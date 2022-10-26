@@ -5,12 +5,12 @@ import (
 	filter "github.com/marcbinz/sdb/lib/filter"
 )
 
-var Group = newGroup("")
+var Group = newGroup[model.Group]("")
 
-func newGroup(key string) group {
-	return group{Name: filter.NewString[model.Group](key)}
+func newGroup[T any](key string) group[T] {
+	return group[T]{Name: filter.NewString[T](key)}
 }
 
-type group struct {
-	Name *filter.String[model.Group]
+type group[T any] struct {
+	Name *filter.String[T]
 }

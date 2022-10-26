@@ -66,6 +66,8 @@ func byFieldInit(input *parser.Result, node parser.Node, field parser.Field) (bo
 		return true, jen.Id(f.Name), jen.Qual(pkgLibSort, "NewSort").Types(jen.Qual(input.PkgPath, node.Name)).Params(jen.Id("key"))
 	case parser.FieldFloat64:
 		return true, jen.Id(f.Name), jen.Qual(pkgLibSort, "NewSort").Types(jen.Qual(input.PkgPath, node.Name)).Params(jen.Id("key"))
+	case parser.FieldTime:
+		return true, jen.Id(f.Name), jen.Qual(pkgLibSort, "NewSort").Types(jen.Qual(input.PkgPath, node.Name)).Params(jen.Id("key"))
 	}
 
 	return false, nil, nil
@@ -86,6 +88,8 @@ func byField(input *parser.Result, node parser.Node, field parser.Field) (bool, 
 	case parser.FieldFloat32:
 		return true, jen.Id(f.Name).Op("*").Qual(pkgLibSort, "Sort").Types(jen.Qual(input.PkgPath, node.Name))
 	case parser.FieldFloat64:
+		return true, jen.Id(f.Name).Op("*").Qual(pkgLibSort, "Sort").Types(jen.Qual(input.PkgPath, node.Name))
+	case parser.FieldTime:
 		return true, jen.Id(f.Name).Op("*").Qual(pkgLibSort, "Sort").Types(jen.Qual(input.PkgPath, node.Name))
 	}
 

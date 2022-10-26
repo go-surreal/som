@@ -3,11 +3,16 @@ package core
 import (
 	"github.com/marcbinz/sdb/builder"
 	"github.com/marcbinz/sdb/parser"
+	"os"
 )
 
 func Generate(inPath, outPath string) error {
 	res, err := parser.Parse(inPath)
 	if err != nil {
+		return err
+	}
+
+	if err := os.RemoveAll(outPath); err != nil {
 		return err
 	}
 

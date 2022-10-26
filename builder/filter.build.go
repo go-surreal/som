@@ -2,6 +2,7 @@ package builder
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/sdb/parser"
 	"path"
 	"strings"
@@ -48,18 +49,20 @@ func buildWhereFile(input *parser.Result, wherePath string, model parser.Node, m
 
 	f := jen.NewFile("where")
 
-	f.Var().Id(model.Name).Op("=").Id("new" + model.Name).Call(jen.Lit(""))
+	f.Var().Id(model.Name).Op("=").Id("new" + model.Name).Types(jen.Qual(modelPkg, model.Name)).Call(jen.Lit(""))
 
 	f.Add(whereNew(input, model))
 
-	f.Type().Id(strings.ToLower(model.Name)).StructFunc(func(g *jen.Group) {
-		for _, field := range model.Fields {
-			ok, code := whereField(input, model, field)
-			if ok {
-				g.Add(code)
+	f.Type().Id(strings.ToLower(model.Name)).
+		Types(jen.Id("T").Any()).
+		StructFunc(func(g *jen.Group) {
+			for _, field := range model.Fields {
+				ok, code := whereField(input, model, field)
+				if ok {
+					g.Add(code)
+				}
 			}
-		}
-	})
+		})
 
 	for _, field := range model.Fields {
 		ok, code := whereFuncs(model, field)
@@ -77,24 +80,26 @@ func buildWhereFile(input *parser.Result, wherePath string, model parser.Node, m
 
 func whereNew(input *parser.Result, model parser.Node) jen.Code {
 	return jen.Func().Id("new" + model.Name).
+		Types(jen.Id("T").Any()).
 		Params(jen.Id("key").String()).
-		Id(strings.ToLower(model.Name)).
+		Id(strings.ToLower(model.Name)).Types(jen.Id("T")).
 		Block(
 			jen.Return(
-				jen.Id(strings.ToLower(model.Name)).Values(jen.DictFunc(func(d jen.Dict) {
-					for _, field := range model.Fields {
-						ok, key, value := whereFieldInit(input, model, field)
-						if ok {
-							d[key] = value
+				jen.Id(strings.ToLower(model.Name)).Types(jen.Id("T")).
+					Values(jen.DictFunc(func(d jen.Dict) {
+						for _, field := range model.Fields {
+							ok, key, value := whereFieldInit(input, model, field)
+							if ok {
+								d[key] = value
+							}
 						}
-					}
-				})),
+					})),
 			),
 		)
 }
 
 func whereFieldInit(input *parser.Result, node parser.Node, field parser.Field) (bool, jen.Code, jen.Code) {
-	typeNode := jen.Qual(input.PkgPath, node.Name)
+	typeNode := jen.Id("T")
 
 	switch f := field.(type) {
 	case parser.FieldID:
@@ -113,6 +118,8 @@ func whereFieldInit(input *parser.Result, node parser.Node, field parser.Field) 
 		return true, jen.Id(f.Name), jen.Qual(pkgLibFilter, "NewNumeric").Types(jen.Float64(), typeNode).Params(jen.Id("key"))
 	case parser.FieldBool:
 		return true, jen.Id(f.Name), jen.Qual(pkgLibFilter, "NewBool").Types(typeNode).Params(jen.Id("key"))
+	case parser.FieldTime:
+		return true, jen.Id(f.Name), jen.Qual(pkgLibFilter, "NewTime").Types(typeNode).Params(jen.Id("key"))
 	case parser.FieldEnum:
 		typeEnum := jen.Qual(input.PkgPath, f.Typ)
 		return true, jen.Id(f.Name), jen.Qual(pkgLibFilter, "NewBase").Types(typeEnum, typeNode).Params(jen.Id("key"))
@@ -122,7 +129,7 @@ func whereFieldInit(input *parser.Result, node parser.Node, field parser.Field) 
 }
 
 func whereField(input *parser.Result, node parser.Node, field parser.Field) (bool, jen.Code) {
-	typeNode := jen.Qual(input.PkgPath, node.Name)
+	typeNode := jen.Id("T")
 
 	switch f := field.(type) {
 	case parser.FieldID:
@@ -141,6 +148,8 @@ func whereField(input *parser.Result, node parser.Node, field parser.Field) (boo
 		return true, jen.Id(f.Name).Op("*").Qual(pkgLibFilter, "Numeric").Types(jen.Float64(), typeNode)
 	case parser.FieldBool:
 		return true, jen.Id(f.Name).Op("*").Qual(pkgLibFilter, "Bool").Types(typeNode)
+	case parser.FieldTime:
+		return true, jen.Id(f.Name).Op("*").Qual(pkgLibFilter, "Time").Types(typeNode)
 	case parser.FieldEnum:
 		typeEnum := jen.Qual(input.PkgPath, f.Typ)
 		return true, jen.Id(f.Name).Op("*").Qual(pkgLibFilter, "Base").Types(typeEnum, typeNode)
@@ -151,19 +160,27 @@ func whereField(input *parser.Result, node parser.Node, field parser.Field) (boo
 
 func whereFuncs(model parser.Node, field parser.Field) (bool, jen.Code) {
 	switch f := field.(type) {
+	case parser.FieldNode:
+		return true, jen.Func().
+			Params(jen.Id(strings.ToLower(model.Name)).Types(jen.Id("T"))).
+			Id(f.Name).Params().
+			Id(strings.ToLower(f.Node)).Types(jen.Id("T")).
+			Block(
+				jen.Return(jen.Id("new" + f.Node).Types(jen.Id("T")).Params(jen.Lit(strcase.ToSnake(f.Name)))),
+			)
 	case parser.FieldStruct:
 		return true, jen.Func().
-			Params(jen.Id(strings.ToLower(model.Name))).
+			Params(jen.Id(strings.ToLower(model.Name)).Types(jen.Id("T"))).
 			Id(f.Name).Params().
 			Block()
 	case parser.FieldSlice:
 		return true, jen.Func().
-			Params(jen.Id(strings.ToLower(model.Name))).
+			Params(jen.Id(strings.ToLower(model.Name)).Types(jen.Id("T"))).
 			Id(f.Name).Params().
 			Block()
 	case parser.FieldMap:
 		return true, jen.Func().
-			Params(jen.Id(strings.ToLower(model.Name))).
+			Params(jen.Id(strings.ToLower(model.Name)).Types(jen.Id("T"))).
 			Id(f.Name).Params().
 			Block()
 	}

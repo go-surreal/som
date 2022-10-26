@@ -39,90 +39,20 @@ func Parse(dir string) (*Result, error) {
 			continue
 		}
 
-		if v.Kind() == gotype.Struct {
-			done := false
-			nf := v.NumField()
-			for j := 0; j < nf; j++ {
-				f := v.Field(j)
-
-				if f.Name() == "Node" && f.Elem().PkgPath() == packagePath {
-					node := Node{Name: v.Name()}
-
-					for k := 0; k < nf; k++ {
-						f2 := v.Field(k)
-
-						if k == j {
-							continue
-						}
-
-						// TODO: ignore unexported fields?!
-
-						var field Field
-
-						// prevent ID from not being a string type
-						if f2.Name() == "ID" && f2.Elem().Kind() != gotype.String {
-							return nil, fmt.Errorf("field ID of model %s must be a string", f.Name())
-						}
-
-						switch f2.Elem().Kind() {
-						case gotype.String:
-							if f2.Name() == "ID" {
-								field = FieldID{fieldAtomic{Name: f2.Name()}}
-							} else if f2.Elem().String() != "string" && f2.Elem().PkgPath() == "github.com/marcbinz/sdb" { // TODO: might not be an enum..?!
-								field = FieldEnum{fieldAtomic{Name: f2.Name()}, f2.Elem().String()}
-							} else {
-								field = FieldString{fieldAtomic{Name: f2.Name()}}
-							}
-						case gotype.Int:
-							field = FieldInt{fieldAtomic{Name: f2.Name()}}
-						case gotype.Int32:
-							field = FieldInt32{fieldAtomic{Name: f2.Name()}}
-						case gotype.Int64:
-							field = FieldInt64{fieldAtomic{Name: f2.Name()}}
-						case gotype.Float32:
-							field = FieldFloat32{fieldAtomic{Name: f2.Name()}}
-						case gotype.Float64:
-							field = FieldFloat64{fieldAtomic{Name: f2.Name()}}
-						case gotype.Bool:
-							field = FieldBool{fieldAtomic{Name: f2.Name()}}
-						case gotype.Struct:
-							// TODO: prevent structs (or general types) from another package (except time and uuid)!
-							if f2.Elem().PkgPath() == "time" {
-								field = FieldTime{fieldAtomic{Name: f2.Name()}}
-							} else if f2.Elem().PkgPath() == "github.com/google/uuid" {
-								field = FieldUUID{fieldAtomic{Name: f2.Name()}}
-							} else {
-								field = FieldStruct{fieldAtomic{Name: f2.Name()}, false} // TODO: handle pointers
-							}
-						case gotype.Slice:
-							field = FieldSlice{fieldAtomic{Name: f2.Name()}, f2.Elem().Elem().Name()}
-						case gotype.Map:
-							field = FieldMap{fieldAtomic{Name: f2.Name()}, f2.Elem().Key().Name(), f2.Elem().Elem().Name()}
-						default:
-							return nil, fmt.Errorf("field %s has unsupported type %s", f2.Name(), f2.Elem().Kind())
-						}
-
-						node.Fields = append(node.Fields, field)
-					}
-
-					res.Nodes = append(res.Nodes, node)
-					done = true
-					continue
-				}
+		if isNode(v) {
+			node, err := parseNode(v)
+			if err != nil {
+				return nil, err
 			}
-
-			if done {
-				continue
-			}
+			res.Nodes = append(res.Nodes, *node)
+			continue
 		}
 
-		if v.Kind() == gotype.String {
-			if v.PkgPath() == packagePath {
-				res.Enums = append(res.Enums, Enum{
-					Name: v.Name(),
-				})
-				continue
-			}
+		if v.Kind() == gotype.String && v.PkgPath() == packagePath {
+			res.Enums = append(res.Enums, Enum{
+				Name: v.Name(),
+			})
+			continue
 		}
 
 		if v.Kind() == gotype.Declaration {
@@ -131,10 +61,102 @@ func Parse(dir string) (*Result, error) {
 				Variable: v.Name(),
 				Value:    v.Value(),
 			})
+			continue
 		}
+
+		fmt.Println("ignoring:", v)
 	}
 
 	return res, nil
+}
+
+func isNode(t gotype.Type) bool {
+	if t.Kind() != gotype.Struct {
+		return false
+	}
+
+	nf := t.NumField()
+
+	for i := 0; i < nf; i++ {
+		f := t.Field(i)
+
+		if f.Name() == "Node" && f.Elem().Name() == "Node" &&
+			f.Elem().String() == "sdb.Node" && f.Elem().PkgPath() == packagePath {
+			return true
+		}
+	}
+
+	return false
+}
+
+func parseNode(v gotype.Type) (*Node, error) {
+	node := &Node{Name: v.Name()}
+
+	nf := v.NumField()
+
+	for i := 0; i < nf; i++ {
+		f := v.Field(i)
+
+		if i == 0 {
+			// TODO: better detect the "Node" field...
+			continue
+		}
+
+		// TODO: ignore unexported fields?!
+
+		var field Field
+
+		// prevent ID from not being a string type
+		if f.Name() == "ID" && f.Elem().Kind() != gotype.String {
+			return nil, fmt.Errorf("field ID of model %s must be a string", v.Name())
+		}
+
+		switch f.Elem().Kind() {
+		case gotype.String:
+			if f.Name() == "ID" {
+				field = FieldID{fieldAtomic{Name: f.Name()}}
+			} else if f.Elem().String() != "string" && f.Elem().PkgPath() == "github.com/marcbinz/sdb" { // TODO: might not be an enum..?!
+				field = FieldEnum{fieldAtomic{Name: f.Name()}, f.Elem().String()}
+			} else {
+				field = FieldString{fieldAtomic{Name: f.Name()}}
+			}
+		case gotype.Int:
+			field = FieldInt{fieldAtomic{Name: f.Name()}}
+		case gotype.Int32:
+			field = FieldInt32{fieldAtomic{Name: f.Name()}}
+		case gotype.Int64:
+			field = FieldInt64{fieldAtomic{Name: f.Name()}}
+		case gotype.Float32:
+			field = FieldFloat32{fieldAtomic{Name: f.Name()}}
+		case gotype.Float64:
+			field = FieldFloat64{fieldAtomic{Name: f.Name()}}
+		case gotype.Bool:
+			field = FieldBool{fieldAtomic{Name: f.Name()}}
+		case gotype.Struct:
+			// TODO: prevent structs (or general types) from another package (except time and uuid)!
+			if f.Elem().PkgPath() == "time" {
+				field = FieldTime{fieldAtomic{Name: f.Name()}}
+			} else if isNode(f.Elem()) {
+				field = FieldNode{fieldAtomic{Name: f.Name()}, f.Elem().Name()}
+			} else {
+				field = FieldStruct{fieldAtomic{Name: f.Name()}, false} // TODO: handle pointers
+			}
+		case gotype.Slice:
+			field = FieldSlice{fieldAtomic{Name: f.Name()}, f.Elem().Elem().Name()}
+		case gotype.Map:
+			field = FieldMap{fieldAtomic{Name: f.Name()}, f.Elem().Key().Name(), f.Elem().Elem().Name()}
+		case gotype.Array:
+			if f.Elem().PkgPath() == "github.com/google/uuid" {
+				field = FieldUUID{fieldAtomic{Name: f.Name()}}
+			}
+		default:
+			return nil, fmt.Errorf("field %s has unsupported type %s", f.Name(), f.Elem().Kind())
+		}
+
+		node.Fields = append(node.Fields, field)
+	}
+
+	return node, nil
 }
 
 type Result struct {
@@ -228,6 +250,11 @@ type FieldTime struct {
 
 type FieldUUID struct {
 	fieldAtomic
+}
+
+type FieldNode struct {
+	fieldAtomic
+	Node string
 }
 
 type FieldEnum struct {

@@ -1,25 +1,38 @@
 package model
 
 import (
+	"github.com/google/uuid"
 	"github.com/marcbinz/sdb"
 	"time"
 )
 
 type User struct {
-	sdb.Node     `surrealdb:"user"`
-	ID           string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	Login        Login
-	Text         string
-	Role         Role
-	Groups       []Group
-	Other        []string
-	Roles        []Role
-	MappedLogin  map[string]Login
-	MappedRoles  map[string]Role
-	MappedGroups map[string]Group
-	OtherMap     map[Role]string
+	sdb.Node `surrealdb:"user"`
+	ID       string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	String  string
+	Int     int
+	Int32   int32
+	Int64   int64
+	Float32 float32
+	Float64 float64
+	Bool    bool
+
+	UUID uuid.UUID
+
+	Login        Login            // struct
+	Role         Role             // enum
+	Groups       []Group          // slice of Nodes
+	MainGroup    Group            // node
+	Other        []string         // slice of strings
+	Roles        []Role           // slice of enum
+	MappedLogin  map[string]Login // map of string and struct
+	MappedRoles  map[string]Role  // map of string and enum
+	MappedGroups map[string]Group // map of string and node
+	OtherMap     map[Role]string  // map of enum and string
 }
 
 type Login struct {
