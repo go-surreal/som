@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"github.com/wzshiming/gotype"
 	"go/ast"
 	"golang.org/x/mod/modfile"
@@ -28,7 +29,7 @@ func Parse(dir string) (*Result, error) {
 		return nil, err
 	}
 
-	res.PkgPath = path.Join(pkgPath, "db", "model") // TODO
+	res.PkgPath = path.Join(pkgPath, "example", "model") // TODO
 
 	nc := n.NumChild()
 	for i := 0; i < nc; i++ {
@@ -51,16 +52,24 @@ func Parse(dir string) (*Result, error) {
 						f2 := v.Field(k)
 
 						if k == j {
-							// TODO: ignore unexported fields!
 							continue
 						}
 
+						// TODO: ignore unexported fields?!
+
 						var field Field
+
+						// prevent ID from not being a string type
+						if f2.Name() == "ID" && f2.Elem().Kind() != gotype.String {
+							return nil, fmt.Errorf("field ID of model %s must be a string", f.Name())
+						}
 
 						switch f2.Elem().Kind() {
 						case gotype.String:
 							if f2.Name() == "ID" {
 								field = FieldID{fieldAtomic{Name: f2.Name()}}
+							} else if f2.Elem().String() != "string" && f2.Elem().PkgPath() == "github.com/marcbinz/sdb" { // TODO: might not be an enum..?!
+								field = FieldEnum{fieldAtomic{Name: f2.Name()}, f2.Elem().String()}
 							} else {
 								field = FieldString{fieldAtomic{Name: f2.Name()}}
 							}
@@ -77,12 +86,20 @@ func Parse(dir string) (*Result, error) {
 						case gotype.Bool:
 							field = FieldBool{fieldAtomic{Name: f2.Name()}}
 						case gotype.Struct:
-							// TODO: prevent structs (or general types) from another package!
-							field = FieldStruct{fieldAtomic{Name: f2.Name()}, false}
+							// TODO: prevent structs (or general types) from another package (except time and uuid)!
+							if f2.Elem().PkgPath() == "time" {
+								field = FieldTime{fieldAtomic{Name: f2.Name()}}
+							} else if f2.Elem().PkgPath() == "github.com/google/uuid" {
+								field = FieldUUID{fieldAtomic{Name: f2.Name()}}
+							} else {
+								field = FieldStruct{fieldAtomic{Name: f2.Name()}, false} // TODO: handle pointers
+							}
 						case gotype.Slice:
 							field = FieldSlice{fieldAtomic{Name: f2.Name()}, f2.Elem().Elem().Name()}
 						case gotype.Map:
 							field = FieldMap{fieldAtomic{Name: f2.Name()}, f2.Elem().Key().Name(), f2.Elem().Elem().Name()}
+						default:
+							return nil, fmt.Errorf("field %s has unsupported type %s", f2.Name(), f2.Elem().Kind())
 						}
 
 						node.Fields = append(node.Fields, field)
@@ -203,6 +220,19 @@ type FieldFloat64 struct {
 
 type FieldBool struct {
 	fieldAtomic
+}
+
+type FieldTime struct {
+	fieldAtomic
+}
+
+type FieldUUID struct {
+	fieldAtomic
+}
+
+type FieldEnum struct {
+	fieldAtomic
+	Typ string
 }
 
 type FieldStruct struct {

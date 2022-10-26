@@ -2,8 +2,8 @@ package sdb
 
 import (
 	"context"
-	model "github.com/marcbinz/sdb/db/model"
-	query "go.alfnet.dev/service/gampi/gen/sdb/query"
+	query "github.com/marcbinz/sdb/example/gen/sdb/query"
+	model "github.com/marcbinz/sdb/example/model"
 )
 
 var User user

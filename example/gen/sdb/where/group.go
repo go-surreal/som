@@ -1,13 +1,16 @@
 package where
 
-import lib "github.com/marcbinz/sdb/lib"
+import (
+	model "github.com/marcbinz/sdb/example/model"
+	filter "github.com/marcbinz/sdb/lib/filter"
+)
 
 var Group = newGroup("")
 
-func newGroup(origin string) group {
-	return group{Name: lib.WhereString{origin}}
+func newGroup(key string) group {
+	return group{Name: filter.NewString[model.Group](key)}
 }
 
 type group struct {
-	Name lib.WhereString
+	Name *filter.String[model.Group]
 }

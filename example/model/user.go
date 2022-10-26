@@ -2,12 +2,16 @@ package model
 
 import (
 	"github.com/marcbinz/sdb"
+	"time"
 )
 
 type User struct {
-	sdb.Node
-	ID           int
+	sdb.Node     `surrealdb:"user"`
+	ID           string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 	Login        Login
+	Text         string
 	Role         Role
 	Groups       []Group
 	Other        []string
@@ -31,6 +35,6 @@ const (
 )
 
 type Group struct {
-	sdb.Node
-	Name string
+	sdb.Node `surrealdb:"group"`
+	Name     string
 }
