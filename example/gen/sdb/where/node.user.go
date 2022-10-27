@@ -1,6 +1,7 @@
 package where
 
 import (
+	uuid "github.com/google/uuid"
 	model "github.com/marcbinz/sdb/example/model"
 	filter "github.com/marcbinz/sdb/lib/filter"
 )
@@ -19,6 +20,7 @@ func newUser[T any](key string) user[T] {
 		Int64:     filter.NewNumeric[int64, T](key),
 		Role:      filter.NewBase[model.Role, T](key),
 		String:    filter.NewString[T](key),
+		UUID:      filter.NewBase[uuid.UUID, T](key),
 		UpdatedAt: filter.NewTime[T](key),
 	}
 }
@@ -34,11 +36,20 @@ type user[T any] struct {
 	Float32   *filter.Numeric[float32, T]
 	Float64   *filter.Numeric[float64, T]
 	Bool      *filter.Bool[T]
+	UUID      *filter.Base[uuid.UUID, T]
 	Role      *filter.Base[model.Role, T]
 }
+type userSlice[T any] struct {
+	user[T]
+	*filter.Slice[model.User, T]
+}
 
-func (user[T]) Login()  {}
-func (user[T]) Groups() {}
+func (user[T]) Login() login[T] {
+	return newLogin[T]("login")
+}
+func (user[T]) Groups() groupSlice[T] {
+	return groupSlice[T]{newGroup[T]("groups"), filter.NewSlice[model.Group, T]("groups")}
+}
 func (user[T]) MainGroup() group[T] {
 	return newGroup[T]("main_group")
 }

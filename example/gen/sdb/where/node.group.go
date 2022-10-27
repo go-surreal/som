@@ -14,3 +14,7 @@ func newGroup[T any](key string) group[T] {
 type group[T any] struct {
 	Name *filter.String[T]
 }
+type groupSlice[T any] struct {
+	group[T]
+	*filter.Slice[model.Group, T]
+}

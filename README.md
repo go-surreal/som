@@ -14,3 +14,4 @@ go run github.com/marcbinz/sdb/cmd/sdbgen@latest <input_dir> <output_dir>
 
 - [ ] generate `sdbmock` package for easy mocking of the underlying database client
 - [ ] add performance benchmarks (and possible optimizations due to it)
+- [ ] make casing of database fields configurable?

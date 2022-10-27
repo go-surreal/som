@@ -14,3 +14,7 @@ func newGroup(key string) group {
 type group struct {
 	Name *sort.String[model.Group]
 }
+
+func (group) Random() *sort.Of[model.Group] {
+	return nil
+}

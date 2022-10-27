@@ -32,3 +32,7 @@ type user struct {
 	Float32   *sort.Sort[model.User]
 	Float64   *sort.Sort[model.User]
 }
+
+func (user) Random() *sort.Of[model.User] {
+	return nil
+}

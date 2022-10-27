@@ -22,6 +22,8 @@ const (
 
 	pkgQuery     = "github.com/marcbinz/sdb/example/gen/sdb/query"     // TODO
 	pkgPredicate = "github.com/marcbinz/sdb/example/gen/sdb/predicate" // TODO
+
+	pkgUUID = "github.com/google/uuid"
 )
 
 func Build(input *parser.Result, outDir string) error {
@@ -64,25 +66,31 @@ func Build(input *parser.Result, outDir string) error {
 		return err
 	}
 
-	for _, model := range input.Nodes {
+	for _, node := range input.Nodes {
 
-		if err := baseFile(basePath, model, input.PkgPath); err != nil {
+		if err := baseFile(basePath, node, input.PkgPath); err != nil {
 			return err
 		}
 
-		if err := buildQueryFile(input, queryPath, model); err != nil {
+		if err := buildQueryFile(input, queryPath, node); err != nil {
 			return err
 		}
 
-		if err := buildWhereFile(input, wherePath, model, input.PkgPath); err != nil {
+		if err := buildFilterNodeFile(input, wherePath, node); err != nil {
 			return err
 		}
 
-		if err := predicateFile(predicatePath, model, input.PkgPath); err != nil {
+		if err := predicateFile(predicatePath, node, input.PkgPath); err != nil {
 			return err
 		}
 
-		if err := buildByFile(input, byPath, model); err != nil {
+		if err := buildByFile(input, byPath, node); err != nil {
+			return err
+		}
+	}
+
+	for _, str := range input.Structs {
+		if err := buildFilterStructFile(input, wherePath, str); err != nil {
 			return err
 		}
 	}

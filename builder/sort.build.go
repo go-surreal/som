@@ -25,6 +25,13 @@ func buildByFile(input *parser.Result, byPath string, model parser.Node) error {
 		}
 	})
 
+	f.Func().Params(jen.Id(strings.ToLower(model.Name))).
+		Id("Random").Params().
+		Op("*").Qual(pkgLibSort, "Of").Types(jen.Qual(input.PkgPath, model.Name)).
+		Block(
+			jen.Return(jen.Nil()),
+		)
+
 	if err := f.Save(path.Join(byPath, fileName)); err != nil {
 		return err
 	}
