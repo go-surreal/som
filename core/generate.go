@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/marcbinz/sdb/builder"
+	"github.com/marcbinz/sdb/genator"
 	"github.com/marcbinz/sdb/parser"
 	"os"
 )
@@ -16,7 +16,7 @@ func Generate(inPath, outPath string) error {
 		return err
 	}
 
-	err = builder.Build(res, outPath)
+	err = genator.Build(res, outPath)
 	if err != nil {
 		return err
 	}

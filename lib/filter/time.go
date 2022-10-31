@@ -16,18 +16,18 @@ func NewTime[R any](key string) *Time[R] {
 	}
 }
 
-func (t Time[R]) Before(val time.Time) *Of[R] {
+func (t *Time[R]) Before(val time.Time) Of[R] {
 	return t.comp.LessThan(val)
 }
 
-func (t Time[R]) BeforeOrEqual(val time.Time) *Of[R] {
+func (t *Time[R]) BeforeOrEqual(val time.Time) Of[R] {
 	return t.comp.LessThanEqual(val)
 }
 
-func (t Time[R]) After(val time.Time) *Of[R] {
+func (t *Time[R]) After(val time.Time) Of[R] {
 	return t.comp.GreaterThan(val)
 }
 
-func (t Time[R]) AfterOrEqual(val time.Time) *Of[R] {
+func (t *Time[R]) AfterOrEqual(val time.Time) Of[R] {
 	return t.comp.GreaterThanEqual(val)
 }

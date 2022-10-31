@@ -1,4 +1,4 @@
-package builder
+package genator
 
 import (
 	"github.com/dave/jennifer/jen"
@@ -12,7 +12,17 @@ func buildQueryFile(input *parser.Result, queryPath string, model parser.Node) e
 
 	f := jen.NewFile("query")
 
-	f.Type().Id(model.Name).Struct()
+	f.Type().Id(model.Name).Struct(
+		jen.Id("build").Op("*").Qual(pkgLibBuilder, "Query"),
+	)
+
+	f.Func().Id("New" + model.Name).Params().
+		Op("*").Id(model.Name).
+		Block(
+			jen.Return(jen.Op("&").Id(model.Name).Values(jen.Dict{
+				jen.Id("build"): jen.Qual(pkgLibBuilder, "NewQuery").Call(),
+			})),
+		)
 
 	functions := []jen.Code{
 		buildQueryFuncFilter(input, model),
@@ -36,9 +46,6 @@ func buildQueryFile(input *parser.Result, queryPath string, model parser.Node) e
 		f.Add(fn)
 	}
 
-	f.Add(buildQueryToModel(input, model))
-	f.Add(buildQueryFromModel(input, model))
-
 	if err := f.Save(path.Join(queryPath, fileName)); err != nil {
 		return err
 	}
@@ -49,9 +56,14 @@ func buildQueryFile(input *parser.Result, queryPath string, model parser.Node) e
 func buildQueryFuncFilter(input *parser.Result, model parser.Node) jen.Code {
 	return jen.Func().
 		Params(jen.Id("q").Op("*").Id(model.Name)).
-		Id("Filter").Params(jen.Id("filters").Op("...").Op("*").Qual(pkgLibFilter, "Of").Types(jen.Qual(input.PkgPath, model.Name))).
+		Id("Filter").Params(jen.Id("filters").Op("...").Qual(pkgLibFilter, "Of").Types(jen.Qual(input.PkgPath, model.Name))).
 		Op("*").Id(model.Name).
 		Block(
+			jen.For(jen.Id("_").Op(",").Id("f").Op(":=").Range().Id("filters")).
+				Block(
+					jen.Id("q").Dot("build").Dot("Where").Op("=").
+						Append(jen.Id("q").Dot("build").Dot("Where"), jen.Qual(pkgLibBuilder, "Where").Call(jen.Id("f"))),
+				),
 			jen.Return(jen.Id("q")),
 		)
 }
@@ -193,25 +205,5 @@ func buildQueryFuncOnlyID(model parser.Node) jen.Code {
 		Parens(jen.List(jen.String(), jen.Error())).
 		Block(
 			jen.Return(jen.Lit(""), jen.Nil()),
-		)
-}
-
-func buildQueryToModel(input *parser.Result, model parser.Node) jen.Code {
-	return jen.Func().
-		Id("to"+model.Name+"Model").
-		Params(jen.Id("data").Map(jen.String()).Any()).
-		Qual(input.PkgPath, model.Name).
-		Block(
-			jen.Return(jen.Qual(input.PkgPath, model.Name).Values()),
-		)
-}
-
-func buildQueryFromModel(input *parser.Result, model parser.Node) jen.Code {
-	return jen.Func().
-		Id("from" + model.Name + "Model").
-		Params(jen.Id("model").Qual(input.PkgPath, model.Name)).
-		Map(jen.String()).Any().
-		Block(
-			jen.Return(jen.Map(jen.String()).Any().Values()),
 		)
 }

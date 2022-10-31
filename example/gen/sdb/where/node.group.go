@@ -8,10 +8,14 @@ import (
 var Group = newGroup[model.Group]("")
 
 func newGroup[T any](key string) group[T] {
-	return group[T]{Name: filter.NewString[T](key)}
+	return group[T]{
+		Name: filter.NewString[T](keyed(key, "name")),
+		key:  key,
+	}
 }
 
 type group[T any] struct {
+	key  string
 	Name *filter.String[T]
 }
 type groupSlice[T any] struct {

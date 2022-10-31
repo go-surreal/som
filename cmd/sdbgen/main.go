@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/marcbinz/sdb/cmd/sdbgen/sub"
 	"github.com/marcbinz/sdb/core"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -11,6 +12,9 @@ func main() {
 	app := cli.App{
 		Name:   "sdbgen",
 		Action: generate,
+		Commands: []*cli.Command{
+			sub.Surreal(),
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {

@@ -10,22 +10,25 @@ var User = newUser[model.User]("")
 
 func newUser[T any](key string) user[T] {
 	return user[T]{
-		Bool:      filter.NewBool[T](key),
-		CreatedAt: filter.NewTime[T](key),
-		Float32:   filter.NewNumeric[float32, T](key),
-		Float64:   filter.NewNumeric[float64, T](key),
-		ID:        filter.NewBase[string, T](key),
-		Int:       filter.NewNumeric[int, T](key),
-		Int32:     filter.NewNumeric[int32, T](key),
-		Int64:     filter.NewNumeric[int64, T](key),
-		Role:      filter.NewBase[model.Role, T](key),
-		String:    filter.NewString[T](key),
-		UUID:      filter.NewBase[uuid.UUID, T](key),
-		UpdatedAt: filter.NewTime[T](key),
+		Bool:      filter.NewBool[T](keyed(key, "bool")),
+		Bool2:     filter.NewBool[T](keyed(key, "bool_2")),
+		CreatedAt: filter.NewTime[T](keyed(key, "created_at")),
+		Float32:   filter.NewNumeric[float32, T](keyed(key, "float_32")),
+		Float64:   filter.NewNumeric[float64, T](keyed(key, "float_64")),
+		ID:        filter.NewBase[string, T](keyed(key, "id")),
+		Int:       filter.NewNumeric[int, T](keyed(key, "int")),
+		Int32:     filter.NewNumeric[int32, T](keyed(key, "int_32")),
+		Int64:     filter.NewNumeric[int64, T](keyed(key, "int_64")),
+		Role:      filter.NewBase[model.Role, T](keyed(key, "role")),
+		String:    filter.NewString[T](keyed(key, "string")),
+		UUID:      filter.NewBase[uuid.UUID, T](keyed(key, "uuid")),
+		UpdatedAt: filter.NewTime[T](keyed(key, "updated_at")),
+		key:       key,
 	}
 }
 
 type user[T any] struct {
+	key       string
 	ID        *filter.Base[string, T]
 	CreatedAt *filter.Time[T]
 	UpdatedAt *filter.Time[T]
@@ -36,6 +39,7 @@ type user[T any] struct {
 	Float32   *filter.Numeric[float32, T]
 	Float64   *filter.Numeric[float64, T]
 	Bool      *filter.Bool[T]
+	Bool2     *filter.Bool[T]
 	UUID      *filter.Base[uuid.UUID, T]
 	Role      *filter.Base[model.Role, T]
 }
@@ -44,18 +48,19 @@ type userSlice[T any] struct {
 	*filter.Slice[model.User, T]
 }
 
-func (user[T]) Login() login[T] {
-	return newLogin[T]("login")
+func (n user[T]) Login() login[T] {
+	return newLogin[T](keyed(n.key, "login"))
 }
-func (user[T]) Groups() groupSlice[T] {
-	return groupSlice[T]{newGroup[T]("groups"), filter.NewSlice[model.Group, T]("groups")}
+func (n user[T]) Groups() groupSlice[T] {
+	key := keyed(n.key, "groups")
+	return groupSlice[T]{newGroup[T](key), filter.NewSlice[model.Group, T](key)}
 }
-func (user[T]) MainGroup() group[T] {
-	return newGroup[T]("main_group")
+func (n user[T]) MainGroup() group[T] {
+	return newGroup[T](keyed(n.key, "main_group"))
 }
-func (user[T]) Other()        {}
-func (user[T]) Roles()        {}
-func (user[T]) MappedLogin()  {}
-func (user[T]) MappedRoles()  {}
-func (user[T]) MappedGroups() {}
-func (user[T]) OtherMap()     {}
+func (n user[T]) Other() *filter.Slice[string, T] {
+	return filter.NewSlice[string, T](keyed(n.key, "other"))
+}
+func (n user[T]) Roles() *filter.Slice[model.Role, T] {
+	return filter.NewSlice[model.Role, T](keyed(n.key, "roles"))
+}

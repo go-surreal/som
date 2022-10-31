@@ -1,11 +1,16 @@
 package where
 
-func All[T any](filters ...T) T {
-	return nil
+import filter "github.com/marcbinz/sdb/lib/filter"
+
+func All[T any](filters ...filter.Of[T]) filter.Of[T] {
+	return filter.All[T](filters)
 }
-func Any[T any](filters ...T) T {
-	return nil
+func Any[T any](filters ...filter.Of[T]) filter.Of[T] {
+	return filter.Any[T](filters)
 }
-func Count[T any](what T) T {
-	return nil
+func keyed(base, key string) string {
+	if base == "" {
+		return key
+	}
+	return base + "." + key
 }

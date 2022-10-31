@@ -2,14 +2,23 @@ package query
 
 import (
 	model "github.com/marcbinz/sdb/example/model"
+	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
 	sort "github.com/marcbinz/sdb/lib/sort"
 	"time"
 )
 
-type Group struct{}
+type Group struct {
+	build *builder.Query
+}
 
-func (q *Group) Filter(filters ...*filter.Of[model.Group]) *Group {
+func NewGroup() *Group {
+	return &Group{build: builder.NewQuery()}
+}
+func (q *Group) Filter(filters ...filter.Of[model.Group]) *Group {
+	for _, f := range filters {
+		q.build.Where = append(q.build.Where, builder.Where(f))
+	}
 	return q
 }
 func (q *Group) Sort(by ...*sort.Of[model.Group]) *Group {
@@ -53,10 +62,4 @@ func (q *Group) Only() (*model.Group, error) {
 }
 func (q *Group) OnlyID() (string, error) {
 	return "", nil
-}
-func toGroupModel(data map[string]any) model.Group {
-	return model.Group{}
-}
-func fromGroupModel(model model.Group) map[string]any {
-	return map[string]any{}
 }

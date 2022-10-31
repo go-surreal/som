@@ -2,14 +2,23 @@ package query
 
 import (
 	model "github.com/marcbinz/sdb/example/model"
+	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
 	sort "github.com/marcbinz/sdb/lib/sort"
 	"time"
 )
 
-type User struct{}
+type User struct {
+	build *builder.Query
+}
 
-func (q *User) Filter(filters ...*filter.Of[model.User]) *User {
+func NewUser() *User {
+	return &User{build: builder.NewQuery()}
+}
+func (q *User) Filter(filters ...filter.Of[model.User]) *User {
+	for _, f := range filters {
+		q.build.Where = append(q.build.Where, builder.Where(f))
+	}
 	return q
 }
 func (q *User) Sort(by ...*sort.Of[model.User]) *User {
@@ -53,10 +62,4 @@ func (q *User) Only() (*model.User, error) {
 }
 func (q *User) OnlyID() (string, error) {
 	return "", nil
-}
-func toUserModel(data map[string]any) model.User {
-	return model.User{}
-}
-func fromUserModel(model model.User) map[string]any {
-	return map[string]any{}
 }
