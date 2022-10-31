@@ -185,8 +185,8 @@ func parseField(t gotype.Type) (Field, error) {
 		}
 	case gotype.Slice:
 		field = FieldSlice{fieldAtomic{Name: t.Name()}, t.Elem().Elem().Name(), isNode(t.Elem().Elem())}
-	case gotype.Map:
-		field = FieldMap{fieldAtomic{Name: t.Name()}, t.Elem().Key().Name(), t.Elem().Elem().Name()}
+	// case gotype.Map:
+	// 	field = FieldMap{fieldAtomic{Name: t.Name()}, t.Elem().Key().Name(), t.Elem().Elem().Name()}
 	case gotype.Array:
 		if t.Elem().PkgPath() == "github.com/google/uuid" {
 			field = FieldUUID{fieldAtomic{Name: t.Name()}}
@@ -204,6 +204,15 @@ type Result struct {
 	Structs    []Struct
 	Enums      []Enum
 	EnumValues []EnumValue
+}
+
+func (r *Result) IsEnum(name string) bool {
+	for _, enum := range r.Enums {
+		if enum.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 //
@@ -236,7 +245,6 @@ type EnumValue struct {
 
 type Field interface {
 	field()
-	GetName() string
 }
 
 type isField struct{}
@@ -246,10 +254,6 @@ func (isField) field() {}
 type fieldAtomic struct {
 	isField
 	Name string
-}
-
-func (f fieldAtomic) GetName() string {
-	return f.Name
 }
 
 type FieldID struct {
@@ -315,11 +319,11 @@ type FieldSlice struct {
 	IsNode bool
 }
 
-type FieldMap struct {
-	fieldAtomic
-	Key   string
-	Value string
-}
+// type FieldMap struct {
+// 	fieldAtomic
+// 	Key   string
+// 	Value string
+// }
 
 //
 // -- HELPER

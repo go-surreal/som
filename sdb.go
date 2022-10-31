@@ -1,6 +1,11 @@
 package sdb
 
-type Node struct{}
+type Node struct {
+	// include query info into each node resulting from a query?:
+	// status string
+	// time   string
+	// extract via sdb.Info(someNode) -> sdb.Info ?
+}
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.

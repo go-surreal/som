@@ -1,4 +1,4 @@
-package builder
+package genator
 
 import (
 	"github.com/dave/jennifer/jen"

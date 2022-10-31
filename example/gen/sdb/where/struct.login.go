@@ -7,12 +7,14 @@ import (
 
 func newLogin[T any](key string) login[T] {
 	return login[T]{
-		Password: filter.NewString[T](key),
-		Username: filter.NewString[T](key),
+		Password: filter.NewString[T](keyed(key, "password")),
+		Username: filter.NewString[T](keyed(key, "username")),
+		key:      key,
 	}
 }
 
 type login[T any] struct {
+	key      string
 	Username *filter.String[T]
 	Password *filter.String[T]
 }

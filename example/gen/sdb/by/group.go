@@ -8,10 +8,14 @@ import (
 var Group = newGroup("")
 
 func newGroup(key string) group {
-	return group{Name: sort.NewString[model.Group](key)}
+	return group{
+		ID:   sort.NewSort[model.Group](key),
+		Name: sort.NewString[model.Group](key),
+	}
 }
 
 type group struct {
+	ID   *sort.Sort[model.Group]
 	Name *sort.String[model.Group]
 }
 

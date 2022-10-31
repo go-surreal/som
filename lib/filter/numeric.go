@@ -16,6 +16,13 @@ func NewNumeric[T Number, R any](key string) *Numeric[T, R] {
 	}
 }
 
+func newCountNumeric[T Number, R any](key string) *Numeric[T, R] {
+	return &Numeric[T, R]{
+		Base:       &Base[T, R]{key: key, isCount: true},
+		Comparable: &Comparable[T, R]{key: key, isCount: true},
+	}
+}
+
 type Number interface {
 	constraints.Integer | constraints.Float
 }

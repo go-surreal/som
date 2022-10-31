@@ -1,0 +1,9 @@
+#V2
+SELECT * FROM user;
+USE sdb
+USE sdb;
+USE NS sdb;
+SELECT * FROM user;
+USE NS sdb DB default;
+SELECT * FROM user;
+USE NS sdb DB default; SELECT * FROM user;
