@@ -104,7 +104,7 @@ func Build(input *parser.Result, outDir string) error {
 			return err
 		}
 
-		if err := buildConvFile(input, convPath, node.Name, node.Fields, true); err != nil {
+		if err := buildConvFile(input, convPath, node.Name, node.Fields, &node); err != nil {
 			return err
 		}
 	}
@@ -114,7 +114,7 @@ func Build(input *parser.Result, outDir string) error {
 			return err
 		}
 
-		if err := buildConvFile(input, convPath, str.Name, str.Fields, false); err != nil {
+		if err := buildConvFile(input, convPath, str.Name, str.Fields, nil); err != nil {
 			return err
 		}
 	}
@@ -205,24 +205,9 @@ func baseFile(basePath string, model parser.Node, modelPkg string) error {
 			),
 			jen.Id("res").Op(":=").Qual(pkgConv, "To"+model.Name).
 				Call(jen.Id("raw").Op(".").Parens(jen.Index().Any()).Index(jen.Lit(0)).Op(".").Parens(jen.Map(jen.String()).Any())),
-			jen.Qual("fmt", "Println").Call(jen.Id("res")),
+			jen.Op("*").Id(strings.ToLower(model.Name)).Op("=").Id("res"),
 			jen.Return(jen.Nil()),
 		)
-
-	// if user.ID != "" {
-	//		return errors.New("ID must not be set")
-	//	}
-	//
-	//	data := conv.FromUser(*user)
-	//	raw, err := db.Create("user", data)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	res := conv.ToUser(raw.([]any)[0].(map[string]any))
-	//
-	//	fmt.Println(res)
-	//	return nil
 
 	f.Func().
 		Params(jen.Id(strings.ToLower(model.Name))).

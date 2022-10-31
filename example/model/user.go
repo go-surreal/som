@@ -51,5 +51,7 @@ const (
 
 type Group struct {
 	sdb.Node `surrealdb:"group"`
-	Name     string
+
+	ID   string
+	Name string
 }

@@ -12,7 +12,21 @@ func buildBaseConvFile(convPath string) error {
 
 	f := jen.NewFile("conv")
 
-	f.Func().Id("parseTime").Call(jen.Id("val").Any()).Qual("time", "Time").
+	f.Func().Id("prepareID").
+		Params(jen.Id("node").String(), jen.Id("id").Any()).
+		String().
+		Block(
+			jen.Return(
+				jen.Qual("strings", "TrimPrefix").Call(
+					jen.Id("id").Op(".").Parens(jen.String()),
+					jen.Id("node").Op("+").Lit(":"),
+				),
+			),
+		)
+
+	// strings.TrimPrefix(data["id"].(string), "user:")
+
+	f.Func().Id("parseTime").Params(jen.Id("val").Any()).Qual("time", "Time").
 		Block(
 			jen.Id("res").Op(",").Err().Op(":=").
 				Qual("time", "Parse").Call(jen.Qual("time", "RFC3339"), jen.Id("val").Op(".").Parens(jen.String())),
@@ -22,7 +36,7 @@ func buildBaseConvFile(convPath string) error {
 			jen.Return(jen.Id("res")),
 		)
 
-	f.Func().Id("parseUUID").Call(jen.Id("val").Any()).Qual(pkgUUID, "UUID").
+	f.Func().Id("parseUUID").Params(jen.Id("val").Any()).Qual(pkgUUID, "UUID").
 		Block(
 			jen.Id("res").Op(",").Err().Op(":=").
 				Qual(pkgUUID, "Parse").Call(jen.Id("val").Op(".").Parens(jen.String())),
@@ -47,9 +61,9 @@ func buildBaseConvFile(convPath string) error {
 	return nil
 }
 
-func buildConvFile(input *parser.Result, convPath string, name string, fields []parser.Field, isNode bool) error {
+func buildConvFile(input *parser.Result, convPath string, name string, fields []parser.Field, node *parser.Node) error {
 	prefix := "struct."
-	if isNode {
+	if node != nil {
 		prefix = "node."
 	}
 
@@ -58,7 +72,7 @@ func buildConvFile(input *parser.Result, convPath string, name string, fields []
 	f := jen.NewFile("conv")
 
 	f.Add(buildConvFromModel(input, name, fields))
-	f.Add(buildConvToModel(input, name, fields))
+	f.Add(buildConvToModel(input, name, node, fields))
 
 	if err := f.Save(path.Join(convPath, fileName)); err != nil {
 		return err
@@ -83,7 +97,7 @@ func buildConvFromModel(input *parser.Result, name string, fields []parser.Field
 			}))))
 }
 
-func buildConvToModel(input *parser.Result, name string, fields []parser.Field) jen.Code {
+func buildConvToModel(input *parser.Result, name string, node *parser.Node, fields []parser.Field) jen.Code {
 	return jen.Func().
 		Id("To"+name).
 		Params(jen.Id("data").Map(jen.String()).Any()).
@@ -91,7 +105,7 @@ func buildConvToModel(input *parser.Result, name string, fields []parser.Field) 
 		Block(
 			jen.Return(jen.Qual(input.PkgPath, name).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, field := range fields {
-					ok, key, value := buildConvToField(field)
+					ok, key, value := buildConvToField(field, node)
 					if ok {
 						d[key] = value
 					}
@@ -102,7 +116,8 @@ func buildConvToModel(input *parser.Result, name string, fields []parser.Field) 
 func buildConvFromField(field parser.Field) (bool, jen.Code, jen.Code) {
 	switch f := field.(type) {
 	case parser.FieldID:
-		return true, jen.Lit(strcase.ToSnake(f.Name)), jen.Id("data").Dot(f.Name)
+		// ID is never set, because the database is providing them, not the application.
+		return false, nil, nil
 	case parser.FieldString:
 		return true, jen.Lit(strcase.ToSnake(f.Name)), jen.Id("data").Dot(f.Name)
 	case parser.FieldInt:
@@ -130,10 +145,10 @@ func buildConvFromField(field parser.Field) (bool, jen.Code, jen.Code) {
 	return false, nil, nil
 }
 
-func buildConvToField(field parser.Field) (bool, jen.Code, jen.Code) {
+func buildConvToField(field parser.Field, node *parser.Node) (bool, jen.Code, jen.Code) {
 	switch f := field.(type) {
 	case parser.FieldID:
-		return true, jen.Id(f.Name), jen.Id("data").Index(jen.Lit(strcase.ToSnake(f.Name))).Op(".").Parens(jen.String())
+		return true, jen.Id(f.Name), jen.Id("prepareID").Call(jen.Lit(strcase.ToSnake(node.Name)), jen.Id("data").Index(jen.Lit(strcase.ToSnake(f.Name))))
 	case parser.FieldString:
 		return true, jen.Id(f.Name), jen.Id("data").Index(jen.Lit(strcase.ToSnake(f.Name))).Op(".").Parens(jen.String())
 	case parser.FieldInt:

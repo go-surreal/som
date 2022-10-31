@@ -9,6 +9,7 @@ var Group = newGroup[model.Group]("")
 
 func newGroup[T any](key string) group[T] {
 	return group[T]{
+		ID:   filter.NewBase[string, T](keyed(key, "id")),
 		Name: filter.NewString[T](keyed(key, "name")),
 		key:  key,
 	}
@@ -16,6 +17,7 @@ func newGroup[T any](key string) group[T] {
 
 type group[T any] struct {
 	key  string
+	ID   *filter.Base[string, T]
 	Name *filter.String[T]
 }
 type groupSlice[T any] struct {

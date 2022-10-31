@@ -22,20 +22,22 @@ func main() {
 
 	userRepo := repo.User{DB: db}
 
-	err = userRepo.Create(ctx, &model.User{
+	user := &model.User{
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-	})
+	}
+
+	err = userRepo.Create(ctx, user)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	user, err := userRepo.FindById(ctx, "od5tfy9z8bzszl3p9l5l")
+	user2, err := userRepo.FindById(ctx, user.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(user)
+	fmt.Println(user2)
 }
 
 func New(username, password, namespace, database string) (*sdb.Client, error) {

@@ -3,7 +3,6 @@ package sdb
 import (
 	"context"
 	"errors"
-	"fmt"
 	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	query "github.com/marcbinz/sdb/example/gen/sdb/query"
 	model "github.com/marcbinz/sdb/example/model"
@@ -26,7 +25,7 @@ func (group) Create(ctx context.Context, db *Client, group *model.Group) error {
 		return err
 	}
 	res := conv.ToGroup(raw.([]any)[0].(map[string]any))
-	fmt.Println(res)
+	*group = res
 	return nil
 }
 func (group) Read(ctx context.Context, db *Client, id string) (*model.Group, error) {

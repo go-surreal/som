@@ -16,3 +16,11 @@ go run github.com/marcbinz/sdb/cmd/sdbgen@latest <input_dir> <output_dir>
 - [ ] add performance benchmarks (and possible optimizations due to it)
 - [ ] make casing of database fields configurable?
 - [ ] add support for maps as node fields
+
+## References
+
+- https://surrealdb.com/docs
+- https://entgo.io
+- https://github.com/d-tsuji/awesome-go-orms
+- https://github.com/doug-martin/goqu
+- https://github.com/sharovik/orm

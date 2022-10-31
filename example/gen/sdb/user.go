@@ -3,7 +3,6 @@ package sdb
 import (
 	"context"
 	"errors"
-	"fmt"
 	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	query "github.com/marcbinz/sdb/example/gen/sdb/query"
 	model "github.com/marcbinz/sdb/example/model"
@@ -26,7 +25,7 @@ func (user) Create(ctx context.Context, db *Client, user *model.User) error {
 		return err
 	}
 	res := conv.ToUser(raw.([]any)[0].(map[string]any))
-	fmt.Println(res)
+	*user = res
 	return nil
 }
 func (user) Read(ctx context.Context, db *Client, id string) (*model.User, error) {
