@@ -1,8 +1,8 @@
-package genator
+package codegen
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/sdb/parser"
+	"github.com/marcbinz/sdb/core/parser"
 	"path"
 	"strings"
 )
