@@ -7,7 +7,7 @@ import (
 )
 
 func Generate(inPath, outPath string) error {
-	res, err := parser.Parse(inPath)
+	source, err := parser.Parse(inPath)
 	if err != nil {
 		return err
 	}
@@ -16,7 +16,7 @@ func Generate(inPath, outPath string) error {
 		return err
 	}
 
-	err = codegen.Build(res, outPath)
+	err = codegen.Build(source, outPath)
 	if err != nil {
 		return err
 	}

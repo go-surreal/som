@@ -1,21 +1,20 @@
 package parser
 
 import (
-	"errors"
 	"fmt"
 	"github.com/wzshiming/gotype"
 	"go/ast"
-	"golang.org/x/mod/modfile"
-	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 const fileGoMod = "go.mod"
 
 const packagePath = "github.com/marcbinz/sdb"
 
-func Parse(dir string) (*Result, error) {
-	res := &Result{}
+func Parse(dir string) (*Output, error) {
+	res := &Output{}
 
 	imp := gotype.NewImporter()
 
@@ -24,12 +23,18 @@ func Parse(dir string) (*Result, error) {
 		return nil, err
 	}
 
-	pkgPath, err := parseMod(dir)
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, fmt.Errorf("could not find absolute path: %v", err)
+	}
+
+	pkgPath, modPath, err := parseMod(absDir)
 	if err != nil {
 		return nil, err
 	}
 
-	res.PkgPath = path.Join(pkgPath, "example", "model") // TODO
+	diff := strings.TrimPrefix(absDir, modPath)
+	res.PkgPath = path.Join(pkgPath, diff)
 
 	nc := n.NumChild()
 	for i := 0; i < nc; i++ {
@@ -44,7 +49,7 @@ func Parse(dir string) (*Result, error) {
 			if err != nil {
 				return nil, err
 			}
-			res.Nodes = append(res.Nodes, *node)
+			res.Nodes = append(res.Nodes, node)
 			continue
 		}
 
@@ -55,19 +60,19 @@ func Parse(dir string) (*Result, error) {
 			if err != nil {
 				return nil, err
 			}
-			res.Structs = append(res.Structs, *str)
+			res.Structs = append(res.Structs, str)
 			continue
 		}
 
 		if v.Kind() == gotype.String && v.PkgPath() == packagePath {
-			res.Enums = append(res.Enums, Enum{
+			res.Enums = append(res.Enums, &Enum{
 				Name: v.Name(),
 			})
 			continue
 		}
 
 		if v.Kind() == gotype.Declaration {
-			res.EnumValues = append(res.EnumValues, EnumValue{
+			res.EnumValues = append(res.EnumValues, &EnumValue{
 				Enum:     v.Declaration().Name(),
 				Variable: v.Name(),
 				Value:    v.Value(),
@@ -98,6 +103,14 @@ func isNode(t gotype.Type) bool {
 	}
 
 	return false
+}
+
+func isEnum(t gotype.Type) bool {
+	if t.Kind() != gotype.String {
+		return false
+	}
+
+	return t.String() != "string" && t.PkgPath() == "github.com/marcbinz/sdb" // TODO: might not be an enum..?!
 }
 
 func parseNode(v gotype.Type) (*Node, error) {
@@ -156,40 +169,40 @@ func parseField(t gotype.Type) (Field, error) {
 	switch t.Elem().Kind() {
 	case gotype.String:
 		if t.Name() == "ID" {
-			field = FieldID{fieldAtomic{Name: t.Name()}}
-		} else if t.Elem().String() != "string" && t.Elem().PkgPath() == "github.com/marcbinz/sdb" { // TODO: might not be an enum..?!
-			field = FieldEnum{fieldAtomic{Name: t.Name()}, t.Elem().String()}
+			field = &FieldID{&fieldAtomic{Name: t.Name()}}
+		} else if isEnum(t.Elem()) {
+			field = &FieldEnum{&fieldAtomic{Name: t.Name()}, t.Elem().String()}
 		} else {
-			field = FieldString{fieldAtomic{Name: t.Name()}}
+			field = &FieldString{&fieldAtomic{Name: t.Name()}}
 		}
 	case gotype.Int:
-		field = FieldInt{fieldAtomic{Name: t.Name()}}
+		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberInt}
 	case gotype.Int32:
-		field = FieldInt32{fieldAtomic{Name: t.Name()}}
+		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberInt32}
 	case gotype.Int64:
-		field = FieldInt64{fieldAtomic{Name: t.Name()}}
+		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberInt64}
 	case gotype.Float32:
-		field = FieldFloat32{fieldAtomic{Name: t.Name()}}
+		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberFloat32}
 	case gotype.Float64:
-		field = FieldFloat64{fieldAtomic{Name: t.Name()}}
+		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberFloat64}
 	case gotype.Bool:
-		field = FieldBool{fieldAtomic{Name: t.Name()}}
+		field = &FieldBool{&fieldAtomic{Name: t.Name()}}
 	case gotype.Struct:
 		// TODO: prevent structs (or general types) from another package (except time and uuid)!
 		if t.Elem().PkgPath() == "time" {
-			field = FieldTime{fieldAtomic{Name: t.Name()}}
+			field = &FieldTime{&fieldAtomic{Name: t.Name()}}
 		} else if isNode(t.Elem()) {
-			field = FieldNode{fieldAtomic{Name: t.Name()}, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldNode{&fieldAtomic{Name: t.Name()}, t.Elem().Name(), false} // TODO: handle pointers
 		} else {
-			field = FieldStruct{fieldAtomic{Name: t.Name()}, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldStruct{&fieldAtomic{Name: t.Name()}, t.Elem().Name(), false} // TODO: handle pointers
 		}
 	case gotype.Slice:
-		field = FieldSlice{fieldAtomic{Name: t.Name()}, t.Elem().Elem().Name(), isNode(t.Elem().Elem())}
+		field = &FieldSlice{&fieldAtomic{Name: t.Name()}, t.Elem().Elem().Name(), isNode(t.Elem().Elem()), isEnum(t.Elem().Elem())}
 	// case gotype.Map:
 	// 	field = FieldMap{fieldAtomic{Name: t.Name()}, t.Elem().Key().Name(), t.Elem().Elem().Name()}
 	case gotype.Array:
 		if t.Elem().PkgPath() == "github.com/google/uuid" {
-			field = FieldUUID{fieldAtomic{Name: t.Name()}}
+			field = &FieldUUID{&fieldAtomic{Name: t.Name()}}
 		}
 	default:
 		return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), t.Elem().Kind())
@@ -198,165 +211,10 @@ func parseField(t gotype.Type) (Field, error) {
 	return field, nil
 }
 
-type Result struct {
+type Output struct {
 	PkgPath    string
-	Nodes      []Node
-	Structs    []Struct
-	Enums      []Enum
-	EnumValues []EnumValue
-}
-
-func (r *Result) IsEnum(name string) bool {
-	for _, enum := range r.Enums {
-		if enum.Name == name {
-			return true
-		}
-	}
-	return false
-}
-
-//
-// -- TOP LEVEL
-//
-
-type Node struct {
-	Name   string
-	Fields []Field
-}
-
-type Struct struct {
-	Name   string
-	Fields []Field
-}
-
-type Enum struct {
-	Name string
-}
-
-type EnumValue struct {
-	Enum     string
-	Variable string
-	Value    string
-}
-
-//
-// -- FIELDS
-//
-
-type Field interface {
-	field()
-}
-
-type isField struct{}
-
-func (isField) field() {}
-
-type fieldAtomic struct {
-	isField
-	Name string
-}
-
-type FieldID struct {
-	fieldAtomic
-}
-
-type FieldString struct {
-	fieldAtomic
-}
-
-type FieldInt struct {
-	fieldAtomic
-}
-
-type FieldInt32 struct {
-	fieldAtomic
-}
-
-type FieldInt64 struct {
-	fieldAtomic
-}
-
-type FieldFloat32 struct {
-	fieldAtomic
-}
-
-type FieldFloat64 struct {
-	fieldAtomic
-}
-
-type FieldBool struct {
-	fieldAtomic
-}
-
-type FieldTime struct {
-	fieldAtomic
-}
-
-type FieldUUID struct {
-	fieldAtomic
-}
-
-type FieldNode struct {
-	fieldAtomic
-	Node    string
-	Pointer bool
-}
-
-type FieldEnum struct {
-	fieldAtomic
-	Typ string
-}
-
-type FieldStruct struct {
-	fieldAtomic
-	Struct  string
-	Pointer bool
-}
-
-type FieldSlice struct {
-	fieldAtomic
-	Value  string
-	IsNode bool
-}
-
-// type FieldMap struct {
-// 	fieldAtomic
-// 	Key   string
-// 	Value string
-// }
-
-//
-// -- HELPER
-//
-
-func findAndReadModFile(dir string) ([]byte, string, error) {
-	for dir != "" {
-		data, err := os.ReadFile(path.Join(dir, fileGoMod))
-
-		if err == nil {
-			return data, dir, nil
-		}
-
-		if !errors.Is(err, os.ErrNotExist) {
-			return nil, "", err
-		}
-
-		dir = path.Dir(dir)
-	}
-
-	return nil, "", errors.New("could not find go.mod in worktree")
-}
-
-func parseMod(dir string) (string, error) {
-	data, _, err := findAndReadModFile(dir)
-	if err != nil {
-		return "", err
-	}
-
-	f, err := modfile.Parse(fileGoMod, data, nil)
-	if err != nil {
-		return "", err
-	}
-
-	return f.Module.Mod.Path, nil
+	Nodes      []*Node
+	Structs    []*Struct
+	Enums      []*Enum
+	EnumValues []*EnumValue
 }
