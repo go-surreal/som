@@ -6,7 +6,6 @@ require (
 	github.com/dave/jennifer v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/iancoleman/strcase v0.2.0
-	github.com/luraim/fun v0.0.0-20220524203513-f1f49b8929d2
 	github.com/surrealdb/surrealdb.go v0.1.1
 	github.com/urfave/cli/v2 v2.20.3
 	github.com/wzshiming/gotype v0.7.3
