@@ -9,6 +9,7 @@ type Client struct {
 func NewClient(db *surrealdbgo.DB) *Client {
 	return &Client{db: db}
 }
+
 func (c *Client) Create(node string, data map[string]any) (any, error) {
 	return c.db.Create(node, data)
 }
