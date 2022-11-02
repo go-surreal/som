@@ -26,22 +26,39 @@ func (q *Group) Filter(filters ...filter.Of[model.Group]) *Group {
 	}
 	return q
 }
-func (q *Group) Sort(by ...*sort.Of[model.Group]) *Group {
+func (q *Group) Order(by ...*sort.Of[model.Group]) *Group {
+	for _, s := range by {
+		q.query.Sort = append(q.query.Sort, (*builder.Sort)(s))
+	}
+	return q
+}
+func (q *Group) OrderRandom() *Group {
+	q.query.SortRandom = true
 	return q
 }
 func (q *Group) Offset(offset int) *Group {
+	q.query.Offset = offset
 	return q
 }
 func (q *Group) Limit(limit int) *Group {
+	q.query.Limit = limit
 	return q
 }
 func (q *Group) Unique() *Group {
 	return q
 }
+func (q *Group) Fetch() *Group {
+	return q
+}
+func (q *Group) FetchDepth() *Group {
+	return q
+}
 func (q *Group) Timeout(timeout time.Duration) *Group {
+	q.query.Timeout = timeout
 	return q
 }
 func (q *Group) Parallel(parallel bool) *Group {
+	q.query.Parallel = parallel
 	return q
 }
 func (q *Group) Count() *Group {
@@ -52,15 +69,13 @@ func (q *Group) Exist() *Group {
 }
 func (q *Group) All() ([]*model.Group, error) {
 	res := builder.Build(q.query)
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	rows, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
 		return nil, err
 	}
-	asMap := raw.([]any)[0].(map[string]any)
-	rows := asMap["result"].([]any)
 	var nodes []*model.Group
 	for _, row := range rows {
-		node := conv.ToGroup(row.(map[string]any))
+		node := conv.ToGroup(row)
 		nodes = append(nodes, &node)
 	}
 	return nodes, nil
@@ -78,5 +93,8 @@ func (q *Group) Only() (*model.Group, error) {
 	return nil, nil
 }
 func (q *Group) OnlyID() (string, error) {
+	return "", nil
+}
+func (q *Group) Describe() (string, error) {
 	return "", nil
 }

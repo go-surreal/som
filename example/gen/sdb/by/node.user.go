@@ -5,34 +5,36 @@ import (
 	sort "github.com/marcbinz/sdb/lib/sort"
 )
 
-var User = newUser("")
+var User = newUser[model.User]("")
 
-func newUser(key string) user {
-	return user{
-		CreatedAt: sort.NewSort[model.User](key),
-		Float32:   sort.NewSort[model.User](key),
-		Float64:   sort.NewSort[model.User](key),
-		ID:        sort.NewSort[model.User](key),
-		Int:       sort.NewSort[model.User](key),
-		Int32:     sort.NewSort[model.User](key),
-		Int64:     sort.NewSort[model.User](key),
-		String:    sort.NewString[model.User](key),
-		UpdatedAt: sort.NewSort[model.User](key),
+func newUser[T any](key string) user[T] {
+	return user[T]{
+		CreatedAt: sort.NewSort[T](keyed(key, "created_at")),
+		Float32:   sort.NewSort[T](keyed(key, "float_32")),
+		Float64:   sort.NewSort[T](keyed(key, "float_64")),
+		ID:        sort.NewSort[T](keyed(key, "id")),
+		Int:       sort.NewSort[T](keyed(key, "int")),
+		Int32:     sort.NewSort[T](keyed(key, "int_32")),
+		Int64:     sort.NewSort[T](keyed(key, "int_64")),
+		String:    sort.NewString[T](keyed(key, "string")),
+		UpdatedAt: sort.NewSort[T](keyed(key, "updated_at")),
+		key:       key,
 	}
 }
 
-type user struct {
-	ID        *sort.Sort[model.User]
-	CreatedAt *sort.Sort[model.User]
-	UpdatedAt *sort.Sort[model.User]
-	String    *sort.String[model.User]
-	Int       *sort.Sort[model.User]
-	Int32     *sort.Sort[model.User]
-	Int64     *sort.Sort[model.User]
-	Float32   *sort.Sort[model.User]
-	Float64   *sort.Sort[model.User]
+type user[T any] struct {
+	key       string
+	ID        *sort.Sort[T]
+	CreatedAt *sort.Sort[T]
+	UpdatedAt *sort.Sort[T]
+	String    *sort.String[T]
+	Int       *sort.Sort[T]
+	Int32     *sort.Sort[T]
+	Int64     *sort.Sort[T]
+	Float32   *sort.Sort[T]
+	Float64   *sort.Sort[T]
 }
 
-func (user) Random() *sort.Of[model.User] {
-	return nil
+func (n user[T]) MainGroup() group[T] {
+	return newGroup[T](keyed(n.key, "main_group"))
 }

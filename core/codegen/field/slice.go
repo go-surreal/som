@@ -82,6 +82,10 @@ func (f *Slice) SortInit(types jen.Code) jen.Code {
 	return nil
 }
 
+func (f *Slice) SortFunc(sourcePkg, elemName string) jen.Code {
+	return nil // TODO
+}
+
 func (f *Slice) ConvFrom() jen.Code {
 	return nil
 }

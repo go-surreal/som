@@ -1,5 +1,11 @@
 package builder
 
+import (
+	"strconv"
+	"strings"
+	"time"
+)
+
 type context struct {
 	varIndex rune
 	vars     map[string]any
@@ -14,8 +20,14 @@ func (c *context) asVar(val any) string {
 
 type Query struct {
 	*context
-	node  string
-	Where []Where
+	node       string
+	Where      []Where
+	Sort       []*Sort
+	SortRandom bool
+	Offset     int
+	Limit      int
+	Timeout    time.Duration
+	Parallel   bool
 }
 
 func NewQuery(node string) *Query {
@@ -29,14 +41,42 @@ func NewQuery(node string) *Query {
 }
 
 func (q Query) render() string {
-	whereStatement := WhereAll{Where: q.Where}.render(q.context)
+	out := "SELECT * FROM " + q.node + " "
 
-	where := ""
+	whereStatement := WhereAll{Where: q.Where}.render(q.context)
 	if whereStatement != "" {
-		where = " WHERE " + whereStatement
+		out += "WHERE " + whereStatement + " "
 	}
 
-	return "SELECT * FROM " + q.node + where
+	if q.SortRandom {
+		out += "ORDER BY RAND() "
+	} else if len(q.Sort) > 0 {
+		var sorts []string
+		for _, s := range q.Sort {
+			sorts = append(sorts, s.render())
+		}
+		out += "ORDER BY " + strings.Join(sorts, ", ") + " "
+	}
+
+	// LIMIT must come before START.
+	if q.Limit > 0 {
+		out += "LIMIT " + strconv.Itoa(q.Limit) + " "
+	}
+
+	// START must come after LIMIT.
+	if q.Offset > 0 {
+		out += "START " + strconv.Itoa(q.Offset) + " "
+	}
+
+	if q.Timeout > 0 {
+		out += "TIMEOUT " + q.Timeout.Round(time.Second).String() + " "
+	}
+
+	if q.Parallel {
+		out += "PARALLEL"
+	}
+
+	return out
 }
 
 func Build(q *Query) *Result {

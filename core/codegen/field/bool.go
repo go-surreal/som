@@ -44,6 +44,11 @@ func (f *Bool) SortInit(types jen.Code) jen.Code {
 	return nil
 }
 
+func (f *Bool) SortFunc(sourcePkg, elemName string) jen.Code {
+	// Bool does not need a sort function.
+	return nil
+}
+
 func (f *Bool) ConvFrom() jen.Code {
 	return jen.Id("data").Dot(f.source.Name)
 }

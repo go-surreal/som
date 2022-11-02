@@ -41,7 +41,7 @@ func (b *queryBuilder) buildBaseFile() error {
 	content := `package query
 
 type Database interface {
-	Query(statement string, vars map[string]any) (any, error)
+	Query(statement string, vars map[string]any) ([]map[string]any, error)
 }
 `
 
@@ -72,20 +72,24 @@ func (b *queryBuilder) buildFile(node *dbtype.Node) error {
 
 	functions := []jen.Code{
 		b.buildQueryFuncFilter(node),
-		b.buildQueryFuncSort(node),
+		b.buildQueryFuncOrder(node),
+		b.buildQueryFuncOrderRandom(node),
 		b.buildQueryFuncOffset(node),
 		b.buildQueryFuncLimit(node),
-		b.buildQueryFuncUnique(node),
+		b.buildQueryFuncUnique(node),     // TODO
+		b.buildQueryFuncFetch(node),      // TODO
+		b.buildQueryFuncFetchDepth(node), // TODO
 		b.buildQueryFuncTimeout(node),
 		b.buildQueryFuncParallel(node),
-		b.buildQueryFuncCount(node),
-		b.buildQueryFuncExist(node),
+		b.buildQueryFuncCount(node), // TODO
+		b.buildQueryFuncExist(node), // TODO
 		b.buildQueryFuncAll(node),
-		b.buildQueryFuncAllIDs(node),
-		b.buildQueryFuncFirst(node),
-		b.buildQueryFuncFirstID(node),
-		b.buildQueryFuncOnly(node),
-		b.buildQueryFuncOnlyID(node),
+		b.buildQueryFuncAllIDs(node),   // TODO
+		b.buildQueryFuncFirst(node),    // TODO
+		b.buildQueryFuncFirstID(node),  // TODO
+		b.buildQueryFuncOnly(node),     // TODO
+		b.buildQueryFuncOnlyID(node),   // TODO
+		b.buildQueryFuncDescribe(node), // TODO
 	}
 
 	for _, fn := range functions {
@@ -114,12 +118,28 @@ func (b *queryBuilder) buildQueryFuncFilter(node *dbtype.Node) jen.Code {
 		)
 }
 
-func (b *queryBuilder) buildQueryFuncSort(node *dbtype.Node) jen.Code {
+func (b *queryBuilder) buildQueryFuncOrder(node *dbtype.Node) jen.Code {
 	return jen.Func().
 		Params(jen.Id("q").Op("*").Id(node.Name)).
-		Id("Sort").Params(jen.Id("by").Op("...").Op("*").Qual(def.PkgLibSort, "Of").Types(b.SourceQual(node.Name))).
+		Id("Order").Params(jen.Id("by").Op("...").Op("*").Qual(def.PkgLibSort, "Of").Types(b.SourceQual(node.Name))).
 		Op("*").Id(node.Name).
 		Block(
+			jen.For(jen.Id("_").Op(",").Id("s").Op(":=").Range().Id("by")).
+				Block(
+					jen.Id("q").Dot("query").Dot("Sort").Op("=").
+						Append(jen.Id("q").Dot("query").Dot("Sort"), jen.Parens(jen.Op("*").Qual(def.PkgLibBuilder, "Sort")).Parens(jen.Id("s"))),
+				),
+			jen.Return(jen.Id("q")),
+		)
+}
+
+func (b *queryBuilder) buildQueryFuncOrderRandom(node *dbtype.Node) jen.Code {
+	return jen.Func().
+		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Id("OrderRandom").Params().
+		Op("*").Id(node.Name).
+		Block(
+			jen.Id("q").Dot("query").Dot("SortRandom").Op("=").True(),
 			jen.Return(jen.Id("q")),
 		)
 }
@@ -130,6 +150,7 @@ func (b *queryBuilder) buildQueryFuncOffset(node *dbtype.Node) jen.Code {
 		Id("Offset").Params(jen.Id("offset").Int()).
 		Op("*").Id(node.Name).
 		Block(
+			jen.Id("q").Dot("query").Dot("Offset").Op("=").Id("offset"),
 			jen.Return(jen.Id("q")),
 		)
 }
@@ -140,6 +161,7 @@ func (b *queryBuilder) buildQueryFuncLimit(node *dbtype.Node) jen.Code {
 		Id("Limit").Params(jen.Id("limit").Int()).
 		Op("*").Id(node.Name).
 		Block(
+			jen.Id("q").Dot("query").Dot("Limit").Op("=").Id("limit"),
 			jen.Return(jen.Id("q")),
 		)
 }
@@ -154,12 +176,33 @@ func (b *queryBuilder) buildQueryFuncUnique(node *dbtype.Node) jen.Code {
 		)
 }
 
+func (b *queryBuilder) buildQueryFuncFetch(node *dbtype.Node) jen.Code {
+	return jen.Func().
+		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Id("Fetch").Params().
+		Op("*").Id(node.Name).
+		Block(
+			jen.Return(jen.Id("q")),
+		)
+}
+
+func (b *queryBuilder) buildQueryFuncFetchDepth(node *dbtype.Node) jen.Code {
+	return jen.Func().
+		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Id("FetchDepth").Params().
+		Op("*").Id(node.Name).
+		Block(
+			jen.Return(jen.Id("q")),
+		)
+}
+
 func (b *queryBuilder) buildQueryFuncTimeout(node *dbtype.Node) jen.Code {
 	return jen.Func().
 		Params(jen.Id("q").Op("*").Id(node.Name)).
 		Id("Timeout").Params(jen.Id("timeout").Qual("time", "Duration")).
 		Op("*").Id(node.Name).
 		Block(
+			jen.Id("q").Dot("query").Dot("Timeout").Op("=").Id("timeout"),
 			jen.Return(jen.Id("q")),
 		)
 }
@@ -170,6 +213,7 @@ func (b *queryBuilder) buildQueryFuncParallel(node *dbtype.Node) jen.Code {
 		Id("Parallel").Params(jen.Id("parallel").Bool()).
 		Op("*").Id(node.Name).
 		Block(
+			jen.Id("q").Dot("query").Dot("Parallel").Op("=").Id("parallel"),
 			jen.Return(jen.Id("q")),
 		)
 }
@@ -204,7 +248,7 @@ func (b *queryBuilder) buildQueryFuncAll(node *dbtype.Node) jen.Code {
 		Block(
 			jen.Id("res").Op(":=").Qual(def.PkgLibBuilder, "Build").Call(jen.Id("q").Dot("query")),
 
-			jen.Id("raw").Op(",").Err().Op(":=").
+			jen.Id("rows").Op(",").Err().Op(":=").
 				Id("q").Dot("db").Dot("Query").
 				Call(
 					jen.Id("res").Dot("Statement"),
@@ -214,18 +258,11 @@ func (b *queryBuilder) buildQueryFuncAll(node *dbtype.Node) jen.Code {
 				jen.Return(jen.Nil(), jen.Err()),
 			),
 
-			jen.Id("asMap").Op(":=").
-				Id("raw").Op(".").Parens(jen.Index().Any()).Index(jen.Lit(0)).
-				Op(".").Parens(jen.Map(jen.String()).Any()),
-
-			jen.Id("rows").Op(":=").
-				Id("asMap").Index(jen.Lit("result")).Op(".").Parens(jen.Index().Any()),
-
 			jen.Var().Id("nodes").Index().Op("*").Add(b.SourceQual(node.NameGo())),
 			jen.For(jen.Id("_").Op(",").Id("row").Op(":=").Range().Id("rows")).
 				Block(
 					jen.Id("node").Op(":=").Qual(pkgConv, "To"+node.NameGo()).
-						Call(jen.Id("row").Op(".").Parens(jen.Map(jen.String()).Any())),
+						Call(jen.Id("row")),
 					jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Op("&").Id("node")),
 				),
 
@@ -277,6 +314,16 @@ func (b *queryBuilder) buildQueryFuncOnlyID(node *dbtype.Node) jen.Code {
 	return jen.Func().
 		Params(jen.Id("q").Op("*").Id(node.Name)).
 		Id("OnlyID").Params().
+		Parens(jen.List(jen.String(), jen.Error())).
+		Block(
+			jen.Return(jen.Lit(""), jen.Nil()),
+		)
+}
+
+func (b *queryBuilder) buildQueryFuncDescribe(node *dbtype.Node) jen.Code {
+	return jen.Func().
+		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Id("Describe").Params().
 		Parens(jen.List(jen.String(), jen.Error())).
 		Block(
 			jen.Return(jen.Lit(""), jen.Nil()),

@@ -5,20 +5,18 @@ import (
 	sort "github.com/marcbinz/sdb/lib/sort"
 )
 
-var Group = newGroup("")
+var Group = newGroup[model.Group]("")
 
-func newGroup(key string) group {
-	return group{
-		ID:   sort.NewSort[model.Group](key),
-		Name: sort.NewString[model.Group](key),
+func newGroup[T any](key string) group[T] {
+	return group[T]{
+		ID:   sort.NewSort[T](keyed(key, "id")),
+		Name: sort.NewString[T](keyed(key, "name")),
+		key:  key,
 	}
 }
 
-type group struct {
-	ID   *sort.Sort[model.Group]
-	Name *sort.String[model.Group]
-}
-
-func (group) Random() *sort.Of[model.Group] {
-	return nil
+type group[T any] struct {
+	key  string
+	ID   *sort.Sort[T]
+	Name *sort.String[T]
 }

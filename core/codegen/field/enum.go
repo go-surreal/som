@@ -42,6 +42,11 @@ func (f *Enum) SortInit(types jen.Code) jen.Code {
 	return nil
 }
 
+func (f *Enum) SortFunc(sourcePkg, elemName string) jen.Code {
+	// Enum does not need a sort function.
+	return nil
+}
+
 func (f *Enum) ConvFrom() jen.Code {
 	return nil // TODO
 }

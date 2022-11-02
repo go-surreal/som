@@ -59,16 +59,13 @@ func (repo *user) List(ctx context.Context) ([]*model.User, error) {
 			// where.User.Other().ContainsAll([]string{"", ""}),
 			// where.User.Roles().ContainsNot(model.RoleAdmin),
 		).
-		Sort(
-			by.User.ID.Asc(),
-			by.User.String.Collate().Desc(),
-			by.User.String.Numeric().Asc(),
+		Order(
 			by.User.CreatedAt.Asc(),
-			by.User.CreatedAt.Desc(),
-			by.User.Random(),
+			by.User.MainGroup().Name.Asc(),
 		).
-		Offset(10).
-		Limit(10).
+		// OrderRandom().
+		// Offset(10).
+		// Limit(10).
 		Timeout(10 * time.Second).
 		Parallel(true).
 		// Select( /* choose what data (apart from basic node) should be loaded into the model */ ).

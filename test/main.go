@@ -11,7 +11,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	db, err := sdb.NewClient("ws://localhost:8010", "sdb", "default", "root", "root")
+	db, err := sdb.NewClient("ws://localhost:8010", "root", "root", "sdb", "default")
 	if err != nil {
 		log.Fatal(err)
 	}

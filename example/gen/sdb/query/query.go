@@ -1,5 +1,5 @@
 package query
 
 type Database interface {
-	Query(statement string, vars map[string]any) (any, error)
+	Query(statement string, vars map[string]any) ([]map[string]any, error)
 }

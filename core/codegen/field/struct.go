@@ -41,11 +41,15 @@ func (f *Struct) FilterFunc(sourcePkg, elemName string) jen.Code {
 }
 
 func (f *Struct) SortDefine(types jen.Code) jen.Code {
-	return nil
+	return nil // TODO
 }
 
 func (f *Struct) SortInit(types jen.Code) jen.Code {
-	return nil
+	return nil // TODO
+}
+
+func (f *Struct) SortFunc(sourcePkg, elemName string) jen.Code {
+	return nil // TODO
 }
 
 func (f *Struct) ConvFrom() jen.Code {

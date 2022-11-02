@@ -1,9 +1,10 @@
 package codegen
 
 import (
+	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/def"
+	"os"
 	"path"
 	"strings"
 )
@@ -23,6 +24,11 @@ func (b *sortBuilder) build() error {
 		return err
 	}
 
+	// Generate the base file.
+	if err := b.buildBaseFile(); err != nil {
+		return err
+	}
+
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
 			return err
@@ -32,27 +38,48 @@ func (b *sortBuilder) build() error {
 	return nil
 }
 
+func (b *sortBuilder) buildBaseFile() error {
+	content := `package by
+
+func keyed(base, key string) string {
+	if base == "" {
+		return key
+	}
+	return base + "." + key
+}
+`
+
+	err := os.WriteFile(path.Join(b.path(), "sort.go"), []byte(content), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to write base file: %v", err)
+	}
+
+	return nil
+}
+
 func (b *sortBuilder) buildFile(node *dbtype.Node) error {
 	f := jen.NewFile(b.pkgName)
 
-	f.Var().Id(node.Name).Op("=").Id("new" + node.Name).Call(jen.Lit(""))
+	f.Var().Id(node.Name).Op("=").Id("new" + node.Name).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 
 	f.Add(b.byNew(node))
 
-	f.Type().Id(strings.ToLower(node.Name)).StructFunc(func(g *jen.Group) {
-		for _, f := range node.Fields {
-			if code := f.SortDefine(b.SourceQual(node.Name)); code != nil {
-				g.Add(code)
+	f.Type().Id(strings.ToLower(node.Name)).
+		Types(jen.Id("T").Any()).
+		StructFunc(func(g *jen.Group) {
+			g.Add(jen.Id("key").String())
+			for _, f := range node.Fields {
+				if code := f.SortDefine(b.SourceQual(node.Name)); code != nil {
+					g.Add(code)
+				}
 			}
-		}
-	})
+		})
 
-	f.Func().Params(jen.Id(strings.ToLower(node.Name))).
-		Id("Random").Params().
-		Op("*").Qual(def.PkgLibSort, "Of").Types(b.SourceQual(node.Name)).
-		Block(
-			jen.Return(jen.Nil()),
-		)
+	for _, fld := range node.GetFields() {
+		if code := fld.SortFunc(b.sourcePkgPath, node.NameGo()); code != nil {
+			f.Add(code)
+		}
+	}
 
 	if err := f.Save(path.Join(b.path(), node.FileName())); err != nil {
 		return err
@@ -63,17 +90,20 @@ func (b *sortBuilder) buildFile(node *dbtype.Node) error {
 
 func (b *sortBuilder) byNew(node *dbtype.Node) jen.Code {
 	return jen.Func().Id("new" + node.Name).
+		Types(jen.Id("T").Any()).
 		Params(jen.Id("key").String()).
-		Id(strings.ToLower(node.Name)).
+		Id(strings.ToLower(node.Name)).Types(jen.Id("T")).
 		Block(
 			jen.Return(
-				jen.Id(strings.ToLower(node.Name)).Values(jen.DictFunc(func(d jen.Dict) {
-					for _, f := range node.Fields {
-						if code := f.SortInit(b.SourceQual(node.Name)); code != nil {
-							d[jen.Id(f.NameGo())] = code
+				jen.Id(strings.ToLower(node.Name)).Types(jen.Id("T")).
+					Values(jen.DictFunc(func(d jen.Dict) {
+						d[jen.Id("key")] = jen.Id("key")
+						for _, f := range node.Fields {
+							if code := f.SortInit(b.SourceQual(node.Name)); code != nil {
+								d[jen.Id(f.NameGo())] = code
+							}
 						}
-					}
-				})),
+					})),
 			),
 		)
 }

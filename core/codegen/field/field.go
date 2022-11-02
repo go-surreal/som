@@ -26,6 +26,7 @@ type Field interface {
 
 	SortDefine(types jen.Code) jen.Code
 	SortInit(types jen.Code) jen.Code
+	SortFunc(sourcePkg, elemName string) jen.Code
 
 	ConvFrom() jen.Code
 	ConvTo(elem string) jen.Code

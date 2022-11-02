@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	model "github.com/marcbinz/sdb/example/model"
 	builder "github.com/marcbinz/sdb/lib/builder"
@@ -27,22 +26,39 @@ func (q *User) Filter(filters ...filter.Of[model.User]) *User {
 	}
 	return q
 }
-func (q *User) Sort(by ...*sort.Of[model.User]) *User {
+func (q *User) Order(by ...*sort.Of[model.User]) *User {
+	for _, s := range by {
+		q.query.Sort = append(q.query.Sort, (*builder.Sort)(s))
+	}
+	return q
+}
+func (q *User) OrderRandom() *User {
+	q.query.SortRandom = true
 	return q
 }
 func (q *User) Offset(offset int) *User {
+	q.query.Offset = offset
 	return q
 }
 func (q *User) Limit(limit int) *User {
+	q.query.Limit = limit
 	return q
 }
 func (q *User) Unique() *User {
 	return q
 }
+func (q *User) Fetch() *User {
+	return q
+}
+func (q *User) FetchDepth() *User {
+	return q
+}
 func (q *User) Timeout(timeout time.Duration) *User {
+	q.query.Timeout = timeout
 	return q
 }
 func (q *User) Parallel(parallel bool) *User {
+	q.query.Parallel = parallel
 	return q
 }
 func (q *User) Count() *User {
@@ -53,16 +69,13 @@ func (q *User) Exist() *User {
 }
 func (q *User) All() ([]*model.User, error) {
 	res := builder.Build(q.query)
-	fmt.Println(res.Statement, res.Variables)
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	rows, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
 		return nil, err
 	}
-	asMap := raw.([]any)[0].(map[string]any)
-	rows := asMap["result"].([]any)
 	var nodes []*model.User
 	for _, row := range rows {
-		node := conv.ToUser(row.(map[string]any))
+		node := conv.ToUser(row)
 		nodes = append(nodes, &node)
 	}
 	return nodes, nil
@@ -80,5 +93,8 @@ func (q *User) Only() (*model.User, error) {
 	return nil, nil
 }
 func (q *User) OnlyID() (string, error) {
+	return "", nil
+}
+func (q *User) Describe() (string, error) {
 	return "", nil
 }

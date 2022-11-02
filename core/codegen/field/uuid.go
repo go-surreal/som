@@ -44,6 +44,11 @@ func (f *UUID) SortInit(types jen.Code) jen.Code {
 	return nil
 }
 
+func (f *UUID) SortFunc(sourcePkg, elemName string) jen.Code {
+	// UUID does not need a sort function.
+	return nil
+}
+
 func (f *UUID) ConvFrom() jen.Code {
 	return jen.Id("data").Dot(f.source.Name)
 }

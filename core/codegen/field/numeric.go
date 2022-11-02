@@ -35,11 +35,17 @@ func (f *Numeric) FilterFunc(sourcePkg, elemName string) jen.Code {
 }
 
 func (f *Numeric) SortDefine(types jen.Code) jen.Code {
-	return jen.Id(f.source.Name).Op("*").Qual(def.PkgLibSort, "Sort").Types(types)
+	return jen.Id(f.source.Name).Op("*").Qual(def.PkgLibSort, "Sort").Types(jen.Id("T"))
 }
 
 func (f *Numeric) SortInit(types jen.Code) jen.Code {
-	return jen.Qual(def.PkgLibSort, "NewSort").Types(types).Params(jen.Id("key"))
+	return jen.Qual(def.PkgLibSort, "NewSort").Types(jen.Id("T")).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+}
+
+func (f *Numeric) SortFunc(sourcePkg, elemName string) jen.Code {
+	// Numeric does not need a sort function.
+	return nil
 }
 
 func (f *Numeric) ConvFrom() jen.Code {

@@ -40,6 +40,10 @@ func (b *build) build() error {
 		return err
 	}
 
+	if err := b.buildDatabaseFile(); err != nil {
+		return err
+	}
+
 	for _, node := range b.input.nodes {
 		if err := b.buildBaseFile(node); err != nil {
 			return err
@@ -74,7 +78,7 @@ type Database interface {
 	Close()
 	Create(thing string, data map[string]any) (any, error)
 	Select(what string) (any, error)
-	Query(statement string, vars map[string]any) (any, error)
+	Query(statement string, vars map[string]any) ([]map[string]any, error)
 	Update(thing string, data map[string]any) (any, error)
 	Delete(what string) (any, error)
 }
@@ -83,26 +87,26 @@ type Client struct {
 	db Database
 }
 
-func NewClient(addr, namespace, database, username, password string) (*Client, error) {
-	db, err := surrealdb.New(addr + "/rpc")
+func NewClient(addr, user, pass, ns, db string) (*Client, error) {
+	surreal, err := surrealdb.New(addr + "/rpc")
 	if err != nil {
 		return nil, fmt.Errorf("new failed: %v", err)
 	}
 
-	_, err = db.Signin(map[string]any{
-		"user": username,
-		"pass": password,
+	_, err = surreal.Signin(map[string]any{
+		"user": user,
+		"pass": pass,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = db.Use(namespace, database)
+	_, err = surreal.Use(ns, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Client{db: db}, nil
+	return &Client{db: &database{DB: surreal}}, nil
 }
 
 func (c *Client) Close() {
@@ -111,6 +115,98 @@ func (c *Client) Close() {
 `
 
 	err := os.WriteFile(path.Join(b.basePath(), "client.go"), []byte(content), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to write base file: %v", err)
+	}
+
+	return nil
+}
+
+func (b *build) buildDatabaseFile() error {
+	content := `package sdb
+
+import (
+	"errors"
+	"fmt"
+	"github.com/surrealdb/surrealdb.go"
+)
+
+type database struct {
+	*surrealdb.DB
+}
+
+func (db *database) Create(thing string, data map[string]any) (any, error) {
+	return db.DB.Create(thing, data)
+}
+
+func (db *database) Select(what string) (any, error) {
+	return db.DB.Select(what)
+}
+
+func (db *database) Query(statement string, vars map[string]any) ([]map[string]any, error) {
+	fmt.Println(statement)
+
+	raw, err := db.DB.Query(statement, vars)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(raw)
+
+	if raw == nil {
+		return nil, errors.New("database result is nil")
+	}
+
+	rawSlice, ok := raw.([]any)
+	if !ok {
+		return nil, errors.New("database result has invalid format")
+	}
+
+	if len(rawSlice) < 1 {
+		return nil, errors.New("database result is empty")
+	}
+
+	rawMap, ok := raw.([]any)[0].(map[string]any)
+	if !ok {
+		return nil, errors.New("database result has invalid content")
+	}
+
+	status, ok := rawMap["status"]
+	if !ok {
+		return nil, errors.New("database result does not provide a status")
+	}
+
+	if fmt.Sprintf("%s", status) == "ERR" {
+		return nil, fmt.Errorf("database returned an error: %s", rawMap["detail"])
+	}
+
+	if fmt.Sprintf("%s", status) != "OK" {
+		return nil, fmt.Errorf("database returned an unknown status: %s", status)
+	}
+
+	rawRows, ok := rawMap["result"].([]any)
+	if !ok {
+		return nil, errors.New("database result data has invalid format")
+	}
+
+	var rows []map[string]any
+	for _, row := range rawRows {
+		rows = append(rows, row.(map[string]any))
+	}
+
+	return rows, nil
+}
+
+func (db *database) Update(what string, data map[string]any) (any, error) {
+	return db.DB.Update(what, data)
+}
+
+func (db *database) Delete(what string) (any, error) {
+	return db.DB.Delete(what)
+}
+`
+
+	err := os.WriteFile(path.Join(b.basePath(), "database.go"), []byte(content), os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
