@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"github.com/marcbinz/sdb/example/gen/sdb"
 	"github.com/marcbinz/sdb/example/gen/sdb/by"
 	"github.com/marcbinz/sdb/example/gen/sdb/where"
@@ -10,40 +9,55 @@ import (
 	"time"
 )
 
-type User struct {
-	DB *sdb.Client
+type UserRepo interface {
+	Create(ctx context.Context, user *model.User) error
+	FindById(ctx context.Context, id string) (*model.User, error)
+	List(ctx context.Context) ([]*model.User, error)
 }
 
-func (repo *User) Create(ctx context.Context, user *model.User) error {
-	return sdb.User.Create(ctx, repo.DB, user)
+type user struct {
+	db *sdb.Client
 }
 
-func (repo *User) FindById(ctx context.Context, id string) (*model.User, error) {
-	return sdb.User.Read(ctx, repo.DB, id)
+func User(db *sdb.Client) UserRepo {
+	return &user{db: db}
 }
 
-func (repo *User) List(ctx context.Context) ([]*model.User, error) {
-	return sdb.User.Query().
+func (repo *user) Create(ctx context.Context, user *model.User) error {
+	return repo.db.User().Create(ctx, user)
+}
+
+func (repo *user) FindById(ctx context.Context, id string) (*model.User, error) {
+	return repo.db.User().Read(ctx, id)
+}
+
+func (repo *user) List(ctx context.Context) ([]*model.User, error) {
+	return repo.db.User().Query().
 		Filter(
-			where.User.String.FuzzyMatch("my fuzzy value"),
-			where.User.UUID.Equal(uuid.UUID{}),
 			where.Any(
-				where.User.Role.Equal(""),
-				where.User.CreatedAt.Before(time.Now()),
+				where.User.ID.Equal("user:9rb97n04ggwmekxats5a"),
+				where.User.ID.Equal("user:lvsl8w9gx5i97vado4tp"),
+				where.User.MainGroup().ID.Equal("group:wq4p7fj4efocis35znzz"),
 			),
-			where.All(
-				where.User.Role.Equal(""),
-				where.User.Groups().Name.FuzzyMatch("some group"),
-				where.User.Groups().Contains(model.Group{}),
-			),
-			where.User.ID.Equal(""),
-			where.User.Login().Username.Equal(""),
-			where.User.Role.Equal(""),
-			where.User.Groups().Count().GreaterThan(5),
-			//
-			where.User.Other().Contains(""),
-			where.User.Other().ContainsAll([]string{"", ""}),
-			where.User.Roles().ContainsNot(model.RoleAdmin),
+			// where.User.String.FuzzyMatch("my fuzzy value"),
+			// where.User.UUID.Equal(uuid.UUID{}),
+			// where.Any(
+			// 	where.User.Role.Equal(""),
+			// 	where.User.CreatedAt.Before(time.Now()),
+			// ),
+			// where.All(
+			// 	where.User.Role.Equal(""),
+			// 	where.User.Groups().Name.FuzzyMatch("some group"),
+			// 	where.User.Groups().Contains(model.Group{}),
+			// ),
+			// where.User.ID.Equal(""),
+			// where.User.Login().Username.Equal(""),
+			// where.User.Role.Equal(""),
+			// where.User.Groups().Count().GreaterThan(5),
+			// //
+			// where.User.Other().Contains(""),
+			// where.User.Other().ContainsAll([]string{"", ""}),
+			// where.User.Roles().ContainsNot(model.RoleAdmin),
 		).
 		Sort(
 			by.User.ID.Asc(),

@@ -17,11 +17,10 @@ type Predicate struct {
 }
 
 func (p Predicate) render(ctx *context) string {
-	res := p.Key + " " + string(p.Op) + " " + ctx.asVar(p.Val)
 	if p.IsCount {
-		res = "COUNT " + res
+		return "count(" + p.Key + ") " + string(p.Op) + " " + ctx.asVar(p.Val)
 	}
-	return res
+	return p.Key + " " + string(p.Op) + " " + ctx.asVar(p.Val)
 }
 
 func (p Predicate) where() {}
@@ -31,13 +30,22 @@ type WhereAll struct {
 }
 
 func (p WhereAll) render(ctx *context) string {
-	var parts []string
-
-	for _, where := range p.Where {
-		parts = append(parts, where.render(ctx))
+	if len(p.Where) < 1 {
+		return ""
 	}
 
-	return strings.Join(parts, " "+string(OpAnd)+" ")
+	var parts []string
+	for _, where := range p.Where {
+		if part := where.render(ctx); part != "" {
+			parts = append(parts, where.render(ctx))
+		}
+	}
+
+	if len(parts) < 1 {
+		return ""
+	}
+
+	return "(" + strings.Join(parts, " "+string(OpAnd)+" ") + ")"
 }
 
 func (p WhereAll) where() {}
@@ -47,13 +55,22 @@ type WhereAny struct {
 }
 
 func (p WhereAny) render(ctx *context) string {
-	var parts []string
-
-	for _, where := range p.Where {
-		parts = append(parts, where.render(ctx))
+	if len(p.Where) < 1 {
+		return ""
 	}
 
-	return strings.Join(parts, " "+string(OpOr)+" ")
+	var parts []string
+	for _, where := range p.Where {
+		if part := where.render(ctx); part != "" {
+			parts = append(parts, where.render(ctx))
+		}
+	}
+
+	if len(parts) < 1 {
+		return ""
+	}
+
+	return "(" + strings.Join(parts, " "+string(OpOr)+" ") + ")"
 }
 
 func (p WhereAny) where() {}

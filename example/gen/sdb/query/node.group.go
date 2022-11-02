@@ -1,6 +1,7 @@
 package query
 
 import (
+	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	model "github.com/marcbinz/sdb/example/model"
 	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
@@ -9,15 +10,19 @@ import (
 )
 
 type Group struct {
-	build *builder.Query
+	db    Database
+	query *builder.Query
 }
 
-func NewGroup() *Group {
-	return &Group{build: builder.NewQuery()}
+func NewGroup(db Database) *Group {
+	return &Group{
+		db:    db,
+		query: builder.NewQuery("group"),
+	}
 }
 func (q *Group) Filter(filters ...filter.Of[model.Group]) *Group {
 	for _, f := range filters {
-		q.build.Where = append(q.build.Where, builder.Where(f))
+		q.query.Where = append(q.query.Where, builder.Where(f))
 	}
 	return q
 }
@@ -46,7 +51,19 @@ func (q *Group) Exist() *Group {
 	return q
 }
 func (q *Group) All() ([]*model.Group, error) {
-	return nil, nil
+	res := builder.Build(q.query)
+	raw, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return nil, err
+	}
+	asMap := raw.([]any)[0].(map[string]any)
+	rows := asMap["result"].([]any)
+	var nodes []*model.Group
+	for _, row := range rows {
+		node := conv.ToGroup(row.(map[string]any))
+		nodes = append(nodes, &node)
+	}
+	return nodes, nil
 }
 func (q *Group) AllIDs() ([]string, error) {
 	return nil, nil

@@ -43,7 +43,7 @@ func (f *String) SortInit(types jen.Code) jen.Code {
 }
 
 func (f *String) ConvFrom() jen.Code {
-	return jen.Id("data").Dot(f.source.Name)
+	return jen.Id("data").Dot(f.source.Name) // TODO: vulnerability -> record link could be injected
 }
 
 func (f *String) ConvTo(elem string) jen.Code {

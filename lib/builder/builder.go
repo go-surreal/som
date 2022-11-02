@@ -1,49 +1,54 @@
 package builder
 
-import (
-	"fmt"
-)
-
 type context struct {
 	varIndex rune
-	vars     map[rune]any
+	vars     map[string]any
 }
 
 func (c *context) asVar(val any) string {
-	index := c.varIndex
+	index := string(c.varIndex)
 	c.vars[index] = val
 	c.varIndex++
-	return "$" + string(index)
+	return "$" + index
 }
 
 type Query struct {
 	*context
-	Where []Block
+	node  string
+	Where []Where
 }
 
-func NewQuery() *Query {
+func NewQuery(node string) *Query {
 	return &Query{
 		context: &context{
 			varIndex: 'A',
-			vars:     map[rune]any{},
+			vars:     map[string]any{},
 		},
+		node: node,
 	}
 }
 
 func (q Query) render() string {
-	return "SELECT * FROM <table>"
+	whereStatement := WhereAll{Where: q.Where}.render(q.context)
+
+	where := ""
+	if whereStatement != "" {
+		where = " WHERE " + whereStatement
+	}
+
+	return "SELECT * FROM " + q.node + where
 }
 
-func Build(q *Query) {
-	for _, where := range q.Where {
-		fmt.Println(where.render(q.context))
+func Build(q *Query) *Result {
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
 	}
+}
 
-	fmt.Println("\nVariables:")
-
-	for key, value := range q.context.vars {
-		fmt.Println(string(key), ":", value)
-	}
+type Result struct {
+	Statement string
+	Variables map[string]any
 }
 
 type Operator string

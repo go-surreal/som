@@ -8,19 +8,23 @@ import (
 	model "github.com/marcbinz/sdb/example/model"
 )
 
-var User user
-
-type user struct{}
-
-func (user) Query() *query.User {
-	return query.NewUser()
+func (c *Client) User() *user {
+	return &user{client: c}
 }
-func (user) Create(ctx context.Context, db *Client, user *model.User) error {
+
+type user struct {
+	client *Client
+}
+
+func (n *user) Query() *query.User {
+	return query.NewUser(n.client.db)
+}
+func (n *user) Create(ctx context.Context, user *model.User) error {
 	if user.ID != "" {
 		return errors.New("ID must not be set for a node to be created")
 	}
 	data := conv.FromUser(*user)
-	raw, err := db.Create("user", data)
+	raw, err := n.client.db.Create("user", data)
 	if err != nil {
 		return err
 	}
@@ -28,17 +32,17 @@ func (user) Create(ctx context.Context, db *Client, user *model.User) error {
 	*user = res
 	return nil
 }
-func (user) Read(ctx context.Context, db *Client, id string) (*model.User, error) {
-	raw, err := db.db.Select("user:" + id)
+func (n *user) Read(ctx context.Context, id string) (*model.User, error) {
+	raw, err := n.client.db.Select("user" + id)
 	if err != nil {
 		return nil, err
 	}
 	res := conv.ToUser(raw.(map[string]any))
 	return &res, nil
 }
-func (user) Update(ctx context.Context, user *model.User) error {
+func (n *user) Update(ctx context.Context, user *model.User) error {
 	return nil
 }
-func (user) Delete(ctx context.Context, user *model.User) error {
+func (n *user) Delete(ctx context.Context, user *model.User) error {
 	return nil
 }

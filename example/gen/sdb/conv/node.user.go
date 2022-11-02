@@ -13,7 +13,7 @@ func FromUser(data model.User) map[string]any {
 		"int_32":     data.Int32,
 		"int_64":     data.Int64,
 		"login":      FromLogin(data.Login),
-		"main_group": FromGroup(data.MainGroup),
+		"main_group": toGroupRecord(data.MainGroup),
 		"string":     data.String,
 		"updated_at": data.UpdatedAt,
 		"uuid":       data.UUID,
@@ -31,9 +31,21 @@ func ToUser(data map[string]any) model.User {
 		Int32:     int32(data["int_32"].(float64)),
 		Int64:     int64(data["int_64"].(float64)),
 		Login:     ToLogin(data["login"].(map[string]any)),
-		MainGroup: ToGroup(data["main_group"].(map[string]any)),
+		MainGroup: fromGroupRecord(data["main_group"]),
 		String:    data["string"].(string),
 		UUID:      parseUUID(data["uuid"]),
 		UpdatedAt: parseTime(data["updated_at"]),
 	}
+}
+func fromUserRecord(data any) model.User {
+	if node, ok := data.(map[string]any); ok {
+		return ToUser(node)
+	}
+	return model.User{}
+}
+func toUserRecord(node model.User) any {
+	if node.ID == "" {
+		return nil
+	}
+	return "user:" + node.ID
 }

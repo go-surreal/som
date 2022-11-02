@@ -49,10 +49,10 @@ func (f *Node) SortInit(types jen.Code) jen.Code {
 }
 
 func (f *Node) ConvFrom() jen.Code {
-	return jen.Id("From" + f.source.Node).Call(jen.Id("data").Dot(f.source.Name))
+	return jen.Id("to" + f.source.Node + "Record").Call(jen.Id("data").Dot(f.source.Name))
 }
 
 func (f *Node) ConvTo(elem string) jen.Code {
-	return jen.Id("To" + f.source.Node).Call(jen.Id("data").
-		Index(jen.Lit(strcase.ToSnake(f.source.Name))).Op(".").Parens(jen.Map(jen.String()).Any()))
+	return jen.Id("from" + f.source.Node + "Record").Call(jen.Id("data").
+		Index(jen.Lit(strcase.ToSnake(f.source.Name))))
 }

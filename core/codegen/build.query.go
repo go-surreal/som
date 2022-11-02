@@ -1,9 +1,11 @@
 package codegen
 
 import (
+	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/codegen/def"
+	"os"
 	"path"
 )
 
@@ -22,6 +24,10 @@ func (b *queryBuilder) build() error {
 		return err
 	}
 
+	if err := b.buildBaseFile(); err != nil {
+		return err
+	}
+
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
 			return err
@@ -31,18 +37,36 @@ func (b *queryBuilder) build() error {
 	return nil
 }
 
+func (b *queryBuilder) buildBaseFile() error {
+	content := `package query
+
+type Database interface {
+	Query(statement string, vars map[string]any) (any, error)
+}
+`
+
+	err := os.WriteFile(path.Join(b.path(), "query.go"), []byte(content), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to write base file: %v", err)
+	}
+
+	return nil
+}
+
 func (b *queryBuilder) buildFile(node *dbtype.Node) error {
 	f := jen.NewFile(b.pkgName)
 
 	f.Type().Id(node.Name).Struct(
-		jen.Id("build").Op("*").Qual(def.PkgLibBuilder, "Query"),
+		jen.Id("db").Id("Database"),
+		jen.Id("query").Op("*").Qual(def.PkgLibBuilder, "Query"),
 	)
 
-	f.Func().Id("New" + node.Name).Params().
+	f.Func().Id("New" + node.Name).Params(jen.Id("db").Id("Database")).
 		Op("*").Id(node.Name).
 		Block(
 			jen.Return(jen.Op("&").Id(node.Name).Values(jen.Dict{
-				jen.Id("build"): jen.Qual(def.PkgLibBuilder, "NewQuery").Call(),
+				jen.Id("db"):    jen.Id("db"),
+				jen.Id("query"): jen.Qual(def.PkgLibBuilder, "NewQuery").Call(jen.Lit(node.NameDatabase())),
 			})),
 		)
 
@@ -83,8 +107,8 @@ func (b *queryBuilder) buildQueryFuncFilter(node *dbtype.Node) jen.Code {
 		Block(
 			jen.For(jen.Id("_").Op(",").Id("f").Op(":=").Range().Id("filters")).
 				Block(
-					jen.Id("q").Dot("build").Dot("Where").Op("=").
-						Append(jen.Id("q").Dot("build").Dot("Where"), jen.Qual(def.PkgLibBuilder, "Where").Call(jen.Id("f"))),
+					jen.Id("q").Dot("query").Dot("Where").Op("=").
+						Append(jen.Id("q").Dot("query").Dot("Where"), jen.Qual(def.PkgLibBuilder, "Where").Call(jen.Id("f"))),
 				),
 			jen.Return(jen.Id("q")),
 		)
@@ -171,12 +195,41 @@ func (b *queryBuilder) buildQueryFuncExist(node *dbtype.Node) jen.Code {
 }
 
 func (b *queryBuilder) buildQueryFuncAll(node *dbtype.Node) jen.Code {
+	pkgConv := b.subPkg(def.PkgConv)
+
 	return jen.Func().
 		Params(jen.Id("q").Op("*").Id(node.Name)).
 		Id("All").Params().
 		Parens(jen.List(jen.Index().Op("*").Add(b.SourceQual(node.Name)), jen.Error())).
 		Block(
-			jen.Return(jen.Nil(), jen.Nil()),
+			jen.Id("res").Op(":=").Qual(def.PkgLibBuilder, "Build").Call(jen.Id("q").Dot("query")),
+
+			jen.Id("raw").Op(",").Err().Op(":=").
+				Id("q").Dot("db").Dot("Query").
+				Call(
+					jen.Id("res").Dot("Statement"),
+					jen.Id("res").Dot("Variables"),
+				),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Err()),
+			),
+
+			jen.Id("asMap").Op(":=").
+				Id("raw").Op(".").Parens(jen.Index().Any()).Index(jen.Lit(0)).
+				Op(".").Parens(jen.Map(jen.String()).Any()),
+
+			jen.Id("rows").Op(":=").
+				Id("asMap").Index(jen.Lit("result")).Op(".").Parens(jen.Index().Any()),
+
+			jen.Var().Id("nodes").Index().Op("*").Add(b.SourceQual(node.NameGo())),
+			jen.For(jen.Id("_").Op(",").Id("row").Op(":=").Range().Id("rows")).
+				Block(
+					jen.Id("node").Op(":=").Qual(pkgConv, "To"+node.NameGo()).
+						Call(jen.Id("row").Op(".").Parens(jen.Map(jen.String()).Any())),
+					jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Op("&").Id("node")),
+				),
+
+			jen.Return(jen.Id("nodes"), jen.Nil()),
 		)
 }
 

@@ -1,6 +1,8 @@
 package query
 
 import (
+	"fmt"
+	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	model "github.com/marcbinz/sdb/example/model"
 	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
@@ -9,15 +11,19 @@ import (
 )
 
 type User struct {
-	build *builder.Query
+	db    Database
+	query *builder.Query
 }
 
-func NewUser() *User {
-	return &User{build: builder.NewQuery()}
+func NewUser(db Database) *User {
+	return &User{
+		db:    db,
+		query: builder.NewQuery("user"),
+	}
 }
 func (q *User) Filter(filters ...filter.Of[model.User]) *User {
 	for _, f := range filters {
-		q.build.Where = append(q.build.Where, builder.Where(f))
+		q.query.Where = append(q.query.Where, builder.Where(f))
 	}
 	return q
 }
@@ -46,7 +52,20 @@ func (q *User) Exist() *User {
 	return q
 }
 func (q *User) All() ([]*model.User, error) {
-	return nil, nil
+	res := builder.Build(q.query)
+	fmt.Println(res.Statement, res.Variables)
+	raw, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return nil, err
+	}
+	asMap := raw.([]any)[0].(map[string]any)
+	rows := asMap["result"].([]any)
+	var nodes []*model.User
+	for _, row := range rows {
+		node := conv.ToUser(row.(map[string]any))
+		nodes = append(nodes, &node)
+	}
+	return nodes, nil
 }
 func (q *User) AllIDs() ([]string, error) {
 	return nil, nil
