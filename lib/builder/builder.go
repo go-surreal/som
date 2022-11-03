@@ -1,49 +1,121 @@
 package builder
 
 import (
-	"fmt"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type context struct {
 	varIndex rune
-	vars     map[rune]any
+	vars     map[string]any
 }
 
 func (c *context) asVar(val any) string {
-	index := c.varIndex
+	index := string(c.varIndex)
 	c.vars[index] = val
 	c.varIndex++
-	return "$" + string(index)
+	return "$" + index
 }
 
 type Query struct {
 	*context
-	Where []Block
+	node       string
+	fields     string
+	groupBy    string
+	Where      []Where
+	Sort       []*Sort
+	SortRandom bool
+	Offset     int
+	Limit      int
+	Timeout    time.Duration
+	Parallel   bool
 }
 
-func NewQuery() *Query {
+func NewQuery(node string) *Query {
 	return &Query{
 		context: &context{
 			varIndex: 'A',
-			vars:     map[rune]any{},
+			vars:     map[string]any{},
 		},
+		node: node,
+	}
+}
+
+func (q Query) BuildAsAll() *Result {
+	q.fields = "*"
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+func (q Query) BuildAsAllIDs() *Result {
+	q.fields = "id"
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+func (q Query) BuildAsCount() *Result {
+	q.fields = "count()"
+	q.groupBy = "id"
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
 	}
 }
 
 func (q Query) render() string {
-	return "SELECT * FROM <table>"
+	out := "SELECT " + q.fields + " FROM " + q.node + " "
+
+	whereStatement := WhereAll{Where: q.Where}.render(q.context)
+	if whereStatement != "" {
+		out += "WHERE " + whereStatement + " "
+	}
+
+	if q.groupBy != "" {
+		out += "GROUP BY " + q.groupBy + " "
+	}
+
+	if q.SortRandom {
+		out += "ORDER BY RAND() "
+	} else if len(q.Sort) > 0 {
+		var sorts []string
+		for _, s := range q.Sort {
+			sorts = append(sorts, s.render())
+		}
+		out += "ORDER BY " + strings.Join(sorts, ", ") + " "
+	}
+
+	// LIMIT must come before START.
+	if q.Limit > 0 {
+		out += "LIMIT " + strconv.Itoa(q.Limit) + " "
+	}
+
+	// START must come after LIMIT.
+	if q.Offset > 0 {
+		out += "START " + strconv.Itoa(q.Offset) + " "
+	}
+
+	if q.Timeout > 0 {
+		out += "TIMEOUT " + q.Timeout.Round(time.Second).String() + " "
+	}
+
+	if q.Parallel {
+		out += "PARALLEL"
+	}
+
+	return out
 }
 
-func Build(q *Query) {
-	for _, where := range q.Where {
-		fmt.Println(where.render(q.context))
-	}
-
-	fmt.Println("\nVariables:")
-
-	for key, value := range q.context.vars {
-		fmt.Println(string(key), ":", value)
-	}
+type Result struct {
+	Statement string
+	Variables map[string]any
 }
 
 type Operator string

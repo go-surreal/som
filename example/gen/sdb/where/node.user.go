@@ -15,7 +15,7 @@ func newUser[T any](key string) user[T] {
 		CreatedAt: filter.NewTime[T](keyed(key, "created_at")),
 		Float32:   filter.NewNumeric[float32, T](keyed(key, "float_32")),
 		Float64:   filter.NewNumeric[float64, T](keyed(key, "float_64")),
-		ID:        filter.NewBase[string, T](keyed(key, "id")),
+		ID:        filter.NewID[T](keyed(key, "id"), "user"),
 		Int:       filter.NewNumeric[int, T](keyed(key, "int")),
 		Int32:     filter.NewNumeric[int32, T](keyed(key, "int_32")),
 		Int64:     filter.NewNumeric[int64, T](keyed(key, "int_64")),
@@ -29,7 +29,7 @@ func newUser[T any](key string) user[T] {
 
 type user[T any] struct {
 	key       string
-	ID        *filter.Base[string, T]
+	ID        *filter.ID[T]
 	CreatedAt *filter.Time[T]
 	UpdatedAt *filter.Time[T]
 	String    *filter.String[T]

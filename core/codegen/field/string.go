@@ -24,7 +24,7 @@ func (f *String) FilterDefine(sourcePkg string) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "String").Types(jen.Id("T"))
 }
 
-func (f *String) FilterInit(sourcePkg string) jen.Code {
+func (f *String) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewString").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
 }
@@ -35,15 +35,21 @@ func (f *String) FilterFunc(sourcePkg, elemName string) jen.Code {
 }
 
 func (f *String) SortDefine(types jen.Code) jen.Code {
-	return jen.Id(f.source.Name).Op("*").Qual(def.PkgLibSort, "String").Types(types)
+	return jen.Id(f.source.Name).Op("*").Qual(def.PkgLibSort, "String").Types(jen.Id("T"))
 }
 
 func (f *String) SortInit(types jen.Code) jen.Code {
-	return jen.Qual(def.PkgLibSort, "NewString").Types(types).Params(jen.Id("key"))
+	return jen.Qual(def.PkgLibSort, "NewString").Types(jen.Id("T")).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+}
+
+func (f *String) SortFunc(sourcePkg, elemName string) jen.Code {
+	// String does not need a sort function.
+	return nil
 }
 
 func (f *String) ConvFrom() jen.Code {
-	return jen.Id("data").Dot(f.source.Name)
+	return jen.Id("data").Dot(f.source.Name) // TODO: vulnerability -> record link could be injected
 }
 
 func (f *String) ConvTo(elem string) jen.Code {

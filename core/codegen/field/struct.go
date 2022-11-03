@@ -25,7 +25,7 @@ func (f *Struct) FilterDefine(sourcePkg string) jen.Code {
 	return nil
 }
 
-func (f *Struct) FilterInit(sourcePkg string) jen.Code {
+func (f *Struct) FilterInit(sourcePkg string, elemName string) jen.Code {
 	// Struct uses a filter function instead.
 	return nil
 }
@@ -41,11 +41,15 @@ func (f *Struct) FilterFunc(sourcePkg, elemName string) jen.Code {
 }
 
 func (f *Struct) SortDefine(types jen.Code) jen.Code {
-	return nil
+	return nil // TODO
 }
 
 func (f *Struct) SortInit(types jen.Code) jen.Code {
-	return nil
+	return nil // TODO
+}
+
+func (f *Struct) SortFunc(sourcePkg, elemName string) jen.Code {
+	return nil // TODO
 }
 
 func (f *Struct) ConvFrom() jen.Code {

@@ -24,7 +24,7 @@ func (f *Enum) FilterDefine(sourcePkg string) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Base").Types(jen.Qual(sourcePkg, f.source.Typ), jen.Id("T"))
 }
 
-func (f *Enum) FilterInit(sourcePkg string) jen.Code {
+func (f *Enum) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewBase").Types(jen.Qual(sourcePkg, f.source.Typ), jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
 }
@@ -39,6 +39,11 @@ func (f *Enum) SortDefine(types jen.Code) jen.Code {
 }
 
 func (f *Enum) SortInit(types jen.Code) jen.Code {
+	return nil
+}
+
+func (f *Enum) SortFunc(sourcePkg, elemName string) jen.Code {
+	// Enum does not need a sort function.
 	return nil
 }
 

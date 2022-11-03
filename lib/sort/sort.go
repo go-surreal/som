@@ -1,6 +1,10 @@
 package sort
 
-type Of[T any] struct{}
+import (
+	"github.com/marcbinz/sdb/lib/builder"
+)
+
+type Of[T any] builder.Sort
 
 type Sort[T any] struct {
 	key string
@@ -11,11 +15,11 @@ func NewSort[T any](key string) *Sort[T] {
 }
 
 func (w Sort[T]) Asc() *Of[T] {
-	return &Of[T]{}
+	return &Of[T]{Field: w.key, Order: builder.SortAsc}
 }
 
 func (w Sort[T]) Desc() *Of[T] {
-	return &Of[T]{}
+	return &Of[T]{Field: w.key, Order: builder.SortDesc}
 }
 
 type String[T any] struct {
@@ -27,11 +31,11 @@ func NewString[T any](key string) *String[T] {
 }
 
 func (w String[T]) Asc() *Of[T] {
-	return &Of[T]{}
+	return &Of[T]{Field: w.key, Order: builder.SortAsc}
 }
 
 func (w String[T]) Desc() *Of[T] {
-	return &Of[T]{}
+	return &Of[T]{Field: w.key, Order: builder.SortDesc}
 }
 
 func (w String[T]) Collate() StringCollate[T] {
@@ -47,21 +51,21 @@ type StringCollate[T any] struct {
 }
 
 func (w StringCollate[T]) Asc() *Of[T] {
-	return &Of[T]{}
+	return &Of[T]{Field: w.key, Order: builder.SortAsc, IsCollate: true}
 }
 
 func (w StringCollate[T]) Desc() *Of[T] {
-	return &Of[T]{}
+	return &Of[T]{Field: w.key, Order: builder.SortDesc, IsCollate: true}
 }
 
 type StringNumeric[T any] struct {
-	Origin string
+	key string
 }
 
 func (w StringNumeric[T]) Asc() *Of[T] {
-	return &Of[T]{}
+	return &Of[T]{Field: w.key, Order: builder.SortAsc, IsNumeric: true}
 }
 
 func (w StringNumeric[T]) Desc() *Of[T] {
-	return &Of[T]{}
+	return &Of[T]{Field: w.key, Order: builder.SortDesc, IsNumeric: true}
 }

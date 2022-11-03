@@ -17,6 +17,14 @@ go run github.com/marcbinz/sdb/cmd/sdbgen@latest <input_dir> <output_dir>
 - [ ] make casing of database fields configurable?
 - [ ] add support for maps as node fields
 
+## FAQ
+
+### Why are maps not supported?
+
+- With the schemaless database this would be possible.
+- Currently, the focus is on structured and deterministic data.
+- Might be added in the future though.
+
 ## References
 
 - https://surrealdb.com/docs

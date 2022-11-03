@@ -24,7 +24,7 @@ func (f *Time) FilterDefine(sourcePkg string) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Time").Types(jen.Id("T"))
 }
 
-func (f *Time) FilterInit(sourcePkg string) jen.Code {
+func (f *Time) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewTime").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
 }
@@ -35,11 +35,17 @@ func (f *Time) FilterFunc(sourcePkg, elemName string) jen.Code {
 }
 
 func (f *Time) SortDefine(types jen.Code) jen.Code {
-	return jen.Id(f.source.Name).Op("*").Qual(def.PkgLibSort, "Sort").Types(types)
+	return jen.Id(f.source.Name).Op("*").Qual(def.PkgLibSort, "Sort").Types(jen.Id("T"))
 }
 
 func (f *Time) SortInit(types jen.Code) jen.Code {
-	return jen.Qual(def.PkgLibSort, "NewSort").Types(types).Params(jen.Id("key"))
+	return jen.Qual(def.PkgLibSort, "NewSort").Types(jen.Id("T")).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+}
+
+func (f *Time) SortFunc(sourcePkg, elemName string) jen.Code {
+	// Time does not need a sort function.
+	return nil
 }
 
 func (f *Time) ConvFrom() jen.Code {

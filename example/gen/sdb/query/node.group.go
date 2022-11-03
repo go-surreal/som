@@ -1,6 +1,8 @@
 package query
 
 import (
+	"errors"
+	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	model "github.com/marcbinz/sdb/example/model"
 	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
@@ -9,57 +11,120 @@ import (
 )
 
 type Group struct {
-	build *builder.Query
+	db    Database
+	query *builder.Query
 }
 
-func NewGroup() *Group {
-	return &Group{build: builder.NewQuery()}
+func NewGroup(db Database) *Group {
+	return &Group{
+		db:    db,
+		query: builder.NewQuery("group"),
+	}
 }
 func (q *Group) Filter(filters ...filter.Of[model.Group]) *Group {
 	for _, f := range filters {
-		q.build.Where = append(q.build.Where, builder.Where(f))
+		q.query.Where = append(q.query.Where, builder.Where(f))
 	}
 	return q
 }
-func (q *Group) Sort(by ...*sort.Of[model.Group]) *Group {
+func (q *Group) Order(by ...*sort.Of[model.Group]) *Group {
+	for _, s := range by {
+		q.query.Sort = append(q.query.Sort, (*builder.Sort)(s))
+	}
+	return q
+}
+func (q *Group) OrderRandom() *Group {
+	q.query.SortRandom = true
 	return q
 }
 func (q *Group) Offset(offset int) *Group {
+	q.query.Offset = offset
 	return q
 }
 func (q *Group) Limit(limit int) *Group {
+	q.query.Limit = limit
 	return q
 }
-func (q *Group) Unique() *Group {
+func (q *Group) Fetch() *Group {
+	return q
+}
+func (q *Group) FetchDepth() *Group {
 	return q
 }
 func (q *Group) Timeout(timeout time.Duration) *Group {
+	q.query.Timeout = timeout
 	return q
 }
 func (q *Group) Parallel(parallel bool) *Group {
+	q.query.Parallel = parallel
 	return q
 }
-func (q *Group) Count() *Group {
-	return q
+func (q *Group) Count() (int, error) {
+	res := q.query.BuildAsCount()
+	rows, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) < 1 {
+		return 0, nil
+	}
+	return int(rows[0]["count"].(float64)), nil
 }
-func (q *Group) Exist() *Group {
-	return q
+func (q *Group) Exists() (bool, error) {
+	count, err := q.Count()
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 func (q *Group) All() ([]*model.Group, error) {
-	return nil, nil
+	res := q.query.BuildAsAll()
+	rows, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return nil, err
+	}
+	var nodes []*model.Group
+	for _, row := range rows {
+		node := conv.ToGroup(row)
+		nodes = append(nodes, &node)
+	}
+	return nodes, nil
 }
 func (q *Group) AllIDs() ([]string, error) {
-	return nil, nil
+	res := q.query.BuildAsAllIDs()
+	rows, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for _, row := range rows {
+		id := row["id"].(string)
+		ids = append(ids, id)
+	}
+	return ids, nil
 }
 func (q *Group) First() (*model.Group, error) {
-	return nil, nil
+	q.query.Limit = 1
+	res, err := q.All()
+	if err != nil {
+		return nil, err
+	}
+	if len(res) < 1 {
+		return nil, errors.New("empty result")
+	}
+	return res[0], nil
 }
 func (q *Group) FirstID() (string, error) {
-	return "", nil
+	q.query.Limit = 1
+	res, err := q.AllIDs()
+	if err != nil {
+		return "", err
+	}
+	if len(res) < 1 {
+		return "", errors.New("empty result")
+	}
+	return res[0], nil
 }
-func (q *Group) Only() (*model.Group, error) {
-	return nil, nil
-}
-func (q *Group) OnlyID() (string, error) {
+func (q *Group) Describe() (string, error) {
 	return "", nil
 }

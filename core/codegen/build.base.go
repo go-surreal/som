@@ -39,6 +39,10 @@ func (b *baseBuilder) pkg() string {
 	return path.Join(b.basePkg, b.pkgName)
 }
 
+func (b *baseBuilder) subPkg(pkg string) string {
+	return path.Join(b.basePkg, pkg)
+}
+
 // createDir creates the directory for the generated files.
 func (b *baseBuilder) createDir() error {
 	return os.MkdirAll(b.path(), os.ModePerm)

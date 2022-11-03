@@ -26,7 +26,7 @@ func (f *Slice) FilterDefine(sourcePkg string) jen.Code {
 	return nil
 }
 
-func (f *Slice) FilterInit(sourcePkg string) jen.Code {
+func (f *Slice) FilterInit(sourcePkg string, elemName string) jen.Code {
 	// Slice uses a filter function instead.
 	return nil
 }
@@ -80,6 +80,10 @@ func (f *Slice) SortDefine(types jen.Code) jen.Code {
 
 func (f *Slice) SortInit(types jen.Code) jen.Code {
 	return nil
+}
+
+func (f *Slice) SortFunc(sourcePkg, elemName string) jen.Code {
+	return nil // TODO
 }
 
 func (f *Slice) ConvFrom() jen.Code {

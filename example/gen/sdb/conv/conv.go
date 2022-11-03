@@ -25,7 +25,7 @@ func parseUUID(val any) uuid.UUID {
 	}
 	return res
 }
-	
+
 // func extract[T any](val any, to func(map[string]any) T) T {
 //	var t T
 //	if val == nil {

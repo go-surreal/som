@@ -8,19 +8,23 @@ import (
 	model "github.com/marcbinz/sdb/example/model"
 )
 
-var Group group
-
-type group struct{}
-
-func (group) Query() *query.Group {
-	return query.NewGroup()
+func (c *Client) Group() *group {
+	return &group{client: c}
 }
-func (group) Create(ctx context.Context, db *Client, group *model.Group) error {
+
+type group struct {
+	client *Client
+}
+
+func (n *group) Query() *query.Group {
+	return query.NewGroup(n.client.db)
+}
+func (n *group) Create(ctx context.Context, group *model.Group) error {
 	if group.ID != "" {
 		return errors.New("ID must not be set for a node to be created")
 	}
 	data := conv.FromGroup(*group)
-	raw, err := db.Create("group", data)
+	raw, err := n.client.db.Create("group", data)
 	if err != nil {
 		return err
 	}
@@ -28,17 +32,17 @@ func (group) Create(ctx context.Context, db *Client, group *model.Group) error {
 	*group = res
 	return nil
 }
-func (group) Read(ctx context.Context, db *Client, id string) (*model.Group, error) {
-	raw, err := db.db.Select("group:" + id)
+func (n *group) Read(ctx context.Context, id string) (*model.Group, error) {
+	raw, err := n.client.db.Select("group" + id)
 	if err != nil {
 		return nil, err
 	}
 	res := conv.ToGroup(raw.(map[string]any))
 	return &res, nil
 }
-func (group) Update(ctx context.Context, group *model.Group) error {
+func (n *group) Update(ctx context.Context, group *model.Group) error {
 	return nil
 }
-func (group) Delete(ctx context.Context, group *model.Group) error {
+func (n *group) Delete(ctx context.Context, group *model.Group) error {
 	return nil
 }

@@ -71,7 +71,7 @@ func parseUUID(val any) uuid.UUID {
 	}
 	return res
 }
-	
+
 // func extract[T any](val any, to func(map[string]any) T) T {
 //	var t T
 //	if val == nil {
@@ -94,6 +94,11 @@ func (b *convBuilder) buildFile(elem dbtype.Element) error {
 
 	f.Add(b.buildFrom(elem))
 	f.Add(b.buildTo(elem))
+
+	if node, ok := elem.(*dbtype.Node); ok {
+		f.Add(b.buildFromRecord(node))
+		f.Add(b.buildToRecord(node))
+	}
 
 	if err := f.Save(path.Join(b.path(), elem.FileName())); err != nil {
 		return err
@@ -132,5 +137,32 @@ func (b *convBuilder) buildTo(elem dbtype.Element) jen.Code {
 			}))))
 }
 
-// from:
-// to:
+func (b *convBuilder) buildFromRecord(node *dbtype.Node) jen.Code {
+	return jen.Func().
+		Id("from"+node.NameGo()+"Record").
+		Params(jen.Id("data").Any()).
+		Add(b.SourceQual(node.NameGo())).
+		Block(
+			jen.If(
+				jen.Id("node").Op(",").Id("ok").Op(":=").Id("data").Op(".").Parens(jen.Map(jen.String()).Any()),
+				jen.Id("ok"),
+			).Block(
+				jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Id("node"))),
+			),
+			jen.Return(jen.Add(b.SourceQual(node.NameGo())).Values()),
+		)
+}
+
+func (b *convBuilder) buildToRecord(node *dbtype.Node) jen.Code {
+	return jen.Func().
+		Id("to"+node.NameGo()+"Record").
+		Params(jen.Id("node").Add(b.SourceQual(node.NameGo()))).
+		Any().
+		Block(
+			jen.If(jen.Id("node").Dot("ID").Op("==").Lit("")).
+				Block(
+					jen.Return(jen.Nil()),
+				),
+			jen.Return(jen.Lit(node.NameDatabase()+":").Op("+").Id("node").Dot("ID")),
+		)
+}
