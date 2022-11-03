@@ -25,7 +25,7 @@ func (f *Struct) FilterDefine(sourcePkg string) jen.Code {
 	return nil
 }
 
-func (f *Struct) FilterInit(sourcePkg string) jen.Code {
+func (f *Struct) FilterInit(sourcePkg string, elemName string) jen.Code {
 	// Struct uses a filter function instead.
 	return nil
 }

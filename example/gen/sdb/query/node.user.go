@@ -1,11 +1,13 @@
 package query
 
 import (
+	"errors"
 	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	model "github.com/marcbinz/sdb/example/model"
 	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
 	sort "github.com/marcbinz/sdb/lib/sort"
+	"strings"
 	"time"
 )
 
@@ -44,9 +46,6 @@ func (q *User) Limit(limit int) *User {
 	q.query.Limit = limit
 	return q
 }
-func (q *User) Unique() *User {
-	return q
-}
 func (q *User) Fetch() *User {
 	return q
 }
@@ -61,14 +60,26 @@ func (q *User) Parallel(parallel bool) *User {
 	q.query.Parallel = parallel
 	return q
 }
-func (q *User) Count() *User {
-	return q
+func (q *User) Count() (int, error) {
+	res := q.query.BuildAsCount()
+	rows, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) < 1 {
+		return 0, nil
+	}
+	return int(rows[0]["count"].(float64)), nil
 }
-func (q *User) Exist() *User {
-	return q
+func (q *User) Exists() (bool, error) {
+	count, err := q.Count()
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 func (q *User) All() ([]*model.User, error) {
-	res := builder.Build(q.query)
+	res := q.query.BuildAsAll()
 	rows, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
 		return nil, err
@@ -81,19 +92,39 @@ func (q *User) All() ([]*model.User, error) {
 	return nodes, nil
 }
 func (q *User) AllIDs() ([]string, error) {
-	return nil, nil
+	res := q.query.BuildAsAllIDs()
+	rows, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for _, row := range rows {
+		id := strings.TrimPrefix(row["id"].(string), "user:")
+		ids = append(ids, id)
+	}
+	return ids, nil
 }
 func (q *User) First() (*model.User, error) {
-	return nil, nil
+	q.query.Limit = 1
+	res, err := q.All()
+	if err != nil {
+		return nil, err
+	}
+	if len(res) < 1 {
+		return nil, errors.New("empty result")
+	}
+	return res[0], nil
 }
 func (q *User) FirstID() (string, error) {
-	return "", nil
-}
-func (q *User) Only() (*model.User, error) {
-	return nil, nil
-}
-func (q *User) OnlyID() (string, error) {
-	return "", nil
+	q.query.Limit = 1
+	res, err := q.AllIDs()
+	if err != nil {
+		return "", err
+	}
+	if len(res) < 1 {
+		return "", errors.New("empty result")
+	}
+	return res[0], nil
 }
 func (q *User) Describe() (string, error) {
 	return "", nil

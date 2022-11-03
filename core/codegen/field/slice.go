@@ -26,7 +26,7 @@ func (f *Slice) FilterDefine(sourcePkg string) jen.Code {
 	return nil
 }
 
-func (f *Slice) FilterInit(sourcePkg string) jen.Code {
+func (f *Slice) FilterInit(sourcePkg string, elemName string) jen.Code {
 	// Slice uses a filter function instead.
 	return nil
 }

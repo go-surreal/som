@@ -21,7 +21,7 @@ type Field interface {
 	NameDatabase() string
 
 	FilterDefine(sourcePkg string) jen.Code
-	FilterInit(sourcePkg string) jen.Code
+	FilterInit(sourcePkg string, elemName string) jen.Code
 	FilterFunc(sourcePkg, elemName string) jen.Code
 
 	SortDefine(types jen.Code) jen.Code

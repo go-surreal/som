@@ -21,12 +21,12 @@ func (f *ID) NameDatabase() string {
 }
 
 func (f *ID) FilterDefine(sourcePkg string) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Base").Types(jen.String(), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "ID").Types(jen.Id("T"))
 }
 
-func (f *ID) FilterInit(sourcePkg string) jen.Code {
-	return jen.Qual(def.PkgLibFilter, "NewBase").Types(jen.String(), jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+func (f *ID) FilterInit(sourcePkg string, elemName string) jen.Code {
+	return jen.Qual(def.PkgLibFilter, "NewID").Types(jen.Id("T")).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))), jen.Lit(strcase.ToSnake(elemName)))
 }
 
 func (f *ID) FilterFunc(sourcePkg, elemName string) jen.Code {

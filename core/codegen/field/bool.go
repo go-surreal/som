@@ -24,7 +24,7 @@ func (f *Bool) FilterDefine(sourcePkg string) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Bool").Types(jen.Id("T"))
 }
 
-func (f *Bool) FilterInit(sourcePkg string) jen.Code {
+func (f *Bool) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewBool").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
 }

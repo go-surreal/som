@@ -24,7 +24,7 @@ func (f *Time) FilterDefine(sourcePkg string) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Time").Types(jen.Id("T"))
 }
 
-func (f *Time) FilterInit(sourcePkg string) jen.Code {
+func (f *Time) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewTime").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
 }

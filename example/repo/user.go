@@ -35,9 +35,9 @@ func (repo *user) List(ctx context.Context) ([]*model.User, error) {
 	return repo.db.User().Query().
 		Filter(
 			where.Any(
-				where.User.ID.Equal("user:9rb97n04ggwmekxats5a"),
-				where.User.ID.Equal("user:lvsl8w9gx5i97vado4tp"),
-				where.User.MainGroup().ID.Equal("group:wq4p7fj4efocis35znzz"),
+				where.User.ID.Equal("9rb97n04ggwmekxats5a"),
+				where.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
+				where.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
 			),
 			// where.User.String.FuzzyMatch("my fuzzy value"),
 			// where.User.UUID.Equal(uuid.UUID{}),

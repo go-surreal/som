@@ -125,7 +125,7 @@ func (b *filterBuilder) whereNew(elem dbtype.Element) jen.Code {
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("key")] = jen.Id("key")
 						for _, f := range elem.GetFields() {
-							if code := f.FilterInit(b.sourcePkgPath); code != nil {
+							if code := f.FilterInit(b.sourcePkgPath, elem.NameGo()); code != nil {
 								d[jen.Id(f.NameGo())] = code
 							}
 						}

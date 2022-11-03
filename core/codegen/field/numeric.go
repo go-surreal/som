@@ -24,7 +24,7 @@ func (f *Numeric) FilterDefine(sourcePkg string) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Numeric").Types(f.CodeNumberType(), jen.Id("T"))
 }
 
-func (f *Numeric) FilterInit(sourcePkg string) jen.Code {
+func (f *Numeric) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewNumeric").Types(f.CodeNumberType(), jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
 }

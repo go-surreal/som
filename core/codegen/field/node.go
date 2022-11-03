@@ -25,7 +25,7 @@ func (f *Node) FilterDefine(sourcePkg string) jen.Code {
 	return nil
 }
 
-func (f *Node) FilterInit(sourcePkg string) jen.Code {
+func (f *Node) FilterInit(sourcePkg string, elemName string) jen.Code {
 	// Node uses a filter function instead.
 	return nil
 }

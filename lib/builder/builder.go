@@ -21,6 +21,8 @@ func (c *context) asVar(val any) string {
 type Query struct {
 	*context
 	node       string
+	fields     string
+	groupBy    string
 	Where      []Where
 	Sort       []*Sort
 	SortRandom bool
@@ -40,12 +42,44 @@ func NewQuery(node string) *Query {
 	}
 }
 
+func (q Query) BuildAsAll() *Result {
+	q.fields = "*"
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+func (q Query) BuildAsAllIDs() *Result {
+	q.fields = "id"
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+func (q Query) BuildAsCount() *Result {
+	q.fields = "count()"
+	q.groupBy = "id"
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
 func (q Query) render() string {
-	out := "SELECT * FROM " + q.node + " "
+	out := "SELECT " + q.fields + " FROM " + q.node + " "
 
 	whereStatement := WhereAll{Where: q.Where}.render(q.context)
 	if whereStatement != "" {
 		out += "WHERE " + whereStatement + " "
+	}
+
+	if q.groupBy != "" {
+		out += "GROUP BY " + q.groupBy + " "
 	}
 
 	if q.SortRandom {
@@ -77,13 +111,6 @@ func (q Query) render() string {
 	}
 
 	return out
-}
-
-func Build(q *Query) *Result {
-	return &Result{
-		Statement: q.render(),
-		Variables: q.context.vars,
-	}
 }
 
 type Result struct {
