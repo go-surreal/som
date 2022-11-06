@@ -56,9 +56,6 @@ func (q *Group) Fetch(fetch ...with.Fetch_[model.Group]) *Group {
 	}
 	return q
 }
-func (q *Group) FetchDepth() *Group {
-	return q
-}
 func (q *Group) Timeout(timeout time.Duration) *Group {
 	q.query.Timeout = timeout
 	return q

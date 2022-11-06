@@ -5,7 +5,6 @@ import (
 	"fmt"
 	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	with "github.com/marcbinz/sdb/example/gen/sdb/with"
-	"github.com/marcbinz/sdb/example/gen/sdb/with/depth"
 	model "github.com/marcbinz/sdb/example/model"
 	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
@@ -54,15 +53,6 @@ func (q *User) Fetch(fetch ...with.Fetch_[model.User]) *User {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			q.query.Fetch = append(q.query.Fetch, field)
 		}
-	}
-	return q
-}
-func (q *User) FetchDepth(d int) *User {
-	for _, fetch := range depth.User("", d) {
-		if fetch == "" {
-			continue
-		}
-		q.query.Fetch = append(q.query.Fetch, fetch)
 	}
 	return q
 }
