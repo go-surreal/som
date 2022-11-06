@@ -12,6 +12,11 @@ type Node struct {
 	dbNameConverter NameConverter
 }
 
+// TODO: cool to expose just like that?
+func (f *Node) NodeName() string {
+	return f.source.Node
+}
+
 func (f *Node) NameGo() string {
 	return f.source.Name
 }

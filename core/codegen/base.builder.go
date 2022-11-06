@@ -54,6 +54,7 @@ func (b *build) build() error {
 		b.newQueryBuilder(),
 		b.newFilterBuilder(),
 		b.newSortBuilder(),
+		b.newFetchBuilder(),
 		b.newConvBuilder(),
 	}
 
@@ -325,6 +326,10 @@ func (b *build) newFilterBuilder() builder {
 
 func (b *build) newSortBuilder() builder {
 	return newSortBuilder(b.input, b.basePath(), b.basePkg(), def.PkgSort)
+}
+
+func (b *build) newFetchBuilder() builder {
+	return newFetchBuilder(b.input, b.basePath(), b.basePkg(), def.PkgFetch)
 }
 
 func (b *build) newConvBuilder() builder {

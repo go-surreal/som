@@ -5,6 +5,7 @@ import (
 	"github.com/marcbinz/sdb/example/gen/sdb"
 	"github.com/marcbinz/sdb/example/gen/sdb/by"
 	"github.com/marcbinz/sdb/example/gen/sdb/where"
+	"github.com/marcbinz/sdb/example/gen/sdb/with"
 	"github.com/marcbinz/sdb/example/model"
 	"time"
 )
@@ -63,6 +64,13 @@ func (repo *user) List(ctx context.Context) ([]*model.User, error) {
 			by.User.CreatedAt.Asc(),
 			by.User.MainGroup().Name.Asc(),
 		).
+		Fetch(
+			with.User, // this is implicit
+			with.User.MainGroup(),
+		).
+		// FetchRecordsWithDepth(3).
+		// FetchEdgesWithDepth3().
+		// FetchDepth(2).
 		// OrderRandom().
 		// Offset(10).
 		// Limit(10).

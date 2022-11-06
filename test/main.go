@@ -52,6 +52,6 @@ func main() {
 	}
 
 	for _, user := range users {
-		fmt.Println(user.ID, user.String)
+		fmt.Println(user.ID, user.String, user.MainGroup.Name)
 	}
 }
