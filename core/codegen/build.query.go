@@ -166,9 +166,20 @@ func (b *queryBuilder) buildQueryFuncLimit(node *dbtype.Node) jen.Code {
 func (b *queryBuilder) buildQueryFuncFetch(node *dbtype.Node) jen.Code {
 	return jen.Func().
 		Params(jen.Id("q").Op("*").Id(node.Name)).
-		Id("Fetch").Params().
+		Id("Fetch").Params(jen.Id("fetch").Op("...").Qual(b.subPkg(def.PkgFetch), "Fetch_").Types(b.SourceQual(node.Name))).
 		Op("*").Id(node.Name).
 		Block(
+			jen.For(jen.List(jen.Id("_"), jen.Id("f")).Op(":=").Range().Id("fetch")).
+				Block(
+					jen.If(
+						jen.Id("field").Op(":=").Qual("fmt", "Sprintf").Call(jen.Lit("%v"), jen.Id("f")),
+						jen.Id("field").Op("!=").Lit(""),
+					).
+						Block(
+							jen.Id("q").Dot("query").Dot("Fetch").Op("=").
+								Append(jen.Id("q").Dot("query").Dot("Fetch"), jen.Id("field")),
+						),
+				),
 			jen.Return(jen.Id("q")),
 		)
 }

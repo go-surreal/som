@@ -6,6 +6,7 @@ const (
 	PkgQuery  = "query"
 	PkgFilter = "where"
 	PkgSort   = "by"
+	PkgFetch  = "with"
 	PkgConv   = "conv"
 )
 

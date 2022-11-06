@@ -26,6 +26,7 @@ type Query struct {
 	Where      []Where
 	Sort       []*Sort
 	SortRandom bool
+	Fetch      []string
 	Offset     int
 	Limit      int
 	Timeout    time.Duration
@@ -100,6 +101,10 @@ func (q Query) render() string {
 	// START must come after LIMIT.
 	if q.Offset > 0 {
 		out += "START " + strconv.Itoa(q.Offset) + " "
+	}
+
+	if len(q.Fetch) > 0 {
+		out += "FETCH " + strings.Join(q.Fetch, ", ") + " "
 	}
 
 	if q.Timeout > 0 {

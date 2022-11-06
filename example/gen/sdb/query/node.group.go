@@ -2,11 +2,14 @@ package query
 
 import (
 	"errors"
+	"fmt"
 	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
+	with "github.com/marcbinz/sdb/example/gen/sdb/with"
 	model "github.com/marcbinz/sdb/example/model"
 	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
 	sort "github.com/marcbinz/sdb/lib/sort"
+	"strings"
 	"time"
 )
 
@@ -45,7 +48,12 @@ func (q *Group) Limit(limit int) *Group {
 	q.query.Limit = limit
 	return q
 }
-func (q *Group) Fetch() *Group {
+func (q *Group) Fetch(fetch ...with.Fetch_[model.Group]) *Group {
+	for _, f := range fetch {
+		if field := fmt.Sprintf("%v", f); field != "" {
+			q.query.Fetch = append(q.query.Fetch, field)
+		}
+	}
 	return q
 }
 func (q *Group) FetchDepth() *Group {
@@ -98,7 +106,7 @@ func (q *Group) AllIDs() ([]string, error) {
 	}
 	var ids []string
 	for _, row := range rows {
-		id := row["id"].(string)
+		id := strings.TrimPrefix(row["id"].(string), "group:")
 		ids = append(ids, id)
 	}
 	return ids, nil

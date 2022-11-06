@@ -63,6 +63,13 @@ func (repo *user) List(ctx context.Context) ([]*model.User, error) {
 			by.User.CreatedAt.Asc(),
 			by.User.MainGroup().Name.Asc(),
 		).
+		// Fetch(
+		// 	with.User, // this is implicit
+		// 	with.User.MainGroup(),
+		// ).
+		// FetchRecordsWithDepth(3).
+		// FetchEdgesWithDepth3().
+		FetchDepth(0).
 		// OrderRandom().
 		// Offset(10).
 		// Limit(10).

@@ -1,4 +1,4 @@
-# SDB
+# SDB | sorrm - surrealOR[r]M | som - surreal object mapper
 
 A type-safe database access layer with code generation for [SurrealDB](https://surrealdb.com).
 
