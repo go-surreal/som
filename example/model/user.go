@@ -31,6 +31,8 @@ type User struct {
 	Other     []string // slice of strings
 	Roles     []Role   // slice of enum
 
+	Wrote WroteEdge
+
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum
 	// MappedGroups map[string]Group // map of string and node
@@ -54,4 +56,44 @@ type Group struct {
 
 	ID   string
 	Name string
+}
+
+type Post struct {
+	sdb.Node
+
+	ID    string
+	Title string
+}
+
+type WroteEdge []Wrote
+
+func (e WroteEdge) Posts() []*Post {
+	var posts []*Post
+	for _, edge := range e {
+		posts = append(posts, edge.Post)
+	}
+	return posts
+}
+
+type Wrote struct {
+	sdb.Edge
+
+	User *User `som:"->"`
+	Post *Post `som:"<-"`
+
+	WrittenAt time.Time
+}
+
+func test() {
+
+	user := User{}
+
+	user.Wrote.Posts()
+
+}
+
+type Edge[I, O, D any] interface {
+	In() I
+	Out() O
+	Data() D
 }
