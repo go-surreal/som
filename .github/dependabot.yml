@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "workflow"
+      - "dependencies"
+    reviewers:
+      - "marcbinz"
+    open-pull-requests-limit: 3
+    pull-request-branch-name:
+      separator: "-"
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+      - "backend"
+      - "dependencies"
+    reviewers:
+      - "marcbinz"
+    open-pull-requests-limit: 3
+    pull-request-branch-name:
+      separator: "-"

@@ -1,0 +1,334 @@
+# GolangCI-Lint config.
+
+run:
+  timeout: 5m
+  skip-dirs:
+    - example/gen/sdb
+
+
+linters:
+  disable-all: true
+  enable:
+
+    # Detects structs that contain a context.Context field.
+    - containedctx
+
+    # Checks function and package cyclomatic complexity.
+    - cyclop
+
+    # Finds unused code.
+    - deadcode
+
+    # A program for checking for unchecked errors in go programs.
+    # These unchecked errors can be critical bugs in some cases.
+    - errcheck
+
+    # Checks that sentinel errors are prefixed with
+    # Err and error types are suffixed with Error.
+    - errname
+
+    # Check exhaustiveness of enum switch statements.
+    - exhaustive
+
+    # Checks for pointers to enclosing loop variables.
+    - exportloopref
+
+    # Finds forced type assertions.
+    - forcetypeassert
+
+    # Controls golang package import order and makes it always deterministic.
+    - gci
+
+    # Finds repeated strings that could be replaced by a constant.
+    - goconst
+
+    # Check if comments conform to certain rules (like ending with a dot).
+    - godot
+
+    # Gofmt checks whether code was gofmt-ed.
+    - gofmt
+
+    # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
+    - gomoddirectives
+
+    # Checks that printf-like functions are named with f at the end.
+    - goprintffuncname
+
+    # Inspects source code for security problems.
+    - gosec
+
+    # Linter for Go source code that specializes in simplifying code.
+    - gosimple
+
+    # Vet examines Go source code and reports suspicious constructs, such as
+    # Printf calls whose arguments do not align with the format string.
+    - govet
+
+    # Checks that your code uses short syntax for if-statements whenever possible.
+    - ifshort
+
+    # Detects when assignments to existing variables are not used.
+    - ineffassign
+
+    # Finds commonly misspelled English words in comments.
+    - misspell
+
+    # Finds naked returns in functions greater than a specified function length.
+    - nakedret
+
+    # Checks that there is no simultaneous return of nil error and an invalid value.
+    - nilnil
+
+    # Checks for misuse of Sprintf to construct a host with port in a URL.
+    - nosprintfhostport
+
+    # Find code that shadows one of Go's predeclared identifiers.
+    - predeclared
+
+    # It's a set of rules from staticcheck. It's not the same thing as the
+    # staticcheck binary. The author of staticcheck doesn't support or
+    # approve the use of staticcheck as a library inside golangci-lint.
+    - staticcheck
+
+    # Remove unnecessary type conversions.
+    - unconvert
+
+    # Reports unused function parameters.
+    - unparam
+
+    # Checks Go code for unused constants, variables, functions and types.
+    - unused
+
+    # Finds unused global variables and constants.
+    - varcheck
+
+    # Checks that the length of a variable's name matches its scope.
+    # - varnamelen (add later)
+
+    # Checks whether HTTP response body is closed successfully.
+    #- bodyclose (not yet 1.18 compatible)
+
+    # Checks whether functions use a non-inherited context.
+    #- contextcheck (not yet 1.18 compatible)
+
+    # Tool for detection of FIXME, TODO and other comment keywords.
+    #- godox (introduce and fix later on)
+
+    # Gofumpt checks whether code was gofumpt-ed.
+    #- gofumpt (introduce and fix later on)
+
+    # Accept interfaces, return concrete types.
+    #- ireturn (a pretty extreme measure, but might be worth it)
+
+    # Reports long lines.
+    #- lll (introduce and fix later on)
+
+    # Finds slice declarations with non-zero initial length.
+    #- makezero (?)
+
+    # Reports deeply nested if statements.
+    #- nestif (introduce and fix later on)
+
+    # Finds the code that returns nil even if it checks that the error is not nil.
+    #- nilerr (not yet 1.18 compatible)
+
+    # Finds sending http request without context.Context.
+    #- noctx (not yet 1.18 compatible)
+
+    # A linter that detects snake case of variable naming and function name.
+    # - nosnakecase (does not ignore test files)
+
+    # Finds unused struct fields.
+    #- structcheck (not yet 1.18 compatible)
+
+    # Checks the struct tags.
+    #- tagliatelle (some model tags are outdated and need to be migrated first!)
+
+    # Like the front-end of a Go compiler, parses and type-checks Go code.
+    #- typecheck (no good when used within IDE)
+
+    # Finds wasted assignment statements.
+    #- wastedassign (not yet 1.18 compatible)
+
+    # Tool for detection of leading and trailing whitespace.
+    #- whitespace (a pretty hard measure, but might be worth it)
+
+    # Checks that errors returned from external packages are wrapped.
+    #- wrapcheck (introduce and fix later on)
+
+    # Whitespace Linter - Forces you to use empty lines!
+    #- wsl (a pretty hard measure, but might be worth it)
+
+    #
+    # might be interesting:
+    #
+    # decorder, depguard, dupl, errorlint, forbidigo, funlen?, gocritic, goheader, gomodguard,
+    # grouper, importas, nolintlint, paralleltest, prealloc, revive, stylecheck, testpackage,
+    # thelper, tparallel, exhaustruct, gomnd, nlreturn, nonamedreturns
+    #
+
+
+linters-settings:
+
+  cyclop:
+    max-complexity: 15
+    package-average: 0.0
+    skip-tests: false
+
+  errcheck:
+    check-type-assertions: true
+    check-blank: false # TODO: activate?
+    disable-default-exclusions: true
+    exclude-functions: []
+
+  exhaustive:
+    check-generated: false
+    default-signifies-exhaustive: false
+    ignore-enum-members: ""
+    package-scope-only: false
+
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(golang.org)
+      - prefix(go.wohnparc.dev)
+    skip-generated: true
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+    ignore-tests: true
+    match-constant: true
+    numbers: true
+    min: 3
+    max: 3
+    ignore-calls: true
+
+  godot:
+    scope: declarations
+    exclude: []
+    period: true
+    capital: false
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: ""
+
+  gomoddirectives:
+    replace-local: true
+    replace-allow-list:
+      - go.wohnparc.dev
+    retract-allow-no-explanation: false
+    exclude-forbidden: false
+
+  gosec:
+    includes: []
+    excludes: []
+    exclude-generated: false
+    severity: low
+    confidence: low
+
+  gosimple:
+    checks: ["*"]
+
+  govet:
+    check-shadowing: false
+    disable-all: false
+    enable: []
+    enable-all: false
+    disable: []
+
+  ifshort:
+    max-decl-lines: 1
+    max-decl-chars: 30
+
+  misspell:
+    ignore-words: []
+
+  nakedret:
+    max-func-lines: 30
+
+  nestif:
+    min-complexity: 5
+
+  nilnil:
+    checked-types:
+      - ptr
+      - func
+      - iface
+      - map
+      - chan
+
+  predeclared:
+    ignore: ""
+    q: false
+
+  staticcheck:
+    checks: ["*"]
+
+  tagliatelle:
+    case:
+      use-field-name: true
+      rules:
+        bson: snake
+        json: snake
+        mapstructure: snake
+        xml: camel
+        yaml: snake
+
+  unparam:
+    check-exported: false
+
+  varcheck:
+    exported-fields: false
+
+  varnamelen:
+    max-distance: 5
+    min-name-length: 3
+    check-receiver: false
+    check-return: false
+    check-type-param: false
+    ignore-type-assert-ok: true
+    ignore-map-index-ok: true
+    ignore-chan-recv-ok: true
+    ignore-names:
+      - err
+      - ok
+      - id
+      - fn
+    ignore-decls:
+      - wg sync.WaitGroup
+      - t T
+
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - .WithMessagef(
+      - .WithStack(
+    ignoreSigRegexps: []
+    ignorePackageGlobs: []
+    ignoreInterfaceRegexps: []
+
+    wsl:
+      allow-assign-and-anything: false
+      allow-assign-and-call: true
+      allow-cuddle-declarations: false
+      allow-multiline-assign: true
+      allow-separated-leading-comment: false
+      allow-trailing-comment: false
+      force-case-trailing-whitespace: 0
+      force-err-cuddling: true
+      force-short-decl-cuddling: true
+      strict-append: true
+
+
+issues:
+  fix: true
