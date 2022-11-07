@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/marcbinz/sdb/example/gen/sdb"
 	"github.com/marcbinz/sdb/example/repo"
-	"log"
 )
 
 func main() {

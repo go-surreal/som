@@ -2,12 +2,13 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/field"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/dave/jennifer/jen"
+	"github.com/marcbinz/sdb/core/codegen/dbtype"
+	"github.com/marcbinz/sdb/core/codegen/field"
 )
 
 type fetchBuilder struct {

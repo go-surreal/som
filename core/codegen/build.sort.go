@@ -2,11 +2,12 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/dave/jennifer/jen"
+	"github.com/marcbinz/sdb/core/codegen/dbtype"
 )
 
 type sortBuilder struct {

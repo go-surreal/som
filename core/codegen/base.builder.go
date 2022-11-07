@@ -2,14 +2,15 @@ package codegen
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/codegen/def"
 	"github.com/marcbinz/sdb/core/parser"
-	"os"
-	"path"
-	"strings"
 )
 
 type build struct {

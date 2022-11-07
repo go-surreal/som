@@ -1,11 +1,12 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/marcbinz/sdb/cmd/sdbgen/sub"
 	"github.com/marcbinz/sdb/core"
 	"github.com/urfave/cli/v2"
-	"log"
-	"os"
 )
 
 func main() {

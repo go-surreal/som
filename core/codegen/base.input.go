@@ -3,6 +3,7 @@ package codegen
 import (
 	"errors"
 	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/sdb/core/codegen/dbtype"

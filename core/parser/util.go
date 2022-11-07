@@ -2,9 +2,10 @@ package parser
 
 import (
 	"errors"
-	"golang.org/x/mod/modfile"
 	"os"
 	"path"
+
+	"golang.org/x/mod/modfile"
 )
 
 func findAndReadModFile(dir string) ([]byte, string, error) {

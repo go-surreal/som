@@ -2,12 +2,13 @@ package repo
 
 import (
 	"context"
+	"time"
+
 	"github.com/marcbinz/sdb/example/gen/sdb"
 	"github.com/marcbinz/sdb/example/gen/sdb/by"
 	"github.com/marcbinz/sdb/example/gen/sdb/where"
 	"github.com/marcbinz/sdb/example/gen/sdb/with"
 	"github.com/marcbinz/sdb/example/model"
-	"time"
 )
 
 type UserRepo interface {

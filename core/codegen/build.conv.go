@@ -2,10 +2,11 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"os"
 	"path"
+
+	"github.com/dave/jennifer/jen"
+	"github.com/marcbinz/sdb/core/codegen/dbtype"
 )
 
 type convBuilder struct {

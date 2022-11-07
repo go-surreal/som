@@ -2,11 +2,12 @@ package codegen
 
 import (
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/codegen/def"
-	"os"
-	"path"
 )
 
 type queryBuilder struct {

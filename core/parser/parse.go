@@ -2,11 +2,12 @@ package parser
 
 import (
 	"fmt"
-	"github.com/wzshiming/gotype"
 	"go/ast"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/wzshiming/gotype"
 )
 
 const fileGoMod = "go.mod"

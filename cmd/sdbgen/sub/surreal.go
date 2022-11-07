@@ -3,9 +3,10 @@ package sub
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/urfave/cli/v2"
-	"time"
 )
 
 func Surreal() *cli.Command {

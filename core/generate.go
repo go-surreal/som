@@ -1,9 +1,10 @@
 package core
 
 import (
+	"os"
+
 	"github.com/marcbinz/sdb/core/codegen"
 	"github.com/marcbinz/sdb/core/parser"
-	"os"
 )
 
 func Generate(inPath, outPath string) error {

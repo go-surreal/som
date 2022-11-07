@@ -1,9 +1,10 @@
 package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/marcbinz/sdb"
-	"time"
 )
 
 type User struct {

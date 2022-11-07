@@ -1,11 +1,12 @@
 package field
 
 import (
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/sdb/core/codegen/def"
 	"github.com/marcbinz/sdb/core/parser"
-	"strings"
 )
 
 type Slice struct {

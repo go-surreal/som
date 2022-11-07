@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+
 	"github.com/marcbinz/sdb/example/gen/sdb"
 	"github.com/marcbinz/sdb/example/model"
 )
