@@ -123,20 +123,6 @@ func (c *Client) Query(what string, vars map[string]any) ([]Data, error) {
 	fmt.Println("res1:", ok, res1.Status, res1.Time, res1.Result[0].ID)
 	fmt.Println("res2:", ok, res2)
 
-	// castedRes := res.([]any)
-	//
-	// castedFirst := castedRes[0].(map[string]any)
-	//
-	// fmt.Println("query output:", castedFirst["status"], castedFirst["time"])
-	//
-	// castedRows := castedFirst["result"].([]any)
-	//
-	// var out []Data
-	// for _, row := range castedRows {
-	// 	castedRow := row.(map[string]any)
-	// 	res = append(out, fromRaw(castedRow))
-	// }
-
 	return nil, nil
 }
 
