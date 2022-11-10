@@ -53,13 +53,12 @@ func (f *Numeric) ConvFrom() jen.Code {
 }
 
 func (f *Numeric) ConvTo(elem string) jen.Code {
-	if f.source.Type == parser.NumberFloat64 {
-		return jen.Id("data").Index(jen.Lit(strcase.ToSnake(f.source.Name))).Op(".").Parens(jen.Float64())
-	}
+	return jen.Id("data").Dot(f.source.Name)
+}
 
-	return jen.Add(f.CodeNumberType()).Call(
-		jen.Id("data").Index(jen.Lit(strcase.ToSnake(f.source.Name))).Op(".").Parens(jen.Float64()),
-	)
+func (f *Numeric) FieldDef() jen.Code {
+	return jen.Id(f.source.Name).Add(f.CodeNumberType()).
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
 }
 
 func (f *Numeric) CodeNumberType() jen.Code {

@@ -53,5 +53,10 @@ func (f *Time) ConvFrom() jen.Code {
 }
 
 func (f *Time) ConvTo(elem string) jen.Code {
-	return jen.Id("parseTime").Call(jen.Id("data").Index(jen.Lit(strcase.ToSnake(f.source.Name))))
+	return jen.Id("data").Dot(f.source.Name)
+}
+
+func (f *Time) FieldDef() jen.Code {
+	return jen.Id(f.source.Name).Qual("time", "Time").
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
 }

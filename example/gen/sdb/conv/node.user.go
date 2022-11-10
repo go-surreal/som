@@ -1,51 +1,79 @@
 package conv
 
-import model "github.com/marcbinz/sdb/example/model"
+import (
+	model "github.com/marcbinz/sdb/example/model"
+	"time"
+)
 
-func FromUser(data model.User) map[string]any {
-	return map[string]any{
-		"bool":       data.Bool,
-		"bool_2":     data.Bool2,
-		"created_at": data.CreatedAt,
-		"float_32":   data.Float32,
-		"float_64":   data.Float64,
-		"int":        data.Int,
-		"int_32":     data.Int32,
-		"int_64":     data.Int64,
-		"login":      FromLogin(data.Login),
-		"main_group": toGroupRecord(data.MainGroup),
-		"string":     data.String,
-		"updated_at": data.UpdatedAt,
-		"uuid":       data.UUID,
+type User struct {
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	String    string    `json:"string"`
+	Int       int       `json:"int"`
+	Int32     int32     `json:"int_32"`
+	Int64     int64     `json:"int_64"`
+	Float32   float32   `json:"float_32"`
+	Float64   float64   `json:"float_64"`
+	Bool      bool      `json:"bool"`
+	Bool2     bool      `json:"bool_2"`
+	UUID      string    `json:"uuid"`
+	Login     Login     `json:"login"`
+	Role      string    `json:"role"`
+	Groups    []Group   `json:"groups"`
+	MainGroup any       `json:"main_group"`
+	Other     []string  `json:"other"`
+	More      []float32 `json:"more"`
+	Roles     []string  `json:"roles"`
+}
+
+func FromUser(data *model.User) *User {
+	if data == nil {
+		return &User{}
+	}
+	return &User{
+		Bool:      data.Bool,
+		Bool2:     data.Bool2,
+		CreatedAt: data.CreatedAt,
+		Float32:   data.Float32,
+		Float64:   data.Float64,
+		Int:       data.Int,
+		Int32:     data.Int32,
+		Int64:     data.Int64,
+		Login:     *FromLogin(&data.Login),
+		MainGroup: toGroupRecord(data.MainGroup),
+		String:    data.String,
+		UUID:      data.UUID.String(),
+		UpdatedAt: data.UpdatedAt,
 	}
 }
-func ToUser(data map[string]any) model.User {
-	return model.User{
-		Bool:      data["bool"].(bool),
-		Bool2:     data["bool_2"].(bool),
-		CreatedAt: parseTime(data["created_at"]),
-		Float32:   float32(data["float_32"].(float64)),
-		Float64:   data["float_64"].(float64),
-		ID:        prepareID("user", data["id"]),
-		Int:       int(data["int"].(float64)),
-		Int32:     int32(data["int_32"].(float64)),
-		Int64:     int64(data["int_64"].(float64)),
-		Login:     ToLogin(data["login"].(map[string]any)),
-		MainGroup: fromGroupRecord(data["main_group"]),
-		String:    data["string"].(string),
-		UUID:      parseUUID(data["uuid"]),
-		UpdatedAt: parseTime(data["updated_at"]),
+func ToUser(data *User) *model.User {
+	return &model.User{
+		Bool:      data.Bool,
+		Bool2:     data.Bool2,
+		CreatedAt: data.CreatedAt,
+		Float32:   data.Float32,
+		Float64:   data.Float64,
+		ID:        prepareID("user", data.ID),
+		Int:       data.Int,
+		Int32:     data.Int32,
+		Int64:     data.Int64,
+		Login:     *ToLogin(&data.Login),
+		MainGroup: *fromGroupRecord(data.MainGroup),
+		String:    data.String,
+		UUID:      parseUUID(data.UUID),
+		UpdatedAt: data.UpdatedAt,
 	}
 }
-func fromUserRecord(data any) model.User {
-	if node, ok := data.(map[string]any); ok {
+func fromUserRecord(data any) *model.User {
+	if node, ok := data.(*User); ok {
 		return ToUser(node)
 	}
-	return model.User{}
+	return &model.User{}
 }
-func toUserRecord(node model.User) any {
+func toUserRecord(node model.User) string {
 	if node.ID == "" {
-		return nil
+		return ""
 	}
 	return "user:" + node.ID
 }

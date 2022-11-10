@@ -70,6 +70,10 @@ func (f *Node) ConvFrom() jen.Code {
 }
 
 func (f *Node) ConvTo(elem string) jen.Code {
-	return jen.Id("from" + f.source.Node + "Record").Call(jen.Id("data").
-		Index(jen.Lit(strcase.ToSnake(f.source.Name))))
+	return jen.Op("*").Id("from" + f.source.Node + "Record").Call(jen.Id("data").Dot(f.source.Name))
+}
+
+func (f *Node) FieldDef() jen.Code {
+	return jen.Id(f.source.Name).Any().
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
 }

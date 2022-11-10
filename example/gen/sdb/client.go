@@ -7,9 +7,9 @@ import (
 
 type Database interface {
 	Close()
-	Create(thing string, data map[string]any) (any, error)
+	Create(thing string, data any) (any, error)
 	Select(what string) (any, error)
-	Query(statement string, vars map[string]any) ([]map[string]any, error)
+	Query(statement string, vars map[string]any) (any, error)
 	Update(thing string, data map[string]any) (any, error)
 	Delete(what string) (any, error)
 }

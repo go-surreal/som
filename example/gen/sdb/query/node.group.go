@@ -9,7 +9,7 @@ import (
 	builder "github.com/marcbinz/sdb/lib/builder"
 	filter "github.com/marcbinz/sdb/lib/filter"
 	sort "github.com/marcbinz/sdb/lib/sort"
-	"strings"
+	surrealdbgo "github.com/surrealdb/surrealdb.go"
 	"time"
 )
 
@@ -66,14 +66,19 @@ func (q *Group) Parallel(parallel bool) *Group {
 }
 func (q *Group) Count() (int, error) {
 	res := q.query.BuildAsCount()
-	rows, err := q.db.Query(res.Statement, res.Variables)
+	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
 		return 0, err
 	}
-	if len(rows) < 1 {
+	var rawCount countResult
+	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawCount)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
 		return 0, nil
 	}
-	return int(rows[0]["count"].(float64)), nil
+	return rawCount.Count, nil
 }
 func (q *Group) Exists() (bool, error) {
 	count, err := q.Count()
@@ -84,27 +89,42 @@ func (q *Group) Exists() (bool, error) {
 }
 func (q *Group) All() ([]*model.Group, error) {
 	res := q.query.BuildAsAll()
-	rows, err := q.db.Query(res.Statement, res.Variables)
+	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
 		return nil, err
 	}
+	var rawNodes []*conv.Group
+	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
 	var nodes []*model.Group
-	for _, row := range rows {
-		node := conv.ToGroup(row)
-		nodes = append(nodes, &node)
+	for _, rawNode := range rawNodes {
+		node := conv.ToGroup(rawNode)
+		nodes = append(nodes, node)
 	}
 	return nodes, nil
 }
 func (q *Group) AllIDs() ([]string, error) {
 	res := q.query.BuildAsAllIDs()
-	rows, err := q.db.Query(res.Statement, res.Variables)
+	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
 		return nil, err
 	}
+	var rawNodes []*idNode
+	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
 	var ids []string
-	for _, row := range rows {
-		id := strings.TrimPrefix(row["id"].(string), "group:")
-		ids = append(ids, id)
+	for _, rawNode := range rawNodes {
+		ids = append(ids, rawNode.ID)
 	}
 	return ids, nil
 }

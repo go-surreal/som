@@ -50,9 +50,14 @@ func (f *UUID) SortFunc(sourcePkg, elemName string) jen.Code {
 }
 
 func (f *UUID) ConvFrom() jen.Code {
-	return jen.Id("data").Dot(f.source.Name)
+	return jen.Id("data").Dot(f.source.Name).Dot("String").Call()
 }
 
 func (f *UUID) ConvTo(elem string) jen.Code {
-	return jen.Id("parseUUID").Call(jen.Id("data").Index(jen.Lit(strcase.ToSnake(f.source.Name))))
+	return jen.Id("parseUUID").Call(jen.Id("data").Dot(f.source.Name))
+}
+
+func (f *UUID) FieldDef() jen.Code {
+	return jen.Id(f.source.Name).String().
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/urfave/cli/v2"
+	"log"
 	"time"
 )
 
@@ -22,7 +23,7 @@ func surreal(ctx *cli.Context) error {
 	}
 	defer db.Close()
 
-	id, err := db.Create(ctx.Context, &Data{
+	_, err = db.Create(ctx.Context, &Data{
 		Key: "some key",
 		SomeData: SomeData{
 			Value: "some value",
@@ -36,13 +37,11 @@ func surreal(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("id:", id)
-
 	rows, selectOneErr := db.Query("select * from data4 where some_data.more_info != $0", map[string]any{
 		"0": nil,
 	})
 	if selectOneErr != nil {
-		panic(selectOneErr)
+		log.Fatal(selectOneErr)
 	}
 
 	for _, row := range rows {
@@ -97,27 +96,48 @@ func (c *Client) Create(ctx context.Context, data *Data) (string, error) {
 	return "", nil
 }
 
+type Result struct {
+	Result []*Data
+	Time   string
+	Status string
+}
+
 func (c *Client) Query(what string, vars map[string]any) ([]Data, error) {
-	res, err := c.DB.Query(what, vars)
+	raw, err := c.DB.Query(what, vars)
 	if err != nil {
 		return nil, err
 	}
 
-	castedRes := res.([]any)
-
-	castedFirst := castedRes[0].(map[string]any)
-
-	fmt.Println("query output:", castedFirst["status"], castedFirst["time"])
-
-	castedRows := castedFirst["result"].([]any)
-
-	var out []Data
-	for _, row := range castedRows {
-		castedRow := row.(map[string]any)
-		res = append(out, fromRaw(castedRow))
+	var res1 *Result
+	err = surrealdb.Unmarshal(raw, &res1)
+	if err != nil {
+		return nil, err
 	}
 
-	return out, nil
+	var res2 *Data
+	ok, err := surrealdb.UnmarshalRaw(raw, &res2)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("res1:", ok, res1.Status, res1.Time, res1.Result[0].ID)
+	fmt.Println("res2:", ok, res2)
+
+	// castedRes := res.([]any)
+	//
+	// castedFirst := castedRes[0].(map[string]any)
+	//
+	// fmt.Println("query output:", castedFirst["status"], castedFirst["time"])
+	//
+	// castedRows := castedFirst["result"].([]any)
+	//
+	// var out []Data
+	// for _, row := range castedRows {
+	// 	castedRow := row.(map[string]any)
+	// 	res = append(out, fromRaw(castedRow))
+	// }
+
+	return nil, nil
 }
 
 type Data struct {

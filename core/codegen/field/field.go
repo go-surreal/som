@@ -30,6 +30,8 @@ type Field interface {
 
 	ConvFrom() jen.Code
 	ConvTo(elem string) jen.Code
+
+	FieldDef() jen.Code
 }
 
 func Convert(field parser.Field, nameConv NameConverter) (Field, bool) {

@@ -61,6 +61,9 @@ func (n user[T]) MainGroup() group[T] {
 func (n user[T]) Other() *filter.Slice[string, T] {
 	return filter.NewSlice[string, T](keyed(n.key, "other"))
 }
+func (n user[T]) More() *filter.Slice[float32, T] {
+	return filter.NewSlice[float32, T](keyed(n.key, "more"))
+}
 func (n user[T]) Roles() *filter.Slice[model.Role, T] {
 	return filter.NewSlice[model.Role, T](keyed(n.key, "roles"))
 }
