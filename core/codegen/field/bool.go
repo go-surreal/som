@@ -54,5 +54,10 @@ func (f *Bool) ConvFrom() jen.Code {
 }
 
 func (f *Bool) ConvTo(elem string) jen.Code {
-	return jen.Id("data").Index(jen.Lit(strcase.ToSnake(f.source.Name))).Op(".").Parens(jen.Bool())
+	return jen.Id("data").Dot(f.source.Name)
+}
+
+func (f *Bool) FieldDef() jen.Code {
+	return jen.Id(f.source.Name).Bool().
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
 }

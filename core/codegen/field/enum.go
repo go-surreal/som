@@ -54,3 +54,8 @@ func (f *Enum) ConvFrom() jen.Code {
 func (f *Enum) ConvTo(elem string) jen.Code {
 	return nil // TODO
 }
+
+func (f *Enum) FieldDef() jen.Code {
+	return jen.Id(f.source.Name).String(). // TODO: support other enum base types (atomic)
+						Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
+}

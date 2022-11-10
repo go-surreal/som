@@ -171,7 +171,7 @@ func parseField(t gotype.Type) (Field, error) {
 		if t.Name() == "ID" {
 			field = &FieldID{&fieldAtomic{Name: t.Name()}}
 		} else if isEnum(t.Elem()) {
-			field = &FieldEnum{&fieldAtomic{Name: t.Name()}, t.Elem().String()}
+			field = &FieldEnum{&fieldAtomic{Name: t.Name()}, t.Elem().Name()}
 		} else {
 			field = &FieldString{&fieldAtomic{Name: t.Name()}}
 		}

@@ -29,7 +29,8 @@ type User struct {
 	Groups    []Group  // slice of Nodes
 	MainGroup Group    // node
 	Other     []string // slice of strings
-	Roles     []Role   // slice of enum
+	More      []float32
+	Roles     []Role // slice of enum
 
 	Wrote WroteEdge
 
