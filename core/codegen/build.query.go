@@ -41,7 +41,15 @@ func (b *queryBuilder) buildBaseFile() error {
 	content := `package query
 
 type Database interface {
-	Query(statement string, vars map[string]any) ([]map[string]any, error)
+	Query(statement string, vars map[string]any) (any, error)
+}
+	
+type idNode struct {
+	ID string
+}
+	
+type countResult struct {
+	Count int	
 }
 `
 
@@ -212,17 +220,25 @@ func (b *queryBuilder) buildQueryFuncCount(node *dbtype.Node) jen.Code {
 		Params(jen.Int(), jen.Error()).
 		Block(
 			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsCount").Call(),
-			jen.Id("rows").Op(",").Err().Op(":=").Id("q").Dot("db").Dot("Query").Call(
+			jen.Id("raw").Op(",").Err().Op(":=").Id("q").Dot("db").Dot("Query").Call(
 				jen.Id("res").Dot("Statement"),
 				jen.Id("res").Dot("Variables"),
 			),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Lit(0), jen.Err()),
 			),
-			jen.If(jen.Len(jen.Id("rows")).Op("<").Lit(1)).Block(
+
+			jen.Var().Id("rawCount").Id("countResult"),
+			jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
+				Call(jen.Id("raw"), jen.Op("&").Id("rawCount")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Lit(0), jen.Err()),
+			),
+			jen.If(jen.Op("!").Id("ok")).Block(
 				jen.Return(jen.Lit(0), jen.Nil()),
 			),
-			jen.Return(jen.Int().Call(jen.Id("rows").Index(jen.Lit(0)).Index(jen.Lit("count")).Op(".").Parens(jen.Float64())), jen.Nil()),
+
+			jen.Return(jen.Id("rawCount").Dot("Count"), jen.Nil()),
 		)
 }
 
@@ -249,7 +265,7 @@ func (b *queryBuilder) buildQueryFuncAll(node *dbtype.Node) jen.Code {
 		Params(jen.Index().Op("*").Add(b.SourceQual(node.Name)), jen.Error()).
 		Block(
 			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
-			jen.Id("rows").Op(",").Err().Op(":=").
+			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("q").Dot("db").Dot("Query").
 				Call(
 					jen.Id("res").Dot("Statement"),
@@ -258,13 +274,25 @@ func (b *queryBuilder) buildQueryFuncAll(node *dbtype.Node) jen.Code {
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Err()),
 			),
+
+			jen.Var().Id("rawNodes").Index().Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
+				Call(jen.Id("raw"), jen.Op("&").Id("rawNodes")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Err()),
+			),
+			jen.If(jen.Op("!").Id("ok")).Block(
+				jen.Return(jen.Nil(), jen.Nil()),
+			),
+
 			jen.Var().Id("nodes").Index().Op("*").Add(b.SourceQual(node.NameGo())),
-			jen.For(jen.Id("_").Op(",").Id("row").Op(":=").Range().Id("rows")).
+			jen.For(jen.Id("_").Op(",").Id("rawNode").Op(":=").Range().Id("rawNodes")).
 				Block(
 					jen.Id("node").Op(":=").Qual(pkgConv, "To"+node.NameGo()).
-						Call(jen.Id("row")),
-					jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Op("&").Id("node")),
+						Call(jen.Id("rawNode")),
+					jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Id("node")),
 				),
+
 			jen.Return(jen.Id("nodes"), jen.Nil()),
 		)
 }
@@ -276,18 +304,30 @@ func (b *queryBuilder) buildQueryFuncAllIDs(node *dbtype.Node) jen.Code {
 		Parens(jen.List(jen.Index().String(), jen.Error())).
 		Block(
 			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAllIDs").Call(),
-			jen.List(jen.Id("rows"), jen.Err()).Op(":=").Id("q").Dot("db").Dot("Query").Call(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("q").Dot("db").Dot("Query").Call(
 				jen.Id("res").Dot("Statement"),
 				jen.Id("res").Dot("Variables"),
 			),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Err()),
 			),
-			jen.Var().Id("ids").Index().String(),
-			jen.For(jen.List(jen.Id("_"), jen.Id("row")).Op(":=").Range().Id("rows")).Block(
-				jen.Id("id").Op(":=").Qual("strings", "TrimPrefix").Call(jen.Id("row").Index(jen.Lit("id")).Op(".").Parens(jen.String()), jen.Lit(node.NameDatabase()+":")),
-				jen.Id("ids").Op("=").Append(jen.Id("ids"), jen.Id("id")),
+
+			jen.Var().Id("rawNodes").Index().Op("*").Id("idNode"),
+			jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
+				Call(jen.Id("raw"), jen.Op("&").Id("rawNodes")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Err()),
 			),
+			jen.If(jen.Op("!").Id("ok")).Block(
+				jen.Return(jen.Nil(), jen.Nil()),
+			),
+
+			jen.Var().Id("ids").Index().String(),
+			jen.For(jen.Id("_").Op(",").Id("rawNode").Op(":=").Range().Id("rawNodes")).
+				Block(
+					jen.Id("ids").Op("=").Append(jen.Id("ids"), jen.Id("rawNode").Dot("ID")),
+				),
+
 			jen.Return(jen.Id("ids"), jen.Nil()),
 		)
 }

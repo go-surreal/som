@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-func prepareID(node string, id any) string {
-	return strings.TrimPrefix(id.(string), node+":")
+func prepareID(node string, id string) string {
+	return strings.TrimPrefix(id, node+":")
 }
 
 func parseTime(val any) time.Time {
@@ -18,9 +18,10 @@ func parseTime(val any) time.Time {
 	return res
 }
 
-func parseUUID(val any) uuid.UUID {
-	res, err := uuid.Parse(val.(string))
+func parseUUID(val string) uuid.UUID {
+	res, err := uuid.Parse(val)
 	if err != nil {
+		// TODO: add logging!
 		return uuid.UUID{}
 	}
 	return res

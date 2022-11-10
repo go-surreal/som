@@ -93,3 +93,12 @@ func (f *Slice) ConvFrom() jen.Code {
 func (f *Slice) ConvTo(elem string) jen.Code {
 	return nil
 }
+
+func (f *Slice) FieldDef() jen.Code {
+	typ := f.source.Value
+	if f.source.IsEnum {
+		typ = "string"
+	}
+	return jen.Id(f.source.Name).Index().Id(typ).
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
+}

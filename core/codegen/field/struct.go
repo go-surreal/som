@@ -53,10 +53,14 @@ func (f *Struct) SortFunc(sourcePkg, elemName string) jen.Code {
 }
 
 func (f *Struct) ConvFrom() jen.Code {
-	return jen.Id("From" + f.source.Struct).Call(jen.Id("data").Dot(f.source.Name))
+	return jen.Op("*").Id("From" + f.source.Struct).Call(jen.Op("&").Id("data").Dot(f.source.Name))
 }
 
 func (f *Struct) ConvTo(elem string) jen.Code {
-	return jen.Id("To" + f.source.Struct).Call(jen.Id("data").
-		Index(jen.Lit(strcase.ToSnake(f.source.Name))).Op(".").Parens(jen.Map(jen.String()).Any()))
+	return jen.Op("*").Id("To" + f.source.Struct).Call(jen.Op("&").Id("data").Dot(f.source.Name))
+}
+
+func (f *Struct) FieldDef() jen.Code {
+	return jen.Id(f.source.Name).Id(f.source.Struct).
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
 }

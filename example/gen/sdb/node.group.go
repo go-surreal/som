@@ -6,6 +6,7 @@ import (
 	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	query "github.com/marcbinz/sdb/example/gen/sdb/query"
 	model "github.com/marcbinz/sdb/example/model"
+	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 
 func (c *Client) Group() *group {
@@ -23,13 +24,17 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	if group.ID != "" {
 		return errors.New("ID must not be set for a node to be created")
 	}
-	data := conv.FromGroup(*group)
+	data := conv.FromGroup(group)
 	raw, err := n.client.db.Create("group", data)
 	if err != nil {
 		return err
 	}
-	res := conv.ToGroup(raw.([]any)[0].(map[string]any))
-	*group = res
+	var convNode conv.Group
+	err = surrealdbgo.Unmarshal(raw, &convNode)
+	if err != nil {
+		return err
+	}
+	group = conv.ToGroup(&convNode)
 	return nil
 }
 func (n *group) Read(ctx context.Context, id string) (*model.Group, error) {
@@ -37,8 +42,12 @@ func (n *group) Read(ctx context.Context, id string) (*model.Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	res := conv.ToGroup(raw.(map[string]any))
-	return &res, nil
+	var rawNode conv.Group
+	err = surrealdbgo.Unmarshal(raw, &rawNode)
+	if err != nil {
+		return nil, err
+	}
+	return conv.ToGroup(&rawNode), nil
 }
 func (n *group) Update(ctx context.Context, group *model.Group) error {
 	return nil
