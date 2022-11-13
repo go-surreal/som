@@ -34,20 +34,8 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	if err != nil {
 		return err
 	}
-	user = conv.ToUser(&convNode)
+	*user = *conv.ToUser(&convNode)
 	return nil
-}
-func (n *user) Read(ctx context.Context, id string) (*model.User, error) {
-	raw, err := n.client.db.Select("user" + id)
-	if err != nil {
-		return nil, err
-	}
-	var rawNode conv.User
-	err = surrealdbgo.Unmarshal(raw, &rawNode)
-	if err != nil {
-		return nil, err
-	}
-	return conv.ToUser(&rawNode), nil
 }
 func (n *user) Update(ctx context.Context, user *model.User) error {
 	return nil

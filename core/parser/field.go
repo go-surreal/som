@@ -60,6 +60,12 @@ type FieldNode struct {
 	Pointer bool
 }
 
+type FieldEdge struct {
+	*fieldAtomic
+	Edge    string
+	Pointer bool
+}
+
 type FieldEnum struct {
 	*fieldAtomic
 	Typ string
@@ -74,7 +80,9 @@ type FieldStruct struct {
 type FieldSlice struct {
 	*fieldAtomic
 	Value  string
+	Field  Field
 	IsNode bool
+	IsEdge bool
 	IsEnum bool
 }
 

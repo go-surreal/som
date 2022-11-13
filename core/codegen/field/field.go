@@ -2,12 +2,23 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/parser"
 )
 
 const (
-	funcPrepareID = "prepareID"
+	funcBuildDatabaseID = "buildDatabaseID"
+	funcParseDatabaseID = "parseDatabaseID"
 )
+
+type Edge struct {
+	Name   string
+	In     Field
+	Out    Field
+	Fields []Field
+}
+
+type ElemGetter func(name string) (dbtype.Element, bool)
 
 type NameConverter func(base string) string
 
@@ -22,19 +33,19 @@ type Field interface {
 
 	FilterDefine(sourcePkg string) jen.Code
 	FilterInit(sourcePkg string, elemName string) jen.Code
-	FilterFunc(sourcePkg, elemName string) jen.Code
+	FilterFunc(sourcePkg string, elem dbtype.Element) jen.Code
 
 	SortDefine(types jen.Code) jen.Code
 	SortInit(types jen.Code) jen.Code
 	SortFunc(sourcePkg, elemName string) jen.Code
 
-	ConvFrom() jen.Code
-	ConvTo(elem string) jen.Code
+	ConvFrom(sourcePkg, elem string) jen.Code
+	ConvTo(sourcePkg, elem string) jen.Code
 
 	FieldDef() jen.Code
 }
 
-func Convert(field parser.Field, nameConv NameConverter) (Field, bool) {
+func Convert(field parser.Field, getElement ElemGetter, nameConv NameConverter) (Field, bool) {
 	switch f := field.(type) {
 
 	case *parser.FieldID:
@@ -95,6 +106,7 @@ func Convert(field parser.Field, nameConv NameConverter) (Field, bool) {
 		return &Slice{
 			source:          f,
 			dbNameConverter: nameConv,
+			getElement:      getElement,
 		}, true
 	}
 

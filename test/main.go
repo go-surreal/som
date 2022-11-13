@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/marcbinz/sdb/example/gen/sdb"
-	"github.com/marcbinz/sdb/example/model"
 	"github.com/marcbinz/sdb/example/repo"
 	"log"
-	"time"
 )
 
 func main() {
@@ -22,36 +20,37 @@ func main() {
 	}
 	defer db.Close()
 
-	groupRepo := repo.Group(db)
+	// groupRepo := repo.Group(db)
 	userRepo := repo.User(db)
 
-	group := &model.Group{
-		Name: "some group",
-	}
-
-	err = groupRepo.Create(ctx, group)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	user := &model.User{
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		String:    "group:test",
-		MainGroup: *group,
-	}
-
-	err = userRepo.Create(ctx, user)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	user2, err := userRepo.FindById(ctx, user.ID)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("user2", user2)
+	// group := &model.Group{
+	// 	Name: "some group",
+	// }
+	//
+	// err = groupRepo.Create(ctx, group)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// fmt.Println("group:", group.Name, group.ID)
+	//
+	// user := &model.User{
+	// 	CreatedAt: time.Now(),
+	// 	UpdatedAt: time.Now(),
+	// 	MainGroup: *group,
+	// }
+	//
+	// err = userRepo.Create(ctx, user)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// user2, err := userRepo.FindById(ctx, user.ID)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// fmt.Println("user2", user2)
 
 	users, err := userRepo.List(ctx)
 	if err != nil {
@@ -59,6 +58,6 @@ func main() {
 	}
 
 	for _, user := range users {
-		fmt.Println(user.ID, user.String, user.MainGroup.Name)
+		fmt.Println("result:", user.ID, user.MainGroup.Name)
 	}
 }

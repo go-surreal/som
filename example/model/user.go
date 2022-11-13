@@ -32,12 +32,20 @@ type User struct {
 	More      []float32
 	Roles     []Role // slice of enum
 
-	Wrote WroteEdge
+	MyGroups []MemberOf
 
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum
 	// MappedGroups map[string]Group // map of string and node
 	// OtherMap     map[Role]string  // map of enum and string
+}
+
+func (u *User) GetGroups() []Group {
+	var nodes []Group
+	for _, edge := range u.MyGroups {
+		nodes = append(nodes, edge.Group)
+	}
+	return nodes
 }
 
 type Login struct {
@@ -57,44 +65,30 @@ type Group struct {
 
 	ID   string
 	Name string
+
+	Members []MemberOf
 }
 
-type Post struct {
-	sdb.Node
-
-	ID    string
-	Title string
-}
-
-type WroteEdge []Wrote
-
-func (e WroteEdge) Posts() []*Post {
-	var posts []*Post
-	for _, edge := range e {
-		posts = append(posts, edge.Post)
+func (g *Group) GetMembers() []User {
+	var nodes []User
+	for _, edge := range g.Members {
+		nodes = append(nodes, edge.User)
 	}
-	return posts
+	return nodes
 }
 
-type Wrote struct {
+type MemberOf struct {
 	sdb.Edge
 
-	User *User `som:"->"`
-	Post *Post `som:"<-"`
+	User  User  `som:"in"`
+	Group Group `som:"out"`
 
-	WrittenAt time.Time
+	Since time.Time
+
+	Meta MemberOfMeta
 }
 
-func test() {
-
-	user := User{}
-
-	user.Wrote.Posts()
-
-}
-
-type Edge[I, O, D any] interface {
-	In() I
-	Out() O
-	Data() D
+type MemberOfMeta struct {
+	IsAdmin  bool
+	IsActive bool
 }

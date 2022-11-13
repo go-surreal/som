@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/urfave/cli/v2"
-	"log"
 	"time"
 )
 
@@ -23,30 +22,30 @@ func surreal(ctx *cli.Context) error {
 	}
 	defer db.Close()
 
-	_, err = db.Create(ctx.Context, &Data{
-		Key: "some key",
-		SomeData: SomeData{
-			Value: "some value",
-			MoreInfo: MoreInfo{
-				Text: "some text",
-			},
-		},
-		CreatedAt: time.Now(),
-	})
-	if err != nil {
-		return err
-	}
-
-	rows, selectOneErr := db.Query("select * from data4 where some_data.more_info != $0", map[string]any{
-		"0": nil,
-	})
-	if selectOneErr != nil {
-		log.Fatal(selectOneErr)
-	}
-
-	for _, row := range rows {
-		fmt.Println(row.Key, row.CreatedAt.Format(time.RFC3339))
-	}
+	// _, err = db.Create(ctx.Context, &Data{
+	// 	Key: "some key",
+	// 	SomeData: SomeData{
+	// 		Value: "some value",
+	// 		MoreInfo: MoreInfo{
+	// 			Text: "some text",
+	// 		},
+	// 	},
+	// 	CreatedAt: time.Now(),
+	// })
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// rows, selectOneErr := db.Query("select * from data4 where some_data.more_info != $0", map[string]any{
+	// 	"0": nil,
+	// })
+	// if selectOneErr != nil {
+	// 	log.Fatal(selectOneErr)
+	// }
+	//
+	// for _, row := range rows {
+	// 	fmt.Println(row.Key, row.CreatedAt.Format(time.RFC3339))
+	// }
 
 	return nil
 }

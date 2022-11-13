@@ -9,14 +9,14 @@ type Numeric[T Number, R any] struct {
 	*Comparable[T, R]
 }
 
-func NewNumeric[T Number, R any](key string) *Numeric[T, R] {
+func NewNumeric[T Number, R any](key Key) *Numeric[T, R] {
 	return &Numeric[T, R]{
 		Base:       &Base[T, R]{key: key},
 		Comparable: &Comparable[T, R]{key: key},
 	}
 }
 
-func newCountNumeric[T Number, R any](key string) *Numeric[T, R] {
+func newCountNumeric[T Number, R any](key Key) *Numeric[T, R] {
 	return &Numeric[T, R]{
 		Base:       &Base[T, R]{key: key, isCount: true},
 		Comparable: &Comparable[T, R]{key: key, isCount: true},

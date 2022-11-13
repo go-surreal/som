@@ -5,6 +5,13 @@ type Node struct {
 	Fields []Field
 }
 
+type Edge struct {
+	Name   string
+	In     Field
+	Out    Field
+	Fields []Field
+}
+
 type Struct struct {
 	Name   string
 	Fields []Field

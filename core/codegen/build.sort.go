@@ -3,10 +3,10 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"os"
 	"path"
-	"strings"
 )
 
 type sortBuilder struct {
@@ -64,7 +64,7 @@ func (b *sortBuilder) buildFile(node *dbtype.Node) error {
 
 	f.Add(b.byNew(node))
 
-	f.Type().Id(strings.ToLower(node.Name)).
+	f.Type().Id(strcase.ToLowerCamel(node.Name)).
 		Types(jen.Id("T").Any()).
 		StructFunc(func(g *jen.Group) {
 			g.Add(jen.Id("key").String())
@@ -92,10 +92,10 @@ func (b *sortBuilder) byNew(node *dbtype.Node) jen.Code {
 	return jen.Func().Id("new" + node.Name).
 		Types(jen.Id("T").Any()).
 		Params(jen.Id("key").String()).
-		Id(strings.ToLower(node.Name)).Types(jen.Id("T")).
+		Id(strcase.ToLowerCamel(node.Name)).Types(jen.Id("T")).
 		Block(
 			jen.Return(
-				jen.Id(strings.ToLower(node.Name)).Types(jen.Id("T")).
+				jen.Id(strcase.ToLowerCamel(node.Name)).Types(jen.Id("T")).
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("key")] = jen.Id("key")
 						for _, f := range node.Fields {

@@ -3,11 +3,11 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/codegen/field"
 	"os"
 	"path"
-	"strings"
 )
 
 type fetchBuilder struct {
@@ -66,24 +66,24 @@ func keyed[S ~string](base S, key string) string {
 func (b *fetchBuilder) buildFile(node *dbtype.Node) error {
 	f := jen.NewFile(b.pkgName)
 
-	f.Var().Id(node.Name).Op("=").Id(strings.ToLower(node.Name)).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+	f.Var().Id(node.Name).Op("=").Id(strcase.ToLowerCamel(node.Name)).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 
-	f.Type().Id(strings.ToLower(node.Name)).
+	f.Type().Id(strcase.ToLowerCamel(node.Name)).
 		Types(jen.Id("T").Any()).
 		String()
 
 	f.Func().
-		Params(jen.Id("n").Id(strings.ToLower(node.NameGo())).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(strcase.ToLowerCamel(node.NameGo())).Types(jen.Id("T"))).
 		Id("fetch").Params(jen.Id("T")).Block()
 
 	for _, fld := range node.GetFields() {
 		if nodeField, ok := fld.(*field.Node); ok {
 			f.Func().
-				Params(jen.Id("n").Id(strings.ToLower(node.NameGo())).Types(jen.Id("T"))).
+				Params(jen.Id("n").Id(strcase.ToLowerCamel(node.NameGo())).Types(jen.Id("T"))).
 				Id(nodeField.NameGo()).Params().
-				Id(strings.ToLower(nodeField.NodeName())).Types(jen.Id("T")).
+				Id(strcase.ToLowerCamel(nodeField.NodeName())).Types(jen.Id("T")).
 				Block(
-					jen.Return(jen.Id(strings.ToLower(nodeField.NodeName())).Types(jen.Id("T")).
+					jen.Return(jen.Id(strcase.ToLowerCamel(nodeField.NodeName())).Types(jen.Id("T")).
 						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
 		}
 	}

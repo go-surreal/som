@@ -3,6 +3,7 @@ package field
 import (
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
+	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/codegen/def"
 	"github.com/marcbinz/sdb/core/parser"
 )
@@ -26,10 +27,10 @@ func (f *Time) FilterDefine(sourcePkg string) jen.Code {
 
 func (f *Time) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewTime").Types(jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
 }
 
-func (f *Time) FilterFunc(sourcePkg, elemName string) jen.Code {
+func (f *Time) FilterFunc(sourcePkg string, elem dbtype.Element) jen.Code {
 	// Time does not need a filter function.
 	return nil
 }
@@ -48,15 +49,15 @@ func (f *Time) SortFunc(sourcePkg, elemName string) jen.Code {
 	return nil
 }
 
-func (f *Time) ConvFrom() jen.Code {
+func (f *Time) ConvFrom(sourcePkg, elem string) jen.Code {
 	return jen.Id("data").Dot(f.source.Name)
 }
 
-func (f *Time) ConvTo(elem string) jen.Code {
+func (f *Time) ConvTo(sourcePkg, elem string) jen.Code {
 	return jen.Id("data").Dot(f.source.Name)
 }
 
 func (f *Time) FieldDef() jen.Code {
 	return jen.Id(f.source.Name).Qual("time", "Time").
-		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name) + ",omitempty"})
 }

@@ -34,20 +34,8 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	if err != nil {
 		return err
 	}
-	group = conv.ToGroup(&convNode)
+	*group = *conv.ToGroup(&convNode)
 	return nil
-}
-func (n *group) Read(ctx context.Context, id string) (*model.Group, error) {
-	raw, err := n.client.db.Select("group" + id)
-	if err != nil {
-		return nil, err
-	}
-	var rawNode conv.Group
-	err = surrealdbgo.Unmarshal(raw, &rawNode)
-	if err != nil {
-		return nil, err
-	}
-	return conv.ToGroup(&rawNode), nil
 }
 func (n *group) Update(ctx context.Context, group *model.Group) error {
 	return nil

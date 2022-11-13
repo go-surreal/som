@@ -3,6 +3,7 @@ package field
 import (
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
+	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/codegen/def"
 	"github.com/marcbinz/sdb/core/parser"
 )
@@ -26,10 +27,10 @@ func (f *Enum) FilterDefine(sourcePkg string) jen.Code {
 
 func (f *Enum) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewBase").Types(jen.Qual(sourcePkg, f.source.Typ), jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
 }
 
-func (f *Enum) FilterFunc(sourcePkg, elemName string) jen.Code {
+func (f *Enum) FilterFunc(sourcePkg string, elem dbtype.Element) jen.Code {
 	// Enum does not need a filter function.
 	return nil
 }
@@ -47,15 +48,15 @@ func (f *Enum) SortFunc(sourcePkg, elemName string) jen.Code {
 	return nil
 }
 
-func (f *Enum) ConvFrom() jen.Code {
-	return nil // TODO
+func (f *Enum) ConvFrom(sourcePkg, elem string) jen.Code {
+	return jen.String().Call(jen.Id("data").Dot(f.source.Name))
 }
 
-func (f *Enum) ConvTo(elem string) jen.Code {
-	return nil // TODO
+func (f *Enum) ConvTo(sourcePkg, elem string) jen.Code {
+	return jen.Qual(sourcePkg, f.source.Typ).Call(jen.Id("data").Dot(f.source.Name))
 }
 
 func (f *Enum) FieldDef() jen.Code {
 	return jen.Id(f.source.Name).String(). // TODO: support other enum base types (atomic)
-						Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
+						Tag(map[string]string{"json": strcase.ToSnake(f.source.Name) + ",omitempty"})
 }

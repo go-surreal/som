@@ -1,30 +1,33 @@
 package conv
 
 import (
+	"encoding/json"
 	model "github.com/marcbinz/sdb/example/model"
+	"strings"
 	"time"
 )
 
 type User struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	String    string    `json:"string"`
-	Int       int       `json:"int"`
-	Int32     int32     `json:"int_32"`
-	Int64     int64     `json:"int_64"`
-	Float32   float32   `json:"float_32"`
-	Float64   float64   `json:"float_64"`
-	Bool      bool      `json:"bool"`
-	Bool2     bool      `json:"bool_2"`
-	UUID      string    `json:"uuid"`
-	Login     Login     `json:"login"`
-	Role      string    `json:"role"`
-	Groups    []Group   `json:"groups"`
-	MainGroup any       `json:"main_group"`
-	Other     []string  `json:"other"`
-	More      []float32 `json:"more"`
-	Roles     []string  `json:"roles"`
+	ID        string       `json:"id,omitempty"`
+	CreatedAt time.Time    `json:"created_at,omitempty"`
+	UpdatedAt time.Time    `json:"updated_at,omitempty"`
+	String    string       `json:"string,omitempty"`
+	Int       int          `json:"int,omitempty"`
+	Int32     int32        `json:"int_32,omitempty"`
+	Int64     int64        `json:"int_64,omitempty"`
+	Float32   float32      `json:"float_32,omitempty"`
+	Float64   float64      `json:"float_64,omitempty"`
+	Bool      bool         `json:"bool,omitempty"`
+	Bool2     bool         `json:"bool_2,omitempty"`
+	UUID      string       `json:"uuid,omitempty"`
+	Login     Login        `json:"login,omitempty"`
+	Role      string       `json:"role,omitempty"`
+	Groups    []GroupField `json:"groups,omitempty"`
+	MainGroup GroupField   `json:"main_group,omitempty"`
+	Other     []string     `json:"other,omitempty"`
+	More      []float32    `json:"more,omitempty"`
+	Roles     []string     `json:"roles,omitempty"`
+	MyGroups  []MemberOf   `json:"my_groups,omitempty"`
 }
 
 func FromUser(data *model.User) *User {
@@ -37,11 +40,17 @@ func FromUser(data *model.User) *User {
 		CreatedAt: data.CreatedAt,
 		Float32:   data.Float32,
 		Float64:   data.Float64,
+		Groups:    mapRecords(data.Groups, toGroupField),
+		ID:        buildDatabaseID("user", data.ID),
 		Int:       data.Int,
 		Int32:     data.Int32,
 		Int64:     data.Int64,
 		Login:     *FromLogin(&data.Login),
-		MainGroup: toGroupRecord(data.MainGroup),
+		MainGroup: toGroupField(&data.MainGroup),
+		More:      data.More,
+		Other:     data.Other,
+		Role:      string(data.Role),
+		Roles:     convertEnum[model.Role, string](data.Roles),
 		String:    data.String,
 		UUID:      data.UUID.String(),
 		UpdatedAt: data.UpdatedAt,
@@ -54,26 +63,49 @@ func ToUser(data *User) *model.User {
 		CreatedAt: data.CreatedAt,
 		Float32:   data.Float32,
 		Float64:   data.Float64,
-		ID:        prepareID("user", data.ID),
+		ID:        parseDatabaseID("user", data.ID),
 		Int:       data.Int,
 		Int32:     data.Int32,
 		Int64:     data.Int64,
 		Login:     *ToLogin(&data.Login),
-		MainGroup: *fromGroupRecord(data.MainGroup),
+		MainGroup: *fromGroupField(data.MainGroup),
+		More:      data.More,
+		Other:     data.Other,
+		Role:      model.Role(data.Role),
+		Roles:     convertEnum[string, model.Role](data.Roles),
 		String:    data.String,
 		UUID:      parseUUID(data.UUID),
 		UpdatedAt: data.UpdatedAt,
 	}
 }
-func fromUserRecord(data any) *model.User {
-	if node, ok := data.(*User); ok {
-		return ToUser(node)
+
+type UserField User
+
+func (f *UserField) MarshalJSON() ([]byte, error) {
+	if f == nil {
+		return nil, nil
 	}
-	return &model.User{}
+	return json.Marshal(f.ID)
 }
-func toUserRecord(node model.User) string {
-	if node.ID == "" {
-		return ""
+func (f *UserField) UnmarshalJSON(data []byte) error {
+	raw := string(data)
+	if strings.HasPrefix(raw, "\""); strings.HasSuffix(raw, "\"") {
+		raw = raw[1 : len(raw)-1]
+		f.ID = parseDatabaseID("user", raw)
+		return nil
 	}
-	return "user:" + node.ID
+	type fieldAlias UserField
+	var field fieldAlias
+	err := json.Unmarshal(data, &field)
+	if err == nil {
+		*f = UserField(field)
+	}
+	return err
+}
+func fromUserField(field UserField) *model.User {
+	node := User(field)
+	return ToUser(&node)
+}
+func toUserField(node *model.User) UserField {
+	return UserField(*FromUser(node))
 }

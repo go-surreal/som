@@ -29,16 +29,30 @@ func (repo *user) Create(ctx context.Context, user *model.User) error {
 }
 
 func (repo *user) FindById(ctx context.Context, id string) (*model.User, error) {
-	return repo.db.User().Read(ctx, id)
+	return repo.db.User().Query().Filter(where.User.ID.Equal(id)).First()
 }
 
 func (repo *user) List(ctx context.Context) ([]*model.User, error) {
 	return repo.db.User().Query().
 		Filter(
 			where.Any(
-				where.User.ID.Equal("9rb97n04ggwmekxats5a"),
-				where.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
-				where.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
+				// where.User.ID.Equal("9rb97n04ggwmekxats5a"),
+				// where.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
+				// where.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
+				// where.User.MyGroups().Since.Before(time.Now()), // ->(member_of where since < $)
+				// where.User.MyGroups().Group().ID.Equal(""),     // ->member_of->(group where id = $)
+
+				where.User.MyGroups().Group().Members().User().ID.Equal("klkl4w6i9z8u0uyo5w7f"),
+
+				//
+				// where.User.Groups().ID.In(nil),
+				// where.User.Groups().Name.In(nil),
+
+				// where.User.Groups(
+				// 	where.Group.ID.Equal(""),
+				// 	where.Group.Name.Equal(""),
+				// ),
+
 			),
 			// where.User.String.FuzzyMatch("my fuzzy value"),
 			// where.User.UUID.Equal(uuid.UUID{}),

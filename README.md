@@ -15,7 +15,13 @@ go run github.com/marcbinz/sdb/cmd/sdbgen@latest <input_dir> <output_dir>
 - [ ] generate `sdbmock` package for easy mocking of the underlying database client
 - [ ] add performance benchmarks (and possible optimizations due to it)
 - [ ] make casing of database fields configurable?
-- [ ] add support for maps as node fields
+- [ ] add support for maps as node fields?
+- [ ] add support for `[]byte` (and `byte`?) type
+- [ ] Replace `strcase.ToLowerCamel` with `strcase.ToLowerCamel`
+- [ ] Switch the source code parsing to support generics
+- [ ] add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser)
+- [ ] Make query builder not use pointers, so partial builds and usages are working
+- [ ] Fix query variable index `rune` not suited for > 26 due to invalid char as variable key?
 
 ## FAQ
 

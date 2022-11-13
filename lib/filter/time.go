@@ -9,7 +9,7 @@ type Time[R any] struct {
 	comp *Comparable[time.Time, R]
 }
 
-func NewTime[R any](key string) *Time[R] {
+func NewTime[R any](key Key) *Time[R] {
 	return &Time[R]{
 		Base: &Base[time.Time, R]{key: key},
 		comp: &Comparable[time.Time, R]{key: key},
