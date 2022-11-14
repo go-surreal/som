@@ -9,10 +9,3 @@ func All[T any](filters ...filter.Of[T]) filter.Of[T] {
 func Any[T any](filters ...filter.Of[T]) filter.Of[T] {
 	return filter.Any[T](filters)
 }
-
-func keyed(base, key string) string {
-	if base == "" {
-		return key
-	}
-	return base + "." + key
-}

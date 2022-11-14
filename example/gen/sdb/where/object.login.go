@@ -5,16 +5,16 @@ import (
 	filter "github.com/marcbinz/sdb/lib/filter"
 )
 
-func newLogin[T any](key string) login[T] {
+func newLogin[T any](key filter.Key) login[T] {
 	return login[T]{
-		Password: filter.NewString[T](keyed(key, "password")),
-		Username: filter.NewString[T](keyed(key, "username")),
+		Password: filter.NewString[T](key.Dot("password")),
+		Username: filter.NewString[T](key.Dot("username")),
 		key:      key,
 	}
 }
 
 type login[T any] struct {
-	key      string
+	key      filter.Key
 	Username *filter.String[T]
 	Password *filter.String[T]
 }

@@ -12,15 +12,19 @@ type Where interface {
 type Predicate struct {
 	Op      Operator
 	Key     string
+	Close   int
 	Val     any
 	IsCount bool
 }
 
 func (p Predicate) render(ctx *context) string {
+	var statement string
 	if p.IsCount {
-		return "count(" + p.Key + ") " + string(p.Op) + " " + ctx.asVar(p.Val)
+		statement = "count(" + p.Key + ") " + string(p.Op) + " " + ctx.asVar(p.Val)
+	} else {
+		statement = p.Key + " " + string(p.Op) + " " + ctx.asVar(p.Val)
 	}
-	return p.Key + " " + string(p.Op) + " " + ctx.asVar(p.Val)
+	return statement + strings.Repeat(")", p.Close)
 }
 
 func (p Predicate) where() {}
@@ -37,7 +41,7 @@ func (p WhereAll) render(ctx *context) string {
 	var parts []string
 	for _, where := range p.Where {
 		if part := where.render(ctx); part != "" {
-			parts = append(parts, where.render(ctx))
+			parts = append(parts, part)
 		}
 	}
 
@@ -62,7 +66,7 @@ func (p WhereAny) render(ctx *context) string {
 	var parts []string
 	for _, where := range p.Where {
 		if part := where.render(ctx); part != "" {
-			parts = append(parts, where.render(ctx))
+			parts = append(parts, part)
 		}
 	}
 

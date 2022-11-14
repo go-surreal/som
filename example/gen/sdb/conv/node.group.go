@@ -1,33 +1,60 @@
 package conv
 
-import model "github.com/marcbinz/sdb/example/model"
+import (
+	"encoding/json"
+	model "github.com/marcbinz/sdb/example/model"
+	"strings"
+)
 
 type Group struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID      string     `json:"id,omitempty"`
+	Name    string     `json:"name,omitempty"`
+	Members []MemberOf `json:"members,omitempty"`
 }
 
 func FromGroup(data *model.Group) *Group {
 	if data == nil {
 		return &Group{}
 	}
-	return &Group{Name: data.Name}
-}
-func ToGroup(data *Group) *model.Group {
-	return &model.Group{
-		ID:   prepareID("group", data.ID),
+	return &Group{
+		ID:   buildDatabaseID("group", data.ID),
 		Name: data.Name,
 	}
 }
-func fromGroupRecord(data any) *model.Group {
-	if node, ok := data.(*Group); ok {
-		return ToGroup(node)
+func ToGroup(data *Group) *model.Group {
+	return &model.Group{
+		ID:   parseDatabaseID("group", data.ID),
+		Name: data.Name,
 	}
-	return &model.Group{}
 }
-func toGroupRecord(node model.Group) string {
-	if node.ID == "" {
-		return ""
+
+type GroupField Group
+
+func (f *GroupField) MarshalJSON() ([]byte, error) {
+	if f == nil {
+		return nil, nil
 	}
-	return "group:" + node.ID
+	return json.Marshal(f.ID)
+}
+func (f *GroupField) UnmarshalJSON(data []byte) error {
+	raw := string(data)
+	if strings.HasPrefix(raw, "\""); strings.HasSuffix(raw, "\"") {
+		raw = raw[1 : len(raw)-1]
+		f.ID = parseDatabaseID("group", raw)
+		return nil
+	}
+	type fieldAlias GroupField
+	var field fieldAlias
+	err := json.Unmarshal(data, &field)
+	if err == nil {
+		*f = GroupField(field)
+	}
+	return err
+}
+func fromGroupField(field GroupField) *model.Group {
+	node := Group(field)
+	return ToGroup(&node)
+}
+func toGroupField(node *model.Group) GroupField {
+	return GroupField(*FromGroup(node))
 }

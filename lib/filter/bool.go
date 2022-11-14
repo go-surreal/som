@@ -5,13 +5,13 @@ import (
 )
 
 type Bool[R any] struct {
-	key string
+	key Key
 }
 
-func NewBool[R any](key string) *Bool[R] {
+func NewBool[R any](key Key) *Bool[R] {
 	return &Bool[R]{key: key}
 }
 
 func (b *Bool[R]) Is(val bool) Of[R] {
-	return newOf[R](builder.OpExactlyEqual, b.key, val, false)
+	return build[R](b.key, builder.OpExactlyEqual, val, false)
 }

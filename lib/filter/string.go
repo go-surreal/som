@@ -9,7 +9,7 @@ type String[R any] struct {
 	*Comparable[string, R]
 }
 
-func NewString[R any](key string) *String[R] {
+func NewString[R any](key Key) *String[R] {
 	return &String[R]{
 		Base:       &Base[string, R]{key: key},
 		Comparable: &Comparable[string, R]{key: key},
@@ -17,9 +17,9 @@ func NewString[R any](key string) *String[R] {
 }
 
 func (s *String[R]) FuzzyMatch(val string) Of[R] {
-	return newOf[R](builder.OpFuzzyMatch, s.Base.key, val, false)
+	return build[R](s.Base.key, builder.OpFuzzyMatch, val, false)
 }
 
 func (s *String[R]) NotFuzzyMatch(val string) Of[R] {
-	return newOf[R](builder.OpFuzzyNotMatch, s.Base.key, val, false)
+	return build[R](s.Base.key, builder.OpFuzzyNotMatch, val, false)
 }

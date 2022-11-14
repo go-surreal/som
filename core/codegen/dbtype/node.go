@@ -2,19 +2,18 @@ package dbtype
 
 import (
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/sdb/core/codegen/field"
 )
 
 type Node struct {
 	Name   string
-	Fields []field.Field
+	Fields []Field
 }
 
 func (n *Node) FileName() string {
 	return "node." + strcase.ToSnake(n.Name) + ".go"
 }
 
-func (n *Node) GetFields() []field.Field {
+func (n *Node) GetFields() []Field {
 	return n.Fields
 }
 

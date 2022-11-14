@@ -4,10 +4,12 @@ import (
 	"github.com/marcbinz/sdb/lib/builder"
 )
 
-type Of[T any] builder.Where
+type Of[T any] struct {
+	builder.Where
+}
 
-func newOf[T any](op builder.Operator, key string, val any, isCount bool) Of[T] {
-	return &builder.Predicate{Op: op, Key: key, Val: val, IsCount: isCount}
+func build[R any](key Key, op builder.Operator, val any, isCount bool) Of[R] {
+	return Of[R]{&builder.Predicate{Op: op, Key: key.key, Val: val, Close: key.close, IsCount: isCount}}
 }
 
 func All[R any](filters []Of[R]) Of[R] {
@@ -15,7 +17,7 @@ func All[R any](filters []Of[R]) Of[R] {
 	for _, f := range filters {
 		whereAll.Where = append(whereAll.Where, builder.Where(f))
 	}
-	return whereAll
+	return Of[R]{whereAll}
 }
 
 func Any[R any](filters []Of[R]) Of[R] {
@@ -23,5 +25,5 @@ func Any[R any](filters []Of[R]) Of[R] {
 	for _, f := range filters {
 		whereAny.Where = append(whereAny.Where, builder.Where(f))
 	}
-	return whereAny
+	return Of[R]{whereAny}
 }

@@ -3,6 +3,7 @@ package field
 import (
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
+	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/codegen/def"
 	"github.com/marcbinz/sdb/core/parser"
 )
@@ -26,10 +27,10 @@ func (f *Bool) FilterDefine(sourcePkg string) jen.Code {
 
 func (f *Bool) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewBool").Types(jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
 }
 
-func (f *Bool) FilterFunc(sourcePkg, elemName string) jen.Code {
+func (f *Bool) FilterFunc(sourcePkg string, elem dbtype.Element) jen.Code {
 	// Bool does not need a filter function.
 	return nil
 }
@@ -49,15 +50,15 @@ func (f *Bool) SortFunc(sourcePkg, elemName string) jen.Code {
 	return nil
 }
 
-func (f *Bool) ConvFrom() jen.Code {
+func (f *Bool) ConvFrom(sourcePkg, elem string) jen.Code {
 	return jen.Id("data").Dot(f.source.Name)
 }
 
-func (f *Bool) ConvTo(elem string) jen.Code {
+func (f *Bool) ConvTo(sourcePkg, elem string) jen.Code {
 	return jen.Id("data").Dot(f.source.Name)
 }
 
 func (f *Bool) FieldDef() jen.Code {
 	return jen.Id(f.source.Name).Bool().
-		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name) + ",omitempty"}) // TODO: store "false" (no omitempty)?
 }

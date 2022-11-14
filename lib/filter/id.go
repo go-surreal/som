@@ -5,22 +5,22 @@ import (
 )
 
 type ID[R any] struct {
-	key  string
+	key  Key
 	node string
 }
 
-func NewID[R any](key string, node string) *ID[R] {
+func NewID[R any](key Key, node string) *ID[R] {
 	return &ID[R]{key: key, node: node}
 }
 
 func (b *ID[R]) Equal(val string) Of[R] {
 	val = b.node + ":" + val
-	return newOf[R](builder.OpEqual, b.key, val, false)
+	return build[R](b.key, builder.OpEqual, val, false)
 }
 
 func (b *ID[R]) NotEqual(val string) Of[R] {
 	val = b.node + ":" + val
-	return newOf[R](builder.OpEqual, b.key, val, false)
+	return build[R](b.key, builder.OpNotEqual, val, false)
 }
 
 func (b *ID[R]) In(vals []string) Of[R] {
@@ -28,7 +28,7 @@ func (b *ID[R]) In(vals []string) Of[R] {
 	for _, val := range vals {
 		mapped = append(mapped, b.node+":"+val)
 	}
-	return newOf[R](builder.OpInside, b.key, mapped, false)
+	return build[R](b.key, builder.OpInside, vals, false)
 }
 
 func (b *ID[R]) NotIn(vals []string) Of[R] {
@@ -36,5 +36,5 @@ func (b *ID[R]) NotIn(vals []string) Of[R] {
 	for _, val := range vals {
 		mapped = append(mapped, b.node+":"+val)
 	}
-	return newOf[R](builder.OpNotInside, b.key, mapped, false)
+	return build[R](b.key, builder.OpNotInside, vals, false)
 }

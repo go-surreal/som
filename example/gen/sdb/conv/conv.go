@@ -6,8 +6,12 @@ import (
 	"time"
 )
 
-func prepareID(node string, id string) string {
+func parseDatabaseID(node string, id string) string {
 	return strings.TrimPrefix(id, node+":")
+}
+
+func buildDatabaseID(node string, id string) string {
+	return node + ":" + id
 }
 
 func parseTime(val any) time.Time {
@@ -25,6 +29,22 @@ func parseUUID(val string) uuid.UUID {
 		return uuid.UUID{}
 	}
 	return res
+}
+	
+func mapRecords[I, O any](in []I, fn func(*I) O) []O {
+	var out []O
+	for _, i := range in {
+		out = append(out, fn(&i))
+	}
+	return out
+}
+	
+func convertEnum[I, O ~string](in []I) []O {
+	var out []O
+	for _, i := range in {
+		out = append(out, O(i))
+	}
+	return out
 }
 
 // func extract[T any](val any, to func(map[string]any) T) T {

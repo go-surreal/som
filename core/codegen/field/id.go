@@ -3,6 +3,7 @@ package field
 import (
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
+	"github.com/marcbinz/sdb/core/codegen/dbtype"
 	"github.com/marcbinz/sdb/core/codegen/def"
 	"github.com/marcbinz/sdb/core/parser"
 )
@@ -26,10 +27,10 @@ func (f *ID) FilterDefine(sourcePkg string) jen.Code {
 
 func (f *ID) FilterInit(sourcePkg string, elemName string) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewID").Types(jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))), jen.Lit(strcase.ToSnake(elemName)))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))), jen.Lit(strcase.ToSnake(elemName)))
 }
 
-func (f *ID) FilterFunc(sourcePkg, elemName string) jen.Code {
+func (f *ID) FilterFunc(sourcePkg string, elem dbtype.Element) jen.Code {
 	// ID does not need a filter function.
 	return nil
 }
@@ -48,13 +49,15 @@ func (f *ID) SortFunc(sourcePkg, elemName string) jen.Code {
 	return nil
 }
 
-func (f *ID) ConvFrom() jen.Code {
-	// ID is never set, because the database is providing them, not the application.
-	return nil
+func (f *ID) ConvFrom(sourcePkg, elem string) jen.Code {
+	return jen.Id(funcBuildDatabaseID).Call(
+		jen.Lit(strcase.ToSnake(elem)),
+		jen.Id("data").Dot(f.source.Name),
+	)
 }
 
-func (f *ID) ConvTo(elem string) jen.Code {
-	return jen.Id(funcPrepareID).Call(
+func (f *ID) ConvTo(sourcePkg, elem string) jen.Code {
+	return jen.Id(funcParseDatabaseID).Call(
 		jen.Lit(strcase.ToSnake(elem)),
 		jen.Id("data").Dot(f.source.Name),
 	)
@@ -62,5 +65,5 @@ func (f *ID) ConvTo(elem string) jen.Code {
 
 func (f *ID) FieldDef() jen.Code {
 	return jen.Id(f.source.Name).String().
-		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name)})
+		Tag(map[string]string{"json": strcase.ToSnake(f.source.Name) + ",omitempty"})
 }

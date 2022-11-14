@@ -9,7 +9,6 @@ import (
 	"github.com/marcbinz/sdb/core/parser"
 	"os"
 	"path"
-	"strings"
 )
 
 type build struct {
@@ -56,6 +55,7 @@ func (b *build) build() error {
 		b.newSortBuilder(),
 		b.newFetchBuilder(),
 		b.newConvBuilder(),
+		b.newRelateBuilder(),
 	}
 
 	for _, builder := range builders {
@@ -183,20 +183,20 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 	f.Func().
 		Params(jen.Id("c").Op("*").Id("Client")).
 		Id(node.NameGo()).Params().
-		Op("*").Id(strings.ToLower(node.NameGo())).
+		Op("*").Id(strcase.ToLowerCamel(node.NameGo())).
 		Block(
 			jen.Return(
-				jen.Op("&").Id(strings.ToLower(node.NameGo())).
+				jen.Op("&").Id(strcase.ToLowerCamel(node.NameGo())).
 					Values(jen.Id("client").Op(":").Id("c")),
 			),
 		)
 
-	f.Type().Id(strings.ToLower(node.NameGo())).Struct(
+	f.Type().Id(strcase.ToLowerCamel(node.NameGo())).Struct(
 		jen.Id("client").Op("*").Id("Client"),
 	)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strings.ToLower(node.NameGo()))).
+		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
 		Id("Query").Params().
 		Op("*").Qual(pkgQuery, node.NameGo()).
 		Block(
@@ -204,19 +204,19 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 		)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strings.ToLower(node.NameGo()))).
+		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
 		Id("Create").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id(strings.ToLower(node.NameGo())).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(strcase.ToLowerCamel(node.NameGo())).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
 		Block(
-			jen.If(jen.Id(strings.ToLower(node.NameGo())).Dot("ID").Op("!=").Lit("")).
+			jen.If(jen.Id(strcase.ToLowerCamel(node.NameGo())).Dot("ID").Op("!=").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for a node to be created"))),
 				),
-			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strings.ToLower(node.NameGo()))),
+			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
 			jen.Id("raw").Op(",").Err().Op(":=").Id("n").Dot("client").Dot("db").Dot("Create").Call(jen.Lit(strcase.ToSnake(node.NameGo())), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
@@ -229,41 +229,49 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 				jen.Return(jen.Err()),
 			),
 
-			jen.Id(strings.ToLower(node.NameGo())).Op("=").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("convNode")),
+			jen.Op("*").Id(strcase.ToLowerCamel(node.NameGo())).Op("=").Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("convNode")),
 			jen.Return(jen.Nil()),
 		)
 
+	// TODO: db.Select does not work with db.Unmarshal(Raw) yet.
+	// Use a query statement for now!
+	//
+	// f.Func().
+	// 	Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+	// 	Id("Read").
+	// 	Params(
+	// 		jen.Id("ctx").Qual("context", "Context"),
+	// 		jen.Id("id").String(),
+	// 	).
+	// 	Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).
+	// 	Block( // TODO: what if id already contains "user:" ?!
+	// 		jen.List(jen.Id("raw"), jen.Err()).Op(":=").
+	// 			Id("n").Dot("client").Dot("db").Dot("Select").
+	// 			Call(jen.Lit(strcase.ToSnake(node.Name)+":").Op("+").Id("id")),
+	// 		// raw, err := n.client.db.Query("select * from user where id = $ID", map[string]any{"ID": "user:" + id})
+	// 		jen.If(jen.Err().Op("!=").Nil()).Block(
+	// 			jen.Return(jen.Nil(), jen.Err()),
+	// 		),
+	//
+	// 		jen.Var().Id("rawNodes").Index().Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+	// 		jen.Err().Op("=").Qual(def.PkgSurrealDB, "UnmarshalRaw").Call(jen.Id("raw"), jen.Op("&").Id("rawNodes")),
+	// 		jen.If(jen.Err().Op("!=").Nil()).Block(
+	// 			jen.Return(jen.Nil(), jen.Err()),
+	// 		),
+	//
+	// 		jen.If(jen.Len(jen.Id("rawNodes")).Op("<").Lit(1)).Block(
+	// 			jen.Return(jen.Nil(), jen.Qual("errors", "New").Call(jen.Lit("no record for id found"))),
+	// 		),
+	//
+	// 		jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("rawNodes").Index(jen.Lit(0))), jen.Nil()),
+	// 	)
+
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strings.ToLower(node.NameGo()))).
-		Id("Read").
-		Params(
-			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").String(),
-		).
-		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).
-		Block( // TODO: what if id already contains "user:" ?!
-			jen.List(jen.Id("raw"), jen.Err()).Op(":=").
-				Id("n").Dot("client").Dot("db").Dot("Select").
-				Call(jen.Lit(strcase.ToSnake(node.Name)).Op("+").Id("id")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.Err()),
-			),
-
-			jen.Var().Id("rawNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("rawNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.Err()),
-			),
-
-			jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("rawNode")), jen.Nil()),
-		)
-
-	f.Func().
-		Params(jen.Id("n").Op("*").Id(strings.ToLower(node.Name))).
+		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.Name))).
 		Id("Update").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id(strings.ToLower(node.Name)).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(strcase.ToLowerCamel(node.Name)).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
 		Block(
@@ -271,15 +279,23 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 		)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strings.ToLower(node.Name))).
+		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.Name))).
 		Id("Delete").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id(strings.ToLower(node.Name)).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(strcase.ToLowerCamel(node.Name)).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
 		Block(
 			jen.Return(jen.Nil()),
+		)
+
+	f.Func().
+		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+		Id("Relate").Params().
+		Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
+		Block(
+			jen.Return(jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(jen.Id("n").Dot("client").Dot("db"))),
 		)
 
 	if err := f.Save(path.Join(b.basePath(), node.FileName())); err != nil {
@@ -307,6 +323,10 @@ func (b *build) newFetchBuilder() builder {
 
 func (b *build) newConvBuilder() builder {
 	return newConvBuilder(b.input, b.basePath(), b.basePkg(), def.PkgConv)
+}
+
+func (b *build) newRelateBuilder() builder {
+	return newRelateBuilder(b.input, b.basePath(), b.basePkg(), def.PkgRelate)
 }
 
 func (b *build) basePath() string {

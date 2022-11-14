@@ -53,6 +53,15 @@ func Parse(dir string) (*Output, error) {
 			continue
 		}
 
+		if isEdge(v) {
+			edge, err := parseEdge(v)
+			if err != nil {
+				return nil, err
+			}
+			res.Edges = append(res.Edges, edge)
+			continue
+		}
+
 		if v.Kind() == gotype.Struct {
 			// TODO: prevent external structs!
 
@@ -105,6 +114,25 @@ func isNode(t gotype.Type) bool {
 	return false
 }
 
+func isEdge(t gotype.Type) bool {
+	if t.Kind() != gotype.Struct {
+		return false
+	}
+
+	nf := t.NumField()
+
+	for i := 0; i < nf; i++ {
+		f := t.Field(i)
+
+		if f.Name() == "Edge" && f.Elem().Name() == "Edge" &&
+			f.Elem().String() == "sdb.Edge" && f.Elem().PkgPath() == packagePath {
+			return true
+		}
+	}
+
+	return false
+}
+
 func isEnum(t gotype.Type) bool {
 	if t.Kind() != gotype.String {
 		return false
@@ -144,6 +172,47 @@ func parseNode(v gotype.Type) (*Node, error) {
 	return node, nil
 }
 
+func parseEdge(v gotype.Type) (*Edge, error) {
+	edge := &Edge{Name: v.Name()}
+
+	nf := v.NumField()
+
+	for i := 0; i < nf; i++ {
+		f := v.Field(i)
+
+		if i == 0 {
+			// TODO: better detect the "Edge" field...
+			continue
+		}
+
+		// TODO: ignore unexported fields?!
+
+		// prevent ID from not being a string type
+		if f.Name() == "ID" && f.Elem().Kind() != gotype.String {
+			return nil, fmt.Errorf("field ID of model %s must be a string", v.Name())
+		}
+
+		field, err := parseField(f)
+		if err != nil {
+			return nil, err
+		}
+
+		if f.Tag().Get("som") == "in" {
+			edge.In = field
+			continue
+		}
+
+		if f.Tag().Get("som") == "out" {
+			edge.Out = field
+			continue
+		}
+
+		edge.Fields = append(edge.Fields, field)
+	}
+
+	return edge, nil
+}
+
 func parseStruct(v gotype.Type) (*Struct, error) {
 	str := &Struct{Name: v.Name()}
 
@@ -166,38 +235,53 @@ func parseStruct(v gotype.Type) (*Struct, error) {
 func parseField(t gotype.Type) (Field, error) {
 	var field Field
 
+	atomic := &fieldAtomic{Name: t.Name()}
+
 	switch t.Elem().Kind() {
 	case gotype.String:
 		if t.Name() == "ID" {
-			field = &FieldID{&fieldAtomic{Name: t.Name()}}
+			field = &FieldID{atomic}
 		} else if isEnum(t.Elem()) {
-			field = &FieldEnum{&fieldAtomic{Name: t.Name()}, t.Elem().Name()}
+			field = &FieldEnum{atomic, t.Elem().Name()}
 		} else {
-			field = &FieldString{&fieldAtomic{Name: t.Name()}}
+			field = &FieldString{atomic}
 		}
 	case gotype.Int:
-		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberInt}
+		field = &FieldNumeric{atomic, NumberInt}
 	case gotype.Int32:
-		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberInt32}
+		field = &FieldNumeric{atomic, NumberInt32}
 	case gotype.Int64:
-		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberInt64}
+		field = &FieldNumeric{atomic, NumberInt64}
 	case gotype.Float32:
-		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberFloat32}
+		field = &FieldNumeric{atomic, NumberFloat32}
 	case gotype.Float64:
-		field = &FieldNumeric{&fieldAtomic{Name: t.Name()}, NumberFloat64}
+		field = &FieldNumeric{atomic, NumberFloat64}
 	case gotype.Bool:
-		field = &FieldBool{&fieldAtomic{Name: t.Name()}}
+		field = &FieldBool{atomic}
 	case gotype.Struct:
 		// TODO: prevent structs (or general types) from another package (except time and uuid)!
 		if t.Elem().PkgPath() == "time" {
-			field = &FieldTime{&fieldAtomic{Name: t.Name()}}
+			field = &FieldTime{atomic}
 		} else if isNode(t.Elem()) {
-			field = &FieldNode{&fieldAtomic{Name: t.Name()}, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldNode{atomic, t.Elem().Name(), false} // TODO: handle pointers
+		} else if isEdge(t.Elem()) {
+			field = &FieldEdge{atomic, t.Elem().Name(), false} // TODO: handle pointers
 		} else {
-			field = &FieldStruct{&fieldAtomic{Name: t.Name()}, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldStruct{atomic, t.Elem().Name(), false} // TODO: handle pointers
 		}
 	case gotype.Slice:
-		field = &FieldSlice{&fieldAtomic{Name: t.Name()}, t.Elem().Elem().Name(), isNode(t.Elem().Elem()), isEnum(t.Elem().Elem())}
+		subField, err := parseField(t.Elem())
+		if err != nil {
+			return nil, err
+		}
+		field = &FieldSlice{
+			&fieldAtomic{Name: t.Name()},
+			t.Elem().Elem().Name(),
+			subField,
+			isNode(t.Elem().Elem()),
+			isEdge(t.Elem().Elem()),
+			isEnum(t.Elem().Elem()),
+		}
 	// case gotype.Map:
 	// 	field = FieldMap{fieldAtomic{Name: t.Name()}, t.Elem().Key().Name(), t.Elem().Elem().Name()}
 	case gotype.Array:
@@ -214,6 +298,7 @@ func parseField(t gotype.Type) (Field, error) {
 type Output struct {
 	PkgPath    string
 	Nodes      []*Node
+	Edges      []*Edge
 	Structs    []*Struct
 	Enums      []*Enum
 	EnumValues []*EnumValue

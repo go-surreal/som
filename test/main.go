@@ -34,10 +34,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	fmt.Println("group:", group.ID, group.Name)
+
 	user := &model.User{
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		String:    "group:test",
+		String:    "Marc",
 		MainGroup: *group,
 	}
 
@@ -46,19 +48,40 @@ func main() {
 		log.Fatal(err)
 	}
 
-	user2, err := userRepo.FindById(ctx, user.ID)
+	fmt.Println("user:", user.ID, user.String)
+
+	edge := &model.MemberOf{
+		CreatedAt: time.Now(),
+		User:      *user,
+		Group:     *group,
+		Meta: model.MemberOfMeta{
+			IsAdmin: true,
+		},
+	}
+
+	err = userRepo.Relate(ctx, edge)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("user2", user2)
+	fmt.Println("relation:", edge.ID)
+	fmt.Println("user:", edge.User.ID)
+	fmt.Println("group:", edge.Group.ID)
 
-	users, err := userRepo.List(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//
+	// user2, err := userRepo.FindById(ctx, user.ID)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// fmt.Println("user2", user2)
 
-	for _, user := range users {
-		fmt.Println(user.ID, user.String, user.MainGroup.Name)
-	}
+	// users, err := userRepo.List(ctx)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// for _, user := range users {
+	// 	fmt.Println("result:", user.ID, user.MainGroup.Name)
+	// }
 }

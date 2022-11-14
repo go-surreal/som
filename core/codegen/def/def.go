@@ -8,6 +8,7 @@ const (
 	PkgSort   = "by"
 	PkgFetch  = "with"
 	PkgConv   = "conv"
+	PkgRelate = "relate"
 )
 
 const (

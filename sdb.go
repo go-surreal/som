@@ -1,5 +1,9 @@
 package sdb
 
+import (
+	"time"
+)
+
 type Node struct {
 	// include query info into each node resulting from a query?:
 	// status string
@@ -10,6 +14,11 @@ type Node struct {
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct{}
+
+type Timestamps struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
