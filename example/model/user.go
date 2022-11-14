@@ -80,10 +80,12 @@ func (g *Group) GetMembers() []User {
 type MemberOf struct {
 	sdb.Edge
 
+	ID        string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
 	User  User  `som:"in"`
 	Group Group `som:"out"`
-
-	Since time.Time
 
 	Meta MemberOfMeta
 }

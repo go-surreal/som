@@ -5,6 +5,7 @@ import (
 	"errors"
 	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
 	query "github.com/marcbinz/sdb/example/gen/sdb/query"
+	relate "github.com/marcbinz/sdb/example/gen/sdb/relate"
 	model "github.com/marcbinz/sdb/example/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
@@ -42,4 +43,7 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 }
 func (n *user) Delete(ctx context.Context, user *model.User) error {
 	return nil
+}
+func (n *user) Relate() *relate.User {
+	return relate.NewUser(n.client.db)
 }

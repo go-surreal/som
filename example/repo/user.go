@@ -14,6 +14,7 @@ type UserRepo interface {
 	Create(ctx context.Context, user *model.User) error
 	FindById(ctx context.Context, id string) (*model.User, error)
 	List(ctx context.Context) ([]*model.User, error)
+	Relate(ctx context.Context, edge *model.MemberOf) error
 }
 
 type user struct {
@@ -30,6 +31,10 @@ func (repo *user) Create(ctx context.Context, user *model.User) error {
 
 func (repo *user) FindById(ctx context.Context, id string) (*model.User, error) {
 	return repo.db.User().Query().Filter(where.User.ID.Equal(id)).First()
+}
+
+func (repo *user) Relate(ctx context.Context, edge *model.MemberOf) error {
+	return repo.db.User().Relate().MyGroups().Create(edge)
 }
 
 func (repo *user) List(ctx context.Context) ([]*model.User, error) {

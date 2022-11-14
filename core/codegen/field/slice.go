@@ -14,6 +14,21 @@ type Slice struct {
 	getElement      ElemGetter
 }
 
+// TODO: cleanup this (temporary) method!
+func (f *Slice) Edge() (bool, string, string, string) {
+	if !f.source.IsEdge {
+		return false, "", "", ""
+	}
+
+	rawEdge, _ := f.getElement(f.source.Field.(*parser.FieldEdge).Edge)
+	edge := rawEdge.(*dbtype.Edge)
+	in := edge.In.(*Node).source.Node
+	out := edge.Out.(*Node).source.Node
+	field := f.source.Field.(*parser.FieldEdge).Edge
+
+	return true, field, in, out
+}
+
 func (f *Slice) NameGo() string {
 	return f.source.Name
 }

@@ -22,6 +22,8 @@ func surreal(ctx *cli.Context) error {
 	}
 	defer db.Close()
 
+	fmt.Println(db.DB.Query("relate user:k14mjkmjp0z9zulpug0a->member_of2->group:s3h3r4rmscpso3f2nv4s", nil))
+
 	// _, err = db.Create(ctx.Context, &Data{
 	// 	Key: "some key",
 	// 	SomeData: SomeData{

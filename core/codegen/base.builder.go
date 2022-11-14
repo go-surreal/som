@@ -55,6 +55,7 @@ func (b *build) build() error {
 		b.newSortBuilder(),
 		b.newFetchBuilder(),
 		b.newConvBuilder(),
+		b.newRelateBuilder(),
 	}
 
 	for _, builder := range builders {
@@ -289,6 +290,14 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 			jen.Return(jen.Nil()),
 		)
 
+	f.Func().
+		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+		Id("Relate").Params().
+		Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
+		Block(
+			jen.Return(jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(jen.Id("n").Dot("client").Dot("db"))),
+		)
+
 	if err := f.Save(path.Join(b.basePath(), node.FileName())); err != nil {
 		return err
 	}
@@ -314,6 +323,10 @@ func (b *build) newFetchBuilder() builder {
 
 func (b *build) newConvBuilder() builder {
 	return newConvBuilder(b.input, b.basePath(), b.basePkg(), def.PkgConv)
+}
+
+func (b *build) newRelateBuilder() builder {
+	return newRelateBuilder(b.input, b.basePath(), b.basePkg(), def.PkgRelate)
 }
 
 func (b *build) basePath() string {

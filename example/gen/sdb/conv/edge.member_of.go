@@ -6,8 +6,10 @@ import (
 )
 
 type MemberOf struct {
-	Since time.Time    `json:"since,omitempty"`
-	Meta  MemberOfMeta `json:"meta,omitempty"`
+	ID        string       `json:"id,omitempty"`
+	CreatedAt time.Time    `json:"created_at,omitempty"`
+	UpdatedAt time.Time    `json:"updated_at,omitempty"`
+	Meta      MemberOfMeta `json:"meta,omitempty"`
 }
 
 func FromMemberOf(data *model.MemberOf) *MemberOf {
@@ -15,13 +17,17 @@ func FromMemberOf(data *model.MemberOf) *MemberOf {
 		return &MemberOf{}
 	}
 	return &MemberOf{
-		Meta:  *FromMemberOfMeta(&data.Meta),
-		Since: data.Since,
+		CreatedAt: data.CreatedAt,
+		ID:        buildDatabaseID("member_of", data.ID),
+		Meta:      *FromMemberOfMeta(&data.Meta),
+		UpdatedAt: data.UpdatedAt,
 	}
 }
 func ToMemberOf(data *MemberOf) *model.MemberOf {
 	return &model.MemberOf{
-		Meta:  *ToMemberOfMeta(&data.Meta),
-		Since: data.Since,
+		CreatedAt: data.CreatedAt,
+		ID:        parseDatabaseID("member_of", data.ID),
+		Meta:      *ToMemberOfMeta(&data.Meta),
+		UpdatedAt: data.UpdatedAt,
 	}
 }
