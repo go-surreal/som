@@ -9,14 +9,16 @@ import (
 	"github.com/marcbinz/sdb/core/parser"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 type build struct {
 	input  *input
 	outDir string
+	outPkg string
 }
 
-func Build(source *parser.Output, outDir string) error {
+func Build(source *parser.Output, outDir string, outPkg string) error {
 	in, err := newInput(source)
 	if err != nil {
 		return fmt.Errorf("error creating input: %v", err)
@@ -25,6 +27,7 @@ func Build(source *parser.Output, outDir string) error {
 	builder := &build{
 		input:  in,
 		outDir: outDir,
+		outPkg: outPkg,
 	}
 
 	return builder.build()
@@ -124,7 +127,7 @@ func (c *Client) Close() {
 }
 
 func (b *build) buildDatabaseFile() error {
-	content := `package sdb
+	content := `
 
 import (
 	// "errors"
@@ -166,7 +169,9 @@ func (db *database) Delete(what string) (any, error) {
 }
 `
 
-	err := os.WriteFile(path.Join(b.basePath(), "database.go"), []byte(content), os.ModePerm)
+	data := []byte("package " + b.basePkgName() + content)
+
+	err := os.WriteFile(path.Join(b.basePath(), "database.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -178,7 +183,7 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
 
-	f := jen.NewFile(def.PkgBase)
+	f := jen.NewFile(b.basePkgName())
 
 	f.Func().
 		Params(jen.Id("c").Op("*").Id("Client")).
@@ -330,11 +335,16 @@ func (b *build) newRelateBuilder() builder {
 }
 
 func (b *build) basePath() string {
-	return path.Join(b.outDir, def.PkgBase)
+	return b.outDir
 }
 
 func (b *build) basePkg() string {
-	return path.Join("github.com/marcbinz/sdb/example/gen", def.PkgBase) // TODO!!!
+	return b.outPkg
+}
+
+func (b *build) basePkgName() string {
+	_, name := filepath.Split(b.outPkg)
+	return name
 }
 
 func (b *build) subPkg(pkg string) string {
