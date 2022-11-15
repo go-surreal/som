@@ -81,7 +81,6 @@ func (f *Slice) FilterFunc(sourcePkg string, elem dbtype.Element) jen.Code {
 				)
 		}
 
-		// return newMemberOfIn[T](keyed(n.key, "my_groups"))
 		return nil
 	} else if f.source.IsNode {
 		return jen.Func().

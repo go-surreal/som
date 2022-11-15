@@ -1,7 +1,5 @@
 package def
 
-const PkgBase = "sdb"
-
 const (
 	PkgQuery  = "query"
 	PkgFilter = "where"

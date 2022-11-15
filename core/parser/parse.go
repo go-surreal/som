@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/wzshiming/gotype"
 	"go/ast"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -18,7 +19,16 @@ func Parse(dir string) (*Output, error) {
 
 	imp := gotype.NewImporter()
 
-	n, err := imp.Import(dir, "")
+	workDir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	if !strings.HasPrefix(dir, "./") {
+		dir = "./" + dir
+	}
+
+	n, err := imp.Import(dir, workDir)
 	if err != nil {
 		return nil, err
 	}
