@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/dbtype"
 	"os"
 	"path"
 )

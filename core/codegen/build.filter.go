@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/def"
-	"github.com/marcbinz/sdb/core/codegen/field"
+	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/def"
+	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
 )
@@ -55,7 +55,7 @@ func (b *filterBuilder) build() error {
 func (b *filterBuilder) buildBaseFile() error {
 	content := `package where
 
-import filter "github.com/marcbinz/sdb/lib/filter"
+import filter "github.com/marcbinz/som/lib/filter"
 
 func All[T any](filters ...filter.Of[T]) filter.Of[T] {
 	return filter.All[T](filters)

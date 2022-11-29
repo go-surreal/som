@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/def"
-	"github.com/marcbinz/sdb/core/codegen/field"
+	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/def"
+	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
 )

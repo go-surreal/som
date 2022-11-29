@@ -2,11 +2,11 @@ package repo
 
 import (
 	"context"
-	"github.com/marcbinz/sdb/example/gen/sdb"
-	"github.com/marcbinz/sdb/example/gen/sdb/by"
-	"github.com/marcbinz/sdb/example/gen/sdb/where"
-	"github.com/marcbinz/sdb/example/gen/sdb/with"
-	"github.com/marcbinz/sdb/example/model"
+	"github.com/marcbinz/som/example/gen/som"
+	"github.com/marcbinz/som/example/gen/som/by"
+	"github.com/marcbinz/som/example/gen/som/where"
+	"github.com/marcbinz/som/example/gen/som/with"
+	"github.com/marcbinz/som/example/model"
 	"time"
 )
 
@@ -18,10 +18,10 @@ type UserRepo interface {
 }
 
 type user struct {
-	db *sdb.Client
+	db *som.Client
 }
 
-func User(db *sdb.Client) UserRepo {
+func User(db *som.Client) UserRepo {
 	return &user{db: db}
 }
 

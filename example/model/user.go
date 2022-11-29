@@ -2,12 +2,12 @@ package model
 
 import (
 	"github.com/google/uuid"
-	"github.com/marcbinz/sdb"
+	"github.com/marcbinz/som"
 	"time"
 )
 
 type User struct {
-	sdb.Node `surrealdb:"user"`
+	som.Node `surrealdb:"user"`
 	ID       string
 
 	CreatedAt time.Time
@@ -53,7 +53,7 @@ type Login struct {
 	Password string
 }
 
-type Role sdb.Enum
+type Role som.Enum
 
 const (
 	RoleUser  Role = "user"
@@ -61,7 +61,7 @@ const (
 )
 
 type Group struct {
-	sdb.Node `surrealdb:"group"`
+	som.Node `surrealdb:"group"`
 
 	ID   string
 	Name string
@@ -78,7 +78,7 @@ func (g *Group) GetMembers() []User {
 }
 
 type MemberOf struct {
-	sdb.Edge
+	som.Edge
 
 	ID        string
 	CreatedAt time.Time

@@ -2,8 +2,8 @@ package repo
 
 import (
 	"context"
-	"github.com/marcbinz/sdb/example/gen/sdb"
-	"github.com/marcbinz/sdb/example/model"
+	"github.com/marcbinz/som/example/gen/som"
+	"github.com/marcbinz/som/example/model"
 )
 
 type GroupRepo interface {
@@ -11,10 +11,10 @@ type GroupRepo interface {
 }
 
 type groupRepo struct {
-	db *sdb.Client
+	db *som.Client
 }
 
-func Group(db *sdb.Client) GroupRepo {
+func Group(db *som.Client) GroupRepo {
 	return &groupRepo{db: db}
 }
 
