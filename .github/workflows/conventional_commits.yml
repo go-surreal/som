@@ -1,12 +1,13 @@
-name: PR
+name: Conventional Commits
 
 on:
   pull_request:
+    types: [opened, edited, synchronize]
 
 jobs:
 
-  conventional_commit:
-    name: Conventional Commits
+  run:
+    name: Run
     runs-on: ubuntu-latest
     steps:
 
