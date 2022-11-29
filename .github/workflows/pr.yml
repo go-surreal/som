@@ -1,0 +1,17 @@
+name: PR
+
+on:
+  pull_request:
+
+jobs:
+
+  conventional_commit:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Verify
+        uses: agenthunt/conventional-commit-checker-action@v1.0.0
