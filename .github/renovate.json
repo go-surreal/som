@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "timezone": "Europe/Berlin",
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchDatasources": ["golang-version"],
+      "groupName": "go version update",
+      "labels": ["dependencies" ,"backend"],
+      "schedule": ["before 8am"]
+    },
+    {
+      "matchDatasources": ["go"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "go minor package updates",
+      "labels": ["dependencies", "backend"],
+      "schedule": ["before 8am"]
+    },
+    {
+      "matchDatasources": ["go"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "go major package updates",
+      "labels": ["dependencies", "backend"],
+      "schedule": ["before 8am"]
+    },
+    {
+      "matchPackagePatterns": ["github-actions"],
+      "groupName": "github workflow updates",
+      "labels": ["dependencies", "workflow"],
+      "schedule": ["before 8am"]
+    }
+  ],
+  "additionalReviewers": ["marcbinz"],
+  "branchConcurrentLimit": 10
+}
