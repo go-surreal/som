@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/marcbinz/som/cmd/somgen/sub"
 	"github.com/marcbinz/som/core"
+	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 )
