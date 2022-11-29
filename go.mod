@@ -1,4 +1,4 @@
-module github.com/marcbinz/sdb
+module github.com/marcbinz/som
 
 go 1.19
 

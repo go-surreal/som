@@ -1,7 +1,7 @@
 package conv
 
 import (
-	model "github.com/marcbinz/sdb/example/model"
+	model "github.com/marcbinz/som/example/model"
 	"time"
 )
 

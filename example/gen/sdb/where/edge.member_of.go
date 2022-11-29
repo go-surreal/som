@@ -1,6 +1,6 @@
 package where
 
-import filter "github.com/marcbinz/sdb/lib/filter"
+import filter "github.com/marcbinz/som/lib/filter"
 
 func newMemberOfIn[T any](key filter.Key) memberOfIn[T] {
 	return memberOfIn[T]{memberOf[T]{

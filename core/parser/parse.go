@@ -12,7 +12,7 @@ import (
 
 const fileGoMod = "go.mod"
 
-const packagePath = "github.com/marcbinz/sdb"
+const packagePath = "github.com/marcbinz/som"
 
 func Parse(dir string) (*Output, error) {
 	res := &Output{}
@@ -116,7 +116,7 @@ func isNode(t gotype.Type) bool {
 		f := t.Field(i)
 
 		if f.Name() == "Node" && f.Elem().Name() == "Node" &&
-			f.Elem().String() == "sdb.Node" && f.Elem().PkgPath() == packagePath {
+			f.Elem().String() == "som.Node" && f.Elem().PkgPath() == packagePath {
 			return true
 		}
 	}
@@ -135,7 +135,7 @@ func isEdge(t gotype.Type) bool {
 		f := t.Field(i)
 
 		if f.Name() == "Edge" && f.Elem().Name() == "Edge" &&
-			f.Elem().String() == "sdb.Edge" && f.Elem().PkgPath() == packagePath {
+			f.Elem().String() == "som.Edge" && f.Elem().PkgPath() == packagePath {
 			return true
 		}
 	}
@@ -148,7 +148,7 @@ func isEnum(t gotype.Type) bool {
 		return false
 	}
 
-	return t.String() != "string" && t.PkgPath() == "github.com/marcbinz/sdb" // TODO: might not be an enum..?!
+	return t.String() != "string" && t.PkgPath() == "github.com/marcbinz/som" // TODO: might not be an enum..?!
 }
 
 func parseNode(v gotype.Type) (*Node, error) {

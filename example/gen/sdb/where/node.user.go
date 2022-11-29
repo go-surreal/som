@@ -2,8 +2,8 @@ package where
 
 import (
 	uuid "github.com/google/uuid"
-	model "github.com/marcbinz/sdb/example/model"
-	filter "github.com/marcbinz/sdb/lib/filter"
+	model "github.com/marcbinz/som/example/model"
+	filter "github.com/marcbinz/som/lib/filter"
 )
 
 var User = newUser[model.User](filter.NewKey())

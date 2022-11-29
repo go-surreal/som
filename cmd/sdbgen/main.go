@@ -1,16 +1,15 @@
 package main
 
 import (
-	"github.com/marcbinz/sdb/cmd/sdbgen/sub"
-	"github.com/marcbinz/sdb/core"
-	"github.com/urfave/cli/v2"
+	"github.com/marcbinz/som/cmd/somgen/sub"
+	"github.com/marcbinz/som/core"
 	"log"
 	"os"
 )
 
 func main() {
 	app := cli.App{
-		Name:   "sdbgen",
+		Name:   "somgen",
 		Action: generate,
 		Commands: []*cli.Command{
 			sub.Surreal(),

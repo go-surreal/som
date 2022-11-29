@@ -16,7 +16,7 @@ func Surreal() *cli.Command {
 }
 
 func surreal(ctx *cli.Context) error {
-	db, err := New("root", "root", "sdb", "default")
+	db, err := New("root", "root", "som", "default")
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ type SomeData struct {
 	MoreInfo MoreInfo
 }
 
-//go:sdb table
+//go:som table
 type MoreInfo struct {
 	Text string
 }

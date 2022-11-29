@@ -1,8 +1,8 @@
 package where
 
 import (
-	model "github.com/marcbinz/sdb/example/model"
-	filter "github.com/marcbinz/sdb/lib/filter"
+	model "github.com/marcbinz/som/example/model"
+	filter "github.com/marcbinz/som/lib/filter"
 )
 
 func newMemberOfMeta[T any](key filter.Key) memberOfMeta[T] {

@@ -1,12 +1,12 @@
-package sdb
+package som
 
 import (
 	"context"
 	"errors"
-	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
-	query "github.com/marcbinz/sdb/example/gen/sdb/query"
-	relate "github.com/marcbinz/sdb/example/gen/sdb/relate"
-	model "github.com/marcbinz/sdb/example/model"
+	conv "github.com/marcbinz/som/example/gen/som/conv"
+	query "github.com/marcbinz/som/example/gen/som/query"
+	relate "github.com/marcbinz/som/example/gen/som/relate"
+	model "github.com/marcbinz/som/example/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 

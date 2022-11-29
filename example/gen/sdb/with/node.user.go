@@ -1,6 +1,6 @@
 package with
 
-import model "github.com/marcbinz/sdb/example/model"
+import model "github.com/marcbinz/som/example/model"
 
 var User = user[model.User]("")
 

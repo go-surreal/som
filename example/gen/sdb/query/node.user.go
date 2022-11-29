@@ -3,12 +3,12 @@ package query
 import (
 	"errors"
 	"fmt"
-	conv "github.com/marcbinz/sdb/example/gen/sdb/conv"
-	with "github.com/marcbinz/sdb/example/gen/sdb/with"
-	model "github.com/marcbinz/sdb/example/model"
-	builder "github.com/marcbinz/sdb/lib/builder"
-	filter "github.com/marcbinz/sdb/lib/filter"
-	sort "github.com/marcbinz/sdb/lib/sort"
+	conv "github.com/marcbinz/som/example/gen/som/conv"
+	with "github.com/marcbinz/som/example/gen/som/with"
+	model "github.com/marcbinz/som/example/model"
+	builder "github.com/marcbinz/som/lib/builder"
+	filter "github.com/marcbinz/som/lib/filter"
+	sort "github.com/marcbinz/som/lib/sort"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 	"time"
 )

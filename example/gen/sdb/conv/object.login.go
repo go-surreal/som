@@ -1,6 +1,6 @@
 package conv
 
-import model "github.com/marcbinz/sdb/example/model"
+import model "github.com/marcbinz/som/example/model"
 
 type Login struct {
 	Username string `json:"username,omitempty"`

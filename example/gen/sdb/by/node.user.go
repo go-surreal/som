@@ -1,8 +1,8 @@
 package by
 
 import (
-	model "github.com/marcbinz/sdb/example/model"
-	sort "github.com/marcbinz/sdb/lib/sort"
+	model "github.com/marcbinz/som/example/model"
+	sort "github.com/marcbinz/som/lib/sort"
 )
 
 var User = newUser[model.User]("")

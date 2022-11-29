@@ -1,4 +1,4 @@
-package sdb
+package som
 
 import (
 	"time"
@@ -8,7 +8,7 @@ type Node struct {
 	// include query info into each node resulting from a query?:
 	// status string
 	// time   string
-	// extract via sdb.Info(someNode) -> sdb.Info ?
+	// extract via som.Info(someNode) -> som.Info ?
 }
 
 // Edge describes an edge between two Node elements.

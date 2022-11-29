@@ -1,4 +1,4 @@
-package sdb
+package som
 
 import (
 	// "errors"
@@ -27,7 +27,7 @@ func (db *database) Query(statement string, vars map[string]any) (any, error) {
 	}
 
 	fmt.Println(raw)
-	
+
 	return raw, err
 }
 

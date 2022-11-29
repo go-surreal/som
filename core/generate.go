@@ -1,8 +1,8 @@
 package core
 
 import (
-	"github.com/marcbinz/sdb/core/codegen"
-	"github.com/marcbinz/sdb/core/parser"
+	"github.com/marcbinz/som/core/codegen"
+	"github.com/marcbinz/som/core/parser"
 	"os"
 	"strings"
 )

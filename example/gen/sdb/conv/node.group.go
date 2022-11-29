@@ -2,7 +2,7 @@ package conv
 
 import (
 	"encoding/json"
-	model "github.com/marcbinz/sdb/example/model"
+	model "github.com/marcbinz/som/example/model"
 	"strings"
 )
 
