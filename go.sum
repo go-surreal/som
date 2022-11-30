@@ -14,6 +14,8 @@ github.com/surrealdb/surrealdb.go v0.1.2-0.20221019092700-845266102715 h1:UFc56a
 github.com/surrealdb/surrealdb.go v0.1.2-0.20221019092700-845266102715/go.mod h1:yUzNdTcM/+Djnw7hWuWdJMo3ehN/3yKYllxUeVeU4Zg=
 github.com/urfave/cli/v2 v2.20.3 h1:lOgGidH/N5loaigd9HjFsOIhXSTrzl7tBpHswZ428w4=
 github.com/urfave/cli/v2 v2.20.3/go.mod h1:1CNUng3PtjQMtRzJO4FMXBQvkGtuYRxxiR9xMa7jMwI=
+github.com/urfave/cli/v2 v2.23.5 h1:xbrU7tAYviSpqeR3X4nEFWUdB/uDZ6DE+HxmRU7Xtyw=
+github.com/urfave/cli/v2 v2.23.5/go.mod h1:GHupkWPMM0M/sj1a2b4wUrWBPzazNrIjouW6fmdJLxc=
 github.com/wzshiming/gotype v0.7.3 h1:Wm4qSJ46BM7EeM1q1r65Vdt2OpSlKGZt3ZEkVPnLbpc=
 github.com/wzshiming/gotype v0.7.3/go.mod h1:7YULvVsDObRVX2U6iUcF5hixYvHFavLsTSIW26c5GLM=
 github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 h1:bAn7/zixMGCfxrRTfdpNzjtPYqr8smhKouy9mxVdGPU=
@@ -22,3 +24,5 @@ golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9 h1:yZNXmy+j/JpX19vZkVktWqAo7
 golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
 golang.org/x/mod v0.6.0 h1:b9gGHsz9/HhJ3HF5DHQytPpuwocVTChQJK3AvoLRD5I=
 golang.org/x/mod v0.6.0/go.mod h1:4mET923SAdbXp2ki8ey+zGs1SLqsuM2Y0uvdZR/fUNI=
+golang.org/x/mod v0.7.0 h1:LapD9S96VoQRhi/GrNTqeBJFrUjs5UHCAtTlgwA5oZA=
+golang.org/x/mod v0.7.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
