@@ -4,6 +4,7 @@ import (
 	"github.com/marcbinz/som/core/codegen"
 	"github.com/marcbinz/som/core/parser"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ func Generate(inPath, outPath string) error {
 		return err
 	}
 
-	outPkg := strings.TrimSuffix(source.PkgPath, inPath) + outPath // TODO: is this really safe?
+	outPkg := path.Join(strings.TrimSuffix(source.PkgPath, inPath), outPath) // TODO: is this really safe?
 
 	err = codegen.Build(source, outPath, outPkg)
 	if err != nil {
