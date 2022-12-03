@@ -10,18 +10,39 @@ go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 
 ## Roadmap
 
-### TODOs:
+### Before v0.1.0 (first "somewhat stable" non-pre-release)
 
-- [ ] generate `sommock` package for easy mocking of the underlying database client
-- [ ] add performance benchmarks (and possible optimizations due to it)
-- [ ] make casing of database fields configurable?
-- [ ] add support for maps as node fields?
-- [ ] add support for `[]byte` (and `byte`?) type
-- [ ] Replace `strcase.ToLowerCamel` with `strcase.ToLowerCamel`
-- [ ] Switch the source code parsing to support generics
-- [ ] add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser)
-- [ ] Make query builder not use pointers, so partial builds and usages are working
-- [ ] Fix query variable index `rune` not suited for > 26 due to invalid char as variable key?
+- [x] Initial implementation.
+- [x] Rename project to "som". (#27)
+- [ ] Add basic GitHub workflow for PR. (#6)
+- [ ] Setup golangci-lint with proper config. (#7)
+- [ ] Consider reserved (query) keywords. (#18)
+- [ ] Add support for pointer fields. (#19)
+- [x] Add support for edge (graph) connections. (#20)
+- [ ] Add support for `[]byte` (and `byte`?) type.
+- [ ] Fix query variable index `rune` not suited for > 26 due to invalid char as variable key.
+- [ ] Think about generation based on schema. (#21)
+- [ ] How to handle data migrations? (#22)
+- [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
+- [ ] Choose proper licensing for the project. (#11)
+
+### After v0.1.0
+
+- [ ] Make query builder not use pointers, so partial builds and usages are working?
+- [ ] Cleanup naming conventions. (#24)
+- [ ] Code comments and documentation. (#9)
+- [ ] Write tests. (#8)
+- [ ] Add "Describe" as query output to get a full description of a generated query. (#17)
+- [ ] Generate `sommock` package for easy mocking of the underlying database client.
+- [ ] Make casing of database field names configurable.
+- [ ] Switch the source code parser to support generics.
+- [ ] Add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser).
+
+### Nice to have (v0.x.x)
+
+- [ ] Add new data type "password". (#16)
+- [ ] Add performance benchmarks (and possible optimizations due to it).
+- [ ] Integrate external APIs (GraphQL) into the db access layer?
 
 ## FAQ
 
