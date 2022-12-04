@@ -5,9 +5,10 @@ on:
 
 jobs:
 
-  setup:
-    name: Setup
+  sync:
+    name: Sync
     runs-on: ubuntu-latest
+    needs: setup
     steps:
 
       - name: Checkout
@@ -28,13 +29,20 @@ jobs:
       - name: Check Go Version
         run: go version
 
-  sync:
-    name: Sync
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
+      - name: Cache Go Modules
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-go-modules
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.OS }}-build-${{ env.cache-name }}-
+            ${{ runner.OS }}-build-
+            ${{ runner.OS }}-
 
       - name: Sync
+        working-directory: .
         run: go mod download
 
       - name: Commit Changes
@@ -48,6 +56,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: ASDF Environment
+        id: asdf
+        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+        with:
+          path_to_tool_versions: "./.tool-versions"
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ steps.asdf.outputs.golang_version }}
+          check-latest: true
 
       - name: Check Go Version
         run: go version
@@ -74,6 +97,24 @@ jobs:
     needs: setup
     steps:
 
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: ASDF Environment
+        id: asdf
+        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+        with:
+          path_to_tool_versions: "./.tool-versions"
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ steps.asdf.outputs.golang_version }}
+          check-latest: true
+
+      - name: Check Go Version
+        run: go version
+
       - name: Cache Go Modules
         uses: actions/cache@v3
         env:
@@ -87,4 +128,5 @@ jobs:
             ${{ runner.OS }}-
 
       - name: Test
+        working-directory: .
         run: go test -v ./...
