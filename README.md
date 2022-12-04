@@ -27,7 +27,7 @@ Up until version 1.0 though, breaking changes might be introduced at any time (m
 
 - [x] Initial implementation.
 - [x] Rename project to "som". (#27)
-- [ ] Add basic GitHub workflow for PR. (#6)
+- [x] Add basic GitHub workflow for PR. (#6)
 - [ ] Setup golangci-lint with proper config. (#7)
 - [ ] Consider reserved (query) keywords. (#18)
 - [ ] Add support for pointer fields. (#19)
