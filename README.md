@@ -2,11 +2,24 @@
 
 A type-safe database access layer with code generation for [SurrealDB](https://surrealdb.com).
 
-## Generate the client code
+## Getting started
+
+### Usage
+
+Generate the client code:
 
 ```
 go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
+
+The package `github.com/marcbinz/sdb` is a dependency for the project in which the generated client code is used.
+So it must be added to the `go.mod` file accordingly.
+
+### Versioning
+
+In the future this package will follow the [semantic versioning](https://semver.org) specification.
+
+Up until version 1.0 though, breaking changes might be introduced at any time (minor version bumps).
 
 ## Roadmap
 
@@ -45,6 +58,16 @@ go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 - [ ] Add performance benchmarks (and possible optimizations due to it).
 - [ ] Integrate external APIs (GraphQL) into the db access layer?
 
+## How to contribute
+
+### Commits & pull requests
+
+- Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org) specification.
+- During development (within a feature branch) commits may have any naming whatsoever.
+- After a PR has been approved, it will be squashed and merged into `main`.
+- The final commit message must adhere to the specification mentioned above.
+- A GitHub Workflow will make sure that the PR title and description matches this specification.
+
 ## FAQ
 
 ### Why are maps not supported?
@@ -52,6 +75,10 @@ go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 - With the schemaless database this would be possible.
 - Currently, the focus is on structured and deterministic data.
 - Might be added in the future though.
+
+## Maintainers & Contributors
+
+- Marc Binz (Author/Owner)
 
 ## References
 
