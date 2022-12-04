@@ -14,7 +14,7 @@ go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 
 - [x] Initial implementation.
 - [x] Rename project to "som". (#27)
-- [ ] Add basic GitHub workflow for PR. (#6)
+- [x] Add basic GitHub workflow for PR. (#6)
 - [ ] Setup golangci-lint with proper config. (#7)
 - [ ] Consider reserved (query) keywords. (#18)
 - [ ] Add support for pointer fields. (#19)
@@ -40,7 +40,8 @@ go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 
 ### Nice to have (v0.x.x)
 
-- [ ] Add new data type "password". (#16)
+- [ ] Add new data type "password" with automatic handling of encryption with salt. (#16)
+- [ ] Add data type "email" as alias for string that adds database assertion.
 - [ ] Add performance benchmarks (and possible optimizations due to it).
 - [ ] Integrate external APIs (GraphQL) into the db access layer?
 

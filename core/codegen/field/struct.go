@@ -20,6 +20,11 @@ func (f *Struct) NameDatabase() string {
 	return f.dbNameConverter(f.source.Name)
 }
 
+// TODO: cleaner expose?
+func (f *Struct) StructName() string {
+	return f.source.Struct
+}
+
 func (f *Struct) FilterDefine(sourcePkg string) jen.Code {
 	// Struct uses a filter function instead.
 	return nil

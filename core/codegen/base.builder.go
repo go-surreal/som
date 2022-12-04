@@ -59,6 +59,7 @@ func (b *build) build() error {
 		b.newFetchBuilder(),
 		b.newConvBuilder(),
 		b.newRelateBuilder(),
+		b.newSchemaBuilder(),
 	}
 
 	for _, builder := range builders {
@@ -332,6 +333,10 @@ func (b *build) newConvBuilder() builder {
 
 func (b *build) newRelateBuilder() builder {
 	return newRelateBuilder(b.input, b.basePath(), b.basePkg(), def.PkgRelate)
+}
+
+func (b *build) newSchemaBuilder() builder {
+	return newSchemaBuilder(b.input, b.basePath(), b.basePkg(), def.PkgSchema)
 }
 
 func (b *build) basePath() string {

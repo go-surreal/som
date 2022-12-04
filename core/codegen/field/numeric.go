@@ -21,6 +21,24 @@ func (f *Numeric) NameDatabase() string {
 	return f.dbNameConverter(f.source.Name)
 }
 
+// TODO: cleaner expose?
+func (f *Numeric) TypeDatabase() string {
+	switch f.source.Type {
+	case parser.NumberInt:
+		return "int"
+	case parser.NumberInt32:
+		return "int"
+	case parser.NumberInt64:
+		return "int"
+	case parser.NumberFloat32:
+		return "float"
+	case parser.NumberFloat64:
+		return "float"
+	default:
+		return "number" // TODO: okay?
+	}
+}
+
 func (f *Numeric) FilterDefine(sourcePkg string) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Numeric").Types(f.CodeNumberType(), jen.Id("T"))
 }
@@ -74,6 +92,7 @@ func (f *Numeric) CodeNumberType() jen.Code {
 		return jen.Float32()
 	case parser.NumberFloat64:
 		return jen.Float64()
+	default:
+		return jen.Int() // TODO: okay?
 	}
-	return jen.Int() // TODO: okay?
 }
