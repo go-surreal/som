@@ -3,9 +3,9 @@ package field
 import (
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/def"
-	"github.com/marcbinz/sdb/core/parser"
+	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/def"
+	"github.com/marcbinz/som/core/parser"
 )
 
 type String struct {

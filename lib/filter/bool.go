@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"github.com/marcbinz/sdb/lib/builder"
+	"github.com/marcbinz/som/lib/builder"
 )
 
 type Bool[R any] struct {

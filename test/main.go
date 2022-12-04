@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/marcbinz/sdb/example/gen/sdb"
-	"github.com/marcbinz/sdb/example/model"
-	"github.com/marcbinz/sdb/example/repo"
+	"github.com/marcbinz/som/example/gen/som"
+	"github.com/marcbinz/som/example/model"
+	"github.com/marcbinz/som/example/repo"
 	"log"
 	"time"
 )
@@ -16,7 +16,7 @@ func main() {
 
 	ctx := context.Background()
 
-	db, err := sdb.NewClient("ws://localhost:8010", "root", "root", "sdb", "default")
+	db, err := som.NewClient("ws://localhost:8010", "root", "root", "som", "default")
 	if err != nil {
 		log.Fatal(err)
 	}
