@@ -21,7 +21,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ env.golang_version }}
+          go-version: $golang_version
           check-latest: true
 
       - name: Check Go Version
