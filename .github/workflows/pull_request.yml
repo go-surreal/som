@@ -7,7 +7,7 @@ jobs:
 
   setup:
     name: Setup
-    runs: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
 
       - name: Checkout
