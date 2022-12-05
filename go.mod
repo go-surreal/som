@@ -9,7 +9,7 @@ require (
 	github.com/surrealdb/surrealdb.go v0.1.2-0.20221019092700-845266102715
 	github.com/urfave/cli/v2 v2.23.6
 	github.com/wzshiming/gotype v0.7.3
-	golang.org/x/exp v0.0.0-20221204150635-6dcec336b2bb
+	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db
 	golang.org/x/mod v0.7.0
 )
 
