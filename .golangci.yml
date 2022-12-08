@@ -1,0 +1,5 @@
+# GolangCI-Lint Configuration
+
+run:
+  skip-dirs:
+    - example/gen

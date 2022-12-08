@@ -50,6 +50,43 @@ jobs:
           commit_message: "Apply dependency sync"
           branch: ${{ github.head_ref }}
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: ASDF Environment
+        id: asdf
+        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+        with:
+          path_to_tool_versions: "./.tool-versions"
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ steps.asdf.outputs.golang_version }}
+          check-latest: true
+
+      - name: Check Go Version
+        run: go version
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: "v${{ steps.asdf.outputs.golangci-lint_version }}"
+          working-directory: .
+          args: --path-prefix=. --go ${{ steps.asdf.outputs.golang_version }}
+
+      - name: Commit Changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        if: always()
+        with:
+          commit_message: "Apply golangci-lint auto-fix changes"
+          branch: ${{ github.head_ref }}
+
   build:
     name: Build
     runs-on: ubuntu-latest
