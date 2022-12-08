@@ -149,8 +149,8 @@ func (b *convBuilder) buildFile(elem dbtype.Element) error {
 			Block(
 				jen.Id("raw").Op(":=").String().Call(jen.Id("data")),
 				jen.If(
-					jen.Qual("strings", "HasPrefix").Call(jen.Id("raw"), jen.Lit("\"")),
-					jen.Qual("strings", "HasSuffix").Call(jen.Id("raw"), jen.Lit("\"")),
+					jen.Qual("strings", "HasPrefix").Call(jen.Id("raw"), jen.Lit("\"")).
+						Op("&&").Qual("strings", "HasSuffix").Call(jen.Id("raw"), jen.Lit("\"")),
 				).
 					Block(
 						jen.Id("raw").Op("=").Id("raw").Index(jen.Lit(1).Op(":").Len(jen.Id("raw")).Op("-").Lit(1)),
