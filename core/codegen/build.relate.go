@@ -85,7 +85,7 @@ func (b *relateBuilder) buildNodeFile(node *dbtype.Node) error {
 			Id(fld.NameGo()).Params().
 			Id(strcase.ToLowerCamel(edge)).
 			Block(
-				jen.Return(jen.Id(strcase.ToLowerCamel(edge)).Values(jen.Id("db").Op(":").Id("n").Dot("db"))),
+				jen.Return(jen.Id(strcase.ToLowerCamel(edge)).Call(jen.Id("n"))),
 			)
 	}
 

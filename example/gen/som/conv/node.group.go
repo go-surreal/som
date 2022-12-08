@@ -38,7 +38,7 @@ func (f *GroupField) MarshalJSON() ([]byte, error) {
 }
 func (f *GroupField) UnmarshalJSON(data []byte) error {
 	raw := string(data)
-	if strings.HasPrefix(raw, "\""); strings.HasSuffix(raw, "\"") {
+	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
 		raw = raw[1 : len(raw)-1]
 		f.ID = parseDatabaseID("group", raw)
 		return nil

@@ -9,5 +9,5 @@ type User struct {
 }
 
 func (n User) MyGroups() memberOf {
-	return memberOf{db: n.db}
+	return memberOf(n)
 }
