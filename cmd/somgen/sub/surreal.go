@@ -84,7 +84,7 @@ func (c *Client) Close() {
 	c.DB.Close()
 }
 
-func (c *Client) Create(ctx context.Context, data *Data) (string, error) {
+func (c *Client) Create(_ context.Context, data *Data) (string, error) {
 	raw := toRaw(data)
 
 	res, err := c.DB.Create("data4", raw)
@@ -157,22 +157,22 @@ func toRaw(data *Data) map[string]any {
 	}
 }
 
-func fromRaw(data map[string]any) Data {
-	fmt.Println("fromRaw:", data)
-	return Data{
-		ID:  data["id"].(string),
-		Key: data["key"].(string),
-		SomeData: SomeData{
-			Value: data["some_data"].(map[string]any)["value"].(string),
-			MoreInfo: MoreInfo{
-				Text: data["some_data"].(map[string]any)["more_info"].(map[string]any)["text"].(string),
-			},
-		},
-		CreatedAt: parseTime(data["created_at"].(string)),
-	}
-}
-
-func parseTime(val string) time.Time {
-	res, _ := time.Parse(time.RFC3339, val)
-	return res
-}
+// func fromRaw(data map[string]any) Data {
+// 	fmt.Println("fromRaw:", data)
+// 	return Data{
+// 		ID:  data["id"].(string),
+// 		Key: data["key"].(string),
+// 		SomeData: SomeData{
+// 			Value: data["some_data"].(map[string]any)["value"].(string),
+// 			MoreInfo: MoreInfo{
+// 				Text: data["some_data"].(map[string]any)["more_info"].(map[string]any)["text"].(string),
+// 			},
+// 		},
+// 		CreatedAt: parseTime(data["created_at"].(string)),
+// 	}
+// }
+//
+// func parseTime(val string) time.Time {
+// 	res, _ := time.Parse(time.RFC3339, val)
+// 	return res
+// }

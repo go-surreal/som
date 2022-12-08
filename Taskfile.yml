@@ -30,3 +30,8 @@ tasks:
     desc: "Run the test code for the example codebase."
     cmds:
       - cd ./test && go run main.go
+
+  lint:
+    desc: "Lint the codebase with the golangci-lint tool."
+    cmds:
+      - golangci-lint run
