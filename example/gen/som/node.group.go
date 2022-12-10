@@ -57,10 +57,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	if group.ID == "" {
 		return errors.New("cannot update Group without existing record ID")
 	}
-	data, err := toMap(conv.FromGroup(group))
-	if err != nil {
-		return err
-	}
+	data := conv.FromGroup(group)
 	raw, err := n.client.db.Update("group:"+group.ID, data)
 	if err != nil {
 		return err

@@ -22,7 +22,18 @@ func surreal(ctx *cli.Context) error {
 	}
 	defer db.Close()
 
-	fmt.Println(db.DB.Query("relate user:k14mjkmjp0z9zulpug0a->member_of2->group:s3h3r4rmscpso3f2nv4s", nil))
+	// fmt.Println(db.DB.Query("relate user:k14mjkmjp0z9zulpug0a->member_of2->group:s3h3r4rmscpso3f2nv4s", nil))
+
+	var x *string
+
+	update, err := db.DB.Update("user:marc", map[string]any{
+		"name": x,
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(update)
 
 	// _, err = db.Create(ctx.Context, &Data{
 	// 	Key: "some key",
