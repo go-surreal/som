@@ -46,10 +46,6 @@ func (b *build) build() error {
 		return err
 	}
 
-	if err := b.buildUtilFile(); err != nil {
-		return err
-	}
-
 	for _, node := range b.input.nodes {
 		if err := b.buildBaseFile(node); err != nil {
 			return err
@@ -86,8 +82,8 @@ type Database interface {
 	Close()
 	Create(thing string, data any) (any, error)
 	Select(what string) (any, error)
-	Query(statement string, vars map[string]any) (any, error)
-	Update(thing string, data map[string]any) (any, error)
+	Query(statement string, vars any) (any, error)
+	Update(thing string, data any) (any, error)
 	Delete(what string) (any, error)
 }
 
@@ -151,7 +147,7 @@ func (db *database) Select(what string) (any, error) {
 	return db.DB.Select(what)
 }
 
-func (db *database) Query(statement string, vars map[string]any) (any, error) {
+func (db *database) Query(statement string, vars any) (any, error) {
 	fmt.Println(statement)
 
 	raw, err := db.DB.Query(statement, vars)
@@ -160,11 +156,11 @@ func (db *database) Query(statement string, vars map[string]any) (any, error) {
 	}
 
 	fmt.Println(raw)
-	
+
 	return raw, err
 }
 
-func (db *database) Update(what string, data map[string]any) (any, error) {
+func (db *database) Update(what string, data any) (any, error) {
 	return db.DB.Update(what, data)
 }
 
@@ -176,39 +172,6 @@ func (db *database) Delete(what string) (any, error) {
 	data := []byte("package " + b.basePkgName() + content)
 
 	err := os.WriteFile(path.Join(b.basePath(), "database.go"), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
-
-	return nil
-}
-
-func (b *build) buildUtilFile() error {
-	content := `
-
-import (
-	"encoding/json"
-)
-
-func toMap(val any) (map[string]any, error) {
-	data, err := json.Marshal(val)
-	if err != nil {
-		return nil, err
-	}
-
-	var res map[string]any
-	err = json.Unmarshal(data, &res)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
-}
-`
-
-	data := []byte("package " + b.basePkgName() + content)
-
-	err := os.WriteFile(path.Join(b.basePath(), "util.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -319,10 +282,7 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
 				),
 
-			jen.List(jen.Id("data"), jen.Err()).Op(":=").Id("toMap").Call(jen.Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo())))),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
-			),
+			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
 
 			jen.Id("raw").Op(",").Err().Op(":=").Id("n").Dot("client").Dot("db").Dot("Update").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(

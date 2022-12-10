@@ -18,7 +18,7 @@ func (db *database) Select(what string) (any, error) {
 	return db.DB.Select(what)
 }
 
-func (db *database) Query(statement string, vars map[string]any) (any, error) {
+func (db *database) Query(statement string, vars any) (any, error) {
 	fmt.Println(statement)
 
 	raw, err := db.DB.Query(statement, vars)
@@ -27,11 +27,11 @@ func (db *database) Query(statement string, vars map[string]any) (any, error) {
 	}
 
 	fmt.Println(raw)
-	
+
 	return raw, err
 }
 
-func (db *database) Update(what string, data map[string]any) (any, error) {
+func (db *database) Update(what string, data any) (any, error) {
 	return db.DB.Update(what, data)
 }
 

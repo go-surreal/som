@@ -49,7 +49,7 @@ func (b *relateBuilder) buildBaseFile() error {
 	content := `package relate
 
 type Database interface {
-	Query(statement string, vars map[string]any) (any, error)
+	Query(statement string, vars any) (any, error)
 }
 `
 

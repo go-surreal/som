@@ -57,10 +57,7 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	if user.ID == "" {
 		return errors.New("cannot update User without existing record ID")
 	}
-	data, err := toMap(conv.FromUser(user))
-	if err != nil {
-		return err
-	}
+	data := conv.FromUser(user)
 	raw, err := n.client.db.Update("user:"+user.ID, data)
 	if err != nil {
 		return err

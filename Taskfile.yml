@@ -28,6 +28,7 @@ tasks:
 
   test:
     desc: "Run the test code for the example codebase."
+    deps: [gen]
     cmds:
       - cd ./test && go run main.go
 
