@@ -12,6 +12,10 @@ import (
 
 type UserRepo interface {
 	Create(ctx context.Context, user *model.User) error
+	Read(ctx context.Context, id string) (*model.User, bool, error)
+	Update(ctx context.Context, u *model.User) error
+	Delete(ctx context.Context, u *model.User) error
+
 	FindById(ctx context.Context, id string) (*model.User, error)
 	List(ctx context.Context) ([]*model.User, error)
 	Relate(ctx context.Context, edge *model.MemberOf) error
@@ -27,6 +31,18 @@ func User(db *som.Client) UserRepo {
 
 func (repo *user) Create(ctx context.Context, user *model.User) error {
 	return repo.db.User().Create(ctx, user)
+}
+
+func (repo *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
+	return repo.db.User().Read(ctx, id)
+}
+
+func (repo *user) Update(ctx context.Context, user *model.User) error {
+	return repo.db.User().Update(ctx, user)
+}
+
+func (repo *user) Delete(ctx context.Context, user *model.User) error {
+	return repo.db.User().Delete(ctx, user)
 }
 
 func (repo *user) FindById(ctx context.Context, id string) (*model.User, error) {

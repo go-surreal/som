@@ -17,6 +17,18 @@ in the database, without the use of complicated JOINs and without bringing the d
 
 (Information extracted from the [official homepage]((https://surrealdb.com)))
 
+## Table of contents
+
+* [Getting started](#getting-started)
+  * [Basic usage](#basic-usage)
+  * [Versioning](#versioning)
+  * [Compatibility](#compatibility)
+  * [Features](#features)
+* [Roadmap](#roadmap)
+* [How to contribute](#how-to-contribute)
+* [Maintainers & Contributors](#maintainers--contributors)
+* [References](#references)
+
 ## Getting started
 
 ### Basic usage
@@ -27,7 +39,7 @@ Generate the client code:
 go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
 
-The package `github.com/marcbinz/sdb` is a dependency for the project in which the generated client code is used.
+The package `github.com/marcbinz/som` is a dependency for the project in which the generated client code is used.
 So it must be added to the `go.mod` file accordingly.
 
 ### Versioning

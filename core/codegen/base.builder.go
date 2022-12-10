@@ -46,6 +46,10 @@ func (b *build) build() error {
 		return err
 	}
 
+	if err := b.buildUtilFile(); err != nil {
+		return err
+	}
+
 	for _, node := range b.input.nodes {
 		if err := b.buildBaseFile(node); err != nil {
 			return err
@@ -179,6 +183,39 @@ func (db *database) Delete(what string) (any, error) {
 	return nil
 }
 
+func (b *build) buildUtilFile() error {
+	content := `
+
+import (
+	"encoding/json"
+)
+
+func toMap(val any) (map[string]any, error) {
+	data, err := json.Marshal(val)
+	if err != nil {
+		return nil, err
+	}
+
+	var res map[string]any
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+`
+
+	data := []byte("package " + b.basePkgName() + content)
+
+	err := os.WriteFile(path.Join(b.basePath(), "util.go"), data, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to write base file: %v", err)
+	}
+
+	return nil
+}
+
 func (b *build) buildBaseFile(node *dbtype.Node) error {
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
@@ -219,6 +256,8 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 		Block(
 			jen.If(jen.Id(strcase.ToLowerCamel(node.NameGo())).Dot("ID").Op("!=").Lit("")).
 				Block(
+					// TODO: allow for nodes to be created with custom IDs
+					// -> maybe add an option to the generator: "strict" vs. "non-strict" mode?
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for a node to be created"))),
 				),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
@@ -238,38 +277,33 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 			jen.Return(jen.Nil()),
 		)
 
-	// TODO: db.Select does not work with db.Unmarshal(Raw) yet.
-	// Use a query statement for now!
-	//
-	// f.Func().
-	// 	Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
-	// 	Id("Read").
-	// 	Params(
-	// 		jen.Id("ctx").Qual("context", "Context"),
-	// 		jen.Id("id").String(),
-	// 	).
-	// 	Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).
-	// 	Block( // TODO: what if id already contains "user:" ?!
-	// 		jen.List(jen.Id("raw"), jen.Err()).Op(":=").
-	// 			Id("n").Dot("client").Dot("db").Dot("Select").
-	// 			Call(jen.Lit(strcase.ToSnake(node.Name)+":").Op("+").Id("id")),
-	// 		// raw, err := n.client.db.Query("select * from user where id = $ID", map[string]any{"ID": "user:" + id})
-	// 		jen.If(jen.Err().Op("!=").Nil()).Block(
-	// 			jen.Return(jen.Nil(), jen.Err()),
-	// 		),
-	//
-	// 		jen.Var().Id("rawNodes").Index().Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-	// 		jen.Err().Op("=").Qual(def.PkgSurrealDB, "UnmarshalRaw").Call(jen.Id("raw"), jen.Op("&").Id("rawNodes")),
-	// 		jen.If(jen.Err().Op("!=").Nil()).Block(
-	// 			jen.Return(jen.Nil(), jen.Err()),
-	// 		),
-	//
-	// 		jen.If(jen.Len(jen.Id("rawNodes")).Op("<").Lit(1)).Block(
-	// 			jen.Return(jen.Nil(), jen.Qual("errors", "New").Call(jen.Lit("no record for id found"))),
-	// 		),
-	//
-	// 		jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("rawNodes").Index(jen.Lit(0))), jen.Nil()),
-	// 	)
+	f.Func().
+		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+		Id("Read").
+		Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("id").String(),
+		).
+		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
+		Block(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Select").
+				Call(jen.Lit(strcase.ToSnake(node.Name)+":").Op("+").Id("id")),
+
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.If(jen.Qual("errors", "As").Call(jen.Err(), jen.Op("&").Qual(def.PkgSurrealDB, "PermissionError").Values())).
+					Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
+				jen.Return(jen.Nil(), jen.False(), jen.Err()),
+			),
+
+			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").Call(jen.Index().Any().Values(jen.Id("raw")), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.False(), jen.Err()),
+			),
+
+			jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")), jen.True(), jen.Nil()),
+		)
 
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.Name))).
@@ -280,6 +314,29 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 		).
 		Error().
 		Block(
+			jen.If(jen.Id(strcase.ToLowerCamel(node.NameGo())).Dot("ID").Op("==").Lit("")).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
+				),
+
+			jen.List(jen.Id("data"), jen.Err()).Op(":=").Id("toMap").Call(jen.Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo())))),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
+
+			jen.Id("raw").Op(",").Err().Op(":=").Id("n").Dot("client").Dot("db").Dot("Update").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID"), jen.Id("data")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
+
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
+				Call(jen.Index().Any().Values(jen.Id("raw")), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
+
+			jen.Op("*").Id(strcase.ToLowerCamel(node.NameGo())).Op("=").Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("convNode")),
 			jen.Return(jen.Nil()),
 		)
 
@@ -292,6 +349,10 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 		).
 		Error().
 		Block(
+			jen.List(jen.Id("_"), jen.Err()).Op(":=").Id("n").Dot("client").Dot("db").Dot("Delete").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
 			jen.Return(jen.Nil()),
 		)
 

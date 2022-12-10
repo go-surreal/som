@@ -38,10 +38,46 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	*group = *conv.ToGroup(&convNode)
 	return nil
 }
+func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
+	raw, err := n.client.db.Select("group:" + id)
+	if err != nil {
+		if errors.As(err, &surrealdbgo.PermissionError{}) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	var convNode *conv.Group
+	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
+	if err != nil {
+		return nil, false, err
+	}
+	return conv.ToGroup(convNode), true, nil
+}
 func (n *group) Update(ctx context.Context, group *model.Group) error {
+	if group.ID == "" {
+		return errors.New("cannot update Group without existing record ID")
+	}
+	data, err := toMap(conv.FromGroup(group))
+	if err != nil {
+		return err
+	}
+	raw, err := n.client.db.Update("group:"+group.ID, data)
+	if err != nil {
+		return err
+	}
+	var convNode conv.Group
+	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
+	if err != nil {
+		return err
+	}
+	*group = *conv.ToGroup(&convNode)
 	return nil
 }
 func (n *group) Delete(ctx context.Context, group *model.Group) error {
+	_, err := n.client.db.Delete("group:" + group.ID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func (n *group) Relate() *relate.Group {

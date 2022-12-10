@@ -38,10 +38,46 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	*user = *conv.ToUser(&convNode)
 	return nil
 }
+func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
+	raw, err := n.client.db.Select("user:" + id)
+	if err != nil {
+		if errors.As(err, &surrealdbgo.PermissionError{}) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	var convNode *conv.User
+	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
+	if err != nil {
+		return nil, false, err
+	}
+	return conv.ToUser(convNode), true, nil
+}
 func (n *user) Update(ctx context.Context, user *model.User) error {
+	if user.ID == "" {
+		return errors.New("cannot update User without existing record ID")
+	}
+	data, err := toMap(conv.FromUser(user))
+	if err != nil {
+		return err
+	}
+	raw, err := n.client.db.Update("user:"+user.ID, data)
+	if err != nil {
+		return err
+	}
+	var convNode conv.User
+	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
+	if err != nil {
+		return err
+	}
+	*user = *conv.ToUser(&convNode)
 	return nil
 }
 func (n *user) Delete(ctx context.Context, user *model.User) error {
+	_, err := n.client.db.Delete("user:" + user.ID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func (n *user) Relate() *relate.User {
