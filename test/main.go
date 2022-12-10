@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/marcbinz/som/example/gen/som"
 	"github.com/marcbinz/som/example/model"
 	"github.com/marcbinz/som/example/repo"
@@ -64,9 +65,38 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("relation:", edge.ID)
-	fmt.Println("user:", edge.User.ID)
-	fmt.Println("group:", edge.Group.ID)
+	user, ok, err := userRepo.Read(ctx, user.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !ok {
+		log.Fatal("could not find user with id:", user.ID)
+	}
+
+	// fmt.Println("relation:", edge.ID)
+	// fmt.Println("user:", edge.User.ID)
+	// fmt.Println("group:", edge.Group.ID)
+
+	fmt.Println("old user uuid:", user.UUID, user.ID)
+
+	user.UUID, _ = uuid.NewUUID()
+
+	fmt.Println("new user uuid:", user.UUID, user.ID)
+
+	err = userRepo.Update(ctx, user)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("updated user uuid:", user.UUID, user.ID)
+
+	err = userRepo.Delete(ctx, user)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("deleted user:", user.ID)
 
 	//
 	// user2, err := userRepo.FindById(ctx, user.ID)

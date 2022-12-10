@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+type Record = Node // TODO: should we use this?
+
 type Node struct {
 	// include query info into each node resulting from a query?:
 	// status string
