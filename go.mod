@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/surrealdb/surrealdb.go v0.1.2-0.20221019092700-845266102715
-	github.com/urfave/cli/v2 v2.23.6
+	github.com/urfave/cli/v2 v2.23.7
 	github.com/wzshiming/gotype v0.7.3
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
 	golang.org/x/mod v0.7.0
