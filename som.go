@@ -36,3 +36,14 @@ type Password string
 // Applying this struct to a type within your model package will ensure
 // that this type is never considered for the generated layer.
 type Meta struct{}
+
+// External describes a database entity that only holds a reference
+// to an external object. An example for an external object would be
+// some data that is fetched from a remote API.
+//
+// The fields of an External model will not be stored in the database.
+// Furthermore, the models can only be read and assigned as links or edges
+// to other nodes, but not created or updates. This should happen directly
+// via the remote API if needed. Primary use case for the External type are
+// referencing purposes, hence the read-only approach.
+type External struct{}
