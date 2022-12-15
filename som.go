@@ -7,6 +7,8 @@ import (
 type Record = Node // TODO: should we use this?
 
 type Node struct {
+	tableRef
+
 	// include query info into each node resulting from a query?:
 	// status string
 	// time   string
@@ -15,7 +17,9 @@ type Node struct {
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
-type Edge struct{}
+type Edge struct {
+	tableRef
+}
 
 type Timestamps struct {
 	CreatedAt time.Time
@@ -36,3 +40,15 @@ type Password string
 // Applying this struct to a type within your model package will ensure
 // that this type is never considered for the generated layer.
 type Meta struct{}
+
+type tableRef struct {
+	fragment bool
+}
+
+func IsFragment(ref tableRef) bool {
+	return ref.fragment
+}
+
+func MarkFragment(ref *tableRef) {
+	ref.fragment = true
+}

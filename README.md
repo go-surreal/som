@@ -138,6 +138,14 @@ language itself. For further information, please refer to the
 - Currently, the focus is on structured and deterministic data.
 - Might be added in the future though.
 
+## Knowhow
+
+- https://www.appdynamics.com/blog/product/common-application-problems-and-how-to-fix-them-the-select-n-1-problem/
+- https://www.sitepoint.com/silver-bullet-n1-problem/
+- https://nhibernate.info/doc/howto/various/lazy-loading-eager-loading.html
+- https://github.com/mindstand/gogm
+
+
 ## Maintainers & Contributors
 
 - Marc Binz (Author/Owner)
