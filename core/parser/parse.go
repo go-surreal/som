@@ -148,7 +148,7 @@ func isEnum(t gotype.Type) bool {
 		return false
 	}
 
-	return t.String() != "string" && t.PkgPath() == "github.com/marcbinz/som" // TODO: might not be an enum..?!
+	return t.String() != "string" && t.PkgPath() == packagePath // TODO: might not be an enum..?!
 }
 
 func parseNode(v gotype.Type) (*Node, error) {

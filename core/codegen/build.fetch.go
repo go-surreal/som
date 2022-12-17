@@ -40,7 +40,9 @@ func (b *fetchBuilder) build() error {
 }
 
 func (b *fetchBuilder) buildBaseFile() error {
-	content := `package with
+	content := `
+
+package with
 
 // Fetch_ has a suffix of "_" to prevent clashes with node names.
 type Fetch_[T any] interface {
@@ -55,7 +57,9 @@ func keyed[S ~string](base S, key string) string {
 }
 `
 
-	err := os.WriteFile(path.Join(b.path(), "fetch.go"), []byte(content), os.ModePerm)
+	data := []byte(codegenComment + content)
+
+	err := os.WriteFile(path.Join(b.path(), "fetch.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -65,6 +69,8 @@ func keyed[S ~string](base S, key string) string {
 
 func (b *fetchBuilder) buildFile(node *dbtype.Node) error {
 	f := jen.NewFile(b.pkgName)
+
+	f.PackageComment(codegenComment)
 
 	f.Var().Id(node.Name).Op("=").Id(strcase.ToLowerCamel(node.Name)).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 

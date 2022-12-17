@@ -71,7 +71,7 @@ func (b *build) build() error {
 }
 
 func (b *build) buildClientFile() error {
-	content := `package som
+	content := `
 
 import (
 	"fmt"
@@ -118,7 +118,9 @@ func (c *Client) Close() {
 }
 `
 
-	err := os.WriteFile(path.Join(b.basePath(), "client.go"), []byte(content), os.ModePerm)
+	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
+
+	err := os.WriteFile(path.Join(b.basePath(), "client.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -130,7 +132,6 @@ func (b *build) buildDatabaseFile() error {
 	content := `
 
 import (
-	// "errors"
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
 )
@@ -169,7 +170,7 @@ func (db *database) Delete(what string) (any, error) {
 }
 `
 
-	data := []byte("package " + b.basePkgName() + content)
+	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
 
 	err := os.WriteFile(path.Join(b.basePath(), "database.go"), data, os.ModePerm)
 	if err != nil {
@@ -184,6 +185,8 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 	pkgConv := b.subPkg(def.PkgConv)
 
 	f := jen.NewFile(b.basePkgName())
+
+	f.PackageComment(codegenComment)
 
 	f.Func().
 		Params(jen.Id("c").Op("*").Id("Client")).

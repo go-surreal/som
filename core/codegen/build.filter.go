@@ -53,7 +53,9 @@ func (b *filterBuilder) build() error {
 }
 
 func (b *filterBuilder) buildBaseFile() error {
-	content := `package where
+	content := `
+
+package where
 
 import filter "github.com/marcbinz/som/lib/filter"
 
@@ -66,7 +68,9 @@ func Any[T any](filters ...filter.Of[T]) filter.Of[T] {
 }
 `
 
-	err := os.WriteFile(path.Join(b.path(), "where.go"), []byte(content), os.ModePerm)
+	data := []byte(codegenComment + content)
+
+	err := os.WriteFile(path.Join(b.path(), "where.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -76,6 +80,8 @@ func Any[T any](filters ...filter.Of[T]) filter.Of[T] {
 
 func (b *filterBuilder) buildFile(elem dbtype.Element) error {
 	file := jen.NewFile(b.pkgName)
+
+	file.PackageComment(codegenComment)
 
 	if edge, ok := elem.(*dbtype.Edge); ok {
 		b.buildEdge(file, edge)

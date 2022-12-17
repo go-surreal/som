@@ -38,7 +38,9 @@ func (b *queryBuilder) build() error {
 }
 
 func (b *queryBuilder) buildBaseFile() error {
-	content := `package query
+	content := `
+
+package query
 
 type Database interface {
 	Query(statement string, vars any) (any, error)
@@ -53,7 +55,9 @@ type countResult struct {
 }
 `
 
-	err := os.WriteFile(path.Join(b.path(), "query.go"), []byte(content), os.ModePerm)
+	data := []byte(codegenComment + content)
+
+	err := os.WriteFile(path.Join(b.path(), "query.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -63,6 +67,8 @@ type countResult struct {
 
 func (b *queryBuilder) buildFile(node *dbtype.Node) error {
 	f := jen.NewFile(b.pkgName)
+
+	f.PackageComment(codegenComment)
 
 	f.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),

@@ -39,7 +39,9 @@ func (b *sortBuilder) build() error {
 }
 
 func (b *sortBuilder) buildBaseFile() error {
-	content := `package by
+	content := `
+
+package by
 
 func keyed(base, key string) string {
 	if base == "" {
@@ -49,7 +51,9 @@ func keyed(base, key string) string {
 }
 `
 
-	err := os.WriteFile(path.Join(b.path(), "sort.go"), []byte(content), os.ModePerm)
+	data := []byte(codegenComment + content)
+
+	err := os.WriteFile(path.Join(b.path(), "sort.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -59,6 +63,8 @@ func keyed(base, key string) string {
 
 func (b *sortBuilder) buildFile(node *dbtype.Node) error {
 	f := jen.NewFile(b.pkgName)
+
+	f.PackageComment(codegenComment)
 
 	f.Var().Id(node.Name).Op("=").Id("new" + node.Name).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 

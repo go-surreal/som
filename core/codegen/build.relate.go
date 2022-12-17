@@ -46,14 +46,18 @@ func (b *relateBuilder) build() error {
 }
 
 func (b *relateBuilder) buildBaseFile() error {
-	content := `package relate
+	content := `
+
+package relate
 
 type Database interface {
 	Query(statement string, vars any) (any, error)
 }
 `
 
-	err := os.WriteFile(path.Join(b.path(), "relate.go"), []byte(content), os.ModePerm)
+	data := []byte(codegenComment + content)
+
+	err := os.WriteFile(path.Join(b.path(), "relate.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -63,6 +67,8 @@ type Database interface {
 
 func (b *relateBuilder) buildNodeFile(node *dbtype.Node) error {
 	file := jen.NewFile(b.pkgName)
+
+	file.PackageComment(codegenComment)
 
 	file.Add(b.byNew(node))
 
@@ -98,6 +104,8 @@ func (b *relateBuilder) buildNodeFile(node *dbtype.Node) error {
 
 func (b *relateBuilder) buildEdgeFile(edge *dbtype.Edge) error {
 	file := jen.NewFile(b.pkgName)
+
+	file.PackageComment(codegenComment)
 
 	file.Type().Id(strcase.ToLowerCamel(edge.Name)).Struct(
 		jen.Id("db").Id("Database"),

@@ -50,7 +50,9 @@ func (b *convBuilder) build() error {
 }
 
 func (b *convBuilder) buildBaseFile() error {
-	content := `package conv
+	content := `
+
+package conv
 
 import (
 	"github.com/google/uuid"
@@ -108,7 +110,9 @@ func convertEnum[I, O ~string](in []I) []O {
 // }
 `
 
-	err := os.WriteFile(path.Join(b.path(), "conv.go"), []byte(content), os.ModePerm)
+	data := []byte(codegenComment + content)
+
+	err := os.WriteFile(path.Join(b.path(), "conv.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -118,6 +122,8 @@ func convertEnum[I, O ~string](in []I) []O {
 
 func (b *convBuilder) buildFile(elem dbtype.Element) error {
 	f := jen.NewFile(b.pkgName)
+
+	f.PackageComment(codegenComment)
 
 	f.Type().Id(elem.NameGo()).StructFunc(func(g *jen.Group) {
 		for _, f := range elem.GetFields() {
