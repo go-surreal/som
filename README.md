@@ -88,6 +88,7 @@ language itself. For further information, please refer to the
 - [ ] How to handle data migrations? (#22)
 - [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
 - [ ] Choose proper licensing for the project. (#11)
+- [ ] Provide `WithInfo` method.
 
 ### After v0.1.0
 
