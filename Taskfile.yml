@@ -26,7 +26,7 @@ tasks:
     generates:
       - /example/gen/som/**/*
 
-  test:
+  example:
     desc: "Run the test code for the example codebase."
     deps: [gen]
     cmds:
@@ -36,3 +36,9 @@ tasks:
     desc: "Lint the codebase with the golangci-lint tool."
     cmds:
       - golangci-lint run
+
+  test:
+    desc: "Execute all go tests."
+    deps: [gen]
+    cmds:
+      - go test ./...
