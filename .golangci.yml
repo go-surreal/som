@@ -1,0 +1,7 @@
+# GolangCI-Lint Configuration
+
+issues:
+  exclude-rules:
+    - path: example/gen
+      linters:
+        - unused

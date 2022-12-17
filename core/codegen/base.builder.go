@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/def"
-	"github.com/marcbinz/sdb/core/parser"
+	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/def"
+	"github.com/marcbinz/som/core/parser"
 	"os"
 	"path"
 	"path/filepath"
@@ -82,8 +82,8 @@ type Database interface {
 	Close()
 	Create(thing string, data any) (any, error)
 	Select(what string) (any, error)
-	Query(statement string, vars map[string]any) (any, error)
-	Update(thing string, data map[string]any) (any, error)
+	Query(statement string, vars any) (any, error)
+	Update(thing string, data any) (any, error)
 	Delete(what string) (any, error)
 }
 
@@ -149,7 +149,7 @@ func (db *database) Select(what string) (any, error) {
 	return db.DB.Select(what)
 }
 
-func (db *database) Query(statement string, vars map[string]any) (any, error) {
+func (db *database) Query(statement string, vars any) (any, error) {
 	fmt.Println(statement)
 
 	raw, err := db.DB.Query(statement, vars)
@@ -158,11 +158,11 @@ func (db *database) Query(statement string, vars map[string]any) (any, error) {
 	}
 
 	fmt.Println(raw)
-	
+
 	return raw, err
 }
 
-func (db *database) Update(what string, data map[string]any) (any, error) {
+func (db *database) Update(what string, data any) (any, error) {
 	return db.DB.Update(what, data)
 }
 
@@ -223,6 +223,8 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 		Block(
 			jen.If(jen.Id(strcase.ToLowerCamel(node.NameGo())).Dot("ID").Op("!=").Lit("")).
 				Block(
+					// TODO: allow for nodes to be created with custom IDs
+					// -> maybe add an option to the generator: "strict" vs. "non-strict" mode?
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for a node to be created"))),
 				),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
@@ -242,38 +244,33 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 			jen.Return(jen.Nil()),
 		)
 
-	// TODO: db.Select does not work with db.Unmarshal(Raw) yet.
-	// Use a query statement for now!
-	//
-	// f.Func().
-	// 	Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
-	// 	Id("Read").
-	// 	Params(
-	// 		jen.Id("ctx").Qual("context", "Context"),
-	// 		jen.Id("id").String(),
-	// 	).
-	// 	Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).
-	// 	Block( // TODO: what if id already contains "user:" ?!
-	// 		jen.List(jen.Id("raw"), jen.Err()).Op(":=").
-	// 			Id("n").Dot("client").Dot("db").Dot("Select").
-	// 			Call(jen.Lit(strcase.ToSnake(node.Name)+":").Op("+").Id("id")),
-	// 		// raw, err := n.client.db.Query("select * from user where id = $ID", map[string]any{"ID": "user:" + id})
-	// 		jen.If(jen.Err().Op("!=").Nil()).Block(
-	// 			jen.Return(jen.Nil(), jen.Err()),
-	// 		),
-	//
-	// 		jen.Var().Id("rawNodes").Index().Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-	// 		jen.Err().Op("=").Qual(def.PkgSurrealDB, "UnmarshalRaw").Call(jen.Id("raw"), jen.Op("&").Id("rawNodes")),
-	// 		jen.If(jen.Err().Op("!=").Nil()).Block(
-	// 			jen.Return(jen.Nil(), jen.Err()),
-	// 		),
-	//
-	// 		jen.If(jen.Len(jen.Id("rawNodes")).Op("<").Lit(1)).Block(
-	// 			jen.Return(jen.Nil(), jen.Qual("errors", "New").Call(jen.Lit("no record for id found"))),
-	// 		),
-	//
-	// 		jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("rawNodes").Index(jen.Lit(0))), jen.Nil()),
-	// 	)
+	f.Func().
+		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+		Id("Read").
+		Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("id").String(),
+		).
+		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
+		Block(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Select").
+				Call(jen.Lit(strcase.ToSnake(node.Name)+":").Op("+").Id("id")),
+
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.If(jen.Qual("errors", "As").Call(jen.Err(), jen.Op("&").Qual(def.PkgSurrealDB, "PermissionError").Values())).
+					Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
+				jen.Return(jen.Nil(), jen.False(), jen.Err()),
+			),
+
+			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").Call(jen.Index().Any().Values(jen.Id("raw")), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.False(), jen.Err()),
+			),
+
+			jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")), jen.True(), jen.Nil()),
+		)
 
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.Name))).
@@ -284,6 +281,26 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 		).
 		Error().
 		Block(
+			jen.If(jen.Id(strcase.ToLowerCamel(node.NameGo())).Dot("ID").Op("==").Lit("")).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
+				),
+
+			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
+
+			jen.Id("raw").Op(",").Err().Op(":=").Id("n").Dot("client").Dot("db").Dot("Update").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID"), jen.Id("data")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
+
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
+				Call(jen.Index().Any().Values(jen.Id("raw")), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
+
+			jen.Op("*").Id(strcase.ToLowerCamel(node.NameGo())).Op("=").Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("convNode")),
 			jen.Return(jen.Nil()),
 		)
 
@@ -296,6 +313,10 @@ func (b *build) buildBaseFile(node *dbtype.Node) error {
 		).
 		Error().
 		Block(
+			jen.List(jen.Id("_"), jen.Err()).Op(":=").Id("n").Dot("client").Dot("db").Dot("Delete").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
 			jen.Return(jen.Nil()),
 		)
 

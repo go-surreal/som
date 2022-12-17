@@ -10,9 +10,9 @@ const (
 )
 
 const (
-	PkgLibFilter  = "github.com/marcbinz/sdb/lib/filter"
-	PkgLibSort    = "github.com/marcbinz/sdb/lib/sort"
-	PkgLibBuilder = "github.com/marcbinz/sdb/lib/builder"
+	PkgLibFilter  = "github.com/marcbinz/som/lib/filter"
+	PkgLibSort    = "github.com/marcbinz/som/lib/sort"
+	PkgLibBuilder = "github.com/marcbinz/som/lib/builder"
 
 	PkgUUID      = "github.com/google/uuid"
 	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"

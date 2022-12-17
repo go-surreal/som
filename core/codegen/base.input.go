@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/field"
-	"github.com/marcbinz/sdb/core/parser"
+	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/parser"
 )
 
 type input struct {
@@ -120,15 +120,6 @@ func newInput(source *parser.Output) (*input, error) {
 	}
 
 	return &in, nil
-}
-
-func (in *input) isEnum(name string) bool {
-	for _, enum := range in.enums {
-		if enum.Name == name {
-			return true
-		}
-	}
-	return false
 }
 
 func (in *input) SourceQual(name string) jen.Code {

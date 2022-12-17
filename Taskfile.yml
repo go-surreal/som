@@ -1,0 +1,38 @@
+# Taskfile (https://taskfile.dev)
+
+version: "3"
+
+# When tasks/commands are executed in parallel, the
+# output should be prefixed with the name of the task,
+# so it is easier to follow what is happening.
+output: "prefixed"
+
+# The interval to check for changes when watching tasks.
+interval: "500ms"
+
+tasks:
+
+  run:
+    desc: "Run the somgen cli tool."
+    cmds:
+      - cd ./cmd/somgen && go run main.go -- {{.CLI_ARGS}}
+
+  gen:
+    desc: "Generate code for the example codebase."
+    cmds:
+      - cd ./cmd/somgen && go run main.go ../../example/model ../../example/gen/som
+    sources:
+      - ./example/model/**/*
+    generates:
+      - /example/gen/som/**/*
+
+  test:
+    desc: "Run the test code for the example codebase."
+    deps: [gen]
+    cmds:
+      - cd ./test && go run main.go
+
+  lint:
+    desc: "Lint the codebase with the golangci-lint tool."
+    cmds:
+      - golangci-lint run

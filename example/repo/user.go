@@ -2,31 +2,47 @@ package repo
 
 import (
 	"context"
-	"github.com/marcbinz/sdb/example/gen/sdb"
-	"github.com/marcbinz/sdb/example/gen/sdb/by"
-	"github.com/marcbinz/sdb/example/gen/sdb/where"
-	"github.com/marcbinz/sdb/example/gen/sdb/with"
-	"github.com/marcbinz/sdb/example/model"
+	"github.com/marcbinz/som/example/gen/som"
+	"github.com/marcbinz/som/example/gen/som/by"
+	"github.com/marcbinz/som/example/gen/som/where"
+	"github.com/marcbinz/som/example/gen/som/with"
+	"github.com/marcbinz/som/example/model"
 	"time"
 )
 
 type UserRepo interface {
 	Create(ctx context.Context, user *model.User) error
+	Read(ctx context.Context, id string) (*model.User, bool, error)
+	Update(ctx context.Context, u *model.User) error
+	Delete(ctx context.Context, u *model.User) error
+
 	FindById(ctx context.Context, id string) (*model.User, error)
 	List(ctx context.Context) ([]*model.User, error)
 	Relate(ctx context.Context, edge *model.MemberOf) error
 }
 
 type user struct {
-	db *sdb.Client
+	db *som.Client
 }
 
-func User(db *sdb.Client) UserRepo {
+func User(db *som.Client) UserRepo {
 	return &user{db: db}
 }
 
 func (repo *user) Create(ctx context.Context, user *model.User) error {
 	return repo.db.User().Create(ctx, user)
+}
+
+func (repo *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
+	return repo.db.User().Read(ctx, id)
+}
+
+func (repo *user) Update(ctx context.Context, user *model.User) error {
+	return repo.db.User().Update(ctx, user)
+}
+
+func (repo *user) Delete(ctx context.Context, user *model.User) error {
+	return repo.db.User().Delete(ctx, user)
 }
 
 func (repo *user) FindById(ctx context.Context, id string) (*model.User, error) {

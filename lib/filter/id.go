@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"github.com/marcbinz/sdb/lib/builder"
+	"github.com/marcbinz/som/lib/builder"
 )
 
 type ID[R any] struct {
@@ -28,7 +28,7 @@ func (b *ID[R]) In(vals []string) Of[R] {
 	for _, val := range vals {
 		mapped = append(mapped, b.node+":"+val)
 	}
-	return build[R](b.key, builder.OpInside, vals, false)
+	return build[R](b.key, builder.OpInside, mapped, false)
 }
 
 func (b *ID[R]) NotIn(vals []string) Of[R] {
@@ -36,5 +36,5 @@ func (b *ID[R]) NotIn(vals []string) Of[R] {
 	for _, val := range vals {
 		mapped = append(mapped, b.node+":"+val)
 	}
-	return build[R](b.key, builder.OpNotInside, vals, false)
+	return build[R](b.key, builder.OpNotInside, mapped, false)
 }

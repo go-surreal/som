@@ -1,7 +1,7 @@
 package sort
 
 import (
-	"github.com/marcbinz/sdb/lib/builder"
+	"github.com/marcbinz/som/lib/builder"
 )
 
 type Of[T any] builder.Sort
@@ -39,11 +39,11 @@ func (w String[T]) Desc() *Of[T] {
 }
 
 func (w String[T]) Collate() StringCollate[T] {
-	return StringCollate[T]{w.key}
+	return StringCollate[T](w)
 }
 
 func (w String[T]) Numeric() StringNumeric[T] {
-	return StringNumeric[T]{w.key}
+	return StringNumeric[T](w)
 }
 
 type StringCollate[T any] struct {

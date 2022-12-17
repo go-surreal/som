@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/def"
-	"github.com/marcbinz/sdb/core/codegen/field"
+	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/def"
+	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
 )
@@ -51,7 +51,7 @@ func (b *relateBuilder) buildBaseFile() error {
 package relate
 
 type Database interface {
-	Query(statement string, vars map[string]any) (any, error)
+	Query(statement string, vars any) (any, error)
 }
 `
 
@@ -91,7 +91,7 @@ func (b *relateBuilder) buildNodeFile(node *dbtype.Node) error {
 			Id(fld.NameGo()).Params().
 			Id(strcase.ToLowerCamel(edge)).
 			Block(
-				jen.Return(jen.Id(strcase.ToLowerCamel(edge)).Values(jen.Id("db").Op(":").Id("n").Dot("db"))),
+				jen.Return(jen.Id(strcase.ToLowerCamel(edge)).Call(jen.Id("n"))),
 			)
 	}
 

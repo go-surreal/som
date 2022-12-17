@@ -3,8 +3,8 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/sdb/core/codegen/dbtype"
-	"github.com/marcbinz/sdb/core/codegen/def"
+	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/def"
 	"os"
 	"path"
 )
@@ -43,15 +43,15 @@ func (b *queryBuilder) buildBaseFile() error {
 package query
 
 type Database interface {
-	Query(statement string, vars map[string]any) (any, error)
+	Query(statement string, vars any) (any, error)
 }
-	
+
 type idNode struct {
 	ID string
 }
-	
+
 type countResult struct {
-	Count int	
+	Count int
 }
 `
 
