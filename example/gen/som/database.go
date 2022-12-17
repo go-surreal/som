@@ -3,7 +3,6 @@
 package som
 
 import (
-	// "errors"
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
 )

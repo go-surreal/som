@@ -132,7 +132,6 @@ func (b *build) buildDatabaseFile() error {
 	content := `
 
 import (
-	// "errors"
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
 )
