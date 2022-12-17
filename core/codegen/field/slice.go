@@ -14,6 +14,11 @@ type Slice struct {
 	getElement      ElemGetter
 }
 
+// TODO: refactor this temp. method!
+func (f *Slice) Value() string {
+	return f.source.Value
+}
+
 // TODO: cleanup this (temporary) method!
 func (f *Slice) Edge() (bool, string, string, string) {
 	if !f.source.IsEdge {

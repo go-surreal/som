@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"fmt"
+	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/dbtype"
 	"github.com/marcbinz/som/core/codegen/field"
 )
@@ -27,21 +28,29 @@ func (b *schemaBuilder) build() error {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL", node.NameDatabase())
 		statements = append(statements, statement)
 
-		for _, field := range node.GetFields() {
-			if field.NameDatabase() == "id" { // TODO: cleaner approach?
+		for _, f := range node.GetFields() {
+			if f.NameDatabase() == "id" { // TODO: cleaner approach?
 				continue
 			}
 
-			fieldType, ok := b.mapFieldType(field)
+			fieldType, ok := b.mapFieldType(f)
 			if !ok {
 				continue
 			}
 
 			statement := fmt.Sprintf(
 				"DEFINE FIELD %s ON TABLE %s TYPE %s",
-				field.NameDatabase(), node.NameDatabase(), fieldType,
+				f.NameDatabase(), node.NameDatabase(), fieldType,
 			)
 			statements = append(statements, statement)
+
+			if slice, ok := f.(*field.Slice); ok {
+				statement := fmt.Sprintf(
+					"DEFINE FIELD %s.* ON TABLE %s TYPE %s",
+					f.NameDatabase(), node.NameDatabase(), "record("+strcase.ToLowerCamel(slice.Value())+")",
+				)
+				statements = append(statements, statement)
+			}
 		}
 	}
 
@@ -70,7 +79,7 @@ func (b *schemaBuilder) mapFieldType(f dbtype.Field) (string, bool) {
 		// mappedField.StructName()
 		return "object", true
 	case *field.Node:
-		return "record(?)", true
+		return "record(" + strcase.ToLowerCamel(mappedField.NodeName()) + ")", true
 	}
 
 	return "", false
