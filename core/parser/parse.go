@@ -245,7 +245,7 @@ func parseStruct(v gotype.Type) (*Struct, error) {
 func parseField(t gotype.Type) (Field, error) {
 	var field Field
 
-	atomic := &fieldAtomic{Name: t.Name()}
+	atomic := &fieldAtomic{name: t.Name()}
 
 	switch t.Elem().Kind() {
 	case gotype.String:
@@ -285,7 +285,7 @@ func parseField(t gotype.Type) (Field, error) {
 			return nil, err
 		}
 		field = &FieldSlice{
-			&fieldAtomic{Name: t.Name()},
+			&fieldAtomic{name: t.Name()},
 			t.Elem().Elem().Name(),
 			subField,
 			isNode(t.Elem().Elem()),
@@ -296,7 +296,7 @@ func parseField(t gotype.Type) (Field, error) {
 	// 	field = FieldMap{fieldAtomic{Name: t.Name()}, t.Elem().Key().Name(), t.Elem().Elem().Name()}
 	case gotype.Array:
 		if t.Elem().PkgPath() == "github.com/google/uuid" {
-			field = &FieldUUID{&fieldAtomic{Name: t.Name()}}
+			field = &FieldUUID{&fieldAtomic{name: t.Name()}}
 		}
 	default:
 		return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), t.Elem().Kind())

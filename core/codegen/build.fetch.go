@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/codegen/dbtype"
 	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
@@ -67,7 +66,7 @@ func keyed[S ~string](base S, key string) string {
 	return nil
 }
 
-func (b *fetchBuilder) buildFile(node *dbtype.Node) error {
+func (b *fetchBuilder) buildFile(node *field.DatabaseNode) error {
 	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(codegenComment)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
 )
@@ -61,7 +61,12 @@ func keyed(base, key string) string {
 	return nil
 }
 
-func (b *sortBuilder) buildFile(node *dbtype.Node) error {
+func (b *sortBuilder) buildFile(node *field.DatabaseNode) error {
+	fieldCtx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		Elem:      node,
+	}
+
 	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(codegenComment)
@@ -75,14 +80,14 @@ func (b *sortBuilder) buildFile(node *dbtype.Node) error {
 		StructFunc(func(g *jen.Group) {
 			g.Add(jen.Id("key").String())
 			for _, f := range node.Fields {
-				if code := f.SortDefine(b.SourceQual(node.Name)); code != nil {
+				if code := f.CodeGen().SortDefine(fieldCtx); code != nil {
 					g.Add(code)
 				}
 			}
 		})
 
 	for _, fld := range node.GetFields() {
-		if code := fld.SortFunc(b.sourcePkgPath, node.NameGo()); code != nil {
+		if code := fld.CodeGen().SortFunc(fieldCtx); code != nil {
 			f.Add(code)
 		}
 	}
@@ -94,7 +99,12 @@ func (b *sortBuilder) buildFile(node *dbtype.Node) error {
 	return nil
 }
 
-func (b *sortBuilder) byNew(node *dbtype.Node) jen.Code {
+func (b *sortBuilder) byNew(node *field.DatabaseNode) jen.Code {
+	fieldCtx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		Elem:      node,
+	}
+
 	return jen.Func().Id("new" + node.Name).
 		Types(jen.Id("T").Any()).
 		Params(jen.Id("key").String()).
@@ -105,7 +115,7 @@ func (b *sortBuilder) byNew(node *dbtype.Node) jen.Code {
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("key")] = jen.Id("key")
 						for _, f := range node.Fields {
-							if code := f.SortInit(b.SourceQual(node.Name)); code != nil {
+							if code := f.CodeGen().SortInit(fieldCtx); code != nil {
 								d[jen.Id(f.NameGo())] = code
 							}
 						}
