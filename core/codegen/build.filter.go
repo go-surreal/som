@@ -82,7 +82,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 
 	file.PackageComment(codegenComment)
 
-	if edge, ok := elem.(*field.DatabaseEdge); ok {
+	if edge, ok := elem.(*field.EdgeTable); ok {
 		b.buildEdge(file, edge)
 	} else {
 		b.buildOther(file, elem)
@@ -98,10 +98,10 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      elem,
+		Table:     elem,
 	}
 
-	if _, ok := elem.(*field.DatabaseNode); ok {
+	if _, ok := elem.(*field.NodeTable); ok {
 		file.Var().Id(elem.NameGo()).Op("=").
 			Id("new" + elem.NameGo()).Types(b.SourceQual(elem.NameGo())).
 			Call(jen.Qual(def.PkgLibFilter, "NewKey").Call())
@@ -137,7 +137,7 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      elem,
+		Table:     elem,
 	}
 
 	return jen.Func().Id("new" + elem.NameGo()).
@@ -159,10 +159,10 @@ func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 		)
 }
 
-func (b *filterBuilder) buildEdge(file *jen.File, edge *field.DatabaseEdge) {
+func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      edge,
+		Table:     edge,
 	}
 
 	file.Func().Id("new" + edge.NameGo() + "In").
@@ -192,15 +192,15 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.DatabaseEdge) {
 		)
 
 	// TODO: below! -> node.FilterFunc?
-	if out, ok := edge.Out.(*field.Node); ok {
-		file.Func().
-			Params(jen.Id("i").Id(strcase.ToLowerCamel(edge.NameGo()) + "In").Types(jen.Id("T"))).
-			Id(out.NameGo()).Params().
-			Id(strcase.ToLowerCamel(out.NodeName())).Types(jen.Id("T")).
-			Block(
-				jen.Return(jen.Id("new" + out.NodeName()).Types(jen.Id("T")).
-					Params(jen.Id("i").Dot("key").Dot("In").Call(jen.Lit(strcase.ToSnake(out.NodeName()))))))
-	}
+	// if out, ok := edge.Out.(*field.Node); ok {
+	file.Func().
+		Params(jen.Id("i").Id(strcase.ToLowerCamel(edge.NameGo()) + "In").Types(jen.Id("T"))).
+		Id(edge.Out.NameGo()).Params().
+		Id(strcase.ToLowerCamel(edge.Out.NameGo())).Types(jen.Id("T")).
+		Block(
+			jen.Return(jen.Id("new" + edge.Out.NameGo()).Types(jen.Id("T")).
+				Params(jen.Id("i").Dot("key").Dot("In").Call(jen.Lit(strcase.ToSnake(edge.Out.NameGo()))))))
+	// }
 
 	file.Func().Id("new" + edge.NameGo() + "Out").
 		Types(jen.Id("T").Any()).
@@ -229,15 +229,15 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.DatabaseEdge) {
 		)
 
 	// TODO: below! -> node.FilterFunc?
-	if in, ok := edge.In.(*field.Node); ok {
-		file.Func().
-			Params(jen.Id("o").Id(strcase.ToLowerCamel(edge.NameGo()) + "Out").Types(jen.Id("T"))).
-			Id(in.NameGo()).Params().
-			Id(strcase.ToLowerCamel(in.NodeName())).Types(jen.Id("T")).
-			Block(
-				jen.Return(jen.Id("new" + in.NodeName()).Types(jen.Id("T")).
-					Params(jen.Id("o").Dot("key").Dot("Out").Call(jen.Lit(strcase.ToSnake(in.NodeName()))))))
-	}
+	// if in, ok := edge.In.(*field.Node); ok {
+	file.Func().
+		Params(jen.Id("o").Id(strcase.ToLowerCamel(edge.NameGo()) + "Out").Types(jen.Id("T"))).
+		Id(edge.In.NameGo()).Params().
+		Id(strcase.ToLowerCamel(edge.In.NameGo())).Types(jen.Id("T")).
+		Block(
+			jen.Return(jen.Id("new" + edge.In.NameGo()).Types(jen.Id("T")).
+				Params(jen.Id("o").Dot("key").Dot("Out").Call(jen.Lit(strcase.ToSnake(edge.In.NameGo()))))))
+	// }
 
 	file.Type().Id(strcase.ToLowerCamel(edge.NameGo())).
 		Types(jen.Id("T").Any()).

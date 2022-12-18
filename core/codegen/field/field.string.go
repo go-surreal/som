@@ -13,6 +13,10 @@ type String struct {
 	source *parser.FieldString
 }
 
+func (f *String) typeGo() jen.Code {
+	return jen.String()
+}
+
 func (f *String) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

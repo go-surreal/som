@@ -180,7 +180,7 @@ func (db *database) Delete(what string) (any, error) {
 	return nil
 }
 
-func (b *build) buildBaseFile(node *field.DatabaseNode) error {
+func (b *build) buildBaseFile(node *field.NodeTable) error {
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
 

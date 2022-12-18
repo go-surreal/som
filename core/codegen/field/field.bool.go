@@ -13,6 +13,10 @@ type Bool struct {
 	source *parser.FieldBool
 }
 
+func (f *Bool) typeGo() jen.Code {
+	return jen.Bool()
+}
+
 func (f *Bool) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

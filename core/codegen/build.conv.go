@@ -123,7 +123,7 @@ func convertEnum[I, O ~string](in []I) []O {
 func (b *convBuilder) buildFile(elem field.Element) error {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      elem,
+		Table:     elem,
 	}
 
 	f := jen.NewFile(b.pkgName)
@@ -141,7 +141,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	f.Add(b.buildFrom(elem))
 	f.Add(b.buildTo(elem))
 
-	if node, ok := elem.(*field.DatabaseNode); ok {
+	if node, ok := elem.(*field.NodeTable); ok {
 		f.Type().Id(node.NameGo() + "Field").Id(node.NameGo())
 
 		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGo()+"Field")).
@@ -194,7 +194,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      elem,
+		Table:     elem,
 	}
 
 	return jen.Func().
@@ -218,7 +218,7 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      elem,
+		Table:     elem,
 	}
 
 	return jen.Func().
@@ -235,7 +235,7 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 			}))))
 }
 
-func (b *convBuilder) buildFromField(node *field.DatabaseNode) jen.Code {
+func (b *convBuilder) buildFromField(node *field.NodeTable) jen.Code {
 	return jen.Func().
 		Id("from"+node.NameGo()+"Field").
 		Params(jen.Id("field").Id(node.NameGo()+"Field")).
@@ -246,7 +246,7 @@ func (b *convBuilder) buildFromField(node *field.DatabaseNode) jen.Code {
 		)
 }
 
-func (b *convBuilder) buildToField(node *field.DatabaseNode) jen.Code {
+func (b *convBuilder) buildToField(node *field.NodeTable) jen.Code {
 	return jen.Func().
 		Id("to" + node.NameGo() + "Field").
 		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).

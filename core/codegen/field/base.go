@@ -1,6 +1,8 @@
 package field
 
 import (
+	"github.com/dave/jennifer/jen"
+	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/parser"
 )
 
@@ -9,31 +11,66 @@ const (
 	funcParseDatabaseID = "parseDatabaseID"
 )
 
-type Edge struct {
-	Name   string
-	In     Field
-	Out    Field
-	Fields []Field
-}
+// type Edge struct {
+// 	Name   string
+// 	In     Field
+// 	Out    Field
+// 	Fields []Field
+// }
 
 type ElemGetter func(name string) (Element, bool)
 
 type Field interface {
 	NameGo() string
+	NameGoLower() string
 	NameDatabase() string
+
+	typeGo() jen.Code
+	// typeDatabase() string
 
 	CodeGen() *CodeGen
 }
 
-type Element interface {
-	FileName() string
-	GetFields() []Field
+type Named interface {
 	NameGo() string
 	NameGoLower() string
 	NameDatabase() string
 }
 
+type Element interface {
+	Named
+
+	FileName() string
+	GetFields() []Field
+}
+
+type Table interface {
+	Named
+
+	FileName() string
+	GetFields() []Field
+}
+
+type Model string
+
+func (m Model) NameGo() string {
+	return string(m)
+}
+
+func (m Model) NameGoLower() string {
+	return strcase.ToLowerCamel(string(m))
+}
+
+func (m Model) NameDatabase() string {
+	return strcase.ToSnake(string(m)) // TODO
+}
+
+func tableEqual(t1, t2 Table) bool {
+	return t1.NameGo() == t2.NameGo()
+}
+
 type BuildConfig struct {
+	SourcePkg      string
 	ToDatabaseName func(base string) string
 }
 
@@ -45,6 +82,10 @@ type baseField struct {
 
 func (f *baseField) NameGo() string {
 	return f.source.Name()
+}
+
+func (f *baseField) NameGoLower() string {
+	return strcase.ToLowerCamel(f.NameGo())
 }
 
 func (f *baseField) NameDatabase() string {

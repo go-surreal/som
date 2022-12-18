@@ -13,6 +13,10 @@ type UUID struct {
 	source *parser.FieldUUID
 }
 
+func (f *UUID) typeGo() jen.Code {
+	return jen.Qual(def.PkgUUID, "UUID")
+}
+
 func (f *UUID) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

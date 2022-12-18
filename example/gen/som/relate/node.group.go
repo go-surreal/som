@@ -9,6 +9,6 @@ type Group struct {
 	db Database
 }
 
-func (n Group) Members() memberOf {
-	return memberOf(n)
+func (n Group) Members() {
+	return (n)
 }

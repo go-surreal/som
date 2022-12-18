@@ -13,6 +13,10 @@ type Time struct {
 	source *parser.FieldTime
 }
 
+func (f *Time) typeGo() jen.Code {
+	return jen.Qual("time", "Time")
+}
+
 func (f *Time) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
@@ -56,6 +60,6 @@ func (f *Time) convTo(ctx Context) jen.Code {
 }
 
 func (f *Time) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Qual("time", "Time").
+	return jen.Id(f.NameGo()).Add(f.typeGo()).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

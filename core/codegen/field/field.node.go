@@ -10,6 +10,11 @@ type Node struct {
 	*baseField
 
 	source *parser.FieldNode
+	table  NodeTable
+}
+
+func (f *Node) typeGo() jen.Code {
+	return jen.Qual(f.SourcePkg, f.table.NameGo())
 }
 
 // TODO: cool to expose just like that?
@@ -35,7 +40,7 @@ func (f *Node) CodeGen() *CodeGen {
 
 func (f *Node) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Elem.NameGoLower()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
 		Id(strcase.ToLowerCamel(f.source.Node)).Types(jen.Id("T")).
 		Block(
@@ -45,7 +50,7 @@ func (f *Node) filterFunc(ctx Context) jen.Code {
 
 func (f *Node) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Elem.NameDatabase()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameDatabase()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
 		Id(strcase.ToLowerCamel(f.source.Node)).Types(jen.Id("T")).
 		Block(

@@ -66,7 +66,7 @@ func keyed[S ~string](base S, key string) string {
 	return nil
 }
 
-func (b *fetchBuilder) buildFile(node *field.DatabaseNode) error {
+func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(codegenComment)

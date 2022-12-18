@@ -61,10 +61,10 @@ func keyed(base, key string) string {
 	return nil
 }
 
-func (b *sortBuilder) buildFile(node *field.DatabaseNode) error {
+func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      node,
+		Table:     node,
 	}
 
 	f := jen.NewFile(b.pkgName)
@@ -99,10 +99,10 @@ func (b *sortBuilder) buildFile(node *field.DatabaseNode) error {
 	return nil
 }
 
-func (b *sortBuilder) byNew(node *field.DatabaseNode) jen.Code {
+func (b *sortBuilder) byNew(node *field.NodeTable) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      node,
+		Table:     node,
 	}
 
 	return jen.Func().Id("new" + node.Name).

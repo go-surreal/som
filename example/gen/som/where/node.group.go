@@ -25,7 +25,3 @@ type groupSlice[T any] struct {
 	group[T]
 	*filter.Slice[model.Group, T]
 }
-
-func (n group[T]) Members() memberOfOut[T] {
-	return newMemberOfOut[T](n.key.Out("member_of"))
-}

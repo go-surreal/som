@@ -10,23 +10,25 @@ import (
 type Slice struct {
 	*baseField
 
-	source     *parser.FieldSlice
-	getElement ElemGetter
+	source  *parser.FieldSlice
+	element Field
+}
+
+func (f *Slice) typeGo() jen.Code {
+	return jen.Index().Add(f.element.typeGo())
 }
 
 // TODO: cleanup this (temporary) method!
-func (f *Slice) Edge() (bool, string, string, string) {
-	if !f.source.IsEdge {
-		return false, "", "", ""
+func (f *Slice) Edge() (bool, Field, *Node, *Node) {
+	edgeElement, ok := f.element.(*Edge)
+	if !ok {
+		return false, nil, nil, nil
 	}
 
-	rawEdge, _ := f.getElement(f.source.Field.(*parser.FieldEdge).Edge)
-	edge := rawEdge.(*DatabaseEdge)
-	in := edge.In.(*Node).source.Node
-	out := edge.Out.(*Node).source.Node
-	field := f.source.Field.(*parser.FieldEdge).Edge
+	in := edgeElement.table.In
+	out := edgeElement.table.Out
 
-	return true, field, in, out
+	return true, f.element, &in, &out
 }
 
 func (f *Slice) CodeGen() *CodeGen {
@@ -46,112 +48,158 @@ func (f *Slice) CodeGen() *CodeGen {
 }
 
 func (f *Slice) filterFunc(ctx Context) jen.Code {
-	if f.source.IsEdge {
-		rawEdge, _ := f.getElement(f.source.Field.(*parser.FieldEdge).Edge)
-		edge := rawEdge.(*DatabaseEdge)
-		in := edge.In.(*Node).source.Node
-		out := edge.Out.(*Node).source.Node
-		field := f.source.Field.(*parser.FieldEdge).Edge
+	switch element := f.element.(type) {
 
-		if ctx.Elem.NameGo() == in {
-			return jen.Func().
-				Params(jen.Id("n").Id(strcase.ToLowerCamel(ctx.Elem.NameGo())).Types(jen.Id("T"))).
-				Id(f.NameGo()).Params().
-				Params(jen.Id(strcase.ToLowerCamel(field) + "In").Index(jen.Id("T"))).
-				Block(
-					jen.Return(
-						jen.Id("new" + field + "In").Index(jen.Id("T")).
-							Call(jen.Id("n").Dot("key").Dot("In").Call(jen.Lit(edge.NameDatabase()))),
-					),
-				)
-		}
-
-		if ctx.Elem.NameGo() == out {
-			return jen.Func().
-				Params(jen.Id("n").Id(ctx.Elem.NameGoLower()).Types(jen.Id("T"))).
-				Id(f.NameGo()).Params().
-				Params(jen.Id(strcase.ToLowerCamel(field) + "Out").Index(jen.Id("T"))).
-				Block(
-					jen.Return(
-						jen.Id("new" + field + "Out").Index(jen.Id("T")).
-							Call(jen.Id("n").Dot("key").Dot("Out").Call(jen.Lit(edge.NameDatabase()))),
-					),
-				)
-		}
-
-		return nil
-	} else if f.source.IsNode {
-		return jen.Func().
-			Params(jen.Id("n").Id(ctx.Elem.NameGoLower()).Types(jen.Id("T"))).
-			Id(f.NameGo()).Params().
-			Id(strcase.ToLowerCamel(f.source.Value)+"Slice").Types(jen.Id("T")).
-			Block(
-				jen.Id("key").Op(":=").Id("n").Dot("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))),
-				jen.Return(
-					jen.Id(strcase.ToLowerCamel(f.source.Value)+"Slice").Types(jen.Id("T")).
-						Values(
-							jen.Id("new"+f.source.Value).Types(jen.Id("T")).
-								Call(jen.Id("key")),
-							jen.Qual(def.PkgLibFilter, "NewSlice").Types(jen.Qual(ctx.SourcePkg, f.source.Value), jen.Id("T")).
-								Call(jen.Id("key")),
+	case *Edge:
+		{
+			if tableEqual(ctx.Table, &element.table.In.table) {
+				return jen.Func().
+					Params(jen.Id("n").Id(strcase.ToLowerCamel(ctx.Table.NameGo())).Types(jen.Id("T"))).
+					Id(f.NameGo()).Params().
+					Params(jen.Id(element.NameGoLower() + "In").Index(jen.Id("T"))).
+					Block(
+						jen.Return(
+							jen.Id("new" + element.NameGo() + "In").Index(jen.Id("T")).
+								Call(jen.Id("n").Dot("key").Dot("In").Call(jen.Lit(element.NameDatabase()))),
 						),
-				),
-			)
-	} else if f.source.IsEnum {
-		return jen.Func().
-			Params(jen.Id("n").Id(ctx.Elem.NameGoLower()).Types(jen.Id("T"))).
-			Id(f.NameGo()).Params().
-			Op("*").Qual(def.PkgLibFilter, "Slice").Types(jen.Qual(ctx.SourcePkg, f.source.Value), jen.Id("T")).
-			Block(
-				jen.Return(
-					jen.Qual(def.PkgLibFilter, "NewSlice").Types(jen.Qual(ctx.SourcePkg, f.source.Value), jen.Id("T")).
-						Call(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo())))),
-				),
-			)
-	} else {
-		return jen.Func().
-			Params(jen.Id("n").Id(ctx.Elem.NameGoLower()).Types(jen.Id("T"))).
-			Id(f.NameGo()).Params().
-			Op("*").Qual(def.PkgLibFilter, "Slice").Types(jen.Id(f.source.Value), jen.Id("T")).
-			Block(
-				jen.Return(
-					jen.Qual(def.PkgLibFilter, "NewSlice").Types(jen.Id(f.source.Value), jen.Id("T")).
-						Call(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo())))),
-				),
-			)
+					)
+			}
+
+			if tableEqual(ctx.Table, &element.table.Out.table) {
+				return jen.Func().
+					Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+					Id(f.NameGo()).Params().
+					Params(jen.Id(element.NameGoLower() + "Out").Index(jen.Id("T"))).
+					Block(
+						jen.Return(
+							jen.Id("new" + element.NameGo() + "Out").Index(jen.Id("T")).
+								Call(jen.Id("n").Dot("key").Dot("Out").Call(jen.Lit(element.NameDatabase()))),
+						),
+					)
+			}
+
+			return nil
+		}
+
+	case *Node:
+		{
+			return jen.Func().
+				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+				Id(f.NameGo()).Params().
+				Id(element.table.NameGoLower()+"Slice").Types(jen.Id("T")).
+				Block(
+					jen.Id("key").Op(":=").Id("n").Dot("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))),
+					jen.Return(
+						jen.Id(element.table.NameGoLower()+"Slice").Types(jen.Id("T")).
+							Values(
+								jen.Id("new"+element.table.NameGo()).Types(jen.Id("T")).
+									Call(jen.Id("key")),
+								jen.Qual(def.PkgLibFilter, "NewSlice").Types(jen.Qual(ctx.SourcePkg, element.table.NameGo()), jen.Id("T")).
+									Call(jen.Id("key")),
+							),
+					),
+				)
+		}
+
+	case *Enum:
+		{
+			return jen.Func().
+				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+				Id(f.NameGo()).Params().
+				Op("*").Qual(def.PkgLibFilter, "Slice").Types(jen.Qual(ctx.SourcePkg, element.model.NameGo()), jen.Id("T")).
+				Block(
+					jen.Return(
+						jen.Qual(def.PkgLibFilter, "NewSlice").Types(jen.Qual(ctx.SourcePkg, element.model.NameGo()), jen.Id("T")).
+							Call(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo())))),
+					),
+				)
+		}
+
+	default:
+		{
+			return jen.Func().
+				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+				Id(f.NameGo()).Params().
+				Op("*").Qual(def.PkgLibFilter, "Slice").Types(element.typeGo(), jen.Id("T")).
+				Block(
+					jen.Return(
+						jen.Qual(def.PkgLibFilter, "NewSlice").Types(element.typeGo(), jen.Id("T")).
+							Call(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo())))),
+					),
+				)
+		}
 	}
 }
 
 func (f *Slice) convFrom(ctx Context) jen.Code {
-	if f.source.IsNode {
-		return jen.Id("mapRecords").Call(jen.Id("data").Dot(f.NameGo()), jen.Id("to"+f.source.Value+"Field"))
-	} else if f.source.IsEdge {
-		return nil // TODO: should edges really not be addable like that?
-	} else if f.source.IsEnum {
-		return jen.Id("convertEnum").Types(jen.Qual(ctx.SourcePkg, f.source.Value), jen.String()).Call(jen.Id("data").Dot(f.NameGo()))
-	} else {
-		return jen.Id("data").Dot(f.NameGo())
+	switch element := f.element.(type) {
+
+	case *Node:
+		{
+			return jen.Id("mapRecords").Call(jen.Id("data").Dot(f.NameGo()), jen.Id("to"+element.NameGo()+"Field"))
+		}
+
+	case *Edge:
+		{
+			return nil // TODO: should edges really not be addable like that?
+		}
+
+	case *Enum:
+		{
+			return jen.Id("convertEnum").Types(element.typeGo(), jen.String()).Call(jen.Id("data").Dot(f.NameGo()))
+		}
+
+	default:
+		{
+			return jen.Id("data").Dot(f.NameGo())
+		}
+
 	}
 }
 
 func (f *Slice) convTo(ctx Context) jen.Code {
-	if f.source.IsNode || f.source.IsEdge {
+	switch element := f.element.(type) {
+
+	case *Node:
 		return nil
-	} else if f.source.IsEnum {
-		return jen.Id("convertEnum").Types(jen.String(), jen.Qual(ctx.SourcePkg, f.source.Value)).Call(jen.Id("data").Dot(f.NameGo()))
-	} else {
-		return jen.Id("data").Dot(f.NameGo())
+
+	case *Edge:
+		return nil
+
+	case *Enum:
+		{
+			return jen.Id("convertEnum").
+				Types(jen.String(), element.typeGo()).
+				Call(jen.Id("data").Dot(f.NameGo()))
+		}
+
+	default:
+		{
+			return jen.Id("data").Dot(f.NameGo())
+		}
+
 	}
 }
 
 func (f *Slice) fieldDef(ctx Context) jen.Code {
-	typ := f.source.Value
-	if f.source.IsNode {
-		typ = f.source.Value + "Field"
+	switch element := f.element.(type) {
+
+	case *Node:
+		{
+			return jen.Id(f.NameGo()).Index().Id(element.table.NameGo() + "Field").
+				Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+		}
+
+	case *Enum:
+		{
+			return jen.Id(f.NameGo()).Index().String().
+				Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+		}
+
+	default:
+		{
+			return jen.Id(f.NameGo()).Index().Add(element.typeGo()).
+				Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+		}
 	}
-	if f.source.IsEnum {
-		typ = "string"
-	}
-	return jen.Id(f.NameGo()).Index().Id(typ).
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

@@ -11,6 +11,11 @@ type Enum struct {
 	*baseField
 
 	source *parser.FieldEnum
+	model  Model
+}
+
+func (f *Enum) typeGo() jen.Code {
+	return jen.Qual(f.SourcePkg, f.model.NameGo())
 }
 
 func (f *Enum) CodeGen() *CodeGen {
@@ -48,5 +53,5 @@ func (f *Enum) convTo(ctx Context) jen.Code {
 
 func (f *Enum) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).String(). // TODO: support other enum base types (atomic)
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+						Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

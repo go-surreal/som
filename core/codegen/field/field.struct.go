@@ -10,6 +10,11 @@ type Struct struct {
 	*baseField
 
 	source *parser.FieldStruct
+	model  Model
+}
+
+func (f *Struct) typeGo() jen.Code {
+	return jen.Qual(f.SourcePkg, f.model.NameGo())
 }
 
 func (f *Struct) CodeGen() *CodeGen {
@@ -30,7 +35,7 @@ func (f *Struct) CodeGen() *CodeGen {
 
 func (f *Struct) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Elem.NameGoLower()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
 		Id(strcase.ToLowerCamel(f.source.Struct)).Types(jen.Id("T")).
 		Block(
