@@ -3,7 +3,7 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/dbtype"
+	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
 )
@@ -120,14 +120,19 @@ func convertEnum[I, O ~string](in []I) []O {
 	return nil
 }
 
-func (b *convBuilder) buildFile(elem dbtype.Element) error {
+func (b *convBuilder) buildFile(elem field.Element) error {
+	fieldCtx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		Elem:      elem,
+	}
+
 	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(codegenComment)
 
 	f.Type().Id(elem.NameGo()).StructFunc(func(g *jen.Group) {
 		for _, f := range elem.GetFields() {
-			if code := f.FieldDef(); code != nil {
+			if code := f.CodeGen().FieldDef(fieldCtx); code != nil {
 				g.Add(code)
 			}
 		}
@@ -136,7 +141,7 @@ func (b *convBuilder) buildFile(elem dbtype.Element) error {
 	f.Add(b.buildFrom(elem))
 	f.Add(b.buildTo(elem))
 
-	if node, ok := elem.(*dbtype.Node); ok {
+	if node, ok := elem.(*field.DatabaseNode); ok {
 		f.Type().Id(node.NameGo() + "Field").Id(node.NameGo())
 
 		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGo()+"Field")).
@@ -186,7 +191,12 @@ func (b *convBuilder) buildFile(elem dbtype.Element) error {
 	return nil
 }
 
-func (b *convBuilder) buildFrom(elem dbtype.Element) jen.Code {
+func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
+	fieldCtx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		Elem:      elem,
+	}
+
 	return jen.Func().
 		Id("From"+elem.NameGo()).
 		Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
@@ -197,7 +207,7 @@ func (b *convBuilder) buildFrom(elem dbtype.Element) jen.Code {
 			),
 			jen.Return(jen.Op("&").Id(elem.NameGo()).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
-					if code := f.ConvFrom(b.sourcePkgPath, elem.NameGo()); code != nil {
+					if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
 					}
 				}
@@ -205,7 +215,12 @@ func (b *convBuilder) buildFrom(elem dbtype.Element) jen.Code {
 		)
 }
 
-func (b *convBuilder) buildTo(elem dbtype.Element) jen.Code {
+func (b *convBuilder) buildTo(elem field.Element) jen.Code {
+	fieldCtx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		Elem:      elem,
+	}
+
 	return jen.Func().
 		Id("To" + elem.NameGo()).
 		Params(jen.Id("data").Op("*").Id(elem.NameGo())).
@@ -213,14 +228,14 @@ func (b *convBuilder) buildTo(elem dbtype.Element) jen.Code {
 		Block(
 			jen.Return(jen.Id("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
-					if code := f.ConvTo(b.sourcePkgPath, elem.NameGo()); code != nil {
+					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
 					}
 				}
 			}))))
 }
 
-func (b *convBuilder) buildFromField(node *dbtype.Node) jen.Code {
+func (b *convBuilder) buildFromField(node *field.DatabaseNode) jen.Code {
 	return jen.Func().
 		Id("from"+node.NameGo()+"Field").
 		Params(jen.Id("field").Id(node.NameGo()+"Field")).
@@ -231,7 +246,7 @@ func (b *convBuilder) buildFromField(node *dbtype.Node) jen.Code {
 		)
 }
 
-func (b *convBuilder) buildToField(node *dbtype.Node) jen.Code {
+func (b *convBuilder) buildToField(node *field.DatabaseNode) jen.Code {
 	return jen.Func().
 		Id("to" + node.NameGo() + "Field").
 		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).

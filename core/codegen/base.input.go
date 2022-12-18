@@ -5,25 +5,28 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/codegen/dbtype"
 	"github.com/marcbinz/som/core/codegen/field"
 	"github.com/marcbinz/som/core/parser"
 )
 
 type input struct {
 	sourcePkgPath string
-	nodes         []*dbtype.Node
-	edges         []*dbtype.Edge
-	objects       []*dbtype.Object
-	enums         []*dbtype.Enum
+	nodes         []*field.DatabaseNode
+	edges         []*field.DatabaseEdge
+	objects       []*field.DatabaseObject
+	enums         []*field.DatabaseEnum
 }
 
 func newInput(source *parser.Output) (*input, error) {
+	buildConf := &field.BuildConfig{
+		ToDatabaseName: strcase.ToSnake, // TODO
+	}
+
 	var in input
 
 	in.sourcePkgPath = source.PkgPath
 
-	getElement := func(name string) (dbtype.Element, bool) {
+	getElement := func(name string) (field.Element, bool) {
 		for _, node := range in.nodes {
 			if node.Name == name {
 				return node, true
@@ -52,12 +55,12 @@ func newInput(source *parser.Output) (*input, error) {
 	}
 
 	for _, node := range source.Nodes {
-		dbNode := &dbtype.Node{
+		dbNode := &field.DatabaseNode{
 			Name: node.Name,
 		}
 
 		for _, f := range node.Fields {
-			dbField, ok := field.Convert(f, getElement, strcase.ToSnake) // TODO
+			dbField, ok := field.Convert(buildConf, f, getElement)
 			if !ok {
 				return nil, fmt.Errorf("could not convert field: %v", f)
 			}
@@ -68,24 +71,24 @@ func newInput(source *parser.Output) (*input, error) {
 	}
 
 	for _, edge := range source.Edges {
-		dbEdge := &dbtype.Edge{
+		dbEdge := &field.DatabaseEdge{
 			Name: edge.Name,
 		}
 
-		inField, ok := field.Convert(edge.In, getElement, strcase.ToSnake) // TODO
+		inField, ok := field.Convert(buildConf, edge.In, getElement)
 		if !ok {
 			return nil, fmt.Errorf("could not convert in field: %v", edge.In)
 		}
 		dbEdge.In = inField
 
-		outField, ok := field.Convert(edge.Out, getElement, strcase.ToSnake) // TODO
+		outField, ok := field.Convert(buildConf, edge.Out, getElement)
 		if !ok {
 			return nil, fmt.Errorf("could not convert out field: %v", edge.Out)
 		}
 		dbEdge.Out = outField
 
 		for _, f := range edge.Fields {
-			dbField, ok := field.Convert(f, getElement, strcase.ToSnake) // TODO
+			dbField, ok := field.Convert(buildConf, f, getElement)
 			if !ok {
 				return nil, fmt.Errorf("could not convert field: %v", f)
 			}
@@ -96,12 +99,12 @@ func newInput(source *parser.Output) (*input, error) {
 	}
 
 	for _, str := range source.Structs {
-		dbObject := &dbtype.Object{
+		dbObject := &field.DatabaseObject{
 			Name: str.Name,
 		}
 
 		for _, f := range str.Fields {
-			dbField, ok := field.Convert(f, getElement, strcase.ToSnake) // TODO
+			dbField, ok := field.Convert(buildConf, f, getElement)
 			if !ok {
 				return nil, errors.New("could not convert field")
 			}
@@ -112,7 +115,7 @@ func newInput(source *parser.Output) (*input, error) {
 	}
 
 	for _, enum := range source.Enums {
-		dbEnum := &dbtype.Enum{
+		dbEnum := &field.DatabaseEnum{
 			Name: enum.Name,
 		}
 

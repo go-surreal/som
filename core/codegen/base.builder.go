@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/codegen/dbtype"
 	"github.com/marcbinz/som/core/codegen/def"
+	"github.com/marcbinz/som/core/codegen/field"
 	"github.com/marcbinz/som/core/parser"
 	"os"
 	"path"
@@ -180,7 +180,7 @@ func (db *database) Delete(what string) (any, error) {
 	return nil
 }
 
-func (b *build) buildBaseFile(node *dbtype.Node) error {
+func (b *build) buildBaseFile(node *field.DatabaseNode) error {
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
 

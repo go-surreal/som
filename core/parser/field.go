@@ -7,16 +7,21 @@ import (
 type Field interface {
 	fmt.Stringer
 	field()
+	Name() string
 }
 
 type fieldAtomic struct {
-	Name string
+	name string
 }
 
 func (*fieldAtomic) field() {}
 
 func (f *fieldAtomic) String() string {
-	return f.Name
+	return f.Name()
+}
+
+func (f *fieldAtomic) Name() string {
+	return f.name
 }
 
 type FieldID struct {

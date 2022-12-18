@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/codegen/dbtype"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
 	"os"
@@ -65,7 +64,7 @@ type Database interface {
 	return nil
 }
 
-func (b *relateBuilder) buildNodeFile(node *dbtype.Node) error {
+func (b *relateBuilder) buildNodeFile(node *field.DatabaseNode) error {
 	file := jen.NewFile(b.pkgName)
 
 	file.PackageComment(codegenComment)
@@ -102,7 +101,7 @@ func (b *relateBuilder) buildNodeFile(node *dbtype.Node) error {
 	return nil
 }
 
-func (b *relateBuilder) buildEdgeFile(edge *dbtype.Edge) error {
+func (b *relateBuilder) buildEdgeFile(edge *field.DatabaseEdge) error {
 	file := jen.NewFile(b.pkgName)
 
 	file.PackageComment(codegenComment)
@@ -195,7 +194,7 @@ func (b *relateBuilder) buildEdgeFile(edge *dbtype.Edge) error {
 	return nil
 }
 
-func (b *relateBuilder) byNew(node dbtype.Element) jen.Code {
+func (b *relateBuilder) byNew(node field.Element) jen.Code {
 	return jen.Func().Id("New" + node.NameGo()).
 		Params(jen.Id("db").Id("Database")).
 		Id("*").Id(node.NameGo()).
