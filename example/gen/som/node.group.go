@@ -41,7 +41,7 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	return nil
 }
 func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
-	raw, err := n.client.db.Select("group:" + id)
+	raw, err := n.client.db.Select("group:⟨" + id + "⟩")
 	if err != nil {
 		if errors.As(err, &surrealdbgo.PermissionError{}) {
 			return nil, false, nil
@@ -60,7 +60,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 		return errors.New("cannot update Group without existing record ID")
 	}
 	data := conv.FromGroup(group)
-	raw, err := n.client.db.Update("group:"+group.ID, data)
+	raw, err := n.client.db.Update("group:⟨"+group.ID+"⟩", data)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	return nil
 }
 func (n *group) Delete(ctx context.Context, group *model.Group) error {
-	_, err := n.client.db.Delete("group:" + group.ID)
+	_, err := n.client.db.Delete("group:⟨" + group.ID + "⟩")
 	if err != nil {
 		return err
 	}

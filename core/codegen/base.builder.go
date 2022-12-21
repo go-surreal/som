@@ -257,7 +257,7 @@ func (b *build) buildBaseFile(node *field.DatabaseNode) error {
 		Block(
 			jen.List(jen.Id("raw"), jen.Err()).Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Select").
-				Call(jen.Lit(strcase.ToSnake(node.Name)+":").Op("+").Id("id")),
+				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
 
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.If(jen.Qual("errors", "As").Call(jen.Err(), jen.Op("&").Qual(def.PkgSurrealDB, "PermissionError").Values())).
@@ -290,7 +290,9 @@ func (b *build) buildBaseFile(node *field.DatabaseNode) error {
 
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
 
-			jen.Id("raw").Op(",").Err().Op(":=").Id("n").Dot("client").Dot("db").Dot("Update").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID"), jen.Id("data")),
+			jen.Id("raw").Op(",").Err().Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Update").
+				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
 			),
@@ -315,7 +317,9 @@ func (b *build) buildBaseFile(node *field.DatabaseNode) error {
 		).
 		Error().
 		Block(
-			jen.List(jen.Id("_"), jen.Err()).Op(":=").Id("n").Dot("client").Dot("db").Dot("Delete").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID")),
+			jen.List(jen.Id("_"), jen.Err()).Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Delete").
+				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
 			),
