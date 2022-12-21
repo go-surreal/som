@@ -25,7 +25,7 @@ func (n *group) Query() *query.Group {
 func (n *group) Create(ctx context.Context, group *model.Group) error {
 	key := "group"
 	if group.ID != "" {
-		key += ":" + group.ID
+		key += ":" + "⟨" + group.ID + "⟩"
 	}
 	data := conv.FromGroup(group)
 	raw, err := n.client.db.Create(key, data)

@@ -223,7 +223,10 @@ func (b *build) buildBaseFile(node *field.DatabaseNode) error {
 			// TODO: maybe add an option to the generator: "strict" vs. "non-strict" mode (regarding custom IDs)?
 			jen.Id("key").Op(":=").Lit(node.NameDatabase()),
 			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Op("!=").Lit("")).
-				Block(jen.Id("key").Op("+=").Lit(":").Op("+").Id(node.NameGoLower()).Dot("ID")),
+				Block(
+					jen.Id("key").Op("+=").
+						Lit(":").Op("+").Lit("⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩"),
+				),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Create").

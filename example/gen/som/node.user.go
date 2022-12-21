@@ -25,7 +25,7 @@ func (n *user) Query() *query.User {
 func (n *user) Create(ctx context.Context, user *model.User) error {
 	key := "user"
 	if user.ID != "" {
-		key += ":" + user.ID
+		key += ":" + "⟨" + user.ID + "⟩"
 	}
 	data := conv.FromUser(user)
 	raw, err := n.client.db.Create(key, data)
