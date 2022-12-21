@@ -32,6 +32,9 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	if err != nil {
 		return err
 	}
+	if _, ok := raw.([]any); !ok {
+		raw = []any{raw} // temporary fix
+	}
 	var convNode conv.User
 	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
@@ -48,8 +51,11 @@ func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
 		}
 		return nil, false, err
 	}
+	if _, ok := raw.([]any); !ok {
+		raw = []any{raw} // temporary fix
+	}
 	var convNode *conv.User
-	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
+	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
 		return nil, false, err
 	}

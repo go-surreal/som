@@ -235,6 +235,14 @@ func (b *build) buildBaseFile(node *field.DatabaseNode) error {
 				jen.Return(jen.Err()),
 			),
 
+			jen.If(
+				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
+					Id("raw").Op(".").Call(jen.Index().Any()),
+				jen.Op("!").Id("ok"),
+			).Block(
+				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
+			),
+
 			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
 			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
 				Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
@@ -265,8 +273,16 @@ func (b *build) buildBaseFile(node *field.DatabaseNode) error {
 				jen.Return(jen.Nil(), jen.False(), jen.Err()),
 			),
 
+			jen.If(
+				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
+					Id("raw").Op(".").Call(jen.Index().Any()),
+				jen.Op("!").Id("ok"),
+			).Block(
+				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
+			),
+
 			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").Call(jen.Index().Any().Values(jen.Id("raw")), jen.Op("&").Id("convNode")),
+			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.False(), jen.Err()),
 			),
