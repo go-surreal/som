@@ -23,11 +23,12 @@ func (n *group) Query() *query.Group {
 	return query.NewGroup(n.client.db)
 }
 func (n *group) Create(ctx context.Context, group *model.Group) error {
+	key := "group"
 	if group.ID != "" {
-		return errors.New("ID must not be set for a node to be created")
+		key += ":" + group.ID
 	}
 	data := conv.FromGroup(group)
-	raw, err := n.client.db.Create("group", data)
+	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err
 	}

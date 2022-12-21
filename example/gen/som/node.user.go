@@ -23,11 +23,12 @@ func (n *user) Query() *query.User {
 	return query.NewUser(n.client.db)
 }
 func (n *user) Create(ctx context.Context, user *model.User) error {
+	key := "user"
 	if user.ID != "" {
-		return errors.New("ID must not be set for a node to be created")
+		key += ":" + user.ID
 	}
 	data := conv.FromUser(user)
-	raw, err := n.client.db.Create("user", data)
+	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err
 	}

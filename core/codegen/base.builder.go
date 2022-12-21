@@ -216,18 +216,18 @@ func (b *build) buildBaseFile(node *field.DatabaseNode) error {
 		Id("Create").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id(strcase.ToLowerCamel(node.NameGo())).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
 		Block(
-			jen.If(jen.Id(strcase.ToLowerCamel(node.NameGo())).Dot("ID").Op("!=").Lit("")).
-				Block(
-					// TODO: allow for nodes to be created with custom IDs
-					// -> maybe add an option to the generator: "strict" vs. "non-strict" mode?
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for a node to be created"))),
-				),
+			// TODO: maybe add an option to the generator: "strict" vs. "non-strict" mode (regarding custom IDs)?
+			jen.Id("key").Op(":=").Lit(node.NameDatabase()),
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Op("!=").Lit("")).
+				Block(jen.Id("key").Op("+=").Lit(":").Op("+").Id(node.NameGoLower()).Dot("ID")),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
-			jen.Id("raw").Op(",").Err().Op(":=").Id("n").Dot("client").Dot("db").Dot("Create").Call(jen.Lit(strcase.ToSnake(node.NameGo())), jen.Id("data")),
+			jen.Id("raw").Op(",").Err().Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Create").
+				Call(jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
 			),
