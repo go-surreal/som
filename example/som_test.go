@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"fmt"
 	"github.com/marcbinz/som/example/gen/som"
 	"github.com/marcbinz/som/example/gen/som/where"
 	"github.com/marcbinz/som/example/model"
@@ -9,6 +10,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/assert"
 	"testing"
+	"unicode/utf8"
 )
 
 const (
@@ -146,6 +148,8 @@ func FuzzWithDatabase(f *testing.F) {
 }
 
 func FuzzCustomModelIDs(f *testing.F) {
+	fmt.Println("THIS IS A SINGLE RUN")
+
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
@@ -188,20 +192,19 @@ func FuzzCustomModelIDs(f *testing.F) {
 	f.Add("ij024itvnjc20394it")
 	f.Add(" 0")
 	f.Add("\"0")
-	f.Add("�")
-
-	// completedOutIn := map[string]string{}
+	f.Add("🙂")
+	f.Add("✅")
+	f.Add("👋😉")
 
 	f.Fuzz(func(t *testing.T, id string) {
-		// id = strings.TrimSpace(id)
+		if !utf8.ValidString(id) {
+			t.Skip("id is not a valid utf8 string")
+		}
 
-		// if val, ok := completedOutIn[id]; ok {
-		// 	t.Errorf("fail: '%s' - '%s'", id, val)
-		// 	return
-		// }
-
-		// fmt.Printf("id: '%s'\n", id)
-		userIn := &model.User{ID: id}
+		userIn := &model.User{
+			ID:     id,
+			String: "1",
+		}
 
 		err = client.User().Create(ctx, userIn)
 		if err != nil {
@@ -211,8 +214,6 @@ func FuzzCustomModelIDs(f *testing.F) {
 		if userIn.ID == "" {
 			t.Error("user ID must not be empty after create call")
 		}
-
-		// fmt.Printf("out id: '%s'\n", userIn.ID)
 
 		userOut, ok, err := client.User().Read(ctx, userIn.ID)
 
@@ -224,9 +225,22 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Errorf("user with ID %s not found", userIn.ID)
 		}
 
-		// completedOutIn[userOut.ID] = userIn.ID
-
 		assert.Equal(t, userIn.ID, userOut.ID)
+		assert.Equal(t, "1", userOut.String)
+
+		userOut.String = "2"
+
+		err = client.User().Update(ctx, userOut)
+		if err != nil {
+			t.Error(err)
+		}
+
+		assert.Equal(t, "2", userOut.String)
+
+		err = client.User().Delete(ctx, userOut)
+		if err != nil {
+			t.Error(err)
+		}
 	})
 }
 
