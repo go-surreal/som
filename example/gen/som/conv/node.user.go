@@ -42,7 +42,6 @@ func FromUser(data *model.User) *User {
 		Float32:   data.Float32,
 		Float64:   data.Float64,
 		Groups:    mapRecords(data.Groups, toGroupField),
-		ID:        buildDatabaseID("user", data.ID),
 		Int:       data.Int,
 		Int32:     data.Int32,
 		Int64:     data.Int64,
