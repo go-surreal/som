@@ -6,10 +6,15 @@ import (
 	"github.com/google/uuid"
 	"strings"
 	"time"
+	"strconv"
 )
 
 func parseDatabaseID(node string, id string) string {
-	return strings.TrimPrefix(id, node+":")
+	id = strings.TrimPrefix(id, node+":")
+	id = strings.TrimPrefix(id,"⟨")
+	id = strings.TrimSuffix(id, "⟩")
+	id, _ = strconv.Unquote("\"" + id + "\"")
+	return id
 }
 
 func buildDatabaseID(node string, id string) string {

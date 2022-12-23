@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"fmt"
 	"github.com/marcbinz/som/example/gen/som"
 	"github.com/marcbinz/som/example/gen/som/where"
 	"github.com/marcbinz/som/example/model"
@@ -9,6 +10,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/assert"
 	"testing"
+	"unicode/utf8"
 )
 
 const (
@@ -142,6 +144,103 @@ func FuzzWithDatabase(f *testing.F) {
 		}
 
 		assert.Equal(t, userIn.String, userOut.String)
+	})
+}
+
+func FuzzCustomModelIDs(f *testing.F) {
+	fmt.Println("THIS IS A SINGLE RUN")
+
+	ctx := context.Background()
+
+	req := testcontainers.ContainerRequest{
+		Image:        "surrealdb/surrealdb:1.0.0-beta.8",
+		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
+		ExposedPorts: []string{"8000/tcp"},
+		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
+	}
+
+	surreal, err := testcontainers.GenericContainer(ctx,
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+		},
+	)
+	if err != nil {
+		f.Error(err)
+	}
+
+	defer func() {
+		if err := surreal.Terminate(ctx); err != nil {
+			f.Fatalf("failed to terminate container: %s", err.Error())
+		}
+	}()
+
+	endpoint, err := surreal.Endpoint(ctx, "")
+	if err != nil {
+		f.Error(err)
+	}
+
+	client, err := som.NewClient("ws://"+endpoint, "root", "root", "som_test", "som_test")
+	if err != nil {
+		f.Error(err)
+	}
+
+	defer client.Close()
+
+	f.Add("v9uitj942tv2403tnv")
+	f.Add("vb92thj29v4tjn20d3")
+	f.Add("ij024itvnjc20394it")
+	f.Add(" 0")
+	f.Add("\"0")
+	f.Add("🙂")
+	f.Add("✅")
+	f.Add("👋😉")
+
+	f.Fuzz(func(t *testing.T, id string) {
+		if !utf8.ValidString(id) {
+			t.Skip("id is not a valid utf8 string")
+		}
+
+		userIn := &model.User{
+			ID:     id,
+			String: "1",
+		}
+
+		err = client.User().Create(ctx, userIn)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if userIn.ID == "" {
+			t.Error("user ID must not be empty after create call")
+		}
+
+		userOut, ok, err := client.User().Read(ctx, userIn.ID)
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		if !ok {
+			t.Errorf("user with ID %s not found", userIn.ID)
+		}
+
+		assert.Equal(t, userIn.ID, userOut.ID)
+		assert.Equal(t, "1", userOut.String)
+
+		userOut.String = "2"
+
+		err = client.User().Update(ctx, userOut)
+		if err != nil {
+			t.Error(err)
+		}
+
+		assert.Equal(t, "2", userOut.String)
+
+		err = client.User().Delete(ctx, userOut)
+		if err != nil {
+			t.Error(err)
+		}
 	})
 }
 

@@ -23,13 +23,17 @@ func (n *group) Query() *query.Group {
 	return query.NewGroup(n.client.db)
 }
 func (n *group) Create(ctx context.Context, group *model.Group) error {
+	key := "group"
 	if group.ID != "" {
-		return errors.New("ID must not be set for a node to be created")
+		key += ":" + "⟨" + group.ID + "⟩"
 	}
 	data := conv.FromGroup(group)
-	raw, err := n.client.db.Create("group", data)
+	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err
+	}
+	if _, ok := raw.([]any); !ok {
+		raw = []any{raw} // temporary fix
 	}
 	var convNode conv.Group
 	err = surrealdbgo.Unmarshal(raw, &convNode)
@@ -40,15 +44,18 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	return nil
 }
 func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
-	raw, err := n.client.db.Select("group:" + id)
+	raw, err := n.client.db.Select("group:⟨" + id + "⟩")
 	if err != nil {
 		if errors.As(err, &surrealdbgo.PermissionError{}) {
 			return nil, false, nil
 		}
 		return nil, false, err
 	}
+	if _, ok := raw.([]any); !ok {
+		raw = []any{raw} // temporary fix
+	}
 	var convNode *conv.Group
-	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
+	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
 		return nil, false, err
 	}
@@ -59,7 +66,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 		return errors.New("cannot update Group without existing record ID")
 	}
 	data := conv.FromGroup(group)
-	raw, err := n.client.db.Update("group:"+group.ID, data)
+	raw, err := n.client.db.Update("group:⟨"+group.ID+"⟩", data)
 	if err != nil {
 		return err
 	}
@@ -72,7 +79,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	return nil
 }
 func (n *group) Delete(ctx context.Context, group *model.Group) error {
-	_, err := n.client.db.Delete("group:" + group.ID)
+	_, err := n.client.db.Delete("group:⟨" + group.ID + "⟩")
 	if err != nil {
 		return err
 	}

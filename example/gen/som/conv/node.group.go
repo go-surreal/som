@@ -17,10 +17,7 @@ func FromGroup(data *model.Group) *Group {
 	if data == nil {
 		return &Group{}
 	}
-	return &Group{
-		ID:   buildDatabaseID("group", data.ID),
-		Name: data.Name,
-	}
+	return &Group{Name: data.Name}
 }
 func ToGroup(data *Group) *model.Group {
 	return &model.Group{

@@ -23,13 +23,17 @@ func (n *user) Query() *query.User {
 	return query.NewUser(n.client.db)
 }
 func (n *user) Create(ctx context.Context, user *model.User) error {
+	key := "user"
 	if user.ID != "" {
-		return errors.New("ID must not be set for a node to be created")
+		key += ":" + "⟨" + user.ID + "⟩"
 	}
 	data := conv.FromUser(user)
-	raw, err := n.client.db.Create("user", data)
+	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err
+	}
+	if _, ok := raw.([]any); !ok {
+		raw = []any{raw} // temporary fix
 	}
 	var convNode conv.User
 	err = surrealdbgo.Unmarshal(raw, &convNode)
@@ -40,15 +44,18 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	return nil
 }
 func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
-	raw, err := n.client.db.Select("user:" + id)
+	raw, err := n.client.db.Select("user:⟨" + id + "⟩")
 	if err != nil {
 		if errors.As(err, &surrealdbgo.PermissionError{}) {
 			return nil, false, nil
 		}
 		return nil, false, err
 	}
+	if _, ok := raw.([]any); !ok {
+		raw = []any{raw} // temporary fix
+	}
 	var convNode *conv.User
-	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
+	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
 		return nil, false, err
 	}
@@ -59,7 +66,7 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 		return errors.New("cannot update User without existing record ID")
 	}
 	data := conv.FromUser(user)
-	raw, err := n.client.db.Update("user:"+user.ID, data)
+	raw, err := n.client.db.Update("user:⟨"+user.ID+"⟩", data)
 	if err != nil {
 		return err
 	}
@@ -72,7 +79,7 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	return nil
 }
 func (n *user) Delete(ctx context.Context, user *model.User) error {
-	_, err := n.client.db.Delete("user:" + user.ID)
+	_, err := n.client.db.Delete("user:⟨" + user.ID + "⟩")
 	if err != nil {
 		return err
 	}

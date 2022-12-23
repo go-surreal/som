@@ -19,7 +19,6 @@ func FromMemberOf(data *model.MemberOf) *MemberOf {
 	}
 	return &MemberOf{
 		CreatedAt: data.CreatedAt,
-		ID:        buildDatabaseID("member_of", data.ID),
 		Meta:      *FromMemberOfMeta(&data.Meta),
 		UpdatedAt: data.UpdatedAt,
 	}
