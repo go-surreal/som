@@ -8,9 +8,9 @@ import (
 )
 
 type Group struct {
-	ID      string            `json:"id,omitempty"`
-	Name    string            `json:"name,omitempty"`
-	Members []model.EdgeTable `json:"members,omitempty"`
+	ID      string     `json:"id,omitempty"`
+	Name    string     `json:"name,omitempty"`
+	Members []MemberOf `json:"members,omitempty"`
 }
 
 func FromGroup(data *model.Group) *Group {

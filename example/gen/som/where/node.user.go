@@ -52,9 +52,9 @@ type userSlice[T any] struct {
 func (n user[T]) Login() login[T] {
 	return newLogin[T](n.key.Dot("login"))
 }
-func (n user[T]) Groups() nodeTableSlice[T] {
+func (n user[T]) Groups() groupSlice[T] {
 	key := n.key.Dot("groups")
-	return nodeTableSlice[T]{newNodeTable[T](key), filter.NewSlice[model.NodeTable, T](key)}
+	return groupSlice[T]{newGroup[T](key), filter.NewSlice[model.Group, T](key)}
 }
 func (n user[T]) MainGroup() group[T] {
 	return newGroup[T](n.key.Dot("main_group"))
@@ -67,4 +67,7 @@ func (n user[T]) More() *filter.Slice[float32, T] {
 }
 func (n user[T]) Roles() *filter.Slice[model.Role, T] {
 	return filter.NewSlice[model.Role, T](n.key.Dot("roles"))
+}
+func (n user[T]) MyGroups() memberOfIn[T] {
+	return newMemberOfIn[T](n.key.In(""))
 }

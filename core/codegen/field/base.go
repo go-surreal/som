@@ -51,7 +51,7 @@ type Table interface {
 	GetFields() []Field
 }
 
-type Model string
+type Model string // TODO: just use table instead?
 
 func (m Model) NameGo() string {
 	return string(m)

@@ -22,7 +22,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		}
 
 		for _, f := range node.Fields {
-			dbField, ok := Convert(buildConf, f)
+			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
 				return nil, fmt.Errorf("could not convert field: %v", f)
 			}
@@ -37,22 +37,20 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 			Name: edge.Name,
 		}
 
-		inField, ok := Convert(buildConf, edge.In)
+		inField, ok := Convert(source, buildConf, edge.In)
 		if !ok {
 			return nil, fmt.Errorf("could not convert in field: %v", edge.In)
 		}
-		in := inField.(*Node)
-		dbEdge.In = *in
+		dbEdge.In = inField.(*Node)
 
-		outField, ok := Convert(buildConf, edge.Out)
+		outField, ok := Convert(source, buildConf, edge.Out)
 		if !ok {
 			return nil, fmt.Errorf("could not convert out field: %v", edge.Out)
 		}
-		out := outField.(*Node)
-		dbEdge.Out = *out
+		dbEdge.Out = outField.(*Node)
 
 		for _, f := range edge.Fields {
-			dbField, ok := Convert(buildConf, f)
+			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
 				return nil, fmt.Errorf("could not convert field: %v", f)
 			}
@@ -68,7 +66,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		}
 
 		for _, f := range str.Fields {
-			dbField, ok := Convert(buildConf, f)
+			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
 				return nil, errors.New("could not convert field")
 			}
@@ -89,7 +87,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 	return &def, nil
 }
 
-func Convert(conf *BuildConfig, field parser.Field) (Field, bool) {
+func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Field, bool) {
 	base := &baseField{BuildConfig: conf, source: field}
 
 	switch f := field.(type) {
@@ -141,33 +139,62 @@ func Convert(conf *BuildConfig, field parser.Field) (Field, bool) {
 		return &Struct{
 			baseField: base,
 			source:    f,
+			model:     Model(f.Struct),
 		}, true
 
 	case *parser.FieldNode:
 		return &Node{
 			baseField: base,
 			source:    f,
-			table: NodeTable{
-				Name:   "NodeTable",
+			table: &NodeTable{
+				Name:   f.Node,
 				Fields: nil,
 			},
 		}, true
 
 	case *parser.FieldEdge:
 		// in,_ := Convert(conf, f.Edge)
+
+		var edge *parser.Edge
+		for _, elem := range source.Edges {
+			if elem.Name == f.Edge {
+				edge = elem
+				break
+			}
+		}
+
+		in, ok := Convert(source, conf, edge.In)
+		if !ok {
+			return nil, false
+		}
+
+		out, ok := Convert(source, conf, edge.Out)
+		if !ok {
+			return nil, false
+		}
+
+		var fields []Field
+		for _, field := range edge.Fields {
+			fld, ok := Convert(source, conf, field)
+			if !ok {
+				return nil, false
+			}
+			fields = append(fields, fld)
+		}
+
 		return &Edge{
 			baseField: base,
 			source:    f,
-			table: EdgeTable{
-				Name:   "EdgeTable",
-				In:     Node{},
-				Out:    Node{},
-				Fields: nil,
-			}, // TODO
+			table: &EdgeTable{
+				Name:   f.Edge,
+				In:     in.(*Node),
+				Out:    out.(*Node),
+				Fields: fields,
+			},
 		}, true
 
 	case *parser.FieldSlice:
-		element, ok := Convert(conf, f.Field)
+		element, ok := Convert(source, conf, f.Field)
 		if !ok {
 			return nil, false
 		}

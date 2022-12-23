@@ -3,7 +3,6 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
@@ -71,24 +70,24 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
-	f.Var().Id(node.Name).Op("=").Id(strcase.ToLowerCamel(node.Name)).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+	f.Var().Id(node.Name).Op("=").Id(node.NameGoLower()).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 
-	f.Type().Id(strcase.ToLowerCamel(node.Name)).
+	f.Type().Id(node.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		String()
 
 	f.Func().
-		Params(jen.Id("n").Id(strcase.ToLowerCamel(node.NameGo())).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
 		Id("fetch").Params(jen.Id("T")).Block()
 
 	for _, fld := range node.GetFields() {
 		if nodeField, ok := fld.(*field.Node); ok {
 			f.Func().
-				Params(jen.Id("n").Id(strcase.ToLowerCamel(node.NameGo())).Types(jen.Id("T"))).
+				Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
 				Id(nodeField.NameGo()).Params().
-				Id(strcase.ToLowerCamel(nodeField.NodeName())).Types(jen.Id("T")).
+				Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
 				Block(
-					jen.Return(jen.Id(strcase.ToLowerCamel(nodeField.NodeName())).Types(jen.Id("T")).
+					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
 						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
 		}
 	}

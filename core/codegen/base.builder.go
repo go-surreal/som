@@ -3,7 +3,6 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
 	"github.com/marcbinz/som/core/parser"
@@ -191,20 +190,20 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	f.Func().
 		Params(jen.Id("c").Op("*").Id("Client")).
 		Id(node.NameGo()).Params().
-		Op("*").Id(strcase.ToLowerCamel(node.NameGo())).
+		Op("*").Id(node.NameGoLower()).
 		Block(
 			jen.Return(
-				jen.Op("&").Id(strcase.ToLowerCamel(node.NameGo())).
+				jen.Op("&").Id(node.NameGoLower()).
 					Values(jen.Id("client").Op(":").Id("c")),
 			),
 		)
 
-	f.Type().Id(strcase.ToLowerCamel(node.NameGo())).Struct(
+	f.Type().Id(node.NameGoLower()).Struct(
 		jen.Id("client").Op("*").Id("Client"),
 	)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
 		Op("*").Qual(pkgQuery, node.NameGo()).
 		Block(
@@ -212,22 +211,24 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Create").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id(strcase.ToLowerCamel(node.NameGo())).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
 		Block(
-			jen.If(jen.Id(strcase.ToLowerCamel(node.NameGo())).Dot("ID").Op("!=").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Op("!=").Lit("")).
 				Block(
 					// TODO: allow for nodes to be created with custom IDs
 					// -> maybe add an option to the generator: "strict" vs. "non-strict" mode?
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for a node to be created"))),
 				),
-			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
-			jen.Id("raw").Op(",").Err().Op(":=").Id("n").Dot("client").Dot("db").Dot("Create").Call(jen.Lit(strcase.ToSnake(node.NameGo())), jen.Id("data")),
+			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
+			jen.Id("raw").Op(",").Err().Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Create").
+				Call(jen.Lit(node.NameDatabase()), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
 			),
@@ -239,12 +240,15 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				jen.Return(jen.Err()),
 			),
 
-			jen.Op("*").Id(strcase.ToLowerCamel(node.NameGo())).Op("=").Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("convNode")),
+			jen.Op("*").Id(node.NameGoLower()).Op("=").
+				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).
+				Call(jen.Op("&").Id("convNode")),
+
 			jen.Return(jen.Nil()),
 		)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -254,7 +258,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Block(
 			jen.List(jen.Id("raw"), jen.Err()).Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Select").
-				Call(jen.Lit(strcase.ToSnake(node.Name)+":").Op("+").Id("id")),
+				Call(jen.Lit(node.NameDatabase()+":").Op("+").Id("id")),
 
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.If(jen.Qual("errors", "As").Call(jen.Err(), jen.Op("&").Qual(def.PkgSurrealDB, "PermissionError").Values())).
@@ -272,22 +276,24 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.Name))).
+		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Update").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id(strcase.ToLowerCamel(node.Name)).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
 		Block(
-			jen.If(jen.Id(strcase.ToLowerCamel(node.NameGo())).Dot("ID").Op("==").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
 				),
 
-			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(strcase.ToLowerCamel(node.NameGo()))),
+			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
 
-			jen.Id("raw").Op(",").Err().Op(":=").Id("n").Dot("client").Dot("db").Dot("Update").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID"), jen.Id("data")),
+			jen.Id("raw").Op(",").Err().Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Update").
+				Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(node.NameGoLower()).Dot("ID"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
 			),
@@ -299,20 +305,24 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				jen.Return(jen.Err()),
 			),
 
-			jen.Op("*").Id(strcase.ToLowerCamel(node.NameGo())).Op("=").Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("convNode")),
+			jen.Op("*").Id(node.NameGoLower()).Op("=").
+				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("convNode")),
+
 			jen.Return(jen.Nil()),
 		)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.Name))).
+		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Delete").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id(strcase.ToLowerCamel(node.Name)).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
 		Block(
-			jen.List(jen.Id("_"), jen.Err()).Op(":=").Id("n").Dot("client").Dot("db").Dot("Delete").Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(strcase.ToLowerCamel(node.Name)).Dot("ID")),
+			jen.List(jen.Id("_"), jen.Err()).Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Delete").
+				Call(jen.Lit(node.NameDatabase()+":").Op("+").Id(node.NameGoLower()).Dot("ID")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
 			),
@@ -320,11 +330,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		)
 
 	f.Func().
-		Params(jen.Id("n").Op("*").Id(strcase.ToLowerCamel(node.NameGo()))).
+		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Relate").Params().
 		Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
 		Block(
-			jen.Return(jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(jen.Id("n").Dot("client").Dot("db"))),
+			jen.Return(jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).
+				Call(jen.Id("n").Dot("client").Dot("db"))),
 		)
 
 	if err := f.Save(path.Join(b.basePath(), node.FileName())); err != nil {

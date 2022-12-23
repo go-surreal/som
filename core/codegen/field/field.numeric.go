@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 )
@@ -51,7 +50,7 @@ func (f *Numeric) filterDefine(ctx Context) jen.Code {
 
 func (f *Numeric) filterInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewNumeric").Types(f.typeGo(), jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
 func (f *Numeric) sortDefine(ctx Context) jen.Code {
@@ -60,7 +59,7 @@ func (f *Numeric) sortDefine(ctx Context) jen.Code {
 
 func (f *Numeric) sortInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibSort, "NewSort").Types(jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Numeric) convFrom(ctx Context) jen.Code {

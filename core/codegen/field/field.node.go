@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/parser"
 )
 
@@ -10,16 +9,15 @@ type Node struct {
 	*baseField
 
 	source *parser.FieldNode
-	table  NodeTable
+	table  *NodeTable
 }
 
 func (f *Node) typeGo() jen.Code {
 	return jen.Qual(f.SourcePkg, f.table.NameGo())
 }
 
-// TODO: cool to expose just like that?
-func (f *Node) NodeName() string {
-	return f.source.Node
+func (f *Node) Table() *NodeTable {
+	return f.table
 }
 
 func (f *Node) CodeGen() *CodeGen {
@@ -42,20 +40,20 @@ func (f *Node) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
-		Id(strcase.ToLowerCamel(f.source.Node)).Types(jen.Id("T")).
+		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.source.Node).Types(jen.Id("T")).
-				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))))
+				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Node) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Id(ctx.Table.NameDatabase()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
-		Id(strcase.ToLowerCamel(f.source.Node)).Types(jen.Id("T")).
+		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.source.Node).Types(jen.Id("T")).
-				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))))
+				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Node) convFrom(ctx Context) jen.Code {

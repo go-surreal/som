@@ -6,8 +6,8 @@ import (
 
 type EdgeTable struct {
 	Name   string
-	In     Node
-	Out    Node
+	In     *Node
+	Out    *Node
 	Fields []Field
 }
 

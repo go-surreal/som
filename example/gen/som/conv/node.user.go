@@ -9,26 +9,26 @@ import (
 )
 
 type User struct {
-	ID        string            `json:"id,omitempty"`
-	CreatedAt time.Time         `json:"created_at,omitempty"`
-	UpdatedAt time.Time         `json:"updated_at,omitempty"`
-	String    string            `json:"string,omitempty"`
-	Int       int               `json:"int,omitempty"`
-	Int32     int32             `json:"int_32,omitempty"`
-	Int64     int64             `json:"int_64,omitempty"`
-	Float32   float32           `json:"float_32,omitempty"`
-	Float64   float64           `json:"float_64,omitempty"`
-	Bool      bool              `json:"bool,omitempty"`
-	Bool2     bool              `json:"bool_2,omitempty"`
-	UUID      string            `json:"uuid,omitempty"`
-	Login     Login             `json:"login,omitempty"`
-	Role      string            `json:"role,omitempty"`
-	Groups    []NodeTableField  `json:"groups,omitempty"`
-	MainGroup GroupField        `json:"main_group,omitempty"`
-	Other     []string          `json:"other,omitempty"`
-	More      []float32         `json:"more,omitempty"`
-	Roles     []string          `json:"roles,omitempty"`
-	MyGroups  []model.EdgeTable `json:"my_groups,omitempty"`
+	ID        string       `json:"id,omitempty"`
+	CreatedAt time.Time    `json:"created_at,omitempty"`
+	UpdatedAt time.Time    `json:"updated_at,omitempty"`
+	String    string       `json:"string,omitempty"`
+	Int       int          `json:"int,omitempty"`
+	Int32     int32        `json:"int_32,omitempty"`
+	Int64     int64        `json:"int_64,omitempty"`
+	Float32   float32      `json:"float_32,omitempty"`
+	Float64   float64      `json:"float_64,omitempty"`
+	Bool      bool         `json:"bool,omitempty"`
+	Bool2     bool         `json:"bool_2,omitempty"`
+	UUID      string       `json:"uuid,omitempty"`
+	Login     Login        `json:"login,omitempty"`
+	Role      string       `json:"role,omitempty"`
+	Groups    []GroupField `json:"groups,omitempty"`
+	MainGroup GroupField   `json:"main_group,omitempty"`
+	Other     []string     `json:"other,omitempty"`
+	More      []float32    `json:"more,omitempty"`
+	Roles     []string     `json:"roles,omitempty"`
+	MyGroups  []MemberOf   `json:"my_groups,omitempty"`
 }
 
 func FromUser(data *model.User) *User {
@@ -41,7 +41,7 @@ func FromUser(data *model.User) *User {
 		CreatedAt: data.CreatedAt,
 		Float32:   data.Float32,
 		Float64:   data.Float64,
-		Groups:    mapRecords(data.Groups, toField),
+		Groups:    mapRecords(data.Groups, toGroupField),
 		ID:        buildDatabaseID("user", data.ID),
 		Int:       data.Int,
 		Int32:     data.Int32,

@@ -5,7 +5,7 @@ version: "3"
 # When tasks/commands are executed in parallel, the
 # output should be prefixed with the name of the task,
 # so it is easier to follow what is happening.
-#output: "prefixed"
+output: "prefixed"
 
 # The interval to check for changes when watching tasks.
 interval: "500ms"

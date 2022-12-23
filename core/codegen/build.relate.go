@@ -3,7 +3,6 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
 	"os"
@@ -81,16 +80,16 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 			continue
 		}
 
-		ok, edge, _, _ := slice.Edge()
+		edgeElement, ok := slice.Element().(*field.Edge)
 		if !ok {
 			continue
 		}
 
 		file.Func().Params(jen.Id("n").Id(node.NameGo())).
 			Id(fld.NameGo()).Params().
-			Id(edge.NameGo()).
+			Id(edgeElement.Table().NameGoLower()).
 			Block(
-				jen.Return(jen.Id(edge.NameGoLower()).Call(jen.Id("n"))),
+				jen.Return(jen.Id(edgeElement.Table().NameGoLower()).Call(jen.Id("n"))),
 			)
 	}
 
@@ -106,11 +105,11 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 
 	file.PackageComment(codegenComment)
 
-	file.Type().Id(strcase.ToLowerCamel(edge.Name)).Struct(
+	file.Type().Id(edge.NameGoLower()).Struct(
 		jen.Id("db").Id("Database"),
 	)
 
-	file.Func().Params(jen.Id("e").Id(strcase.ToLowerCamel(edge.NameGo()))).
+	file.Func().Params(jen.Id("e").Id(edge.NameGoLower())).
 		Id("Create").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name))).
 		Error().
 		Block(
@@ -170,15 +169,15 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 	//	*edge = *conv.ToMemberOf(&convEdge)
 	//	return nil
 
-	file.Func().Params(jen.Id(strcase.ToLowerCamel(edge.NameGo()))).
-		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name))).
+	file.Func().Params(jen.Id(edge.NameGoLower())).
+		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
 			jen.Return(jen.Nil()),
 		)
 
-	file.Func().Params(jen.Id(strcase.ToLowerCamel(edge.NameGo()))).
-		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name))).
+	file.Func().Params(jen.Id(edge.NameGoLower())).
+		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
 			jen.Return(jen.Nil()),

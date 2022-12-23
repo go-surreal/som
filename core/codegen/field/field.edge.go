@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/parser"
 )
 
@@ -10,11 +9,15 @@ type Edge struct {
 	*baseField
 
 	source *parser.FieldEdge
-	table  EdgeTable
+	table  *EdgeTable
 }
 
 func (f *Edge) typeGo() jen.Code {
-	return jen.Qual(f.SourcePkg, f.table.NameGo())
+	return jen.Id(f.table.NameGo())
+}
+
+func (f *Edge) Table() *EdgeTable {
+	return f.table
 }
 
 func (f *Edge) CodeGen() *CodeGen {
@@ -37,20 +40,20 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
-		Id(strcase.ToLowerCamel(f.source.Edge)).Types(jen.Id("T")).
+		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.source.Edge).Types(jen.Id("T")).
-				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))))
+				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Edge) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Id(ctx.Table.NameDatabase()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
-		Id(strcase.ToLowerCamel(f.source.Edge)).Types(jen.Id("T")).
+		Id(f.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.source.Edge).Types(jen.Id("T")).
-				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))))
+				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Edge) convFrom(ctx Context) jen.Code {
