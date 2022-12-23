@@ -286,11 +286,11 @@ func parseField(t gotype.Type) (Field, error) {
 		}
 		field = &FieldSlice{
 			&fieldAtomic{name: t.Name()},
-			t.Elem().Elem().Name(),
+			// t.Elem().Elem().Name(),
 			subField,
-			isNode(t.Elem().Elem()),
-			isEdge(t.Elem().Elem()),
-			isEnum(t.Elem().Elem()),
+			// isNode(t.Elem().Elem()),
+			// isEdge(t.Elem().Elem()),
+			// isEnum(t.Elem().Elem()),
 		}
 	// case gotype.Map:
 	// 	field = FieldMap{fieldAtomic{Name: t.Name()}, t.Elem().Key().Name(), t.Elem().Elem().Name()}

@@ -69,5 +69,5 @@ func (n user[T]) Roles() *filter.Slice[model.Role, T] {
 	return filter.NewSlice[model.Role, T](n.key.Dot("roles"))
 }
 func (n user[T]) MyGroups() memberOfIn[T] {
-	return newMemberOfIn[T](n.key.In("member_of"))
+	return newMemberOfIn[T](n.key.In(""))
 }

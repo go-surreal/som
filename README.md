@@ -102,6 +102,7 @@ language itself. For further information, please refer to the
 - [ ] Switch the source code parser to support generics.
 - [ ] Add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser).
 - [ ] Support transactions.
+- [ ] Distinct results (https://stackoverflow.com/questions/74326176/surrealdb-equivalent-of-select-distinct).
 
 ### Nice to have (v0.x.x)
 

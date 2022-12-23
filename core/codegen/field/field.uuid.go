@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 )
@@ -11,6 +10,10 @@ type UUID struct {
 	*baseField
 
 	source *parser.FieldUUID
+}
+
+func (f *UUID) typeGo() jen.Code {
+	return jen.Qual(def.PkgUUID, "UUID")
 }
 
 func (f *UUID) CodeGen() *CodeGen {
@@ -35,7 +38,7 @@ func (f *UUID) filterDefine(ctx Context) jen.Code {
 
 func (f *UUID) filterInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewBase").Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
 func (f *UUID) convFrom(ctx Context) jen.Code {

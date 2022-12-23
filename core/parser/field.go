@@ -84,11 +84,11 @@ type FieldStruct struct {
 
 type FieldSlice struct {
 	*fieldAtomic
-	Value  string
-	Field  Field
-	IsNode bool
-	IsEdge bool
-	IsEnum bool
+	// Value  string
+	Field Field
+	// IsNode bool
+	// IsEdge bool
+	// IsEnum bool
 }
 
 // type FieldMap struct {

@@ -27,5 +27,5 @@ type groupSlice[T any] struct {
 }
 
 func (n group[T]) Members() memberOfOut[T] {
-	return newMemberOfOut[T](n.key.Out("member_of"))
+	return newMemberOfOut[T](n.key.Out(""))
 }

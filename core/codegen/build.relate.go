@@ -3,7 +3,6 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
 	"os"
@@ -64,7 +63,7 @@ type Database interface {
 	return nil
 }
 
-func (b *relateBuilder) buildNodeFile(node *field.DatabaseNode) error {
+func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 	file := jen.NewFile(b.pkgName)
 
 	file.PackageComment(codegenComment)
@@ -81,16 +80,16 @@ func (b *relateBuilder) buildNodeFile(node *field.DatabaseNode) error {
 			continue
 		}
 
-		ok, edge, _, _ := slice.Edge()
+		edgeElement, ok := slice.Element().(*field.Edge)
 		if !ok {
 			continue
 		}
 
 		file.Func().Params(jen.Id("n").Id(node.NameGo())).
 			Id(fld.NameGo()).Params().
-			Id(strcase.ToLowerCamel(edge)).
+			Id(edgeElement.Table().NameGoLower()).
 			Block(
-				jen.Return(jen.Id(strcase.ToLowerCamel(edge)).Call(jen.Id("n"))),
+				jen.Return(jen.Id(edgeElement.Table().NameGoLower()).Call(jen.Id("n"))),
 			)
 	}
 
@@ -101,19 +100,16 @@ func (b *relateBuilder) buildNodeFile(node *field.DatabaseNode) error {
 	return nil
 }
 
-func (b *relateBuilder) buildEdgeFile(edge *field.DatabaseEdge) error {
+func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 	file := jen.NewFile(b.pkgName)
 
 	file.PackageComment(codegenComment)
 
-	file.Type().Id(strcase.ToLowerCamel(edge.Name)).Struct(
+	file.Type().Id(edge.NameGoLower()).Struct(
 		jen.Id("db").Id("Database"),
 	)
 
-	in := edge.In.(*field.Node)
-	out := edge.Out.(*field.Node)
-
-	file.Func().Params(jen.Id("e").Id(strcase.ToLowerCamel(edge.NameGo()))).
+	file.Func().Params(jen.Id("e").Id(edge.NameGoLower())).
 		Id("Create").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name))).
 		Error().
 		Block(
@@ -122,20 +118,20 @@ func (b *relateBuilder) buildEdgeFile(edge *field.DatabaseEdge) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for an edge to be created"))),
 				),
 
-			jen.If(jen.Id("edge").Dot(in.NameGo()).Dot("ID").Op("==").Lit("")).
+			jen.If(jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Op("==").Lit("")).
 				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the incoming node '"+in.NameGo()+"' must not be empty"))),
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the incoming node '"+edge.In.NameGo()+"' must not be empty"))),
 				),
 
-			jen.If(jen.Id("edge").Dot(out.NameGo()).Dot("ID").Op("==").Lit("")).
+			jen.If(jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Op("==").Lit("")).
 				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the outgoing node '"+out.NameGo()+"' must not be empty"))),
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the outgoing node '"+edge.Out.NameGo()+"' must not be empty"))),
 				),
 
 			jen.Id("query").Op(":=").Lit("RELATE "),
-			jen.Id("query").Op("+=").Lit(strcase.ToSnake(in.NodeName())+":").Op("+").Id("edge").Dot(in.NameGo()).Dot("ID"),
+			jen.Id("query").Op("+=").Lit(edge.In.NameDatabase()+":").Op("+").Id("edge").Dot(edge.In.NameGo()).Dot("ID"),
 			jen.Id("query").Op("+=").Lit("->"+edge.NameDatabase()+"->"),
-			jen.Id("query").Op("+=").Lit(strcase.ToSnake(out.NodeName())+":").Op("+").Id("edge").Dot(out.NameGo()).Dot("ID"),
+			jen.Id("query").Op("+=").Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID"),
 			jen.Id("query").Op("+=").Lit(" CONTENT $data"),
 
 			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Id("edge")),
@@ -173,15 +169,15 @@ func (b *relateBuilder) buildEdgeFile(edge *field.DatabaseEdge) error {
 	//	*edge = *conv.ToMemberOf(&convEdge)
 	//	return nil
 
-	file.Func().Params(jen.Id(strcase.ToLowerCamel(edge.NameGo()))).
-		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name))).
+	file.Func().Params(jen.Id(edge.NameGoLower())).
+		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
 			jen.Return(jen.Nil()),
 		)
 
-	file.Func().Params(jen.Id(strcase.ToLowerCamel(edge.NameGo()))).
-		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name))).
+	file.Func().Params(jen.Id(edge.NameGoLower())).
+		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
 			jen.Return(jen.Nil()),

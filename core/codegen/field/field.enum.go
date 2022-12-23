@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 )
@@ -11,6 +10,11 @@ type Enum struct {
 	*baseField
 
 	source *parser.FieldEnum
+	model  Model
+}
+
+func (f *Enum) typeGo() jen.Code {
+	return jen.Qual(f.SourcePkg, f.model.NameGo())
 }
 
 func (f *Enum) CodeGen() *CodeGen {
@@ -35,7 +39,7 @@ func (f *Enum) filterDefine(ctx Context) jen.Code {
 
 func (f *Enum) filterInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewBase").Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
 func (f *Enum) convFrom(ctx Context) jen.Code {
@@ -48,5 +52,5 @@ func (f *Enum) convTo(ctx Context) jen.Code {
 
 func (f *Enum) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).String(). // TODO: support other enum base types (atomic)
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+						Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

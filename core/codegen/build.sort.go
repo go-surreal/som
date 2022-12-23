@@ -3,7 +3,6 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
@@ -61,10 +60,10 @@ func keyed(base, key string) string {
 	return nil
 }
 
-func (b *sortBuilder) buildFile(node *field.DatabaseNode) error {
+func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      node,
+		Table:     node,
 	}
 
 	f := jen.NewFile(b.pkgName)
@@ -75,7 +74,7 @@ func (b *sortBuilder) buildFile(node *field.DatabaseNode) error {
 
 	f.Add(b.byNew(node))
 
-	f.Type().Id(strcase.ToLowerCamel(node.Name)).
+	f.Type().Id(node.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		StructFunc(func(g *jen.Group) {
 			g.Add(jen.Id("key").String())
@@ -99,19 +98,19 @@ func (b *sortBuilder) buildFile(node *field.DatabaseNode) error {
 	return nil
 }
 
-func (b *sortBuilder) byNew(node *field.DatabaseNode) jen.Code {
+func (b *sortBuilder) byNew(node *field.NodeTable) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
-		Elem:      node,
+		Table:     node,
 	}
 
 	return jen.Func().Id("new" + node.Name).
 		Types(jen.Id("T").Any()).
 		Params(jen.Id("key").String()).
-		Id(strcase.ToLowerCamel(node.Name)).Types(jen.Id("T")).
+		Id(node.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(
-				jen.Id(strcase.ToLowerCamel(node.Name)).Types(jen.Id("T")).
+				jen.Id(node.NameGoLower()).Types(jen.Id("T")).
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("key")] = jen.Id("key")
 						for _, f := range node.Fields {

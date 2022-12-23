@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 )
@@ -11,6 +10,10 @@ type Time struct {
 	*baseField
 
 	source *parser.FieldTime
+}
+
+func (f *Time) typeGo() jen.Code {
+	return jen.Qual("time", "Time")
 }
 
 func (f *Time) CodeGen() *CodeGen {
@@ -35,7 +38,7 @@ func (f *Time) filterDefine(ctx Context) jen.Code {
 
 func (f *Time) filterInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewTime").Types(jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
 func (f *Time) sortDefine(ctx Context) jen.Code {
@@ -44,7 +47,7 @@ func (f *Time) sortDefine(ctx Context) jen.Code {
 
 func (f *Time) sortInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibSort, "NewSort").Types(jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Time) convFrom(ctx Context) jen.Code {
@@ -56,6 +59,6 @@ func (f *Time) convTo(ctx Context) jen.Code {
 }
 
 func (f *Time) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Qual("time", "Time").
+	return jen.Id(f.NameGo()).Add(f.typeGo()).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

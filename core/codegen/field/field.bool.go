@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 )
@@ -11,6 +10,10 @@ type Bool struct {
 	*baseField
 
 	source *parser.FieldBool
+}
+
+func (f *Bool) typeGo() jen.Code {
+	return jen.Bool()
 }
 
 func (f *Bool) CodeGen() *CodeGen {
@@ -35,7 +38,7 @@ func (f *Bool) filterDefine(ctx Context) jen.Code {
 
 func (f *Bool) filterInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewBool").Types(jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
 func (f *Bool) convFrom(ctx Context) jen.Code {

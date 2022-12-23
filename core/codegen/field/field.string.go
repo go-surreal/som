@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 )
@@ -11,6 +10,10 @@ type String struct {
 	*baseField
 
 	source *parser.FieldString
+}
+
+func (f *String) typeGo() jen.Code {
+	return jen.String()
 }
 
 func (f *String) CodeGen() *CodeGen {
@@ -35,7 +38,7 @@ func (f *String) filterDefine(ctx Context) jen.Code {
 
 func (f *String) filterInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibFilter, "NewString").Types(jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
 func (f *String) sortDefine(ctx Context) jen.Code {
@@ -44,7 +47,7 @@ func (f *String) sortDefine(ctx Context) jen.Code {
 
 func (f *String) sortInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibSort, "NewString").Types(jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(strcase.ToSnake(f.NameGo()))))
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *String) convFrom(ctx Context) jen.Code {
