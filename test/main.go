@@ -80,7 +80,7 @@ func main() {
 
 	fmt.Println("old user uuid:", user.UUID, user.ID)
 
-	user.UUID, _ = uuid.NewUUID()
+	user.UUID = uuid.New()
 
 	fmt.Println("new user uuid:", user.UUID, user.ID)
 

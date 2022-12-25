@@ -281,7 +281,7 @@ func (b *queryBuilder) buildQueryFuncAll(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Nil(), jen.Err()),
 			),
 
-			jen.Var().Id("rawNodes").Index().Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Var().Id("rawNodes").Index().Qual(b.subPkg(def.PkgConv), node.NameGo()),
 			jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
 				Call(jen.Id("raw"), jen.Op("&").Id("rawNodes")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
@@ -296,7 +296,7 @@ func (b *queryBuilder) buildQueryFuncAll(node *field.NodeTable) jen.Code {
 				Block(
 					jen.Id("node").Op(":=").Qual(pkgConv, "To"+node.NameGo()).
 						Call(jen.Id("rawNode")),
-					jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Id("node")),
+					jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Op("&").Id("node")),
 				),
 
 			jen.Return(jen.Id("nodes"), jen.Nil()),

@@ -80,6 +80,14 @@ func parseTime(val any) time.Time {
 	}
 	return res
 }
+	
+func uuidPtr(val *uuid.UUID) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
 
 func parseUUID(val string) uuid.UUID {
 	res, err := uuid.Parse(val)
@@ -90,29 +98,53 @@ func parseUUID(val string) uuid.UUID {
 	return res
 }
 	
-func mapRecords[I, O any](in []I, fn func(*I) O) []O {
+func mapSlice[I, O any](in []I, fn func(I) O) []O {
 	var out []O
 	for _, i := range in {
-		out = append(out, fn(&i))
+		out = append(out, fn(i))
 	}
 	return out
 }
 	
-func convertEnum[I, O ~string](in []I) []O {
-	var out []O
-	for _, i := range in {
-		out = append(out, O(i))
-	}
-	return out
+func mapEnum[I, O ~string](in I) O {
+ 	return O(in)
 }
 
-// func extract[T any](val any, to func(map[string]any) T) T {
-//	var t T
-//	if val == nil {
-//		return t
-//	}
-//	return to(val.(map[string]any))
-// }
+func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
+ 	return func(in *I) *O {
+ 		if in == nil {
+ 			return nil
+ 		}
+ 		out := fn(*in)
+ 		return &out
+ 	}
+}
+	
+func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
+ 	ptrFn := ptrFunc(fn)
+
+ 	var out []*O
+ 	for _, i := range in {
+ 		out = append(out, ptrFn(i))
+ 	}
+
+ 	return out
+}
+	
+func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
+	if in == nil {
+		return nil
+	}
+	
+	ptrFn := ptrFunc(fn)
+	
+	var out []*O
+	for _, i := range *in {
+		out = append(out, ptrFn(i))
+	}
+	
+	return &out
+}
 `
 
 	data := []byte(codegenComment + content)
@@ -135,7 +167,15 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 
 	f.PackageComment(codegenComment)
 
-	f.Type().Id(elem.NameGo()).StructFunc(func(g *jen.Group) {
+	_, isNode := elem.(*field.NodeTable)
+	_, isEdge := elem.(*field.EdgeTable)
+
+	typeName := elem.NameGoLower()
+	if isNode || isEdge {
+		typeName = elem.NameGo()
+	}
+
+	f.Type().Id(typeName).StructFunc(func(g *jen.Group) {
 		for _, f := range elem.GetFields() {
 			if code := f.CodeGen().FieldDef(fieldCtx); code != nil {
 				g.Add(code)
@@ -147,9 +187,9 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	f.Add(b.buildTo(elem))
 
 	if node, ok := elem.(*field.NodeTable); ok {
-		f.Type().Id(node.NameGo() + "Field").Id(node.NameGo())
+		f.Type().Id(node.NameGoLower() + "Link").Id(node.NameGo())
 
-		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGo()+"Field")).
+		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGoLower()+"Link")).
 			Id("MarshalJSON").Params().
 			Params(jen.Index().Byte(), jen.Error()).
 			Block(
@@ -159,7 +199,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.Return(jen.Qual("encoding/json", "Marshal").Call(jen.Id("f").Dot("ID"))),
 			)
 
-		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGo()+"Field")).
+		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGoLower()+"Link")).
 			Id("UnmarshalJSON").Params(jen.Id("data").Index().Byte()).
 			Error().
 			Block(
@@ -174,19 +214,19 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 						jen.Return(jen.Nil()),
 					),
 
-				jen.Type().Id("fieldAlias").Id(node.NameGo()+"Field"),
-				jen.Var().Id("field").Id("fieldAlias"),
+				jen.Type().Id("alias").Id(node.NameGoLower()+"Link"),
+				jen.Var().Id("link").Id("alias"),
 
-				jen.Err().Op(":=").Qual("encoding/json", "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("field")),
+				jen.Err().Op(":=").Qual("encoding/json", "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("link")),
 				jen.If(jen.Err().Op("==").Nil()).Block(
-					jen.Op("*").Id("f").Op("=").Id(node.NameGo()+"Field").Call(jen.Id("field")),
+					jen.Op("*").Id("f").Op("=").Id(node.NameGoLower()+"Link").Call(jen.Id("link")),
 				),
 
 				jen.Return(jen.Err()),
 			)
 
-		f.Add(b.buildFromField(node))
-		f.Add(b.buildToField(node))
+		f.Add(b.buildFromLink(node))
+		f.Add(b.buildToLink(node))
 	}
 
 	if err := f.Save(path.Join(b.path(), elem.FileName())); err != nil {
@@ -202,15 +242,23 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 		Table:     elem,
 	}
 
+	localName := elem.NameGoLower()
+	methodPrefix := "from"
+
+	_, isNode := elem.(*field.NodeTable)
+	_, isEdge := elem.(*field.EdgeTable)
+
+	if isNode || isEdge {
+		localName = elem.NameGo()
+		methodPrefix = "From"
+	}
+
 	return jen.Func().
-		Id("From"+elem.NameGo()).
-		Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
-		Op("*").Id(elem.NameGo()).
+		Id(methodPrefix + elem.NameGo()).
+		Params(jen.Id("data").Add(b.SourceQual(elem.NameGo()))).
+		Id(localName).
 		Block(
-			jen.If(jen.Id("data").Op("==").Nil()).Block(
-				jen.Return(jen.Op("&").Id(elem.NameGo()).Values()),
-			),
-			jen.Return(jen.Op("&").Id(elem.NameGo()).Values(jen.DictFunc(func(d jen.Dict) {
+			jen.Return(jen.Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
 					if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
@@ -226,12 +274,23 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 		Table:     elem,
 	}
 
+	localName := elem.NameGoLower()
+	methodPrefix := "to"
+
+	_, isNode := elem.(*field.NodeTable)
+	_, isEdge := elem.(*field.EdgeTable)
+
+	if isNode || isEdge {
+		localName = elem.NameGo()
+		methodPrefix = "To"
+	}
+
 	return jen.Func().
-		Id("To" + elem.NameGo()).
-		Params(jen.Id("data").Op("*").Id(elem.NameGo())).
-		Op("*").Add(b.SourceQual(elem.NameGo())).
+		Id(methodPrefix + elem.NameGo()).
+		Params(jen.Id("data").Id(localName)).
+		Add(b.SourceQual(elem.NameGo())).
 		Block(
-			jen.Return(jen.Id("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
+			jen.Return(jen.Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
 					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
@@ -240,23 +299,22 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 			}))))
 }
 
-func (b *convBuilder) buildFromField(node *field.NodeTable) jen.Code {
+func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Id("from"+node.NameGo()+"Field").
-		Params(jen.Id("field").Id(node.NameGo()+"Field")).
-		Op("*").Add(b.SourceQual(node.NameGo())).
+		Id("from" + node.NameGo() + "Link").
+		Params(jen.Id("link").Id(node.NameGoLower() + "Link")).
+		Add(b.SourceQual(node.NameGo())).
 		Block(
-			jen.Id("node").Op(":=").Id(node.NameGo()).Call(jen.Id("field")),
-			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Op("&").Id("node"))),
+			jen.Return(jen.Id("To" + node.NameGo()).Call(jen.Id(node.NameGo()).Call(jen.Id("link")))),
 		)
 }
 
-func (b *convBuilder) buildToField(node *field.NodeTable) jen.Code {
+func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Id("to" + node.NameGo() + "Field").
-		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).
-		Id(node.NameGo() + "Field").
+		Id("to" + node.NameGo() + "Link").
+		Params(jen.Id("node").Add(b.SourceQual(node.NameGo()))).
+		Id(node.NameGoLower() + "Link").
 		Block(
-			jen.Return(jen.Id(node.NameGo() + "Field").Call(jen.Op("*").Id("From" + node.NameGo()).Call(jen.Id("node")))),
+			jen.Return(jen.Id(node.NameGoLower() + "Link").Call(jen.Id("From" + node.NameGo()).Call(jen.Id("node")))),
 		)
 }

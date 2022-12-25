@@ -4,12 +4,12 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-type Numeric[T Number, R any] struct {
+type Numeric[T any, R any] struct {
 	*Base[T, R]
 	*Comparable[T, R]
 }
 
-func NewNumeric[T Number, R any](key Key) *Numeric[T, R] {
+func NewNumeric[T any, R any](key Key) *Numeric[T, R] {
 	return &Numeric[T, R]{
 		Base:       &Base[T, R]{key: key},
 		Comparable: &Comparable[T, R]{key: key},

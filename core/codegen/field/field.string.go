@@ -13,7 +13,11 @@ type String struct {
 }
 
 func (f *String) typeGo() jen.Code {
-	return jen.String()
+	return jen.Add(f.ptr()).String()
+}
+
+func (f *String) typeConv() jen.Code {
+	return f.typeGo()
 }
 
 func (f *String) CodeGen() *CodeGen {
@@ -59,6 +63,6 @@ func (f *String) convTo(ctx Context) jen.Code {
 }
 
 func (f *String) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).String().
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

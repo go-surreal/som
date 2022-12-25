@@ -28,6 +28,14 @@ func parseTime(val any) time.Time {
 	}
 	return res
 }
+	
+func uuidPtr(val *uuid.UUID) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
 
 func parseUUID(val string) uuid.UUID {
 	res, err := uuid.Parse(val)
@@ -38,26 +46,50 @@ func parseUUID(val string) uuid.UUID {
 	return res
 }
 	
-func mapRecords[I, O any](in []I, fn func(*I) O) []O {
+func mapSlice[I, O any](in []I, fn func(I) O) []O {
 	var out []O
 	for _, i := range in {
-		out = append(out, fn(&i))
+		out = append(out, fn(i))
 	}
 	return out
 }
 	
-func convertEnum[I, O ~string](in []I) []O {
-	var out []O
-	for _, i := range in {
-		out = append(out, O(i))
-	}
-	return out
+func mapEnum[I, O ~string](in I) O {
+ 	return O(in)
 }
 
-// func extract[T any](val any, to func(map[string]any) T) T {
-//	var t T
-//	if val == nil {
-//		return t
-//	}
-//	return to(val.(map[string]any))
-// }
+func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
+ 	return func(in *I) *O {
+ 		if in == nil {
+ 			return nil
+ 		}
+ 		out := fn(*in)
+ 		return &out
+ 	}
+}
+	
+func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
+ 	ptrFn := ptrFunc(fn)
+
+ 	var out []*O
+ 	for _, i := range in {
+ 		out = append(out, ptrFn(i))
+ 	}
+
+ 	return out
+}
+	
+func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
+	if in == nil {
+		return nil
+	}
+	
+	ptrFn := ptrFunc(fn)
+	
+	var out []*O
+	for _, i := range *in {
+		out = append(out, ptrFn(i))
+	}
+	
+	return &out
+}

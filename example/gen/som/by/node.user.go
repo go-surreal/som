@@ -17,7 +17,10 @@ func newUser[T any](key string) user[T] {
 		Int:       sort.NewSort[T](keyed(key, "int")),
 		Int32:     sort.NewSort[T](keyed(key, "int_32")),
 		Int64:     sort.NewSort[T](keyed(key, "int_64")),
+		IntPtr:    sort.NewSort[T](keyed(key, "int_ptr")),
 		String:    sort.NewString[T](keyed(key, "string")),
+		StringPtr: sort.NewString[T](keyed(key, "string_ptr")),
+		TimePtr:   sort.NewSort[T](keyed(key, "time_ptr")),
 		UpdatedAt: sort.NewSort[T](keyed(key, "updated_at")),
 		key:       key,
 	}
@@ -34,6 +37,9 @@ type user[T any] struct {
 	Int64     *sort.Sort[T]
 	Float32   *sort.Sort[T]
 	Float64   *sort.Sort[T]
+	StringPtr *sort.String[T]
+	IntPtr    *sort.Sort[T]
+	TimePtr   *sort.Sort[T]
 }
 
 func (n user[T]) MainGroup() group[T] {

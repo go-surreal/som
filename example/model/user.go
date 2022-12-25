@@ -34,6 +34,20 @@ type User struct {
 
 	MyGroups []MemberOf
 
+	StringPtr         *string
+	IntPtr            *int
+	TimePtr           *time.Time
+	UuidPtr           *uuid.UUID
+	StructPtr         *SomeStruct
+	StringPtrSlice    []*string
+	StringSlicePtr    *[]string
+	StructPtrSlice    []*SomeStruct
+	StructPtrSlicePtr *[]*SomeStruct
+	EnumPtrSlice      []*Role
+	NodePtrSlice      []*Group
+	NodePtrSlicePtr   *[]*Group
+	SliceSlice        [][]string
+
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum
 	// MappedGroups map[string]Group // map of string and node
@@ -51,6 +65,13 @@ func (u *User) GetGroups() []Group {
 type Login struct {
 	Username string
 	Password string
+}
+
+type SomeStruct struct {
+	StringPtr *string
+	IntPtr    *int
+	TimePtr   *time.Time
+	UuidPtr   *uuid.UUID
 }
 
 type Role som.Enum

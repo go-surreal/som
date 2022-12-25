@@ -14,7 +14,11 @@ type Enum struct {
 }
 
 func (f *Enum) typeGo() jen.Code {
-	return jen.Qual(f.SourcePkg, f.model.NameGo())
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo())
+}
+
+func (f *Enum) typeConv() jen.Code {
+	return jen.Add(f.ptr()).String() // TODO: support other enum base types (atomic)
 }
 
 func (f *Enum) CodeGen() *CodeGen {
@@ -51,6 +55,6 @@ func (f *Enum) convTo(ctx Context) jen.Code {
 }
 
 func (f *Enum) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).String(). // TODO: support other enum base types (atomic)
-						Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

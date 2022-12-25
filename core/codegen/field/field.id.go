@@ -16,6 +16,10 @@ func (f *ID) typeGo() jen.Code {
 	return jen.String()
 }
 
+func (f *ID) typeConv() jen.Code {
+	return f.typeGo()
+}
+
 func (f *ID) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
@@ -58,6 +62,6 @@ func (f *ID) convTo(ctx Context) jen.Code {
 }
 
 func (f *ID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).String().
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

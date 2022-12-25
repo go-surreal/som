@@ -219,6 +219,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).
 		Error().
 		Block(
+			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+				),
+
 			// TODO: maybe add an option to the generator: "strict" vs. "non-strict" mode (regarding custom IDs)?
 			jen.Id("key").Op(":=").Lit(node.NameDatabase()),
 			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Op("!=").Lit("")).
@@ -226,7 +231,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Id("key").Op("+=").
 						Lit(":").Op("+").Lit("⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩"),
 				),
-			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
+			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Op("*").Id(node.NameGoLower())),
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Create").
 				Call(jen.Id("key"), jen.Id("data")),
@@ -250,8 +255,8 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
-				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).
-				Call(jen.Op("&").Id("convNode")),
+				Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).
+				Call(jen.Id("convNode")),
 
 			jen.Return(jen.Nil()),
 		)
@@ -283,13 +288,14 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
 			),
 
-			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
 			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.False(), jen.Err()),
 			),
 
-			jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")), jen.True(), jen.Nil()),
+			jen.Id("node").Op(":=").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
+			jen.Return(jen.Op("&").Id("node"), jen.True(), jen.Nil()),
 		)
 
 	f.Func().
@@ -301,12 +307,17 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).
 		Error().
 		Block(
+			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+				),
+
 			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
 				),
 
-			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
+			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Op("*").Id(node.NameGoLower())),
 
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Update").
@@ -323,7 +334,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
-				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Op("&").Id("convNode")),
+				Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
 
 			jen.Return(jen.Nil()),
 		)
@@ -337,6 +348,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).
 		Error().
 		Block(
+			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+				),
+
 			jen.List(jen.Id("_"), jen.Err()).Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Delete").
 				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩")),

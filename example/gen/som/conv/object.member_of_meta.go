@@ -3,22 +3,19 @@ package conv
 
 import model "github.com/marcbinz/som/example/model"
 
-type MemberOfMeta struct {
-	IsAdmin  bool `json:"is_admin,omitempty"`
-	IsActive bool `json:"is_active,omitempty"`
+type memberOfMeta struct {
+	IsAdmin  bool `json:"is_admin"`
+	IsActive bool `json:"is_active"`
 }
 
-func FromMemberOfMeta(data *model.MemberOfMeta) *MemberOfMeta {
-	if data == nil {
-		return &MemberOfMeta{}
-	}
-	return &MemberOfMeta{
+func fromMemberOfMeta(data model.MemberOfMeta) memberOfMeta {
+	return memberOfMeta{
 		IsActive: data.IsActive,
 		IsAdmin:  data.IsAdmin,
 	}
 }
-func ToMemberOfMeta(data *MemberOfMeta) *model.MemberOfMeta {
-	return &model.MemberOfMeta{
+func toMemberOfMeta(data memberOfMeta) model.MemberOfMeta {
+	return model.MemberOfMeta{
 		IsActive: data.IsActive,
 		IsAdmin:  data.IsAdmin,
 	}

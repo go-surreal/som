@@ -26,6 +26,7 @@ type Field interface {
 	NameDatabase() string
 
 	typeGo() jen.Code
+	typeConv() jen.Code
 	// typeDatabase() string
 
 	CodeGen() *CodeGen
@@ -78,6 +79,13 @@ type baseField struct {
 	*BuildConfig
 
 	source parser.Field
+}
+
+func (f *baseField) ptr() jen.Code {
+	if f.source.Pointer() {
+		return jen.Op("*")
+	}
+	return jen.Empty()
 }
 
 func (f *baseField) NameGo() string {

@@ -13,7 +13,11 @@ type Edge struct {
 }
 
 func (f *Edge) typeGo() jen.Code {
-	return jen.Id(f.table.NameGo())
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
+}
+
+func (f *Edge) typeConv() jen.Code {
+	return jen.Add(f.ptr()).Id(f.table.NameGo())
 }
 
 func (f *Edge) Table() *EdgeTable {
@@ -42,7 +46,7 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 		Id(f.NameGo()).Params().
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
-			jen.Return(jen.Id("new" + f.source.Edge).Types(jen.Id("T")).
+			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
 				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))))
 }
 
@@ -52,19 +56,19 @@ func (f *Edge) sortFunc(ctx Context) jen.Code {
 		Id(f.NameGo()).Params().
 		Id(f.NameGoLower()).Types(jen.Id("T")).
 		Block(
-			jen.Return(jen.Id("new" + f.source.Edge).Types(jen.Id("T")).
+			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Edge) convFrom(ctx Context) jen.Code {
-	return jen.Id("to" + f.source.Edge + "Field").Call(jen.Op("&").Id("data").Dot(f.NameGo()))
+	return jen.Id("To" + f.table.NameGo()).Call(jen.Op("&").Id("data").Dot(f.NameGo()))
 }
 
 func (f *Edge) convTo(ctx Context) jen.Code {
-	return jen.Op("*").Id("from" + f.source.Edge + "Field").Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Op("*").Id("From" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Edge) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Id(f.source.Edge + "Field").
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

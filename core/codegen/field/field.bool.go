@@ -13,7 +13,11 @@ type Bool struct {
 }
 
 func (f *Bool) typeGo() jen.Code {
-	return jen.Bool()
+	return jen.Add(f.ptr()).Bool()
+}
+
+func (f *Bool) typeConv() jen.Code {
+	return f.typeGo()
 }
 
 func (f *Bool) CodeGen() *CodeGen {
@@ -50,6 +54,6 @@ func (f *Bool) convTo(ctx Context) jen.Code {
 }
 
 func (f *Bool) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Bool().
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"}) // TODO: store "false" (no omitempty)?
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

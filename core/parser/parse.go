@@ -245,7 +245,10 @@ func parseStruct(v gotype.Type) (*Struct, error) {
 func parseField(t gotype.Type) (Field, error) {
 	var field Field
 
-	atomic := &fieldAtomic{name: t.Name()}
+	atomic := &fieldAtomic{
+		name:    t.Name(),
+		pointer: false,
+	}
 
 	switch t.Elem().Kind() {
 	case gotype.String:
@@ -273,11 +276,11 @@ func parseField(t gotype.Type) (Field, error) {
 		if t.Elem().PkgPath() == "time" {
 			field = &FieldTime{atomic}
 		} else if isNode(t.Elem()) {
-			field = &FieldNode{atomic, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldNode{atomic, t.Elem().Name()}
 		} else if isEdge(t.Elem()) {
-			field = &FieldEdge{atomic, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldEdge{atomic, t.Elem().Name()}
 		} else {
-			field = &FieldStruct{atomic, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldStruct{atomic, t.Elem().Name()}
 		}
 	case gotype.Slice:
 		subField, err := parseField(t.Elem())
@@ -298,6 +301,22 @@ func parseField(t gotype.Type) (Field, error) {
 		if t.Elem().PkgPath() == "github.com/google/uuid" {
 			field = &FieldUUID{&fieldAtomic{name: t.Name()}}
 		}
+
+	case gotype.Ptr:
+		{
+			ptrField, err := parseField(t.Elem())
+			if err != nil {
+				return nil, fmt.Errorf("could not parse elem for ptr field %s: %v", t.Name(), err)
+			}
+
+			if t.Name() != "" {
+				ptrField.setName(t.Name())
+			}
+			ptrField.setPointer(true)
+
+			field = ptrField
+		}
+
 	default:
 		return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), t.Elem().Kind())
 	}

@@ -15,17 +15,21 @@ type Numeric struct {
 func (f *Numeric) typeGo() jen.Code {
 	switch f.source.Type {
 	case parser.NumberInt:
-		return jen.Int()
+		return jen.Add(f.ptr()).Int()
 	case parser.NumberInt32:
-		return jen.Int32()
+		return jen.Add(f.ptr()).Int32()
 	case parser.NumberInt64:
-		return jen.Int64()
+		return jen.Add(f.ptr()).Int64()
 	case parser.NumberFloat32:
-		return jen.Float32()
+		return jen.Add(f.ptr()).Float32()
 	case parser.NumberFloat64:
-		return jen.Float64()
+		return jen.Add(f.ptr()).Float64()
 	}
-	return jen.Int() // TODO: okay?
+	return jen.Empty() // this case can basically not happen ;)
+}
+
+func (f *Numeric) typeConv() jen.Code {
+	return f.typeGo()
 }
 
 func (f *Numeric) CodeGen() *CodeGen {
@@ -71,6 +75,6 @@ func (f *Numeric) convTo(ctx Context) jen.Code {
 }
 
 func (f *Numeric) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeGo()).
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

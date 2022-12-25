@@ -13,7 +13,11 @@ type UUID struct {
 }
 
 func (f *UUID) typeGo() jen.Code {
-	return jen.Qual(def.PkgUUID, "UUID")
+	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
+}
+
+func (f *UUID) typeConv() jen.Code {
+	return jen.Add(f.ptr()).String()
 }
 
 func (f *UUID) CodeGen() *CodeGen {
@@ -42,14 +46,20 @@ func (f *UUID) filterInit(ctx Context) jen.Code {
 }
 
 func (f *UUID) convFrom(ctx Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.Id("uuidPtr").Call(jen.Id("data").Dot(f.NameGo()))
+	}
 	return jen.Id("data").Dot(f.NameGo()).Dot("String").Call()
 }
 
 func (f *UUID) convTo(ctx Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.Id("ptrFunc").Call(jen.Id("parseUUID")).Call(jen.Id("data").Dot(f.NameGo()))
+	}
 	return jen.Id("parseUUID").Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *UUID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).String().
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

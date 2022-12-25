@@ -16,6 +16,10 @@ func (f *Node) typeGo() jen.Code {
 	return jen.Qual(f.SourcePkg, f.table.NameGo())
 }
 
+func (f *Node) typeConv() jen.Code {
+	return jen.Add(f.ptr()).Id(f.table.NameGoLower() + "Link")
+}
+
 func (f *Node) Table() *NodeTable {
 	return f.table
 }
@@ -42,7 +46,7 @@ func (f *Node) filterFunc(ctx Context) jen.Code {
 		Id(f.NameGo()).Params().
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
-			jen.Return(jen.Id("new" + f.source.Node).Types(jen.Id("T")).
+			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
 				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))))
 }
 
@@ -52,19 +56,19 @@ func (f *Node) sortFunc(ctx Context) jen.Code {
 		Id(f.NameGo()).Params().
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
-			jen.Return(jen.Id("new" + f.source.Node).Types(jen.Id("T")).
+			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Node) convFrom(ctx Context) jen.Code {
-	return jen.Id("to" + f.source.Node + "Field").Call(jen.Op("&").Id("data").Dot(f.NameGo()))
+	return jen.Id("to" + f.table.NameGo() + "Link").Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Node) convTo(ctx Context) jen.Code {
-	return jen.Op("*").Id("from" + f.source.Node + "Field").Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id("from" + f.table.NameGo() + "Link").Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Node) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Id(f.source.Node + "Field").
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

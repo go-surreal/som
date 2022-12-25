@@ -8,10 +8,14 @@ type Field interface {
 	fmt.Stringer
 	field()
 	Name() string
+	Pointer() bool
+	setName(string)
+	setPointer(bool)
 }
 
 type fieldAtomic struct {
-	name string
+	name    string
+	pointer bool
 }
 
 func (*fieldAtomic) field() {}
@@ -22,6 +26,18 @@ func (f *fieldAtomic) String() string {
 
 func (f *fieldAtomic) Name() string {
 	return f.name
+}
+
+func (f *fieldAtomic) setName(name string) {
+	f.name = name
+}
+
+func (f *fieldAtomic) Pointer() bool {
+	return f.pointer
+}
+
+func (f *fieldAtomic) setPointer(val bool) {
+	f.pointer = val
 }
 
 type FieldID struct {
@@ -61,14 +77,12 @@ type FieldUUID struct {
 
 type FieldNode struct {
 	*fieldAtomic
-	Node    string
-	Pointer bool
+	Node string
 }
 
 type FieldEdge struct {
 	*fieldAtomic
-	Edge    string
-	Pointer bool
+	Edge string
 }
 
 type FieldEnum struct {
@@ -78,8 +92,7 @@ type FieldEnum struct {
 
 type FieldStruct struct {
 	*fieldAtomic
-	Struct  string
-	Pointer bool
+	Struct string
 }
 
 type FieldSlice struct {

@@ -13,7 +13,11 @@ type Time struct {
 }
 
 func (f *Time) typeGo() jen.Code {
-	return jen.Qual("time", "Time")
+	return jen.Add(f.ptr()).Qual("time", "Time")
+}
+
+func (f *Time) typeConv() jen.Code {
+	return f.typeGo()
 }
 
 func (f *Time) CodeGen() *CodeGen {
@@ -59,6 +63,6 @@ func (f *Time) convTo(ctx Context) jen.Code {
 }
 
 func (f *Time) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeGo()).
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }
