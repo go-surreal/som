@@ -20,14 +20,14 @@ func newUser[T any](key filter.Key) user[T] {
 		Int:       filter.NewNumeric[int, T](key.Dot("int")),
 		Int32:     filter.NewNumeric[int32, T](key.Dot("int_32")),
 		Int64:     filter.NewNumeric[int64, T](key.Dot("int_64")),
-		IntPtr:    filter.NewNumeric[*int, T](key.Dot("int_ptr")),
+		IntPtr:    filter.NewNumericPtr[*int, T](key.Dot("int_ptr")),
 		Role:      filter.NewBase[model.Role, T](key.Dot("role")),
 		String:    filter.NewString[T](key.Dot("string")),
-		StringPtr: filter.NewString[T](key.Dot("string_ptr")),
-		TimePtr:   filter.NewTime[T](key.Dot("time_ptr")),
+		StringPtr: filter.NewStringPtr[T](key.Dot("string_ptr")),
+		TimePtr:   filter.NewTimePtr[T](key.Dot("time_ptr")),
 		UUID:      filter.NewBase[uuid.UUID, T](key.Dot("uuid")),
 		UpdatedAt: filter.NewTime[T](key.Dot("updated_at")),
-		UuidPtr:   filter.NewBase[uuid.UUID, T](key.Dot("uuid_ptr")),
+		UuidPtr:   filter.NewBasePtr[uuid.UUID, T](key.Dot("uuid_ptr")),
 		key:       key,
 	}
 }
@@ -47,10 +47,10 @@ type user[T any] struct {
 	Bool2     *filter.Bool[T]
 	UUID      *filter.Base[uuid.UUID, T]
 	Role      *filter.Base[model.Role, T]
-	StringPtr *filter.String[T]
-	IntPtr    *filter.Numeric[*int, T]
-	TimePtr   *filter.Time[T]
-	UuidPtr   *filter.Base[uuid.UUID, T]
+	StringPtr *filter.StringPtr[T]
+	IntPtr    *filter.NumericPtr[*int, T]
+	TimePtr   *filter.TimePtr[T]
+	UuidPtr   *filter.BasePtr[uuid.UUID, T]
 }
 type userSlice[T any] struct {
 	user[T]

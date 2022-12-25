@@ -31,3 +31,15 @@ func (t *Time[R]) After(val time.Time) Of[R] {
 func (t *Time[R]) AfterOrEqual(val time.Time) Of[R] {
 	return t.comp.GreaterThanEqual(val)
 }
+
+type TimePtr[R any] struct {
+	*Time[R]
+	*Nillable[R]
+}
+
+func NewTimePtr[R any](key Key) *TimePtr[R] {
+	return &TimePtr[R]{
+		Time:     NewTime[R](key),
+		Nillable: &Nillable[R]{key: key},
+	}
+}

@@ -22,7 +22,7 @@ type User struct {
 	Bool2             bool           `json:"bool_2"`
 	UUID              string         `json:"uuid"`
 	Login             login          `json:"login"`
-	Role              string         `json:"role,omitempty"`
+	Role              string         `json:"role"`
 	Groups            []groupLink    `json:"groups"`
 	MainGroup         groupLink      `json:"main_group"`
 	Other             []string       `json:"other"`

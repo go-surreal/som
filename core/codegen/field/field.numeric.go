@@ -49,11 +49,21 @@ func (f *Numeric) CodeGen() *CodeGen {
 }
 
 func (f *Numeric) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Numeric").Types(f.typeGo(), jen.Id("T"))
+	filter := "Numeric"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(f.typeGo(), jen.Id("T"))
 }
 
 func (f *Numeric) filterInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLibFilter, "NewNumeric").Types(f.typeGo(), jen.Id("T")).
+	filter := "NewNumeric"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Qual(def.PkgLibFilter, filter).Types(f.typeGo(), jen.Id("T")).
 		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 

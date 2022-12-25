@@ -37,11 +37,21 @@ func (f *UUID) CodeGen() *CodeGen {
 }
 
 func (f *UUID) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Base").Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T"))
+	filter := "Base"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T"))
 }
 
 func (f *UUID) filterInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLibFilter, "NewBase").Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
+	filter := "NewBase"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Qual(def.PkgLibFilter, filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
 		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 

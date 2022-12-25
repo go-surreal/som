@@ -38,11 +38,21 @@ func (f *Enum) CodeGen() *CodeGen {
 }
 
 func (f *Enum) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Base").Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T"))
+	filter := "Base"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T"))
 }
 
 func (f *Enum) filterInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLibFilter, "NewBase").Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T")).
+	filter := "NewBase"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Qual(def.PkgLibFilter, filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T")).
 		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
@@ -56,5 +66,5 @@ func (f *Enum) convTo(ctx Context) jen.Code {
 
 func (f *Enum) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

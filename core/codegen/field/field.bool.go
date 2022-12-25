@@ -37,11 +37,21 @@ func (f *Bool) CodeGen() *CodeGen {
 }
 
 func (f *Bool) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Bool").Types(jen.Id("T"))
+	filter := "Bool"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(jen.Id("T"))
 }
 
 func (f *Bool) filterInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLibFilter, "NewBool").Types(jen.Id("T")).
+	filter := "NewBool"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Qual(def.PkgLibFilter, filter).Types(jen.Id("T")).
 		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 

@@ -1,28 +1,29 @@
 package filter
 
-import (
-	"golang.org/x/exp/constraints"
-)
-
-type Numeric[T any, R any] struct {
+type Numeric[T, R any] struct {
 	*Base[T, R]
 	*Comparable[T, R]
 }
 
-func NewNumeric[T any, R any](key Key) *Numeric[T, R] {
+func NewNumeric[T, R any](key Key) *Numeric[T, R] {
+	return newNumeric[T, R](key, false)
+}
+
+func newNumeric[T, R any](key Key, count bool) *Numeric[T, R] {
 	return &Numeric[T, R]{
-		Base:       &Base[T, R]{key: key},
-		Comparable: &Comparable[T, R]{key: key},
+		Base:       &Base[T, R]{key: key, isCount: count},
+		Comparable: &Comparable[T, R]{key: key, isCount: count},
 	}
 }
 
-func newCountNumeric[T Number, R any](key Key) *Numeric[T, R] {
-	return &Numeric[T, R]{
-		Base:       &Base[T, R]{key: key, isCount: true},
-		Comparable: &Comparable[T, R]{key: key, isCount: true},
-	}
+type NumericPtr[T, R any] struct {
+	*Numeric[T, R]
+	*Nillable[R]
 }
 
-type Number interface {
-	constraints.Integer | constraints.Float
+func NewNumericPtr[T, R any](key Key) *NumericPtr[T, R] {
+	return &NumericPtr[T, R]{
+		Numeric:  NewNumeric[T, R](key),
+		Nillable: &Nillable[R]{key: key},
+	}
 }

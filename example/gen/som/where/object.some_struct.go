@@ -9,20 +9,20 @@ import (
 
 func newSomeStruct[T any](key filter.Key) someStruct[T] {
 	return someStruct[T]{
-		IntPtr:    filter.NewNumeric[*int, T](key.Dot("int_ptr")),
-		StringPtr: filter.NewString[T](key.Dot("string_ptr")),
-		TimePtr:   filter.NewTime[T](key.Dot("time_ptr")),
-		UuidPtr:   filter.NewBase[uuid.UUID, T](key.Dot("uuid_ptr")),
+		IntPtr:    filter.NewNumericPtr[*int, T](key.Dot("int_ptr")),
+		StringPtr: filter.NewStringPtr[T](key.Dot("string_ptr")),
+		TimePtr:   filter.NewTimePtr[T](key.Dot("time_ptr")),
+		UuidPtr:   filter.NewBasePtr[uuid.UUID, T](key.Dot("uuid_ptr")),
 		key:       key,
 	}
 }
 
 type someStruct[T any] struct {
 	key       filter.Key
-	StringPtr *filter.String[T]
-	IntPtr    *filter.Numeric[*int, T]
-	TimePtr   *filter.Time[T]
-	UuidPtr   *filter.Base[uuid.UUID, T]
+	StringPtr *filter.StringPtr[T]
+	IntPtr    *filter.NumericPtr[*int, T]
+	TimePtr   *filter.TimePtr[T]
+	UuidPtr   *filter.BasePtr[uuid.UUID, T]
 }
 type someStructSlice[T any] struct {
 	someStruct[T]
