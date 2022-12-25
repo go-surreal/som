@@ -33,5 +33,17 @@ func (s *Slice[T, R]) ContainsNone(vals []T) Of[R] {
 }
 
 func (s *Slice[T, R]) Count() *Numeric[int, R] {
-	return newCountNumeric[int, R](s.key)
+	return newNumeric[int, R](s.key, true)
+}
+
+type SlicePtr[T, R any] struct {
+	*Slice[T, R]
+	*Nillable[R]
+}
+
+func NewSlicePtr[T, R any](key Key) *SlicePtr[T, R] {
+	return &SlicePtr[T, R]{
+		Slice:    &Slice[T, R]{key: key},
+		Nillable: &Nillable[R]{key: key},
+	}
 }

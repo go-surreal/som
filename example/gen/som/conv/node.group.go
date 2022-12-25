@@ -9,50 +9,47 @@ import (
 
 type Group struct {
 	ID      string     `json:"id,omitempty"`
-	Name    string     `json:"name,omitempty"`
+	Name    string     `json:"name"`
 	Members []MemberOf `json:"members,omitempty"`
 }
 
-func FromGroup(data *model.Group) *Group {
-	if data == nil {
-		return &Group{}
-	}
-	return &Group{Name: data.Name}
+func FromGroup(data model.Group) Group {
+	return Group{Name: data.Name}
 }
-func ToGroup(data *Group) *model.Group {
-	return &model.Group{
-		ID:   parseDatabaseID("group", data.ID),
-		Name: data.Name,
+func ToGroup(data Group) model.Group {
+	return model.Group{
+		ID:      parseDatabaseID("group", data.ID),
+		Members: mapSlice(data.Members, ToMemberOf),
+		Name:    data.Name,
 	}
 }
 
-type GroupField Group
+type groupLink Group
 
-func (f *GroupField) MarshalJSON() ([]byte, error) {
+func (f *groupLink) MarshalJSON() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
 	return json.Marshal(f.ID)
 }
-func (f *GroupField) UnmarshalJSON(data []byte) error {
+func (f *groupLink) UnmarshalJSON(data []byte) error {
 	raw := string(data)
 	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
 		raw = raw[1 : len(raw)-1]
 		f.ID = parseDatabaseID("group", raw)
 		return nil
 	}
-	type fieldAlias GroupField
-	var field fieldAlias
-	err := json.Unmarshal(data, &field)
+	type alias groupLink
+	var link alias
+	err := json.Unmarshal(data, &link)
 	if err == nil {
-		*f = GroupField(field)
+		*f = groupLink(link)
 	}
 	return err
 }
-func fromGroupField(field GroupField) *model.Group {
-	node := Group(field)
-	return ToGroup(&node)
+func fromGroupLink(link groupLink) model.Group {
+	return ToGroup(Group(link))
 }
-func toGroupField(node *model.Group) GroupField {
-	return GroupField(*FromGroup(node))
+func toGroupLink(node model.Group) groupLink {
+	return groupLink(FromGroup(node))
 }

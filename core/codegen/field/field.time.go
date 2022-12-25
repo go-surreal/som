@@ -13,7 +13,11 @@ type Time struct {
 }
 
 func (f *Time) typeGo() jen.Code {
-	return jen.Qual("time", "Time")
+	return jen.Add(f.ptr()).Qual("time", "Time")
+}
+
+func (f *Time) typeConv() jen.Code {
+	return f.typeGo()
 }
 
 func (f *Time) CodeGen() *CodeGen {
@@ -33,11 +37,21 @@ func (f *Time) CodeGen() *CodeGen {
 }
 
 func (f *Time) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "Time").Types(jen.Id("T"))
+	filter := "Time"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(jen.Id("T"))
 }
 
 func (f *Time) filterInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLibFilter, "NewTime").Types(jen.Id("T")).
+	filter := "NewTime"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Qual(def.PkgLibFilter, filter).Types(jen.Id("T")).
 		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
@@ -59,6 +73,6 @@ func (f *Time) convTo(ctx Context) jen.Code {
 }
 
 func (f *Time) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeGo()).
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

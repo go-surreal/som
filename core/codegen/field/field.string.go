@@ -13,7 +13,11 @@ type String struct {
 }
 
 func (f *String) typeGo() jen.Code {
-	return jen.String()
+	return jen.Add(f.ptr()).String()
+}
+
+func (f *String) typeConv() jen.Code {
+	return f.typeGo()
 }
 
 func (f *String) CodeGen() *CodeGen {
@@ -33,11 +37,21 @@ func (f *String) CodeGen() *CodeGen {
 }
 
 func (f *String) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, "String").Types(jen.Id("T"))
+	filter := "String"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(jen.Id("T"))
 }
 
 func (f *String) filterInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLibFilter, "NewString").Types(jen.Id("T")).
+	filter := "NewString"
+	if f.source.Pointer() {
+		filter += "Ptr"
+	}
+
+	return jen.Qual(def.PkgLibFilter, filter).Types(jen.Id("T")).
 		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
 }
 
@@ -59,6 +73,6 @@ func (f *String) convTo(ctx Context) jen.Code {
 }
 
 func (f *String) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).String().
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

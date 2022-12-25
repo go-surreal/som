@@ -14,7 +14,11 @@ type Slice struct {
 }
 
 func (f *Slice) typeGo() jen.Code {
-	return jen.Index().Add(f.element.typeGo())
+	return jen.Add(f.ptr()).Index().Add(f.element.typeGo())
+}
+
+func (f *Slice) typeConv() jen.Code {
+	return jen.Add(f.ptr()).Index().Add(f.element.typeConv())
 }
 
 func (f *Slice) Element() Field {
@@ -126,17 +130,57 @@ func (f *Slice) convFrom(ctx Context) jen.Code {
 
 	case *Node:
 		{
-			return jen.Id("mapRecords").Call(jen.Id("data").Dot(f.NameGo()), jen.Id("to"+element.table.NameGo()+"Field"))
+			mapFn := "mapSlice"
+			if f.source.Pointer() {
+				mapFn = "mapSlicePtr"
+			}
+
+			if element.source.Pointer() {
+				mapFn = "mapPtrSlice"
+				if f.source.Pointer() {
+					mapFn = "mapPtrSlicePtr"
+				}
+			}
+
+			return jen.Id(mapFn).Call(
+				jen.Id("data").Dot(f.NameGo()),
+				jen.Id("to"+element.table.NameGo()+"Link"),
+			)
+		}
+
+	case *Struct:
+		{
+			mapFn := "mapSlice"
+			if f.source.Pointer() {
+				mapFn = "mapSlicePtr"
+			}
+
+			if element.source.Pointer() {
+				mapFn = "mapPtrSlice"
+				if f.source.Pointer() {
+					mapFn = "mapPtrSlicePtr"
+				}
+			}
+
+			return jen.Id(mapFn).Call(
+				jen.Id("data").Dot(f.NameGo()),
+				jen.Id("from"+element.model.NameGo()),
+			)
 		}
 
 	case *Edge:
 		{
-			return nil // TODO: should edges really not be addable like that?
+			return nil // TODO: should an edge really not be addable like that?
 		}
 
 	case *Enum:
 		{
-			return jen.Id("convertEnum").Types(element.typeGo(), jen.String()).Call(jen.Id("data").Dot(f.NameGo()))
+			mapEnumFn := jen.Id("mapEnum").Types(jen.Qual(f.SourcePkg, element.model.NameGo()), jen.String())
+			if element.source.Pointer() {
+				mapEnumFn = jen.Id("ptrFunc").Call(mapEnumFn)
+			}
+
+			return jen.Id("mapSlice").Call(jen.Id("data").Dot(f.NameGo()), mapEnumFn)
 		}
 
 	default:
@@ -151,16 +195,56 @@ func (f *Slice) convTo(ctx Context) jen.Code {
 	switch element := f.element.(type) {
 
 	case *Node:
-		return nil
+		{
+			mapFn := "mapSlice"
+			if f.source.Pointer() {
+				mapFn = "mapSlicePtr"
+			}
+
+			if element.source.Pointer() {
+				mapFn = "mapPtrSlice"
+				if f.source.Pointer() {
+					mapFn = "mapPtrSlicePtr"
+				}
+			}
+
+			return jen.Id(mapFn).Call(
+				jen.Id("data").Dot(f.NameGo()),
+				jen.Id("from"+element.table.NameGo()+"Link"),
+			)
+		}
+
+	case *Struct:
+		{
+			mapFn := "mapSlice"
+			if f.source.Pointer() {
+				mapFn = "mapSlicePtr"
+			}
+
+			if element.source.Pointer() {
+				mapFn = "mapPtrSlice"
+				if f.source.Pointer() {
+					mapFn = "mapPtrSlicePtr"
+				}
+			}
+
+			return jen.Id(mapFn).Call(
+				jen.Id("data").Dot(f.NameGo()),
+				jen.Id("to"+element.model.NameGo()),
+			)
+		}
 
 	case *Edge:
-		return nil
+		return jen.Id("mapSlice").Call(jen.Id("data").Dot(f.NameGo()), jen.Id("To"+element.table.NameGo()))
 
 	case *Enum:
 		{
-			return jen.Id("convertEnum").
-				Types(jen.String(), element.typeGo()).
-				Call(jen.Id("data").Dot(f.NameGo()))
+			mapEnumFn := jen.Id("mapEnum").Types(jen.String(), jen.Qual(f.SourcePkg, element.model.NameGo()))
+			if element.source.Pointer() {
+				mapEnumFn = jen.Id("ptrFunc").Call(mapEnumFn)
+			}
+
+			return jen.Id("mapSlice").Call(jen.Id("data").Dot(f.NameGo()), mapEnumFn)
 		}
 
 	default:
@@ -172,24 +256,11 @@ func (f *Slice) convTo(ctx Context) jen.Code {
 }
 
 func (f *Slice) fieldDef(ctx Context) jen.Code {
-	switch element := f.element.(type) {
-
-	case *Node:
-		{
-			return jen.Id(f.NameGo()).Index().Id(element.table.NameGo() + "Field").
-				Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
-		}
-
-	case *Enum:
-		{
-			return jen.Id(f.NameGo()).Index().String().
-				Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
-		}
-
-	default:
-		{
-			return jen.Id(f.NameGo()).Index().Add(element.typeGo()).
-				Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
-		}
+	jsonSuffix := ""
+	if _, isEdge := f.element.(*Edge); isEdge {
+		jsonSuffix = ",omitempty"
 	}
+
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase() + jsonSuffix})
 }

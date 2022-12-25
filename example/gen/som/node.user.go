@@ -23,11 +23,14 @@ func (n *user) Query() *query.User {
 	return query.NewUser(n.client.db)
 }
 func (n *user) Create(ctx context.Context, user *model.User) error {
+	if user == nil {
+		return errors.New("the passed node must not be nil")
+	}
 	key := "user"
 	if user.ID != "" {
 		key += ":" + "⟨" + user.ID + "⟩"
 	}
-	data := conv.FromUser(user)
+	data := conv.FromUser(*user)
 	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err
@@ -40,7 +43,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	if err != nil {
 		return err
 	}
-	*user = *conv.ToUser(&convNode)
+	*user = conv.ToUser(convNode)
 	return nil
 }
 func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
@@ -54,18 +57,22 @@ func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
 	if _, ok := raw.([]any); !ok {
 		raw = []any{raw} // temporary fix
 	}
-	var convNode *conv.User
+	var convNode conv.User
 	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
 		return nil, false, err
 	}
-	return conv.ToUser(convNode), true, nil
+	node := conv.ToUser(convNode)
+	return &node, true, nil
 }
 func (n *user) Update(ctx context.Context, user *model.User) error {
+	if user == nil {
+		return errors.New("the passed node must not be nil")
+	}
 	if user.ID == "" {
 		return errors.New("cannot update User without existing record ID")
 	}
-	data := conv.FromUser(user)
+	data := conv.FromUser(*user)
 	raw, err := n.client.db.Update("user:⟨"+user.ID+"⟩", data)
 	if err != nil {
 		return err
@@ -75,10 +82,13 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	if err != nil {
 		return err
 	}
-	*user = *conv.ToUser(&convNode)
+	*user = conv.ToUser(convNode)
 	return nil
 }
 func (n *user) Delete(ctx context.Context, user *model.User) error {
+	if user == nil {
+		return errors.New("the passed node must not be nil")
+	}
 	_, err := n.client.db.Delete("user:⟨" + user.ID + "⟩")
 	if err != nil {
 		return err

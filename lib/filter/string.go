@@ -23,3 +23,15 @@ func (s *String[R]) FuzzyMatch(val string) Of[R] {
 func (s *String[R]) NotFuzzyMatch(val string) Of[R] {
 	return build[R](s.Base.key, builder.OpFuzzyNotMatch, val, false)
 }
+
+type StringPtr[R any] struct {
+	*String[R]
+	*Nillable[R]
+}
+
+func NewStringPtr[R any](key Key) *StringPtr[R] {
+	return &StringPtr[R]{
+		String:   NewString[R](key),
+		Nillable: &Nillable[R]{key: key},
+	}
+}

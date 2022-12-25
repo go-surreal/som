@@ -94,7 +94,7 @@ func (q *User) All() ([]*model.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	var rawNodes []*conv.User
+	var rawNodes []conv.User
 	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (q *User) All() ([]*model.User, error) {
 	var nodes []*model.User
 	for _, rawNode := range rawNodes {
 		node := conv.ToUser(rawNode)
-		nodes = append(nodes, node)
+		nodes = append(nodes, &node)
 	}
 	return nodes, nil
 }

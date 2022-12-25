@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/marcbinz/som/example/gen/som"
+	"github.com/marcbinz/som/example/gen/som/where"
 	"github.com/marcbinz/som/example/model"
-	"github.com/marcbinz/som/example/repo"
 	"log"
 	"time"
 )
@@ -23,14 +23,11 @@ func main() {
 	}
 	defer db.Close()
 
-	groupRepo := repo.Group(db)
-	userRepo := repo.User(db)
-
 	group := &model.Group{
 		Name: "some group",
 	}
 
-	err = groupRepo.Create(ctx, group)
+	err = db.Group().Create(ctx, group)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +41,7 @@ func main() {
 		MainGroup: *group,
 	}
 
-	err = userRepo.Create(ctx, user)
+	err = db.User().Create(ctx, user)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,12 +57,12 @@ func main() {
 		},
 	}
 
-	err = userRepo.Relate(ctx, edge)
+	err = db.User().Relate().MyGroups().Create(edge)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	user, ok, err := userRepo.Read(ctx, user.ID)
+	user, ok, err := db.User().Read(ctx, user.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,18 +77,56 @@ func main() {
 
 	fmt.Println("old user uuid:", user.UUID, user.ID)
 
-	user.UUID, _ = uuid.NewUUID()
+	user.UUID = uuid.New()
+
+	value := "some value"
+	user.StringPtr = &value
 
 	fmt.Println("new user uuid:", user.UUID, user.ID)
 
-	err = userRepo.Update(ctx, user)
+	err = db.User().Update(ctx, user)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("updated user uuid:", user.UUID, user.ID)
 
-	err = userRepo.Delete(ctx, user)
+	exists, err := db.User().Query().
+		Filter(
+			where.User.StringPtr.NotNil(),
+		).
+		Exists()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !exists {
+		log.Fatal("record with given filter does not exist")
+	}
+
+	user.StringPtr = nil
+
+	err = db.User().Update(ctx, user)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	exists, err = db.User().Query().
+		Filter(
+			where.User.StringPtr.Nil(),
+		).
+		Exists()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !exists {
+		log.Fatal("record with given filter does not exist")
+	}
+
+	err = db.User().Delete(ctx, user)
 	if err != nil {
 		log.Fatal(err)
 	}

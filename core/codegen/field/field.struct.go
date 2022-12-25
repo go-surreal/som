@@ -13,7 +13,11 @@ type Struct struct {
 }
 
 func (f *Struct) typeGo() jen.Code {
-	return jen.Qual(f.SourcePkg, f.model.NameGo())
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo())
+}
+
+func (f *Struct) typeConv() jen.Code {
+	return jen.Add(f.ptr()).Id(f.model.NameGoLower())
 }
 
 func (f *Struct) CodeGen() *CodeGen {
@@ -43,14 +47,22 @@ func (f *Struct) filterFunc(ctx Context) jen.Code {
 }
 
 func (f *Struct) convFrom(ctx Context) jen.Code {
-	return jen.Op("*").Id("From" + f.source.Struct).Call(jen.Op("&").Id("data").Dot(f.NameGo()))
+	code := jen.Id("from" + f.model.NameGo())
+	if f.source.Pointer() {
+		code = jen.Id("ptrFunc").Call(jen.Id("from" + f.model.NameGo()))
+	}
+	return code.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Struct) convTo(ctx Context) jen.Code {
-	return jen.Op("*").Id("To" + f.source.Struct).Call(jen.Op("&").Id("data").Dot(f.NameGo()))
+	code := jen.Id("to" + f.model.NameGo())
+	if f.source.Pointer() {
+		code = jen.Id("ptrFunc").Call(jen.Id("to" + f.model.NameGo()))
+	}
+	return code.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Struct) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Id(f.source.Struct).
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	return jen.Id(f.NameGo()).Add(f.typeConv()).
+		Tag(map[string]string{"json": f.NameDatabase()})
 }

@@ -89,6 +89,7 @@ language itself. For further information, please refer to the
 - [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
 - [ ] Choose proper licensing for the project. (#11)
 - [ ] Provide `WithInfo` method.
+- [ ] Support (deeply) nested slices? (needed?)
 
 ### After v0.1.0
 
