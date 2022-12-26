@@ -42,7 +42,7 @@ func TestQuery(t *testing.T) {
 		query.Describe(),
 	)
 
-	query.Filter(
+	query = query.Filter(
 		where.Any(
 			where.User.TimePtr.Nil(),
 			where.User.UUID.Equal(uuid.New()),
