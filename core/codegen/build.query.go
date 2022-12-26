@@ -377,9 +377,9 @@ func (b *queryBuilder) buildQueryFuncFirstID(node *field.NodeTable) jen.Code {
 func (b *queryBuilder) buildQueryFuncDescribe(node *field.NodeTable) jen.Code {
 	return jen.Func().
 		Params(jen.Id("q").Op("*").Id(node.Name)).
-		Id("Describe").Params().
-		Parens(jen.List(jen.String(), jen.Error())).
+		Id("Describe").Params().String().
 		Block(
-			jen.Return(jen.Lit(""), jen.Nil()),
+			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
+			jen.Return(jen.Id("res").Dot("Statement")),
 		)
 }
