@@ -151,6 +151,7 @@ func (q *User) FirstID() (string, error) {
 	}
 	return res[0], nil
 }
-func (q *User) Describe() (string, error) {
-	return "", nil
+func (q *User) Describe() string {
+	res := q.query.BuildAsAll()
+	return res.Statement
 }

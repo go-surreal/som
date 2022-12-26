@@ -151,6 +151,7 @@ func (q *Group) FirstID() (string, error) {
 	}
 	return res[0], nil
 }
-func (q *Group) Describe() (string, error) {
-	return "", nil
+func (q *Group) Describe() string {
+	res := q.query.BuildAsAll()
+	return res.Statement
 }
