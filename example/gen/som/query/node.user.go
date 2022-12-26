@@ -16,7 +16,7 @@ import (
 
 type User struct {
 	db    Database
-	query *builder.Query
+	query builder.Query
 }
 
 func NewUser(db Database) *User {
@@ -25,31 +25,31 @@ func NewUser(db Database) *User {
 		query: builder.NewQuery("user"),
 	}
 }
-func (q *User) Filter(filters ...filter.Of[model.User]) *User {
+func (q User) Filter(filters ...filter.Of[model.User]) User {
 	for _, f := range filters {
 		q.query.Where = append(q.query.Where, builder.Where(f))
 	}
 	return q
 }
-func (q *User) Order(by ...*sort.Of[model.User]) *User {
+func (q User) Order(by ...*sort.Of[model.User]) User {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*builder.Sort)(s))
 	}
 	return q
 }
-func (q *User) OrderRandom() *User {
+func (q User) OrderRandom() User {
 	q.query.SortRandom = true
 	return q
 }
-func (q *User) Offset(offset int) *User {
+func (q User) Offset(offset int) User {
 	q.query.Offset = offset
 	return q
 }
-func (q *User) Limit(limit int) *User {
+func (q User) Limit(limit int) User {
 	q.query.Limit = limit
 	return q
 }
-func (q *User) Fetch(fetch ...with.Fetch_[model.User]) *User {
+func (q User) Fetch(fetch ...with.Fetch_[model.User]) User {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			q.query.Fetch = append(q.query.Fetch, field)
@@ -57,15 +57,15 @@ func (q *User) Fetch(fetch ...with.Fetch_[model.User]) *User {
 	}
 	return q
 }
-func (q *User) Timeout(timeout time.Duration) *User {
+func (q User) Timeout(timeout time.Duration) User {
 	q.query.Timeout = timeout
 	return q
 }
-func (q *User) Parallel(parallel bool) *User {
+func (q User) Parallel(parallel bool) User {
 	q.query.Parallel = parallel
 	return q
 }
-func (q *User) Count() (int, error) {
+func (q User) Count() (int, error) {
 	res := q.query.BuildAsCount()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -81,14 +81,14 @@ func (q *User) Count() (int, error) {
 	}
 	return rawCount.Count, nil
 }
-func (q *User) Exists() (bool, error) {
+func (q User) Exists() (bool, error) {
 	count, err := q.Count()
 	if err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
-func (q *User) All() ([]*model.User, error) {
+func (q User) All() ([]*model.User, error) {
 	res := q.query.BuildAsAll()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -109,7 +109,7 @@ func (q *User) All() ([]*model.User, error) {
 	}
 	return nodes, nil
 }
-func (q *User) AllIDs() ([]string, error) {
+func (q User) AllIDs() ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -129,7 +129,7 @@ func (q *User) AllIDs() ([]string, error) {
 	}
 	return ids, nil
 }
-func (q *User) First() (*model.User, error) {
+func (q User) First() (*model.User, error) {
 	q.query.Limit = 1
 	res, err := q.All()
 	if err != nil {
@@ -140,7 +140,7 @@ func (q *User) First() (*model.User, error) {
 	}
 	return res[0], nil
 }
-func (q *User) FirstID() (string, error) {
+func (q User) FirstID() (string, error) {
 	q.query.Limit = 1
 	res, err := q.AllIDs()
 	if err != nil {
@@ -151,7 +151,7 @@ func (q *User) FirstID() (string, error) {
 	}
 	return res[0], nil
 }
-func (q *User) Describe() string {
+func (q User) Describe() string {
 	res := q.query.BuildAsAll()
 	return res.Statement
 }

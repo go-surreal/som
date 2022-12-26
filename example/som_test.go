@@ -35,14 +35,24 @@ func TestQuery(t *testing.T) {
 		Filter(
 			where.User.String.In(nil),
 			where.User.Bool.Is(true),
-			where.Any(
-				where.User.TimePtr.Nil(),
-				where.User.UUID.Equal(uuid.New()),
-			),
-		).
-		Describe()
+		)
 
-	assert.Equal(t, "SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1 AND (time_ptr == $2 OR uuid = $3)) ", query)
+	assert.Equal(t,
+		"SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1) ",
+		query.Describe(),
+	)
+
+	query = query.Filter(
+		where.Any(
+			where.User.TimePtr.Nil(),
+			where.User.UUID.Equal(uuid.New()),
+		),
+	)
+
+	assert.Equal(t,
+		"SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1 AND (time_ptr == $2 OR uuid = $3)) ",
+		query.Describe(),
+	)
 }
 
 func TestWithDatabase(t *testing.T) {
