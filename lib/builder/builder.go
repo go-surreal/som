@@ -7,19 +7,19 @@ import (
 )
 
 type context struct {
-	varIndex rune
+	varIndex int
 	vars     map[string]any
 }
 
 func (c *context) asVar(val any) string {
-	index := string(c.varIndex)
+	index := strconv.Itoa(c.varIndex)
 	c.vars[index] = val
 	c.varIndex++
 	return "$" + index
 }
 
 type Query struct {
-	*context
+	context
 	node       string
 	fields     string
 	groupBy    string
@@ -33,10 +33,10 @@ type Query struct {
 	Parallel   bool
 }
 
-func NewQuery(node string) *Query {
-	return &Query{
-		context: &context{
-			varIndex: 'A',
+func NewQuery(node string) Query {
+	return Query{
+		context: context{
+			varIndex: 0,
 			vars:     map[string]any{},
 		},
 		node: node,
@@ -74,7 +74,7 @@ func (q Query) BuildAsCount() *Result {
 func (q Query) render() string {
 	out := "SELECT " + q.fields + " FROM " + q.node + " "
 
-	whereStatement := WhereAll{Where: q.Where}.render(q.context)
+	whereStatement := WhereAll{Where: q.Where}.render(&q.context)
 	if whereStatement != "" {
 		out += "WHERE " + whereStatement + " "
 	}

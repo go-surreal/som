@@ -3,6 +3,7 @@ package example
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/marcbinz/som/example/gen/som"
 	"github.com/marcbinz/som/example/gen/som/where"
 	"github.com/marcbinz/som/example/model"
@@ -25,6 +26,33 @@ func conf(endpoint string) som.Config {
 		Namespace: "som_test",
 		Database:  "som_test",
 	}
+}
+
+func TestQuery(t *testing.T) {
+	client := &som.Client{}
+
+	query := client.User().Query().
+		Filter(
+			where.User.String.In(nil),
+			where.User.Bool.Is(true),
+		)
+
+	assert.Equal(t,
+		"SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1) ",
+		query.Describe(),
+	)
+
+	query = query.Filter(
+		where.Any(
+			where.User.TimePtr.Nil(),
+			where.User.UUID.Equal(uuid.New()),
+		),
+	)
+
+	assert.Equal(t,
+		"SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1 AND (time_ptr == $2 OR uuid = $3)) ",
+		query.Describe(),
+	)
 }
 
 func TestWithDatabase(t *testing.T) {
