@@ -21,6 +21,10 @@ func (f *Enum) typeConv() jen.Code {
 	return jen.Add(f.ptr()).String() // TODO: support other enum base types (atomic)
 }
 
+func (f *Enum) TypeDatabase() string {
+	return "string"
+}
+
 func (f *Enum) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

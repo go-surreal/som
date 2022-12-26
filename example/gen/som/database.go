@@ -3,8 +3,8 @@
 package som
 
 import (
-	"fmt"
 	"github.com/surrealdb/surrealdb.go"
+	"golang.org/x/exp/slog"
 )
 
 type database struct {
@@ -20,14 +20,12 @@ func (db *database) Select(what string) (any, error) {
 }
 
 func (db *database) Query(statement string, vars any) (any, error) {
-	fmt.Println(statement)
+	slog.Debug("executing database query", "query", statement, "vars", vars)
 
 	raw, err := db.DB.Query(statement, vars)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(raw)
 
 	return raw, err
 }

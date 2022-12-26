@@ -20,6 +20,10 @@ func (f *Edge) typeConv() jen.Code {
 	return jen.Add(f.ptr()).Id(f.table.NameGo())
 }
 
+func (f *Edge) TypeDatabase() string {
+	return ""
+}
+
 func (f *Edge) Table() *EdgeTable {
 	return f.table
 }

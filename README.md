@@ -107,7 +107,8 @@ language itself. For further information, please refer to the
 
 ### Nice to have (v0.x.x)
 
-- [ ] Add new data type "password". (#16)
+- [ ] Add new data type "password" with automatic handling of encryption with salt. (#16)
+- [ ] Add data type "email" as alias for string that adds database assertion.
 - [ ] Add performance benchmarks (and possible optimizations due to it).
 - [ ] Integrate external APIs (GraphQL) into the db access layer?
 

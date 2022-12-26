@@ -20,6 +20,10 @@ func (f *Time) typeConv() jen.Code {
 	return f.typeGo()
 }
 
+func (f *Time) TypeDatabase() string {
+	return "datetime"
+}
+
 func (f *Time) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

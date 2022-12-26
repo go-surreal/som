@@ -20,6 +20,10 @@ func (f *Bool) typeConv() jen.Code {
 	return f.typeGo()
 }
 
+func (f *Bool) TypeDatabase() string {
+	return "bool"
+}
+
 func (f *Bool) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

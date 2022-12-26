@@ -1,6 +1,7 @@
 package field
 
 import (
+	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/parser"
 )
@@ -18,6 +19,10 @@ func (f *Node) typeGo() jen.Code {
 
 func (f *Node) typeConv() jen.Code {
 	return jen.Add(f.ptr()).Id(f.table.NameGoLower() + "Link")
+}
+
+func (f *Node) TypeDatabase() string {
+	return fmt.Sprintf("record(%s)", f.table.NameDatabase())
 }
 
 func (f *Node) Table() *NodeTable {

@@ -27,7 +27,7 @@ type Field interface {
 
 	typeGo() jen.Code
 	typeConv() jen.Code
-	// typeDatabase() string
+	TypeDatabase() string
 
 	CodeGen() *CodeGen
 }

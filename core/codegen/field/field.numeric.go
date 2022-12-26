@@ -32,6 +32,16 @@ func (f *Numeric) typeConv() jen.Code {
 	return f.typeGo()
 }
 
+func (f *Numeric) TypeDatabase() string {
+	switch f.source.Type {
+	case parser.NumberInt, parser.NumberInt32, parser.NumberInt64:
+		return "int"
+	case parser.NumberFloat32, parser.NumberFloat64:
+		return "float"
+	}
+	return ""
+}
+
 func (f *Numeric) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

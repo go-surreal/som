@@ -20,6 +20,10 @@ func (f *UUID) typeConv() jen.Code {
 	return jen.Add(f.ptr()).String()
 }
 
+func (f *UUID) TypeDatabase() string {
+	return "string"
+}
+
 func (f *UUID) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

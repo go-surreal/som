@@ -17,6 +17,16 @@ const (
 	containerName = "som_test_surrealdb"
 )
 
+func conf(endpoint string) som.Config {
+	return som.Config{
+		Address:   "ws://" + endpoint,
+		Username:  "root",
+		Password:  "root",
+		Namespace: "som_test",
+		Database:  "som_test",
+	}
+}
+
 func TestWithDatabase(t *testing.T) {
 	ctx := context.Background()
 
@@ -50,12 +60,16 @@ func TestWithDatabase(t *testing.T) {
 		t.Error(err)
 	}
 
-	client, err := som.NewClient("ws://"+endpoint, "root", "root", "som_test", "som_test")
+	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
 		t.Error(err)
 	}
 
 	defer client.Close()
+
+	if err := client.ApplySchema(); err != nil {
+		t.Error(err)
+	}
 
 	str := "Some User"
 
@@ -110,7 +124,7 @@ func FuzzWithDatabase(f *testing.F) {
 		f.Error(err)
 	}
 
-	client, err := som.NewClient("ws://"+endpoint, "root", "root", "som_test", "som_test")
+	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
 		f.Error(err)
 	}
@@ -180,7 +194,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 		f.Error(err)
 	}
 
-	client, err := som.NewClient("ws://"+endpoint, "root", "root", "som_test", "som_test")
+	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
 		f.Error(err)
 	}
@@ -275,7 +289,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 		b.Error(err)
 	}
 
-	client, err := som.NewClient("ws://"+endpoint, "root", "root", "som_test", "som_test")
+	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
 		b.Error(err)
 	}

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 type build struct {
@@ -42,6 +43,10 @@ func (b *build) build() error {
 	}
 
 	if err := b.buildDatabaseFile(); err != nil {
+		return err
+	}
+
+	if err := b.buildSchemaFile(); err != nil {
 		return err
 	}
 
@@ -86,25 +91,33 @@ type Database interface {
 	Delete(what string) (any, error)
 }
 
+type Config struct {
+	Address string
+	Username string
+	Password string
+	Namespace string
+	Database string
+}
+
 type Client struct {
 	db Database
 }
 
-func NewClient(addr, user, pass, ns, db string) (*Client, error) {
-	surreal, err := surrealdb.New(addr + "/rpc")
+func NewClient(conf Config) (*Client, error) {
+	surreal, err := surrealdb.New(conf.Address + "/rpc")
 	if err != nil {
 		return nil, fmt.Errorf("new failed: %v", err)
 	}
 
 	_, err = surreal.Signin(map[string]any{
-		"user": user,
-		"pass": pass,
+		"user": conf.Username,
+		"pass": conf.Password,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = surreal.Use(ns, db)
+	_, err = surreal.Use(conf.Namespace, conf.Database)
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +144,8 @@ func (b *build) buildDatabaseFile() error {
 	content := `
 
 import (
-	"fmt"
 	"github.com/surrealdb/surrealdb.go"
+	"golang.org/x/exp/slog"
 )
 
 type database struct {
@@ -148,14 +161,12 @@ func (db *database) Select(what string) (any, error) {
 }
 
 func (db *database) Query(statement string, vars any) (any, error) {
-	fmt.Println(statement)
+	slog.Debug("executing database query", "query", statement, "vars", vars)
 
 	raw, err := db.DB.Query(statement, vars)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(raw)
 
 	return raw, err
 }
@@ -172,6 +183,97 @@ func (db *database) Delete(what string) (any, error) {
 	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
 
 	err := os.WriteFile(path.Join(b.basePath(), "database.go"), data, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to write base file: %v", err)
+	}
+
+	return nil
+}
+
+func (b *build) buildSchemaFile() error {
+	statements := []string{"", ""}
+
+	var fieldFn func(table string, f field.Field, prefix string)
+	fieldFn = func(table string, f field.Field, prefix string) {
+		fieldType := f.TypeDatabase()
+		if fieldType == "" {
+			return
+		}
+
+		statement := fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, fieldType,
+		)
+		statements = append(statements, statement)
+
+		if object, ok := f.(*field.Struct); ok {
+			for _, fld := range object.Table().GetFields() {
+				fieldFn(table, fld, prefix+f.NameDatabase()+".")
+			}
+		}
+
+		if slice, ok := f.(*field.Slice); ok {
+			statement := fmt.Sprintf(
+				"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+				prefix+f.NameDatabase()+".*", table, slice.Element().TypeDatabase(),
+			)
+			statements = append(statements, statement)
+
+			if object, ok := slice.Element().(*field.Struct); ok {
+				for _, fld := range object.Table().GetFields() {
+					fieldFn(table, fld, prefix+f.NameDatabase()+".*.")
+				}
+			}
+		}
+	}
+
+	for _, node := range b.input.nodes {
+		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL;", node.NameDatabase())
+		statements = append(statements, statement)
+
+		for _, f := range node.GetFields() {
+			fieldFn(node.NameDatabase(), f, "")
+		}
+
+		statements = append(statements, "")
+	}
+
+	for _, edge := range b.input.edges {
+		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL;", edge.NameDatabase())
+		statements = append(statements, statement)
+
+		for _, f := range edge.GetFields() {
+			fieldFn(edge.NameDatabase(), f, "")
+		}
+
+		statements = append(statements, "")
+	}
+
+	content := strings.Join(statements, "\n")
+
+	tmpl := `%s
+
+package %s
+
+import(
+	"fmt"
+)
+	
+func (c *Client) ApplySchema() error {
+	_, err := c.db.Query(tmpl, nil)
+	if err != nil {
+		return fmt.Errorf("could not apply schema: %%v", err)
+	}
+
+	return nil
+}
+
+var tmpl = %s
+`
+
+	data := []byte(fmt.Sprintf(tmpl, codegenComment, b.basePkgName(), "`"+content+"`"))
+
+	err := os.WriteFile(path.Join(b.basePath(), "schema.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}

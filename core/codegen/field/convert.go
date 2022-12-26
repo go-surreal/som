@@ -136,11 +136,33 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 		}, true
 
 	case *parser.FieldStruct:
-		return &Struct{
-			baseField: base,
-			source:    f,
-			model:     Model(f.Struct),
-		}, true
+		{
+			var object *parser.Struct
+			for _, elem := range source.Structs {
+				if elem.Name == f.Struct {
+					object = elem
+					break
+				}
+			}
+
+			var fields []Field
+			for _, field := range object.Fields {
+				fld, ok := Convert(source, conf, field)
+				if !ok {
+					return nil, false
+				}
+				fields = append(fields, fld)
+			}
+
+			return &Struct{
+				baseField: base,
+				source:    f,
+				table: &NodeTable{
+					Name:   f.Struct,
+					Fields: fields,
+				},
+			}, true
+		}
 
 	case *parser.FieldNode:
 		return &Node{

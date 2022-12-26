@@ -17,11 +17,21 @@ func main() {
 
 	ctx := context.Background()
 
-	db, err := som.NewClient("ws://localhost:8010", "root", "root", "som", "default")
+	db, err := som.NewClient(som.Config{
+		Address:   "ws://localhost:8010",
+		Username:  "root",
+		Password:  "root",
+		Namespace: "som",
+		Database:  "default",
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	if err := db.ApplySchema(); err != nil {
+		log.Fatal(err)
+	}
 
 	group := &model.Group{
 		Name: "some group",

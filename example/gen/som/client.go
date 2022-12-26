@@ -16,25 +16,33 @@ type Database interface {
 	Delete(what string) (any, error)
 }
 
+type Config struct {
+	Address string
+	Username string
+	Password string
+	Namespace string
+	Database string
+}
+
 type Client struct {
 	db Database
 }
 
-func NewClient(addr, user, pass, ns, db string) (*Client, error) {
-	surreal, err := surrealdb.New(addr + "/rpc")
+func NewClient(conf Config) (*Client, error) {
+	surreal, err := surrealdb.New(conf.Address + "/rpc")
 	if err != nil {
 		return nil, fmt.Errorf("new failed: %v", err)
 	}
 
 	_, err = surreal.Signin(map[string]any{
-		"user": user,
-		"pass": pass,
+		"user": conf.Username,
+		"pass": conf.Password,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = surreal.Use(ns, db)
+	_, err = surreal.Use(conf.Namespace, conf.Database)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ const (
 	PkgFetch  = "with"
 	PkgConv   = "conv"
 	PkgRelate = "relate"
+	PkgSchema = "schema"
 )
 
 const (

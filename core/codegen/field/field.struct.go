@@ -9,15 +9,23 @@ type Struct struct {
 	*baseField
 
 	source *parser.FieldStruct
-	model  Model
+	table  Table
 }
 
 func (f *Struct) typeGo() jen.Code {
-	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo())
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }
 
 func (f *Struct) typeConv() jen.Code {
-	return jen.Add(f.ptr()).Id(f.model.NameGoLower())
+	return jen.Add(f.ptr()).Id(f.table.NameGoLower())
+}
+
+func (f *Struct) TypeDatabase() string {
+	return "object" // TODO: sub-fields!
+}
+
+func (f *Struct) Table() Table {
+	return f.table
 }
 
 func (f *Struct) CodeGen() *CodeGen {
@@ -40,24 +48,24 @@ func (f *Struct) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
-		Id(f.model.NameGoLower()).Types(jen.Id("T")).
+		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.source.Struct).Types(jen.Id("T")).
 				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Struct) convFrom(ctx Context) jen.Code {
-	code := jen.Id("from" + f.model.NameGo())
+	code := jen.Id("from" + f.table.NameGo())
 	if f.source.Pointer() {
-		code = jen.Id("ptrFunc").Call(jen.Id("from" + f.model.NameGo()))
+		code = jen.Id("ptrFunc").Call(jen.Id("from" + f.table.NameGo()))
 	}
 	return code.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Struct) convTo(ctx Context) jen.Code {
-	code := jen.Id("to" + f.model.NameGo())
+	code := jen.Id("to" + f.table.NameGo())
 	if f.source.Pointer() {
-		code = jen.Id("ptrFunc").Call(jen.Id("to" + f.model.NameGo()))
+		code = jen.Id("ptrFunc").Call(jen.Id("to" + f.table.NameGo()))
 	}
 	return code.Call(jen.Id("data").Dot(f.NameGo()))
 }

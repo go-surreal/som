@@ -21,6 +21,14 @@ func (f *Slice) typeConv() jen.Code {
 	return jen.Add(f.ptr()).Index().Add(f.element.typeConv())
 }
 
+func (f *Slice) TypeDatabase() string {
+	if f.element.TypeDatabase() == "" {
+		return ""
+	}
+
+	return "array"
+}
+
 func (f *Slice) Element() Field {
 	return f.element
 }
@@ -164,7 +172,7 @@ func (f *Slice) convFrom(ctx Context) jen.Code {
 
 			return jen.Id(mapFn).Call(
 				jen.Id("data").Dot(f.NameGo()),
-				jen.Id("from"+element.model.NameGo()),
+				jen.Id("from"+element.table.NameGo()),
 			)
 		}
 
@@ -230,7 +238,7 @@ func (f *Slice) convTo(ctx Context) jen.Code {
 
 			return jen.Id(mapFn).Call(
 				jen.Id("data").Dot(f.NameGo()),
-				jen.Id("to"+element.model.NameGo()),
+				jen.Id("to"+element.table.NameGo()),
 			)
 		}
 
