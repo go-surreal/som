@@ -101,10 +101,13 @@ func main() {
 
 	fmt.Println("updated user uuid:", user.UUID, user.ID)
 
-	exists, err := db.User().Query().
+	query := db.User().Query().
 		Filter(
-			where.User.StringPtr.NotNil(),
-		).
+			where.User.ID.NotEqual(""),
+		)
+
+	exists, err := query.
+		Filter(where.User.StringPtr.NotNil()).
 		Exists()
 
 	if err != nil {
@@ -122,10 +125,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	exists, err = db.User().Query().
-		Filter(
-			where.User.StringPtr.Nil(),
-		).
+	exists, err = query.
+		Filter(where.User.StringPtr.Nil()).
 		Exists()
 
 	if err != nil {

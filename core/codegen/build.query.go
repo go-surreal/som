@@ -72,7 +72,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),
-		jen.Id("query").Op("*").Qual(def.PkgLibBuilder, "Query"),
+		jen.Id("query").Qual(def.PkgLibBuilder, "Query"),
 	)
 
 	f.Func().Id("New" + node.Name).Params(jen.Id("db").Id("Database")).
@@ -115,9 +115,9 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 func (b *queryBuilder) buildQueryFuncFilter(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Filter").Params(jen.Id("filters").Op("...").Qual(def.PkgLibFilter, "Of").Types(b.SourceQual(node.Name))).
-		Op("*").Id(node.Name).
+		Id(node.Name).
 		Block(
 			jen.For(jen.Id("_").Op(",").Id("f").Op(":=").Range().Id("filters")).
 				Block(
@@ -130,9 +130,9 @@ func (b *queryBuilder) buildQueryFuncFilter(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncOrder(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Order").Params(jen.Id("by").Op("...").Op("*").Qual(def.PkgLibSort, "Of").Types(b.SourceQual(node.Name))).
-		Op("*").Id(node.Name).
+		Id(node.Name).
 		Block(
 			jen.For(jen.Id("_").Op(",").Id("s").Op(":=").Range().Id("by")).
 				Block(
@@ -145,9 +145,9 @@ func (b *queryBuilder) buildQueryFuncOrder(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncOrderRandom(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("OrderRandom").Params().
-		Op("*").Id(node.Name).
+		Id(node.Name).
 		Block(
 			jen.Id("q").Dot("query").Dot("SortRandom").Op("=").True(),
 			jen.Return(jen.Id("q")),
@@ -156,9 +156,9 @@ func (b *queryBuilder) buildQueryFuncOrderRandom(node *field.NodeTable) jen.Code
 
 func (b *queryBuilder) buildQueryFuncOffset(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Offset").Params(jen.Id("offset").Int()).
-		Op("*").Id(node.Name).
+		Id(node.Name).
 		Block(
 			jen.Id("q").Dot("query").Dot("Offset").Op("=").Id("offset"),
 			jen.Return(jen.Id("q")),
@@ -167,9 +167,9 @@ func (b *queryBuilder) buildQueryFuncOffset(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncLimit(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Limit").Params(jen.Id("limit").Int()).
-		Op("*").Id(node.Name).
+		Id(node.Name).
 		Block(
 			jen.Id("q").Dot("query").Dot("Limit").Op("=").Id("limit"),
 			jen.Return(jen.Id("q")),
@@ -178,9 +178,9 @@ func (b *queryBuilder) buildQueryFuncLimit(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncFetch(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Fetch").Params(jen.Id("fetch").Op("...").Qual(b.subPkg(def.PkgFetch), "Fetch_").Types(b.SourceQual(node.Name))).
-		Op("*").Id(node.Name).
+		Id(node.Name).
 		Block(
 			jen.For(jen.List(jen.Id("_"), jen.Id("f")).Op(":=").Range().Id("fetch")).
 				Block(
@@ -199,9 +199,9 @@ func (b *queryBuilder) buildQueryFuncFetch(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncTimeout(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Timeout").Params(jen.Id("timeout").Qual("time", "Duration")).
-		Op("*").Id(node.Name).
+		Id(node.Name).
 		Block(
 			jen.Id("q").Dot("query").Dot("Timeout").Op("=").Id("timeout"),
 			jen.Return(jen.Id("q")),
@@ -210,9 +210,9 @@ func (b *queryBuilder) buildQueryFuncTimeout(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncParallel(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Parallel").Params(jen.Id("parallel").Bool()).
-		Op("*").Id(node.Name).
+		Id(node.Name).
 		Block(
 			jen.Id("q").Dot("query").Dot("Parallel").Op("=").Id("parallel"),
 			jen.Return(jen.Id("q")),
@@ -221,7 +221,7 @@ func (b *queryBuilder) buildQueryFuncParallel(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncCount(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Count").Params().
 		Params(jen.Int(), jen.Error()).
 		Block(
@@ -250,7 +250,7 @@ func (b *queryBuilder) buildQueryFuncCount(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncExists(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Exists").Params().
 		Params(jen.Bool(), jen.Error()).
 		Block(
@@ -266,7 +266,7 @@ func (b *queryBuilder) buildQueryFuncAll(node *field.NodeTable) jen.Code {
 	pkgConv := b.subPkg(def.PkgConv)
 
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("All").Params().
 		Params(jen.Index().Op("*").Add(b.SourceQual(node.Name)), jen.Error()).
 		Block(
@@ -305,7 +305,7 @@ func (b *queryBuilder) buildQueryFuncAll(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncAllIDs(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("AllIDs").Params().
 		Parens(jen.List(jen.Index().String(), jen.Error())).
 		Block(
@@ -340,7 +340,7 @@ func (b *queryBuilder) buildQueryFuncAllIDs(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncFirst(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("First").Params().
 		Params(jen.Op("*").Add(b.SourceQual(node.Name)), jen.Error()).
 		Block(
@@ -358,7 +358,7 @@ func (b *queryBuilder) buildQueryFuncFirst(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncFirstID(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("FirstID").Params().
 		Params(jen.String(), jen.Error()).
 		Block(
@@ -376,7 +376,7 @@ func (b *queryBuilder) buildQueryFuncFirstID(node *field.NodeTable) jen.Code {
 
 func (b *queryBuilder) buildQueryFuncDescribe(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Params(jen.Id("q").Op("*").Id(node.Name)).
+		Params(jen.Id("q").Id(node.Name)).
 		Id("Describe").Params().String().
 		Block(
 			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),

@@ -19,7 +19,7 @@ func (c *context) asVar(val any) string {
 }
 
 type Query struct {
-	*context
+	context
 	node       string
 	fields     string
 	groupBy    string
@@ -33,9 +33,9 @@ type Query struct {
 	Parallel   bool
 }
 
-func NewQuery(node string) *Query {
-	return &Query{
-		context: &context{
+func NewQuery(node string) Query {
+	return Query{
+		context: context{
 			varIndex: 0,
 			vars:     map[string]any{},
 		},
@@ -74,7 +74,7 @@ func (q Query) BuildAsCount() *Result {
 func (q Query) render() string {
 	out := "SELECT " + q.fields + " FROM " + q.node + " "
 
-	whereStatement := WhereAll{Where: q.Where}.render(q.context)
+	whereStatement := WhereAll{Where: q.Where}.render(&q.context)
 	if whereStatement != "" {
 		out += "WHERE " + whereStatement + " "
 	}
