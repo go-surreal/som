@@ -78,39 +78,39 @@ language itself. For further information, please refer to the
 - [x] Initial implementation.
 - [x] Rename project to "som". (#27)
 - [x] Add basic GitHub workflow for PR. (#6)
-- [ ] Setup golangci-lint with proper config. (#7)
 - [ ] Consider reserved (query) keywords. (#18)
-- [ ] Add support for pointer fields. (#19)
+- [x] Add support for pointer fields. (#19)
 - [x] Add support for edge (graph) connections. (#20)
-- [ ] Add support for `[]byte` (and `byte`?) type.
 - [ ] Fix query variable index `rune` not suited for > 26 due to invalid char as variable key.
-- [ ] Think about generation based on schema. (#21)
-- [ ] How to handle data migrations? (#22)
 - [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
-- [ ] Choose proper licensing for the project. (#11)
 - [ ] Provide `WithInfo` method.
-- [ ] Support (deeply) nested slices? (needed?)
+- [ ] Check for possible security vulnerabilities.
+- [ ] Add "Describe" as query output to get a full description of a generated query. (#17)
+- [ ] Make query builder not use pointers, so partial builds and usages are working?
+- [ ] Choose proper licensing for the project. (#11)
 
 ### After v0.1.0
 
-- [ ] Make query builder not use pointers, so partial builds and usages are working?
+- [ ] Add support for `[]byte` (and `byte`?) type.
+- [ ] How to handle data migrations? (#22)
+- [ ] Setup golangci-lint with proper config. (#7)
 - [ ] Cleanup naming conventions. (#24)
 - [ ] Code comments and documentation. (#9)
 - [ ] Write tests. (#8)
-- [ ] Add "Describe" as query output to get a full description of a generated query. (#17)
 - [ ] Generate `sommock` package for easy mocking of the underlying database client.
 - [ ] Make casing of database field names configurable.
 - [ ] Switch the source code parser to support generics.
 - [ ] Add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser).
 - [ ] Support transactions.
 - [ ] Distinct results (https://stackoverflow.com/questions/74326176/surrealdb-equivalent-of-select-distinct).
+- [ ] Integrate external APIs (GraphQL) into the db access layer?
+- [ ] Support (deeply) nested slices? (needed?)
 
 ### Nice to have (v0.x.x)
 
 - [ ] Add new data type "password" with automatic handling of encryption with salt. (#16)
 - [ ] Add data type "email" as alias for string that adds database assertion.
 - [ ] Add performance benchmarks (and possible optimizations due to it).
-- [ ] Integrate external APIs (GraphQL) into the db access layer?
 
 ## How to contribute
 
