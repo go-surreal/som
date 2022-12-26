@@ -1,10 +1,37 @@
+
+[![go 1.19.4](https://img.shields.io/badge/go-1.19.4-informational)](https://go.dev/doc/devel/release)
+[![PR](https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg)](https://github.com/marcbinz/som/actions/workflows/pull_request.yml)
+
 # som
 
-A type-safe database access layer with code generation for [SurrealDB](https://surrealdb.com).
+A type-safe database access layer based on code generation for [SurrealDB](https://surrealdb.com).
+
+SurrealDB is a relatively new database approach.
+It provides a SQL-style query language with real-time queries and highly-efficient related data retrieval.
+Both schemafull and schemaless handling of the data is possible.
+
+With full graph database functionality, SurrealDB enables more advanced querying and analysis.
+Records (or vertices) can be connected to one another with edges, each with its own record properties and metadata.
+Simple extensions to traditional SQL queries allow for multi-table, multi-depth document retrieval, efficiently 
+in the database, without the use of complicated JOINs and without bringing the data down to the client.
+
+(Information extracted from the [official homepage]((https://surrealdb.com)))
+
+## Table of contents
+
+* [Getting started](#getting-started)
+  * [Basic usage](#basic-usage)
+  * [Versioning](#versioning)
+  * [Compatibility](#compatibility)
+  * [Features](#features)
+* [Roadmap](#roadmap)
+* [How to contribute](#how-to-contribute)
+* [Maintainers & Contributors](#maintainers--contributors)
+* [References](#references)
 
 ## Getting started
 
-### Usage
+### Basic usage
 
 Generate the client code:
 
@@ -12,7 +39,7 @@ Generate the client code:
 go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
 
-The package `github.com/marcbinz/sdb` is a dependency for the project in which the generated client code is used.
+The package `github.com/marcbinz/som` is a dependency for the project in which the generated client code is used.
 So it must be added to the `go.mod` file accordingly.
 
 ### Versioning
@@ -20,6 +47,29 @@ So it must be added to the `go.mod` file accordingly.
 In the future this package will follow the [semantic versioning](https://semver.org) specification.
 
 Up until version 1.0 though, breaking changes might be introduced at any time (minor version bumps).
+
+### Compatibility
+
+This go project makes heavy use of generics. As this feature has been introduced with go 1.18, that version is the 
+earliest to be supported by this library.
+
+In general, the two latest (minor) versions of go - and within those, only the latest patch - will be supported 
+officially. This means that older versions might still work, but could also break at any time and with any new release.
+
+Deprecating an "outdated" go version does not yield a new major version of this library. There will be no support for 
+older versions whatsoever. This rather hard handling is intended, because it is the official handling for the go 
+language itself. For further information, please refer to the
+[official documentation](https://go.dev/doc/devel/release#policy) or [endoflife.date](https://endoflife.date/go).
+
+### Features
+
+- Fully type-safe surrealdb access via generated code.
+- Supports most atomic go types: `string`, `int`, `int32`, `int64`, `float32`, `float64`, `bool`
+  - Coming soon: `byte`, `[]byte`, `rune`, `uint` ...
+- Supports slice values of all atomic types
+- Supports pointer fields
+- Supports complex types `time.Time` (standard lib) and `uuid.UUID` (google)
+  - Maybe future: support any external type with custom encoders and decoders?
 
 ## Roadmap
 
@@ -38,6 +88,8 @@ Up until version 1.0 though, breaking changes might be introduced at any time (m
 - [ ] How to handle data migrations? (#22)
 - [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
 - [ ] Choose proper licensing for the project. (#11)
+- [ ] Provide `WithInfo` method.
+- [ ] Support (deeply) nested slices? (needed?)
 
 ### After v0.1.0
 
@@ -50,6 +102,8 @@ Up until version 1.0 though, breaking changes might be introduced at any time (m
 - [ ] Make casing of database field names configurable.
 - [ ] Switch the source code parser to support generics.
 - [ ] Add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser).
+- [ ] Support transactions.
+- [ ] Distinct results (https://stackoverflow.com/questions/74326176/surrealdb-equivalent-of-select-distinct).
 
 ### Nice to have (v0.x.x)
 
@@ -60,6 +114,11 @@ Up until version 1.0 though, breaking changes might be introduced at any time (m
 
 ## How to contribute
 
+### Forking
+
+- to contribute please create a fork within your own namespace
+- after making your changes, create a pull request that will merge your state into upstream
+
 ### Commits & pull requests
 
 - Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org) specification.
@@ -67,6 +126,13 @@ Up until version 1.0 though, breaking changes might be introduced at any time (m
 - After a PR has been approved, it will be squashed and merged into `main`.
 - The final commit message must adhere to the specification mentioned above.
 - A GitHub Workflow will make sure that the PR title and description matches this specification.
+
+### Labels
+
+- there are some different labels for issues and pull requests (e.g. bug and fix)
+- the labels on pull requests resemble the conventional commits specification
+- the "highest" label should then be used for the final commit message (e.g. feat above fix, or fix above refactor)
+  - TODO: create exhaustive list of label order
 
 ## FAQ
 

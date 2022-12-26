@@ -148,7 +148,7 @@ func isEnum(t gotype.Type) bool {
 		return false
 	}
 
-	return t.String() != "string" && t.PkgPath() == "github.com/marcbinz/som" // TODO: might not be an enum..?!
+	return t.String() != "string" && t.PkgPath() == packagePath // TODO: might not be an enum..?!
 }
 
 func parseNode(v gotype.Type) (*Node, error) {
@@ -245,7 +245,10 @@ func parseStruct(v gotype.Type) (*Struct, error) {
 func parseField(t gotype.Type) (Field, error) {
 	var field Field
 
-	atomic := &fieldAtomic{Name: t.Name()}
+	atomic := &fieldAtomic{
+		name:    t.Name(),
+		pointer: false,
+	}
 
 	switch t.Elem().Kind() {
 	case gotype.String:
@@ -273,11 +276,11 @@ func parseField(t gotype.Type) (Field, error) {
 		if t.Elem().PkgPath() == "time" {
 			field = &FieldTime{atomic}
 		} else if isNode(t.Elem()) {
-			field = &FieldNode{atomic, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldNode{atomic, t.Elem().Name()}
 		} else if isEdge(t.Elem()) {
-			field = &FieldEdge{atomic, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldEdge{atomic, t.Elem().Name()}
 		} else {
-			field = &FieldStruct{atomic, t.Elem().Name(), false} // TODO: handle pointers
+			field = &FieldStruct{atomic, t.Elem().Name()}
 		}
 	case gotype.Slice:
 		subField, err := parseField(t.Elem())
@@ -285,19 +288,35 @@ func parseField(t gotype.Type) (Field, error) {
 			return nil, err
 		}
 		field = &FieldSlice{
-			&fieldAtomic{Name: t.Name()},
-			t.Elem().Elem().Name(),
+			&fieldAtomic{name: t.Name()},
+			// t.Elem().Elem().Name(),
 			subField,
-			isNode(t.Elem().Elem()),
-			isEdge(t.Elem().Elem()),
-			isEnum(t.Elem().Elem()),
+			// isNode(t.Elem().Elem()),
+			// isEdge(t.Elem().Elem()),
+			// isEnum(t.Elem().Elem()),
 		}
 	// case gotype.Map:
 	// 	field = FieldMap{fieldAtomic{Name: t.Name()}, t.Elem().Key().Name(), t.Elem().Elem().Name()}
 	case gotype.Array:
 		if t.Elem().PkgPath() == "github.com/google/uuid" {
-			field = &FieldUUID{&fieldAtomic{Name: t.Name()}}
+			field = &FieldUUID{&fieldAtomic{name: t.Name()}}
 		}
+
+	case gotype.Ptr:
+		{
+			ptrField, err := parseField(t.Elem())
+			if err != nil {
+				return nil, fmt.Errorf("could not parse elem for ptr field %s: %v", t.Name(), err)
+			}
+
+			if t.Name() != "" {
+				ptrField.setName(t.Name())
+			}
+			ptrField.setPointer(true)
+
+			field = ptrField
+		}
+
 	default:
 		return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), t.Elem().Kind())
 	}

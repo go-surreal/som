@@ -35,10 +35,6 @@ func (b *baseBuilder) path() string {
 	return path.Join(b.basePath, b.pkgName)
 }
 
-func (b *baseBuilder) pkg() string {
-	return path.Join(b.basePkg, b.pkgName)
-}
-
 func (b *baseBuilder) subPkg(pkg string) string {
 	return path.Join(b.basePkg, pkg)
 }

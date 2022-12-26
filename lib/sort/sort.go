@@ -39,11 +39,11 @@ func (w String[T]) Desc() *Of[T] {
 }
 
 func (w String[T]) Collate() StringCollate[T] {
-	return StringCollate[T]{w.key}
+	return StringCollate[T](w)
 }
 
 func (w String[T]) Numeric() StringNumeric[T] {
-	return StringNumeric[T]{w.key}
+	return StringNumeric[T](w)
 }
 
 type StringCollate[T any] struct {

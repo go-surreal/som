@@ -4,32 +4,32 @@
     "config:base"
   ],
   "timezone": "Europe/Berlin",
-  "labels": ["dependencies"],
+  "labels": ["cc | build"],
   "packageRules": [
     {
       "matchDatasources": ["golang-version"],
       "groupName": "go version update",
-      "labels": ["dependencies" ,"backend"],
+      "labels": ["cc | build"],
       "schedule": ["before 8am"]
     },
     {
       "matchDatasources": ["go"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "go minor package updates",
-      "labels": ["dependencies", "backend"],
+      "labels": ["cc | build"],
       "schedule": ["before 8am"]
     },
     {
       "matchDatasources": ["go"],
       "matchUpdateTypes": ["major"],
       "groupName": "go major package updates",
-      "labels": ["dependencies", "backend"],
+      "labels": ["cc | build"],
       "schedule": ["before 8am"]
     },
     {
       "matchPackagePatterns": ["github-actions"],
       "groupName": "github workflow updates",
-      "labels": ["dependencies", "workflow"],
+      "labels": ["cc | ci"],
       "schedule": ["before 8am"]
     }
   ],

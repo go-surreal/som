@@ -3,8 +3,6 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/codegen/dbtype"
 	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
@@ -40,7 +38,9 @@ func (b *fetchBuilder) build() error {
 }
 
 func (b *fetchBuilder) buildBaseFile() error {
-	content := `package with
+	content := `
+
+package with
 
 // Fetch_ has a suffix of "_" to prevent clashes with node names.
 type Fetch_[T any] interface {
@@ -55,7 +55,9 @@ func keyed[S ~string](base S, key string) string {
 }
 `
 
-	err := os.WriteFile(path.Join(b.path(), "fetch.go"), []byte(content), os.ModePerm)
+	data := []byte(codegenComment + content)
+
+	err := os.WriteFile(path.Join(b.path(), "fetch.go"), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -63,27 +65,29 @@ func keyed[S ~string](base S, key string) string {
 	return nil
 }
 
-func (b *fetchBuilder) buildFile(node *dbtype.Node) error {
+func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 	f := jen.NewFile(b.pkgName)
 
-	f.Var().Id(node.Name).Op("=").Id(strcase.ToLowerCamel(node.Name)).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+	f.PackageComment(codegenComment)
 
-	f.Type().Id(strcase.ToLowerCamel(node.Name)).
+	f.Var().Id(node.Name).Op("=").Id(node.NameGoLower()).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+
+	f.Type().Id(node.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		String()
 
 	f.Func().
-		Params(jen.Id("n").Id(strcase.ToLowerCamel(node.NameGo())).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
 		Id("fetch").Params(jen.Id("T")).Block()
 
 	for _, fld := range node.GetFields() {
 		if nodeField, ok := fld.(*field.Node); ok {
 			f.Func().
-				Params(jen.Id("n").Id(strcase.ToLowerCamel(node.NameGo())).Types(jen.Id("T"))).
+				Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
 				Id(nodeField.NameGo()).Params().
-				Id(strcase.ToLowerCamel(nodeField.NodeName())).Types(jen.Id("T")).
+				Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
 				Block(
-					jen.Return(jen.Id(strcase.ToLowerCamel(nodeField.NodeName())).Types(jen.Id("T")).
+					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
 						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
 		}
 	}

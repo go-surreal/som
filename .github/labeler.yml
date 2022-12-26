@@ -1,0 +1,17 @@
+# Labeler Config
+
+cc | build:
+  - go.mod
+  - go.sum
+
+cc | ci:
+  - .github/**/*
+
+cc | docs:
+  - README.md
+  - docs/**/*
+
+cc | test:
+  - ./**/*_test.go
+
+# chore | feat | fix | perf | refactor | revert | style

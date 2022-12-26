@@ -22,7 +22,18 @@ func surreal(ctx *cli.Context) error {
 	}
 	defer db.Close()
 
-	fmt.Println(db.DB.Query("relate user:k14mjkmjp0z9zulpug0a->member_of2->group:s3h3r4rmscpso3f2nv4s", nil))
+	// fmt.Println(db.DB.Query("relate user:k14mjkmjp0z9zulpug0a->member_of2->group:s3h3r4rmscpso3f2nv4s", nil))
+
+	var x *string
+
+	update, err := db.DB.Update("user:marc", map[string]any{
+		"name": x,
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(update)
 
 	// _, err = db.Create(ctx.Context, &Data{
 	// 	Key: "some key",
@@ -84,7 +95,7 @@ func (c *Client) Close() {
 	c.DB.Close()
 }
 
-func (c *Client) Create(ctx context.Context, data *Data) (string, error) {
+func (c *Client) Create(_ context.Context, data *Data) (string, error) {
 	raw := toRaw(data)
 
 	res, err := c.DB.Create("data4", raw)
@@ -157,22 +168,22 @@ func toRaw(data *Data) map[string]any {
 	}
 }
 
-func fromRaw(data map[string]any) Data {
-	fmt.Println("fromRaw:", data)
-	return Data{
-		ID:  data["id"].(string),
-		Key: data["key"].(string),
-		SomeData: SomeData{
-			Value: data["some_data"].(map[string]any)["value"].(string),
-			MoreInfo: MoreInfo{
-				Text: data["some_data"].(map[string]any)["more_info"].(map[string]any)["text"].(string),
-			},
-		},
-		CreatedAt: parseTime(data["created_at"].(string)),
-	}
-}
-
-func parseTime(val string) time.Time {
-	res, _ := time.Parse(time.RFC3339, val)
-	return res
-}
+// func fromRaw(data map[string]any) Data {
+// 	fmt.Println("fromRaw:", data)
+// 	return Data{
+// 		ID:  data["id"].(string),
+// 		Key: data["key"].(string),
+// 		SomeData: SomeData{
+// 			Value: data["some_data"].(map[string]any)["value"].(string),
+// 			MoreInfo: MoreInfo{
+// 				Text: data["some_data"].(map[string]any)["more_info"].(map[string]any)["text"].(string),
+// 			},
+// 		},
+// 		CreatedAt: parseTime(data["created_at"].(string)),
+// 	}
+// }
+//
+// func parseTime(val string) time.Time {
+// 	res, _ := time.Parse(time.RFC3339, val)
+// 	return res
+// }
