@@ -18,7 +18,7 @@ replace (
 	// https://github.com/docker/buildx/blob/v0.8.1/go.mod#L62-L64
 	k8s.io/api => k8s.io/api v0.22.4
 	k8s.io/apimachinery => k8s.io/apimachinery v0.22.4
-	k8s.io/client-go => k8s.io/client-go v0.22.4
+	k8s.io/client-go/v11 => k8s.io/client-go v11.0.0+incompatible
 )
 
 require (
