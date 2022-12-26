@@ -7,12 +7,12 @@ import (
 )
 
 type context struct {
-	varIndex rune
+	varIndex int
 	vars     map[string]any
 }
 
 func (c *context) asVar(val any) string {
-	index := string(c.varIndex)
+	index := strconv.Itoa(c.varIndex)
 	c.vars[index] = val
 	c.varIndex++
 	return "$" + index
@@ -36,7 +36,7 @@ type Query struct {
 func NewQuery(node string) *Query {
 	return &Query{
 		context: &context{
-			varIndex: 'A',
+			varIndex: 0,
 			vars:     map[string]any{},
 		},
 		node: node,
