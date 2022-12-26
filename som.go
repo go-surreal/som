@@ -63,3 +63,117 @@ type Info struct {
 type Entity interface {
 	entity()
 }
+
+//
+// -- GEO
+//
+
+type Point struct {
+	Longitude float64
+	Latitude  float64
+}
+
+// {
+//    type: "Point",
+//    coordinates: [-0.118092, 51.509865],
+// }
+
+type Line struct {
+	Points []Point
+}
+
+// {
+//	type: "LineString",
+//	coordinates: [
+//		[10.0, 11.2], [10.5, 11.9]
+//	]
+// }
+
+type Polygon struct {
+	Points []MultiPoint
+}
+
+// {
+//	type: "Polygon",
+//	coordinates: [[
+//		[-0.38314819, 51.37692386], [0.1785278, 51.37692386],
+//		[0.1785278, 51.61460570], [-0.38314819, 51.61460570],
+//		[-0.38314819, 51.37692386]
+//	]]
+// }
+
+type MultiPoint struct {
+	Points []Point
+}
+
+// {
+//	type: "MultiPoint",
+//	coordinates: [
+//		[10.0, 11.2],
+//		[10.5, 11.9]
+//	],
+// }
+
+type MultiLine struct {
+	Lines []Line
+}
+
+// {
+//	type: "MultiLinestring",
+//	coordinates: [
+//		[ [10.0, 11.2], [10.5, 11.9] ],
+//		[ [11.0, 12.2], [11.5, 12.9], [12.0, 13.0] ]
+//	]
+// }
+
+type MultiPolygon struct {
+	Polygons []Polygon
+}
+
+// {
+//	type: "MultiPolygon",
+//	coordinates: [
+//		[
+//			[ [10.0, 11.2], [10.5, 11.9], [10.8, 12.0], [10.0, 11.2] ]
+//		],
+//		[
+//			[ [9.0, 11.2], [10.5, 11.9], [10.3, 13.0], [9.0, 11.2] ]
+//		]
+//	]
+// }
+
+type Collection struct {
+	Geometries []any
+}
+
+// {
+//	type: "GeometryCollection",
+//	geometries: [
+//		{
+//			type: "MultiPoint",
+//			coordinates: [
+//				[10.0, 11.2],
+//				[10.5, 11.9]
+//			],
+//		},
+//		{
+//			type: "Polygon",
+//			coordinates: [[
+//				[-0.38314819, 51.37692386], [0.1785278, 51.37692386],
+//				[0.1785278, 51.61460570], [-0.38314819, 51.61460570],
+//				[-0.38314819, 51.37692386]
+//			]]
+//		},
+//		{
+//			type: "MultiPolygon",
+//			coordinates: [
+//				[
+//					[ [10.0, 11.2], [10.5, 11.9], [10.8, 12.0], [10.0, 11.2] ]
+//				],
+//				[
+//					[ [9.0, 11.2], [10.5, 11.9], [10.3, 13.0], [9.0, 11.2] ]
+//				]
+//			]
+//		}
+//	]
+// }
