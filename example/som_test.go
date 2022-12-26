@@ -42,7 +42,7 @@ func TestQuery(t *testing.T) {
 		).
 		Describe()
 
-	assert.Equal(t, "SELECT * FROM user WHERE (string INSIDE $A AND bool == $B AND (time_ptr == $C OR uuid = $D)) ", query)
+	assert.Equal(t, "SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1 AND (time_ptr == $2 OR uuid = $3)) ", query)
 }
 
 func TestWithDatabase(t *testing.T) {
