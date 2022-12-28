@@ -18,7 +18,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, node := range source.Nodes {
 		dbNode := &NodeTable{
-			Name: node.Name,
+			Name:       node.Name,
+			Timestamps: node.Timestamps,
 		}
 
 		for _, f := range node.Fields {
@@ -34,7 +35,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, edge := range source.Edges {
 		dbEdge := &EdgeTable{
-			Name: edge.Name,
+			Name:       edge.Name,
+			Timestamps: edge.Timestamps,
 		}
 
 		inField, ok := Convert(source, buildConf, edge.In)
@@ -93,47 +95,61 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 	switch f := field.(type) {
 
 	case *parser.FieldID:
-		return &ID{
-			baseField: base,
-			source:    f,
-		}, true
+		{
+			return &ID{
+				baseField: base,
+				source:    f,
+			}, true
+		}
 
 	case *parser.FieldString:
-		return &String{
-			baseField: base,
-			source:    f,
-		}, true
+		{
+			return &String{
+				baseField: base,
+				source:    f,
+			}, true
+		}
 
 	case *parser.FieldNumeric:
-		return &Numeric{
-			baseField: base,
-			source:    f,
-		}, true
+		{
+			return &Numeric{
+				baseField: base,
+				source:    f,
+			}, true
+		}
 
 	case *parser.FieldBool:
-		return &Bool{
-			baseField: base,
-			source:    f,
-		}, true
+		{
+			return &Bool{
+				baseField: base,
+				source:    f,
+			}, true
+		}
 
 	case *parser.FieldTime:
-		return &Time{
-			baseField: base,
-			source:    f,
-		}, true
+		{
+			return &Time{
+				baseField: base,
+				source:    f,
+			}, true
+		}
 
 	case *parser.FieldUUID:
-		return &UUID{
-			baseField: base,
-			source:    f,
-		}, true
+		{
+			return &UUID{
+				baseField: base,
+				source:    f,
+			}, true
+		}
 
 	case *parser.FieldEnum:
-		return &Enum{
-			baseField: base,
-			source:    f,
-			model:     Model(f.Typ),
-		}, true
+		{
+			return &Enum{
+				baseField: base,
+				source:    f,
+				model:     Model(f.Typ),
+			}, true
+		}
 
 	case *parser.FieldStruct:
 		{
@@ -160,72 +176,86 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				table: &NodeTable{
 					Name:   f.Struct,
 					Fields: fields,
-				},
+				}, // TODO: struct not a NodeTable?!
 			}, true
 		}
 
 	case *parser.FieldNode:
-		return &Node{
-			baseField: base,
-			source:    f,
-			table: &NodeTable{
-				Name:   f.Node,
-				Fields: nil,
-			},
-		}, true
+		{
+			var node *parser.Node
+			for _, elem := range source.Nodes {
+				if elem.Name == f.Node {
+					node = elem
+					break
+				}
+			}
+
+			return &Node{
+				baseField: base,
+				source:    f,
+				table: &NodeTable{
+					Name:       f.Node,
+					Fields:     nil, // TODO: needed? -> node.Fields
+					Timestamps: node.Timestamps,
+				},
+			}, true
+		}
 
 	case *parser.FieldEdge:
-		// in,_ := Convert(conf, f.Edge)
-
-		var edge *parser.Edge
-		for _, elem := range source.Edges {
-			if elem.Name == f.Edge {
-				edge = elem
-				break
+		{
+			var edge *parser.Edge
+			for _, elem := range source.Edges {
+				if elem.Name == f.Edge {
+					edge = elem
+					break
+				}
 			}
-		}
 
-		in, ok := Convert(source, conf, edge.In)
-		if !ok {
-			return nil, false
-		}
-
-		out, ok := Convert(source, conf, edge.Out)
-		if !ok {
-			return nil, false
-		}
-
-		var fields []Field
-		for _, field := range edge.Fields {
-			fld, ok := Convert(source, conf, field)
+			in, ok := Convert(source, conf, edge.In)
 			if !ok {
 				return nil, false
 			}
-			fields = append(fields, fld)
-		}
 
-		return &Edge{
-			baseField: base,
-			source:    f,
-			table: &EdgeTable{
-				Name:   f.Edge,
-				In:     in.(*Node),
-				Out:    out.(*Node),
-				Fields: fields,
-			},
-		}, true
+			out, ok := Convert(source, conf, edge.Out)
+			if !ok {
+				return nil, false
+			}
+
+			var fields []Field
+			for _, field := range edge.Fields {
+				fld, ok := Convert(source, conf, field)
+				if !ok {
+					return nil, false
+				}
+				fields = append(fields, fld)
+			}
+
+			return &Edge{
+				baseField: base,
+				source:    f,
+				table: &EdgeTable{
+					Name:       f.Edge,
+					In:         in.(*Node),
+					Out:        out.(*Node),
+					Fields:     fields,
+					Timestamps: edge.Timestamps,
+				},
+			}, true
+		}
 
 	case *parser.FieldSlice:
-		element, ok := Convert(source, conf, f.Field)
-		if !ok {
-			return nil, false
-		}
+		{
+			element, ok := Convert(source, conf, f.Field)
+			if !ok {
+				return nil, false
+			}
 
-		return &Slice{
-			baseField: base,
-			source:    f,
-			element:   element,
-		}, true
+			return &Slice{
+				baseField: base,
+				source:    f,
+				element:   element,
+			}, true
+		}
 	}
 
 	return nil, false

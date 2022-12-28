@@ -9,14 +9,6 @@ type DatabaseObject struct {
 	Fields []Field
 }
 
-func (o *DatabaseObject) FileName() string {
-	return "object." + strcase.ToSnake(o.Name) + ".go"
-}
-
-func (o *DatabaseObject) GetFields() []Field {
-	return o.Fields
-}
-
 func (o *DatabaseObject) NameGo() string {
 	return o.Name
 }
@@ -27,4 +19,16 @@ func (o *DatabaseObject) NameGoLower() string {
 
 func (o *DatabaseObject) NameDatabase() string {
 	return strcase.ToSnake(o.Name) // TODO
+}
+
+func (o *DatabaseObject) FileName() string {
+	return "object." + strcase.ToSnake(o.Name) + ".go"
+}
+
+func (o *DatabaseObject) GetFields() []Field {
+	return o.Fields
+}
+
+func (o *DatabaseObject) HasTimestamps() bool {
+	return false // TODO: not needed for objects
 }

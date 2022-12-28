@@ -7,6 +7,7 @@ import (
 type Record = Node // TODO: should we use this?
 
 type Node struct {
+	ID string
 	// include query info into each node resulting from a query?:
 	// status string
 	// time   string
@@ -15,11 +16,42 @@ type Node struct {
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
-type Edge struct{}
+type Edge struct {
+	ID string
+}
 
 type Timestamps struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	createdAt time.Time
+	updatedAt time.Time
+}
+
+func NewTimestamps(createdAt time.Time, updatedAt time.Time) Timestamps {
+	return Timestamps{
+		createdAt: createdAt,
+		updatedAt: updatedAt,
+	}
+}
+
+func (t Timestamps) CreatedAt() time.Time {
+	return t.createdAt
+}
+
+func (t Timestamps) UpdatedAt() time.Time {
+	return t.updatedAt
+}
+
+type SoftDelete struct {
+	deletedAt time.Time
+}
+
+func NewSoftDelete(deletedAt time.Time) SoftDelete {
+	return SoftDelete{
+		deletedAt: deletedAt,
+	}
+}
+
+func (t SoftDelete) DeletedAt() time.Time {
+	return t.deletedAt
 }
 
 // Enum describes a database type with a fixed set of allowed values.
@@ -62,4 +94,8 @@ type Info struct {
 
 type Entity interface {
 	entity()
+}
+
+type External struct {
+	ID string
 }

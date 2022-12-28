@@ -9,6 +9,7 @@ import (
 	relate "github.com/marcbinz/som/example/gen/som/relate"
 	model "github.com/marcbinz/som/example/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	"time"
 )
 
 func (c *Client) User() *user {
@@ -31,6 +32,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 		key += ":" + "⟨" + user.ID + "⟩"
 	}
 	data := conv.FromUser(*user)
+	data.CreatedAt = time.Now()
 	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err
@@ -73,6 +75,7 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 		return errors.New("cannot update User without existing record ID")
 	}
 	data := conv.FromUser(*user)
+	data.UpdatedAt = time.Now()
 	raw, err := n.client.db.Update("user:⟨"+user.ID+"⟩", data)
 	if err != nil {
 		return err

@@ -6,11 +6,6 @@ import (
 	"github.com/marcbinz/som/core/parser"
 )
 
-const (
-	funcBuildDatabaseID = "buildDatabaseID"
-	funcParseDatabaseID = "parseDatabaseID"
-)
-
 // type Edge struct {
 // 	Name   string
 // 	In     Field
@@ -43,6 +38,7 @@ type Element interface {
 
 	FileName() string
 	GetFields() []Field
+	HasTimestamps() bool
 }
 
 type Table interface {

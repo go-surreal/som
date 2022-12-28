@@ -77,6 +77,8 @@ DEFINE FIELD slice_slice ON TABLE user TYPE array;
 DEFINE FIELD slice_slice.* ON TABLE user TYPE array;
 
 DEFINE TABLE group SCHEMAFULL;
+DEFINE FIELD created_at ON TABLE group TYPE datetime;
+DEFINE FIELD updated_at ON TABLE group TYPE datetime;
 DEFINE FIELD name ON TABLE group TYPE string;
 
 DEFINE TABLE member_of SCHEMAFULL;
