@@ -33,6 +33,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	}
 	data := conv.FromUser(*user)
 	data.CreatedAt = time.Now()
+	data.UpdatedAt = data.CreatedAt
 	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err

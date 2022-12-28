@@ -33,6 +33,7 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	}
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
+	data.UpdatedAt = data.CreatedAt
 	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err
