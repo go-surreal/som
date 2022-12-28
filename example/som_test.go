@@ -244,9 +244,10 @@ func FuzzCustomModelIDs(f *testing.F) {
 		}
 
 		userIn := &model.User{
-			ID:     id,
 			String: "1",
 		}
+
+		userIn.ID = id
 
 		err = client.User().Create(ctx, userIn)
 		if err != nil {
