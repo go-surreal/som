@@ -35,6 +35,7 @@ func TestQuery(t *testing.T) {
 		Filter(
 			where.User.String.In(nil),
 			where.User.Bool.Is(true),
+			where.User.MyGroups(where.Group.Name.Equal("")).ID.Equal(""),
 		)
 
 	assert.Equal(t,

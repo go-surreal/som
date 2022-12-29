@@ -75,37 +75,37 @@ language itself. For further information, please refer to the
 
 ### Before v0.1.0 (first "somewhat stable" non-pre-release)
 
+- [ ] Setup golangci-lint with proper config. (#7)
+- [ ] Consider reserved (query) keywords. (#18)
+- [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
+- [ ] Choose proper licensing for the project. (#11)
+- [ ] Add `som.SoftDelete` type with `DeletedAt` timestamp and automated handling throughout som.
+- [ ] Implement sub-queries.
 - [x] Initial implementation.
 - [x] Rename project to "som". (#27)
 - [x] Add basic GitHub workflow for PR. (#6)
-- [ ] Setup golangci-lint with proper config. (#7)
-- [ ] Consider reserved (query) keywords. (#18)
-- [ ] Add support for pointer fields. (#19)
+- [x] Add support for pointer fields. (#19)
 - [x] Add support for edge (graph) connections. (#20)
-- [ ] Add support for `[]byte` (and `byte`?) type.
-- [ ] Fix query variable index `rune` not suited for > 26 due to invalid char as variable key.
-- [ ] Think about generation based on schema. (#21)
-- [ ] How to handle data migrations? (#22)
-- [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
-- [ ] Choose proper licensing for the project. (#11)
-- [ ] Provide `WithInfo` method.
-- [ ] Support (deeply) nested slices? (needed?)
-- [ ] Add query `where.User.Equal(userModel)`? Prevent clash by appending `_` where necessary?
+- [x] Fix query variable index `rune` not suited for > 26 due to invalid char as variable key.
 
 ### After v0.1.0
 
-- [ ] Add `som.SoftDelete` type with `DeletedAt` timestamp and automated handling throughout som.
-- [ ] Make query builder not use pointers, so partial builds and usages are working?
+- [ ] Add query `where.User.Equal(userModel)`? Prevent clash by appending `_` where necessary?
+- [ ] Provide `WithInfo` method.
+- [ ] Support (deeply) nested slices? (needed?)
+- [ ] How to handle data migrations? (#22)
+- [ ] Add support for `[]byte` (and `byte`?) type.
 - [ ] Cleanup naming conventions. (#24)
 - [ ] Code comments and documentation. (#9)
 - [ ] Write tests. (#8)
-- [ ] Add "Describe" as query output to get a full description of a generated query. (#17)
 - [ ] Generate `sommock` package for easy mocking of the underlying database client.
 - [ ] Make casing of database field names configurable.
 - [ ] Switch the source code parser to support generics.
 - [ ] Add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser).
 - [ ] Support transactions.
 - [ ] Distinct results (https://stackoverflow.com/questions/74326176/surrealdb-equivalent-of-select-distinct).
+- [x] Make query builder not use pointers, so partial builds and usages are working?
+- [x] Add "Describe" as query output to get a full description of a generated query. (#17)
 
 ### Nice to have (v0.x.x)
 
