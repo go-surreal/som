@@ -5,8 +5,9 @@ import (
 )
 
 type NodeTable struct {
-	Name   string
-	Fields []Field
+	Name       string
+	Fields     []Field
+	Timestamps bool
 }
 
 func (t *NodeTable) FileName() string {
@@ -27,4 +28,8 @@ func (t *NodeTable) NameGoLower() string {
 
 func (t *NodeTable) NameDatabase() string {
 	return strcase.ToSnake(t.Name) // TODO
+}
+
+func (t *NodeTable) HasTimestamps() bool {
+	return t.Timestamps
 }

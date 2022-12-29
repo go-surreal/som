@@ -309,6 +309,13 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(jen.Id("n").Dot("client").Dot("db"))),
 		)
 
+	onCreatedAt := jen.Empty()
+	onUpdatedAt := jen.Empty()
+	if node.HasTimestamps() {
+		onCreatedAt = jen.Id("data").Dot("CreatedAt").Op("=").Qual("time", "Now").Call()
+		onUpdatedAt = jen.Id("data").Dot("UpdatedAt").Op("=").Id("data").Dot("CreatedAt")
+	}
+
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Create").
@@ -331,6 +338,10 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 						Lit(":").Op("+").Lit("⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩"),
 				),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Op("*").Id(node.NameGoLower())),
+
+			jen.Add(onCreatedAt),
+			jen.Add(onUpdatedAt),
+
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Create").
 				Call(jen.Id("key"), jen.Id("data")),
@@ -397,6 +408,10 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Return(jen.Op("&").Id("node"), jen.True(), jen.Nil()),
 		)
 
+	if node.HasTimestamps() {
+		onUpdatedAt = jen.Id("data").Dot("UpdatedAt").Op("=").Qual("time", "Now").Call()
+	}
+
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Update").
@@ -417,6 +432,8 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				),
 
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Op("*").Id(node.NameGoLower())),
+
+			jen.Add(onUpdatedAt),
 
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Update").

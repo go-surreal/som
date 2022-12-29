@@ -3,14 +3,18 @@ package conv
 
 import (
 	"encoding/json"
+	som "github.com/marcbinz/som"
 	model "github.com/marcbinz/som/example/model"
 	"strings"
+	"time"
 )
 
 type Group struct {
-	ID      string     `json:"id,omitempty"`
-	Name    string     `json:"name"`
-	Members []MemberOf `json:"members,omitempty"`
+	ID        string     `json:"id,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	Name      string     `json:"name"`
+	Members   []MemberOf `json:"members,omitempty"`
 }
 
 func FromGroup(data model.Group) Group {
@@ -18,9 +22,10 @@ func FromGroup(data model.Group) Group {
 }
 func ToGroup(data Group) model.Group {
 	return model.Group{
-		ID:      parseDatabaseID("group", data.ID),
-		Members: mapSlice(data.Members, ToMemberOf),
-		Name:    data.Name,
+		Members:    mapSlice(data.Members, ToMemberOf),
+		Name:       data.Name,
+		Node:       som.Node{ID: parseDatabaseID("group", data.ID)},
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }
 

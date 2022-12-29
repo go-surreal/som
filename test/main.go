@@ -8,7 +8,6 @@ import (
 	"github.com/marcbinz/som/example/gen/som/where"
 	"github.com/marcbinz/som/example/model"
 	"log"
-	"time"
 )
 
 func main() {
@@ -42,11 +41,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("group:", group.ID, group.Name)
+	fmt.Println("group:", group.ID, group.Name, group.CreatedAt())
 
 	user := &model.User{
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
 		String:    "Marc",
 		MainGroup: *group,
 	}
@@ -56,12 +53,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("user:", user.ID, user.String)
+	fmt.Println("user:", user.ID, user.String, user.CreatedAt(), user.UpdatedAt().IsZero())
 
 	edge := &model.MemberOf{
-		CreatedAt: time.Now(),
-		User:      *user,
-		Group:     *group,
+		User:  *user,
+		Group: *group,
 		Meta: model.MemberOfMeta{
 			IsAdmin: true,
 		},
@@ -85,7 +81,7 @@ func main() {
 	// fmt.Println("user:", edge.User.ID)
 	// fmt.Println("group:", edge.Group.ID)
 
-	fmt.Println("old user uuid:", user.UUID, user.ID)
+	fmt.Println("old user uuid:", user.UUID, user.ID, user.UpdatedAt())
 
 	user.UUID = uuid.New()
 
@@ -99,7 +95,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("updated user uuid:", user.UUID, user.ID)
+	fmt.Println("updated user uuid:", user.UUID, user.ID, user.UpdatedAt())
 
 	query := db.User().Query().
 		Filter(

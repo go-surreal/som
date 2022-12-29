@@ -90,9 +90,11 @@ language itself. For further information, please refer to the
 - [ ] Choose proper licensing for the project. (#11)
 - [ ] Provide `WithInfo` method.
 - [ ] Support (deeply) nested slices? (needed?)
+- [ ] `db.User.CreateWithID(customID, model)`
 
 ### After v0.1.0
 
+- [ ] Add `som.SoftDelete` type with `DeletedAt` timestamp and automated handling throughout som.
 - [ ] Make query builder not use pointers, so partial builds and usages are working?
 - [ ] Cleanup naming conventions. (#24)
 - [ ] Code comments and documentation. (#9)

@@ -10,16 +10,20 @@ var Group = newGroup[model.Group](filter.NewKey())
 
 func newGroup[T any](key filter.Key) group[T] {
 	return group[T]{
-		ID:   filter.NewID[T](key.Dot("id"), "group"),
-		Name: filter.NewString[T](key.Dot("name")),
-		key:  key,
+		CreatedAt: filter.NewTime[T](key.Dot("created_at")),
+		ID:        filter.NewID[T](key.Dot("id"), "group"),
+		Name:      filter.NewString[T](key.Dot("name")),
+		UpdatedAt: filter.NewTime[T](key.Dot("updated_at")),
+		key:       key,
 	}
 }
 
 type group[T any] struct {
-	key  filter.Key
-	ID   *filter.ID[T]
-	Name *filter.String[T]
+	key       filter.Key
+	ID        *filter.ID[T]
+	CreatedAt *filter.Time[T]
+	UpdatedAt *filter.Time[T]
+	Name      *filter.String[T]
 }
 type groupSlice[T any] struct {
 	group[T]

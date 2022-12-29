@@ -9,6 +9,7 @@ import (
 	relate "github.com/marcbinz/som/example/gen/som/relate"
 	model "github.com/marcbinz/som/example/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	"time"
 )
 
 func (c *Client) Group() *group {
@@ -31,6 +32,8 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 		key += ":" + "⟨" + group.ID + "⟩"
 	}
 	data := conv.FromGroup(*group)
+	data.CreatedAt = time.Now()
+	data.UpdatedAt = data.CreatedAt
 	raw, err := n.client.db.Create(key, data)
 	if err != nil {
 		return err
@@ -73,6 +76,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 		return errors.New("cannot update Group without existing record ID")
 	}
 	data := conv.FromGroup(*group)
+	data.UpdatedAt = time.Now()
 	raw, err := n.client.db.Update("group:⟨"+group.ID+"⟩", data)
 	if err != nil {
 		return err
