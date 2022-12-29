@@ -16,19 +16,19 @@ func (e memberOf) Create(edge *model.MemberOf) error {
 	if edge == nil {
 		return errors.New("the given edge must not be nil")
 	}
-	if edge.ID != "" {
+	if edge.ID() != "" {
 		return errors.New("ID must not be set for an edge to be created")
 	}
-	if edge.User.ID == "" {
+	if edge.User.ID() == "" {
 		return errors.New("ID of the incoming node 'User' must not be empty")
 	}
-	if edge.Group.ID == "" {
+	if edge.Group.ID() == "" {
 		return errors.New("ID of the outgoing node 'Group' must not be empty")
 	}
 	query := "RELATE "
-	query += "user:" + edge.User.ID
+	query += "user:" + edge.User.ID()
 	query += "->member_of->"
-	query += "group:" + edge.Group.ID
+	query += "group:" + edge.Group.ID()
 	query += " CONTENT $data"
 	data := conv.FromMemberOf(*edge)
 	raw, err := e.db.Query(query, map[string]any{"data": data})

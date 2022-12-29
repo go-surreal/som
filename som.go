@@ -4,20 +4,36 @@ import (
 	"time"
 )
 
-type Record = Node // TODO: should we use this?
+// type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
 type Node struct {
-	ID string
-	// include query info into each node resulting from a query?:
-	// status string
-	// time   string
-	// extract via som.Info(someNode) -> som.Info ?
+	id string
+}
+
+func NewNode(id string) Node {
+	return Node{
+		id: id,
+	}
+}
+
+func (n Node) ID() string {
+	return n.id
 }
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
-	ID string
+	id string
+}
+
+func NewEdge(id string) Edge {
+	return Edge{
+		id: id,
+	}
+}
+
+func (e Edge) ID() string {
+	return e.id
 }
 
 type Timestamps struct {
@@ -40,19 +56,20 @@ func (t Timestamps) UpdatedAt() time.Time {
 	return t.updatedAt
 }
 
-type SoftDelete struct {
-	deletedAt time.Time
-}
-
-func NewSoftDelete(deletedAt time.Time) SoftDelete {
-	return SoftDelete{
-		deletedAt: deletedAt,
-	}
-}
-
-func (t SoftDelete) DeletedAt() time.Time {
-	return t.deletedAt
-}
+// TODO: implement soft delete feature
+// type SoftDelete struct {
+// 	deletedAt time.Time
+// }
+//
+// func NewSoftDelete(deletedAt time.Time) SoftDelete {
+// 	return SoftDelete{
+// 		deletedAt: deletedAt,
+// 	}
+// }
+//
+// func (t SoftDelete) DeletedAt() time.Time {
+// 	return t.deletedAt
+// }
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
@@ -60,14 +77,15 @@ type Enum string
 // Password describes a special string field.
 // Regarding the generated database query operations, it can only be matched, but never read.
 // In a query result, the Password field will always be empty.
-type Password string
+// TODO: implement!
+// type Password string
 
 // Meta describes a model that is not related to any Node or Edge.
 // Instead, it is used to hold metadata that was queried from a Node or Edge.
 //
 // Applying this struct to a type within your model package will ensure
 // that this type is never considered for the generated layer.
-type Meta struct{}
+// type Meta struct{}
 
 // Info holds information about a single database operation.
 // It is used as target to hold said information when building
@@ -86,16 +104,19 @@ type Meta struct{}
 //
 // Please note: When using the same base for multiple operations, the Info
 // struct will only ever hold the information of the last operation.
-type Info struct {
-	Time    time.Time
-	Status  string
-	Message string
-}
+// TODO: implement!
+// type Info struct {
+// 	Time    time.Time
+// 	Status  string
+// 	Message string
+// }
 
-type Entity interface {
-	entity()
-}
+// TODO: below needed?
+// type Entity interface {
+// 	entity()
+// }
 
-type External struct {
-	ID string
-}
+// TODO: implement external types
+// type External struct {
+// 	ID string
+// }

@@ -118,25 +118,25 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the given edge must not be nil"))),
 				),
 
-			jen.If(jen.Id("edge").Dot("ID").Op("!=").Lit("")).
+			jen.If(jen.Id("edge").Dot("ID").Call().Op("!=").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for an edge to be created"))),
 				),
 
-			jen.If(jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Op("==").Lit("")).
+			jen.If(jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the incoming node '"+edge.In.NameGo()+"' must not be empty"))),
 				),
 
-			jen.If(jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Op("==").Lit("")).
+			jen.If(jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the outgoing node '"+edge.Out.NameGo()+"' must not be empty"))),
 				),
 
 			jen.Id("query").Op(":=").Lit("RELATE "),
-			jen.Id("query").Op("+=").Lit(edge.In.NameDatabase()+":").Op("+").Id("edge").Dot(edge.In.NameGo()).Dot("ID"),
+			jen.Id("query").Op("+=").Lit(edge.In.NameDatabase()+":").Op("+").Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call(),
 			jen.Id("query").Op("+=").Lit("->"+edge.NameDatabase()+"->"),
-			jen.Id("query").Op("+=").Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID"),
+			jen.Id("query").Op("+=").Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call(),
 			jen.Id("query").Op("+=").Lit(" CONTENT $data"),
 
 			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),

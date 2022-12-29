@@ -24,7 +24,7 @@ func ToGroup(data Group) model.Group {
 	return model.Group{
 		Members:    mapSlice(data.Members, ToMemberOf),
 		Name:       data.Name,
-		Node:       som.Node{ID: parseDatabaseID("group", data.ID)},
+		Node:       som.NewNode(parseDatabaseID("group", data.ID)),
 		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }

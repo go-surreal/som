@@ -171,13 +171,13 @@ func FuzzWithDatabase(f *testing.F) {
 			t.Error(err)
 		}
 
-		if userIn.ID == "" {
+		if userIn.ID() == "" {
 			t.Error("user ID must not be empty after create call")
 		}
 
 		userOut, err := client.User().Query().
 			Filter(
-				where.User.ID.Equal(userIn.ID),
+				where.User.ID.Equal(userIn.ID()),
 			).
 			First()
 
@@ -247,28 +247,26 @@ func FuzzCustomModelIDs(f *testing.F) {
 			String: "1",
 		}
 
-		userIn.ID = id
-
-		err = client.User().Create(ctx, userIn)
+		err = client.User().CreateWithID(ctx, id, userIn)
 		if err != nil {
 			t.Error(err)
 		}
 
-		if userIn.ID == "" {
+		if userIn.ID() == "" {
 			t.Error("user ID must not be empty after create call")
 		}
 
-		userOut, ok, err := client.User().Read(ctx, userIn.ID)
+		userOut, ok, err := client.User().Read(ctx, userIn.ID())
 
 		if err != nil {
 			t.Error(err)
 		}
 
 		if !ok {
-			t.Errorf("user with ID %s not found", userIn.ID)
+			t.Errorf("user with ID %s not found", userIn.ID())
 		}
 
-		assert.Equal(t, userIn.ID, userOut.ID)
+		assert.Equal(t, userIn.ID(), userOut.ID())
 		assert.Equal(t, "1", userOut.String)
 
 		userOut.String = "2"
@@ -337,13 +335,13 @@ func BenchmarkWithDatabase(b *testing.B) {
 			b.Error(err)
 		}
 
-		if userIn.ID == "" {
+		if userIn.ID() == "" {
 			b.Error("user ID must not be empty after create call")
 		}
 
 		userOut, err := client.User().Query().
 			Filter(
-				where.User.ID.Equal(userIn.ID),
+				where.User.ID.Equal(userIn.ID()),
 			).
 			First()
 
