@@ -54,57 +54,57 @@ type user[T any] struct {
 }
 type userSlice[T any] struct {
 	user[T]
-	*filter.Slice[model.User, T]
+	*filter.Slice[T, model.User]
 }
 
 func (n user[T]) Login() login[T] {
 	return newLogin[T](n.key.Dot("login"))
 }
-func (n user[T]) Groups() groupSlice[T] {
+func (n user[T]) Groups(filters ...filter.Of[model.Group]) groupSlice[T] {
 	key := n.key.Dot("groups")
-	return groupSlice[T]{newGroup[T](key), filter.NewSlice[model.Group, T](key)}
+	return groupSlice[T]{newGroup[T](key), filter.NewSlice[T, model.Group](key, filters)}
 }
 func (n user[T]) MainGroup() group[T] {
 	return newGroup[T](n.key.Dot("main_group"))
 }
-func (n user[T]) Other() *filter.Slice[string, T] {
-	return filter.NewSlice[string, T](n.key.Dot("other"))
+func (n user[T]) Other() *filter.Slice[T, string] {
+	return filter.NewSlice[T, string](n.key.Dot("other"), nil)
 }
-func (n user[T]) More() *filter.Slice[float32, T] {
-	return filter.NewSlice[float32, T](n.key.Dot("more"))
+func (n user[T]) More() *filter.Slice[T, float32] {
+	return filter.NewSlice[T, float32](n.key.Dot("more"), nil)
 }
-func (n user[T]) Roles() *filter.Slice[model.Role, T] {
-	return filter.NewSlice[model.Role, T](n.key.Dot("roles"))
+func (n user[T]) Roles() *filter.Slice[T, model.Role] {
+	return filter.NewSlice[T, model.Role](n.key.Dot("roles"), nil)
 }
-func (n user[T]) MyGroups() memberOfIn[T] {
-	return newMemberOfIn[T](n.key.In(""))
+func (n user[T]) MyGroups(filters ...filter.Of[model.MemberOf]) memberOfIn[T] {
+	return newMemberOfIn[T](n.key.In(""), filters)
 }
 func (n user[T]) StructPtr() someStruct[T] {
 	return newSomeStruct[T](n.key.Dot("struct_ptr"))
 }
-func (n user[T]) StringPtrSlice() *filter.Slice[*string, T] {
-	return filter.NewSlice[*string, T](n.key.Dot("string_ptr_slice"))
+func (n user[T]) StringPtrSlice() *filter.Slice[T, *string] {
+	return filter.NewSlice[T, *string](n.key.Dot("string_ptr_slice"), nil)
 }
-func (n user[T]) StringSlicePtr() *filter.Slice[string, T] {
-	return filter.NewSlice[string, T](n.key.Dot("string_slice_ptr"))
+func (n user[T]) StringSlicePtr() *filter.Slice[T, string] {
+	return filter.NewSlice[T, string](n.key.Dot("string_slice_ptr"), nil)
 }
-func (n user[T]) StructPtrSlice() *filter.Slice[*model.SomeStruct, T] {
-	return filter.NewSlice[*model.SomeStruct, T](n.key.Dot("struct_ptr_slice"))
+func (n user[T]) StructPtrSlice() *filter.Slice[T, *model.SomeStruct] {
+	return filter.NewSlice[T, *model.SomeStruct](n.key.Dot("struct_ptr_slice"), nil)
 }
-func (n user[T]) StructPtrSlicePtr() *filter.Slice[*model.SomeStruct, T] {
-	return filter.NewSlice[*model.SomeStruct, T](n.key.Dot("struct_ptr_slice_ptr"))
+func (n user[T]) StructPtrSlicePtr() *filter.Slice[T, *model.SomeStruct] {
+	return filter.NewSlice[T, *model.SomeStruct](n.key.Dot("struct_ptr_slice_ptr"), nil)
 }
-func (n user[T]) EnumPtrSlice() *filter.Slice[model.Role, T] {
-	return filter.NewSlice[model.Role, T](n.key.Dot("enum_ptr_slice"))
+func (n user[T]) EnumPtrSlice() *filter.Slice[T, model.Role] {
+	return filter.NewSlice[T, model.Role](n.key.Dot("enum_ptr_slice"), nil)
 }
-func (n user[T]) NodePtrSlice() groupSlice[T] {
+func (n user[T]) NodePtrSlice(filters ...filter.Of[model.Group]) groupSlice[T] {
 	key := n.key.Dot("node_ptr_slice")
-	return groupSlice[T]{newGroup[T](key), filter.NewSlice[model.Group, T](key)}
+	return groupSlice[T]{newGroup[T](key), filter.NewSlice[T, model.Group](key, filters)}
 }
-func (n user[T]) NodePtrSlicePtr() groupSlice[T] {
+func (n user[T]) NodePtrSlicePtr(filters ...filter.Of[model.Group]) groupSlice[T] {
 	key := n.key.Dot("node_ptr_slice_ptr")
-	return groupSlice[T]{newGroup[T](key), filter.NewSlice[model.Group, T](key)}
+	return groupSlice[T]{newGroup[T](key), filter.NewSlice[T, model.Group](key, filters)}
 }
-func (n user[T]) SliceSlice() *filter.Slice[[]string, T] {
-	return filter.NewSlice[[]string, T](n.key.Dot("slice_slice"))
+func (n user[T]) SliceSlice() *filter.Slice[T, []string] {
+	return filter.NewSlice[T, []string](n.key.Dot("slice_slice"), nil)
 }

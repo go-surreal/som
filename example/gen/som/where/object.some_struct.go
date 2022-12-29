@@ -26,5 +26,5 @@ type someStruct[T any] struct {
 }
 type someStructSlice[T any] struct {
 	someStruct[T]
-	*filter.Slice[model.SomeStruct, T]
+	*filter.Slice[T, model.SomeStruct]
 }

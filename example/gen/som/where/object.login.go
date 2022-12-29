@@ -21,5 +21,5 @@ type login[T any] struct {
 }
 type loginSlice[T any] struct {
 	login[T]
-	*filter.Slice[model.Login, T]
+	*filter.Slice[T, model.Login]
 }

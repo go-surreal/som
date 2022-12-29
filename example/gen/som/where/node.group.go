@@ -27,9 +27,9 @@ type group[T any] struct {
 }
 type groupSlice[T any] struct {
 	group[T]
-	*filter.Slice[model.Group, T]
+	*filter.Slice[T, model.Group]
 }
 
-func (n group[T]) Members() memberOfOut[T] {
-	return newMemberOfOut[T](n.key.Out(""))
+func (n group[T]) Members(filters ...filter.Of[model.MemberOf]) memberOfOut[T] {
+	return newMemberOfOut[T](n.key.Out(""), filters)
 }

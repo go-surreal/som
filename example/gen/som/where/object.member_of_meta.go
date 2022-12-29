@@ -21,5 +21,5 @@ type memberOfMeta[T any] struct {
 }
 type memberOfMetaSlice[T any] struct {
 	memberOfMeta[T]
-	*filter.Slice[model.MemberOfMeta, T]
+	*filter.Slice[T, model.MemberOfMeta]
 }
