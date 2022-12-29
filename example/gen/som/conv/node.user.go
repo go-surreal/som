@@ -94,7 +94,7 @@ func ToUser(data User) model.User {
 		MainGroup:         fromGroupLink(data.MainGroup),
 		More:              data.More,
 		MyGroups:          mapSlice(data.MyGroups, ToMemberOf),
-		Node:              som.Node{ID: parseDatabaseID("user", data.ID)},
+		Node:              som.NewNode(parseDatabaseID("user", data.ID)),
 		NodePtrSlice:      mapPtrSlice(data.NodePtrSlice, fromGroupLink),
 		NodePtrSlicePtr:   mapPtrSlicePtr(data.NodePtrSlicePtr, fromGroupLink),
 		Other:             data.Other,

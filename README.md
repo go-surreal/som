@@ -90,7 +90,7 @@ language itself. For further information, please refer to the
 - [ ] Choose proper licensing for the project. (#11)
 - [ ] Provide `WithInfo` method.
 - [ ] Support (deeply) nested slices? (needed?)
-- [ ] `db.User.CreateWithID(customID, model)`
+- [ ] Add query `where.User.Equal(userModel)`? Prevent clash by appending `_` where necessary?
 
 ### After v0.1.0
 

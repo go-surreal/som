@@ -330,13 +330,68 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			// TODO: maybe add an option to the generator: "strict" vs. "non-strict" mode (regarding custom IDs)?
-			jen.Id("key").Op(":=").Lit(node.NameDatabase()),
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Op("!=").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
 				Block(
-					jen.Id("key").Op("+=").
-						Lit(":").Op("+").Lit("⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩"),
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("creating node with preset ID not allowed, use CreateWithID for that"))),
 				),
+
+			jen.Id("key").Op(":=").Lit(node.NameDatabase()),
+			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Op("*").Id(node.NameGoLower())),
+
+			jen.Add(onCreatedAt),
+			jen.Add(onUpdatedAt),
+
+			jen.Id("raw").Op(",").Err().Op(":=").
+				Id("n").Dot("client").Dot("db").Dot("Create").
+				Call(jen.Id("key"), jen.Id("data")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
+
+			jen.If(
+				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
+					Id("raw").Op(".").Call(jen.Index().Any()),
+				jen.Op("!").Id("ok"),
+			).Block(
+				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
+			),
+
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
+				Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
+
+			jen.Op("*").Id(node.NameGoLower()).Op("=").
+				Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).
+				Call(jen.Id("convNode")),
+
+			jen.Return(jen.Nil()),
+		)
+
+	f.Func().
+		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
+		Id("CreateWithID").
+		Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("id").String(), // TODO: name clash if node/model is named "id"!
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).
+		Error().
+		Block(
+			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+				),
+
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("creating node with preset ID not allowed, use CreateWithID for that"))),
+				),
+
+			jen.Id("key").Op(":=").Lit(node.NameDatabase()+":").Op("+").
+				Lit("⟨").Op("+").Id("id").Op("+").Lit("⟩"),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Op("*").Id(node.NameGoLower())),
 
 			jen.Add(onCreatedAt),
@@ -426,7 +481,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Op("==").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
 				),
@@ -437,7 +492,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Update").
-				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩"), jen.Id("data")),
+				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
 			),
@@ -471,7 +526,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.List(jen.Id("_"), jen.Err()).Op(":=").
 				Id("n").Dot("client").Dot("db").Dot("Delete").
-				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Op("+").Lit("⟩")),
+				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
 			),

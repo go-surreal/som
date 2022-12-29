@@ -311,8 +311,8 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 				}
 
 				if _, ok := elem.(*field.NodeTable); ok {
-					d[jen.Id("Node")] = jen.Qual(def.PkgSom, "Node").Values(
-						jen.Id("ID").Op(":").Id("parseDatabaseID").Call(
+					d[jen.Id("Node")] = jen.Qual(def.PkgSom, "NewNode").Call(
+						jen.Id("parseDatabaseID").Call(
 							jen.Lit(elem.NameDatabase()),
 							jen.Id("data").Dot("ID"),
 						),
@@ -320,8 +320,8 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 				}
 
 				if _, ok := elem.(*field.EdgeTable); ok {
-					d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "Edge").Values(
-						jen.Id("ID").Op(":").Id("parseDatabaseID").Call(
+					d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "NewEdge").Call(
+						jen.Id("parseDatabaseID").Call(
 							jen.Lit(elem.NameDatabase()),
 							jen.Id("data").Dot("ID"),
 						),

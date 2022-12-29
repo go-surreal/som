@@ -19,7 +19,7 @@ func FromMemberOf(data model.MemberOf) MemberOf {
 }
 func ToMemberOf(data MemberOf) model.MemberOf {
 	return model.MemberOf{
-		Edge:       som.Edge{ID: parseDatabaseID("member_of", data.ID)},
+		Edge:       som.NewEdge(parseDatabaseID("member_of", data.ID)),
 		Meta:       toMemberOfMeta(data.Meta),
 		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}

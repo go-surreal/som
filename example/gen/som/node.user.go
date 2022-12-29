@@ -27,10 +27,36 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	key := "user"
-	if user.ID != "" {
-		key += ":" + "⟨" + user.ID + "⟩"
+	if user.ID() != "" {
+		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
 	}
+	key := "user"
+	data := conv.FromUser(*user)
+	data.CreatedAt = time.Now()
+	data.UpdatedAt = data.CreatedAt
+	raw, err := n.client.db.Create(key, data)
+	if err != nil {
+		return err
+	}
+	if _, ok := raw.([]any); !ok {
+		raw = []any{raw} // temporary fix
+	}
+	var convNode conv.User
+	err = surrealdbgo.Unmarshal(raw, &convNode)
+	if err != nil {
+		return err
+	}
+	*user = conv.ToUser(convNode)
+	return nil
+}
+func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) error {
+	if user == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if user.ID() != "" {
+		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
+	}
+	key := "user:" + "⟨" + id + "⟩"
 	data := conv.FromUser(*user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
@@ -72,12 +98,12 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if user.ID == "" {
+	if user.ID() == "" {
 		return errors.New("cannot update User without existing record ID")
 	}
 	data := conv.FromUser(*user)
 	data.UpdatedAt = time.Now()
-	raw, err := n.client.db.Update("user:⟨"+user.ID+"⟩", data)
+	raw, err := n.client.db.Update("user:⟨"+user.ID()+"⟩", data)
 	if err != nil {
 		return err
 	}
@@ -93,7 +119,7 @@ func (n *user) Delete(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.client.db.Delete("user:⟨" + user.ID + "⟩")
+	_, err := n.client.db.Delete("user:⟨" + user.ID() + "⟩")
 	if err != nil {
 		return err
 	}

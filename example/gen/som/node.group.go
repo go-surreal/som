@@ -27,10 +27,36 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	key := "group"
-	if group.ID != "" {
-		key += ":" + "⟨" + group.ID + "⟩"
+	if group.ID() != "" {
+		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
 	}
+	key := "group"
+	data := conv.FromGroup(*group)
+	data.CreatedAt = time.Now()
+	data.UpdatedAt = data.CreatedAt
+	raw, err := n.client.db.Create(key, data)
+	if err != nil {
+		return err
+	}
+	if _, ok := raw.([]any); !ok {
+		raw = []any{raw} // temporary fix
+	}
+	var convNode conv.Group
+	err = surrealdbgo.Unmarshal(raw, &convNode)
+	if err != nil {
+		return err
+	}
+	*group = conv.ToGroup(convNode)
+	return nil
+}
+func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group) error {
+	if group == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if group.ID() != "" {
+		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
+	}
+	key := "group:" + "⟨" + id + "⟩"
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
@@ -72,12 +98,12 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if group.ID == "" {
+	if group.ID() == "" {
 		return errors.New("cannot update Group without existing record ID")
 	}
 	data := conv.FromGroup(*group)
 	data.UpdatedAt = time.Now()
-	raw, err := n.client.db.Update("group:⟨"+group.ID+"⟩", data)
+	raw, err := n.client.db.Update("group:⟨"+group.ID()+"⟩", data)
 	if err != nil {
 		return err
 	}
@@ -93,7 +119,7 @@ func (n *group) Delete(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.client.db.Delete("group:⟨" + group.ID + "⟩")
+	_, err := n.client.db.Delete("group:⟨" + group.ID() + "⟩")
 	if err != nil {
 		return err
 	}
