@@ -77,7 +77,7 @@ func (n user[T]) Roles() *filter.Slice[T, model.Role] {
 	return filter.NewSlice[T, model.Role](n.key.Dot("roles"), nil)
 }
 func (n user[T]) MyGroups(filters ...filter.Of[model.MemberOf]) memberOfIn[T] {
-	return newMemberOfIn[T](n.key.In(""), filters)
+	return newMemberOfIn[T](n.key.In("member_of", filters))
 }
 func (n user[T]) StructPtr() someStruct[T] {
 	return newSomeStruct[T](n.key.Dot("struct_ptr"))

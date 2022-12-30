@@ -9,9 +9,13 @@ type Where interface {
 	where()
 }
 
+type KeyPart struct{}
+
+type Key []KeyPart
+
 type Predicate struct {
 	Op      Operator
-	Key     string
+	Key     Key
 	Close   int
 	Val     any
 	IsCount bool

@@ -87,10 +87,12 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 					Params(jen.Id(element.table.NameGoLower() + "In").Index(jen.Id("T"))).
 					Block(
 						jen.Return(
-							jen.Id("new"+element.table.NameGo()+"In").Index(jen.Id("T")).
+							jen.Id("new" + element.table.NameGo() + "In").Index(jen.Id("T")).
 								Call(
-									jen.Id("n").Dot("key").Dot("In").Call(jen.Lit(element.NameDatabase())),
-									jen.Id("filters"),
+									jen.Id("n").Dot("key").Dot("In").Call(
+										jen.Lit(element.table.NameDatabase()),
+										jen.Id("filters"),
+									),
 								),
 						),
 					)
@@ -106,10 +108,12 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 					Params(jen.Id(element.table.NameGoLower() + "Out").Index(jen.Id("T"))).
 					Block(
 						jen.Return(
-							jen.Id("new"+element.table.NameGo()+"Out").Index(jen.Id("T")).
+							jen.Id("new" + element.table.NameGo() + "Out").Index(jen.Id("T")).
 								Call(
-									jen.Id("n").Dot("key").Dot("Out").Call(jen.Lit(element.NameDatabase())),
-									jen.Id("filters"),
+									jen.Id("n").Dot("key").Dot("Out").Call(
+										jen.Lit(element.table.NameDatabase()),
+										jen.Id("filters"),
+									),
 								),
 						),
 					)

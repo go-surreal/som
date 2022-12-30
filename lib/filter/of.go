@@ -9,7 +9,15 @@ type Of[T any] struct {
 }
 
 func build[R any](key Key, op builder.Operator, val any, isCount bool) Of[R] {
-	return Of[R]{&builder.Predicate{Op: op, Key: key.key, Val: val, Close: key.close, IsCount: isCount}}
+	return Of[R]{
+		&builder.Predicate{
+			Op:      op,
+			Key:     key.key,
+			Val:     val,
+			Close:   key.close,
+			IsCount: isCount,
+		},
+	}
 }
 
 func All[R any](filters []Of[R]) Of[R] {

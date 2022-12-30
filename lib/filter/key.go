@@ -1,49 +1,53 @@
 package filter
 
-type Key struct {
-	key   string
-	open  bool
-	close int
+type KeyPart interface{}
+
+type KeyField struct {
+	name string
 }
+
+type KeyNode struct {
+	name    string
+	filters []Of[any]
+}
+
+type KeyEdge struct {
+	name      string
+	direction string
+	filters   []Of[any]
+}
+
+type Key []KeyPart
 
 func NewKey() Key {
 	return Key{}
 }
 
-func (k Key) Dot(field string) Key {
-	if k.key == "" {
-		k.key = field
-	} else if k.open {
-		k.key += " WHERE " + field
-		k.close += 1
-		k.open = false
-	} else {
-		k.key += "." + field
-	}
-	return k
+func (k Key) Field(name string) Key {
+	return append(k, KeyField{
+		name: name,
+	})
 }
 
-func (k Key) In(elem string) Key {
-	if k.open {
-		k.key += ")"
-		k.open = false
-	}
-	k.key += "->(" + elem
-	k.open = true
-	return k
+func (k Key) Node(name string, filters []Of[any]) Key {
+	return append(k, KeyNode{
+		name:    name,
+		filters: filters,
+	})
 }
 
-func (k Key) Out(elem string) Key {
-	if k.open {
-		k.key += ")"
-		k.open = false
-	}
-	k.key += "<-(" + elem
-	k.open = true
-	return k
+func (k Key) EdgeIn(name string, filters []Of[any]) Key {
+	return append(k, KeyEdge{
+		name:      name,
+		direction: "->",
+		filters:   filters,
+	})
 }
 
-func (k Key) Sub(field string) Key {
-	k.key += " WHERE " + field
-	return k
+func (k Key) EdgeOut(name string, filters []Of[any]) Key {
+	return append(k, KeyEdge{
+		name:      name,
+		direction: "<-",
+		filters:   filters,
+	})
 }

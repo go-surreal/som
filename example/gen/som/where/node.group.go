@@ -31,5 +31,5 @@ type groupSlice[T any] struct {
 }
 
 func (n group[T]) Members(filters ...filter.Of[model.MemberOf]) memberOfOut[T] {
-	return newMemberOfOut[T](n.key.Out(""), filters)
+	return newMemberOfOut[T](n.key.Out("member_of", filters))
 }
