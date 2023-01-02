@@ -21,7 +21,10 @@ func (f *UUID) typeConv() jen.Code {
 }
 
 func (f *UUID) TypeDatabase() string {
-	return "string"
+	if f.source.Pointer() {
+		return "string"
+	}
+	return "string ASSERT $value != NULL" // TODO: assert for uuid? (currently fails for unknown reason!)
 }
 
 func (f *UUID) CodeGen() *CodeGen {

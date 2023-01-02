@@ -22,7 +22,10 @@ func (f *Enum) typeConv() jen.Code {
 }
 
 func (f *Enum) TypeDatabase() string {
-	return "string"
+	if f.source.Pointer() {
+		return "string"
+	}
+	return "string ASSERT $value != NULL" // TODO: assert defined values
 }
 
 func (f *Enum) CodeGen() *CodeGen {

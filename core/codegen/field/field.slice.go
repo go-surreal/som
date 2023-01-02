@@ -26,7 +26,10 @@ func (f *Slice) TypeDatabase() string {
 		return ""
 	}
 
-	return "array"
+	if f.source.Pointer() {
+		return "array"
+	}
+	return "array ASSERT $value != NULL"
 }
 
 func (f *Slice) Element() Field {
