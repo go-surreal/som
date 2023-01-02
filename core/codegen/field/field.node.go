@@ -22,10 +22,7 @@ func (f *Node) typeConv() jen.Code {
 }
 
 func (f *Node) TypeDatabase() string {
-	if f.source.Pointer() {
-		return fmt.Sprintf("record(%s)", f.table.NameDatabase())
-	}
-	return fmt.Sprintf("record(%s) ASSERT $value != NULL", f.table.NameDatabase()) // TODO: how does it behave with empty struct?
+	return fmt.Sprintf("record(%s)", f.table.NameDatabase())
 }
 
 func (f *Node) Table() *NodeTable {

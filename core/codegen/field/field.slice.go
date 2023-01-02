@@ -196,7 +196,10 @@ func (f *Slice) convFrom(ctx Context) jen.Code {
 
 	default:
 		{
-			return jen.Id("data").Dot(f.NameGo())
+			if f.source.Pointer() {
+				return jen.Id("data").Dot(f.NameGo())
+			}
+			return jen.Id("slice").Call(jen.Id("data").Dot(f.NameGo()))
 		}
 
 	}

@@ -99,8 +99,15 @@ func parseUUID(val string) uuid.UUID {
 	return res
 }
 	
+func slice[T any](s []T) []T {
+	if s == nil {
+		return make([]T, 0)
+	}
+	return s
+}
+	
 func mapSlice[I, O any](in []I, fn func(I) O) []O {
-	var out []O
+	out := make([]O, len(in))
 	for _, i := range in {
 		out = append(out, fn(i))
 	}
@@ -124,7 +131,7 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
 func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
  	ptrFn := ptrFunc(fn)
 
- 	var out []*O
+	out := make([]*O, len(in))
  	for _, i := range in {
  		out = append(out, ptrFn(i))
  	}
@@ -139,7 +146,7 @@ func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
 	
 	ptrFn := ptrFunc(fn)
 	
-	var out []*O
+	out := make([]*O, len(*in))
 	for _, i := range *in {
 		out = append(out, ptrFn(i))
 	}
