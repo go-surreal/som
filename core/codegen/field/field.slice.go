@@ -26,10 +26,9 @@ func (f *Slice) TypeDatabase() string {
 		return ""
 	}
 
-	if f.source.Pointer() {
-		return "array"
-	}
-	return "array ASSERT $value != NULL"
+	// Note: No "ASSERT $value != NULL" used here,
+	// because the zero value of a slice is nil.
+	return "array"
 }
 
 func (f *Slice) Element() Field {
@@ -196,10 +195,7 @@ func (f *Slice) convFrom(ctx Context) jen.Code {
 
 	default:
 		{
-			if f.source.Pointer() {
-				return jen.Id("data").Dot(f.NameGo())
-			}
-			return jen.Id("slice").Call(jen.Id("data").Dot(f.NameGo()))
+			return jen.Id("data").Dot(f.NameGo())
 		}
 
 	}

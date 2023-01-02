@@ -3,7 +3,9 @@ package example
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	sombase "github.com/marcbinz/som"
 	"github.com/marcbinz/som/example/gen/som"
 	"github.com/marcbinz/som/example/gen/som/where"
 	"github.com/marcbinz/som/example/model"
@@ -74,7 +76,7 @@ func TestWithDatabase(t *testing.T) {
 		},
 	)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	defer func() {
@@ -85,40 +87,50 @@ func TestWithDatabase(t *testing.T) {
 
 	endpoint, err := surreal.Endpoint(ctx, "")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	defer client.Close()
 
 	if err := client.ApplySchema(); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	str := "Some User"
 
-	err = client.User().Create(ctx, &model.User{
+	userNew := model.User{
 		String: str,
-	})
-	if err != nil {
-		t.Error(err)
 	}
 
-	user, err := client.User().Query().
+	userIn := userNew
+
+	err = client.User().Create(ctx, &userIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userOut, err := client.User().Query().
 		Filter(
+			where.User.ID.Equal(userIn.ID()),
 			where.User.String.Equal(str),
 		).
 		First()
 
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
-	assert.Equal(t, str, user.String)
+	assert.Equal(t, str, userOut.String)
+
+	assert.DeepEqual(t,
+		userNew, *userOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+	)
 }
 
 func FuzzWithDatabase(f *testing.F) {
