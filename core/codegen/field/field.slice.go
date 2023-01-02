@@ -26,6 +26,8 @@ func (f *Slice) TypeDatabase() string {
 		return ""
 	}
 
+	// Note: No "ASSERT $value != NULL" used here,
+	// because the zero value of a slice is nil.
 	return "array"
 }
 

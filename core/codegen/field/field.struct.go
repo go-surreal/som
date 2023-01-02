@@ -21,7 +21,10 @@ func (f *Struct) typeConv() jen.Code {
 }
 
 func (f *Struct) TypeDatabase() string {
-	return "object" // TODO: sub-fields!
+	if f.source.Pointer() {
+		return "object"
+	}
+	return "object ASSERT $value != NULL"
 }
 
 func (f *Struct) Table() Table {

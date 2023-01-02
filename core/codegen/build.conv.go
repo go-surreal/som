@@ -81,7 +81,7 @@ func parseTime(val any) time.Time {
 	}
 	return res
 }
-	
+
 func uuidPtr(val *uuid.UUID) *string {
 	if val == nil {
 		return nil
@@ -98,15 +98,19 @@ func parseUUID(val string) uuid.UUID {
 	}
 	return res
 }
-	
+
 func mapSlice[I, O any](in []I, fn func(I) O) []O {
-	var out []O
+	if in == nil {
+		return nil
+	}
+
+	out := make([]O, len(in))
 	for _, i := range in {
 		out = append(out, fn(i))
 	}
 	return out
 }
-	
+
 func mapEnum[I, O ~string](in I) O {
  	return O(in)
 }
@@ -120,30 +124,34 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
  		return &out
  	}
 }
-	
+
 func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
+	if in == nil {
+		return nil
+	}
+
  	ptrFn := ptrFunc(fn)
 
- 	var out []*O
+	out := make([]*O, len(in))
  	for _, i := range in {
  		out = append(out, ptrFn(i))
  	}
 
  	return out
 }
-	
+
 func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
 	if in == nil {
 		return nil
 	}
-	
+
 	ptrFn := ptrFunc(fn)
-	
-	var out []*O
+
+	out := make([]*O, len(*in))
 	for _, i := range *in {
 		out = append(out, ptrFn(i))
 	}
-	
+
 	return &out
 }
 `
