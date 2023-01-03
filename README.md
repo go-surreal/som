@@ -63,38 +63,33 @@ language itself. For further information, please refer to the
 
 ### Features
 
-- Fully type-safe surrealdb access via generated code.
+- Fully type-safe SurrealDB access via generated code.
 - Supports most atomic go types: `string`, `int`, `int32`, `int64`, `float32`, `float64`, `bool`
   - Coming soon: `byte`, `[]byte`, `rune`, `uint` ...
-- Supports slice values of all atomic types
-- Supports pointer fields
+- Supports slice values of all atomic types.
+- Supports pointer fields.
 - Supports complex types `time.Time` (standard lib) and `uuid.UUID` (google)
   - Maybe future: support any external type with custom encoders and decoders?
+- Supports record links (references to other nodes/models).
+- Supports graph connections (edges) between nodes/models.
 
 ## Roadmap
 
 ### Before v0.1.0 (first "somewhat stable" non-pre-release)
 
-- [ ] Setup golangci-lint with proper config. (#7)
-- [ ] Consider reserved (query) keywords. (#18)
-- [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
-- [ ] Choose proper licensing for the project. (#11)
+- [ ] Implement sub-queries for node and edge types.
 - [ ] Add `som.SoftDelete` type with `DeletedAt` timestamp and automated handling throughout som.
-- [ ] Implement sub-queries.
-- [x] Initial implementation.
-- [x] Rename project to "som". (#27)
-- [x] Add basic GitHub workflow for PR. (#6)
-- [x] Add support for pointer fields. (#19)
-- [x] Add support for edge (graph) connections. (#20)
-- [x] Fix query variable index `rune` not suited for > 26 due to invalid char as variable key.
+- [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
+- [ ] Consider reserved (query) keywords. (#18)
+- [ ] Check for possible security vulnerabilities.
+- [ ] Choose proper licensing for the project. (#11)
 
 ### After v0.1.0
 
-- [ ] Add query `where.User.Equal(userModel)`? Prevent clash by appending `_` where necessary?
 - [ ] Provide `WithInfo` method.
-- [ ] Support (deeply) nested slices? (needed?)
-- [ ] How to handle data migrations? (#22)
 - [ ] Add support for `[]byte` (and `byte`?) type.
+- [ ] How to handle data migrations? (#22)
+- [ ] Setup golangci-lint with proper config. (#7)
 - [ ] Cleanup naming conventions. (#24)
 - [ ] Code comments and documentation. (#9)
 - [ ] Write tests. (#8)
@@ -104,15 +99,15 @@ language itself. For further information, please refer to the
 - [ ] Add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser).
 - [ ] Support transactions.
 - [ ] Distinct results (https://stackoverflow.com/questions/74326176/surrealdb-equivalent-of-select-distinct).
-- [x] Make query builder not use pointers, so partial builds and usages are working?
-- [x] Add "Describe" as query output to get a full description of a generated query. (#17)
+- [ ] Integrate external APIs (GraphQL) into the db access layer?
+- [ ] Support (deeply) nested slices? (needed?)
 
-### Nice to have (v0.x.x)
+### Nice to have (v0.x.x)?
 
 - [ ] Add new data type "password" with automatic handling of encryption with salt. (#16)
 - [ ] Add data type "email" as alias for string that adds database assertion.
+  - Or provide an API to add custom assertions for types (especially string).
 - [ ] Add performance benchmarks (and possible optimizations due to it).
-- [ ] Integrate external APIs (GraphQL) into the db access layer?
 
 ## How to contribute
 
@@ -138,11 +133,22 @@ language itself. For further information, please refer to the
 
 ## FAQ
 
+*Disclaimer: Currently those are just questions I asked myself and wanted an answer before the initial public release.
+In the future this section will be advanced by topics raised in issues or discussions.*
+
 ### Why are maps not supported?
 
 - With the schemaless database this would be possible.
 - Currently, the focus is on structured and deterministic data.
 - Might be added in the future though.
+
+### Why does a filter like `where.User.Equal(userModel)` not exist?
+
+- This would be an ambiguous case. Should it compare the whole object with all properties or only the ID?
+- For this case it is better and more deterministic to just compare the ID explicitly.
+- If - for whatever reason - it is required to check the fields, adding those filters one by one makes the purpose of the query clearer.
+- Furthermore, we would need to find a way to circumvent a naming clash when the field of a model is named `Equal` (or other keywords).
+- On the other hand, this feature is still open for debate. So if anyone can clarify the need for it, we might as well implement it at some point.
 
 ## Maintainers & Contributors
 

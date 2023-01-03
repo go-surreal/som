@@ -102,7 +102,7 @@ func Parse(dir string) (*Output, error) {
 				res.EnumValues = append(res.EnumValues, &EnumValue{
 					Enum:     v.Declaration().Name(),
 					Variable: v.Name(),
-					Value:    v.Value(),
+					Value:    strings.Trim(v.Value(), "\""),
 				})
 				continue
 			}

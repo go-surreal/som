@@ -10,7 +10,6 @@ type Def struct {
 	Nodes   []*NodeTable
 	Edges   []*EdgeTable
 	Objects []*DatabaseObject
-	Enums   []*DatabaseEnum
 }
 
 func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
@@ -78,14 +77,6 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		def.Objects = append(def.Objects, dbObject)
 	}
 
-	for _, enum := range source.Enums {
-		dbEnum := &DatabaseEnum{
-			Name: enum.Name,
-		}
-
-		def.Enums = append(def.Enums, dbEnum)
-	}
-
 	return &def, nil
 }
 
@@ -144,10 +135,18 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 
 	case *parser.FieldEnum:
 		{
+			var values []string
+			for _, val := range source.EnumValues {
+				if val.Enum == f.Typ {
+					values = append(values, val.Value)
+				}
+			}
+
 			return &Enum{
 				baseField: base,
 				source:    f,
-				model:     Model(f.Typ),
+				model:     EnumModel(f.Typ),
+				values:    values,
 			}, true
 		}
 

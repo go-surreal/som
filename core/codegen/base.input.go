@@ -13,7 +13,6 @@ type input struct {
 	nodes         []*field.NodeTable
 	edges         []*field.EdgeTable
 	objects       []*field.DatabaseObject
-	enums         []*field.DatabaseEnum
 }
 
 func newInput(source *parser.Output) (*input, error) {
@@ -62,7 +61,6 @@ func newInput(source *parser.Output) (*input, error) {
 	in.nodes = def.Nodes
 	in.edges = def.Edges
 	in.objects = def.Objects
-	in.enums = def.Enums
 
 	return &in, nil
 }
