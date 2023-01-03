@@ -3,6 +3,7 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
 	"os"
 	"path"
@@ -80,7 +81,7 @@ func parseTime(val any) time.Time {
 	}
 	return res
 }
-	
+
 func uuidPtr(val *uuid.UUID) *string {
 	if val == nil {
 		return nil
@@ -97,15 +98,19 @@ func parseUUID(val string) uuid.UUID {
 	}
 	return res
 }
-	
+
 func mapSlice[I, O any](in []I, fn func(I) O) []O {
-	var out []O
+	if in == nil {
+		return nil
+	}
+
+	out := make([]O, len(in))
 	for _, i := range in {
 		out = append(out, fn(i))
 	}
 	return out
 }
-	
+
 func mapEnum[I, O ~string](in I) O {
  	return O(in)
 }
@@ -119,30 +124,34 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
  		return &out
  	}
 }
-	
+
 func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
+	if in == nil {
+		return nil
+	}
+
  	ptrFn := ptrFunc(fn)
 
- 	var out []*O
+	out := make([]*O, len(in))
  	for _, i := range in {
  		out = append(out, ptrFn(i))
  	}
 
  	return out
 }
-	
+
 func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
 	if in == nil {
 		return nil
 	}
-	
+
 	ptrFn := ptrFunc(fn)
-	
-	var out []*O
+
+	out := make([]*O, len(*in))
 	for _, i := range *in {
 		out = append(out, ptrFn(i))
 	}
-	
+
 	return &out
 }
 `
@@ -260,6 +269,12 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 		Block(
 			jen.Return(jen.Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
+					if elem.HasTimestamps() {
+						if f.NameGo() == "CreatedAt" || f.NameGo() == "UpdatedAt" {
+							continue
+						}
+					}
+
 					if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
 					}
@@ -292,9 +307,40 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 		Block(
 			jen.Return(jen.Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
+					if elem.HasTimestamps() {
+						if f.NameGo() == "CreatedAt" || f.NameGo() == "UpdatedAt" {
+							continue
+						}
+					}
+
 					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
 					}
+				}
+
+				if _, ok := elem.(*field.NodeTable); ok {
+					d[jen.Id("Node")] = jen.Qual(def.PkgSom, "NewNode").Call(
+						jen.Id("parseDatabaseID").Call(
+							jen.Lit(elem.NameDatabase()),
+							jen.Id("data").Dot("ID"),
+						),
+					)
+				}
+
+				if _, ok := elem.(*field.EdgeTable); ok {
+					d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "NewEdge").Call(
+						jen.Id("parseDatabaseID").Call(
+							jen.Lit(elem.NameDatabase()),
+							jen.Id("data").Dot("ID"),
+						),
+					)
+				}
+
+				if elem.HasTimestamps() {
+					d[jen.Id("Timestamps")] = jen.Qual(def.PkgSom, "NewTimestamps").Call(
+						jen.Id("data").Dot("CreatedAt"),
+						jen.Id("data").Dot("UpdatedAt"),
+					)
 				}
 			}))))
 }

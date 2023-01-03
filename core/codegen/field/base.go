@@ -6,11 +6,6 @@ import (
 	"github.com/marcbinz/som/core/parser"
 )
 
-const (
-	funcBuildDatabaseID = "buildDatabaseID"
-	funcParseDatabaseID = "parseDatabaseID"
-)
-
 // type Edge struct {
 // 	Name   string
 // 	In     Field
@@ -43,6 +38,7 @@ type Element interface {
 
 	FileName() string
 	GetFields() []Field
+	HasTimestamps() bool
 }
 
 type Table interface {
@@ -52,17 +48,17 @@ type Table interface {
 	GetFields() []Field
 }
 
-type Model string // TODO: just use table instead?
+type EnumModel string
 
-func (m Model) NameGo() string {
+func (m EnumModel) NameGo() string {
 	return string(m)
 }
 
-func (m Model) NameGoLower() string {
+func (m EnumModel) NameGoLower() string {
 	return strcase.ToLowerCamel(string(m))
 }
 
-func (m Model) NameDatabase() string {
+func (m EnumModel) NameDatabase() string {
 	return strcase.ToSnake(string(m)) // TODO
 }
 

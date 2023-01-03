@@ -33,12 +33,18 @@ func (f *Numeric) typeConv() jen.Code {
 }
 
 func (f *Numeric) TypeDatabase() string {
+	assert := ""
+	if !f.source.Pointer() {
+		assert = " ASSERT $value != NULL"
+	}
+
 	switch f.source.Type {
 	case parser.NumberInt, parser.NumberInt32, parser.NumberInt64:
-		return "int"
+		return "int" + assert
 	case parser.NumberFloat32, parser.NumberFloat64:
-		return "float"
+		return "float" + assert
 	}
+
 	return ""
 }
 

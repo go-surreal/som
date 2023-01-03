@@ -7,11 +7,8 @@ import (
 )
 
 type User struct {
-	som.Node `surrealdb:"user"`
-	ID       string
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	som.Node
+	som.Timestamps
 
 	String  string
 	Int     int
@@ -82,9 +79,9 @@ const (
 )
 
 type Group struct {
-	som.Node `surrealdb:"group"`
+	som.Node
+	som.Timestamps
 
-	ID   string
 	Name string
 
 	Members []MemberOf
@@ -100,10 +97,7 @@ func (g *Group) GetMembers() []User {
 
 type MemberOf struct {
 	som.Edge
-
-	ID        string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	som.Timestamps
 
 	User  User  `som:"in"`
 	Group Group `som:"out"`

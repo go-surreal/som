@@ -21,7 +21,10 @@ func (f *String) typeConv() jen.Code {
 }
 
 func (f *String) TypeDatabase() string {
-	return "string"
+	if f.source.Pointer() {
+		return "string"
+	}
+	return "string ASSERT $value != NULL"
 }
 
 func (f *String) CodeGen() *CodeGen {

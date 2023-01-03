@@ -50,56 +50,68 @@ func Parse(dir string) (*Output, error) {
 	for i := 0; i < nc; i++ {
 		v := n.Child(i)
 
-		if !ast.IsExported(v.Name()) {
-			continue
-		}
+		switch {
 
-		if isNode(v) {
-			node, err := parseNode(v)
-			if err != nil {
-				return nil, err
+		case !ast.IsExported(v.Name()):
+			{
+				continue
 			}
-			res.Nodes = append(res.Nodes, node)
-			continue
-		}
 
-		if isEdge(v) {
-			edge, err := parseEdge(v)
-			if err != nil {
-				return nil, err
+		case isNode(v):
+			{
+				node, err := parseNode(v)
+				if err != nil {
+					return nil, err
+				}
+				res.Nodes = append(res.Nodes, node)
+				continue
 			}
-			res.Edges = append(res.Edges, edge)
-			continue
-		}
 
-		if v.Kind() == gotype.Struct {
-			// TODO: prevent external structs!
-
-			str, err := parseStruct(v)
-			if err != nil {
-				return nil, err
+		case isEdge(v):
+			{
+				edge, err := parseEdge(v)
+				if err != nil {
+					return nil, err
+				}
+				res.Edges = append(res.Edges, edge)
+				continue
 			}
-			res.Structs = append(res.Structs, str)
-			continue
-		}
 
-		if v.Kind() == gotype.String && v.PkgPath() == packagePath {
-			res.Enums = append(res.Enums, &Enum{
-				Name: v.Name(),
-			})
-			continue
-		}
+		case v.Kind() == gotype.Struct:
+			{
+				// TODO: prevent external structs!
 
-		if v.Kind() == gotype.Declaration {
-			res.EnumValues = append(res.EnumValues, &EnumValue{
-				Enum:     v.Declaration().Name(),
-				Variable: v.Name(),
-				Value:    v.Value(),
-			})
-			continue
-		}
+				str, err := parseStruct(v)
+				if err != nil {
+					return nil, err
+				}
+				res.Structs = append(res.Structs, str)
+				continue
+			}
 
-		fmt.Println("ignoring:", v)
+		case v.Kind() == gotype.String && v.PkgPath() == packagePath:
+			{
+				res.Enums = append(res.Enums, &Enum{
+					Name: v.Name(),
+				})
+				continue
+			}
+
+		case v.Kind() == gotype.Declaration:
+			{
+				res.EnumValues = append(res.EnumValues, &EnumValue{
+					Enum:     v.Declaration().Name(),
+					Variable: v.Name(),
+					Value:    strings.Trim(v.Value(), "\""),
+				})
+				continue
+			}
+
+		default:
+			{
+				fmt.Println("ignoring:", v)
+			}
+		}
 	}
 
 	return res, nil
@@ -159,16 +171,37 @@ func parseNode(v gotype.Type) (*Node, error) {
 	for i := 0; i < nf; i++ {
 		f := v.Field(i)
 
-		if i == 0 {
-			// TODO: better detect the "Node" field...
+		if !ast.IsExported(f.Name()) {
 			continue
 		}
 
-		// TODO: ignore unexported fields?!
+		if f.IsAnonymous() {
+			if f.Elem().PkgPath() != packagePath {
+				return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
+			}
 
-		// prevent ID from not being a string type
-		if f.Name() == "ID" && f.Elem().Kind() != gotype.String {
-			return nil, fmt.Errorf("field ID of model %s must be a string", v.Name())
+			if f.Name() == "Node" {
+				node.Fields = append(node.Fields,
+					&FieldID{&fieldAtomic{"ID", false}},
+				)
+				continue
+			}
+
+			if f.Name() == "Timestamps" {
+				node.Timestamps = true
+				node.Fields = append(node.Fields,
+					&FieldTime{&fieldAtomic{"CreatedAt", false}},
+					&FieldTime{&fieldAtomic{"UpdatedAt", false}},
+				)
+				continue
+			}
+
+			return nil, fmt.Errorf("model %s: unexpected anonymous field %s", v.Name(), f.Name())
+		}
+
+		// prevent custom ID field
+		if strings.ToLower(f.Name()) == "id" {
+			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Node", v.Name())
 		}
 
 		field, err := parseField(f)
@@ -190,16 +223,37 @@ func parseEdge(v gotype.Type) (*Edge, error) {
 	for i := 0; i < nf; i++ {
 		f := v.Field(i)
 
-		if i == 0 {
-			// TODO: better detect the "Edge" field...
+		if !ast.IsExported(f.Name()) {
 			continue
 		}
 
-		// TODO: ignore unexported fields?!
+		if f.IsAnonymous() {
+			if f.Elem().PkgPath() != packagePath {
+				return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
+			}
 
-		// prevent ID from not being a string type
-		if f.Name() == "ID" && f.Elem().Kind() != gotype.String {
-			return nil, fmt.Errorf("field ID of model %s must be a string", v.Name())
+			if f.Name() == "Edge" {
+				edge.Fields = append(edge.Fields,
+					&FieldID{&fieldAtomic{"ID", false}},
+				)
+				continue
+			}
+
+			if f.Name() == "Timestamps" {
+				edge.Timestamps = true
+				edge.Fields = append(edge.Fields,
+					&FieldTime{&fieldAtomic{"CreatedAt", false}},
+					&FieldTime{&fieldAtomic{"UpdatedAt", false}},
+				)
+				continue
+			}
+
+			return nil, fmt.Errorf("model %s: unexpected anonymous field %s", v.Name(), f.Name())
+		}
+
+		// prevent custom ID field
+		if strings.ToLower(f.Name()) == "id" {
+			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Edge", v.Name())
 		}
 
 		field, err := parseField(f)
@@ -243,85 +297,117 @@ func parseStruct(v gotype.Type) (*Struct, error) {
 }
 
 func parseField(t gotype.Type) (Field, error) {
-	var field Field
-
 	atomic := &fieldAtomic{
 		name:    t.Name(),
 		pointer: false,
 	}
 
 	switch t.Elem().Kind() {
+
 	case gotype.String:
-		if t.Name() == "ID" {
-			field = &FieldID{atomic}
-		} else if isEnum(t.Elem()) {
-			field = &FieldEnum{atomic, t.Elem().Name()}
-		} else {
-			field = &FieldString{atomic}
+		{
+			switch {
+			case isEnum(t.Elem()):
+				{
+					return &FieldEnum{atomic, t.Elem().Name()}, nil
+				}
+			default:
+				{
+					return &FieldString{atomic}, nil
+				}
+			}
 		}
+
 	case gotype.Int:
-		field = &FieldNumeric{atomic, NumberInt}
+		{
+			return &FieldNumeric{atomic, NumberInt}, nil
+		}
+
 	case gotype.Int32:
-		field = &FieldNumeric{atomic, NumberInt32}
+		{
+			return &FieldNumeric{atomic, NumberInt32}, nil
+		}
+
 	case gotype.Int64:
-		field = &FieldNumeric{atomic, NumberInt64}
+		{
+			return &FieldNumeric{atomic, NumberInt64}, nil
+		}
+
 	case gotype.Float32:
-		field = &FieldNumeric{atomic, NumberFloat32}
+		{
+			return &FieldNumeric{atomic, NumberFloat32}, nil
+		}
+
 	case gotype.Float64:
-		field = &FieldNumeric{atomic, NumberFloat64}
+		{
+			return &FieldNumeric{atomic, NumberFloat64}, nil
+		}
+
 	case gotype.Bool:
-		field = &FieldBool{atomic}
+		{
+			return &FieldBool{atomic}, nil
+		}
+
 	case gotype.Struct:
-		// TODO: prevent structs (or general types) from another package (except time and uuid)!
-		if t.Elem().PkgPath() == "time" {
-			field = &FieldTime{atomic}
-		} else if isNode(t.Elem()) {
-			field = &FieldNode{atomic, t.Elem().Name()}
-		} else if isEdge(t.Elem()) {
-			field = &FieldEdge{atomic, t.Elem().Name()}
-		} else {
-			field = &FieldStruct{atomic, t.Elem().Name()}
+		{
+			// TODO: prevent structs (or general types) from another package (except time and uuid)!
+			switch {
+			case t.Elem().PkgPath() == "time":
+				{
+					return &FieldTime{atomic}, nil
+				}
+			case isNode(t.Elem()):
+				{
+					return &FieldNode{atomic, t.Elem().Name()}, nil
+				}
+			case isEdge(t.Elem()):
+				{
+					return &FieldEdge{atomic, t.Elem().Name()}, nil
+				}
+			default:
+				{
+					return &FieldStruct{atomic, t.Elem().Name()}, nil
+				}
+			}
 		}
+
 	case gotype.Slice:
-		subField, err := parseField(t.Elem())
-		if err != nil {
-			return nil, err
+		{
+			field, err := parseField(t.Elem())
+			if err != nil {
+				return nil, err
+			}
+
+			return &FieldSlice{
+				&fieldAtomic{name: t.Name()},
+				field,
+			}, nil
 		}
-		field = &FieldSlice{
-			&fieldAtomic{name: t.Name()},
-			// t.Elem().Elem().Name(),
-			subField,
-			// isNode(t.Elem().Elem()),
-			// isEdge(t.Elem().Elem()),
-			// isEnum(t.Elem().Elem()),
-		}
-	// case gotype.Map:
-	// 	field = FieldMap{fieldAtomic{Name: t.Name()}, t.Elem().Key().Name(), t.Elem().Elem().Name()}
+
 	case gotype.Array:
-		if t.Elem().PkgPath() == "github.com/google/uuid" {
-			field = &FieldUUID{&fieldAtomic{name: t.Name()}}
+		{
+			if t.Elem().PkgPath() == "github.com/google/uuid" {
+				return &FieldUUID{&fieldAtomic{name: t.Name()}}, nil
+			}
 		}
 
 	case gotype.Ptr:
 		{
-			ptrField, err := parseField(t.Elem())
+			field, err := parseField(t.Elem())
 			if err != nil {
 				return nil, fmt.Errorf("could not parse elem for ptr field %s: %v", t.Name(), err)
 			}
 
 			if t.Name() != "" {
-				ptrField.setName(t.Name())
+				field.setName(t.Name())
 			}
-			ptrField.setPointer(true)
+			field.setPointer(true)
 
-			field = ptrField
+			return field, nil
 		}
-
-	default:
-		return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), t.Elem().Kind())
 	}
 
-	return field, nil
+	return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), t.Elem().Kind())
 }
 
 type Output struct {

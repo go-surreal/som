@@ -35,7 +35,7 @@ func (f *ID) CodeGen() *CodeGen {
 		sortFunc:   nil,
 
 		convFrom: nil, // the ID field must not be passed as field
-		convTo:   f.convTo,
+		convTo:   nil, // handled directly, because it is so special ;)
 		fieldDef: f.fieldDef,
 	}
 }
@@ -56,13 +56,6 @@ func (f *ID) sortDefine(ctx Context) jen.Code {
 func (f *ID) sortInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLibSort, "NewSort").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *ID) convTo(ctx Context) jen.Code {
-	return jen.Id(funcParseDatabaseID).Call(
-		jen.Lit(ctx.Table.NameDatabase()),
-		jen.Id("data").Dot(f.NameGo()),
-	)
 }
 
 func (f *ID) fieldDef(ctx Context) jen.Code {

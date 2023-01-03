@@ -3,6 +3,7 @@ package conv
 
 import (
 	"encoding/json"
+	som "github.com/marcbinz/som"
 	model "github.com/marcbinz/som/example/model"
 	"strings"
 	"time"
@@ -48,7 +49,6 @@ func FromUser(data model.User) User {
 	return User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
-		CreatedAt:         data.CreatedAt,
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[model.Role, string])),
 		Float32:           data.Float32,
 		Float64:           data.Float64,
@@ -75,7 +75,6 @@ func FromUser(data model.User) User {
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
 		TimePtr:           data.TimePtr,
 		UUID:              data.UUID.String(),
-		UpdatedAt:         data.UpdatedAt,
 		UuidPtr:           uuidPtr(data.UuidPtr),
 	}
 }
@@ -83,12 +82,10 @@ func ToUser(data User) model.User {
 	return model.User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
-		CreatedAt:         data.CreatedAt,
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[string, model.Role])),
 		Float32:           data.Float32,
 		Float64:           data.Float64,
 		Groups:            mapSlice(data.Groups, fromGroupLink),
-		ID:                parseDatabaseID("user", data.ID),
 		Int:               data.Int,
 		Int32:             data.Int32,
 		Int64:             data.Int64,
@@ -97,6 +94,7 @@ func ToUser(data User) model.User {
 		MainGroup:         fromGroupLink(data.MainGroup),
 		More:              data.More,
 		MyGroups:          mapSlice(data.MyGroups, ToMemberOf),
+		Node:              som.NewNode(parseDatabaseID("user", data.ID)),
 		NodePtrSlice:      mapPtrSlice(data.NodePtrSlice, fromGroupLink),
 		NodePtrSlicePtr:   mapPtrSlicePtr(data.NodePtrSlicePtr, fromGroupLink),
 		Other:             data.Other,
@@ -111,8 +109,8 @@ func ToUser(data User) model.User {
 		StructPtrSlice:    mapPtrSlice(data.StructPtrSlice, toSomeStruct),
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
 		TimePtr:           data.TimePtr,
+		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		UUID:              parseUUID(data.UUID),
-		UpdatedAt:         data.UpdatedAt,
 		UuidPtr:           ptrFunc(parseUUID)(data.UuidPtr),
 	}
 }

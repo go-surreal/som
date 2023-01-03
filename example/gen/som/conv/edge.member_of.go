@@ -2,6 +2,7 @@
 package conv
 
 import (
+	som "github.com/marcbinz/som"
 	model "github.com/marcbinz/som/example/model"
 	"time"
 )
@@ -14,17 +15,12 @@ type MemberOf struct {
 }
 
 func FromMemberOf(data model.MemberOf) MemberOf {
-	return MemberOf{
-		CreatedAt: data.CreatedAt,
-		Meta:      fromMemberOfMeta(data.Meta),
-		UpdatedAt: data.UpdatedAt,
-	}
+	return MemberOf{Meta: fromMemberOfMeta(data.Meta)}
 }
 func ToMemberOf(data MemberOf) model.MemberOf {
 	return model.MemberOf{
-		CreatedAt: data.CreatedAt,
-		ID:        parseDatabaseID("member_of", data.ID),
-		Meta:      toMemberOfMeta(data.Meta),
-		UpdatedAt: data.UpdatedAt,
+		Edge:       som.NewEdge(parseDatabaseID("member_of", data.ID)),
+		Meta:       toMemberOfMeta(data.Meta),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }

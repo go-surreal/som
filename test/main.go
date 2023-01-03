@@ -8,7 +8,6 @@ import (
 	"github.com/marcbinz/som/example/gen/som/where"
 	"github.com/marcbinz/som/example/model"
 	"log"
-	"time"
 )
 
 func main() {
@@ -42,11 +41,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("group:", group.ID, group.Name)
+	fmt.Println("group:", group.ID(), group.Name, group.CreatedAt())
 
 	user := &model.User{
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
 		String:    "Marc",
 		MainGroup: *group,
 	}
@@ -56,12 +53,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("user:", user.ID, user.String)
+	fmt.Println("user:", user.ID(), user.String, user.CreatedAt(), user.UpdatedAt().IsZero())
 
 	edge := &model.MemberOf{
-		CreatedAt: time.Now(),
-		User:      *user,
-		Group:     *group,
+		User:  *user,
+		Group: *group,
 		Meta: model.MemberOfMeta{
 			IsAdmin: true,
 		},
@@ -72,34 +68,34 @@ func main() {
 		log.Fatal(err)
 	}
 
-	user, ok, err := db.User().Read(ctx, user.ID)
+	user, ok, err := db.User().Read(ctx, user.ID())
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if !ok {
-		log.Fatal("could not find user with id:", user.ID)
+		log.Fatal("could not find user with id:", user.ID())
 	}
 
 	// fmt.Println("relation:", edge.ID)
 	// fmt.Println("user:", edge.User.ID)
 	// fmt.Println("group:", edge.Group.ID)
 
-	fmt.Println("old user uuid:", user.UUID, user.ID)
+	fmt.Println("old user uuid:", user.UUID, user.ID(), user.UpdatedAt())
 
 	user.UUID = uuid.New()
 
 	value := "some value"
 	user.StringPtr = &value
 
-	fmt.Println("new user uuid:", user.UUID, user.ID)
+	fmt.Println("new user uuid:", user.UUID, user.ID())
 
 	err = db.User().Update(ctx, user)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("updated user uuid:", user.UUID, user.ID)
+	fmt.Println("updated user uuid:", user.UUID, user.ID(), user.UpdatedAt())
 
 	query := db.User().Query().
 		Filter(
@@ -142,7 +138,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("deleted user:", user.ID)
+	fmt.Println("deleted user:", user.ID())
 
 	//
 	// user2, err := userRepo.FindById(ctx, user.ID)
