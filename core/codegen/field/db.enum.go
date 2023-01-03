@@ -1,5 +1,6 @@
 package field
 
-type DatabaseEnum struct {
-	Name string
+type databaseEnum struct {
+	Name   string
+	Values []string
 }

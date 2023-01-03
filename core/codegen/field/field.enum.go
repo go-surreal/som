@@ -1,16 +1,19 @@
 package field
 
 import (
+	"encoding/json"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
+	"sort"
 )
 
 type Enum struct {
 	*baseField
 
 	source *parser.FieldEnum
-	model  Model
+	model  EnumModel
+	values []string
 }
 
 func (f *Enum) typeGo() jen.Code {
@@ -22,10 +25,15 @@ func (f *Enum) typeConv() jen.Code {
 }
 
 func (f *Enum) TypeDatabase() string {
+	sort.Strings(f.values)
+	valuesRaw, _ := json.Marshal(f.values)
+	values := string(valuesRaw)
+
 	if f.source.Pointer() {
-		return "string"
+		return "string ASSERT $value == NULL OR $value INSIDE " + values
 	}
-	return "string ASSERT $value != NULL" // TODO: assert defined values
+
+	return "string ASSERT $value INSIDE " + values
 }
 
 func (f *Enum) CodeGen() *CodeGen {
