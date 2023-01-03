@@ -5,6 +5,7 @@ import (
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
+	"golang.org/x/exp/slices"
 	"sort"
 )
 
@@ -25,6 +26,10 @@ func (f *Enum) typeConv() jen.Code {
 }
 
 func (f *Enum) TypeDatabase() string {
+	if !slices.Contains(f.values, "") {
+		f.values = append(f.values, "") // TODO: add warning to output?!
+	}
+
 	sort.Strings(f.values)
 	valuesRaw, _ := json.Marshal(f.values)
 	values := string(valuesRaw)

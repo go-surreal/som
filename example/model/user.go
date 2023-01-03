@@ -74,9 +74,8 @@ type SomeStruct struct {
 type Role som.Enum
 
 const (
-	RoleDefault Role = ""
-	RoleUser    Role = "user"
-	RoleAdmin   Role = "admin"
+	RoleUser  Role = "user"
+	RoleAdmin Role = "admin"
 )
 
 type Group struct {
