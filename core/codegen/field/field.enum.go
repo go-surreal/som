@@ -1,16 +1,20 @@
 package field
 
 import (
+	"encoding/json"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
+	"golang.org/x/exp/slices"
+	"sort"
 )
 
 type Enum struct {
 	*baseField
 
 	source *parser.FieldEnum
-	model  Model
+	model  EnumModel
+	values []string
 }
 
 func (f *Enum) typeGo() jen.Code {
@@ -22,10 +26,19 @@ func (f *Enum) typeConv() jen.Code {
 }
 
 func (f *Enum) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "string"
+	if !slices.Contains(f.values, "") {
+		f.values = append(f.values, "") // TODO: add warning to output?!
 	}
-	return "string ASSERT $value != NULL" // TODO: assert defined values
+
+	sort.Strings(f.values)
+	valuesRaw, _ := json.Marshal(f.values)
+	values := string(valuesRaw)
+
+	if f.source.Pointer() {
+		return "string ASSERT $value == NULL OR $value INSIDE " + values
+	}
+
+	return "string ASSERT $value INSIDE " + values
 }
 
 func (f *Enum) CodeGen() *CodeGen {

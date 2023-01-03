@@ -48,17 +48,17 @@ type Table interface {
 	GetFields() []Field
 }
 
-type Model string // TODO: just use table instead?
+type EnumModel string
 
-func (m Model) NameGo() string {
+func (m EnumModel) NameGo() string {
 	return string(m)
 }
 
-func (m Model) NameGoLower() string {
+func (m EnumModel) NameGoLower() string {
 	return strcase.ToLowerCamel(string(m))
 }
 
-func (m Model) NameDatabase() string {
+func (m EnumModel) NameDatabase() string {
 	return strcase.ToSnake(string(m)) // TODO
 }
 
