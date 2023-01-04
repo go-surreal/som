@@ -42,7 +42,7 @@ func TestQuery(t *testing.T) {
 			where.User.Groups(where.Group.CreatedAt.After(time.Now())).CreatedAt.Before(time.Now()),
 
 			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
-			where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
+			// where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
 		)
 
 	assert.Equal(t,

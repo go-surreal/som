@@ -52,7 +52,7 @@ func (f *Node) filterFunc(ctx Context) jen.Code {
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
-				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))))
+				Params(jen.Id("n").Dot("key").Dot("Field").Call(jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Node) sortFunc(ctx Context) jen.Code {

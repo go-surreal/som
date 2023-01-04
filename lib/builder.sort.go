@@ -1,21 +1,21 @@
-package builder
+package lib
 
-type Sort struct {
+type SortBuilder struct {
 	Field     string
 	Order     SortOrder
 	IsCollate bool
 	IsNumeric bool
 }
 
-func (s *Sort) render() string {
-	out := s.Field + " "
-	if s.IsCollate {
+func (b *SortBuilder) render() string {
+	out := b.Field + " "
+	if b.IsCollate {
 		out += "COLLATE "
 	}
-	if s.IsNumeric {
+	if b.IsNumeric {
 		out += "NUMERIC "
 	}
-	return out + string(s.Order)
+	return out + string(b.Order)
 }
 
 type SortOrder string

@@ -51,7 +51,7 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
-				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))))
+				Params(jen.Id("n").Dot("key").Dot("Field").Call(jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Edge) sortFunc(ctx Context) jen.Code {

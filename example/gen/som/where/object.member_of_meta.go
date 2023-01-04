@@ -3,23 +3,23 @@ package where
 
 import (
 	model "github.com/marcbinz/som/example/model"
-	filter "github.com/marcbinz/som/lib/filter"
+	lib "github.com/marcbinz/som/lib"
 )
 
-func newMemberOfMeta[T any](key filter.Key) memberOfMeta[T] {
+func newMemberOfMeta[T any](key lib.Key) memberOfMeta[T] {
 	return memberOfMeta[T]{
-		IsActive: filter.NewBool[T](key.Dot("is_active")),
-		IsAdmin:  filter.NewBool[T](key.Dot("is_admin")),
+		IsActive: lib.NewBool[T](key.Field("is_active")),
+		IsAdmin:  lib.NewBool[T](key.Field("is_admin")),
 		key:      key,
 	}
 }
 
 type memberOfMeta[T any] struct {
-	key      filter.Key
-	IsAdmin  *filter.Bool[T]
-	IsActive *filter.Bool[T]
+	key      lib.Key
+	IsAdmin  *lib.Bool[T]
+	IsActive *lib.Bool[T]
 }
 type memberOfMetaSlice[T any] struct {
 	memberOfMeta[T]
-	*filter.Slice[T, model.MemberOfMeta]
+	*lib.Slice[T, model.MemberOfMeta]
 }

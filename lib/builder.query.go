@@ -1,10 +1,12 @@
-package builder
+package lib
 
 import (
 	"strconv"
 	"strings"
 	"time"
 )
+
+type Where func(*context) string
 
 type context struct {
 	varIndex int
@@ -24,7 +26,7 @@ type Query struct {
 	fields     string
 	groupBy    string
 	Where      []Where
-	Sort       []*Sort
+	Sort       []*SortBuilder
 	SortRandom bool
 	Fetch      []string
 	Offset     int
@@ -74,7 +76,7 @@ func (q Query) BuildAsCount() *Result {
 func (q Query) render() string {
 	out := "SELECT " + q.fields + " FROM " + q.node + " "
 
-	whereStatement := WhereAll{Where: q.Where}.render(&q.context)
+	whereStatement := All(q.Where)(&q.context)
 	if whereStatement != "" {
 		out += "WHERE " + whereStatement + " "
 	}
