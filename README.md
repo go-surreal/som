@@ -31,6 +31,8 @@ in the database, without the use of complicated JOINs and without bringing the d
 
 ## Getting started
 
+*Please note: This package is currently tested against version `1.0.0-beta.8` of SurrealDB.*
+
 ### Basic usage
 
 Generate the client code:
@@ -83,6 +85,7 @@ language itself. For further information, please refer to the
 - [ ] Consider reserved (query) keywords. (#18)
 - [ ] Check for possible security vulnerabilities.
 - [ ] Choose proper licensing for the project. (#11)
+- [ ] Decimal vs Float vs Number type?
 
 ### After v0.1.0
 
