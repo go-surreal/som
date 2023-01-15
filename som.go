@@ -6,17 +6,21 @@ import (
 
 // type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
-type Node struct {
+type Node interface {
+	ID() string
+}
+
+type node struct {
 	id string
 }
 
 func NewNode(id string) Node {
-	return Node{
+	return node{
 		id: id,
 	}
 }
 
-func (n Node) ID() string {
+func (n node) ID() string {
 	return n.id
 }
 
