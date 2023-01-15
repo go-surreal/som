@@ -23,13 +23,14 @@ replace (
 
 require (
 	github.com/dave/jennifer v1.6.0
+	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/surrealdb/surrealdb.go v0.1.2-0.20221019092700-845266102715
 	github.com/testcontainers/testcontainers-go v0.17.0
 	github.com/urfave/cli/v2 v2.23.7
 	github.com/wzshiming/gotype v0.7.3
-	golang.org/x/exp v0.0.0-20221230185412-738e83a70c30
+	golang.org/x/exp v0.0.0-20230113213754-f9f960f08ad4
 	golang.org/x/mod v0.7.0
 	gotest.tools v2.2.0+incompatible
 )
@@ -46,7 +47,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
