@@ -102,6 +102,7 @@ language itself. For further information, please refer to the
 - [ ] Distinct results (https://stackoverflow.com/questions/74326176/surrealdb-equivalent-of-select-distinct).
 - [ ] Integrate external APIs (GraphQL) into the db access layer?
 - [ ] Support (deeply) nested slices? (needed?)
+- [ ] Unique relations (`DEFINE INDEX __som_unique_relation ON TABLE member_of COLUMNS in, out UNIQUE;`)
 
 ### Nice to have (v0.x.x)?
 
@@ -109,6 +110,24 @@ language itself. For further information, please refer to the
 - [ ] Add data type "email" as alias for string that adds database assertion.
   - Or provide an API to add custom assertions for types (especially string).
 - [ ] Add performance benchmarks (and possible optimizations due to it).
+
+```sql
+DEFINE TABLE user SCHEMAFULL 
+        PERMISSIONS NONE;
+DEFINE FIELD username ON TABLE user
+        TYPE string
+        ASSERT string::length($value) >= 4
+        ASSERT string::length($value) <= 8;
+DEFINE FIELD password ON TABLE user
+        PERMISSIONS
+                FOR SELECT NONE
+        TYPE string;
+DEFINE FIELD email ON TABLE user
+        TYPE string
+        ASSERT is::email($value);
+DEFINE FIELD num ON TABLE user
+        VALUE 42;
+```
 
 ## How to contribute
 
