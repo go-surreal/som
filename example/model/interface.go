@@ -9,6 +9,7 @@ type Shape interface {
 	typeShape()
 }
 
+// https://stackoverflow.com/questions/28033277/decoding-generic-json-objects-to-one-of-many-formats
 var _ Shape = &Square{}
 var _ Shape = &Triangle{}
 var _ Shape = &Circle{}
