@@ -1,10 +1,31 @@
+<br>
 
-[![go 1.19.4](https://img.shields.io/badge/go-1.19.4-informational)](https://go.dev/doc/devel/release)
-[![PR](https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg)](https://github.com/marcbinz/som/actions/workflows/pull_request.yml)
+<div align="center">
+    <h1>SOM</h1>
+    <h3>SurrealDB object mapper & query builder</h3>
+</div>
 
-# som
+<hr />
 
-A type-safe database access layer based on code generation for [SurrealDB](https://surrealdb.com).
+<br>
+
+<p align="center">
+  <a href="https://go.dev/doc/devel/release">
+    <img src="https://img.shields.io/badge/go-1.19.5-informational"> 
+  </a>
+  <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
+    <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg">
+  </a>
+  <a href="https://discord.gg/exaQDX2">
+    <img src="https://img.shields.io/discord/414532188722298881">
+  </a>
+  <img src="https://img.shields.io/github/contributors/marcbinz/som">
+</p>
+
+SOM (SurrealDB object mapper) is an ORM and query builder for [SurrealDB](https://surrealdb.com/) with built-in model
+mapping and type-safe query operation generator. It provides an easy and sophisticated database access layer.
+
+## What is SurrealDB?
 
 SurrealDB is a relatively new database approach.
 It provides a SQL-style query language with real-time queries and highly-efficient related data retrieval.
@@ -15,7 +36,7 @@ Records (or vertices) can be connected to one another with edges, each with its 
 Simple extensions to traditional SQL queries allow for multi-table, multi-depth document retrieval, efficiently 
 in the database, without the use of complicated JOINs and without bringing the data down to the client.
 
-(Information extracted from the [official homepage]((https://surrealdb.com)))
+*(Information extracted from the [official homepage]((https://surrealdb.com)))*
 
 ## Table of contents
 
@@ -30,6 +51,15 @@ in the database, without the use of complicated JOINs and without bringing the d
 * [References](#references)
 
 ## Getting started
+
+### Notice
+
+Som is in the stage of early development. When using it for production applications, please note that there might
+still be a few bugs to be caught. Furthermore, it may lack specific features and edge cases you might expect from 
+a fully-featured ORM and query builder library. Feel free to submit feature requests or pull requests to add 
+additional functionality to Som. We do ask you to please read our [Contributor Guide](CONTRIBUTING.md).
+
+While we try to prevent making any significant API changes, we can and will not guarantee this.
 
 ### Basic usage
 
@@ -75,41 +105,8 @@ language itself. For further information, please refer to the
 
 ## Roadmap
 
-### Before v0.1.0 (first "somewhat stable" non-pre-release)
-
-- [ ] Implement sub-queries for node and edge types.
-- [ ] Add `som.SoftDelete` type with `DeletedAt` timestamp and automated handling throughout som.
-- [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
-- [ ] Consider reserved (query) keywords. (#18)
-- [ ] Check for possible security vulnerabilities.
-- [ ] Choose proper licensing for the project. (#11)
-
-### After v0.1.0
-
-- [ ] Provide `WithInfo` method.
-- [ ] Add support for `[]byte` (and `byte`?) type.
-- [ ] How to handle data migrations? (#22)
-- [ ] Setup golangci-lint with proper config. (#7)
-- [ ] Support (deeply) nested slices? (needed?)
-- [ ] Cleanup naming conventions. (#24)
-- [ ] Code comments and documentation. (#9)
-- [ ] Write tests. (#8)
-- [ ] Generate `sommock` package for easy mocking of the underlying database client.
-- [ ] Make casing of database field names configurable.
-- [ ] Switch the source code parser to support generics.
-- [ ] Add `som.Edge[I, O any]` for defining edges more clearly and without tags (requires generics parser).
-- [ ] Support transactions.
-- [ ] Distinct results (https://stackoverflow.com/questions/74326176/surrealdb-equivalent-of-select-distinct).
-- [ ] Integrate external APIs (GraphQL) into the db access layer?
-- [ ] Support (deeply) nested slices? (needed?)
-- [ ] Unique relations (`DEFINE INDEX __som_unique_relation ON TABLE member_of COLUMNS in, out UNIQUE;`)
-
-### Nice to have (v0.x.x)?
-
-- [ ] Add new data type "password" with automatic handling of encryption with salt. (#16)
-- [ ] Add data type "email" as alias for string that adds database assertion.
-  - Or provide an API to add custom assertions for types (especially string).
-- [ ] Add performance benchmarks (and possible optimizations due to it).
+You can find the official roadmap [here](ROADMAP.md). As this might not always be the full
+list of all planned changes, please take a look at the issue section on GitHub as well.
 
 ```sql
 DEFINE TABLE user SCHEMAFULL 
