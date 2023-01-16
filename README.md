@@ -1,13 +1,11 @@
 <br>
 
 <div align="center">
-    <h1>SOM</h1>
+    <img width="400px" src=".github/branding/logo.png" alt="logo">
     <h3>SurrealDB object mapper & query builder</h3>
 </div>
 
 <hr />
-
-<br>
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
@@ -16,8 +14,8 @@
   <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
     <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg">
   </a>
-  <a href="https://discord.gg/exaQDX2">
-    <img src="https://img.shields.io/discord/414532188722298881">
+  <a href="https://discord.gg/surrealdb">
+    <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6">
   </a>
   <img src="https://img.shields.io/github/contributors/marcbinz/som">
 </p>
@@ -178,3 +176,5 @@ In the future this section will be advanced by topics raised in issues or discus
 - https://github.com/d-tsuji/awesome-go-orms
 - https://github.com/doug-martin/goqu
 - https://github.com/sharovik/orm
+- https://github.com/StarlaneStudios/cirql
+- 
