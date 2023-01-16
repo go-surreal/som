@@ -2,7 +2,7 @@
 
 <div align="center">
     <img width="400px" src=".github/branding/logo.png" alt="logo">
-    <h3>SurrealDB object mapper & query builder</h3>
+    <h3>SOM - A SurrealDB object mapper & query builder for Go</h3>
 </div>
 
 <hr />
