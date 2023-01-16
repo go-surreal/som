@@ -106,24 +106,6 @@ language itself. For further information, please refer to the
 You can find the official roadmap [here](ROADMAP.md). As this might not always be the full
 list of all planned changes, please take a look at the issue section on GitHub as well.
 
-```sql
-DEFINE TABLE user SCHEMAFULL 
-        PERMISSIONS NONE;
-DEFINE FIELD username ON TABLE user
-        TYPE string
-        ASSERT string::length($value) >= 4
-        ASSERT string::length($value) <= 8;
-DEFINE FIELD password ON TABLE user
-        PERMISSIONS
-                FOR SELECT NONE
-        TYPE string;
-DEFINE FIELD email ON TABLE user
-        TYPE string
-        ASSERT is::email($value);
-DEFINE FIELD num ON TABLE user
-        VALUE 42;
-```
-
 ## How to contribute
 
 ### Forking
@@ -177,4 +159,3 @@ In the future this section will be advanced by topics raised in issues or discus
 - https://github.com/doug-martin/goqu
 - https://github.com/sharovik/orm
 - https://github.com/StarlaneStudios/cirql
-- 

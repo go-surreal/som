@@ -35,3 +35,21 @@
 - [ ] Add data type "email" as alias for string that adds database assertion.
     - Or provide an API to add custom assertions for types (especially string).
 - [ ] Add performance benchmarks (and possible optimizations due to it).
+
+```sql
+DEFINE TABLE user SCHEMAFULL 
+        PERMISSIONS NONE;
+DEFINE FIELD username ON TABLE user
+        TYPE string
+        ASSERT string::length($value) >= 4
+        ASSERT string::length($value) <= 8;
+DEFINE FIELD password ON TABLE user
+        PERMISSIONS
+                FOR SELECT NONE
+        TYPE string;
+DEFINE FIELD email ON TABLE user
+        TYPE string
+        ASSERT is::email($value);
+DEFINE FIELD num ON TABLE user
+        VALUE 42;
+```

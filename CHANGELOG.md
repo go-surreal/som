@@ -2,31 +2,40 @@
 
 ## 0.1.0 - First public release
 
-- Fixed delete operations failing
-- Delete, relate, and let queries now return `Promise<undefined>`
-    - This makes the typings for arrays returned by chaning more accurate
+tbd.
 
 ## 0.0.5
 
-- Added support for stateless queries
-    - Use the new `CirqlStateless` class
-    - Same API as the main stateful `Cirql` class
-- Added query function for LET statement
-- Added query function for IF ELSE statement
-- Refactored authentication
-    - Now supports scope, namespace, database, and token authentication
-- Refactored AND & OR behavior
-    - Now allows for more combinations than before
+tbd.
 
 ## 0.0.4
-- Allow array add and remove in update queries
+
+- Added automatic timestamps (create/update)
+- Made query builder object reusable (pass-by-value instead of pass-by-ref)
+- Providing a separate "create with ID" method
+- Fix for query variable index
+- Basic query description method
 
 ## 0.0.3
-- Added support for query writers
-- Added retry functionality
+
+- Code generator refactoring
+- Support for pointer fields
+- Custom record IDs
+- Generated database schema with apply method
+- Added testing with test-containers
+- Dependency updates
+- Minor fixes
 
 ## 0.0.2
-- Refactored some functions
 
-## 0.0.1
-- Basic functionality only
+- Introduced conventional commits spec
+- CI workflow updates
+- Dependency updates
+- Minor fixes
+
+## 0.0.1 - First "working" draft
+
+- Basic Repository & CI setup
+- Parser and code generator
+- Basic CRUD & query builder
+- Basic graph edge support
