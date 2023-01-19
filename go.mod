@@ -7,7 +7,7 @@ go 1.19
 replace (
 	github.com/docker/cli => github.com/docker/cli v20.10.3-0.20221013132413-1d6c6e2367e2+incompatible // 22.06 master branch
 	github.com/docker/docker => github.com/docker/docker v20.10.3-0.20221013203545-33ab36d6b304+incompatible // 22.06 branch
-	github.com/moby/buildkit => github.com/moby/buildkit v0.10.6 // same as buildx
+	github.com/moby/buildkit => github.com/moby/buildkit v0.11.1 // same as buildx
 
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.4 // Can be removed on next bump of containerd to > 1.6.4
 
@@ -16,9 +16,9 @@ replace (
 	// version needed.
 	// See https://github.com/docker/buildx/pull/948 for details.
 	// https://github.com/docker/buildx/blob/v0.8.1/go.mod#L62-L64
-	k8s.io/api => k8s.io/api v0.26.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.26.0
-	k8s.io/client-go => k8s.io/client-go v0.26.0
+	k8s.io/api => k8s.io/api v0.26.1
+	k8s.io/apimachinery => k8s.io/apimachinery v0.26.1
+	k8s.io/client-go => k8s.io/client-go v0.26.1
 )
 
 require (
