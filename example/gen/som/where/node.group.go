@@ -6,30 +6,30 @@ import (
 	lib "github.com/marcbinz/som/lib"
 )
 
-var Group = newGroup[model.Group](lib.NewKey())
+var Group = newGroup[model.Group](lib.NewKey[model.Group]())
 
-func newGroup[T any](key lib.Key) group[T] {
+func newGroup[T any](key lib.Key[T]) group[T] {
 	return group[T]{
-		CreatedAt: lib.NewTime[T](key.Field("created_at")),
-		ID:        lib.NewID[T](key.Field("id"), "group"),
-		Name:      lib.NewString[T](key.Field("name")),
-		UpdatedAt: lib.NewTime[T](key.Field("updated_at")),
+		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
+		ID:        lib.NewID[T](lib.Field(key, "id"), "group"),
+		Name:      lib.NewString[T](lib.Field(key, "name")),
+		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
 		key:       key,
 	}
 }
 
 type group[T any] struct {
-	key       lib.Key
+	key       lib.Key[T]
 	ID        *lib.ID[T]
 	CreatedAt *lib.Time[T]
 	UpdatedAt *lib.Time[T]
 	Name      *lib.String[T]
 }
 type groupSlice[T any] struct {
-	group[T]
+	lib.Filter[T]
 	*lib.Slice[T, model.Group]
 }
 
 func (n group[T]) Members(filters ...lib.Filter[model.MemberOf]) memberOfOut[T] {
-	return newMemberOfOut[T](n.key.EdgeOut("member_of", lib.Filters(filters)))
+	return newMemberOfOut[T](lib.EdgeOut(n.key, "member_of", filters))
 }

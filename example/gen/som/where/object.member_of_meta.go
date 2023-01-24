@@ -6,20 +6,20 @@ import (
 	lib "github.com/marcbinz/som/lib"
 )
 
-func newMemberOfMeta[T any](key lib.Key) memberOfMeta[T] {
+func newMemberOfMeta[T any](key lib.Key[T]) memberOfMeta[T] {
 	return memberOfMeta[T]{
-		IsActive: lib.NewBool[T](key.Field("is_active")),
-		IsAdmin:  lib.NewBool[T](key.Field("is_admin")),
+		IsActive: lib.NewBool[T](lib.Field(key, "is_active")),
+		IsAdmin:  lib.NewBool[T](lib.Field(key, "is_admin")),
 		key:      key,
 	}
 }
 
 type memberOfMeta[T any] struct {
-	key      lib.Key
+	key      lib.Key[T]
 	IsAdmin  *lib.Bool[T]
 	IsActive *lib.Bool[T]
 }
 type memberOfMetaSlice[T any] struct {
-	memberOfMeta[T]
+	lib.Filter[T]
 	*lib.Slice[T, model.MemberOfMeta]
 }

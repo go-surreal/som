@@ -4,20 +4,20 @@
     <img width="400px" src=".github/branding/logo.png" alt="logo">
     <h3>SOM - A SurrealDB object mapper & query builder for Go</h3>
 </div>
-
+9
 <hr />
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.19.5-informational"> 
+    <img src="https://img.shields.io/badge/go-1.19.5-informational" alt="Go 1.19.5"> 
   </a>
   <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
-    <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg">
+    <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
   </a>
   <a href="https://discord.gg/surrealdb">
-    <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6">
+    <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord">
   </a>
-  <img src="https://img.shields.io/github/contributors/marcbinz/som">
+  <img src="https://img.shields.io/github/contributors/marcbinz/som" alt="Contributors">
 </p>
 
 SOM (SurrealDB object mapper) is an ORM and query builder for [SurrealDB](https://surrealdb.com/) with built-in model

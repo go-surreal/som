@@ -7,24 +7,24 @@ import (
 	lib "github.com/marcbinz/som/lib"
 )
 
-func newSomeStruct[T any](key lib.Key) someStruct[T] {
+func newSomeStruct[T any](key lib.Key[T]) someStruct[T] {
 	return someStruct[T]{
-		IntPtr:    lib.NewNumericPtr[*int, T](key.Field("int_ptr")),
-		StringPtr: lib.NewStringPtr[T](key.Field("string_ptr")),
-		TimePtr:   lib.NewTimePtr[T](key.Field("time_ptr")),
-		UuidPtr:   lib.NewBasePtr[uuid.UUID, T](key.Field("uuid_ptr")),
+		IntPtr:    lib.NewNumericPtr[*int, T](lib.Field(key, "int_ptr")),
+		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
+		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
+		UuidPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
 		key:       key,
 	}
 }
 
 type someStruct[T any] struct {
-	key       lib.Key
+	key       lib.Key[T]
 	StringPtr *lib.StringPtr[T]
 	IntPtr    *lib.NumericPtr[*int, T]
 	TimePtr   *lib.TimePtr[T]
 	UuidPtr   *lib.BasePtr[uuid.UUID, T]
 }
 type someStructSlice[T any] struct {
-	someStruct[T]
+	lib.Filter[T]
 	*lib.Slice[T, model.SomeStruct]
 }

@@ -14,19 +14,17 @@ import (
 
 type Group struct {
 	db    Database
-	query lib.Query
+	query lib.Query[model.Group]
 }
 
 func NewGroup(db Database) *Group {
 	return &Group{
 		db:    db,
-		query: lib.NewQuery("group"),
+		query: lib.NewQuery[model.Group]("group"),
 	}
 }
 func (q Group) Filter(filters ...lib.Filter[model.Group]) Group {
-	for _, f := range filters {
-		q.query.Where = append(q.query.Where, lib.Where(f))
-	}
+	q.query.Where = append(q.query.Where, filters...)
 	return q
 }
 func (q Group) Order(by ...*lib.Sort[model.Group]) Group {

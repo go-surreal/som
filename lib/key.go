@@ -8,35 +8,38 @@ type KeyPart interface {
 	render(ctx *context) string
 }
 
-type BaseKeyPart struct {
+type BaseKeyPart[T any] struct {
 	name      string
 	separator string
-	filters   []Filter[any]
+	filters   []Filter[T]
 }
 
-func (p BaseKeyPart) render(ctx *context) string {
-	if len(p.filters) < 1 {
-		return p.separator + p.name
+func (p BaseKeyPart[T]) render(ctx *context) string {
+	where := ""
+
+	if len(p.filters) > 0 {
+		var t T
+		where = "[WHERE " + All[T](p.filters).build(ctx, t) + "]"
 	}
 
-	return p.separator + "(" + p.name + " WHERE " + All(ToWhere(p.filters))(ctx) + ")"
+	return p.separator + p.name + where
 }
 
-type CountKeyPart struct {
-	key Key
+type CountKeyPart[T any] struct {
+	key Key[T]
 }
 
-func (p CountKeyPart) render(ctx *context) string {
+func (p CountKeyPart[T]) render(ctx *context) string {
 	return "count(" + strings.TrimPrefix(p.key.render(ctx), ".") + ")"
 }
 
-type Key []KeyPart
+type Key[T any] []KeyPart
 
-func NewKey() Key {
-	return Key{}
+func NewKey[T any]() Key[T] {
+	return Key[T]{}
 }
 
-func (k Key) render(ctx *context) string {
+func (k Key[T]) render(ctx *context) string {
 	var statement string
 
 	for _, part := range k {
@@ -46,46 +49,48 @@ func (k Key) render(ctx *context) string {
 	return statement
 }
 
-func (k Key) Field(name string) Key {
-	return append(k, BaseKeyPart{
+func Field[T any](k Key[T], name string) Key[T] {
+	return append(k, BaseKeyPart[T]{
 		name:      name,
 		separator: ".",
 	})
 }
 
-func (k Key) Node(name string, filters []Filter[any]) Key {
-	return append(k, BaseKeyPart{
+func Node[T, S any](k Key[T], name string, filters []Filter[S]) Key[T] {
+	return append(k, BaseKeyPart[S]{
 		name:      name,
 		separator: ".",
 		filters:   filters,
 	})
 }
 
-func (k Key) EdgeIn(name string, filters []Filter[any]) Key {
-	return append(k, BaseKeyPart{
+func EdgeIn[T, S any](k Key[T], name string, filters []Filter[S]) Key[T] {
+	return append(k, BaseKeyPart[S]{
 		name:      name,
 		separator: "->",
 		filters:   filters,
 	})
 }
 
-func (k Key) EdgeOut(name string, filters []Filter[any]) Key {
-	return append(k, BaseKeyPart{
+func EdgeOut[T, S any](key Key[T], name string, filters []Filter[S]) Key[T] {
+	return append(key, BaseKeyPart[S]{
 		name:      name,
 		separator: "<-",
 		filters:   filters,
 	})
 }
 
-func (k Key) Count() Key {
-	return Key{
-		CountKeyPart{key: k},
+func (k Key[T]) Count() Key[T] {
+	return Key[T]{
+		CountKeyPart[T]{key: k},
 	}
 }
 
-func (k Key) Op(op Operator, val any) Where {
-	return func(ctx *context) string {
-		statement := k.render(ctx) + " " + string(op) + " " + ctx.asVar(val)
-		return strings.TrimPrefix(statement, ".")
-	}
+func (k Key[T]) Op(op Operator, val any) Filter[T] {
+	return filter[T](
+		func(ctx *context, _ T) string {
+			statement := k.render(ctx) + " " + string(op) + " " + ctx.asVar(val)
+			return strings.TrimPrefix(statement, ".")
+		},
+	)
 }

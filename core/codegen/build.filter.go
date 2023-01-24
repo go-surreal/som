@@ -58,11 +58,11 @@ package where
 import "github.com/marcbinz/som/lib"
 
 func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
-	return lib.Filter[T](lib.All(lib.ToWhere(filters)))
+	return lib.All[T](filters)
 }
 
 func Any[T any](filters ...lib.Filter[T]) lib.Filter[T] {
-	return lib.Filter[T](lib.Any(lib.ToWhere(filters)))
+	return lib.Any[T](filters)
 }
 `
 
@@ -103,7 +103,7 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	if _, ok := elem.(*field.NodeTable); ok {
 		file.Var().Id(elem.NameGo()).Op("=").
 			Id("new" + elem.NameGo()).Types(b.SourceQual(elem.NameGo())).
-			Call(jen.Qual(def.PkgLib, "NewKey").Call())
+			Call(jen.Qual(def.PkgLib, "NewKey").Types(b.SourceQual(elem.NameGo())).Call())
 	}
 
 	file.Add(b.whereNew(elem))
@@ -111,7 +111,7 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	file.Type().Id(elem.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").Qual(def.PkgLib, "Key"))
+			g.Add(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")))
 			for _, f := range elem.GetFields() {
 				if code := f.CodeGen().FilterDefine(fieldCtx); code != nil {
 					g.Add(code)
@@ -122,7 +122,7 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	file.Type().Id(elem.NameGoLower()+"Slice").
 		Types(jen.Id("T").Any()).
 		Struct(
-			jen.Id(elem.NameGoLower()).Types(jen.Id("T")),
+			jen.Qual(def.PkgLib, "Filter").Types(jen.Id("T")),
 			jen.Op("*").Qual(def.PkgLib, "Slice").Types(jen.Id("T"), b.SourceQual(elem.NameGo())),
 		)
 
@@ -141,7 +141,7 @@ func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 
 	return jen.Func().Id("new" + elem.NameGo()).
 		Types(jen.Id("T").Any()).
-		Params(jen.Id("key").Qual(def.PkgLib, "Key")).
+		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
 		Id(elem.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(
@@ -166,7 +166,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 
 	file.Func().Id("new" + edge.NameGo() + "In").
 		Types(jen.Id("T").Any()).
-		Params(jen.Id("key").Qual(def.PkgLib, "Key")).
+		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
 		Id(edge.NameGoLower() + "In").Types(jen.Id("T")).
 		Block(
 			jen.Return(
@@ -193,18 +193,23 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 	// TODO: below! -> node.FilterFunc?
 	// if out, ok := edge.Out.(*field.Node); ok {
 	file.Func().
-		Params(jen.Id("i").Id(edge.NameGoLower() + "In").Types(jen.Id("T"))).
-		Id(edge.Out.NameGo()).Params().
+		Params(jen.Id("i").Id(edge.NameGoLower() + "In").Types(jen.Id("T"))).Id(edge.Out.NameGo()).
+		Params(
+			jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").Types(b.SourceQual(edge.Out.NameGo())),
+		).
 		Id(edge.Out.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + edge.Out.NameGo()).Types(jen.Id("T")).
-				Params(jen.Id("i").Dot("key").Dot("EdgeIn").
-					Call(jen.Lit(edge.Out.NameDatabase()), jen.Nil()))))
+				Params(jen.Qual(def.PkgLib, "EdgeIn").Call(
+					jen.Id("i").Dot("key"),
+					jen.Lit(edge.Out.NameDatabase()),
+					jen.Id("filters"),
+				))))
 	// }
 
 	file.Func().Id("new" + edge.NameGo() + "Out").
 		Types(jen.Id("T").Any()).
-		Params(jen.Id("key").Qual(def.PkgLib, "Key")).
+		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
 		Id(edge.NameGoLower() + "Out").Types(jen.Id("T")).
 		Block(
 			jen.Return(
@@ -231,19 +236,24 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 	// TODO: below! -> node.FilterFunc?
 	// if in, ok := edge.In.(*field.Node); ok {
 	file.Func().
-		Params(jen.Id("o").Id(edge.NameGoLower() + "Out").Types(jen.Id("T"))).
-		Id(edge.In.NameGo()).Params().
+		Params(jen.Id("o").Id(edge.NameGoLower() + "Out").Types(jen.Id("T"))).Id(edge.In.NameGo()).
+		Params(
+			jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").Types(b.SourceQual(edge.In.NameGo())),
+		).
 		Id(edge.In.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + edge.In.NameGo()).Types(jen.Id("T")).
-				Params(jen.Id("o").Dot("key").Dot("EdgeOut").
-					Call(jen.Lit(edge.In.NameDatabase()), jen.Nil()))))
+				Params(jen.Qual(def.PkgLib, "EdgeOut").Call(
+					jen.Id("o").Dot("key"),
+					jen.Lit(edge.In.NameDatabase()),
+					jen.Id("filters"),
+				))))
 	// }
 
 	file.Type().Id(edge.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").Qual(def.PkgLib, "Key"))
+			g.Add(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")))
 			for _, f := range edge.GetFields() {
 				if code := f.CodeGen().FilterDefine(fieldCtx); code != nil {
 					g.Add(code)

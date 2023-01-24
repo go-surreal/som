@@ -27,13 +27,14 @@ func main() {
 
 	query := db.User().Query().
 		Filter(
-			where.User.Groups(where.Group.ID.Equal("")).Name.Equal(""),
+			where.User.Groups(where.Group.ID.Equal(""), where.Group.Name.Equal("")),
+			where.Any(
+				where.User.ID.Equal(""),
+			),
 		).
 		Describe()
 
 	fmt.Println(query)
-
-	return
 
 	// if err := db.ApplySchema(); err != nil {
 	// 	log.Fatal(err)

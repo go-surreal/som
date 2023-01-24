@@ -46,7 +46,7 @@ func (f *ID) filterDefine(ctx Context) jen.Code {
 
 func (f *ID) filterInit(ctx Context) jen.Code {
 	return jen.Qual(def.PkgLib, "NewID").Types(jen.Id("T")).
-		Params(jen.Id("key").Dot("Field").Call(jen.Lit(f.NameDatabase())), jen.Lit(ctx.Table.NameDatabase()))
+		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())), jen.Lit(ctx.Table.NameDatabase()))
 }
 
 func (f *ID) sortDefine(ctx Context) jen.Code {

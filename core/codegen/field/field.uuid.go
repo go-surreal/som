@@ -59,7 +59,7 @@ func (f *UUID) filterInit(ctx Context) jen.Code {
 	}
 
 	return jen.Qual(def.PkgLib, filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
-		Params(jen.Id("key").Dot("Field").Call(jen.Lit(f.NameDatabase())))
+		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *UUID) convFrom(ctx Context) jen.Code {

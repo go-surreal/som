@@ -72,7 +72,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),
-		jen.Id("query").Qual(def.PkgLib, "Query"),
+		jen.Id("query").Qual(def.PkgLib, "Query").Types(b.SourceQual(node.Name)),
 	)
 
 	f.Func().Id("New" + node.Name).Params(jen.Id("db").Id("Database")).
@@ -80,7 +80,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		Block(
 			jen.Return(jen.Op("&").Id(node.Name).Values(jen.Dict{
 				jen.Id("db"):    jen.Id("db"),
-				jen.Id("query"): jen.Qual(def.PkgLib, "NewQuery").Call(jen.Lit(node.NameDatabase())),
+				jen.Id("query"): jen.Qual(def.PkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
 			})),
 		)
 
@@ -119,11 +119,8 @@ func (b *queryBuilder) buildQueryFuncFilter(node *field.NodeTable) jen.Code {
 		Id("Filter").Params(jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").Types(b.SourceQual(node.Name))).
 		Id(node.Name).
 		Block(
-			jen.For(jen.Id("_").Op(",").Id("f").Op(":=").Range().Id("filters")).
-				Block(
-					jen.Id("q").Dot("query").Dot("Where").Op("=").
-						Append(jen.Id("q").Dot("query").Dot("Where"), jen.Qual(def.PkgLib, "Where").Call(jen.Id("f"))),
-				),
+			jen.Id("q").Dot("query").Dot("Where").Op("=").
+				Append(jen.Id("q").Dot("query").Dot("Where"), jen.Id("filters").Op("...")),
 			jen.Return(jen.Id("q")),
 		)
 }

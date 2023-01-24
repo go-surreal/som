@@ -6,20 +6,20 @@ import (
 	lib "github.com/marcbinz/som/lib"
 )
 
-func newLogin[T any](key lib.Key) login[T] {
+func newLogin[T any](key lib.Key[T]) login[T] {
 	return login[T]{
-		Password: lib.NewString[T](key.Field("password")),
-		Username: lib.NewString[T](key.Field("username")),
+		Password: lib.NewString[T](lib.Field(key, "password")),
+		Username: lib.NewString[T](lib.Field(key, "username")),
 		key:      key,
 	}
 }
 
 type login[T any] struct {
-	key      lib.Key
+	key      lib.Key[T]
 	Username *lib.String[T]
 	Password *lib.String[T]
 }
 type loginSlice[T any] struct {
-	login[T]
+	lib.Filter[T]
 	*lib.Slice[T, model.Login]
 }

@@ -14,19 +14,17 @@ import (
 
 type User struct {
 	db    Database
-	query lib.Query
+	query lib.Query[model.User]
 }
 
 func NewUser(db Database) *User {
 	return &User{
 		db:    db,
-		query: lib.NewQuery("user"),
+		query: lib.NewQuery[model.User]("user"),
 	}
 }
 func (q User) Filter(filters ...lib.Filter[model.User]) User {
-	for _, f := range filters {
-		q.query.Where = append(q.query.Where, lib.Where(f))
-	}
+	q.query.Where = append(q.query.Where, filters...)
 	return q
 }
 func (q User) Order(by ...*lib.Sort[model.User]) User {

@@ -5,9 +5,9 @@ package where
 import "github.com/marcbinz/som/lib"
 
 func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
-	return lib.Filter[T](lib.All(lib.ToWhere(filters)))
+	return lib.All[T](filters)
 }
 
 func Any[T any](filters ...lib.Filter[T]) lib.Filter[T] {
-	return lib.Filter[T](lib.Any(lib.ToWhere(filters)))
+	return lib.Any[T](filters)
 }

@@ -5,38 +5,47 @@ import (
 	"time"
 )
 
-type Filter[T any] Where
-
-func Filters[T any](filters []Filter[T]) []Filter[any] {
-	var mapped []Filter[any]
-
-	for _, filter := range filters {
-		mapped = append(mapped, Filter[any](filter))
-	}
-
-	return mapped
+type Filter[T any] interface {
+	build(*context, T) string
 }
 
-func ToWhere[T any](filters []Filter[T]) []Where {
-	var mapped []Where
+type filter[T any] func(*context, T) string
 
-	for _, filter := range filters {
-		mapped = append(mapped, Where(filter))
-	}
-
-	return mapped
+//nolint:unused
+func (f filter[T]) build(ctx *context, t T) string {
+	return f(ctx, t)
 }
+
+func KeyFilter[T any](key Key[T]) Filter[T] {
+	return filter[T](func(ctx *context, _ T) string {
+		return key.render(ctx)
+	})
+}
+
+// type ToAnyFilter[T any] func(*context, T) string
+//
+// func ToAnyFilters[T any](in []Filter[T]) []Filter[any] {
+// 	var out []Filter[any]
+//
+// 	for _, elem := range in {
+// 		out = append(out, filter[any](func(ctx *context, a any) string {
+// 			return elem.build(ctx, a)
+// 		}))
+// 	}
+//
+// 	return out
+// }
 
 //
 // -- BASE
 //
 
+// TODO: switch T and R
 type Base[T any, R any] struct {
-	key     Key
-	isCount bool
+	key Key[R]
 }
 
-func NewBase[T, R any](key Key) *Base[T, R] {
+func NewBase[T, R any](key Key[R]) *Base[T, R] {
 	return &Base[T, R]{key: key}
 }
 
@@ -61,7 +70,7 @@ type BasePtr[T, R any] struct {
 	*Nillable[R]
 }
 
-func NewBasePtr[T, R any](key Key) *BasePtr[T, R] {
+func NewBasePtr[T, R any](key Key[R]) *BasePtr[T, R] {
 	return &BasePtr[T, R]{
 		Base:     &Base[T, R]{key: key},
 		Nillable: &Nillable[R]{key: key},
@@ -73,8 +82,7 @@ func NewBasePtr[T, R any](key Key) *BasePtr[T, R] {
 //
 
 type Comparable[T any, R any] struct {
-	key     Key
-	isCount bool
+	key Key[R]
 }
 
 func (c *Comparable[T, R]) LessThan(val T) Filter[R] {
@@ -98,7 +106,7 @@ func (c *Comparable[T, R]) GreaterThanEqual(val T) Filter[R] {
 //
 
 type Nillable[R any] struct {
-	key Key
+	key Key[R]
 }
 
 func (n *Nillable[R]) Nil() Filter[R] {
@@ -114,11 +122,11 @@ func (n *Nillable[R]) NotNil() Filter[R] {
 //
 
 type ID[R any] struct {
-	key  Key
+	key  Key[R]
 	node string
 }
 
-func NewID[R any](key Key, node string) *ID[R] {
+func NewID[R any](key Key[R], node string) *ID[R] {
 	return &ID[R]{key: key, node: node}
 }
 
@@ -161,7 +169,7 @@ type String[R any] struct {
 	*Comparable[string, R]
 }
 
-func NewString[R any](key Key) *String[R] {
+func NewString[R any](key Key[R]) *String[R] {
 	return &String[R]{
 		Base:       &Base[string, R]{key: key},
 		Comparable: &Comparable[string, R]{key: key},
@@ -181,7 +189,7 @@ type StringPtr[R any] struct {
 	*Nillable[R]
 }
 
-func NewStringPtr[R any](key Key) *StringPtr[R] {
+func NewStringPtr[R any](key Key[R]) *StringPtr[R] {
 	return &StringPtr[R]{
 		String:   NewString[R](key),
 		Nillable: &Nillable[R]{key: key},
@@ -197,7 +205,7 @@ type Numeric[T, R any] struct {
 	*Comparable[T, R]
 }
 
-func NewNumeric[T, R any](key Key) *Numeric[T, R] {
+func NewNumeric[T, R any](key Key[R]) *Numeric[T, R] {
 	return &Numeric[T, R]{
 		Base:       &Base[T, R]{key: key},
 		Comparable: &Comparable[T, R]{key: key},
@@ -209,7 +217,7 @@ type NumericPtr[T, R any] struct {
 	*Nillable[R]
 }
 
-func NewNumericPtr[T, R any](key Key) *NumericPtr[T, R] {
+func NewNumericPtr[T, R any](key Key[R]) *NumericPtr[T, R] {
 	return &NumericPtr[T, R]{
 		Numeric:  NewNumeric[T, R](key),
 		Nillable: &Nillable[R]{key: key},
@@ -221,10 +229,10 @@ func NewNumericPtr[T, R any](key Key) *NumericPtr[T, R] {
 //
 
 type Bool[R any] struct {
-	key Key
+	key Key[R]
 }
 
-func NewBool[R any](key Key) *Bool[R] {
+func NewBool[R any](key Key[R]) *Bool[R] {
 	return &Bool[R]{key: key}
 }
 
@@ -237,7 +245,7 @@ type BoolPtr[R any] struct {
 	*Nillable[R]
 }
 
-func NewBoolPtr[R any](key Key) *BoolPtr[R] {
+func NewBoolPtr[R any](key Key[R]) *BoolPtr[R] {
 	return &BoolPtr[R]{
 		Bool:     &Bool[R]{key: key},
 		Nillable: &Nillable[R]{key: key},
@@ -253,7 +261,7 @@ type Time[R any] struct {
 	comp *Comparable[time.Time, R]
 }
 
-func NewTime[R any](key Key) *Time[R] {
+func NewTime[R any](key Key[R]) *Time[R] {
 	return &Time[R]{
 		Base: &Base[time.Time, R]{key: key},
 		comp: &Comparable[time.Time, R]{key: key},
@@ -281,7 +289,7 @@ type TimePtr[R any] struct {
 	*Nillable[R]
 }
 
-func NewTimePtr[R any](key Key) *TimePtr[R] {
+func NewTimePtr[R any](key Key[R]) *TimePtr[R] {
 	return &TimePtr[R]{
 		Time:     NewTime[R](key),
 		Nillable: &Nillable[R]{key: key},
@@ -296,33 +304,33 @@ func NewTimePtr[R any](key Key) *TimePtr[R] {
 // T is the type of the outgoing table for the filter statement.
 // E is the type of the slice elements.
 type Slice[T, E any] struct {
-	key Key
+	key Key[T]
 }
 
 // NewSlice creates a new slice filter.
-func NewSlice[T, E any](key Key) *Slice[T, E] {
+func NewSlice[T, E any](key Key[T]) *Slice[T, E] {
 	return &Slice[T, E]{
 		key: key,
 	}
 }
 
-func (s *Slice[T, E]) Contains(val T) Filter[T] {
+func (s *Slice[T, E]) Contains(val E) Filter[T] {
 	return Filter[T](s.key.Op(OpContains, val))
 }
 
-func (s *Slice[T, E]) ContainsNot(val T) Filter[T] {
+func (s *Slice[T, E]) ContainsNot(val E) Filter[T] {
 	return Filter[T](s.key.Op(OpContainsNot, val))
 }
 
-func (s *Slice[T, E]) ContainsAll(vals []T) Filter[T] {
+func (s *Slice[T, E]) ContainsAll(vals []E) Filter[T] {
 	return Filter[T](s.key.Op(OpContainsAll, vals))
 }
 
-func (s *Slice[T, E]) ContainsAny(vals []T) Filter[T] {
+func (s *Slice[T, E]) ContainsAny(vals []E) Filter[T] {
 	return Filter[T](s.key.Op(OpContainsAny, vals))
 }
 
-func (s *Slice[T, E]) ContainsNone(vals []T) Filter[T] {
+func (s *Slice[T, E]) ContainsNone(vals []E) Filter[T] {
 	return Filter[T](s.key.Op(OpContainsNone, vals))
 }
 
@@ -335,7 +343,7 @@ type SlicePtr[T, E any] struct {
 	*Nillable[T]
 }
 
-func NewSlicePtr[T, E, F any](key Key) *SlicePtr[T, E] {
+func NewSlicePtr[T, E, F any](key Key[T]) *SlicePtr[T, E] {
 	return &SlicePtr[T, E]{
 		Slice:    &Slice[T, E]{key: key},
 		Nillable: &Nillable[T]{key: key},
@@ -343,47 +351,68 @@ func NewSlicePtr[T, E, F any](key Key) *SlicePtr[T, E] {
 }
 
 //
+// -- NODE SLICE
+//
+
+// type NodeSlice[T, N any] struct {
+// 	key Key[T]
+// }
+//
+// func NewNodeSlice[T, N any](key Key[T]) *NodeSlice[T, N] {
+// 	return &NodeSlice[T, N]{key: key}
+// }
+//
+// func (s *NodeSlice[T, N]) build(_ *context, _ T) string {
+// 	return "" // TODO
+// }
+//
+// func (s *NodeSlice[T, N]) Count() *Numeric[int, T] {
+// 	return NewNumeric[int, T](s.key.Count())
+// }
+
+//
 // -- ALL | ANY
 //
 
-func All(filters []Where) Where {
-	return func(ctx *context) string {
-		if len(filters) < 1 {
-			return ""
-		}
+type All[T any] []Filter[T]
 
-		var parts []string
-		for _, filter := range filters {
-			if part := filter(ctx); part != "" {
-				parts = append(parts, part)
-			}
-		}
-
-		if len(parts) < 1 {
-			return ""
-		}
-
-		return "(" + strings.Join(parts, " "+string(OpAnd)+" ") + ")"
+func (a All[T]) build(ctx *context, t T) string {
+	if len(a) < 1 {
+		return ""
 	}
+
+	var parts []string
+	for _, filter := range a {
+		if part := filter.build(ctx, t); part != "" {
+			parts = append(parts, strings.TrimPrefix(part, ".")) // TODO: better place to trim?
+		}
+	}
+
+	if len(parts) < 1 {
+		return ""
+	}
+
+	return "(" + strings.Join(parts, " "+string(OpAnd)+" ") + ")"
 }
 
-func Any(filters []Where) Where {
-	return func(ctx *context) string {
-		if len(filters) < 1 {
-			return ""
-		}
+type Any[T any] []Filter[T]
 
-		var parts []string
-		for _, filter := range filters {
-			if part := filter(ctx); part != "" {
-				parts = append(parts, part)
-			}
-		}
-
-		if len(parts) < 1 {
-			return ""
-		}
-
-		return "(" + strings.Join(parts, " "+string(OpOr)+" ") + ")"
+//nolint:unused
+func (a Any[T]) build(ctx *context, t T) string {
+	if len(a) < 1 {
+		return ""
 	}
+
+	var parts []string
+	for _, filter := range a {
+		if part := filter.build(ctx, t); part != "" {
+			parts = append(parts, strings.TrimPrefix(part, ".")) // TODO: better place to trim?
+		}
+	}
+
+	if len(parts) < 1 {
+		return ""
+	}
+
+	return "(" + strings.Join(parts, " "+string(OpOr)+" ") + ")"
 }
