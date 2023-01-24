@@ -18,7 +18,7 @@ type UserRepo interface {
 
 	FindById(ctx context.Context, id string) (*model.User, error)
 	List(ctx context.Context) ([]*model.User, error)
-	Relate(ctx context.Context, edge *model.MemberOf) error
+	Relate(ctx context.Context, edge *model.GroupMember) error
 }
 
 type user struct {
@@ -49,21 +49,23 @@ func (repo *user) FindById(ctx context.Context, id string) (*model.User, error) 
 	return repo.db.User().Query().Filter(where.User.ID.Equal(id)).First()
 }
 
-func (repo *user) Relate(ctx context.Context, edge *model.MemberOf) error {
-	return repo.db.User().Relate().MyGroups().Create(edge)
+func (repo *user) Relate(ctx context.Context, edge *model.GroupMember) error {
+	return repo.db.User().Relate().MemberOf().Create(edge)
 }
 
 func (repo *user) List(ctx context.Context) ([]*model.User, error) {
 	return repo.db.User().Query().
 		Filter(
-			where.Any(
+			where.Any[model.User](
 				// where.User.ID.Equal("9rb97n04ggwmekxats5a"),
 				// where.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
 				// where.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
 				// where.User.MyGroups().Since.Before(time.Now()), // ->(member_of where since < $)
 				// where.User.MyGroups().Group().ID.Equal(""),     // ->member_of->(group where id = $)
 
-				where.User.MyGroups().Group().Members().User().ID.Equal("klkl4w6i9z8u0uyo5w7f"),
+				where.User.MemberOf().Group().Members().User(
+					where.User.ID.Equal("klkl4w6i9z8u0uyo5w7f"),
+				),
 
 				//
 				// where.User.Groups().ID.In(nil),

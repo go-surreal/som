@@ -25,11 +25,21 @@ type group[T any] struct {
 	UpdatedAt *lib.Time[T]
 	Name      *lib.String[T]
 }
+
+func (n group[T]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[T] {
+	return newGroupMemberOut[T](lib.EdgeOut(n.key, "group_member", filters))
+}
+
+type groupEdges[T any] struct {
+	lib.Filter[T]
+	key lib.Key[T]
+}
+
+func (n groupEdges[T]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[T] {
+	return newGroupMemberOut[T](lib.EdgeOut(n.key, "group_member", filters))
+}
+
 type groupSlice[T any] struct {
 	lib.Filter[T]
 	*lib.Slice[T, model.Group]
-}
-
-func (n group[T]) Members(filters ...lib.Filter[model.MemberOf]) memberOfOut[T] {
-	return newMemberOfOut[T](lib.EdgeOut(n.key, "member_of", filters))
 }

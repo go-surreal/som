@@ -84,9 +84,14 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 
 	case *Edge:
 		{
+			receiver := jen.Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))
+			if ctx.Receiver != nil {
+				receiver = ctx.Receiver
+			}
+
 			if tableEqual(ctx.Table, element.table.In.table) {
 				return jen.Func().
-					Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).Id(f.NameGo()).
+					Params(jen.Id("n").Add(receiver)).Id(f.NameGo()).
 					Params(
 						jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").
 							Types(jen.Qual(f.SourcePkg, element.table.NameGo())),
@@ -108,7 +113,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 
 			if tableEqual(ctx.Table, element.table.Out.table) {
 				return jen.Func().
-					Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).Id(f.NameGo()).
+					Params(jen.Id("n").Add(receiver)).Id(f.NameGo()).
 					Params(
 						jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").
 							Types(jen.Qual(f.SourcePkg, element.table.NameGo())),

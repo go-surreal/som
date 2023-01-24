@@ -19,6 +19,10 @@ type login[T any] struct {
 	Username *lib.String[T]
 	Password *lib.String[T]
 }
+type loginEdges[T any] struct {
+	lib.Filter[T]
+	key lib.Key[T]
+}
 type loginSlice[T any] struct {
 	lib.Filter[T]
 	*lib.Slice[T, model.Login]

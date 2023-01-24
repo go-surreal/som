@@ -81,10 +81,10 @@ DEFINE FIELD created_at ON TABLE group TYPE datetime ASSERT $value != NULL;
 DEFINE FIELD updated_at ON TABLE group TYPE datetime ASSERT $value != NULL;
 DEFINE FIELD name ON TABLE group TYPE string ASSERT $value != NULL;
 
-DEFINE TABLE member_of SCHEMAFULL;
-DEFINE FIELD created_at ON TABLE member_of TYPE datetime ASSERT $value != NULL;
-DEFINE FIELD updated_at ON TABLE member_of TYPE datetime ASSERT $value != NULL;
-DEFINE FIELD meta ON TABLE member_of TYPE object ASSERT $value != NULL;
-DEFINE FIELD meta.is_admin ON TABLE member_of TYPE bool ASSERT $value != NULL;
-DEFINE FIELD meta.is_active ON TABLE member_of TYPE bool ASSERT $value != NULL;
+DEFINE TABLE group_member SCHEMAFULL;
+DEFINE FIELD created_at ON TABLE group_member TYPE datetime ASSERT $value != NULL;
+DEFINE FIELD updated_at ON TABLE group_member TYPE datetime ASSERT $value != NULL;
+DEFINE FIELD meta ON TABLE group_member TYPE object ASSERT $value != NULL;
+DEFINE FIELD meta.is_admin ON TABLE group_member TYPE bool ASSERT $value != NULL;
+DEFINE FIELD meta.is_active ON TABLE group_member TYPE bool ASSERT $value != NULL;
 `

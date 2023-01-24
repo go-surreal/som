@@ -52,10 +52,6 @@ type user[T any] struct {
 	TimePtr   *lib.TimePtr[T]
 	UuidPtr   *lib.BasePtr[uuid.UUID, T]
 }
-type userSlice[T any] struct {
-	lib.Filter[T]
-	*lib.Slice[T, model.User]
-}
 
 func (n user[T]) Login() login[T] {
 	return newLogin[T](lib.Field(n.key, "login"))
@@ -76,8 +72,8 @@ func (n user[T]) More() *lib.Slice[T, float32] {
 func (n user[T]) Roles() *lib.Slice[T, model.Role] {
 	return lib.NewSlice[T, model.Role](lib.Field(n.key, "roles"))
 }
-func (n user[T]) MyGroups(filters ...lib.Filter[model.MemberOf]) memberOfIn[T] {
-	return newMemberOfIn[T](lib.EdgeIn(n.key, "member_of", filters))
+func (n user[T]) MemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[T] {
+	return newGroupMemberIn[T](lib.EdgeIn(n.key, "group_member", filters))
 }
 func (n user[T]) StructPtr() someStruct[T] {
 	return newSomeStruct[T](lib.Field(n.key, "struct_ptr"))
@@ -107,4 +103,18 @@ func (n user[T]) NodePtrSlicePtr(filters ...lib.Filter[model.Group]) groupSlice[
 }
 func (n user[T]) SliceSlice() *lib.Slice[T, []string] {
 	return lib.NewSlice[T, []string](lib.Field(n.key, "slice_slice"))
+}
+
+type userEdges[T any] struct {
+	lib.Filter[T]
+	key lib.Key[T]
+}
+
+func (n userEdges[T]) MemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[T] {
+	return newGroupMemberIn[T](lib.EdgeIn(n.key, "group_member", filters))
+}
+
+type userSlice[T any] struct {
+	lib.Filter[T]
+	*lib.Slice[T, model.User]
 }
