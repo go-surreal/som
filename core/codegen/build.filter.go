@@ -197,7 +197,6 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 		Types(jen.Id("T").Any()).
 		Struct(
 			jen.Qual(def.PkgLib, "Filter").Types(jen.Id("T")),
-			// jen.Id(edge.NameGoLower()).Types(jen.Id("T")),
 			jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")),
 		)
 
@@ -210,15 +209,6 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 				jen.Id(edge.NameGoLower()+"In").Types(jen.Id("T")).Values(
 					jen.Qual(def.PkgLib, "KeyFilter").Call(jen.Id("key")),
 					jen.Id("key"),
-					// jen.Id(edge.NameGoLower()).Types(jen.Id("T")).
-					// 	Values(jen.DictFunc(func(d jen.Dict) {
-					// 		d[jen.Id("key")] = jen.Id("key")
-					// 		for _, f := range edge.GetFields() {
-					// 			if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
-					// 				d[jen.Id(f.NameGo())] = code
-					// 			}
-					// 		}
-					// 	})),
 				),
 			),
 		)
@@ -246,7 +236,6 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 		Types(jen.Id("T").Any()).
 		Struct(
 			jen.Qual(def.PkgLib, "Filter").Types(jen.Id("T")),
-			// jen.Id(edge.NameGoLower()).Types(jen.Id("T")),
 			jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")),
 		)
 
@@ -259,15 +248,6 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 				jen.Id(edge.NameGoLower()+"Out").Types(jen.Id("T")).Values(
 					jen.Qual(def.PkgLib, "KeyFilter").Call(jen.Id("key")),
 					jen.Id("key"),
-					// jen.Id(edge.NameGoLower()).Types(jen.Id("T")).
-					// 	Values(jen.DictFunc(func(d jen.Dict) {
-					// 		d[jen.Id("key")] = jen.Id("key")
-					// 		for _, f := range edge.GetFields() {
-					// 			if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
-					// 				d[jen.Id(f.NameGo())] = code
-					// 			}
-					// 		}
-					// 	})),
 				),
 			),
 		)

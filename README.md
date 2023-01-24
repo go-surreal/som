@@ -4,7 +4,7 @@
     <img width="400px" src=".github/branding/logo.png" alt="logo">
     <h3>SOM - A SurrealDB object mapper & query builder for Go</h3>
 </div>
-9
+
 <hr />
 
 <p align="center">
