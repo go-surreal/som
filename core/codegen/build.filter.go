@@ -133,6 +133,124 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	}
 }
 
+func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
+	fieldCtx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		Table:     edge,
+	}
+
+	file.Var().Id(edge.NameGo()).Op("=").
+		Id("new" + edge.NameGo()).Types(b.SourceQual(edge.NameGo())).
+		Call(jen.Qual(def.PkgLib, "NewKey").Types(b.SourceQual(edge.NameGo())).Call())
+
+	file.Add(b.whereNew(edge))
+
+	file.Type().Id(edge.NameGoLower()).
+		Types(jen.Id("T").Any()).
+		StructFunc(func(g *jen.Group) {
+			g.Add(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")))
+			for _, f := range edge.GetFields() {
+				if code := f.CodeGen().FilterDefine(fieldCtx); code != nil {
+					g.Add(code)
+				}
+			}
+		})
+
+	for _, fld := range edge.GetFields() {
+		if code := fld.CodeGen().FilterFunc(fieldCtx); code != nil {
+			file.Add(code)
+		}
+	}
+
+	file.Type().Id(edge.NameGoLower()+"In").
+		Types(jen.Id("T").Any()).
+		Struct(
+			jen.Qual(def.PkgLib, "Filter").Types(jen.Id("T")),
+			// jen.Id(edge.NameGoLower()).Types(jen.Id("T")),
+			jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")),
+		)
+
+	file.Func().Id("new" + edge.NameGo() + "In").
+		Types(jen.Id("T").Any()).
+		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
+		Id(edge.NameGoLower() + "In").Types(jen.Id("T")).
+		Block(
+			jen.Return(
+				jen.Id(edge.NameGoLower()+"In").Types(jen.Id("T")).Values(
+					jen.Qual(def.PkgLib, "KeyFilter").Call(jen.Id("key")),
+					jen.Id("key"),
+					// jen.Id(edge.NameGoLower()).Types(jen.Id("T")).
+					// 	Values(jen.DictFunc(func(d jen.Dict) {
+					// 		d[jen.Id("key")] = jen.Id("key")
+					// 		for _, f := range edge.GetFields() {
+					// 			if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
+					// 				d[jen.Id(f.NameGo())] = code
+					// 			}
+					// 		}
+					// 	})),
+				),
+			),
+		)
+
+	file.Func().
+		Params(jen.Id("i").Id(edge.NameGoLower() + "In").Types(jen.Id("T"))).Id(edge.Out.NameGo()).
+		Params(
+			jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").Types(b.SourceQual(edge.Out.NameGo())),
+		).
+		Id(edge.Out.NameGoLower()).Types(jen.Id("T")).
+		Block(
+			jen.Return(jen.Id("new" + edge.Out.NameGo()).Types(jen.Id("T")).
+				Params(jen.Qual(def.PkgLib, "EdgeIn").Call(
+					jen.Id("i").Dot("key"),
+					jen.Lit(edge.Out.NameDatabase()),
+					jen.Id("filters"),
+				))))
+
+	file.Type().Id(edge.NameGoLower()+"Out").
+		Types(jen.Id("T").Any()).
+		Struct(
+			jen.Qual(def.PkgLib, "Filter").Types(jen.Id("T")),
+			// jen.Id(edge.NameGoLower()).Types(jen.Id("T")),
+			jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")),
+		)
+
+	file.Func().Id("new" + edge.NameGo() + "Out").
+		Types(jen.Id("T").Any()).
+		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
+		Id(edge.NameGoLower() + "Out").Types(jen.Id("T")).
+		Block(
+			jen.Return(
+				jen.Id(edge.NameGoLower()+"Out").Types(jen.Id("T")).Values(
+					jen.Qual(def.PkgLib, "KeyFilter").Call(jen.Id("key")),
+					jen.Id("key"),
+					// jen.Id(edge.NameGoLower()).Types(jen.Id("T")).
+					// 	Values(jen.DictFunc(func(d jen.Dict) {
+					// 		d[jen.Id("key")] = jen.Id("key")
+					// 		for _, f := range edge.GetFields() {
+					// 			if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
+					// 				d[jen.Id(f.NameGo())] = code
+					// 			}
+					// 		}
+					// 	})),
+				),
+			),
+		)
+
+	file.Func().
+		Params(jen.Id("o").Id(edge.NameGoLower() + "Out").Types(jen.Id("T"))).Id(edge.In.NameGo()).
+		Params(
+			jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").Types(b.SourceQual(edge.In.NameGo())),
+		).
+		Id(edge.In.NameGoLower()).Types(jen.Id("T")).
+		Block(
+			jen.Return(jen.Id("new" + edge.In.NameGo()).Types(jen.Id("T")).
+				Params(jen.Qual(def.PkgLib, "EdgeOut").Call(
+					jen.Id("o").Dot("key"),
+					jen.Lit(edge.In.NameDatabase()),
+					jen.Id("filters"),
+				))))
+}
+
 func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
@@ -156,112 +274,4 @@ func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 					})),
 			),
 		)
-}
-
-func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		Table:     edge,
-	}
-
-	file.Type().Id(edge.NameGoLower()+"In").
-		Types(jen.Id("T").Any()).
-		Struct(
-			jen.Qual(def.PkgLib, "Filter").Types(jen.Id("T")),
-			jen.Id(edge.NameGoLower()).Types(jen.Id("T")),
-		)
-
-	file.Func().Id("new" + edge.NameGo() + "In").
-		Types(jen.Id("T").Any()).
-		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
-		Id(edge.NameGoLower() + "In").Types(jen.Id("T")).
-		Block(
-			jen.Return(
-				jen.Id(edge.NameGoLower()+"In").Types(jen.Id("T")).Values(
-					jen.Qual(def.PkgLib, "KeyFilter").Call(jen.Id("key")),
-					jen.Id(edge.NameGoLower()).Types(jen.Id("T")).
-						Values(jen.DictFunc(func(d jen.Dict) {
-							d[jen.Id("key")] = jen.Id("key")
-							for _, f := range edge.GetFields() {
-								if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
-									d[jen.Id(f.NameGo())] = code
-								}
-							}
-						})),
-				),
-			),
-		)
-
-	file.Func().
-		Params(jen.Id("i").Id(edge.NameGoLower() + "In").Types(jen.Id("T"))).Id(edge.Out.NameGo()).
-		Params(
-			jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").Types(b.SourceQual(edge.Out.NameGo())),
-		).
-		Id(edge.Out.NameGoLower()).Types(jen.Id("T")).
-		Block(
-			jen.Return(jen.Id("new" + edge.Out.NameGo()).Types(jen.Id("T")).
-				Params(jen.Qual(def.PkgLib, "EdgeIn").Call(
-					jen.Id("i").Dot("key"),
-					jen.Lit(edge.Out.NameDatabase()),
-					jen.Id("filters"),
-				))))
-
-	file.Type().Id(edge.NameGoLower()+"Out").
-		Types(jen.Id("T").Any()).
-		Struct(
-			jen.Qual(def.PkgLib, "Filter").Types(jen.Id("T")),
-			jen.Id(edge.NameGoLower()).Types(jen.Id("T")),
-		)
-
-	file.Func().Id("new" + edge.NameGo() + "Out").
-		Types(jen.Id("T").Any()).
-		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
-		Id(edge.NameGoLower() + "Out").Types(jen.Id("T")).
-		Block(
-			jen.Return(
-				jen.Id(edge.NameGoLower()+"Out").Types(jen.Id("T")).Values(
-					jen.Qual(def.PkgLib, "KeyFilter").Call(jen.Id("key")),
-					jen.Id(edge.NameGoLower()).Types(jen.Id("T")).
-						Values(jen.DictFunc(func(d jen.Dict) {
-							d[jen.Id("key")] = jen.Id("key")
-							for _, f := range edge.GetFields() {
-								if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
-									d[jen.Id(f.NameGo())] = code
-								}
-							}
-						})),
-				),
-			),
-		)
-
-	file.Func().
-		Params(jen.Id("o").Id(edge.NameGoLower() + "Out").Types(jen.Id("T"))).Id(edge.In.NameGo()).
-		Params(
-			jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").Types(b.SourceQual(edge.In.NameGo())),
-		).
-		Id(edge.In.NameGoLower()).Types(jen.Id("T")).
-		Block(
-			jen.Return(jen.Id("new" + edge.In.NameGo()).Types(jen.Id("T")).
-				Params(jen.Qual(def.PkgLib, "EdgeOut").Call(
-					jen.Id("o").Dot("key"),
-					jen.Lit(edge.In.NameDatabase()),
-					jen.Id("filters"),
-				))))
-
-	file.Type().Id(edge.NameGoLower()).
-		Types(jen.Id("T").Any()).
-		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")))
-			for _, f := range edge.GetFields() {
-				if code := f.CodeGen().FilterDefine(fieldCtx); code != nil {
-					g.Add(code)
-				}
-			}
-		})
-
-	for _, fld := range edge.GetFields() {
-		if code := fld.CodeGen().FilterFunc(fieldCtx); code != nil {
-			file.Add(code)
-		}
-	}
 }

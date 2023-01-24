@@ -9,6 +9,7 @@ import (
 	model "github.com/marcbinz/som/example/model"
 	lib "github.com/marcbinz/som/lib"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	"strings"
 	"time"
 )
 
@@ -149,5 +150,5 @@ func (q Group) FirstID() (string, error) {
 }
 func (q Group) Describe() string {
 	res := q.query.BuildAsAll()
-	return res.Statement
+	return strings.TrimSpace(res.Statement)
 }

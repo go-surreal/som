@@ -12,6 +12,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/assert"
 	"testing"
+	"time"
 	"unicode/utf8"
 )
 
@@ -40,14 +41,16 @@ func TestQuery(t *testing.T) {
 			// ).Count().GreaterThan(3),
 			// where.User.Groups(where.Group.CreatedAt.After(time.Now())),
 
-			where.User.MyGroups(),
+			where.User.MyGroups(
+				where.MemberOf.CreatedAt.Before(time.Now()),
+			),
 
 			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
 			// where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM user WHERE (->member_of) ",
+		"SELECT * FROM user WHERE (->member_of[WHERE (created_at < $0)])",
 		// "SELECT * FROM user WHERE (count(groups[WHERE (name = $0 AND created_at INSIDE $1)]) > $2 "+
 		// 	"AND groups[WHERE (created_at > $3)]) ",
 		query.Describe(),

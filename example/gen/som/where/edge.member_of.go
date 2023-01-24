@@ -6,38 +6,15 @@ import (
 	lib "github.com/marcbinz/som/lib"
 )
 
-type memberOfIn[T any] struct {
-	lib.Filter[T]
-	memberOf[T]
-}
+var MemberOf = newMemberOf[model.MemberOf](lib.NewKey[model.MemberOf]())
 
-func newMemberOfIn[T any](key lib.Key[T]) memberOfIn[T] {
-	return memberOfIn[T]{lib.KeyFilter(key), memberOf[T]{
+func newMemberOf[T any](key lib.Key[T]) memberOf[T] {
+	return memberOf[T]{
 		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
 		ID:        lib.NewID[T](lib.Field(key, "id"), "member_of"),
 		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
 		key:       key,
-	}}
-}
-func (i memberOfIn[T]) Group(filters ...lib.Filter[model.Group]) group[T] {
-	return newGroup[T](lib.EdgeIn(i.key, "group", filters))
-}
-
-type memberOfOut[T any] struct {
-	lib.Filter[T]
-	memberOf[T]
-}
-
-func newMemberOfOut[T any](key lib.Key[T]) memberOfOut[T] {
-	return memberOfOut[T]{lib.KeyFilter(key), memberOf[T]{
-		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
-		ID:        lib.NewID[T](lib.Field(key, "id"), "member_of"),
-		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
-		key:       key,
-	}}
-}
-func (o memberOfOut[T]) User(filters ...lib.Filter[model.User]) user[T] {
-	return newUser[T](lib.EdgeOut(o.key, "user", filters))
+	}
 }
 
 type memberOf[T any] struct {
@@ -49,4 +26,28 @@ type memberOf[T any] struct {
 
 func (n memberOf[T]) Meta() memberOfMeta[T] {
 	return newMemberOfMeta[T](lib.Field(n.key, "meta"))
+}
+
+type memberOfIn[T any] struct {
+	lib.Filter[T]
+	key lib.Key[T]
+}
+
+func newMemberOfIn[T any](key lib.Key[T]) memberOfIn[T] {
+	return memberOfIn[T]{lib.KeyFilter(key), key}
+}
+func (i memberOfIn[T]) Group(filters ...lib.Filter[model.Group]) group[T] {
+	return newGroup[T](lib.EdgeIn(i.key, "group", filters))
+}
+
+type memberOfOut[T any] struct {
+	lib.Filter[T]
+	key lib.Key[T]
+}
+
+func newMemberOfOut[T any](key lib.Key[T]) memberOfOut[T] {
+	return memberOfOut[T]{lib.KeyFilter(key), key}
+}
+func (o memberOfOut[T]) User(filters ...lib.Filter[model.User]) user[T] {
+	return newUser[T](lib.EdgeOut(o.key, "user", filters))
 }

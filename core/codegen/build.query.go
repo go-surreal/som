@@ -377,6 +377,8 @@ func (b *queryBuilder) buildQueryFuncDescribe(node *field.NodeTable) jen.Code {
 		Id("Describe").Params().String().
 		Block(
 			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
-			jen.Return(jen.Id("res").Dot("Statement")),
+			jen.Return(jen.Qual("strings", "TrimSpace").Call(
+				jen.Id("res").Dot("Statement"),
+			)),
 		)
 }
