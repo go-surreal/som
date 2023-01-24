@@ -8,11 +8,11 @@ import (
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 
-type memberOf struct {
+type groupMember struct {
 	db Database
 }
 
-func (e memberOf) Create(edge *model.MemberOf) error {
+func (e groupMember) Create(edge *model.GroupMember) error {
 	if edge == nil {
 		return errors.New("the given edge must not be nil")
 	}
@@ -27,15 +27,15 @@ func (e memberOf) Create(edge *model.MemberOf) error {
 	}
 	query := "RELATE "
 	query += "user:" + edge.User.ID()
-	query += "->member_of->"
+	query += "->group_member->"
 	query += "group:" + edge.Group.ID()
 	query += " CONTENT $data"
-	data := conv.FromMemberOf(*edge)
+	data := conv.FromGroupMember(*edge)
 	raw, err := e.db.Query(query, map[string]any{"data": data})
 	if err != nil {
 		return err
 	}
-	var convEdge conv.MemberOf
+	var convEdge conv.GroupMember
 	ok, err := surrealdbgo.UnmarshalRaw(raw, &convEdge)
 	if err != nil {
 		return err
@@ -43,12 +43,12 @@ func (e memberOf) Create(edge *model.MemberOf) error {
 	if !ok {
 		return errors.New("result is empty")
 	}
-	*edge = conv.ToMemberOf(convEdge)
+	*edge = conv.ToGroupMember(convEdge)
 	return nil
 }
-func (memberOf) Update(edge *model.MemberOf) error {
+func (groupMember) Update(edge *model.GroupMember) error {
 	return nil
 }
-func (memberOf) Delete(edge *model.MemberOf) error {
+func (groupMember) Delete(edge *model.GroupMember) error {
 	return nil
 }

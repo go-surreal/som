@@ -7,33 +7,30 @@ import (
 	conv "github.com/marcbinz/som/example/gen/som/conv"
 	with "github.com/marcbinz/som/example/gen/som/with"
 	model "github.com/marcbinz/som/example/model"
-	builder "github.com/marcbinz/som/lib/builder"
-	filter "github.com/marcbinz/som/lib/filter"
-	sort "github.com/marcbinz/som/lib/sort"
+	lib "github.com/marcbinz/som/lib"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	"strings"
 	"time"
 )
 
 type Group struct {
 	db    Database
-	query builder.Query
+	query lib.Query[model.Group]
 }
 
 func NewGroup(db Database) *Group {
 	return &Group{
 		db:    db,
-		query: builder.NewQuery("group"),
+		query: lib.NewQuery[model.Group]("group"),
 	}
 }
-func (q Group) Filter(filters ...filter.Of[model.Group]) Group {
-	for _, f := range filters {
-		q.query.Where = append(q.query.Where, builder.Where(f))
-	}
+func (q Group) Filter(filters ...lib.Filter[model.Group]) Group {
+	q.query.Where = append(q.query.Where, filters...)
 	return q
 }
-func (q Group) Order(by ...*sort.Of[model.Group]) Group {
+func (q Group) Order(by ...*lib.Sort[model.Group]) Group {
 	for _, s := range by {
-		q.query.Sort = append(q.query.Sort, (*builder.Sort)(s))
+		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
 	return q
 }
@@ -153,5 +150,5 @@ func (q Group) FirstID() (string, error) {
 }
 func (q Group) Describe() string {
 	res := q.query.BuildAsAll()
-	return res.Statement
+	return strings.TrimSpace(res.Statement)
 }

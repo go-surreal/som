@@ -10,11 +10,11 @@ import (
 )
 
 type Group struct {
-	ID        string     `json:"id,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	Name      string     `json:"name"`
-	Members   []MemberOf `json:"members,omitempty"`
+	ID        string        `json:"id,omitempty"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
+	Name      string        `json:"name"`
+	Members   []GroupMember `json:"members,omitempty"`
 }
 
 func FromGroup(data model.Group) Group {
@@ -22,7 +22,7 @@ func FromGroup(data model.Group) Group {
 }
 func ToGroup(data Group) model.Group {
 	return model.Group{
-		Members:    mapSlice(data.Members, ToMemberOf),
+		Members:    mapSlice(data.Members, ToGroupMember),
 		Name:       data.Name,
 		Node:       som.NewNode(parseDatabaseID("group", data.ID)),
 		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),

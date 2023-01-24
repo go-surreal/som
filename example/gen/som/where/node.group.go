@@ -3,33 +3,43 @@ package where
 
 import (
 	model "github.com/marcbinz/som/example/model"
-	filter "github.com/marcbinz/som/lib/filter"
+	lib "github.com/marcbinz/som/lib"
 )
 
-var Group = newGroup[model.Group](filter.NewKey())
+var Group = newGroup[model.Group](lib.NewKey[model.Group]())
 
-func newGroup[T any](key filter.Key) group[T] {
+func newGroup[T any](key lib.Key[T]) group[T] {
 	return group[T]{
-		CreatedAt: filter.NewTime[T](key.Dot("created_at")),
-		ID:        filter.NewID[T](key.Dot("id"), "group"),
-		Name:      filter.NewString[T](key.Dot("name")),
-		UpdatedAt: filter.NewTime[T](key.Dot("updated_at")),
+		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
+		ID:        lib.NewID[T](lib.Field(key, "id"), "group"),
+		Name:      lib.NewString[T](lib.Field(key, "name")),
+		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
 		key:       key,
 	}
 }
 
 type group[T any] struct {
-	key       filter.Key
-	ID        *filter.ID[T]
-	CreatedAt *filter.Time[T]
-	UpdatedAt *filter.Time[T]
-	Name      *filter.String[T]
-}
-type groupSlice[T any] struct {
-	group[T]
-	*filter.Slice[model.Group, T]
+	key       lib.Key[T]
+	ID        *lib.ID[T]
+	CreatedAt *lib.Time[T]
+	UpdatedAt *lib.Time[T]
+	Name      *lib.String[T]
 }
 
-func (n group[T]) Members() memberOfOut[T] {
-	return newMemberOfOut[T](n.key.Out(""))
+func (n group[T]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[T] {
+	return newGroupMemberOut[T](lib.EdgeOut(n.key, "group_member", filters))
+}
+
+type groupEdges[T any] struct {
+	lib.Filter[T]
+	key lib.Key[T]
+}
+
+func (n groupEdges[T]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[T] {
+	return newGroupMemberOut[T](lib.EdgeOut(n.key, "group_member", filters))
+}
+
+type groupSlice[T any] struct {
+	lib.Filter[T]
+	*lib.Slice[T, model.Group]
 }

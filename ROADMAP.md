@@ -8,6 +8,7 @@
 - [ ] Consider reserved (query) keywords. (#18)
 - [ ] Check for possible security vulnerabilities.
 - [ ] Choose proper licensing for the project. (#11)
+- [ ] Decimal vs Float vs Number type?
 
 ## After v0.1.0
 

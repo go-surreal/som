@@ -3,25 +3,25 @@ package by
 
 import (
 	model "github.com/marcbinz/som/example/model"
-	sort "github.com/marcbinz/som/lib/sort"
+	lib "github.com/marcbinz/som/lib"
 )
 
 var Group = newGroup[model.Group]("")
 
 func newGroup[T any](key string) group[T] {
 	return group[T]{
-		CreatedAt: sort.NewSort[T](keyed(key, "created_at")),
-		ID:        sort.NewSort[T](keyed(key, "id")),
-		Name:      sort.NewString[T](keyed(key, "name")),
-		UpdatedAt: sort.NewSort[T](keyed(key, "updated_at")),
+		CreatedAt: lib.NewBaseSort[T](keyed(key, "created_at")),
+		ID:        lib.NewBaseSort[T](keyed(key, "id")),
+		Name:      lib.NewStringSort[T](keyed(key, "name")),
+		UpdatedAt: lib.NewBaseSort[T](keyed(key, "updated_at")),
 		key:       key,
 	}
 }
 
 type group[T any] struct {
 	key       string
-	ID        *sort.Sort[T]
-	CreatedAt *sort.Sort[T]
-	UpdatedAt *sort.Sort[T]
-	Name      *sort.String[T]
+	ID        *lib.BaseSort[T]
+	CreatedAt *lib.BaseSort[T]
+	UpdatedAt *lib.BaseSort[T]
+	Name      *lib.StringSort[T]
 }

@@ -3,23 +3,27 @@ package where
 
 import (
 	model "github.com/marcbinz/som/example/model"
-	filter "github.com/marcbinz/som/lib/filter"
+	lib "github.com/marcbinz/som/lib"
 )
 
-func newLogin[T any](key filter.Key) login[T] {
+func newLogin[T any](key lib.Key[T]) login[T] {
 	return login[T]{
-		Password: filter.NewString[T](key.Dot("password")),
-		Username: filter.NewString[T](key.Dot("username")),
+		Password: lib.NewString[T](lib.Field(key, "password")),
+		Username: lib.NewString[T](lib.Field(key, "username")),
 		key:      key,
 	}
 }
 
 type login[T any] struct {
-	key      filter.Key
-	Username *filter.String[T]
-	Password *filter.String[T]
+	key      lib.Key[T]
+	Username *lib.String[T]
+	Password *lib.String[T]
+}
+type loginEdges[T any] struct {
+	lib.Filter[T]
+	key lib.Key[T]
 }
 type loginSlice[T any] struct {
-	login[T]
-	*filter.Slice[model.Login, T]
+	lib.Filter[T]
+	*lib.Slice[T, model.Login]
 }

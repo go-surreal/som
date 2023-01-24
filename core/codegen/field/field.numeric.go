@@ -70,7 +70,7 @@ func (f *Numeric) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(f.typeGo(), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, filter).Types(f.typeGo(), jen.Id("T"))
 }
 
 func (f *Numeric) filterInit(ctx Context) jen.Code {
@@ -79,16 +79,16 @@ func (f *Numeric) filterInit(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(def.PkgLibFilter, filter).Types(f.typeGo(), jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
+	return jen.Qual(def.PkgLib, filter).Types(f.typeGo(), jen.Id("T")).
+		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Numeric) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibSort, "Sort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, "BaseSort").Types(jen.Id("T"))
 }
 
 func (f *Numeric) sortInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLibSort, "NewSort").Types(jen.Id("T")).
+	return jen.Qual(def.PkgLib, "NewBaseSort").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

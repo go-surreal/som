@@ -2,12 +2,12 @@
 
 package where
 
-import filter "github.com/marcbinz/som/lib/filter"
+import "github.com/marcbinz/som/lib"
 
-func All[T any](filters ...filter.Of[T]) filter.Of[T] {
-	return filter.All[T](filters)
+func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
+	return lib.All[T](filters)
 }
 
-func Any[T any](filters ...filter.Of[T]) filter.Of[T] {
-	return filter.Any[T](filters)
+func Any[T any](filters ...lib.Filter[T]) lib.Filter[T] {
+	return lib.Any[T](filters)
 }

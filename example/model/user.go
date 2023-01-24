@@ -29,7 +29,7 @@ type User struct {
 	More      []float32
 	Roles     []Role // slice of enum
 
-	MyGroups []MemberOf
+	MemberOf []GroupMember
 
 	StringPtr         *string
 	IntPtr            *int
@@ -53,7 +53,7 @@ type User struct {
 
 func (u *User) GetGroups() []Group {
 	var nodes []Group
-	for _, edge := range u.MyGroups {
+	for _, edge := range u.MemberOf {
 		nodes = append(nodes, edge.Group)
 	}
 	return nodes
@@ -84,7 +84,7 @@ type Group struct {
 
 	Name string
 
-	Members []MemberOf
+	Members []GroupMember
 }
 
 func (g *Group) GetMembers() []User {
@@ -95,17 +95,17 @@ func (g *Group) GetMembers() []User {
 	return nodes
 }
 
-type MemberOf struct {
+type GroupMember struct {
 	som.Edge
 	som.Timestamps
 
 	User  User  `som:"in"`
 	Group Group `som:"out"`
 
-	Meta MemberOfMeta
+	Meta GroupMemberMeta
 }
 
-type MemberOfMeta struct {
+type GroupMemberMeta struct {
 	IsAdmin  bool
 	IsActive bool
 }

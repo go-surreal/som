@@ -7,33 +7,30 @@ import (
 	conv "github.com/marcbinz/som/example/gen/som/conv"
 	with "github.com/marcbinz/som/example/gen/som/with"
 	model "github.com/marcbinz/som/example/model"
-	builder "github.com/marcbinz/som/lib/builder"
-	filter "github.com/marcbinz/som/lib/filter"
-	sort "github.com/marcbinz/som/lib/sort"
+	lib "github.com/marcbinz/som/lib"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	"strings"
 	"time"
 )
 
 type User struct {
 	db    Database
-	query builder.Query
+	query lib.Query[model.User]
 }
 
 func NewUser(db Database) *User {
 	return &User{
 		db:    db,
-		query: builder.NewQuery("user"),
+		query: lib.NewQuery[model.User]("user"),
 	}
 }
-func (q User) Filter(filters ...filter.Of[model.User]) User {
-	for _, f := range filters {
-		q.query.Where = append(q.query.Where, builder.Where(f))
-	}
+func (q User) Filter(filters ...lib.Filter[model.User]) User {
+	q.query.Where = append(q.query.Where, filters...)
 	return q
 }
-func (q User) Order(by ...*sort.Of[model.User]) User {
+func (q User) Order(by ...*lib.Sort[model.User]) User {
 	for _, s := range by {
-		q.query.Sort = append(q.query.Sort, (*builder.Sort)(s))
+		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
 	return q
 }
@@ -153,5 +150,5 @@ func (q User) FirstID() (string, error) {
 }
 func (q User) Describe() string {
 	res := q.query.BuildAsAll()
-	return res.Statement
+	return strings.TrimSpace(res.Statement)
 }

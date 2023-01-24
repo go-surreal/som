@@ -49,7 +49,7 @@ func (f *UUID) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T"))
 }
 
 func (f *UUID) filterInit(ctx Context) jen.Code {
@@ -58,8 +58,8 @@ func (f *UUID) filterInit(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(def.PkgLibFilter, filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
+	return jen.Qual(def.PkgLib, filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
+		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *UUID) convFrom(ctx Context) jen.Code {

@@ -29,7 +29,7 @@ type User struct {
 	Other             []string       `json:"other"`
 	More              []float32      `json:"more"`
 	Roles             []string       `json:"roles"`
-	MyGroups          []MemberOf     `json:"my_groups,omitempty"`
+	MemberOf          []GroupMember  `json:"member_of,omitempty"`
 	StringPtr         *string        `json:"string_ptr"`
 	IntPtr            *int           `json:"int_ptr"`
 	TimePtr           *time.Time     `json:"time_ptr"`
@@ -92,8 +92,8 @@ func ToUser(data User) model.User {
 		IntPtr:            data.IntPtr,
 		Login:             toLogin(data.Login),
 		MainGroup:         fromGroupLink(data.MainGroup),
+		MemberOf:          mapSlice(data.MemberOf, ToGroupMember),
 		More:              data.More,
-		MyGroups:          mapSlice(data.MyGroups, ToMemberOf),
 		Node:              som.NewNode(parseDatabaseID("user", data.ID)),
 		NodePtrSlice:      mapPtrSlice(data.NodePtrSlice, fromGroupLink),
 		NodePtrSlicePtr:   mapPtrSlicePtr(data.NodePtrSlicePtr, fromGroupLink),

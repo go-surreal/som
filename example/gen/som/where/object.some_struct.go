@@ -4,27 +4,31 @@ package where
 import (
 	uuid "github.com/google/uuid"
 	model "github.com/marcbinz/som/example/model"
-	filter "github.com/marcbinz/som/lib/filter"
+	lib "github.com/marcbinz/som/lib"
 )
 
-func newSomeStruct[T any](key filter.Key) someStruct[T] {
+func newSomeStruct[T any](key lib.Key[T]) someStruct[T] {
 	return someStruct[T]{
-		IntPtr:    filter.NewNumericPtr[*int, T](key.Dot("int_ptr")),
-		StringPtr: filter.NewStringPtr[T](key.Dot("string_ptr")),
-		TimePtr:   filter.NewTimePtr[T](key.Dot("time_ptr")),
-		UuidPtr:   filter.NewBasePtr[uuid.UUID, T](key.Dot("uuid_ptr")),
+		IntPtr:    lib.NewNumericPtr[*int, T](lib.Field(key, "int_ptr")),
+		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
+		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
+		UuidPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
 		key:       key,
 	}
 }
 
 type someStruct[T any] struct {
-	key       filter.Key
-	StringPtr *filter.StringPtr[T]
-	IntPtr    *filter.NumericPtr[*int, T]
-	TimePtr   *filter.TimePtr[T]
-	UuidPtr   *filter.BasePtr[uuid.UUID, T]
+	key       lib.Key[T]
+	StringPtr *lib.StringPtr[T]
+	IntPtr    *lib.NumericPtr[*int, T]
+	TimePtr   *lib.TimePtr[T]
+	UuidPtr   *lib.BasePtr[uuid.UUID, T]
+}
+type someStructEdges[T any] struct {
+	lib.Filter[T]
+	key lib.Key[T]
 }
 type someStructSlice[T any] struct {
-	someStruct[T]
-	*filter.Slice[model.SomeStruct, T]
+	lib.Filter[T]
+	*lib.Slice[T, model.SomeStruct]
 }

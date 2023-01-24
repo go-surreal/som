@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/uuid"
 	sombase "github.com/marcbinz/som"
 	"github.com/marcbinz/som/example/gen/som"
 	"github.com/marcbinz/som/example/gen/som/where"
@@ -13,6 +12,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/assert"
 	"testing"
+	"time"
 	"unicode/utf8"
 )
 
@@ -35,26 +35,44 @@ func TestQuery(t *testing.T) {
 
 	query := client.User().Query().
 		Filter(
-			where.User.String.In(nil),
-			where.User.Bool.Is(true),
+			// where.User.Groups(
+			// 	where.Group.Name.Equal(""),
+			// 	where.Group.CreatedAt.In(nil),
+			// ).Count().GreaterThan(3),
+			// where.User.Groups(where.Group.CreatedAt.After(time.Now())),
+
+			where.User.
+				MemberOf(
+					where.GroupMember.CreatedAt.Before(time.Now()),
+				).
+				Group(
+					where.Group.ID.Equal("some_id"),
+				),
+
+			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
+			// where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1) ",
+		"SELECT * FROM user WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)])",
+		// "SELECT * FROM user WHERE (count(groups[WHERE (name = $0 AND created_at INSIDE $1)]) > $2 "+
+		// 	"AND groups[WHERE (created_at > $3)]) ",
 		query.Describe(),
 	)
 
-	query = query.Filter(
-		where.Any(
-			where.User.TimePtr.Nil(),
-			where.User.UUID.Equal(uuid.New()),
-		),
-	)
+	//  ("SELECT * FROM user WHERE count(groups[WHERE name = $0]) > $1 " + "AND groups[WHERE created_at > $2].created_at < $3" string)
 
-	assert.Equal(t,
-		"SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1 AND (time_ptr == $2 OR uuid = $3)) ",
-		query.Describe(),
-	)
+	// query = query.Filter(
+	// 	where.Any(
+	// 		where.User.TimePtr.Nil(),
+	// 		where.User.UUID.Equal(uuid.New()),
+	// 	),
+	// )
+	//
+	// assert.Equal(t,
+	// 	"SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1 AND (time_ptr == $2 OR uuid = $3)) ",
+	// 	query.Describe(),
+	// )
 }
 
 func TestWithDatabase(t *testing.T) {

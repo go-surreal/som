@@ -1,4 +1,4 @@
-package builder
+package lib
 
 import (
 	"strconv"
@@ -18,13 +18,13 @@ func (c *context) asVar(val any) string {
 	return "$" + index
 }
 
-type Query struct {
+type Query[T any] struct {
 	context
 	node       string
 	fields     string
 	groupBy    string
-	Where      []Where
-	Sort       []*Sort
+	Where      []Filter[T]
+	Sort       []*SortBuilder
 	SortRandom bool
 	Fetch      []string
 	Offset     int
@@ -33,8 +33,8 @@ type Query struct {
 	Parallel   bool
 }
 
-func NewQuery(node string) Query {
-	return Query{
+func NewQuery[T any](node string) Query[T] {
+	return Query[T]{
 		context: context{
 			varIndex: 0,
 			vars:     map[string]any{},
@@ -43,7 +43,7 @@ func NewQuery(node string) Query {
 	}
 }
 
-func (q Query) BuildAsAll() *Result {
+func (q Query[T]) BuildAsAll() *Result {
 	q.fields = "*"
 
 	return &Result{
@@ -52,7 +52,7 @@ func (q Query) BuildAsAll() *Result {
 	}
 }
 
-func (q Query) BuildAsAllIDs() *Result {
+func (q Query[T]) BuildAsAllIDs() *Result {
 	q.fields = "id"
 
 	return &Result{
@@ -61,7 +61,7 @@ func (q Query) BuildAsAllIDs() *Result {
 	}
 }
 
-func (q Query) BuildAsCount() *Result {
+func (q Query[T]) BuildAsCount() *Result {
 	q.fields = "count()"
 	q.groupBy = "id"
 
@@ -71,10 +71,11 @@ func (q Query) BuildAsCount() *Result {
 	}
 }
 
-func (q Query) render() string {
+func (q Query[T]) render() string {
 	out := "SELECT " + q.fields + " FROM " + q.node + " "
 
-	whereStatement := WhereAll{Where: q.Where}.render(&q.context)
+	var t T
+	whereStatement := All[T](q.Where).build(&q.context, t)
 	if whereStatement != "" {
 		out += "WHERE " + whereStatement + " "
 	}

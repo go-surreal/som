@@ -3,43 +3,43 @@ package by
 
 import (
 	model "github.com/marcbinz/som/example/model"
-	sort "github.com/marcbinz/som/lib/sort"
+	lib "github.com/marcbinz/som/lib"
 )
 
 var User = newUser[model.User]("")
 
 func newUser[T any](key string) user[T] {
 	return user[T]{
-		CreatedAt: sort.NewSort[T](keyed(key, "created_at")),
-		Float32:   sort.NewSort[T](keyed(key, "float_32")),
-		Float64:   sort.NewSort[T](keyed(key, "float_64")),
-		ID:        sort.NewSort[T](keyed(key, "id")),
-		Int:       sort.NewSort[T](keyed(key, "int")),
-		Int32:     sort.NewSort[T](keyed(key, "int_32")),
-		Int64:     sort.NewSort[T](keyed(key, "int_64")),
-		IntPtr:    sort.NewSort[T](keyed(key, "int_ptr")),
-		String:    sort.NewString[T](keyed(key, "string")),
-		StringPtr: sort.NewString[T](keyed(key, "string_ptr")),
-		TimePtr:   sort.NewSort[T](keyed(key, "time_ptr")),
-		UpdatedAt: sort.NewSort[T](keyed(key, "updated_at")),
+		CreatedAt: lib.NewBaseSort[T](keyed(key, "created_at")),
+		Float32:   lib.NewBaseSort[T](keyed(key, "float_32")),
+		Float64:   lib.NewBaseSort[T](keyed(key, "float_64")),
+		ID:        lib.NewBaseSort[T](keyed(key, "id")),
+		Int:       lib.NewBaseSort[T](keyed(key, "int")),
+		Int32:     lib.NewBaseSort[T](keyed(key, "int_32")),
+		Int64:     lib.NewBaseSort[T](keyed(key, "int_64")),
+		IntPtr:    lib.NewBaseSort[T](keyed(key, "int_ptr")),
+		String:    lib.NewStringSort[T](keyed(key, "string")),
+		StringPtr: lib.NewStringSort[T](keyed(key, "string_ptr")),
+		TimePtr:   lib.NewBaseSort[T](keyed(key, "time_ptr")),
+		UpdatedAt: lib.NewBaseSort[T](keyed(key, "updated_at")),
 		key:       key,
 	}
 }
 
 type user[T any] struct {
 	key       string
-	ID        *sort.Sort[T]
-	CreatedAt *sort.Sort[T]
-	UpdatedAt *sort.Sort[T]
-	String    *sort.String[T]
-	Int       *sort.Sort[T]
-	Int32     *sort.Sort[T]
-	Int64     *sort.Sort[T]
-	Float32   *sort.Sort[T]
-	Float64   *sort.Sort[T]
-	StringPtr *sort.String[T]
-	IntPtr    *sort.Sort[T]
-	TimePtr   *sort.Sort[T]
+	ID        *lib.BaseSort[T]
+	CreatedAt *lib.BaseSort[T]
+	UpdatedAt *lib.BaseSort[T]
+	String    *lib.StringSort[T]
+	Int       *lib.BaseSort[T]
+	Int32     *lib.BaseSort[T]
+	Int64     *lib.BaseSort[T]
+	Float32   *lib.BaseSort[T]
+	Float64   *lib.BaseSort[T]
+	StringPtr *lib.StringSort[T]
+	IntPtr    *lib.BaseSort[T]
+	TimePtr   *lib.BaseSort[T]
 }
 
 func (n user[T]) MainGroup() group[T] {
