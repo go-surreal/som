@@ -6,35 +6,36 @@ import (
 	lib "github.com/marcbinz/som/lib"
 )
 
+type memberOfIn[T any] struct {
+	lib.Filter[T]
+	memberOf[T]
+}
+
 func newMemberOfIn[T any](key lib.Key[T]) memberOfIn[T] {
-	return memberOfIn[T]{memberOf[T]{
+	return memberOfIn[T]{lib.KeyFilter(key), memberOf[T]{
 		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
 		ID:        lib.NewID[T](lib.Field(key, "id"), "member_of"),
 		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
 		key:       key,
 	}}
 }
-
-type memberOfIn[T any] struct {
-	memberOf[T]
-}
-
 func (i memberOfIn[T]) Group(filters ...lib.Filter[model.Group]) group[T] {
 	return newGroup[T](lib.EdgeIn(i.key, "group", filters))
 }
+
+type memberOfOut[T any] struct {
+	lib.Filter[T]
+	memberOf[T]
+}
+
 func newMemberOfOut[T any](key lib.Key[T]) memberOfOut[T] {
-	return memberOfOut[T]{memberOf[T]{
+	return memberOfOut[T]{lib.KeyFilter(key), memberOf[T]{
 		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
 		ID:        lib.NewID[T](lib.Field(key, "id"), "member_of"),
 		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
 		key:       key,
 	}}
 }
-
-type memberOfOut[T any] struct {
-	memberOf[T]
-}
-
 func (o memberOfOut[T]) User(filters ...lib.Filter[model.User]) user[T] {
 	return newUser[T](lib.EdgeOut(o.key, "user", filters))
 }
