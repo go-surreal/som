@@ -6,6 +6,26 @@ import (
 
 // type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
+// type Record[T any] struct {
+// 	id T
+// }
+//
+// func NewRecord[T any](id T) Record[T] {
+// 	return Record[T]{
+// 		id: id,
+// 	}
+// }
+//
+// func (r Record[T]) ID() T {
+// 	return r.id
+// }
+//
+// type TimeSeries Record[TimeSeriesID]
+//
+// type TimeSeriesID struct {
+// 	timestamp time.Time
+// }
+
 type Node struct {
 	id string
 }
@@ -22,17 +42,17 @@ func (n Node) ID() string {
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
-type Edge struct {
+type Edge[I, O any] struct {
 	id string
 }
 
-func NewEdge(id string) Edge {
-	return Edge{
+func NewEdge[I, O any](id string) Edge[I, O] {
+	return Edge[I, O]{
 		id: id,
 	}
 }
 
-func (e Edge) ID() string {
+func (e Edge[I, O]) ID() string {
 	return e.id
 }
 
