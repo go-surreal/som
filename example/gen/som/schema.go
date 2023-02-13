@@ -36,6 +36,7 @@ DEFINE FIELD role ON TABLE user TYPE string ASSERT $value INSIDE ["","admin","us
 DEFINE FIELD groups ON TABLE user TYPE array;
 DEFINE FIELD groups.* ON TABLE user TYPE record(group);
 DEFINE FIELD main_group ON TABLE user TYPE record(group);
+DEFINE FIELD main_group_ptr ON TABLE user TYPE record(group);
 DEFINE FIELD other ON TABLE user TYPE array;
 DEFINE FIELD other.* ON TABLE user TYPE string ASSERT $value != NULL;
 DEFINE FIELD more ON TABLE user TYPE array;
