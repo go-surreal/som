@@ -52,9 +52,30 @@ func (f *groupLink) UnmarshalJSON(data []byte) error {
 	}
 	return err
 }
-func fromGroupLink(link groupLink) model.Group {
-	return ToGroup(Group(link))
+func fromGroupLink(link *groupLink) model.Group {
+	if link == nil {
+		return model.Group{}
+	}
+	return ToGroup(Group(*link))
 }
-func toGroupLink(node model.Group) groupLink {
-	return groupLink(FromGroup(node))
+func fromGroupLinkPtr(link *groupLink) *model.Group {
+	if link == nil {
+		return nil
+	}
+	node := ToGroup(Group(*link))
+	return &node
+}
+func toGroupLink(node model.Group) *groupLink {
+	if node.ID() == "" {
+		return nil
+	}
+	link := groupLink(FromGroup(node))
+	return &link
+}
+func toGroupLinkPtr(node *model.Group) *groupLink {
+	if node == nil {
+		return nil
+	}
+	link := groupLink(FromGroup(*node))
+	return &link
 }

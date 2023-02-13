@@ -63,6 +63,9 @@ func (n user[T]) Groups(filters ...lib.Filter[model.Group]) groupSlice[T] {
 func (n user[T]) MainGroup() group[T] {
 	return newGroup[T](lib.Field(n.key, "main_group"))
 }
+func (n user[T]) MainGroupPtr() group[T] {
+	return newGroup[T](lib.Field(n.key, "main_group_ptr"))
+}
 func (n user[T]) Other() *lib.Slice[T, string] {
 	return lib.NewSlice[T, string](lib.Field(n.key, "other"))
 }
