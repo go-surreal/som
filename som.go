@@ -56,6 +56,35 @@ func (t Timestamps) UpdatedAt() time.Time {
 	return t.updatedAt
 }
 
+// Versioned adds a version field as well as automated handling
+// of said field to prevent the lost update phenomenon.
+//
+// See: https://vladmihalcea.com/jpa-entity-version-property-hibernate/
+// See: https://vladmihalcea.com/a-beginners-guide-to-database-locking-and-the-lost-update-phenomena/
+//
+// DEFINE FIELD version ON TABLE x VALUE $before ? $before + 1 : 1
+type Versioned struct {
+	version int
+}
+
+func NewVersioned(version int) Versioned {
+	return Versioned{
+		version: version,
+	}
+}
+
+func (v Versioned) Version() int {
+	return v.version
+}
+
+// BumpVersion increments the version field of the given Versioned struct.
+//
+// Note: For internal use only. Calling this method manually
+// on a model entity will have unexpected side effects.
+func BumpVersion(v *Versioned) {
+	v.version++
+}
+
 // TODO: implement soft delete feature
 // type SoftDelete struct {
 // 	deletedAt time.Time
