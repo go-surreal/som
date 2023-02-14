@@ -1,12 +1,13 @@
 package field
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 	"golang.org/x/exp/slices"
 	"sort"
+	"strings"
 )
 
 type Enum struct {
@@ -31,14 +32,19 @@ func (f *Enum) TypeDatabase() string {
 	}
 
 	sort.Strings(f.values)
-	valuesRaw, _ := json.Marshal(f.values)
-	values := string(valuesRaw)
 
-	if f.source.Pointer() {
-		return "string ASSERT $value == NULL OR $value INSIDE " + values
+	var values []string
+	for _, value := range f.values {
+		values = append(values, fmt.Sprintf(`"%s"`, value))
 	}
 
-	return "string ASSERT $value INSIDE " + values
+	in := strings.Join(values, ", ")
+
+	if f.source.Pointer() {
+		return "string ASSERT $value == NULL OR $value INSIDE [" + in + "]"
+	}
+
+	return "string ASSERT $value INSIDE [" + in + "]"
 }
 
 func (f *Enum) CodeGen() *CodeGen {

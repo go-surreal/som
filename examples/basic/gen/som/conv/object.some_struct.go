@@ -2,7 +2,7 @@
 package conv
 
 import (
-	model "github.com/marcbinz/som/example/model"
+	model "github.com/marcbinz/som/examples/basic/model"
 	"time"
 )
 

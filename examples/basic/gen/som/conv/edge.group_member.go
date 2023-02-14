@@ -3,7 +3,7 @@ package conv
 
 import (
 	som "github.com/marcbinz/som"
-	model "github.com/marcbinz/som/example/model"
+	model "github.com/marcbinz/som/examples/basic/model"
 	"time"
 )
 

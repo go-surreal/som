@@ -1,4 +1,4 @@
-package parser
+package util
 
 import (
 	"errors"
@@ -6,6 +6,22 @@ import (
 	"os"
 	"path"
 )
+
+const fileGoMod = "go.mod"
+
+func ParseMod(dir string) (string, string, error) {
+	data, filePath, err := findAndReadModFile(dir)
+	if err != nil {
+		return "", "", err
+	}
+
+	f, err := modfile.Parse(fileGoMod, data, nil)
+	if err != nil {
+		return "", "", err
+	}
+
+	return f.Module.Mod.Path, filePath, nil
+}
 
 func findAndReadModFile(dir string) ([]byte, string, error) {
 	for dir != "" {
@@ -23,18 +39,4 @@ func findAndReadModFile(dir string) ([]byte, string, error) {
 	}
 
 	return nil, "", errors.New("could not find go.mod in worktree")
-}
-
-func parseMod(dir string) (string, string, error) {
-	data, filePath, err := findAndReadModFile(dir)
-	if err != nil {
-		return "", "", err
-	}
-
-	f, err := modfile.Parse(fileGoMod, data, nil)
-	if err != nil {
-		return "", "", err
-	}
-
-	return f.Module.Mod.Path, filePath, nil
 }

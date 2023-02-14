@@ -3,8 +3,8 @@ package relate
 
 import (
 	"errors"
-	conv "github.com/marcbinz/som/example/gen/som/conv"
-	model "github.com/marcbinz/som/example/model"
+	conv "github.com/marcbinz/som/examples/basic/gen/som/conv"
+	model "github.com/marcbinz/som/examples/basic/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 

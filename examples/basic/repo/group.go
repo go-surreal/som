@@ -2,8 +2,8 @@ package repo
 
 import (
 	"context"
-	"github.com/marcbinz/som/example/gen/som"
-	"github.com/marcbinz/som/example/model"
+	"github.com/marcbinz/som/examples/basic/gen/som"
+	"github.com/marcbinz/som/examples/basic/model"
 )
 
 type GroupRepo interface {

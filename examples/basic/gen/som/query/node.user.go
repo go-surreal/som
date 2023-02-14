@@ -4,9 +4,9 @@ package query
 import (
 	"errors"
 	"fmt"
-	conv "github.com/marcbinz/som/example/gen/som/conv"
-	with "github.com/marcbinz/som/example/gen/som/with"
-	model "github.com/marcbinz/som/example/model"
+	conv "github.com/marcbinz/som/examples/basic/gen/som/conv"
+	with "github.com/marcbinz/som/examples/basic/gen/som/with"
+	model "github.com/marcbinz/som/examples/basic/model"
 	lib "github.com/marcbinz/som/lib"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 	"strings"

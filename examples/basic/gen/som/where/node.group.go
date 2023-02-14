@@ -2,7 +2,7 @@
 package where
 
 import (
-	model "github.com/marcbinz/som/example/model"
+	model "github.com/marcbinz/som/examples/basic/model"
 	lib "github.com/marcbinz/som/lib"
 )
 

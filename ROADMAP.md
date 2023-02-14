@@ -2,16 +2,17 @@
 
 ## Before v0.1.0 (first "somewhat stable" non-pre-release)
 
-- [ ] Implement sub-queries for node and edge types.
-- [ ] Add `som.SoftDelete` type with `DeletedAt` timestamp and automated handling throughout som.
-- [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
-- [ ] Consider reserved (query) keywords. (#18)
+- [x] Implement sub-queries for node and edge types.
+- [ ] Check current code functionality and add more tests.
 - [ ] Check for possible security vulnerabilities.
 - [ ] Choose proper licensing for the project. (#11)
 - [ ] Decimal vs Float vs Number type?
 
 ## After v0.1.0
 
+- [ ] Add `som.SoftDelete` type with `DeletedAt` timestamp and automated handling throughout som.
+- [ ] Mark fetched sub-nodes as "invalid to be saved"? (#25)
+- [ ] Consider reserved (query) keywords. (#18)
 - [ ] Provide `WithInfo` method.
 - [ ] Add support for `[]byte` (and `byte`?) type.
 - [ ] How to handle data migrations? (#22)

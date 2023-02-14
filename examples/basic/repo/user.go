@@ -2,11 +2,11 @@ package repo
 
 import (
 	"context"
-	"github.com/marcbinz/som/example/gen/som"
-	"github.com/marcbinz/som/example/gen/som/by"
-	"github.com/marcbinz/som/example/gen/som/where"
-	"github.com/marcbinz/som/example/gen/som/with"
-	"github.com/marcbinz/som/example/model"
+	"github.com/marcbinz/som/examples/basic/gen/som"
+	"github.com/marcbinz/som/examples/basic/gen/som/by"
+	"github.com/marcbinz/som/examples/basic/gen/som/where"
+	"github.com/marcbinz/som/examples/basic/gen/som/with"
+	"github.com/marcbinz/som/examples/basic/model"
 	"time"
 )
 

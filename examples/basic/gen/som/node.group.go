@@ -4,10 +4,10 @@ package som
 import (
 	"context"
 	"errors"
-	conv "github.com/marcbinz/som/example/gen/som/conv"
-	query "github.com/marcbinz/som/example/gen/som/query"
-	relate "github.com/marcbinz/som/example/gen/som/relate"
-	model "github.com/marcbinz/som/example/model"
+	conv "github.com/marcbinz/som/examples/basic/gen/som/conv"
+	query "github.com/marcbinz/som/examples/basic/gen/som/query"
+	relate "github.com/marcbinz/som/examples/basic/gen/som/relate"
+	model "github.com/marcbinz/som/examples/basic/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 	"time"
 )

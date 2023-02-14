@@ -4,7 +4,7 @@ package conv
 import (
 	"encoding/json"
 	som "github.com/marcbinz/som"
-	model "github.com/marcbinz/som/example/model"
+	model "github.com/marcbinz/som/examples/basic/model"
 	"strings"
 	"time"
 )
