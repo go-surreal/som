@@ -1,38 +1,71 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
   "timezone": "Europe/Berlin",
-  "labels": ["cc | build"],
+  "labels": ["dependencies"],
   "packageRules": [
     {
       "matchDatasources": ["golang-version"],
       "groupName": "go version update",
-      "labels": ["cc | build"],
-      "schedule": ["before 8am"]
+      "labels": ["dependencies" ,"backend"],
+      "commitMessage": "Update go version {{{commitMessageExtra}}}.",
+      "schedule": ["after 7am before 9am"]
     },
     {
       "matchDatasources": ["go"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "go minor package updates",
-      "labels": ["cc | build"],
-      "schedule": ["before 8am"]
+      "matchUpdateTypes": ["minor", "patch", "pin", "pinDigest", "digest", "lockFileMaintenance", "rollback", "bump"],
+      "groupName": "go minor/patch package updates",
+      "commitMessage": "Apply minor/patch go package updates.",
+      "labels": ["dependencies", "backend"],
+      "schedule": ["after 7am before 9am"]
     },
     {
       "matchDatasources": ["go"],
       "matchUpdateTypes": ["major"],
+      "stabilityDays": 3,
       "groupName": "go major package updates",
-      "labels": ["cc | build"],
-      "schedule": ["before 8am"]
+      "commitMessage": "Apply major go package updates.",
+      "labels": ["dependencies", "backend"],
+      "schedule": ["after 7am before 9am"]
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "pinDigest", "digest", "lockFileMaintenance", "rollback", "bump"],
+      "groupName": "npm minor package updates",
+      "commitMessage": "Apply minor/patch npm package updates.",
+      "labels": ["dependencies", "frontend"],
+      "schedule": ["after 7am before 9am"]
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "stabilityDays": 3,
+      "groupName": "npm major package updates",
+      "commitMessage": "Apply major npm package updates.",
+      "labels": ["dependencies", "frontend"],
+      "schedule": ["after 7am before 9am"]
+    },
+    {
+      "matchDatasources": ["node"],
+      "groupName": "node version update",
+      "commitMessage": "Update node version {{{commitMessageExtra}}}.",
+      "labels": ["dependencies", "frontend"],
+      "schedule": ["after 7am before 9am"]
+    },
+    {
+      "matchDatasources": ["docker"],
+      "groupName": "docker updates",
+      "commitMessage": "Apply docker updates.",
+      "labels": ["dependencies", "devops"],
+      "schedule": ["after 7am before 9am"]
     },
     {
       "matchPackagePatterns": ["github-actions"],
-      "groupName": "github workflow updates",
-      "labels": ["cc | ci"],
-      "schedule": ["before 8am"]
+      "groupName": "workflow updates",
+      "commitMessage": "Apply workflow updates.",
+      "labels": ["dependencies", "workflow"],
+      "schedule": ["after 7am before 9am"]
     }
   ],
   "additionalReviewers": ["marcbinz"],
-  "branchConcurrentLimit": 10
+  "branchConcurrentLimit": 5
 }
