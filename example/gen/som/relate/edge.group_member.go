@@ -46,9 +46,11 @@ func (e groupMember) Create(edge *model.GroupMember) error {
 	*edge = conv.ToGroupMember(convEdge)
 	return nil
 }
+
 func (groupMember) Update(edge *model.GroupMember) error {
 	return nil
 }
+
 func (groupMember) Delete(edge *model.GroupMember) error {
 	return nil
 }

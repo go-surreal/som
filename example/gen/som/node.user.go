@@ -23,6 +23,7 @@ type user struct {
 func (n *user) Query() *query.User {
 	return query.NewUser(n.client.db)
 }
+
 func (n *user) Create(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return errors.New("the passed node must not be nil")
@@ -49,6 +50,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	*user = conv.ToUser(convNode)
 	return nil
 }
+
 func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) error {
 	if user == nil {
 		return errors.New("the passed node must not be nil")
@@ -75,6 +77,7 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 	*user = conv.ToUser(convNode)
 	return nil
 }
+
 func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
 	raw, err := n.client.db.Select("user:⟨" + id + "⟩")
 	if err != nil {
@@ -94,6 +97,7 @@ func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
 	node := conv.ToUser(convNode)
 	return &node, true, nil
 }
+
 func (n *user) Update(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return errors.New("the passed node must not be nil")
@@ -115,6 +119,7 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	*user = conv.ToUser(convNode)
 	return nil
 }
+
 func (n *user) Delete(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return errors.New("the passed node must not be nil")
@@ -125,6 +130,7 @@ func (n *user) Delete(ctx context.Context, user *model.User) error {
 	}
 	return nil
 }
+
 func (n *user) Relate() *relate.User {
 	return relate.NewUser(n.client.db)
 }

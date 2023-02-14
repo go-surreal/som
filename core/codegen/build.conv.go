@@ -196,6 +196,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		typeName = elem.NameGo()
 	}
 
+	f.Line()
 	f.Type().Id(typeName).StructFunc(func(g *jen.Group) {
 		for _, f := range elem.GetFields() {
 			if code := f.CodeGen().FieldDef(fieldCtx); code != nil {
@@ -204,15 +205,20 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		}
 	})
 
+	f.Line()
 	f.Add(b.buildFrom(elem))
+
+	f.Line()
 	f.Add(b.buildTo(elem))
 
 	if node, ok := elem.(*field.NodeTable); ok {
+		f.Line()
 		f.Type().Id(node.NameGoLower()+"Link").Struct(
 			jen.Id(node.NameGo()),
 			jen.Id("ID").String(),
 		)
 
+		f.Line()
 		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGoLower()+"Link")).
 			Id("MarshalJSON").Params().
 			Params(jen.Index().Byte(), jen.Error()).
@@ -223,6 +229,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.Return(jen.Qual("encoding/json", "Marshal").Call(jen.Id("f").Dot("ID"))),
 			)
 
+		f.Line()
 		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGoLower()+"Link")).
 			Id("UnmarshalJSON").Params(jen.Id("data").Index().Byte()).
 			Error().
@@ -249,9 +256,16 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.Return(jen.Err()),
 			)
 
+		f.Line()
 		f.Add(b.buildFromLink(node))
+
+		f.Line()
 		f.Add(b.buildFromLinkPtr(node))
+
+		f.Line()
 		f.Add(b.buildToLink(node))
+
+		f.Line()
 		f.Add(b.buildToLinkPtr(node))
 	}
 

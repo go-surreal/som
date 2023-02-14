@@ -20,6 +20,7 @@ type Group struct {
 func FromGroup(data model.Group) Group {
 	return Group{Name: data.Name}
 }
+
 func ToGroup(data Group) model.Group {
 	return model.Group{
 		Members:    mapSlice(data.Members, ToGroupMember),
@@ -29,7 +30,10 @@ func ToGroup(data Group) model.Group {
 	}
 }
 
-type groupLink Group
+type groupLink struct {
+	Group
+	ID string
+}
 
 func (f *groupLink) MarshalJSON() ([]byte, error) {
 	if f == nil {
@@ -37,6 +41,7 @@ func (f *groupLink) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(f.ID)
 }
+
 func (f *groupLink) UnmarshalJSON(data []byte) error {
 	raw := string(data)
 	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
@@ -52,30 +57,34 @@ func (f *groupLink) UnmarshalJSON(data []byte) error {
 	}
 	return err
 }
+
 func fromGroupLink(link *groupLink) model.Group {
 	if link == nil {
 		return model.Group{}
 	}
-	return ToGroup(Group(*link))
+	return ToGroup(Group(link.Group))
 }
+
 func fromGroupLinkPtr(link *groupLink) *model.Group {
 	if link == nil {
 		return nil
 	}
-	node := ToGroup(Group(*link))
+	node := ToGroup(Group(link.Group))
 	return &node
 }
+
 func toGroupLink(node model.Group) *groupLink {
 	if node.ID() == "" {
 		return nil
 	}
-	link := groupLink(FromGroup(node))
+	link := groupLink{Group: FromGroup(node), ID: buildDatabaseID("group", node.ID())}
 	return &link
 }
+
 func toGroupLinkPtr(node *model.Group) *groupLink {
-	if node == nil {
+	if node == nil || node.ID() == "" {
 		return nil
 	}
-	link := groupLink(FromGroup(*node))
+	link := groupLink{Group: FromGroup(*node), ID: buildDatabaseID("group", node.ID())}
 	return &link
 }

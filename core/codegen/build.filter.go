@@ -101,11 +101,13 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	}
 
 	if _, ok := elem.(*field.NodeTable); ok {
+		file.Line()
 		file.Var().Id(elem.NameGo()).Op("=").
 			Id("new" + elem.NameGo()).Types(b.SourceQual(elem.NameGo())).
 			Call(jen.Qual(def.PkgLib, "NewKey").Types(b.SourceQual(elem.NameGo())).Call())
 	}
 
+	file.Line()
 	file.Add(b.whereNew(elem))
 
 	file.Type().Id(elem.NameGoLower()).
@@ -121,10 +123,12 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 
 	for _, fld := range elem.GetFields() {
 		if code := fld.CodeGen().FilterFunc(fieldCtx); code != nil {
+			file.Line()
 			file.Add(code)
 		}
 	}
 
+	file.Line()
 	file.Type().Id(elem.NameGoLower()+"Edges").
 		Types(jen.Id("T").Any()).
 		Struct(
@@ -152,10 +156,12 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 		}
 
 		if code := fld.CodeGen().FilterFunc(fieldCtx); code != nil {
+			file.Line()
 			file.Add(code)
 		}
 	}
 
+	file.Line()
 	file.Type().Id(elem.NameGoLower()+"Slice").
 		Types(jen.Id("T").Any()).
 		Struct(
@@ -170,12 +176,15 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 		Table:     edge,
 	}
 
+	file.Line()
 	file.Var().Id(edge.NameGo()).Op("=").
 		Id("new" + edge.NameGo()).Types(b.SourceQual(edge.NameGo())).
 		Call(jen.Qual(def.PkgLib, "NewKey").Types(b.SourceQual(edge.NameGo())).Call())
 
+	file.Line()
 	file.Add(b.whereNew(edge))
 
+	file.Line()
 	file.Type().Id(edge.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		StructFunc(func(g *jen.Group) {
@@ -189,10 +198,12 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 
 	for _, fld := range edge.GetFields() {
 		if code := fld.CodeGen().FilterFunc(fieldCtx); code != nil {
+			file.Line()
 			file.Add(code)
 		}
 	}
 
+	file.Line()
 	file.Type().Id(edge.NameGoLower()+"In").
 		Types(jen.Id("T").Any()).
 		Struct(
@@ -200,6 +211,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 			jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")),
 		)
 
+	file.Line()
 	file.Func().Id("new" + edge.NameGo() + "In").
 		Types(jen.Id("T").Any()).
 		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
@@ -213,6 +225,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 			),
 		)
 
+	file.Line()
 	file.Func().
 		Params(jen.Id("i").Id(edge.NameGoLower()+"In").Types(jen.Id("T"))).Id(edge.Out.NameGo()).
 		Params(
@@ -232,6 +245,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 				),
 			))
 
+	file.Line()
 	file.Type().Id(edge.NameGoLower()+"Out").
 		Types(jen.Id("T").Any()).
 		Struct(
@@ -239,6 +253,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 			jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T")),
 		)
 
+	file.Line()
 	file.Func().Id("new" + edge.NameGo() + "Out").
 		Types(jen.Id("T").Any()).
 		Params(jen.Id("key").Qual(def.PkgLib, "Key").Types(jen.Id("T"))).
@@ -252,6 +267,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 			),
 		)
 
+	file.Line()
 	file.Func().
 		Params(jen.Id("o").Id(edge.NameGoLower()+"Out").Types(jen.Id("T"))).Id(edge.In.NameGo()).
 		Params(

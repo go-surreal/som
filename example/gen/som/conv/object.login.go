@@ -14,6 +14,7 @@ func fromLogin(data model.Login) login {
 		Username: data.Username,
 	}
 }
+
 func toLogin(data login) model.Login {
 	return model.Login{
 		Password: data.Password,
