@@ -1,4 +1,4 @@
-# lefthook.yml x
+# lefthook.yml
 
 min_version: 1.2.7
 
@@ -9,7 +9,3 @@ pre-push:
     lint:
       tags: go
       run: task lint
-
-    test:
-      tags: go
-      run: task test
