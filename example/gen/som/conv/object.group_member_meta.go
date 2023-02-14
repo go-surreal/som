@@ -14,6 +14,7 @@ func fromGroupMemberMeta(data model.GroupMemberMeta) groupMemberMeta {
 		IsAdmin:  data.IsAdmin,
 	}
 }
+
 func toGroupMemberMeta(data groupMemberMeta) model.GroupMemberMeta {
 	return model.GroupMemberMeta{
 		IsActive: data.IsActive,

@@ -17,6 +17,7 @@ type GroupMember struct {
 func FromGroupMember(data model.GroupMember) GroupMember {
 	return GroupMember{Meta: fromGroupMemberMeta(data.Meta)}
 }
+
 func ToGroupMember(data GroupMember) model.GroupMember {
 	return model.GroupMember{
 		Edge:       som.NewEdge(parseDatabaseID("group_member", data.ID)),

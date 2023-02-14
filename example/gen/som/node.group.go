@@ -23,6 +23,7 @@ type group struct {
 func (n *group) Query() *query.Group {
 	return query.NewGroup(n.client.db)
 }
+
 func (n *group) Create(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -49,6 +50,7 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	*group = conv.ToGroup(convNode)
 	return nil
 }
+
 func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -75,6 +77,7 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	*group = conv.ToGroup(convNode)
 	return nil
 }
+
 func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
 	raw, err := n.client.db.Select("group:⟨" + id + "⟩")
 	if err != nil {
@@ -94,6 +97,7 @@ func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error)
 	node := conv.ToGroup(convNode)
 	return &node, true, nil
 }
+
 func (n *group) Update(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -115,6 +119,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	*group = conv.ToGroup(convNode)
 	return nil
 }
+
 func (n *group) Delete(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -125,6 +130,7 @@ func (n *group) Delete(ctx context.Context, group *model.Group) error {
 	}
 	return nil
 }
+
 func (n *group) Relate() *relate.Group {
 	return relate.NewGroup(n.client.db)
 }

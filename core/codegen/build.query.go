@@ -70,11 +70,13 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
+	f.Line()
 	f.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),
 		jen.Id("query").Qual(def.PkgLib, "Query").Types(b.SourceQual(node.Name)),
 	)
 
+	f.Line()
 	f.Func().Id("New" + node.Name).Params(jen.Id("db").Id("Database")).
 		Op("*").Id(node.Name).
 		Block(
@@ -103,6 +105,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	}
 
 	for _, fn := range functions {
+		f.Line()
 		f.Add(fn)
 	}
 

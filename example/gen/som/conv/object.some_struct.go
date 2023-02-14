@@ -21,6 +21,7 @@ func fromSomeStruct(data model.SomeStruct) someStruct {
 		UuidPtr:   uuidPtr(data.UuidPtr),
 	}
 }
+
 func toSomeStruct(data someStruct) model.SomeStruct {
 	return model.SomeStruct{
 		IntPtr:    data.IntPtr,

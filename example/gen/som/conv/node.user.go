@@ -80,6 +80,7 @@ func FromUser(data model.User) User {
 		UuidPtr:           uuidPtr(data.UuidPtr),
 	}
 }
+
 func ToUser(data User) model.User {
 	return model.User{
 		Bool:              data.Bool,
@@ -118,7 +119,10 @@ func ToUser(data User) model.User {
 	}
 }
 
-type userLink User
+type userLink struct {
+	User
+	ID string
+}
 
 func (f *userLink) MarshalJSON() ([]byte, error) {
 	if f == nil {
@@ -126,6 +130,7 @@ func (f *userLink) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(f.ID)
 }
+
 func (f *userLink) UnmarshalJSON(data []byte) error {
 	raw := string(data)
 	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
@@ -141,30 +146,34 @@ func (f *userLink) UnmarshalJSON(data []byte) error {
 	}
 	return err
 }
+
 func fromUserLink(link *userLink) model.User {
 	if link == nil {
 		return model.User{}
 	}
-	return ToUser(User(*link))
+	return ToUser(User(link.User))
 }
+
 func fromUserLinkPtr(link *userLink) *model.User {
 	if link == nil {
 		return nil
 	}
-	node := ToUser(User(*link))
+	node := ToUser(User(link.User))
 	return &node
 }
+
 func toUserLink(node model.User) *userLink {
 	if node.ID() == "" {
 		return nil
 	}
-	link := userLink(FromUser(node))
+	link := userLink{User: FromUser(node), ID: buildDatabaseID("user", node.ID())}
 	return &link
 }
+
 func toUserLinkPtr(node *model.User) *userLink {
-	if node == nil {
+	if node == nil || node.ID() == "" {
 		return nil
 	}
-	link := userLink(FromUser(*node))
+	link := userLink{User: FromUser(*node), ID: buildDatabaseID("user", node.ID())}
 	return &link
 }

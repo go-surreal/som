@@ -24,28 +24,34 @@ func NewUser(db Database) *User {
 		query: lib.NewQuery[model.User]("user"),
 	}
 }
+
 func (q User) Filter(filters ...lib.Filter[model.User]) User {
 	q.query.Where = append(q.query.Where, filters...)
 	return q
 }
+
 func (q User) Order(by ...*lib.Sort[model.User]) User {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
 	return q
 }
+
 func (q User) OrderRandom() User {
 	q.query.SortRandom = true
 	return q
 }
+
 func (q User) Offset(offset int) User {
 	q.query.Offset = offset
 	return q
 }
+
 func (q User) Limit(limit int) User {
 	q.query.Limit = limit
 	return q
 }
+
 func (q User) Fetch(fetch ...with.Fetch_[model.User]) User {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
@@ -54,14 +60,17 @@ func (q User) Fetch(fetch ...with.Fetch_[model.User]) User {
 	}
 	return q
 }
+
 func (q User) Timeout(timeout time.Duration) User {
 	q.query.Timeout = timeout
 	return q
 }
+
 func (q User) Parallel(parallel bool) User {
 	q.query.Parallel = parallel
 	return q
 }
+
 func (q User) Count() (int, error) {
 	res := q.query.BuildAsCount()
 	raw, err := q.db.Query(res.Statement, res.Variables)
@@ -78,6 +87,7 @@ func (q User) Count() (int, error) {
 	}
 	return rawCount.Count, nil
 }
+
 func (q User) Exists() (bool, error) {
 	count, err := q.Count()
 	if err != nil {
@@ -85,6 +95,7 @@ func (q User) Exists() (bool, error) {
 	}
 	return count > 0, nil
 }
+
 func (q User) All() ([]*model.User, error) {
 	res := q.query.BuildAsAll()
 	raw, err := q.db.Query(res.Statement, res.Variables)
@@ -106,6 +117,7 @@ func (q User) All() ([]*model.User, error) {
 	}
 	return nodes, nil
 }
+
 func (q User) AllIDs() ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	raw, err := q.db.Query(res.Statement, res.Variables)
@@ -126,6 +138,7 @@ func (q User) AllIDs() ([]string, error) {
 	}
 	return ids, nil
 }
+
 func (q User) First() (*model.User, error) {
 	q.query.Limit = 1
 	res, err := q.All()
@@ -137,6 +150,7 @@ func (q User) First() (*model.User, error) {
 	}
 	return res[0], nil
 }
+
 func (q User) FirstID() (string, error) {
 	q.query.Limit = 1
 	res, err := q.AllIDs()
@@ -148,6 +162,7 @@ func (q User) FirstID() (string, error) {
 	}
 	return res[0], nil
 }
+
 func (q User) Describe() string {
 	res := q.query.BuildAsAll()
 	return strings.TrimSpace(res.Statement)

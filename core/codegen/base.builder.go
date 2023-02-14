@@ -286,6 +286,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("c").Op("*").Id("Client")).
 		Id(node.NameGo()).Params().
@@ -297,10 +298,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 		)
 
+	f.Line()
 	f.Type().Id(node.NameGoLower()).Struct(
 		jen.Id("client").Op("*").Id("Client"),
 	)
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
@@ -316,6 +319,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		onUpdatedAt = jen.Id("data").Dot("UpdatedAt").Op("=").Id("data").Dot("CreatedAt")
 	}
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Create").
@@ -370,6 +374,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Return(jen.Nil()),
 		)
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("CreateWithID").
@@ -426,6 +431,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Return(jen.Nil()),
 		)
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Read").
@@ -467,6 +473,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		onUpdatedAt = jen.Id("data").Dot("UpdatedAt").Op("=").Qual("time", "Now").Call()
 	}
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Update").
@@ -510,6 +517,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Return(jen.Nil()),
 		)
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Delete").
@@ -533,6 +541,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Return(jen.Nil()),
 		)
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Relate").Params().

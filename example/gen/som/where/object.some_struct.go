@@ -24,10 +24,12 @@ type someStruct[T any] struct {
 	TimePtr   *lib.TimePtr[T]
 	UuidPtr   *lib.BasePtr[uuid.UUID, T]
 }
+
 type someStructEdges[T any] struct {
 	lib.Filter[T]
 	key lib.Key[T]
 }
+
 type someStructSlice[T any] struct {
 	lib.Filter[T]
 	*lib.Slice[T, model.SomeStruct]
