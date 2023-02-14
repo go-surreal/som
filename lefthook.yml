@@ -1,0 +1,11 @@
+# lefthook.yml
+
+min_version: 1.2.7
+
+pre-push:
+  parallel: true
+  commands:
+
+    lint:
+      tags: go
+      run: task lint
