@@ -45,3 +45,6 @@ type user[T any] struct {
 func (n user[T]) MainGroup() group[T] {
 	return newGroup[T](keyed(n.key, "main_group"))
 }
+func (n user[T]) MainGroupPtr() group[T] {
+	return newGroup[T](keyed(n.key, "main_group_ptr"))
+}

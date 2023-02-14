@@ -21,13 +21,14 @@ type User struct {
 
 	UUID uuid.UUID
 
-	Login     Login    // struct
-	Role      Role     // enum
-	Groups    []Group  // slice of Nodes
-	MainGroup Group    // node
-	Other     []string // slice of strings
-	More      []float32
-	Roles     []Role // slice of enum
+	Login        Login    // struct
+	Role         Role     // enum
+	Groups       []Group  // slice of Nodes
+	MainGroup    Group    // node
+	MainGroupPtr *Group   // node pointer
+	Other        []string // slice of strings
+	More         []float32
+	Roles        []Role // slice of enum
 
 	MemberOf []GroupMember
 
