@@ -11,10 +11,10 @@ require (
 	github.com/iancoleman/strcase v0.2.0
 	github.com/surrealdb/surrealdb.go v0.1.2-0.20221019092700-845266102715
 	github.com/testcontainers/testcontainers-go v0.17.0
-	github.com/urfave/cli/v2 v2.24.1
+	github.com/urfave/cli/v2 v2.24.3
 	github.com/wzshiming/gotype v0.7.3
-	golang.org/x/exp v0.0.0-20230124195608-d38c7dcee874
-	golang.org/x/mod v0.7.0
+	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb
+	golang.org/x/mod v0.8.0
 	gotest.tools v2.2.0+incompatible
 )
 

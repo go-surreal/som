@@ -24,8 +24,9 @@ type User struct {
 	UUID              string         `json:"uuid"`
 	Login             login          `json:"login"`
 	Role              string         `json:"role"`
-	Groups            []groupLink    `json:"groups"`
-	MainGroup         groupLink      `json:"main_group"`
+	Groups            []*groupLink   `json:"groups"`
+	MainGroup         *groupLink     `json:"main_group"`
+	MainGroupPtr      *groupLink     `json:"main_group_ptr"`
 	Other             []string       `json:"other"`
 	More              []float32      `json:"more"`
 	Roles             []string       `json:"roles"`
@@ -59,9 +60,10 @@ func FromUser(data model.User) User {
 		IntPtr:            data.IntPtr,
 		Login:             fromLogin(data.Login),
 		MainGroup:         toGroupLink(data.MainGroup),
+		MainGroupPtr:      toGroupLinkPtr(data.MainGroupPtr),
 		More:              data.More,
-		NodePtrSlice:      mapPtrSlice(data.NodePtrSlice, toGroupLink),
-		NodePtrSlicePtr:   mapPtrSlicePtr(data.NodePtrSlicePtr, toGroupLink),
+		NodePtrSlice:      mapSlice(data.NodePtrSlice, toGroupLinkPtr),
+		NodePtrSlicePtr:   mapSlicePtr(data.NodePtrSlicePtr, toGroupLinkPtr),
 		Other:             data.Other,
 		Role:              string(data.Role),
 		Roles:             mapSlice(data.Roles, mapEnum[model.Role, string]),
@@ -78,6 +80,7 @@ func FromUser(data model.User) User {
 		UuidPtr:           uuidPtr(data.UuidPtr),
 	}
 }
+
 func ToUser(data User) model.User {
 	return model.User{
 		Bool:              data.Bool,
@@ -92,11 +95,12 @@ func ToUser(data User) model.User {
 		IntPtr:            data.IntPtr,
 		Login:             toLogin(data.Login),
 		MainGroup:         fromGroupLink(data.MainGroup),
+		MainGroupPtr:      fromGroupLinkPtr(data.MainGroupPtr),
 		MemberOf:          mapSlice(data.MemberOf, ToGroupMember),
 		More:              data.More,
 		Node:              som.NewNode(parseDatabaseID("user", data.ID)),
-		NodePtrSlice:      mapPtrSlice(data.NodePtrSlice, fromGroupLink),
-		NodePtrSlicePtr:   mapPtrSlicePtr(data.NodePtrSlicePtr, fromGroupLink),
+		NodePtrSlice:      mapSlice(data.NodePtrSlice, fromGroupLinkPtr),
+		NodePtrSlicePtr:   mapSlicePtr(data.NodePtrSlicePtr, fromGroupLinkPtr),
 		Other:             data.Other,
 		Role:              model.Role(data.Role),
 		Roles:             mapSlice(data.Roles, mapEnum[string, model.Role]),
@@ -115,7 +119,10 @@ func ToUser(data User) model.User {
 	}
 }
 
-type userLink User
+type userLink struct {
+	User
+	ID string
+}
 
 func (f *userLink) MarshalJSON() ([]byte, error) {
 	if f == nil {
@@ -123,6 +130,7 @@ func (f *userLink) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(f.ID)
 }
+
 func (f *userLink) UnmarshalJSON(data []byte) error {
 	raw := string(data)
 	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
@@ -138,9 +146,34 @@ func (f *userLink) UnmarshalJSON(data []byte) error {
 	}
 	return err
 }
-func fromUserLink(link userLink) model.User {
-	return ToUser(User(link))
+
+func fromUserLink(link *userLink) model.User {
+	if link == nil {
+		return model.User{}
+	}
+	return ToUser(User(link.User))
 }
-func toUserLink(node model.User) userLink {
-	return userLink(FromUser(node))
+
+func fromUserLinkPtr(link *userLink) *model.User {
+	if link == nil {
+		return nil
+	}
+	node := ToUser(User(link.User))
+	return &node
+}
+
+func toUserLink(node model.User) *userLink {
+	if node.ID() == "" {
+		return nil
+	}
+	link := userLink{User: FromUser(node), ID: buildDatabaseID("user", node.ID())}
+	return &link
+}
+
+func toUserLinkPtr(node *model.User) *userLink {
+	if node == nil || node.ID() == "" {
+		return nil
+	}
+	link := userLink{User: FromUser(*node), ID: buildDatabaseID("user", node.ID())}
+	return &link
 }

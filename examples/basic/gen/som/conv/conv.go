@@ -45,6 +45,10 @@ func parseUUID(val string) uuid.UUID {
 	}
 	return res
 }
+	
+func mapEnum[I, O ~string](in I) O {
+ 	return O(in)
+}
 
 func mapSlice[I, O any](in []I, fn func(I) O) []O {
 	if in == nil {
@@ -57,19 +61,17 @@ func mapSlice[I, O any](in []I, fn func(I) O) []O {
 	}
 	return out
 }
+	
+func mapSlicePtr[I, O any](in *[]I, fn func(I) O) *[]O {
+	if in == nil {
+		return nil
+	}
 
-func mapEnum[I, O ~string](in I) O {
- 	return O(in)
-}
-
-func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
- 	return func(in *I) *O {
- 		if in == nil {
- 			return nil
- 		}
- 		out := fn(*in)
- 		return &out
- 	}
+	out := make([]O, len(*in))
+	for _, i := range *in {
+		out = append(out, fn(i))
+	}
+	return &out
 }
 
 func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
@@ -100,4 +102,14 @@ func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
 	}
 
 	return &out
+}
+	
+func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
+ 	return func(in *I) *O {
+ 		if in == nil {
+ 			return nil
+ 		}
+ 		out := fn(*in)
+ 		return &out
+ 	}
 }

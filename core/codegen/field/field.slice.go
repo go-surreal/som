@@ -175,21 +175,20 @@ func (f *Slice) convFrom(ctx Context) jen.Code {
 
 	case *Node:
 		{
-			mapFn := "mapSlice"
+			mapperFunc := "mapSlice"
+			mapFunc := "to" + element.table.NameGo() + "Link"
+
 			if f.source.Pointer() {
-				mapFn = "mapSlicePtr"
+				mapperFunc += "Ptr"
 			}
 
 			if element.source.Pointer() {
-				mapFn = "mapPtrSlice"
-				if f.source.Pointer() {
-					mapFn = "mapPtrSlicePtr"
-				}
+				mapFunc += "Ptr"
 			}
 
-			return jen.Id(mapFn).Call(
+			return jen.Id(mapperFunc).Call(
 				jen.Id("data").Dot(f.NameGo()),
-				jen.Id("to"+element.table.NameGo()+"Link"),
+				jen.Id(mapFunc),
 			)
 		}
 
@@ -241,21 +240,20 @@ func (f *Slice) convTo(ctx Context) jen.Code {
 
 	case *Node:
 		{
-			mapFn := "mapSlice"
+			mapperFunc := "mapSlice"
+			mapFunc := "from" + element.table.NameGo() + "Link"
+
 			if f.source.Pointer() {
-				mapFn = "mapSlicePtr"
+				mapperFunc += "Ptr"
 			}
 
 			if element.source.Pointer() {
-				mapFn = "mapPtrSlice"
-				if f.source.Pointer() {
-					mapFn = "mapPtrSlicePtr"
-				}
+				mapFunc += "Ptr"
 			}
 
-			return jen.Id(mapFn).Call(
+			return jen.Id(mapperFunc).Call(
 				jen.Id("data").Dot(f.NameGo()),
-				jen.Id("from"+element.table.NameGo()+"Link"),
+				jen.Id(mapFunc),
 			)
 		}
 

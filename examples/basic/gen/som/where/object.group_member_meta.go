@@ -19,10 +19,12 @@ type groupMemberMeta[T any] struct {
 	IsAdmin  *lib.Bool[T]
 	IsActive *lib.Bool[T]
 }
+
 type groupMemberMetaEdges[T any] struct {
 	lib.Filter[T]
 	key lib.Key[T]
 }
+
 type groupMemberMetaSlice[T any] struct {
 	lib.Filter[T]
 	*lib.Slice[T, model.GroupMemberMeta]

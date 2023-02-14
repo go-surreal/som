@@ -56,51 +56,70 @@ type user[T any] struct {
 func (n user[T]) Login() login[T] {
 	return newLogin[T](lib.Field(n.key, "login"))
 }
+
 func (n user[T]) Groups(filters ...lib.Filter[model.Group]) groupSlice[T] {
 	key := lib.Node(n.key, "groups", filters)
 	return groupSlice[T]{lib.KeyFilter[T](key), lib.NewSlice[T, model.Group](key)}
 }
+
 func (n user[T]) MainGroup() group[T] {
 	return newGroup[T](lib.Field(n.key, "main_group"))
 }
+
+func (n user[T]) MainGroupPtr() group[T] {
+	return newGroup[T](lib.Field(n.key, "main_group_ptr"))
+}
+
 func (n user[T]) Other() *lib.Slice[T, string] {
 	return lib.NewSlice[T, string](lib.Field(n.key, "other"))
 }
+
 func (n user[T]) More() *lib.Slice[T, float32] {
 	return lib.NewSlice[T, float32](lib.Field(n.key, "more"))
 }
+
 func (n user[T]) Roles() *lib.Slice[T, model.Role] {
 	return lib.NewSlice[T, model.Role](lib.Field(n.key, "roles"))
 }
+
 func (n user[T]) MemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[T] {
 	return newGroupMemberIn[T](lib.EdgeIn(n.key, "group_member", filters))
 }
+
 func (n user[T]) StructPtr() someStruct[T] {
 	return newSomeStruct[T](lib.Field(n.key, "struct_ptr"))
 }
+
 func (n user[T]) StringPtrSlice() *lib.Slice[T, *string] {
 	return lib.NewSlice[T, *string](lib.Field(n.key, "string_ptr_slice"))
 }
+
 func (n user[T]) StringSlicePtr() *lib.Slice[T, string] {
 	return lib.NewSlice[T, string](lib.Field(n.key, "string_slice_ptr"))
 }
+
 func (n user[T]) StructPtrSlice() *lib.Slice[T, *model.SomeStruct] {
 	return lib.NewSlice[T, *model.SomeStruct](lib.Field(n.key, "struct_ptr_slice"))
 }
+
 func (n user[T]) StructPtrSlicePtr() *lib.Slice[T, *model.SomeStruct] {
 	return lib.NewSlice[T, *model.SomeStruct](lib.Field(n.key, "struct_ptr_slice_ptr"))
 }
+
 func (n user[T]) EnumPtrSlice() *lib.Slice[T, model.Role] {
 	return lib.NewSlice[T, model.Role](lib.Field(n.key, "enum_ptr_slice"))
 }
+
 func (n user[T]) NodePtrSlice(filters ...lib.Filter[model.Group]) groupSlice[T] {
 	key := lib.Node(n.key, "node_ptr_slice", filters)
 	return groupSlice[T]{lib.KeyFilter[T](key), lib.NewSlice[T, model.Group](key)}
 }
+
 func (n user[T]) NodePtrSlicePtr(filters ...lib.Filter[model.Group]) groupSlice[T] {
 	key := lib.Node(n.key, "node_ptr_slice_ptr", filters)
 	return groupSlice[T]{lib.KeyFilter[T](key), lib.NewSlice[T, model.Group](key)}
 }
+
 func (n user[T]) SliceSlice() *lib.Slice[T, []string] {
 	return lib.NewSlice[T, []string](lib.Field(n.key, "slice_slice"))
 }

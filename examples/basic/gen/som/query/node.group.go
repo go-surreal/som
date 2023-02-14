@@ -24,28 +24,34 @@ func NewGroup(db Database) *Group {
 		query: lib.NewQuery[model.Group]("group"),
 	}
 }
+
 func (q Group) Filter(filters ...lib.Filter[model.Group]) Group {
 	q.query.Where = append(q.query.Where, filters...)
 	return q
 }
+
 func (q Group) Order(by ...*lib.Sort[model.Group]) Group {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
 	return q
 }
+
 func (q Group) OrderRandom() Group {
 	q.query.SortRandom = true
 	return q
 }
+
 func (q Group) Offset(offset int) Group {
 	q.query.Offset = offset
 	return q
 }
+
 func (q Group) Limit(limit int) Group {
 	q.query.Limit = limit
 	return q
 }
+
 func (q Group) Fetch(fetch ...with.Fetch_[model.Group]) Group {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
@@ -54,14 +60,17 @@ func (q Group) Fetch(fetch ...with.Fetch_[model.Group]) Group {
 	}
 	return q
 }
+
 func (q Group) Timeout(timeout time.Duration) Group {
 	q.query.Timeout = timeout
 	return q
 }
+
 func (q Group) Parallel(parallel bool) Group {
 	q.query.Parallel = parallel
 	return q
 }
+
 func (q Group) Count() (int, error) {
 	res := q.query.BuildAsCount()
 	raw, err := q.db.Query(res.Statement, res.Variables)
@@ -78,6 +87,7 @@ func (q Group) Count() (int, error) {
 	}
 	return rawCount.Count, nil
 }
+
 func (q Group) Exists() (bool, error) {
 	count, err := q.Count()
 	if err != nil {
@@ -85,6 +95,7 @@ func (q Group) Exists() (bool, error) {
 	}
 	return count > 0, nil
 }
+
 func (q Group) All() ([]*model.Group, error) {
 	res := q.query.BuildAsAll()
 	raw, err := q.db.Query(res.Statement, res.Variables)
@@ -106,6 +117,7 @@ func (q Group) All() ([]*model.Group, error) {
 	}
 	return nodes, nil
 }
+
 func (q Group) AllIDs() ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	raw, err := q.db.Query(res.Statement, res.Variables)
@@ -126,6 +138,7 @@ func (q Group) AllIDs() ([]string, error) {
 	}
 	return ids, nil
 }
+
 func (q Group) First() (*model.Group, error) {
 	q.query.Limit = 1
 	res, err := q.All()
@@ -137,6 +150,7 @@ func (q Group) First() (*model.Group, error) {
 	}
 	return res[0], nil
 }
+
 func (q Group) FirstID() (string, error) {
 	q.query.Limit = 1
 	res, err := q.AllIDs()
@@ -148,6 +162,7 @@ func (q Group) FirstID() (string, error) {
 	}
 	return res[0], nil
 }
+
 func (q Group) Describe() string {
 	res := q.query.BuildAsAll()
 	return strings.TrimSpace(res.Statement)

@@ -36,6 +36,7 @@ type groupMemberIn[T any] struct {
 func newGroupMemberIn[T any](key lib.Key[T]) groupMemberIn[T] {
 	return groupMemberIn[T]{lib.KeyFilter(key), key}
 }
+
 func (i groupMemberIn[T]) Group(filters ...lib.Filter[model.Group]) groupEdges[T] {
 	key := lib.EdgeIn(i.key, "group", filters)
 	return groupEdges[T]{lib.KeyFilter(key), key}
@@ -49,6 +50,7 @@ type groupMemberOut[T any] struct {
 func newGroupMemberOut[T any](key lib.Key[T]) groupMemberOut[T] {
 	return groupMemberOut[T]{lib.KeyFilter(key), key}
 }
+
 func (o groupMemberOut[T]) User(filters ...lib.Filter[model.User]) userEdges[T] {
 	key := lib.EdgeOut(o.key, "user", filters)
 	return userEdges[T]{lib.KeyFilter(key), key}
