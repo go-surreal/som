@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	containerName = "som_test_surrealdb"
+	surrealDBContainerVersion = "nightly" // 1.0.0-beta.8
+	containerName             = "som_test_surrealdb"
 )
 
 func conf(endpoint string) som.Config {
@@ -80,7 +81,7 @@ func TestWithDatabase(t *testing.T) {
 
 	req := testcontainers.ContainerRequest{
 		Name:         containerName,
-		Image:        "surrealdb/surrealdb:1.0.0-beta.8",
+		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
@@ -155,7 +156,7 @@ func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
-		Image:        "surrealdb/surrealdb:1.0.0-beta.8",
+		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
@@ -168,7 +169,7 @@ func FuzzWithDatabase(f *testing.F) {
 		},
 	)
 	if err != nil {
-		f.Error(err)
+		f.Fatal(err)
 	}
 
 	defer func() {
@@ -179,12 +180,12 @@ func FuzzWithDatabase(f *testing.F) {
 
 	endpoint, err := surreal.Endpoint(ctx, "")
 	if err != nil {
-		f.Error(err)
+		f.Fatal(err)
 	}
 
 	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
-		f.Error(err)
+		f.Fatal(err)
 	}
 
 	defer client.Close()
@@ -198,11 +199,11 @@ func FuzzWithDatabase(f *testing.F) {
 
 		err = client.User().Create(ctx, userIn)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		if userIn.ID() == "" {
-			t.Error("user ID must not be empty after create call")
+			t.Fatal("user ID must not be empty after create call")
 		}
 
 		userOut, err := client.User().Query().
@@ -212,7 +213,7 @@ func FuzzWithDatabase(f *testing.F) {
 			First()
 
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		assert.Equal(t, userIn.String, userOut.String)
@@ -225,7 +226,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
-		Image:        "surrealdb/surrealdb:1.0.0-beta.8",
+		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
@@ -238,7 +239,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 		},
 	)
 	if err != nil {
-		f.Error(err)
+		f.Fatal(err)
 	}
 
 	defer func() {
@@ -249,12 +250,12 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 	endpoint, err := surreal.Endpoint(ctx, "")
 	if err != nil {
-		f.Error(err)
+		f.Fatal(err)
 	}
 
 	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
-		f.Error(err)
+		f.Fatal(err)
 	}
 
 	defer client.Close()
@@ -279,21 +280,21 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 		err = client.User().CreateWithID(ctx, id, userIn)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		if userIn.ID() == "" {
-			t.Error("user ID must not be empty after create call")
+			t.Fatal("user ID must not be empty after create call")
 		}
 
 		userOut, ok, err := client.User().Read(ctx, userIn.ID())
 
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		if !ok {
-			t.Errorf("user with ID %s not found", userIn.ID())
+			t.Fatalf("user with ID '%s' not found", userIn.ID())
 		}
 
 		assert.Equal(t, userIn.ID(), userOut.ID())
@@ -303,14 +304,14 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 		err = client.User().Update(ctx, userOut)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		assert.Equal(t, "2", userOut.String)
 
 		err = client.User().Delete(ctx, userOut)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 	})
 }
@@ -319,7 +320,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
-		Image:        "surrealdb/surrealdb:1.0.0-beta.8",
+		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
@@ -332,23 +333,23 @@ func BenchmarkWithDatabase(b *testing.B) {
 		},
 	)
 	if err != nil {
-		b.Error(err)
+		b.Fatal(err)
 	}
 
 	defer func() {
 		if err := surreal.Terminate(ctx); err != nil {
-			b.Fatalf("failed to terminate container: %s", err.Error())
+			b.Errorf("failed to terminate container: %s", err.Error())
 		}
 	}()
 
 	endpoint, err := surreal.Endpoint(ctx, "")
 	if err != nil {
-		b.Error(err)
+		b.Fatal(err)
 	}
 
 	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
-		b.Error(err)
+		b.Fatal(err)
 	}
 
 	defer client.Close()
@@ -362,11 +363,11 @@ func BenchmarkWithDatabase(b *testing.B) {
 
 		err = client.User().Create(ctx, userIn)
 		if err != nil {
-			b.Error(err)
+			b.Fatal(err)
 		}
 
 		if userIn.ID() == "" {
-			b.Error("user ID must not be empty after create call")
+			b.Fatal("user ID must not be empty after create call")
 		}
 
 		userOut, err := client.User().Query().
@@ -376,7 +377,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 			First()
 
 		if err != nil {
-			b.Error(err)
+			b.Fatal(err)
 		}
 
 		assert.Equal(b, userIn.String, userOut.String)

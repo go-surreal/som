@@ -162,3 +162,4 @@ In the future this section will be advanced by topics raised in issues or discus
 - https://github.com/sharovik/orm
 - https://github.com/StarlaneStudios/cirql
 - https://github.com/uptrace/bun
+- https://atlasgo.io/
