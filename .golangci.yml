@@ -2,6 +2,9 @@
 
 issues:
   exclude-rules:
-    - path: example/gen
+    - path: examples/basic/gen
+      linters:
+        - unused
+    - path: examples/movie/gen
       linters:
         - unused
