@@ -9,7 +9,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/iancoleman/strcase v0.2.0
-	github.com/surrealdb/surrealdb.go v0.1.2-0.20221019092700-845266102715
+	github.com/surrealdb/surrealdb.go v0.1.2-0.20230309175011-e0397e60fdc8
 	github.com/testcontainers/testcontainers-go v0.19.0
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/wzshiming/gotype v0.7.3
