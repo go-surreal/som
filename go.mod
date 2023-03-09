@@ -15,7 +15,7 @@ require (
 	github.com/wzshiming/gotype v0.7.3
 	golang.org/x/exp v0.0.0-20230307190834-24139beb5833
 	golang.org/x/mod v0.9.0
-	gotest.tools v2.2.0+incompatible
+	gotest.tools/v3 v3.4.0
 )
 
 require (
@@ -50,5 +50,4 @@ require (
 	google.golang.org/genproto v0.0.0-20220617124728-180714bec0ad // indirect
 	google.golang.org/grpc v1.47.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
-	gotest.tools/v3 v3.4.0 // indirect
 )
