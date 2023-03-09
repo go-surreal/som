@@ -10,7 +10,7 @@ import (
 	"github.com/marcbinz/som/examples/basic/model"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 	"testing"
 	"time"
 	"unicode/utf8"
