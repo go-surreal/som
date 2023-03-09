@@ -2,6 +2,7 @@
 package query
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	conv "github.com/marcbinz/som/example/gen/som/conv"
@@ -12,6 +13,10 @@ import (
 	"strings"
 	"time"
 )
+
+type UserQuery interface{
+	Filter(filters ...lib.Filter[model.User]) User
+}
 
 type User struct {
 	db    Database
@@ -96,26 +101,38 @@ func (q User) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-func (q User) All() ([]*model.User, error) {
-	res := q.query.BuildAsAll()
-	raw, err := q.db.Query(res.Statement, res.Variables)
-	if err != nil {
-		return nil, err
+func (q User) All(ctx context.Context) ([]*model.User, error) {
+	select {
+
+	case val := <-ctx.Done():
+		if val == nil {
+
+		}
+		return nil, fmt.Errorf("context already done: %w", ctx.Err())
+
+	default:
+		{
+			res := q.query.BuildAsAll()
+			raw, err := q.db.Query(res.Statement, res.Variables)
+			if err != nil {
+				return nil, err
+			}
+			var rawNodes []conv.User
+			ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, nil
+			}
+			var nodes []*model.User
+			for _, rawNode := range rawNodes {
+				node := conv.ToUser(rawNode)
+				nodes = append(nodes, &node)
+			}
+			return nodes, nil
+		}
 	}
-	var rawNodes []conv.User
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
-	}
-	var nodes []*model.User
-	for _, rawNode := range rawNodes {
-		node := conv.ToUser(rawNode)
-		nodes = append(nodes, &node)
-	}
-	return nodes, nil
 }
 
 func (q User) AllIDs() ([]string, error) {

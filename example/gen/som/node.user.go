@@ -12,15 +12,25 @@ import (
 	"time"
 )
 
-func (c *Client) User() *user {
+func (c *ClientImpl) User() UserRepo {
 	return &user{client: c}
 }
 
-type user struct {
-	client *Client
+type UserRepo interface {
+	Query() query.UserQuery
+	Create(ctx context.Context, user *model.User) error
+	CreateWithID(ctx context.Context, id string, user *model.User) error
+	Read(ctx context.Context, id string) (*model.User, bool, error)
+	Update(ctx context.Context, user *model.User) error
+	Delete(ctx context.Context, user *model.User) error
+	Relate() *relate.User
 }
 
-func (n *user) Query() *query.User {
+type user struct {
+	client *ClientImpl
+}
+
+func (n *user) Query() query.UserQuery {
 	return query.NewUser(n.client.db)
 }
 
