@@ -9,13 +9,13 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/iancoleman/strcase v0.2.0
-	github.com/surrealdb/surrealdb.go v0.1.2-0.20221019092700-845266102715
+	github.com/surrealdb/surrealdb.go v0.1.2-0.20230309175011-e0397e60fdc8
 	github.com/testcontainers/testcontainers-go v0.19.0
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/wzshiming/gotype v0.7.3
-	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb
+	golang.org/x/exp v0.0.0-20230307190834-24139beb5833
 	golang.org/x/mod v0.9.0
-	gotest.tools v2.2.0+incompatible
+	gotest.tools/v3 v3.4.0
 )
 
 require (
@@ -50,5 +50,4 @@ require (
 	google.golang.org/genproto v0.0.0-20220617124728-180714bec0ad // indirect
 	google.golang.org/grpc v1.47.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
-	gotest.tools/v3 v3.4.0 // indirect
 )
