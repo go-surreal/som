@@ -13,7 +13,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.19.0
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/wzshiming/gotype v0.7.3
-	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb
+	golang.org/x/exp v0.0.0-20230307190834-24139beb5833
 	golang.org/x/mod v0.9.0
 	gotest.tools v2.2.0+incompatible
 )
