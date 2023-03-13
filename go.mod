@@ -2,7 +2,7 @@ module github.com/marcbinz/som
 
 go 1.19
 
-replace github.com/docker/docker => github.com/docker/docker v20.10.3-0.20221021173910-5aac513617f0+incompatible // 22.06 branch
+replace github.com/docker/docker/v23 => github.com/docker/docker v23.0.1+incompatible // 22.06 branch
 
 require (
 	github.com/dave/jennifer v1.6.0
