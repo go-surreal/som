@@ -24,10 +24,6 @@ type Config struct {
 	Database string
 }
 
-type Client interface {
-	User() UserRepo
-}
-
 type ClientImpl struct {
 	db Database
 }

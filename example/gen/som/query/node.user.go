@@ -14,17 +14,13 @@ import (
 	"time"
 )
 
-type UserQuery interface{
-	Filter(filters ...lib.Filter[model.User]) User
-}
-
 type User struct {
 	db    Database
 	query lib.Query[model.User]
 }
 
-func NewUser(db Database) *User {
-	return &User{
+func NewUser(db Database) User {
+	return User{
 		db:    db,
 		query: lib.NewQuery[model.User]("user"),
 	}
@@ -76,7 +72,7 @@ func (q User) Parallel(parallel bool) User {
 	return q
 }
 
-func (q User) Count() (int, error) {
+func (q User) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -93,8 +89,8 @@ func (q User) Count() (int, error) {
 	return rawCount.Count, nil
 }
 
-func (q User) Exists() (bool, error) {
-	count, err := q.Count()
+func (q User) Exists(ctx context.Context) (bool, error) {
+	count, err := q.Count(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -102,40 +98,28 @@ func (q User) Exists() (bool, error) {
 }
 
 func (q User) All(ctx context.Context) ([]*model.User, error) {
-	select {
-
-	case val := <-ctx.Done():
-		if val == nil {
-
-		}
-		return nil, fmt.Errorf("context already done: %w", ctx.Err())
-
-	default:
-		{
-			res := q.query.BuildAsAll()
-			raw, err := q.db.Query(res.Statement, res.Variables)
-			if err != nil {
-				return nil, err
-			}
-			var rawNodes []conv.User
-			ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
-			if err != nil {
-				return nil, err
-			}
-			if !ok {
-				return nil, nil
-			}
-			var nodes []*model.User
-			for _, rawNode := range rawNodes {
-				node := conv.ToUser(rawNode)
-				nodes = append(nodes, &node)
-			}
-			return nodes, nil
-		}
+	res := q.query.BuildAsAll()
+	raw, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return nil, err
 	}
+	var rawNodes []conv.User
+	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	var nodes []*model.User
+	for _, rawNode := range rawNodes {
+		node := conv.ToUser(rawNode)
+		nodes = append(nodes, &node)
+	}
+	return nodes, nil
 }
 
-func (q User) AllIDs() ([]string, error) {
+func (q User) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -156,9 +140,9 @@ func (q User) AllIDs() ([]string, error) {
 	return ids, nil
 }
 
-func (q User) First() (*model.User, error) {
+func (q User) First(ctx context.Context) (*model.User, error) {
 	q.query.Limit = 1
-	res, err := q.All()
+	res, err := q.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -168,9 +152,9 @@ func (q User) First() (*model.User, error) {
 	return res[0], nil
 }
 
-func (q User) FirstID() (string, error) {
+func (q User) FirstID(ctx context.Context) (string, error) {
 	q.query.Limit = 1
-	res, err := q.AllIDs()
+	res, err := q.AllIDs(ctx)
 	if err != nil {
 		return "", err
 	}

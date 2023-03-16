@@ -2,6 +2,7 @@
 package query
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	conv "github.com/marcbinz/som/example/gen/som/conv"
@@ -18,8 +19,8 @@ type Group struct {
 	query lib.Query[model.Group]
 }
 
-func NewGroup(db Database) *Group {
-	return &Group{
+func NewGroup(db Database) Group {
+	return Group{
 		db:    db,
 		query: lib.NewQuery[model.Group]("group"),
 	}
@@ -71,7 +72,7 @@ func (q Group) Parallel(parallel bool) Group {
 	return q
 }
 
-func (q Group) Count() (int, error) {
+func (q Group) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -88,15 +89,15 @@ func (q Group) Count() (int, error) {
 	return rawCount.Count, nil
 }
 
-func (q Group) Exists() (bool, error) {
-	count, err := q.Count()
+func (q Group) Exists(ctx context.Context) (bool, error) {
+	count, err := q.Count(ctx)
 	if err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-func (q Group) All() ([]*model.Group, error) {
+func (q Group) All(ctx context.Context) ([]*model.Group, error) {
 	res := q.query.BuildAsAll()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -118,7 +119,7 @@ func (q Group) All() ([]*model.Group, error) {
 	return nodes, nil
 }
 
-func (q Group) AllIDs() ([]string, error) {
+func (q Group) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -139,9 +140,9 @@ func (q Group) AllIDs() ([]string, error) {
 	return ids, nil
 }
 
-func (q Group) First() (*model.Group, error) {
+func (q Group) First(ctx context.Context) (*model.Group, error) {
 	q.query.Limit = 1
-	res, err := q.All()
+	res, err := q.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -151,9 +152,9 @@ func (q Group) First() (*model.Group, error) {
 	return res[0], nil
 }
 
-func (q Group) FirstID() (string, error) {
+func (q Group) FirstID(ctx context.Context) (string, error) {
 	q.query.Limit = 1
-	res, err := q.AllIDs()
+	res, err := q.AllIDs(ctx)
 	if err != nil {
 		return "", err
 	}

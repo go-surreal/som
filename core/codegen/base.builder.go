@@ -12,6 +12,13 @@ import (
 	"strings"
 )
 
+const (
+	filenameClient     = "som.client.go"
+	filenameDatabase   = "som.database.go"
+	filenameInterfaces = "som.interfaces.go"
+	filenameSchema     = "som.schema.go"
+)
+
 type build struct {
 	input  *input
 	outDir string
@@ -43,6 +50,10 @@ func (b *build) build() error {
 	}
 
 	if err := b.buildDatabaseFile(); err != nil {
+		return err
+	}
+
+	if err := b.buildInterfaceFile(); err != nil {
 		return err
 	}
 
@@ -99,11 +110,11 @@ type Config struct {
 	Database string
 }
 
-type Client struct {
+type ClientImpl struct {
 	db Database
 }
 
-func NewClient(conf Config) (*Client, error) {
+func NewClient(conf Config) (*ClientImpl, error) {
 	surreal, err := surrealdb.New(conf.Address + "/rpc")
 	if err != nil {
 		return nil, fmt.Errorf("new failed: %v", err)
@@ -122,17 +133,17 @@ func NewClient(conf Config) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{db: &database{DB: surreal}}, nil
+	return &ClientImpl{db: &database{DB: surreal}}, nil
 }
 
-func (c *Client) Close() {
+func (c *ClientImpl) Close() {
 	c.db.Close()
 }
 `
 
 	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
 
-	err := os.WriteFile(path.Join(b.basePath(), "client.go"), data, os.ModePerm)
+	err := os.WriteFile(path.Join(b.basePath(), filenameClient), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -179,9 +190,29 @@ func (db *database) Delete(what string) (any, error) {
 
 	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
 
-	err := os.WriteFile(path.Join(b.basePath(), "database.go"), data, os.ModePerm)
+	err := os.WriteFile(path.Join(b.basePath(), filenameDatabase), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
+	}
+
+	return nil
+}
+
+func (b *build) buildInterfaceFile() error {
+	f := jen.NewFile(b.basePkgName())
+
+	f.PackageComment(codegenComment)
+
+	f.Type().Id("Client").InterfaceFunc(func(g *jen.Group) {
+		for _, node := range b.input.nodes {
+			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
+		}
+
+		g.Id("Close").Call()
+	})
+
+	if err := f.Save(path.Join(b.basePath(), filenameInterfaces)); err != nil {
+		return err
 	}
 
 	return nil
@@ -256,7 +287,7 @@ import(
 	"fmt"
 )
 	
-func (c *Client) ApplySchema() error {
+func (c *ClientImpl) ApplySchema() error {
 	_, err := c.db.Query(tmpl, nil)
 	if err != nil {
 		return fmt.Errorf("could not apply schema: %%v", err)
@@ -270,7 +301,7 @@ var tmpl = %s
 
 	data := []byte(fmt.Sprintf(tmpl, codegenComment, b.basePkgName(), "`"+content+"`"))
 
-	err := os.WriteFile(path.Join(b.basePath(), "schema.go"), data, os.ModePerm)
+	err := os.WriteFile(path.Join(b.basePath(), filenameSchema), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -286,30 +317,68 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
+	//
+	// type {NodeName}Repo interface {...}
+	//
+	f.Type().Id(node.NameGo()+"Repo").Interface(
+		jen.Id("Query").Call().Qual(pkgQuery, node.NameGo()),
+
+		jen.Id("Create").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Error(),
+
+		jen.Id("CreateWithID").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("id").String(),
+			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Error(),
+
+		jen.Id("Read").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("id").String(),
+		).Parens(jen.List(
+			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Bool(),
+			jen.Error(),
+		)),
+
+		jen.Id("Update").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Error(),
+
+		jen.Id("Delete").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Error(),
+
+		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
+	)
+
 	f.Line()
 	f.Func().
-		Params(jen.Id("c").Op("*").Id("Client")).
-		Id(node.NameGo()).Params().
-		Op("*").Id(node.NameGoLower()).
+		Params(jen.Id("c").Op("*").Id("ClientImpl")).
+		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
 		Block(
 			jen.Return(
 				jen.Op("&").Id(node.NameGoLower()).
-					Values(jen.Id("client").Op(":").Id("c")),
+					Values(jen.Id("db").Op(":").Id("c").Dot("db")),
 			),
 		)
 
 	f.Line()
 	f.Type().Id(node.NameGoLower()).Struct(
-		jen.Id("client").Op("*").Id("Client"),
+		jen.Id("db").Id("Database"),
 	)
 
 	f.Line()
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
-		Op("*").Qual(pkgQuery, node.NameGo()).
+		Qual(pkgQuery, node.NameGo()).
 		Block(
-			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(jen.Id("n").Dot("client").Dot("db"))),
+			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(jen.Id("n").Dot("db"))),
 		)
 
 	onCreatedAt := jen.Empty()
@@ -346,7 +415,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onUpdatedAt),
 
 			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("client").Dot("db").Dot("Create").
+				Id("n").Dot("db").Dot("Create").
 				Call(jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
@@ -403,7 +472,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onUpdatedAt),
 
 			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("client").Dot("db").Dot("Create").
+				Id("n").Dot("db").Dot("Create").
 				Call(jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
@@ -442,7 +511,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
 			jen.List(jen.Id("raw"), jen.Err()).Op(":=").
-				Id("n").Dot("client").Dot("db").Dot("Select").
+				Id("n").Dot("db").Dot("Select").
 				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
 
 			jen.If(jen.Err().Op("!=").Nil()).Block(
@@ -498,7 +567,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onUpdatedAt),
 
 			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("client").Dot("db").Dot("Update").
+				Id("n").Dot("db").Dot("Update").
 				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
@@ -533,7 +602,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				),
 
 			jen.List(jen.Id("_"), jen.Err()).Op(":=").
-				Id("n").Dot("client").Dot("db").Dot("Delete").
+				Id("n").Dot("db").Dot("Delete").
 				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Err()),
@@ -548,7 +617,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
 		Block(
 			jen.Return(jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).
-				Call(jen.Id("n").Dot("client").Dot("db"))),
+				Call(jen.Id("n").Dot("db"))),
 		)
 
 	if err := f.Save(path.Join(b.basePath(), node.FileName())); err != nil {

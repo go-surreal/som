@@ -125,6 +125,10 @@ type MemberOfProps struct {
 }
 ```
 
+### Partial updates
+
+- https://incident.io/blog/code-generation
+
 ## Optimisations
 
 tbd.

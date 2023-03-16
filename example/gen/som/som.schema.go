@@ -6,7 +6,7 @@ import(
 	"fmt"
 )
 	
-func (c *Client) ApplySchema() error {
+func (c *ClientImpl) ApplySchema() error {
 	_, err := c.db.Query(tmpl, nil)
 	if err != nil {
 		return fmt.Errorf("could not apply schema: %v", err)
