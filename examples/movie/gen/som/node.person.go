@@ -4,6 +4,7 @@ package som
 import (
 	"context"
 	"errors"
+	"fmt"
 	conv "github.com/marcbinz/som/examples/movie/gen/som/conv"
 	query "github.com/marcbinz/som/examples/movie/gen/som/query"
 	relate "github.com/marcbinz/som/examples/movie/gen/som/relate"
@@ -38,7 +39,7 @@ func (n *person) Create(ctx context.Context, person *model.Person) error {
 		return errors.New("the passed node must not be nil")
 	}
 	if person.ID() != "" {
-		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
+		return errors.New("given node already has an id")
 	}
 	key := "person"
 	data := conv.FromPerson(*person)
@@ -71,7 +72,7 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 
 	raw, err := n.db.Create(key, data)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create entity: %w", err)
 	}
 	if _, ok := raw.([]any); !ok {
 		raw = []any{raw} // temporary fix
@@ -79,7 +80,7 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 	var convNode conv.Person
 	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*person = conv.ToPerson(convNode)
 	return nil
@@ -99,7 +100,7 @@ func (n *person) Read(ctx context.Context, id string) (*model.Person, bool, erro
 	var convNode conv.Person
 	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
-		return nil, false, err
+		return nil, false, fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	node := conv.ToPerson(convNode)
 	return &node, true, nil
@@ -116,12 +117,12 @@ func (n *person) Update(ctx context.Context, person *model.Person) error {
 
 	raw, err := n.db.Update("person:⟨"+person.ID()+"⟩", data)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not update entity: %w", err)
 	}
 	var convNode conv.Person
 	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*person = conv.ToPerson(convNode)
 	return nil
@@ -133,7 +134,7 @@ func (n *person) Delete(ctx context.Context, person *model.Person) error {
 	}
 	_, err := n.db.Delete("person:⟨" + person.ID() + "⟩")
 	if err != nil {
-		return err
+		return fmt.Errorf("could not delete entity: %w", err)
 	}
 	return nil
 }

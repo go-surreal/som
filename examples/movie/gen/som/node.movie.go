@@ -4,6 +4,7 @@ package som
 import (
 	"context"
 	"errors"
+	"fmt"
 	conv "github.com/marcbinz/som/examples/movie/gen/som/conv"
 	query "github.com/marcbinz/som/examples/movie/gen/som/query"
 	relate "github.com/marcbinz/som/examples/movie/gen/som/relate"
@@ -38,7 +39,7 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 		return errors.New("the passed node must not be nil")
 	}
 	if movie.ID() != "" {
-		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
+		return errors.New("given node already has an id")
 	}
 	key := "movie"
 	data := conv.FromMovie(*movie)
@@ -71,7 +72,7 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 
 	raw, err := n.db.Create(key, data)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create entity: %w", err)
 	}
 	if _, ok := raw.([]any); !ok {
 		raw = []any{raw} // temporary fix
@@ -79,7 +80,7 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 	var convNode conv.Movie
 	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*movie = conv.ToMovie(convNode)
 	return nil
@@ -99,7 +100,7 @@ func (n *movie) Read(ctx context.Context, id string) (*model.Movie, bool, error)
 	var convNode conv.Movie
 	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
-		return nil, false, err
+		return nil, false, fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	node := conv.ToMovie(convNode)
 	return &node, true, nil
@@ -116,12 +117,12 @@ func (n *movie) Update(ctx context.Context, movie *model.Movie) error {
 
 	raw, err := n.db.Update("movie:⟨"+movie.ID()+"⟩", data)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not update entity: %w", err)
 	}
 	var convNode conv.Movie
 	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*movie = conv.ToMovie(convNode)
 	return nil
@@ -133,7 +134,7 @@ func (n *movie) Delete(ctx context.Context, movie *model.Movie) error {
 	}
 	_, err := n.db.Delete("movie:⟨" + movie.ID() + "⟩")
 	if err != nil {
-		return err
+		return fmt.Errorf("could not delete entity: %w", err)
 	}
 	return nil
 }

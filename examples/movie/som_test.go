@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "nightly" // 1.0.0-beta.8
+	surrealDBContainerVersion = "1.0.0-beta.8" // "nightly"
 	containerName             = "som_test_surrealdb"
+	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
 
 func conf(endpoint string) som.Config {
@@ -24,7 +25,7 @@ func conf(endpoint string) som.Config {
 		Username:  "root",
 		Password:  "root",
 		Namespace: "som_test",
-		Database:  "som_test",
+		Database:  "example_movie",
 	}
 }
 
@@ -36,7 +37,7 @@ func TestWithDatabase(t *testing.T) {
 		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
+		WaitingFor:   wait.ForLog(containerStartedMsg),
 	}
 
 	surreal, err := testcontainers.GenericContainer(ctx,

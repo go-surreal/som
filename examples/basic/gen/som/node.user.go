@@ -4,6 +4,7 @@ package som
 import (
 	"context"
 	"errors"
+	"fmt"
 	conv "github.com/marcbinz/som/examples/basic/gen/som/conv"
 	query "github.com/marcbinz/som/examples/basic/gen/som/query"
 	relate "github.com/marcbinz/som/examples/basic/gen/som/relate"
@@ -39,7 +40,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 		return errors.New("the passed node must not be nil")
 	}
 	if user.ID() != "" {
-		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
+		return errors.New("given node already has an id")
 	}
 	key := "user"
 	data := conv.FromUser(*user)
@@ -74,7 +75,7 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 	data.UpdatedAt = data.CreatedAt
 	raw, err := n.db.Create(key, data)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create entity: %w", err)
 	}
 	if _, ok := raw.([]any); !ok {
 		raw = []any{raw} // temporary fix
@@ -82,7 +83,7 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 	var convNode conv.User
 	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*user = conv.ToUser(convNode)
 	return nil
@@ -102,7 +103,7 @@ func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
 	var convNode conv.User
 	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
-		return nil, false, err
+		return nil, false, fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	node := conv.ToUser(convNode)
 	return &node, true, nil
@@ -119,12 +120,12 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	data.UpdatedAt = time.Now()
 	raw, err := n.db.Update("user:⟨"+user.ID()+"⟩", data)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not update entity: %w", err)
 	}
 	var convNode conv.User
 	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*user = conv.ToUser(convNode)
 	return nil
@@ -136,7 +137,7 @@ func (n *user) Delete(ctx context.Context, user *model.User) error {
 	}
 	_, err := n.db.Delete("user:⟨" + user.ID() + "⟩")
 	if err != nil {
-		return err
+		return fmt.Errorf("could not delete entity: %w", err)
 	}
 	return nil
 }

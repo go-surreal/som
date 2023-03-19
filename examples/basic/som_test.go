@@ -2,7 +2,6 @@ package basic
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	sombase "github.com/marcbinz/som"
 	"github.com/marcbinz/som/examples/basic/gen/som"
@@ -20,6 +19,7 @@ import (
 const (
 	surrealDBContainerVersion = "1.0.0-beta.8" // "nightly"
 	containerName             = "som_test_surrealdb"
+	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
 
 func conf(endpoint string) som.Config {
@@ -28,7 +28,7 @@ func conf(endpoint string) som.Config {
 		Username:  "root",
 		Password:  "root",
 		Namespace: "som_test",
-		Database:  "som_test",
+		Database:  "example_basic",
 	}
 }
 
@@ -87,7 +87,7 @@ func TestWithDatabase(t *testing.T) {
 		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
+		WaitingFor:   wait.ForLog(containerStartedMsg),
 	}
 
 	surreal, err := testcontainers.GenericContainer(ctx,
@@ -155,6 +155,12 @@ func TestWithDatabase(t *testing.T) {
 	)
 }
 
+type ContainerLog func(testcontainers.Log)
+
+func (l ContainerLog) Accept(log testcontainers.Log) {
+	l(log)
+}
+
 func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 
@@ -162,7 +168,7 @@ func FuzzWithDatabase(f *testing.F) {
 		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
+		WaitingFor:   wait.ForLog(containerStartedMsg),
 	}
 
 	surreal, err := testcontainers.GenericContainer(ctx,
@@ -224,15 +230,13 @@ func FuzzWithDatabase(f *testing.F) {
 }
 
 func FuzzCustomModelIDs(f *testing.F) {
-	fmt.Println("THIS IS A SINGLE RUN")
-
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
 		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
+		WaitingFor:   wait.ForLog(containerStartedMsg),
 	}
 
 	surreal, err := testcontainers.GenericContainer(ctx,
@@ -244,6 +248,16 @@ func FuzzCustomModelIDs(f *testing.F) {
 	if err != nil {
 		f.Fatal(err)
 	}
+
+	// log := ContainerLog(func(log testcontainers.Log) {
+	// 	fmt.Println(log.LogType, string(log.Content))
+	// })
+	//
+	// surreal.FollowOutput(log)
+	//
+	// if err := surreal.StartLogProducer(ctx); err != nil {
+	// 	f.Fatal(err)
+	// }
 
 	defer func() {
 		if err := surreal.Terminate(ctx); err != nil {
@@ -326,7 +340,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog("Started web server on 0.0.0.0:8000"),
+		WaitingFor:   wait.ForLog(containerStartedMsg),
 	}
 
 	surreal, err := testcontainers.GenericContainer(ctx,
