@@ -25,7 +25,7 @@ func main() {
 	}
 	defer db.Close()
 
-	query := db.User().Query().
+	query := db.UserRepo().Query().
 		Filter(
 			where.User.Groups(where.Group.ID.Equal(""), where.Group.Name.Equal("")),
 			where.Any(
@@ -149,7 +149,7 @@ func main() {
 	// fmt.Println("deleted user:", user.ID())
 
 	//
-	// user2, err := userRepo.FindById(ctx, user.ID)
+	// user2, err := userRepo.FindByID(ctx, user.ID)
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }

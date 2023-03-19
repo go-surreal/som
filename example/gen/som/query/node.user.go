@@ -2,6 +2,7 @@
 package query
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	conv "github.com/marcbinz/som/example/gen/som/conv"
@@ -18,18 +19,29 @@ type User struct {
 	query lib.Query[model.User]
 }
 
-func NewUser(db Database) *User {
-	return &User{
+func NewUser(db Database) User {
+	return User{
 		db:    db,
 		query: lib.NewQuery[model.User]("user"),
 	}
 }
 
+// Filter adds a where statement to the query to
+// select records based on the given conditions.
+//
+// Use where.All to chain multiple conditions
+// together that all need to match.
+// Use where.Any to chain multiple conditions
+// together where at least one needs to match.
 func (q User) Filter(filters ...lib.Filter[model.User]) User {
 	q.query.Where = append(q.query.Where, filters...)
 	return q
 }
 
+// Order sorts the returned records based on the given conditions.
+// If multiple conditions are given, they are applied one after the other.
+// Note: If OrderRandom is used within the same query,
+// it would override the sort conditions.
 func (q User) Order(by ...*lib.Sort[model.User]) User {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
@@ -37,21 +49,27 @@ func (q User) Order(by ...*lib.Sort[model.User]) User {
 	return q
 }
 
+// OrderRandom sorts the returned records in a random order.
+// Note: OrderRandom takes precedence over Order.
 func (q User) OrderRandom() User {
 	q.query.SortRandom = true
 	return q
 }
 
+// Offset skips the first x records for the result set.
 func (q User) Offset(offset int) User {
 	q.query.Offset = offset
 	return q
 }
 
+// Limit restricts the query to return at most x records.
 func (q User) Limit(limit int) User {
 	q.query.Limit = limit
 	return q
 }
 
+// Fetch can be used to return related records.
+// This works for both records links and edges.
 func (q User) Fetch(fetch ...with.Fetch_[model.User]) User {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
@@ -61,17 +79,24 @@ func (q User) Fetch(fetch ...with.Fetch_[model.User]) User {
 	return q
 }
 
+// Timeout adds an execution time limit to the query.
+// When exceeded, the query call will return with an error.
 func (q User) Timeout(timeout time.Duration) User {
 	q.query.Timeout = timeout
 	return q
 }
 
+// Parallel tells SurrealDB that individual parts
+// of the query can be calculated in parallel.
+// This could lead to a faster execution.
 func (q User) Parallel(parallel bool) User {
 	q.query.Parallel = parallel
 	return q
 }
 
-func (q User) Count() (int, error) {
+// Count returns the size of the result set, in other words the
+// number of records matching the conditions of the query.
+func (q User) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -88,15 +113,19 @@ func (q User) Count() (int, error) {
 	return rawCount.Count, nil
 }
 
-func (q User) Exists() (bool, error) {
-	count, err := q.Count()
+// Exists returns whether at least one record for the conditons
+// of the query exists or not. In other words it returns whether
+// the size of the result set is greater than 0.
+func (q User) Exists(ctx context.Context) (bool, error) {
+	count, err := q.Count(ctx)
 	if err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-func (q User) All() ([]*model.User, error) {
+// All returns all records matching the conditions of the query.
+func (q User) All(ctx context.Context) ([]*model.User, error) {
 	res := q.query.BuildAsAll()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -118,7 +147,8 @@ func (q User) All() ([]*model.User, error) {
 	return nodes, nil
 }
 
-func (q User) AllIDs() ([]string, error) {
+// AllIDs returns the IDs of all records matching the conditions of the query.
+func (q User) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -139,9 +169,12 @@ func (q User) AllIDs() ([]string, error) {
 	return ids, nil
 }
 
-func (q User) First() (*model.User, error) {
+// First returns the first record matching the conditions of the query.
+// This comes in handy when using a filter for a field with unique values or when
+// sorting the result set in a specific order where only the first result is relevant.
+func (q User) First(ctx context.Context) (*model.User, error) {
 	q.query.Limit = 1
-	res, err := q.All()
+	res, err := q.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -151,9 +184,12 @@ func (q User) First() (*model.User, error) {
 	return res[0], nil
 }
 
-func (q User) FirstID() (string, error) {
+// FirstID returns the ID of the first record matching the conditions of the query.
+// This comes in handy when using a filter for a field with unique values or when
+// sorting the result set in a specific order where only the first result is relevant.
+func (q User) FirstID(ctx context.Context) (string, error) {
 	q.query.Limit = 1
-	res, err := q.AllIDs()
+	res, err := q.AllIDs(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -163,6 +199,9 @@ func (q User) FirstID() (string, error) {
 	return res[0], nil
 }
 
+// Describe returns a string representation of the query.
+// While this might be a valid SurrealDB query, it
+// should only be used for debugging purposes.
 func (q User) Describe() string {
 	res := q.query.BuildAsAll()
 	return strings.TrimSpace(res.Statement)

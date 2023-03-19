@@ -8,6 +8,7 @@ require (
 	github.com/dave/jennifer v1.6.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
+	github.com/google/wire v0.5.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/surrealdb/surrealdb.go v0.1.2-0.20230309175011-e0397e60fdc8
 	github.com/testcontainers/testcontainers-go v0.19.0

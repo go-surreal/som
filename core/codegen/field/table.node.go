@@ -8,6 +8,8 @@ type NodeTable struct {
 	Name       string
 	Fields     []Field
 	Timestamps bool
+
+	// TODO: include source package path + method(s)
 }
 
 func (t *NodeTable) FileName() string {

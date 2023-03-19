@@ -12,16 +12,26 @@ import (
 	"time"
 )
 
-func (c *Client) Group() *group {
-	return &group{client: c}
+type GroupRepo interface {
+	Query() query.Group
+	Create(ctx context.Context, user *model.Group) error
+	CreateWithID(ctx context.Context, id string, user *model.Group) error
+	Read(ctx context.Context, id string) (*model.Group, bool, error)
+	Update(ctx context.Context, user *model.Group) error
+	Delete(ctx context.Context, user *model.Group) error
+	Relate() *relate.Group
+}
+
+func (c *ClientImpl) GroupRepo() GroupRepo {
+	return &group{db: c.db}
 }
 
 type group struct {
-	client *Client
+	db Database
 }
 
-func (n *group) Query() *query.Group {
-	return query.NewGroup(n.client.db)
+func (n *group) Query() query.Group {
+	return query.NewGroup(n.db)
 }
 
 func (n *group) Create(ctx context.Context, group *model.Group) error {
@@ -35,7 +45,7 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	raw, err := n.client.db.Create(key, data)
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return err
 	}
@@ -62,7 +72,7 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	raw, err := n.client.db.Create(key, data)
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return err
 	}
@@ -79,7 +89,7 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 }
 
 func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
-	raw, err := n.client.db.Select("group:⟨" + id + "⟩")
+	raw, err := n.db.Select("group:⟨" + id + "⟩")
 	if err != nil {
 		if errors.As(err, &surrealdbgo.PermissionError{}) {
 			return nil, false, nil
@@ -107,7 +117,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	}
 	data := conv.FromGroup(*group)
 	data.UpdatedAt = time.Now()
-	raw, err := n.client.db.Update("group:⟨"+group.ID()+"⟩", data)
+	raw, err := n.db.Update("group:⟨"+group.ID()+"⟩", data)
 	if err != nil {
 		return err
 	}
@@ -124,7 +134,7 @@ func (n *group) Delete(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.client.db.Delete("group:⟨" + group.ID() + "⟩")
+	_, err := n.db.Delete("group:⟨" + group.ID() + "⟩")
 	if err != nil {
 		return err
 	}
@@ -132,5 +142,5 @@ func (n *group) Delete(ctx context.Context, group *model.Group) error {
 }
 
 func (n *group) Relate() *relate.Group {
-	return relate.NewGroup(n.client.db)
+	return relate.NewGroup(n.db)
 }
