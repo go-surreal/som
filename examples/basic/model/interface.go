@@ -5,7 +5,11 @@ import (
 )
 
 type Shape interface {
-	som.Node
+	som.Union
+	shape
+}
+
+type shape interface {
 	typeShape()
 }
 
@@ -16,18 +20,15 @@ var _ Shape = &Circle{}
 
 type Square struct {
 	som.Node
+	shape
 }
-
-func (*Square) typeShape() {}
 
 type Triangle struct {
 	som.Node
+	shape
 }
-
-func (*Triangle) typeShape() {}
 
 type Circle struct {
 	som.Node
+	shape
 }
-
-func (*Circle) typeShape() {}

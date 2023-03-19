@@ -6,23 +6,21 @@ import (
 
 // type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
-type Node interface {
-	ID() string
-}
-
-type node struct {
+type Node struct {
 	id string
 }
 
 func NewNode(id string) Node {
-	return node{
+	return Node{
 		id: id,
 	}
 }
 
-func (n node) ID() string {
+func (n Node) ID() string {
 	return n.id
 }
+
+func (n Node) union() {}
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
@@ -38,6 +36,11 @@ func NewEdge(id string) Edge {
 
 func (e Edge) ID() string {
 	return e.id
+}
+
+type Union interface {
+	ID() string
+	union()
 }
 
 type Timestamps struct {
