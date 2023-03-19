@@ -5,7 +5,6 @@ type SortBuilder struct {
 	Order     SortOrder
 	IsCollate bool
 	IsNumeric bool
-	IsRandom  bool
 }
 
 func (b *SortBuilder) render() string {

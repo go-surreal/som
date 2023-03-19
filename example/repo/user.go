@@ -13,15 +13,8 @@ import (
 type UserRepo interface {
 	som.UserRepo
 
-	// Create(ctx context.Context, user *model.User) error
-	// Read(ctx context.Context, id string) (*model.User, bool, error)
-	// Update(ctx context.Context, u *model.User) error
-	// Delete(ctx context.Context, u *model.User) error
-
 	FindByID(ctx context.Context, id string) (*model.User, error)
 	List(ctx context.Context) ([]*model.User, error)
-
-	// Relate(ctx context.Context, edge *model.GroupMember) error
 }
 
 type user struct {
@@ -51,10 +44,6 @@ func (r *user) FetchByID(
 		Fetch(fetch...).
 		All(ctx)
 }
-
-// func (r *user) Relate(ctx context.Context, edge *model.GroupMember) error {
-// 	return r.db.UserRepo().Relate().MemberOf().Create(edge)
-// }
 
 func (r *user) List(ctx context.Context) ([]*model.User, error) {
 	return r.UserRepo.Query().

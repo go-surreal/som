@@ -43,15 +43,6 @@ func (b *queryBuilder) buildBaseFile() error {
 
 package query
 
-import (
-	"context"
-	"time"
-	
-	"github.com/marcbinz/som"
-	"github.com/marcbinz/som/example/gen/som/with"
-	"github.com/marcbinz/som/lib"
-)
-
 type Database interface {
 	Query(statement string, vars any) (any, error)
 }
