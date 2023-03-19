@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "nightly" // 1.0.0-beta.8
+	surrealDBContainerVersion = "1.0.0-beta.8" // "nightly"
 	containerName             = "som_test_surrealdb"
 )
 

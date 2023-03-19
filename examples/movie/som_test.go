@@ -80,17 +80,17 @@ func TestWithDatabase(t *testing.T) {
 
 	movieIn := movieNew
 
-	err = client.Movie().Create(ctx, &movieIn)
+	err = client.MovieRepo().Create(ctx, &movieIn)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	movieOut, err := client.Movie().Query().
+	movieOut, err := client.MovieRepo().Query().
 		Filter(
 			where.Movie.ID.Equal(movieIn.ID()),
 			where.Movie.Title.Equal(title),
 		).
-		First()
+		First(ctx)
 
 	if err != nil {
 		t.Fatal(err)
