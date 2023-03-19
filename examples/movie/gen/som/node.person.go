@@ -11,16 +11,26 @@ import (
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 
-func (c *Client) Person() *person {
-	return &person{client: c}
+type PersonRepo interface {
+	Query() query.Person
+	Create(ctx context.Context, user *model.Person) error
+	CreateWithID(ctx context.Context, id string, user *model.Person) error
+	Read(ctx context.Context, id string) (*model.Person, bool, error)
+	Update(ctx context.Context, user *model.Person) error
+	Delete(ctx context.Context, user *model.Person) error
+	Relate() *relate.Person
+}
+
+func (c *ClientImpl) PersonRepo() PersonRepo {
+	return &person{db: c.db}
 }
 
 type person struct {
-	client *Client
+	db Database
 }
 
-func (n *person) Query() *query.Person {
-	return query.NewPerson(n.client.db)
+func (n *person) Query() query.Person {
+	return query.NewPerson(n.db)
 }
 
 func (n *person) Create(ctx context.Context, person *model.Person) error {
@@ -33,7 +43,7 @@ func (n *person) Create(ctx context.Context, person *model.Person) error {
 	key := "person"
 	data := conv.FromPerson(*person)
 
-	raw, err := n.client.db.Create(key, data)
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return err
 	}
@@ -59,7 +69,7 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 	key := "person:" + "⟨" + id + "⟩"
 	data := conv.FromPerson(*person)
 
-	raw, err := n.client.db.Create(key, data)
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return err
 	}
@@ -76,7 +86,7 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 }
 
 func (n *person) Read(ctx context.Context, id string) (*model.Person, bool, error) {
-	raw, err := n.client.db.Select("person:⟨" + id + "⟩")
+	raw, err := n.db.Select("person:⟨" + id + "⟩")
 	if err != nil {
 		if errors.As(err, &surrealdbgo.PermissionError{}) {
 			return nil, false, nil
@@ -104,7 +114,7 @@ func (n *person) Update(ctx context.Context, person *model.Person) error {
 	}
 	data := conv.FromPerson(*person)
 
-	raw, err := n.client.db.Update("person:⟨"+person.ID()+"⟩", data)
+	raw, err := n.db.Update("person:⟨"+person.ID()+"⟩", data)
 	if err != nil {
 		return err
 	}
@@ -121,7 +131,7 @@ func (n *person) Delete(ctx context.Context, person *model.Person) error {
 	if person == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.client.db.Delete("person:⟨" + person.ID() + "⟩")
+	_, err := n.db.Delete("person:⟨" + person.ID() + "⟩")
 	if err != nil {
 		return err
 	}
@@ -129,5 +139,5 @@ func (n *person) Delete(ctx context.Context, person *model.Person) error {
 }
 
 func (n *person) Relate() *relate.Person {
-	return relate.NewPerson(n.client.db)
+	return relate.NewPerson(n.db)
 }

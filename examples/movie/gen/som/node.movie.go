@@ -11,16 +11,26 @@ import (
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 
-func (c *Client) Movie() *movie {
-	return &movie{client: c}
+type MovieRepo interface {
+	Query() query.Movie
+	Create(ctx context.Context, user *model.Movie) error
+	CreateWithID(ctx context.Context, id string, user *model.Movie) error
+	Read(ctx context.Context, id string) (*model.Movie, bool, error)
+	Update(ctx context.Context, user *model.Movie) error
+	Delete(ctx context.Context, user *model.Movie) error
+	Relate() *relate.Movie
+}
+
+func (c *ClientImpl) MovieRepo() MovieRepo {
+	return &movie{db: c.db}
 }
 
 type movie struct {
-	client *Client
+	db Database
 }
 
-func (n *movie) Query() *query.Movie {
-	return query.NewMovie(n.client.db)
+func (n *movie) Query() query.Movie {
+	return query.NewMovie(n.db)
 }
 
 func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
@@ -33,7 +43,7 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 	key := "movie"
 	data := conv.FromMovie(*movie)
 
-	raw, err := n.client.db.Create(key, data)
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return err
 	}
@@ -59,7 +69,7 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 	key := "movie:" + "⟨" + id + "⟩"
 	data := conv.FromMovie(*movie)
 
-	raw, err := n.client.db.Create(key, data)
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return err
 	}
@@ -76,7 +86,7 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 }
 
 func (n *movie) Read(ctx context.Context, id string) (*model.Movie, bool, error) {
-	raw, err := n.client.db.Select("movie:⟨" + id + "⟩")
+	raw, err := n.db.Select("movie:⟨" + id + "⟩")
 	if err != nil {
 		if errors.As(err, &surrealdbgo.PermissionError{}) {
 			return nil, false, nil
@@ -104,7 +114,7 @@ func (n *movie) Update(ctx context.Context, movie *model.Movie) error {
 	}
 	data := conv.FromMovie(*movie)
 
-	raw, err := n.client.db.Update("movie:⟨"+movie.ID()+"⟩", data)
+	raw, err := n.db.Update("movie:⟨"+movie.ID()+"⟩", data)
 	if err != nil {
 		return err
 	}
@@ -121,7 +131,7 @@ func (n *movie) Delete(ctx context.Context, movie *model.Movie) error {
 	if movie == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.client.db.Delete("movie:⟨" + movie.ID() + "⟩")
+	_, err := n.db.Delete("movie:⟨" + movie.ID() + "⟩")
 	if err != nil {
 		return err
 	}
@@ -129,5 +139,5 @@ func (n *movie) Delete(ctx context.Context, movie *model.Movie) error {
 }
 
 func (n *movie) Relate() *relate.Movie {
-	return relate.NewMovie(n.client.db)
+	return relate.NewMovie(n.db)
 }

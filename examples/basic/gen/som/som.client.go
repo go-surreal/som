@@ -24,11 +24,11 @@ type Config struct {
 	Database string
 }
 
-type Client struct {
+type ClientImpl struct {
 	db Database
 }
 
-func NewClient(conf Config) (*Client, error) {
+func NewClient(conf Config) (*ClientImpl, error) {
 	surreal, err := surrealdb.New(conf.Address + "/rpc")
 	if err != nil {
 		return nil, fmt.Errorf("new failed: %v", err)
@@ -47,9 +47,9 @@ func NewClient(conf Config) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{db: &database{DB: surreal}}, nil
+	return &ClientImpl{db: &database{DB: surreal}}, nil
 }
 
-func (c *Client) Close() {
+func (c *ClientImpl) Close() {
 	c.db.Close()
 }

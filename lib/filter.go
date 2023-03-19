@@ -22,20 +22,6 @@ func KeyFilter[T any](key Key[T]) Filter[T] {
 	})
 }
 
-// type ToAnyFilter[T any] func(*context, T) string
-//
-// func ToAnyFilters[T any](in []Filter[T]) []Filter[any] {
-// 	var out []Filter[any]
-//
-// 	for _, elem := range in {
-// 		out = append(out, filter[any](func(ctx *context, a any) string {
-// 			return elem.build(ctx, a)
-// 		}))
-// 	}
-//
-// 	return out
-// }
-
 //
 // -- BASE
 //

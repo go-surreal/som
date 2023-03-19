@@ -11,50 +11,42 @@ import (
 )
 
 type UserRepo interface {
-	Create(ctx context.Context, user *model.User) error
-	Read(ctx context.Context, id string) (*model.User, bool, error)
-	Update(ctx context.Context, u *model.User) error
-	Delete(ctx context.Context, u *model.User) error
+	som.UserRepo
 
-	FindById(ctx context.Context, id string) (*model.User, error)
+	FindByID(ctx context.Context, id string) (*model.User, error)
 	List(ctx context.Context) ([]*model.User, error)
-	Relate(ctx context.Context, edge *model.GroupMember) error
 }
 
 type user struct {
-	db *som.Client
+	som.UserRepo
 }
 
-func User(db *som.Client) UserRepo {
-	return &user{db: db}
+func User(db som.Client) UserRepo {
+	return &user{
+		UserRepo: db.UserRepo(),
+	}
 }
 
-func (repo *user) Create(ctx context.Context, user *model.User) error {
-	return repo.db.User().Create(ctx, user)
+func (r *user) FindByID(ctx context.Context, id string) (*model.User, error) {
+	return r.UserRepo.Query().Filter(where.User.ID.Equal(id)).First(ctx)
 }
 
-func (repo *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
-	return repo.db.User().Read(ctx, id)
+func (r *user) FetchByID(
+	ctx context.Context,
+	id string,
+	fetch ...with.Fetch_[model.User],
+) (
+	[]*model.User,
+	error,
+) {
+	return r.UserRepo.Query().
+		Filter(where.User.ID.Equal(id)).
+		Fetch(fetch...).
+		All(ctx)
 }
 
-func (repo *user) Update(ctx context.Context, user *model.User) error {
-	return repo.db.User().Update(ctx, user)
-}
-
-func (repo *user) Delete(ctx context.Context, user *model.User) error {
-	return repo.db.User().Delete(ctx, user)
-}
-
-func (repo *user) FindById(ctx context.Context, id string) (*model.User, error) {
-	return repo.db.User().Query().Filter(where.User.ID.Equal(id)).First()
-}
-
-func (repo *user) Relate(ctx context.Context, edge *model.GroupMember) error {
-	return repo.db.User().Relate().MemberOf().Create(edge)
-}
-
-func (repo *user) List(ctx context.Context) ([]*model.User, error) {
-	return repo.db.User().Query().
+func (r *user) List(ctx context.Context) ([]*model.User, error) {
+	return r.UserRepo.Query().
 		Filter(
 			where.Any[model.User](
 				// where.User.ID.Equal("9rb97n04ggwmekxats5a"),
@@ -114,5 +106,5 @@ func (repo *user) List(ctx context.Context) ([]*model.User, error) {
 		Timeout(10 * time.Second).
 		Parallel(true).
 		// Select( /* choose what data (apart from basic node) should be loaded into the model */ ).
-		All()
+		All(ctx)
 }

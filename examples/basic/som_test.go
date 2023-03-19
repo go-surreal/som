@@ -8,6 +8,7 @@ import (
 	"github.com/marcbinz/som/examples/basic/gen/som"
 	"github.com/marcbinz/som/examples/basic/gen/som/where"
 	"github.com/marcbinz/som/examples/basic/model"
+	"github.com/marcbinz/som/examples/testutil"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
@@ -32,9 +33,9 @@ func conf(endpoint string) som.Config {
 }
 
 func TestQuery(t *testing.T) {
-	client := &som.Client{}
+	client := &som.ClientImpl{}
 
-	query := client.User().Query().
+	query := client.UserRepo().Query().
 		Filter(
 			// where.User.Groups(
 			// 	where.Group.Name.Equal(""),
@@ -77,6 +78,8 @@ func TestQuery(t *testing.T) {
 }
 
 func TestWithDatabase(t *testing.T) {
+	testutil.SkipWithoutEnv(t, "GOTEST_INTEGRATION")
+
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
@@ -128,17 +131,17 @@ func TestWithDatabase(t *testing.T) {
 
 	userIn := userNew
 
-	err = client.User().Create(ctx, &userIn)
+	err = client.UserRepo().Create(ctx, &userIn)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	userOut, err := client.User().Query().
+	userOut, err := client.UserRepo().Query().
 		Filter(
 			where.User.ID.Equal(userIn.ID()),
 			where.User.String.Equal(str),
 		).
-		First()
+		First(ctx)
 
 	if err != nil {
 		t.Fatal(err)
@@ -148,7 +151,7 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+		cmpopts.IgnoreUnexported(sombase.Timestamps{}),
 	)
 }
 
@@ -197,7 +200,7 @@ func FuzzWithDatabase(f *testing.F) {
 			String: str,
 		}
 
-		err = client.User().Create(ctx, userIn)
+		err = client.UserRepo().Create(ctx, userIn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -206,11 +209,11 @@ func FuzzWithDatabase(f *testing.F) {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
-		userOut, err := client.User().Query().
+		userOut, err := client.UserRepo().Query().
 			Filter(
 				where.User.ID.Equal(userIn.ID()),
 			).
-			First()
+			First(ctx)
 
 		if err != nil {
 			t.Fatal(err)
@@ -278,7 +281,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			String: "1",
 		}
 
-		err = client.User().CreateWithID(ctx, id, userIn)
+		err = client.UserRepo().CreateWithID(ctx, id, userIn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -287,7 +290,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
-		userOut, ok, err := client.User().Read(ctx, userIn.ID())
+		userOut, ok, err := client.UserRepo().Read(ctx, userIn.ID())
 
 		if err != nil {
 			t.Fatal(err)
@@ -302,14 +305,14 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 		userOut.String = "2"
 
-		err = client.User().Update(ctx, userOut)
+		err = client.UserRepo().Update(ctx, userOut)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		assert.Equal(t, "2", userOut.String)
 
-		err = client.User().Delete(ctx, userOut)
+		err = client.UserRepo().Delete(ctx, userOut)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -361,7 +364,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 			String: "Some User",
 		}
 
-		err = client.User().Create(ctx, userIn)
+		err = client.UserRepo().Create(ctx, userIn)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -370,11 +373,11 @@ func BenchmarkWithDatabase(b *testing.B) {
 			b.Fatal("user ID must not be empty after create call")
 		}
 
-		userOut, err := client.User().Query().
+		userOut, err := client.UserRepo().Query().
 			Filter(
 				where.User.ID.Equal(userIn.ID()),
 			).
-			First()
+			First(ctx)
 
 		if err != nil {
 			b.Fatal(err)

@@ -183,6 +183,11 @@ type MemberOfProps struct {
 
 - https://www.edgedb.com/blog/why-orms-are-slow-and-getting-slower
 
+### Partial updates
+
+- https://incident.io/blog/code-generation
+>>>>>>> main
+
 ## Optimisations
 
 tbd.
