@@ -5,13 +5,45 @@ The main usage of this document is brainstorming on whether the listed ideas are
 For more in-depth talk about single points, a [GitHub discussion](https://github.com/marcbinz/som/discussions)
 can be created at any point and linked back to this document.
 
+## References 
+
+- https://pg.uptrace.dev/sql-null-go-zero-values/
+- https://ente.io/blog/tech/go-nulls-and-sql/
+- 
+
 ## Features
+
+### Soft Delete
+
+- https://www.jmix.io/blog/to-delete-or-to-soft-delete-that-is-the-question/
+- https://www.brentozar.com/archive/2020/02/what-are-soft-deletes-and-how-are-they-implemented/
+- 
 
 ### Support custom ID constructs
 
 ```
 som.Timeseries
 ```
+
+### Add `som.Slug` type
+
+- https://github.com/gosimple/slug
+
+- is a string internally
+- automatically converts its value to a unique slug representation
+- 1: check if value is already in slug format (slug it and compare)
+- 2: if it is, do nothing more
+- 3: if it is not, slug it and check for uniqueness
+- 4: if it is unique, do nothing more
+- 5: if it is not unique, append or bump a suffix (e.g. "some-slug-1" to "some-slug-2")
+
+### Add automated data seeding capabilities
+
+- https://medium.easyread.co/how-i-seed-my-database-with-go-27488d2e6a75
+- https://github.com/kristijorgji/goseeder
+- https://medium.com/@thegalang/automatic-data-seeding-on-go-api-server-4ba7eb8c1881
+- https://www.reddit.com/r/golang/comments/8o8s7f/how_do_you_seed_your_database/
+- https://ieftimov.com/posts/simple-golang-database-seeding-abstraction-gorm/
 
 ### Query math functions
 
@@ -79,6 +111,8 @@ client.User.Query().
 
 ```
 
+- https://stackoverflow.com/questions/58787039/cursor-based-pagination-for-search-results-without-sequential-unique-ids-eg-lo
+
 ### Aggregations
 
 ```
@@ -99,6 +133,17 @@ userNameGroupNameTuples := client.User().Query().
 
 allGroupNamesOfUser := som.Values(
   field.User.Groups().Name
+)
+
+```
+
+### Choose the fields to update specifically
+
+```go
+
+repo.db.user.Update(&userModel, 
+  field.User.FirstName,
+  field.User.LastName,
 )
 
 ```
@@ -125,10 +170,32 @@ type MemberOfProps struct {
 }
 ```
 
+### (Automatic) Migrations
+
+- https://www.edgedb.com/showcase/migrations
+
+### System-versioned temporal tables
+
+- https://learn.microsoft.com/en-us/sql/relational-databases/tables/temporal-tables?view=sql-server-ver16
+- MIGHT COME AS NATIVE FEATURE!
+
+### Calculate the complexity (and cost) of a query and issue warnings if too high
+
+- https://www.edgedb.com/blog/why-orms-are-slow-and-getting-slower
+
 ### Partial updates
 
 - https://incident.io/blog/code-generation
+>>>>>>> main
 
 ## Optimisations
 
 tbd.
+
+## Other links
+
+- https://www.liquibase.com/resources/guides/database-version-control
+- https://www.dolthub.com/blog/2022-08-04-database-versioning/
+- https://go-rel.github.io/introduction/
+- https://hackernoon.com/introducing-bun-a-golang-orm
+- https://www.quora.com/What-are-the-basics-of-building-an-object-relationship-mapper-ORM-for-an-SQL-database

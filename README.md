@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.19.5-informational" alt="Go 1.19.5"> 
+    <img src="https://img.shields.io/badge/go-1.20.1-informational" alt="Go 1.20.1"> 
   </a>
   <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
     <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
@@ -162,3 +162,4 @@ In the future this section will be advanced by topics raised in issues or discus
 - https://github.com/sharovik/orm
 - https://github.com/StarlaneStudios/cirql
 - https://github.com/uptrace/bun
+- https://atlasgo.io/
