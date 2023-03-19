@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.20.1-informational" alt="Go 1.20.1"> 
+    <img src="https://img.shields.io/badge/go-1.20.2-informational" alt="Go 1.20.2"> 
   </a>
   <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
     <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
