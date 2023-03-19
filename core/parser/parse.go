@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"github.com/marcbinz/som/core/util"
 	"github.com/wzshiming/gotype"
 	"go/ast"
 	"os"
@@ -9,8 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 )
-
-const fileGoMod = "go.mod"
 
 const packagePath = "github.com/marcbinz/som"
 
@@ -38,7 +37,7 @@ func Parse(dir string) (*Output, error) {
 		return nil, fmt.Errorf("could not find absolute path: %v", err)
 	}
 
-	pkgPath, modPath, err := parseMod(absDir)
+	pkgPath, modPath, err := util.ParseMod(absDir)
 	if err != nil {
 		return nil, err
 	}

@@ -25,34 +25,6 @@ func newInput(source *parser.Output) (*input, error) {
 
 	in.sourcePkgPath = source.PkgPath
 
-	// getElement := func(name string) (field.Element, bool) {
-	// 	for _, node := range in.nodes {
-	// 		if node.Name == name {
-	// 			return node, true
-	// 		}
-	// 	}
-	//
-	// 	for _, edge := range in.edges {
-	// 		if edge.Name == name {
-	// 			return edge, true
-	// 		}
-	// 	}
-	//
-	// 	for _, obj := range in.objects {
-	// 		if obj.Name == name {
-	// 			return obj, true
-	// 		}
-	// 	}
-	//
-	// 	// for _, enum := range in.enums {
-	// 	// 	if enum.Name == name {
-	// 	// 		return enum, true
-	// 	// 	}
-	// 	// }
-	//
-	// 	return nil, false
-	// }
-
 	def, err := field.NewDef(source, buildConf)
 	if err != nil {
 		return nil, fmt.Errorf("could not build def: %v", err)

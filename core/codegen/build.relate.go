@@ -68,8 +68,10 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 
 	file.PackageComment(codegenComment)
 
+	file.Line()
 	file.Add(b.byNew(node))
 
+	file.Line()
 	file.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),
 	)
@@ -85,6 +87,7 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 			continue
 		}
 
+		file.Line()
 		file.Func().Params(jen.Id("n").Id(node.NameGo())).
 			Id(fld.NameGo()).Params().
 			Id(edgeElement.Table().NameGoLower()).
@@ -105,10 +108,12 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 
 	file.PackageComment(codegenComment)
 
+	file.Line()
 	file.Type().Id(edge.NameGoLower()).Struct(
 		jen.Id("db").Id("Database"),
 	)
 
+	file.Line()
 	file.Func().Params(jen.Id("e").Id(edge.NameGoLower())).
 		Id("Create").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name))).
 		Error().
@@ -160,20 +165,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			jen.Return(jen.Nil()),
 		)
 
-	//
-	//	data := conv.FromMemberOf(edge)
-	//	raw, err := e.db.Query(query, map[string]any{"data": data})
-	//	if err != nil {
-	//		return err
-	//	}
-	//	var convEdge conv.MemberOf
-	//	err = surrealdbgo.Unmarshal(raw, &convEdge)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	*edge = *conv.ToMemberOf(&convEdge)
-	//	return nil
-
+	file.Line()
 	file.Func().Params(jen.Id(edge.NameGoLower())).
 		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
@@ -181,6 +173,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			jen.Return(jen.Nil()),
 		)
 
+	file.Line()
 	file.Func().Params(jen.Id(edge.NameGoLower())).
 		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().

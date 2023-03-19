@@ -3,6 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 )
 
@@ -18,7 +19,7 @@ func (f *Node) typeGo() jen.Code {
 }
 
 func (f *Node) typeConv() jen.Code {
-	return jen.Add(f.ptr()).Id(f.table.NameGoLower() + "Link")
+	return jen.Op("*").Id(f.table.NameGoLower() + "Link")
 }
 
 func (f *Node) TypeDatabase() string {
@@ -46,13 +47,18 @@ func (f *Node) CodeGen() *CodeGen {
 }
 
 func (f *Node) filterFunc(ctx Context) jen.Code {
+	receiver := jen.Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))
+	if ctx.Receiver != nil {
+		receiver = ctx.Receiver
+	}
+
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Add(receiver)).
 		Id(f.NameGo()).Params().
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
-				Params(jen.Id("n").Dot("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))))
+				Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Node) sortFunc(ctx Context) jen.Code {
@@ -66,11 +72,21 @@ func (f *Node) sortFunc(ctx Context) jen.Code {
 }
 
 func (f *Node) convFrom(ctx Context) jen.Code {
-	return jen.Id("to" + f.table.NameGo() + "Link").Call(jen.Id("data").Dot(f.NameGo()))
+	funcName := "to" + f.table.NameGo() + "Link"
+	if f.source.Pointer() {
+		funcName += "Ptr"
+	}
+
+	return jen.Id(funcName).Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Node) convTo(ctx Context) jen.Code {
-	return jen.Id("from" + f.table.NameGo() + "Link").Call(jen.Id("data").Dot(f.NameGo()))
+	funcName := "from" + f.table.NameGo() + "Link"
+	if f.source.Pointer() {
+		funcName += "Ptr"
+	}
+
+	return jen.Id(funcName).Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Node) fieldDef(ctx Context) jen.Code {

@@ -49,7 +49,7 @@ func (f *String) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibFilter, filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, filter).Types(jen.Id("T"))
 }
 
 func (f *String) filterInit(ctx Context) jen.Code {
@@ -58,16 +58,16 @@ func (f *String) filterInit(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(def.PkgLibFilter, filter).Types(jen.Id("T")).
-		Params(jen.Id("key").Dot("Dot").Call(jen.Lit(f.NameDatabase())))
+	return jen.Qual(def.PkgLib, filter).Types(jen.Id("T")).
+		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *String) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLibSort, "String").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, "StringSort").Types(jen.Id("T"))
 }
 
 func (f *String) sortInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLibSort, "NewString").Types(jen.Id("T")).
+	return jen.Qual(def.PkgLib, "NewStringSort").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

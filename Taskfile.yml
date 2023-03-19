@@ -13,37 +13,49 @@ interval: "500ms"
 tasks:
 
   run:
+    aliases: [ r ]
     desc: "Run the somgen cli tool."
     cmds:
       - cd ./cmd/somgen && go run main.go -- {{.CLI_ARGS}}
 
   gen:
+    aliases: [ g ]
     desc: "Generate code for the example codebase."
     cmds:
-      - cd ./cmd/somgen && go run main.go ../../example/model ../../example/gen/som
+      - cd examples/basic && go generate gen.go
+      - cd examples/movie && go generate gen.go
     sources:
-      - ./example/model/**/*
+      - examples/basic/model/**/*
+      - examples/movie/model/**/*
     generates:
-      - /example/gen/som/**/*
+      - examples/basic/gen/som/**/*
+      - examples/movie/gen/som/**/*
 
   example:
+    aliases: [ e ]
     desc: "Run the test code for the example codebase."
     deps: [gen]
     cmds:
       - cd ./test && go run main.go
 
   lint:
+    aliases: [ l ]
     desc: "Lint the codebase with the golangci-lint tool."
     cmds:
       - golangci-lint run
 
   test:
+    aliases: [ t ]
     desc: "Execute all go tests."
     deps: [gen]
     cmds:
       - go test ./...
+      - cd examples/basic && go test ./...
+      - cd examples/movie && go test ./...
 
   benchmark:
+    aliases: [ b ]
+    desc: "Run benchmark tests."
     cmds:
       - go test -bench=. | tee ../graphic/out.dat ; \
         awk '/Benchmark/{count ++; gsub(/BenchmarkTest/,""); printf("%d,%s,%s,%s\n",count,$$1,$$2,$$3)}' ../graphic/out.dat > ../graphic/final.dat ; \
