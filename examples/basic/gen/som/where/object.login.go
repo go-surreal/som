@@ -2,8 +2,8 @@
 package where
 
 import (
+	lib "github.com/marcbinz/som/examples/basic/gen/som/internal/lib"
 	model "github.com/marcbinz/som/examples/basic/model"
-	lib "github.com/marcbinz/som/lib"
 )
 
 func newLogin[T any](key lib.Key[T]) login[T] {

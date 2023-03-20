@@ -67,6 +67,8 @@ type countResult struct {
 }
 
 func (b *queryBuilder) buildFile(node *field.NodeTable) error {
+	pkgLib := b.subPkg(def.PkgLib)
+
 	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(codegenComment)
@@ -74,7 +76,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	f.Line()
 	f.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),
-		jen.Id("query").Qual(def.PkgLib, "Query").Types(b.SourceQual(node.Name)),
+		jen.Id("query").Qual(pkgLib, "Query").Types(b.SourceQual(node.Name)),
 	)
 
 	f.Line()
@@ -83,7 +85,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		Block(
 			jen.Return(jen.Id(node.Name).Values(jen.Dict{
 				jen.Id("db"):    jen.Id("db"),
-				jen.Id("query"): jen.Qual(def.PkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
+				jen.Id("query"): jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
 			})),
 		)
 
@@ -118,6 +120,8 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 }
 
 func (b *queryBuilder) buildQueryFuncFilter(node *field.NodeTable) jen.Code {
+	pkgLib := b.subPkg(def.PkgLib)
+
 	return jen.
 		Add(comment(`
 Filter adds a where statement to the query to
@@ -129,7 +133,7 @@ Use where.Any to chain multiple conditions
 together where at least one needs to match.
 		`)).
 		Func().Params(jen.Id("q").Id(node.Name)).
-		Id("Filter").Params(jen.Id("filters").Op("...").Qual(def.PkgLib, "Filter").Types(b.SourceQual(node.Name))).
+		Id("Filter").Params(jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(b.SourceQual(node.Name))).
 		Id(node.Name).
 		Block(
 			jen.Id("q").Dot("query").Dot("Where").Op("=").
@@ -139,6 +143,8 @@ together where at least one needs to match.
 }
 
 func (b *queryBuilder) buildQueryFuncOrder(node *field.NodeTable) jen.Code {
+	pkgLib := b.subPkg(def.PkgLib)
+
 	return jen.
 		Add(comment(`
 Order sorts the returned records based on the given conditions.
@@ -147,13 +153,13 @@ Note: If OrderRandom is used within the same query,
 it would override the sort conditions.
 		`)).
 		Func().Params(jen.Id("q").Id(node.Name)).
-		Id("Order").Params(jen.Id("by").Op("...").Op("*").Qual(def.PkgLib, "Sort").Types(b.SourceQual(node.Name))).
+		Id("Order").Params(jen.Id("by").Op("...").Op("*").Qual(pkgLib, "Sort").Types(b.SourceQual(node.Name))).
 		Id(node.Name).
 		Block(
 			jen.For(jen.Id("_").Op(",").Id("s").Op(":=").Range().Id("by")).
 				Block(
 					jen.Id("q").Dot("query").Dot("Sort").Op("=").
-						Append(jen.Id("q").Dot("query").Dot("Sort"), jen.Parens(jen.Op("*").Qual(def.PkgLib, "SortBuilder")).Parens(jen.Id("s"))),
+						Append(jen.Id("q").Dot("query").Dot("Sort"), jen.Parens(jen.Op("*").Qual(pkgLib, "SortBuilder")).Parens(jen.Id("s"))),
 				),
 			jen.Return(jen.Id("q")),
 		)

@@ -2,7 +2,6 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 )
 
@@ -55,7 +54,7 @@ func (f *Struct) filterFunc(ctx Context) jen.Code {
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
 			jen.Return(jen.Id("new" + f.source.Struct).Types(jen.Id("T")).
-				Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
+				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Struct) convFrom(ctx Context) jen.Code {

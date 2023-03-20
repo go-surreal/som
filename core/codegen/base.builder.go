@@ -5,6 +5,7 @@ import (
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/embed"
 	"github.com/marcbinz/som/core/parser"
 	"os"
 	"path"
@@ -45,6 +46,10 @@ func (b *build) build() error {
 		return err
 	}
 
+	if err := b.copyInternalPackage(); err != nil {
+		return err
+	}
+
 	if err := b.buildClientFile(); err != nil {
 		return err
 	}
@@ -78,6 +83,32 @@ func (b *build) build() error {
 
 	for _, builder := range builders {
 		if err := builder.build(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b *build) copyInternalPackage() error {
+	files, err := embed.Lib()
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Join(b.outDir, "internal")
+
+	err = os.MkdirAll(filepath.Join(dir, "lib"), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, "//go:build embed", codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(dir, file.Path), []byte(content), os.ModePerm)
+		if err != nil {
 			return err
 		}
 	}
