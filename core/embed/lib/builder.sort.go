@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 type SortBuilder struct {

@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 type Sort[T any] SortBuilder

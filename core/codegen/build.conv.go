@@ -181,6 +181,7 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
 func (b *convBuilder) buildFile(elem field.Element) error {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     elem,
 	}
 
@@ -279,6 +280,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     elem,
 	}
 
@@ -317,6 +319,7 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     elem,
 	}
 
