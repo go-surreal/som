@@ -2,8 +2,8 @@
 package by
 
 import (
+	lib "github.com/marcbinz/som/examples/movie/gen/som/internal/lib"
 	model "github.com/marcbinz/som/examples/movie/model"
-	lib "github.com/marcbinz/som/lib"
 )
 
 var Person = newPerson[model.Person]("")
