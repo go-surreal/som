@@ -105,7 +105,7 @@ func (b *build) copyInternalPackage() error {
 
 	for _, file := range files {
 		content := string(file.Content)
-		content = strings.TrimPrefix(content, "//go:build embed\n\n")
+		content = strings.Replace(content, "//go:build embed", codegenComment, 1)
 
 		err := os.WriteFile(filepath.Join(dir, file.Path), []byte(content), os.ModePerm)
 		if err != nil {
