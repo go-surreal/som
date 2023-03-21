@@ -13,6 +13,8 @@ func newUser[T any](key lib.Key[T]) user[T] {
 	return user[T]{
 		Bool:      lib.NewBool[T](lib.Field(key, "bool")),
 		Bool2:     lib.NewBool[T](lib.Field(key, "bool_2")),
+		Byte:      lib.NewBase[byte, T](lib.Field(key, "byte")),
+		BytePtr:   lib.NewBasePtr[byte, T](lib.Field(key, "byte_ptr")),
 		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
 		Float32:   lib.NewNumeric[float32, T](lib.Field(key, "float_32")),
 		Float64:   lib.NewNumeric[float64, T](lib.Field(key, "float_64")),
@@ -51,6 +53,8 @@ type user[T any] struct {
 	IntPtr    *lib.NumericPtr[*int, T]
 	TimePtr   *lib.TimePtr[T]
 	UuidPtr   *lib.BasePtr[uuid.UUID, T]
+	Byte      *lib.Base[byte, T]
+	BytePtr   *lib.BasePtr[byte, T]
 }
 
 func (n user[T]) Login() login[T] {
@@ -122,6 +126,14 @@ func (n user[T]) NodePtrSlicePtr(filters ...lib.Filter[model.Group]) groupSlice[
 
 func (n user[T]) SliceSlice() *lib.Slice[T, []string] {
 	return lib.NewSlice[T, []string](lib.Field(n.key, "slice_slice"))
+}
+
+func (n user[T]) ByteSlice() *lib.Slice[T, byte] {
+	return lib.NewSlice[T, byte](lib.Field(n.key, "byte_slice"))
+}
+
+func (n user[T]) ByteSlicePtr() *lib.Slice[T, byte] {
+	return lib.NewSlice[T, byte](lib.Field(n.key, "byte_slice_ptr"))
 }
 
 type userEdges[T any] struct {

@@ -45,6 +45,8 @@ func (r *user) FetchByID(
 		All(ctx)
 }
 
+var b byte
+
 func (r *user) List(ctx context.Context) ([]*model.User, error) {
 	return r.UserRepo.Query().
 		Filter(
@@ -58,6 +60,16 @@ func (r *user) List(ctx context.Context) ([]*model.User, error) {
 				where.User.MemberOf().Group().Members().User(
 					where.User.ID.Equal("klkl4w6i9z8u0uyo5w7f"),
 				),
+
+				where.User.Byte.Equal(b),
+
+				where.User.BytePtr.Equal(b),
+
+				where.User.ByteSlice().Equal([]byte("omr4f")),
+
+				where.User.ByteSlicePtr(),
+
+				where.User.StringSlicePtr().Nil(),
 
 				//
 				// where.User.Groups().ID.In(nil),

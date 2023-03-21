@@ -117,6 +117,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldByte:
+		{
+			return &Byte{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldTime:
 		{
 			return &Time{

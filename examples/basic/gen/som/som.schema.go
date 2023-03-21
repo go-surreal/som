@@ -76,6 +76,12 @@ DEFINE FIELD node_ptr_slice_ptr ON TABLE user TYPE array;
 DEFINE FIELD node_ptr_slice_ptr.* ON TABLE user TYPE record(group);
 DEFINE FIELD slice_slice ON TABLE user TYPE array;
 DEFINE FIELD slice_slice.* ON TABLE user TYPE array;
+DEFINE FIELD byte ON TABLE user TYPE string ASSERT $value != NULL;
+DEFINE FIELD byte_ptr ON TABLE user TYPE string;
+DEFINE FIELD byte_slice ON TABLE user TYPE array;
+DEFINE FIELD byte_slice.* ON TABLE user TYPE string ASSERT $value != NULL;
+DEFINE FIELD byte_slice_ptr ON TABLE user TYPE array;
+DEFINE FIELD byte_slice_ptr.* ON TABLE user TYPE string ASSERT $value != NULL;
 
 DEFINE TABLE group SCHEMAFULL;
 DEFINE FIELD created_at ON TABLE group TYPE datetime ASSERT $value != NULL;

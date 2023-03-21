@@ -153,6 +153,8 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 
 	default:
 		{
+			// TODO: does not need to be a filterFunc, use filterDefine/filterInit instead ?!
+		
 			return jen.Func().
 				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 				Id(f.NameGo()).Params().

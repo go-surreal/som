@@ -44,12 +44,20 @@ type User struct {
 	NodePtrSlice      []*groupLink   `json:"node_ptr_slice"`
 	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
 	SliceSlice        [][]string     `json:"slice_slice"`
+	Byte              byte           `json:"byte"`
+	BytePtr           *byte          `json:"byte_ptr"`
+	ByteSlice         []byte         `json:"byte_slice"`
+	ByteSlicePtr      *[]byte        `json:"byte_slice_ptr"`
 }
 
 func FromUser(data model.User) User {
 	return User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
+		Byte:              data.Byte,
+		BytePtr:           data.BytePtr,
+		ByteSlice:         data.ByteSlice,
+		ByteSlicePtr:      data.ByteSlicePtr,
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[model.Role, string])),
 		Float32:           data.Float32,
 		Float64:           data.Float64,
@@ -85,6 +93,10 @@ func ToUser(data User) model.User {
 	return model.User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
+		Byte:              data.Byte,
+		BytePtr:           data.BytePtr,
+		ByteSlice:         data.ByteSlice,
+		ByteSlicePtr:      data.ByteSlicePtr,
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[string, model.Role])),
 		Float32:           data.Float32,
 		Float64:           data.Float64,

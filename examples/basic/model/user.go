@@ -46,6 +46,11 @@ type User struct {
 	NodePtrSlicePtr   *[]*Group
 	SliceSlice        [][]string
 
+	Byte         byte
+	BytePtr      *byte
+	ByteSlice    []byte
+	ByteSlicePtr *[]byte
+
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum
 	// MappedGroups map[string]Group // map of string and node
