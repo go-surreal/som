@@ -186,7 +186,26 @@ type MemberOfProps struct {
 ### Partial updates
 
 - https://incident.io/blog/code-generation
->>>>>>> main
+
+### ?
+
+```golang
+
+func (r *user) QueryUsersByPartialName(name string) query.User {
+	return r.Query().
+		Filter(
+			where.User.String.FuzzyMatch(name),
+		)
+}
+
+r.QueryUsersByPartialName("some").
+  Filter(
+    where.User.Int.GreaterThan(5),
+    where.User.Int.LessThan(10),
+  ).
+  All(ctx)
+
+```
 
 ## Optimisations
 
