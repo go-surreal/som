@@ -5,8 +5,8 @@ go 1.20
 require (
 	github.com/dave/jennifer v1.6.0
 	github.com/iancoleman/strcase v0.2.0
-	github.com/surrealdb/surrealdb.go v0.1.2-0.20230309175011-e0397e60fdc8
-	github.com/urfave/cli/v2 v2.25.0
+	github.com/surrealdb/surrealdb.go v0.2.0
+	github.com/urfave/cli/v2 v2.25.1
 	github.com/wzshiming/gotype v0.7.3
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
 	golang.org/x/mod v0.9.0
