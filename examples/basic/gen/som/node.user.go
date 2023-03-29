@@ -46,19 +46,14 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	data := conv.FromUser(*user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	raw, err := n.db.Create(key, data)
+	convNodes, err := surrealdbgo.SmartUnmarshal[[]conv.User](n.db.Create(key, data))
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create entity: %w", err)
 	}
-	if _, ok := raw.([]any); !ok {
-		raw = []any{raw} // temporary fix
+	if len(convNodes) < 1 {
+		return errors.New("database response is empty")
 	}
-	var convNode conv.User
-	err = surrealdbgo.Unmarshal(raw, &convNode)
-	if err != nil {
-		return err
-	}
-	*user = conv.ToUser(convNode)
+	*user = conv.ToUser(convNodes[0])
 	return nil
 }
 
@@ -73,37 +68,21 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 	data := conv.FromUser(*user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	raw, err := n.db.Create(key, data)
+	convNode, err := surrealdbgo.SmartUnmarshal[conv.User](n.db.Create(key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
-	}
-	if _, ok := raw.([]any); !ok {
-		raw = []any{raw} // temporary fix
-	}
-	var convNode conv.User
-	err = surrealdbgo.Unmarshal(raw, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*user = conv.ToUser(convNode)
 	return nil
 }
 
 func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
-	raw, err := n.db.Select("user:⟨" + id + "⟩")
-	if err != nil {
-		if errors.Is(err, surrealdbgo.ErrNoRow) {
-			return nil, false, nil
-		}
-		return nil, false, err
+	convNode, err := surrealdbgo.SmartUnmarshal[conv.User](n.db.Select("user:⟨" + id + "⟩"))
+	if errors.Is(err, surrealdbgo.ErrNoRow) {
+		return nil, false, nil
 	}
-	if _, ok := raw.([]any); !ok {
-		raw = []any{raw} // temporary fix
-	}
-	var convNode conv.User
-	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
-		return nil, false, fmt.Errorf("could not unmarshal response: %w", err)
+		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
 	node := conv.ToUser(convNode)
 	return &node, true, nil
@@ -118,14 +97,9 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	}
 	data := conv.FromUser(*user)
 	data.UpdatedAt = time.Now()
-	raw, err := n.db.Update("user:⟨"+user.ID()+"⟩", data)
+	convNode, err := surrealdbgo.SmartUnmarshal[conv.User](n.db.Update("user:⟨"+user.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
-	}
-	var convNode conv.User
-	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*user = conv.ToUser(convNode)
 	return nil
