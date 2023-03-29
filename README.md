@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.20.1-informational" alt="Go 1.20.1"> 
+    <img src="https://img.shields.io/badge/go-1.20.2-informational" alt="Go 1.20.2"> 
   </a>
   <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
     <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
@@ -50,16 +50,29 @@ in the database, without the use of complicated JOINs and without bringing the d
 
 ## Getting started
 
-*Please note: This package is currently tested against version `1.0.0-beta.8` of SurrealDB.*
+*Please note: This package is currently tested against version 
+[1.0.0-beta.8](https://github.com/surrealdb/surrealdb/releases/tag/v1.0.0-beta.8)
+of SurrealDB.*
 
-### Notice
+### Disclaimer
 
-Som is in the stage of early development. When using it for production applications, please note that there might
-still be a few bugs to be caught. Furthermore, it may lack specific features and edge cases you might expect from 
-a fully-featured ORM and query builder library. Feel free to submit feature requests or pull requests to add 
-additional functionality to Som. We do ask you to please read our [Contributor Guide](CONTRIBUTING.md).
+This library is currently considered **HIGHLY EXPERIMENTAL**.
 
-While we try to prevent making any significant API changes, we can and will not guarantee this.
+Som is in the stage of (very) early development. While the basic functionality should be working as expected,
+there could be unknown and critical bugs. This could theoretically lead to your database and especially 
+the data within it to get broken. It is not yet recommended for production use, so please be careful!
+
+If you still want to use it for production applications, we do not accept any liability for data loss 
+or other kind of issues. You have been warned!
+
+Furthermore, it may lack specific features and edge cases you might expect from a fully-featured ORM and 
+query builder library. Feel free to submit feature requests or pull requests to add additional functionality
+to Som. We do ask you to please read our [Contributor Guide](CONTRIBUTING.md).
+
+As long as this library is not considered stable, there will likely be significant and breaking changes to its API.
+So please keep in mind, that any new updates might lead to required (manual) migrations or to take similar actions.
+
+But still, please try it out and give us some feedback. We would highly appreciate it. Thank you! 🙏
 
 ### Basic usage
 
@@ -69,8 +82,8 @@ Generate the client code:
 go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
 
-The package `github.com/marcbinz/som` is a dependency for the project in which the generated client code is used.
-So it must be added to the `go.mod` file accordingly.
+The package `github.com/marcbinz/som` can be considered an invisible dependency for your project. All it does is to
+generate code that lives within your project, but the package itself does not need to be added to the `go.mod` file.
 
 ### Versioning
 
@@ -132,22 +145,7 @@ list of all planned changes, please take a look at the issue section on GitHub a
 
 ## FAQ
 
-*Disclaimer: Currently those are just questions I asked myself and wanted an answer before the initial public release.
-In the future this section will be advanced by topics raised in issues or discussions.*
-
-### Why are maps not supported?
-
-- With the schemaless database this would be possible.
-- Currently, the focus is on structured and deterministic data.
-- Might be added in the future though.
-
-### Why does a filter like `where.User.Equal(userModel)` not exist?
-
-- This would be an ambiguous case. Should it compare the whole object with all properties or only the ID?
-- For this case it is better and more deterministic to just compare the ID explicitly.
-- If - for whatever reason - it is required to check the fields, adding those filters one by one makes the purpose of the query clearer.
-- Furthermore, we would need to find a way to circumvent a naming clash when the field of a model is named `Equal` (or other keywords).
-- On the other hand, this feature is still open for debate. So if anyone can clarify the need for it, we might as well implement it at some point.
+You can find a separate document for the FAQ [here](FAQ.md).
 
 ## Maintainers & Contributors
 
