@@ -89,7 +89,7 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 func (n *movie) Read(ctx context.Context, id string) (*model.Movie, bool, error) {
 	raw, err := n.db.Select("movie:⟨" + id + "⟩")
 	if err != nil {
-		if errors.As(err, &surrealdbgo.PermissionError{}) {
+		if errors.Is(err, surrealdbgo.ErrNoRow) {
 			return nil, false, nil
 		}
 		return nil, false, err

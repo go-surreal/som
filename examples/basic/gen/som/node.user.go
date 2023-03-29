@@ -92,7 +92,7 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
 	raw, err := n.db.Select("user:⟨" + id + "⟩")
 	if err != nil {
-		if errors.As(err, &surrealdbgo.PermissionError{}) {
+		if errors.Is(err, surrealdbgo.ErrNoRow) {
 			return nil, false, nil
 		}
 		return nil, false, err

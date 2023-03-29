@@ -546,7 +546,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
 
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.If(jen.Qual("errors", "As").Call(jen.Err(), jen.Op("&").Qual(def.PkgSurrealDB, "PermissionError").Values())).
+				jen.If(jen.Qual("errors", "Is").Call(jen.Err(), jen.Qual(def.PkgSurrealDB, "ErrNoRow"))).
 					Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
 				jen.Return(jen.Nil(), jen.False(), jen.Err()),
 			),

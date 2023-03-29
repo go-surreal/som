@@ -92,7 +92,7 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
 	raw, err := n.db.Select("group:⟨" + id + "⟩")
 	if err != nil {
-		if errors.As(err, &surrealdbgo.PermissionError{}) {
+		if errors.Is(err, surrealdbgo.ErrNoRow) {
 			return nil, false, nil
 		}
 		return nil, false, err
