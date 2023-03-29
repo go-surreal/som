@@ -56,7 +56,7 @@ of SurrealDB.*
 
 ### Disclaimer
 
-Please note that this library is considered **HIGHLY EXPERIMENTAL**.
+This library is currently considered **HIGHLY EXPERIMENTAL**.
 
 Som is in the stage of (very) early development. While the basic functionality should be working as expected,
 there could be unknown and critical bugs. This could theoretically lead to your database and especially 
@@ -82,8 +82,8 @@ Generate the client code:
 go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
 
-The package `github.com/marcbinz/som` is a dependency for the project in which the generated client code is used.
-So it must be added to the `go.mod` file accordingly.
+The package `github.com/marcbinz/som` can be considered an invisible dependency for your project. All it does is to
+generate code that lives within your project, but the package itself does not need to be added to the `go.mod` file.
 
 ### Versioning
 
