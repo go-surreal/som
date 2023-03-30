@@ -3,6 +3,7 @@ package relate
 
 import (
 	"errors"
+	"fmt"
 	conv "github.com/marcbinz/som/examples/movie/gen/som/conv"
 	model "github.com/marcbinz/som/examples/movie/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
@@ -25,32 +26,20 @@ func (e directed) Create(edge *model.Directed) error {
 	if edge.Movie.ID() == "" {
 		return errors.New("ID of the outgoing node 'Movie' must not be empty")
 	}
-	query := "RELATE "
-	query += "person:" + edge.Person.ID()
-	query += "->directed->"
-	query += "movie:" + edge.Movie.ID()
-	query += " CONTENT $data"
+	query := "RELATE " + "person:" + edge.Person.ID() + "->directed->" + "movie:" + edge.Movie.ID() + " CONTENT $data"
 	data := conv.FromDirected(*edge)
-	raw, err := e.db.Query(query, map[string]any{"data": data})
+	convEdge, err := surrealdbgo.SmartUnmarshal[conv.Directed](e.db.Query(query, map[string]any{"data": data}))
 	if err != nil {
-		return err
-	}
-	var convEdge conv.Directed
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &convEdge)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return errors.New("result is empty")
+		return fmt.Errorf("could not create relation: %w", err)
 	}
 	*edge = conv.ToDirected(convEdge)
 	return nil
 }
 
 func (directed) Update(edge *model.Directed) error {
-	return nil
+	return errors.New("not yet implemented")
 }
 
 func (directed) Delete(edge *model.Directed) error {
-	return nil
+	return errors.New("not yet implemented")
 }
