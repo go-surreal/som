@@ -85,6 +85,12 @@ go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
 The package `github.com/marcbinz/som` can be considered an invisible dependency for your project. All it does is to
 generate code that lives within your project, but the package itself does not need to be added to the `go.mod` file.
 
+The generated code uses the official SurrealDB go client:
+
+```
+go get github.com/surrealdb/surrealdb.go
+```
+
 ### Versioning
 
 In the future this package will follow the [semantic versioning](https://semver.org) specification.

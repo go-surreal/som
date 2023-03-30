@@ -138,27 +138,23 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the outgoing node '"+edge.Out.NameGo()+"' must not be empty"))),
 				),
 
-			jen.Id("query").Op(":=").Lit("RELATE "),
-			jen.Id("query").Op("+=").Lit(edge.In.NameDatabase()+":").Op("+").Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call(),
-			jen.Id("query").Op("+=").Lit("->"+edge.NameDatabase()+"->"),
-			jen.Id("query").Op("+=").Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call(),
-			jen.Id("query").Op("+=").Lit(" CONTENT $data"),
+			jen.Id("query").Op(":=").Lit("RELATE ").Op("+").
+				Lit(edge.In.NameDatabase()+":").Op("+").Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Op("+").
+				Lit("->"+edge.NameDatabase()+"->").Op("+").
+				Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("+").
+				Lit(" CONTENT $data"),
 
 			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
-			jen.Id("raw").Op(",").Err().Op(":=").Id("e").Dot("db").Dot("Query").
-				Call(jen.Id("query"), jen.Map(jen.String()).Any().Values(jen.Lit("data").Op(":").Id("data"))),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
-			),
 
-			jen.Var().Id("convEdge").Qual(b.subPkg(def.PkgConv), edge.NameGo()),
-			jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
-				Call(jen.Id("raw"), jen.Op("&").Id("convEdge")),
+			jen.List(jen.Id("convEdge"), jen.Err()).Op(":=").
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), edge.NameGo())).
+				Call(
+					jen.Id("e").Dot("db").Dot("Query").
+						Call(jen.Id("query"), jen.Map(jen.String()).Any().Values(jen.Lit("data").Op(":").Id("data"))),
+				),
+
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
-			),
-			jen.If(jen.Op("!").Id("ok")).Block(
-				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("result is empty"))),
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create relation: %w"), jen.Err())),
 			),
 
 			jen.Op("*").Id("edge").Op("=").Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
@@ -170,7 +166,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
-			jen.Return(jen.Nil()),
+			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not yet implemented"))),
 		)
 
 	file.Line()
@@ -178,7 +174,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
-			jen.Return(jen.Nil()),
+			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not yet implemented"))),
 		)
 
 	if err := file.Save(path.Join(b.path(), edge.FileName())); err != nil {

@@ -131,8 +131,6 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
-github.com/surrealdb/surrealdb.go v0.1.2-0.20230309175011-e0397e60fdc8 h1:CtGN7xtYXyNTvCDIQVw/HZiTBizxpC401DjAs38YrZE=
-github.com/surrealdb/surrealdb.go v0.1.2-0.20230309175011-e0397e60fdc8/go.mod h1:CloW70O49xyVO/rGO9cAZ62FEbl0/hreRHEJuamnndQ=
 github.com/surrealdb/surrealdb.go v0.2.0 h1:TyfIRg+kN6sz144JiS+etTGsbB0zj4Uk0iLdcbDD3FU=
 github.com/surrealdb/surrealdb.go v0.2.0/go.mod h1:CloW70O49xyVO/rGO9cAZ62FEbl0/hreRHEJuamnndQ=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
