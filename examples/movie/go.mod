@@ -4,7 +4,7 @@ go 1.19
 
 replace github.com/marcbinz/som => ../../
 
-replace github.com/docker/docker => github.com/docker/docker v20.10.3-0.20221021173910-5aac513617f0+incompatible // 22.06 branch
+replace github.com/docker/docker => github.com/docker/docker v23.0.2+incompatible // 22.06 branch
 
 require (
 	github.com/google/go-cmp v0.5.9
