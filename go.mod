@@ -9,7 +9,7 @@ require (
 	github.com/urfave/cli/v2 v2.25.1
 	github.com/wzshiming/gotype v0.7.3
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
-	golang.org/x/mod v0.9.0
+	golang.org/x/mod v0.10.0
 )
 
 require (
