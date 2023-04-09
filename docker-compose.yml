@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+
+  surrealdb:
+    image: surrealdb/surrealdb:1.0.0-beta.9
+    command: start --log debug --user root --pass root file:data/surreal
+    ports:
+      - "8020:8000"
+    volumes:
+      - type: bind
+        source: ~/.local/share/docker/volumes/som/surrealdb
+        target: /data
+    restart: always
