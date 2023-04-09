@@ -10,7 +10,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/marcbinz/som v0.0.0
-	github.com/surrealdb/surrealdb.go v0.2.0
+	github.com/surrealdb/surrealdb.go v0.2.1-0.20230404124315-45630a906733
 	github.com/testcontainers/testcontainers-go v0.19.0
 	gotest.tools/v3 v3.4.0
 )

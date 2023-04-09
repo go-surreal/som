@@ -207,6 +207,37 @@ r.QueryUsersByPartialName("some").
 
 ```
 
+### Allow for union of connected records
+
+```
+TYPE record(table1, table2, etc...)
+```
+
+```
+type SomeRecordUnion interface {
+    someRecordUnion()
+}
+
+type X struct {
+    som.Node
+    SomeRecordUnion
+}
+
+type Y struct {
+    som.Node
+    SomeRecordUnion
+}
+
+type Z struct {
+    som.Node
+    XY SomeRecordUnion
+}
+```
+
+```
+DEFINE FIELD xy ON z TYPE record(x, y)
+```
+
 ## Optimisations
 
 tbd.
