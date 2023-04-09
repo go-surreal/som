@@ -98,19 +98,11 @@ func (q Group) Parallel(parallel bool) Group {
 // number of records matching the conditions of the query.
 func (q Group) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	result, err := surrealdbgo.SmartUnmarshal[countResult](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("could not count records: %w", err)
 	}
-	var rawCount countResult
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawCount)
-	if err != nil {
-		return 0, err
-	}
-	if !ok {
-		return 0, nil
-	}
-	return rawCount.Count, nil
+	return result.Count, nil
 }
 
 // Exists returns whether at least one record for the conditons
@@ -127,17 +119,9 @@ func (q Group) Exists(ctx context.Context) (bool, error) {
 // All returns all records matching the conditions of the query.
 func (q Group) All(ctx context.Context) ([]*model.Group, error) {
 	res := q.query.BuildAsAll()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	rawNodes, err := surrealdbgo.SmartUnmarshal[[]conv.Group](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
-		return nil, err
-	}
-	var rawNodes []conv.Group
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
+		return nil, fmt.Errorf("could not query records: %w", err)
 	}
 	var nodes []*model.Group
 	for _, rawNode := range rawNodes {
@@ -150,17 +134,9 @@ func (q Group) All(ctx context.Context) ([]*model.Group, error) {
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q Group) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	rawNodes, err := surrealdbgo.SmartUnmarshal[[]idNode](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
-		return nil, err
-	}
-	var rawNodes []*idNode
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
+		return nil, fmt.Errorf("could not query records: %w", err)
 	}
 	var ids []string
 	for _, rawNode := range rawNodes {

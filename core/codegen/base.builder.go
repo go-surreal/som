@@ -445,31 +445,24 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onCreatedAt),
 			jen.Add(onUpdatedAt),
 
-			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("db").Dot("Create").
-				Call(jen.Id("key"), jen.Id("data")),
+			jen.List(jen.Id("convNodes"), jen.Err()).Op(":=").
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Qual(b.subPkg(def.PkgConv), node.NameGo())).
+				Call(
+					jen.Id("n").Dot("db").Dot("Create").
+						Call(jen.Id("key"), jen.Id("data")),
+				),
+
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
 			),
 
-			jen.If(
-				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
-					Id("raw").Op(".").Call(jen.Index().Any()),
-				jen.Op("!").Id("ok"),
-			).Block(
-				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
-			),
-
-			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
-				Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
+			jen.If(jen.Len(jen.Id("convNodes")).Op("<").Lit(1)).Block(
+				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("database response is empty"))),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
 				Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).
-				Call(jen.Id("convNode")),
+				Call(jen.Id("convNodes").Index(jen.Lit(0))),
 
 			jen.Return(jen.Nil()),
 		)
@@ -492,7 +485,9 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
 				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("creating node with preset ID not allowed, use CreateWithID for that"))),
+					jen.Return(jen.Qual("errors", "New").Call(
+						jen.Lit("creating node with preset ID not allowed, use CreateWithID for that")),
+					),
 				),
 
 			jen.Id("key").Op(":=").Lit(node.NameDatabase()+":").Op("+").
@@ -502,26 +497,15 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onCreatedAt),
 			jen.Add(onUpdatedAt),
 
-			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("db").Dot("Create").
-				Call(jen.Id("key"), jen.Id("data")),
+			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
+				Call(
+					jen.Id("n").Dot("db").Dot("Create").
+						Call(jen.Id("key"), jen.Id("data")),
+				),
+
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
-			),
-
-			jen.If(
-				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
-					Id("raw").Op(".").Call(jen.Index().Any()),
-				jen.Op("!").Id("ok"),
-			).Block(
-				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
-			),
-
-			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
-				Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
@@ -541,28 +525,22 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
-			jen.List(jen.Id("raw"), jen.Err()).Op(":=").
-				Id("n").Dot("db").Dot("Select").
-				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
+			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
+				Call(
+					jen.Id("n").Dot("db").Dot("Select").
+						Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
+				),
+
+			jen.If(jen.Qual("errors", "Is").Call(jen.Err(), jen.Qual(def.PkgSurrealDB, "ErrNoRow"))).
+				Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
 
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.If(jen.Qual("errors", "As").Call(jen.Err(), jen.Op("&").Qual(def.PkgSurrealDB, "PermissionError").Values())).
-					Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
-				jen.Return(jen.Nil(), jen.False(), jen.Err()),
-			),
-
-			jen.If(
-				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
-					Id("raw").Op(".").Call(jen.Index().Any()),
-				jen.Op("!").Id("ok"),
-			).Block(
-				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
-			),
-
-			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.False(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
+				jen.Return(
+					jen.Nil(),
+					jen.False(),
+					jen.Qual("fmt", "Errorf").Call(jen.Lit("could not read entity: %w"), jen.Err()),
+				),
 			),
 
 			jen.Id("node").Op(":=").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
@@ -597,18 +575,16 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Add(onUpdatedAt),
 
-			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("db").Dot("Update").
-				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩"), jen.Id("data")),
+			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
+				Call(
+					jen.Id("n").Dot("db").Dot("Update").
+						Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
+							Op("+").Lit("⟩"), jen.Id("data")),
+				),
+
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not update entity: %w"), jen.Err())),
-			),
-
-			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
-				Call(jen.Index().Any().Values(jen.Id("raw")), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").

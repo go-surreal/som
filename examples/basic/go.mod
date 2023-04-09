@@ -10,7 +10,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/marcbinz/som v0.0.0
-	github.com/surrealdb/surrealdb.go v0.1.2-0.20230309175011-e0397e60fdc8
+	github.com/surrealdb/surrealdb.go v0.2.1-0.20230404124315-45630a906733
 	github.com/testcontainers/testcontainers-go v0.19.0
 	gotest.tools/v3 v3.4.0
 )
@@ -36,7 +36,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
-	github.com/opencontainers/runc v1.1.3 // indirect
+	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
