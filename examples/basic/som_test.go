@@ -7,7 +7,6 @@ import (
 	"github.com/marcbinz/som/examples/basic/gen/som"
 	"github.com/marcbinz/som/examples/basic/gen/som/where"
 	"github.com/marcbinz/som/examples/basic/model"
-	"github.com/marcbinz/som/examples/testutil"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
@@ -78,8 +77,6 @@ func TestQuery(t *testing.T) {
 }
 
 func TestWithDatabase(t *testing.T) {
-	testutil.SkipWithoutEnv(t, "GOTEST_INTEGRATION")
-
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
@@ -153,12 +150,6 @@ func TestWithDatabase(t *testing.T) {
 		userNew, *userOut,
 		cmpopts.IgnoreUnexported(sombase.Timestamps{}),
 	)
-}
-
-type ContainerLog func(testcontainers.Log)
-
-func (l ContainerLog) Accept(log testcontainers.Log) {
-	l(log)
 }
 
 func FuzzWithDatabase(f *testing.F) {

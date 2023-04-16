@@ -98,11 +98,14 @@ func (q Movie) Parallel(parallel bool) Movie {
 // number of records matching the conditions of the query.
 func (q Movie) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
-	result, err := surrealdbgo.SmartUnmarshal[countResult](q.db.Query(res.Statement, res.Variables))
+	result, err := surrealdbgo.SmartUnmarshal[[]countResult](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
-	return result.Count, nil
+	if len(result) < 1 {
+		return 0, errors.New("database result is empty")
+	}
+	return result[0].Count, nil
 }
 
 // Exists returns whether at least one record for the conditons
