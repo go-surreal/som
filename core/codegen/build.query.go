@@ -277,7 +277,7 @@ number of records matching the conditions of the query.
 			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsCount").Call(),
 
 			jen.List(jen.Id("result"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Id("countResult")).
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Id("countResult")).
 				Call(
 					jen.Id("q").Dot("db").Dot("Query").Call(
 						jen.Id("res").Dot("Statement"),
@@ -289,7 +289,11 @@ number of records matching the conditions of the query.
 				jen.Return(jen.Lit(0), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not count records: %w"), jen.Err())),
 			),
 
-			jen.Return(jen.Id("result").Dot("Count"), jen.Nil()),
+			jen.If(jen.Len(jen.Id("result")).Op("<").Lit(1)).Block(
+				jen.Return(jen.Lit(0), jen.Qual("errors", "New").Call(jen.Lit("database result is empty"))),
+			),
+
+			jen.Return(jen.Id("result").Index(jen.Lit(0)).Dot("Count"), jen.Nil()),
 		)
 }
 
