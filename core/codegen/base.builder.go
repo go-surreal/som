@@ -16,6 +16,7 @@ import (
 const (
 	filenameClient     = "som.client.go"
 	filenameDatabase   = "som.database.go"
+	filenameFunctions  = "som.functions.go"
 	filenameInterfaces = "som.interfaces.go"
 	filenameSchema     = "som.schema.go"
 )
@@ -55,6 +56,10 @@ func (b *build) build() error {
 	}
 
 	if err := b.buildDatabaseFile(); err != nil {
+		return err
+	}
+
+	if err := b.buildFunctionsFile(); err != nil {
 		return err
 	}
 
@@ -222,6 +227,61 @@ func (db *database) Delete(what string) (any, error) {
 	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
 
 	err := os.WriteFile(path.Join(b.basePath(), filenameDatabase), data, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to write base file: %v", err)
+	}
+
+	return nil
+}
+
+func (b *build) buildFunctionsFile() error {
+	content := `
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+const statusOK = "OK"
+
+type RawQuery[T any] struct {
+	Status string
+	Time   string
+	Result T
+	Detail string 
+}
+
+func Unmarshal[M any](respond interface{}) (model M, err error) {
+	var bytes []byte
+
+	if arrResp, isArr := respond.([]interface{}); len(arrResp) > 0 {
+		if dataMap, ok := arrResp[0].(map[string]interface{}); ok && isArr {
+			if _, ok := dataMap["status"]; ok {
+				if bytes, err = json.Marshal(respond); err == nil {
+					var raw []RawQuery[M]
+					if err = json.Unmarshal(bytes, &raw); err == nil {
+						if raw[0].Status != statusOK {
+							err = fmt.Errorf("%s: %s", raw[0].Status, raw[0].Detail)
+						}
+						model = raw[0].Result
+					}
+				}
+				return model, err
+			}
+		}
+	}
+
+	if bytes, err = json.Marshal(respond); err == nil {
+		err = json.Unmarshal(bytes, &model)
+	}
+
+	return model, err
+}
+`
+
+	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
+
+	err := os.WriteFile(path.Join(b.basePath(), filenameFunctions), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}

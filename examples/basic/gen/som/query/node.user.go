@@ -103,7 +103,7 @@ func (q User) Count(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
 	if len(result) < 1 {
-		return 0, errors.New("database result is empty")
+		return 0, nil
 	}
 	return result[0].Count, nil
 }

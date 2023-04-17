@@ -5,24 +5,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	conv "github.com/marcbinz/som/examples/basic/gen/som/conv"
-	lib "github.com/marcbinz/som/examples/basic/gen/som/internal/lib"
-	with "github.com/marcbinz/som/examples/basic/gen/som/with"
-	model "github.com/marcbinz/som/examples/basic/model"
+	conv "github.com/marcbinz/som/examples/testing/gen/som/conv"
+	lib "github.com/marcbinz/som/examples/testing/gen/som/internal/lib"
+	with "github.com/marcbinz/som/examples/testing/gen/som/with"
+	model "github.com/marcbinz/som/examples/testing/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 	"strings"
 	"time"
 )
 
-type Group struct {
+type FieldsLikeDBResponse struct {
 	db    Database
-	query lib.Query[model.Group]
+	query lib.Query[model.FieldsLikeDBResponse]
 }
 
-func NewGroup(db Database) Group {
-	return Group{
+func NewFieldsLikeDBResponse(db Database) FieldsLikeDBResponse {
+	return FieldsLikeDBResponse{
 		db:    db,
-		query: lib.NewQuery[model.Group]("group"),
+		query: lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
 	}
 }
 
@@ -33,7 +33,7 @@ func NewGroup(db Database) Group {
 // together that all need to match.
 // Use where.Any to chain multiple conditions
 // together where at least one needs to match.
-func (q Group) Filter(filters ...lib.Filter[model.Group]) Group {
+func (q FieldsLikeDBResponse) Filter(filters ...lib.Filter[model.FieldsLikeDBResponse]) FieldsLikeDBResponse {
 	q.query.Where = append(q.query.Where, filters...)
 	return q
 }
@@ -42,7 +42,7 @@ func (q Group) Filter(filters ...lib.Filter[model.Group]) Group {
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
 // it would override the sort conditions.
-func (q Group) Order(by ...*lib.Sort[model.Group]) Group {
+func (q FieldsLikeDBResponse) Order(by ...*lib.Sort[model.FieldsLikeDBResponse]) FieldsLikeDBResponse {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
@@ -51,26 +51,26 @@ func (q Group) Order(by ...*lib.Sort[model.Group]) Group {
 
 // OrderRandom sorts the returned records in a random order.
 // Note: OrderRandom takes precedence over Order.
-func (q Group) OrderRandom() Group {
+func (q FieldsLikeDBResponse) OrderRandom() FieldsLikeDBResponse {
 	q.query.SortRandom = true
 	return q
 }
 
 // Offset skips the first x records for the result set.
-func (q Group) Offset(offset int) Group {
+func (q FieldsLikeDBResponse) Offset(offset int) FieldsLikeDBResponse {
 	q.query.Offset = offset
 	return q
 }
 
 // Limit restricts the query to return at most x records.
-func (q Group) Limit(limit int) Group {
+func (q FieldsLikeDBResponse) Limit(limit int) FieldsLikeDBResponse {
 	q.query.Limit = limit
 	return q
 }
 
 // Fetch can be used to return related records.
 // This works for both records links and edges.
-func (q Group) Fetch(fetch ...with.Fetch_[model.Group]) Group {
+func (q FieldsLikeDBResponse) Fetch(fetch ...with.Fetch_[model.FieldsLikeDBResponse]) FieldsLikeDBResponse {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			q.query.Fetch = append(q.query.Fetch, field)
@@ -81,7 +81,7 @@ func (q Group) Fetch(fetch ...with.Fetch_[model.Group]) Group {
 
 // Timeout adds an execution time limit to the query.
 // When exceeded, the query call will return with an error.
-func (q Group) Timeout(timeout time.Duration) Group {
+func (q FieldsLikeDBResponse) Timeout(timeout time.Duration) FieldsLikeDBResponse {
 	q.query.Timeout = timeout
 	return q
 }
@@ -89,14 +89,14 @@ func (q Group) Timeout(timeout time.Duration) Group {
 // Parallel tells SurrealDB that individual parts
 // of the query can be calculated in parallel.
 // This could lead to a faster execution.
-func (q Group) Parallel(parallel bool) Group {
+func (q FieldsLikeDBResponse) Parallel(parallel bool) FieldsLikeDBResponse {
 	q.query.Parallel = parallel
 	return q
 }
 
 // Count returns the size of the result set, in other words the
 // number of records matching the conditions of the query.
-func (q Group) Count(ctx context.Context) (int, error) {
+func (q FieldsLikeDBResponse) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
 	result, err := surrealdbgo.SmartUnmarshal[[]countResult](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
@@ -111,7 +111,7 @@ func (q Group) Count(ctx context.Context) (int, error) {
 // Exists returns whether at least one record for the conditons
 // of the query exists or not. In other words it returns whether
 // the size of the result set is greater than 0.
-func (q Group) Exists(ctx context.Context) (bool, error) {
+func (q FieldsLikeDBResponse) Exists(ctx context.Context) (bool, error) {
 	count, err := q.Count(ctx)
 	if err != nil {
 		return false, err
@@ -120,22 +120,22 @@ func (q Group) Exists(ctx context.Context) (bool, error) {
 }
 
 // All returns all records matching the conditions of the query.
-func (q Group) All(ctx context.Context) ([]*model.Group, error) {
+func (q FieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
 	res := q.query.BuildAsAll()
-	rawNodes, err := surrealdbgo.SmartUnmarshal[[]conv.Group](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := surrealdbgo.SmartUnmarshal[[]conv.FieldsLikeDBResponse](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	var nodes []*model.Group
+	var nodes []*model.FieldsLikeDBResponse
 	for _, rawNode := range rawNodes {
-		node := conv.ToGroup(rawNode)
+		node := conv.ToFieldsLikeDBResponse(rawNode)
 		nodes = append(nodes, &node)
 	}
 	return nodes, nil
 }
 
 // AllIDs returns the IDs of all records matching the conditions of the query.
-func (q Group) AllIDs(ctx context.Context) ([]string, error) {
+func (q FieldsLikeDBResponse) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	rawNodes, err := surrealdbgo.SmartUnmarshal[[]idNode](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
@@ -151,7 +151,7 @@ func (q Group) AllIDs(ctx context.Context) ([]string, error) {
 // First returns the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q Group) First(ctx context.Context) (*model.Group, error) {
+func (q FieldsLikeDBResponse) First(ctx context.Context) (*model.FieldsLikeDBResponse, error) {
 	q.query.Limit = 1
 	res, err := q.All(ctx)
 	if err != nil {
@@ -166,7 +166,7 @@ func (q Group) First(ctx context.Context) (*model.Group, error) {
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q Group) FirstID(ctx context.Context) (string, error) {
+func (q FieldsLikeDBResponse) FirstID(ctx context.Context) (string, error) {
 	q.query.Limit = 1
 	res, err := q.AllIDs(ctx)
 	if err != nil {
@@ -181,7 +181,7 @@ func (q Group) FirstID(ctx context.Context) (string, error) {
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
-func (q Group) Describe() string {
+func (q FieldsLikeDBResponse) Describe() string {
 	res := q.query.BuildAsAll()
 	return strings.TrimSpace(res.Statement)
 }

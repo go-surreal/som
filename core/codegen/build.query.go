@@ -290,7 +290,7 @@ number of records matching the conditions of the query.
 			),
 
 			jen.If(jen.Len(jen.Id("result")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Lit(0), jen.Qual("errors", "New").Call(jen.Lit("database result is empty"))),
+				jen.Return(jen.Lit(0), jen.Nil()),
 			),
 
 			jen.Return(jen.Id("result").Index(jen.Lit(0)).Dot("Count"), jen.Nil()),
