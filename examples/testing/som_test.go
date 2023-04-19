@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/marcbinz/som/examples/testing/gen/som"
 	"github.com/marcbinz/som/examples/testing/model"
+	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"testing"
@@ -30,7 +31,7 @@ func conf(endpoint string) som.Config {
 	}
 }
 
-func TestQueryCount(t *testing.T) {
+func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
@@ -74,7 +75,33 @@ func TestQueryCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.FieldsLikeDBResponseRepo().Create(ctx, &model.FieldsLikeDBResponse{})
+	newModel := &model.FieldsLikeDBResponse{
+		Status: "some value",
+	}
+
+	err = client.FieldsLikeDBResponseRepo().Create(ctx, newModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readModel, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, newModel.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.True(t, exists)
+	assert.Equal(t, "some value", readModel.Status)
+
+	readModel.Status = "some other value"
+
+	err = client.FieldsLikeDBResponseRepo().Update(ctx, readModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "some other value", readModel.Status)
+
+	err = client.FieldsLikeDBResponseRepo().Delete(ctx, readModel)
 	if err != nil {
 		t.Fatal(err)
 	}

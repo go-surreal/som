@@ -505,19 +505,22 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onCreatedAt),
 			jen.Add(onUpdatedAt),
 
-			jen.List(jen.Id("convNodes"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Qual(b.subPkg(def.PkgConv), node.NameGo())).
-				Call(
-					jen.Id("n").Dot("db").Dot("Create").
-						Call(jen.Id("key"), jen.Id("data")),
-				),
-
+			jen.Id("raw").Op(",").Err().Op(":=").
+				Id("n").Dot("db").Dot("Create").
+				Call(jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
 			),
 
+			jen.Var().Id("convNodes").Index().Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
+				Call(jen.Id("raw"), jen.Op("&").Id("convNodes")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
+			),
+
 			jen.If(jen.Len(jen.Id("convNodes")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("database response is empty"))),
+				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("response is empty"))),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").

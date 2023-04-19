@@ -44,17 +44,17 @@ func (n *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse 
 	key := "fields_like_db_response"
 	data := conv.FromFieldsLikeDBResponse(*fieldsLikeDBResponse)
 
-	result, err := n.db.Create(key, data)
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-
-	convNodes, err := Unmarshal[[]conv.FieldsLikeDBResponse](result)
+	var convNodes []conv.FieldsLikeDBResponse
+	err = surrealdbgo.Unmarshal(raw, &convNodes)
 	if err != nil {
-		return fmt.Errorf("could not unmarshal result: %w", err)
+		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	if len(convNodes) < 1 {
-		return errors.New("database response is empty")
+		return errors.New("response is empty")
 	}
 	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNodes[0])
 	return nil
