@@ -5,11 +5,11 @@ go 1.20
 require (
 	github.com/dave/jennifer v1.6.1
 	github.com/iancoleman/strcase v0.2.0
-	github.com/surrealdb/surrealdb.go v0.2.1
-	github.com/urfave/cli/v2 v2.25.3
+	github.com/surrealdb/surrealdb.go v0.2.2-0.20230518162653-b499ddda7ada
+	github.com/urfave/cli/v2 v2.25.7
 	github.com/wzshiming/gotype v0.7.3
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
-	golang.org/x/mod v0.10.0
+	golang.org/x/mod v0.11.0
 )
 
 require (
