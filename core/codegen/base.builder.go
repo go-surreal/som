@@ -128,6 +128,8 @@ import (
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
+	"github.com/surrealdb/surrealdb.go/pkg/logger"
+	"time"
 )
 
 type Database interface {
@@ -152,9 +154,21 @@ type ClientImpl struct {
 }
 
 func NewClient(conf Config) (*ClientImpl, error) {
-	surreal, err := surrealdb.New(conf.Address + "/rpc", gorilla.Create())
+	url := conf.Address + "/rpc"
+
+	logData, err := logger.New().Make()
 	if err != nil {
-		return nil, fmt.Errorf("new failed: %v", err)
+		return nil, fmt.Errorf("could not create logger: %v", err)
+	}
+
+	ws, err := gorilla.Create().Logger(logData).SetTimeOut(time.Minute).Connect(url)
+	if err != nil {
+		return nil, fmt.Errorf("could not create websocket: %v", err)
+	}
+	
+	surreal, err := surrealdb.New("<unused>", ws)
+	if err != nil {
+		return nil, fmt.Errorf("could not create surrealdb client: %v", err)
 	}
 
 	_, err = surreal.Signin(map[string]any{
