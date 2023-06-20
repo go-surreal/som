@@ -127,6 +127,7 @@ func (b *build) buildClientFile() error {
 import (
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
+	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
 )
 
 type Database interface {
@@ -151,7 +152,7 @@ type ClientImpl struct {
 }
 
 func NewClient(conf Config) (*ClientImpl, error) {
-	surreal, err := surrealdb.New(conf.Address + "/rpc")
+	surreal, err := surrealdb.New(conf.Address + "/rpc", gorilla.Create())
 	if err != nil {
 		return nil, fmt.Errorf("new failed: %v", err)
 	}
