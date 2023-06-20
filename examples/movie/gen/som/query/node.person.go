@@ -98,14 +98,22 @@ func (q Person) Parallel(parallel bool) Person {
 // number of records matching the conditions of the query.
 func (q Person) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
-	result, err := surrealdbgo.SmartUnmarshal[[]countResult](q.db.Query(res.Statement, res.Variables))
+	raw, err := q.db.Query(res.Statement, res.Variables)
+	if err != nil {
+		return 0, err
+	}
+	var rawCount []countResult
+	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
-	if len(result) < 1 {
-		return 0, errors.New("database result is empty")
+	if !ok {
+		return 0, nil
 	}
-	return result[0].Count, nil
+	if len(rawCount) < 1 {
+		return 0, nil
+	}
+	return rawCount[0].Count, nil
 }
 
 // Exists returns whether at least one record for the conditons

@@ -44,12 +44,17 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 	key := "movie"
 	data := conv.FromMovie(*movie)
 
-	convNodes, err := surrealdbgo.SmartUnmarshal[[]conv.Movie](n.db.Create(key, data))
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
+	var convNodes []conv.Movie
+	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal response: %w", err)
+	}
 	if len(convNodes) < 1 {
-		return errors.New("database response is empty")
+		return errors.New("response is empty")
 	}
 	*movie = conv.ToMovie(convNodes[0])
 	return nil

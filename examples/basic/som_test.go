@@ -148,7 +148,7 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
-		cmpopts.IgnoreUnexported(sombase.Timestamps{}),
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
 	)
 }
 

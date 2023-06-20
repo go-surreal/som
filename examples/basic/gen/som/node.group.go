@@ -46,12 +46,17 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	convNodes, err := surrealdbgo.SmartUnmarshal[[]conv.Group](n.db.Create(key, data))
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
+	var convNodes []conv.Group
+	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal response: %w", err)
+	}
 	if len(convNodes) < 1 {
-		return errors.New("database response is empty")
+		return errors.New("response is empty")
 	}
 	*group = conv.ToGroup(convNodes[0])
 	return nil

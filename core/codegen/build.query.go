@@ -276,24 +276,31 @@ number of records matching the conditions of the query.
 		Block(
 			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsCount").Call(),
 
-			jen.List(jen.Id("result"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Id("countResult")).
-				Call(
-					jen.Id("q").Dot("db").Dot("Query").Call(
-						jen.Id("res").Dot("Statement"),
-						jen.Id("res").Dot("Variables"),
-					),
-				),
+			jen.Id("raw").Op(",").Err().Op(":=").Id("q").Dot("db").Dot("Query").Call(
+				jen.Id("res").Dot("Statement"),
+				jen.Id("res").Dot("Variables"),
+			),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Lit(0), jen.Err()),
+			),
+
+			jen.Var().Id("rawCount").Index().Id("countResult"),
+			jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
+				Call(jen.Id("raw"), jen.Op("&").Id("rawCount")),
 
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Lit(0), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not count records: %w"), jen.Err())),
 			),
 
-			jen.If(jen.Len(jen.Id("result")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Lit(0), jen.Qual("errors", "New").Call(jen.Lit("database result is empty"))),
+			jen.If(jen.Op("!").Id("ok")).Block(
+				jen.Return(jen.Lit(0), jen.Nil()),
 			),
 
-			jen.Return(jen.Id("result").Index(jen.Lit(0)).Dot("Count"), jen.Nil()),
+			jen.If(jen.Len(jen.Id("rawCount")).Op("<").Lit(1)).Block(
+				jen.Return(jen.Lit(0), jen.Nil()),
+			),
+
+			jen.Return(jen.Id("rawCount").Index(jen.Lit(0)).Dot("Count"), jen.Nil()),
 		)
 }
 
