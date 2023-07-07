@@ -4,13 +4,13 @@ go 1.19
 
 replace github.com/marcbinz/som => ../../
 
-replace github.com/docker/docker => github.com/docker/docker v20.10.3-0.20221021173910-5aac513617f0+incompatible // 22.06 branch
+replace github.com/docker/docker => github.com/docker/docker v24.0.3+incompatible // 22.06 branch
 
 require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/marcbinz/som v0.0.0
-	github.com/surrealdb/surrealdb.go v0.2.1
+	github.com/surrealdb/surrealdb.go v0.2.2-0.20230518162653-b499ddda7ada
 	github.com/testcontainers/testcontainers-go v0.20.0
 	gotest.tools/v3 v3.4.0
 )
@@ -31,6 +31,8 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/klauspost/compress v1.11.13 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/term v0.0.0-20221128092401-c43b287e0e0f // indirect
@@ -39,6 +41,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/rs/zerolog v1.29.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
