@@ -1,6 +1,6 @@
 module github.com/marcbinz/som/examples/basic
 
-go 1.19
+go 1.20
 
 replace github.com/marcbinz/som => ../../
 
