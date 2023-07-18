@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.20.2-informational" alt="Go 1.20.2"> 
+    <img src="https://img.shields.io/badge/go-1.21rc3-informational" alt="Go 1.21rc3"> 
   </a>
   <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
     <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
@@ -50,7 +50,7 @@ in the database, without the use of complicated JOINs and without bringing the d
 
 ## Getting started
 
-*Please note: This package is currently tested against version `1.0.0-beta.8` of SurrealDB.*
+*Please note: This package is currently tested against version `1.0.0-beta.9` (nightly) of SurrealDB.*
 
 ### Notice
 
