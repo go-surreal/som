@@ -22,7 +22,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21-rc3 # ${{ steps.asdf.outputs.golang_version }}
+          go-version: 1.21-rc.3 # ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
 
       - name: Check Go Version
@@ -67,7 +67,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21-rc3 # ${{ steps.asdf.outputs.golang_version }}
+          go-version: 1.21-rc.3 # ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
 
       - name: Check Go Version
@@ -116,7 +116,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21-rc3 # ${{ steps.asdf.outputs.golang_version }}
+          go-version: 1.21-rc.3 # ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
 
       - name: Check Go Version
@@ -155,7 +155,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21-rc3 # ${{ steps.asdf.outputs.golang_version }}
+          go-version: 1.21-rc.3 # ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
 
       - name: Check Go Version
