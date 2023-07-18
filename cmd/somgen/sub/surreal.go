@@ -3,6 +3,7 @@ package sub
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
 	"github.com/urfave/cli/v2"
@@ -35,6 +36,40 @@ func surreal(ctx *cli.Context) error {
 	}
 
 	fmt.Println(update)
+
+	live, err := db.DB.Live("select * from user")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("live:", live)
+
+	var bytes []byte
+
+	for _, val := range live.([]interface{}) {
+		bytes = append(bytes, byte(val.(float64)))
+	}
+
+	uid, err := uuid.FromBytes(bytes)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("uid:", uid)
+
+	query, err := db.DB.Query("select * from "+uid.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("query:", query)
+
+	kill, err := db.DB.Kill(uid.String())
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("kill:", kill)
 
 	// _, err = db.Create(ctx.Context, &Data{
 	// 	Key: "some key",
@@ -69,7 +104,12 @@ type Client struct {
 }
 
 func New(username, password, namespace, database string) (*Client, error) {
-	db, err := surrealdb.New("ws://localhost:8010/rpc", gorilla.Create())
+	ws, err := gorilla.Create().SetTimeOut(time.Minute).Connect("ws://localhost:8020/rpc")
+	if err != nil {
+		return nil, fmt.Errorf("new failed: %v", err)
+	}
+
+	db, err := surrealdb.New("<unused>", ws)
 	if err != nil {
 		return nil, fmt.Errorf("new failed: %v", err)
 	}

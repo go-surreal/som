@@ -28,7 +28,31 @@ func conf(endpoint string) som.Config {
 		Password:  "root",
 		Namespace: "som_test",
 		Database:  "example_basic",
+		Init:      dbInit,
 	}
+}
+
+func dbInit(db som.InitDB) {
+
+	// DEFINE ANALYZER simple TOKENIZERS camel,class FILTERS snowball(English)
+	analyzerSimple := db.NewAnalyzer("simple").
+		Tokenizers(som.Camel, som.Class).  // som.Blank, som.Camel, som.Class, som.Punct
+		Filters(som.Snowball(som.English)) // som.Ascii, som.EdgeNGram, som.Snowball(Lang), som.Lowercase, som.Uppercase
+
+	// DEFINE INDEX idx_author ON books FIELDS author
+	db.Table().Books().NewIndex("idx_author").
+		Fields(som.TableBooks.Fields.Author)
+
+	// DEFINE INDEX uniq_isbn ON books FIELDS isbn UNIQUE
+	db.Table().Books().NewIndex("uniq_isbn").
+		Fields(som.TableBooks.Fields.ISBN).
+		Unique()
+
+	// DEFINE INDEX ft_title ON books FIELDS title SEARCH analyzer_simple BM25(1.2, 0.75) HIGHLIGHTS
+	db.Table().Books().NewIndex("ft_title").
+		Fields(som.TableBooks.Fields.Title).
+		Search(analyzerSimple, som.BM25(1.2, 0.75), som.Highlights)
+
 }
 
 func TestQuery(t *testing.T) {
