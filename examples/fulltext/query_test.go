@@ -1,35 +1,22 @@
-package basic
+package fulltext
 
 import (
 	"context"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	sombase "github.com/marcbinz/som"
-	"github.com/marcbinz/som/examples/movie/gen/som"
-	"github.com/marcbinz/som/examples/movie/gen/som/where"
-	"github.com/marcbinz/som/examples/movie/model"
+	"github.com/marcbinz/som/examples/basic/gen/som"
+	"github.com/marcbinz/som/examples/basic/model"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
+	"math/rand"
 	"testing"
 )
 
 const (
-	surrealDBContainerVersion = "nightly"
-	containerName             = "som_test_surrealdb"
-	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
+	randMin = 5
+	randMax = 20
 )
 
-func conf(endpoint string) som.Config {
-	return som.Config{
-		Address:   "ws://" + endpoint,
-		Username:  "root",
-		Password:  "root",
-		Namespace: "som_test",
-		Database:  "example_movie",
-	}
-}
-
-func TestWithDatabase(t *testing.T) {
+func TestQueryCount(t *testing.T) {
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
@@ -73,34 +60,22 @@ func TestWithDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	title := "Some Movie"
+	count := rand.Intn(randMax-randMin) + randMin
 
-	movieNew := model.Movie{
-		Title: title,
+	for i := 0; i < count; i++ {
+		err = client.UserRepo().Create(ctx, &model.User{})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	movieIn := movieNew
-
-	err = client.MovieRepo().Create(ctx, &movieIn)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	movieOut, err := client.MovieRepo().Query().
-		Filter(
-			where.Movie.ID.Equal(movieIn.ID()),
-			where.Movie.Title.Equal(title),
-		).
-		First(ctx)
+	dbCount, err := client.UserRepo().Query().Count(ctx)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, title, movieOut.Title)
+	// TODO: add database cleanup?
 
-	assert.DeepEqual(t,
-		movieNew, *movieOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
-	)
+	assert.Equal(t, count, dbCount)
 }
