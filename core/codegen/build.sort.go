@@ -63,6 +63,7 @@ func keyed(base, key string) string {
 func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     node,
 	}
 
@@ -70,10 +71,13 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
+	f.Line()
 	f.Var().Id(node.Name).Op("=").Id("new" + node.Name).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 
+	f.Line()
 	f.Add(b.byNew(node))
 
+	f.Line()
 	f.Type().Id(node.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		StructFunc(func(g *jen.Group) {
@@ -87,6 +91,7 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 
 	for _, fld := range node.GetFields() {
 		if code := fld.CodeGen().SortFunc(fieldCtx); code != nil {
+			f.Line()
 			f.Add(code)
 		}
 	}
@@ -101,6 +106,7 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 func (b *sortBuilder) byNew(node *field.NodeTable) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     node,
 	}
 

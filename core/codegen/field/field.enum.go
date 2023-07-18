@@ -1,12 +1,12 @@
 package field
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/parser"
 	"golang.org/x/exp/slices"
 	"sort"
+	"strings"
 )
 
 type Enum struct {
@@ -31,14 +31,19 @@ func (f *Enum) TypeDatabase() string {
 	}
 
 	sort.Strings(f.values)
-	valuesRaw, _ := json.Marshal(f.values)
-	values := string(valuesRaw)
 
-	if f.source.Pointer() {
-		return "string ASSERT $value == NULL OR $value INSIDE " + values
+	var values []string
+	for _, value := range f.values {
+		values = append(values, fmt.Sprintf(`"%s"`, value))
 	}
 
-	return "string ASSERT $value INSIDE " + values
+	in := strings.Join(values, ", ")
+
+	if f.source.Pointer() {
+		return "string ASSERT $value == NULL OR $value INSIDE [" + in + "]"
+	}
+
+	return "string ASSERT $value INSIDE [" + in + "]"
 }
 
 func (f *Enum) CodeGen() *CodeGen {
@@ -63,7 +68,7 @@ func (f *Enum) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T"))
 }
 
 func (f *Enum) filterInit(ctx Context) jen.Code {
@@ -72,8 +77,8 @@ func (f *Enum) filterInit(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(def.PkgLib, filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T")).
-		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T")).
+		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Enum) convFrom(ctx Context) jen.Code {

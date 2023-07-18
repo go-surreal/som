@@ -1,0 +1,4 @@
+docs linguist-documentation
+
+examples/basic/gen linguist-generated
+examples/movie/gen linguist-generated

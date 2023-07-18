@@ -70,18 +70,22 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
+	f.Line()
 	f.Var().Id(node.Name).Op("=").Id(node.NameGoLower()).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 
+	f.Line()
 	f.Type().Id(node.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		String()
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
 		Id("fetch").Params(jen.Id("T")).Block()
 
 	for _, fld := range node.GetFields() {
 		if nodeField, ok := fld.(*field.Node); ok {
+			f.Line()
 			f.Func().
 				Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
 				Id(nodeField.NameGo()).Params().
