@@ -46,17 +46,17 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 
 	raw, err := n.db.Create(key, data)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create entity: %w", err)
 	}
-	if _, ok := raw.([]any); !ok {
-		raw = []any{raw} // temporary fix
-	}
-	var convNode conv.Movie
-	err = surrealdbgo.Unmarshal(raw, &convNode)
+	var convNodes []conv.Movie
+	err = surrealdbgo.Unmarshal(raw, &convNodes)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
-	*movie = conv.ToMovie(convNode)
+	if len(convNodes) < 1 {
+		return errors.New("response is empty")
+	}
+	*movie = conv.ToMovie(convNodes[0])
 	return nil
 }
 
@@ -70,37 +70,21 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 	key := "movie:" + "⟨" + id + "⟩"
 	data := conv.FromMovie(*movie)
 
-	raw, err := n.db.Create(key, data)
+	convNode, err := surrealdbgo.SmartUnmarshal[conv.Movie](n.db.Create(key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
-	}
-	if _, ok := raw.([]any); !ok {
-		raw = []any{raw} // temporary fix
-	}
-	var convNode conv.Movie
-	err = surrealdbgo.Unmarshal(raw, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*movie = conv.ToMovie(convNode)
 	return nil
 }
 
 func (n *movie) Read(ctx context.Context, id string) (*model.Movie, bool, error) {
-	raw, err := n.db.Select("movie:⟨" + id + "⟩")
-	if err != nil {
-		if errors.As(err, &surrealdbgo.PermissionError{}) {
-			return nil, false, nil
-		}
-		return nil, false, err
+	convNode, err := surrealdbgo.SmartUnmarshal[conv.Movie](n.db.Select("movie:⟨" + id + "⟩"))
+	if errors.Is(err, surrealdbgo.ErrNoRow) {
+		return nil, false, nil
 	}
-	if _, ok := raw.([]any); !ok {
-		raw = []any{raw} // temporary fix
-	}
-	var convNode conv.Movie
-	err = surrealdbgo.Unmarshal(raw, &convNode)
 	if err != nil {
-		return nil, false, fmt.Errorf("could not unmarshal response: %w", err)
+		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
 	node := conv.ToMovie(convNode)
 	return &node, true, nil
@@ -115,14 +99,9 @@ func (n *movie) Update(ctx context.Context, movie *model.Movie) error {
 	}
 	data := conv.FromMovie(*movie)
 
-	raw, err := n.db.Update("movie:⟨"+movie.ID()+"⟩", data)
+	convNode, err := surrealdbgo.SmartUnmarshal[conv.Movie](n.db.Update("movie:⟨"+movie.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
-	}
-	var convNode conv.Movie
-	err = surrealdbgo.Unmarshal([]any{raw}, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*movie = conv.ToMovie(convNode)
 	return nil

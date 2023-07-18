@@ -63,6 +63,7 @@ func keyed(base, key string) string {
 func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     node,
 	}
 
@@ -105,6 +106,7 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 func (b *sortBuilder) byNew(node *field.NodeTable) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     node,
 	}
 

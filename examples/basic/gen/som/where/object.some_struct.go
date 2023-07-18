@@ -3,8 +3,8 @@ package where
 
 import (
 	uuid "github.com/google/uuid"
+	lib "github.com/marcbinz/som/examples/basic/gen/som/internal/lib"
 	model "github.com/marcbinz/som/examples/basic/model"
-	lib "github.com/marcbinz/som/lib"
 )
 
 func newSomeStruct[T any](key lib.Key[T]) someStruct[T] {

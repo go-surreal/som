@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	conv "github.com/marcbinz/som/examples/basic/gen/som/conv"
+	lib "github.com/marcbinz/som/examples/basic/gen/som/internal/lib"
 	with "github.com/marcbinz/som/examples/basic/gen/som/with"
 	model "github.com/marcbinz/som/examples/basic/model"
-	lib "github.com/marcbinz/som/lib"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
 	"strings"
 	"time"
@@ -102,15 +102,18 @@ func (q Group) Count(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	var rawCount countResult
+	var rawCount []countResult
 	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawCount)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("could not count records: %w", err)
 	}
 	if !ok {
 		return 0, nil
 	}
-	return rawCount.Count, nil
+	if len(rawCount) < 1 {
+		return 0, nil
+	}
+	return rawCount[0].Count, nil
 }
 
 // Exists returns whether at least one record for the conditons
@@ -127,17 +130,9 @@ func (q Group) Exists(ctx context.Context) (bool, error) {
 // All returns all records matching the conditions of the query.
 func (q Group) All(ctx context.Context) ([]*model.Group, error) {
 	res := q.query.BuildAsAll()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	rawNodes, err := surrealdbgo.SmartUnmarshal[[]conv.Group](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
-		return nil, err
-	}
-	var rawNodes []conv.Group
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
+		return nil, fmt.Errorf("could not query records: %w", err)
 	}
 	var nodes []*model.Group
 	for _, rawNode := range rawNodes {
@@ -150,17 +145,9 @@ func (q Group) All(ctx context.Context) ([]*model.Group, error) {
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q Group) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	rawNodes, err := surrealdbgo.SmartUnmarshal[[]idNode](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
-		return nil, err
-	}
-	var rawNodes []*idNode
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawNodes)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
+		return nil, fmt.Errorf("could not query records: %w", err)
 	}
 	var ids []string
 	for _, rawNode := range rawNodes {

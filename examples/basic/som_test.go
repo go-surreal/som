@@ -7,7 +7,6 @@ import (
 	"github.com/marcbinz/som/examples/basic/gen/som"
 	"github.com/marcbinz/som/examples/basic/gen/som/where"
 	"github.com/marcbinz/som/examples/basic/model"
-	"github.com/marcbinz/som/examples/testutil"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
@@ -17,7 +16,7 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "1.0.0-beta.8" // "nightly"
+	surrealDBContainerVersion = "1.0.0-beta.9"
 	containerName             = "som_test_surrealdb"
 	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
@@ -78,8 +77,6 @@ func TestQuery(t *testing.T) {
 }
 
 func TestWithDatabase(t *testing.T) {
-	testutil.SkipWithoutEnv(t, "GOTEST_INTEGRATION")
-
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
@@ -151,14 +148,8 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
-		cmpopts.IgnoreUnexported(sombase.Timestamps{}),
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
 	)
-}
-
-type ContainerLog func(testcontainers.Log)
-
-func (l ContainerLog) Accept(log testcontainers.Log) {
-	l(log)
 }
 
 func FuzzWithDatabase(f *testing.F) {

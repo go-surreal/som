@@ -5,6 +5,7 @@ import (
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/embed"
 	"github.com/marcbinz/som/core/parser"
 	"os"
 	"path"
@@ -15,6 +16,7 @@ import (
 const (
 	filenameClient     = "som.client.go"
 	filenameDatabase   = "som.database.go"
+	filenameFunctions  = "som.functions.go"
 	filenameInterfaces = "som.interfaces.go"
 	filenameSchema     = "som.schema.go"
 )
@@ -45,11 +47,19 @@ func (b *build) build() error {
 		return err
 	}
 
+	if err := b.copyInternalPackage(); err != nil {
+		return err
+	}
+
 	if err := b.buildClientFile(); err != nil {
 		return err
 	}
 
 	if err := b.buildDatabaseFile(); err != nil {
+		return err
+	}
+
+	if err := b.buildFunctionsFile(); err != nil {
 		return err
 	}
 
@@ -85,12 +95,41 @@ func (b *build) build() error {
 	return nil
 }
 
+func (b *build) copyInternalPackage() error {
+	files, err := embed.Lib()
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Join(b.outDir, "internal")
+
+	err = os.MkdirAll(filepath.Join(dir, "lib"), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, "//go:build embed", codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(dir, file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (b *build) buildClientFile() error {
 	content := `
 
 import (
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
+	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
+	"github.com/surrealdb/surrealdb.go/pkg/logger"
+	"time"
 )
 
 type Database interface {
@@ -115,9 +154,21 @@ type ClientImpl struct {
 }
 
 func NewClient(conf Config) (*ClientImpl, error) {
-	surreal, err := surrealdb.New(conf.Address + "/rpc")
+	url := conf.Address + "/rpc"
+
+	logData, err := logger.New().Make()
 	if err != nil {
-		return nil, fmt.Errorf("new failed: %v", err)
+		return nil, fmt.Errorf("could not create logger: %v", err)
+	}
+
+	ws, err := gorilla.Create().Logger(logData).SetTimeOut(time.Minute).Connect(url)
+	if err != nil {
+		return nil, fmt.Errorf("could not create websocket: %v", err)
+	}
+	
+	surreal, err := surrealdb.New("<unused>", ws)
+	if err != nil {
+		return nil, fmt.Errorf("could not create surrealdb client: %v", err)
 	}
 
 	_, err = surreal.Signin(map[string]any{
@@ -191,6 +242,61 @@ func (db *database) Delete(what string) (any, error) {
 	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
 
 	err := os.WriteFile(path.Join(b.basePath(), filenameDatabase), data, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to write base file: %v", err)
+	}
+
+	return nil
+}
+
+func (b *build) buildFunctionsFile() error {
+	content := `
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+const statusOK = "OK"
+
+type RawQuery[T any] struct {
+	Status string
+	Time   string
+	Result T
+	Detail string 
+}
+
+func Unmarshal[M any](respond interface{}) (model M, err error) {
+	var bytes []byte
+
+	if arrResp, isArr := respond.([]interface{}); len(arrResp) > 0 {
+		if dataMap, ok := arrResp[0].(map[string]interface{}); ok && isArr {
+			if _, ok := dataMap["status"]; ok {
+				if bytes, err = json.Marshal(respond); err == nil {
+					var raw []RawQuery[M]
+					if err = json.Unmarshal(bytes, &raw); err == nil {
+						if raw[0].Status != statusOK {
+							err = fmt.Errorf("%s: %s", raw[0].Status, raw[0].Detail)
+						}
+						model = raw[0].Result
+					}
+				}
+				return model, err
+			}
+		}
+	}
+
+	if bytes, err = json.Marshal(respond); err == nil {
+		err = json.Unmarshal(bytes, &model)
+	}
+
+	return model, err
+}
+`
+
+	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
+
+	err := os.WriteFile(path.Join(b.basePath(), filenameFunctions), data, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to write base file: %v", err)
 	}
@@ -418,27 +524,23 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				Id("n").Dot("db").Dot("Create").
 				Call(jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
 			),
 
-			jen.If(
-				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
-					Id("raw").Op(".").Call(jen.Index().Any()),
-				jen.Op("!").Id("ok"),
-			).Block(
-				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
-			),
-
-			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Var().Id("convNodes").Index().Qual(b.subPkg(def.PkgConv), node.NameGo()),
 			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
-				Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
+				Call(jen.Id("raw"), jen.Op("&").Id("convNodes")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Err()),
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
+			),
+
+			jen.If(jen.Len(jen.Id("convNodes")).Op("<").Lit(1)).Block(
+				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("response is empty"))),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
 				Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).
-				Call(jen.Id("convNode")),
+				Call(jen.Id("convNodes").Index(jen.Lit(0))),
 
 			jen.Return(jen.Nil()),
 		)
@@ -461,7 +563,9 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
 				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("creating node with preset ID not allowed, use CreateWithID for that"))),
+					jen.Return(jen.Qual("errors", "New").Call(
+						jen.Lit("creating node with preset ID not allowed, use CreateWithID for that")),
+					),
 				),
 
 			jen.Id("key").Op(":=").Lit(node.NameDatabase()+":").Op("+").
@@ -471,26 +575,15 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onCreatedAt),
 			jen.Add(onUpdatedAt),
 
-			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("db").Dot("Create").
-				Call(jen.Id("key"), jen.Id("data")),
+			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
+				Call(
+					jen.Id("n").Dot("db").Dot("Create").
+						Call(jen.Id("key"), jen.Id("data")),
+				),
+
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
-			),
-
-			jen.If(
-				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
-					Id("raw").Op(".").Call(jen.Index().Any()),
-				jen.Op("!").Id("ok"),
-			).Block(
-				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
-			),
-
-			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
-				Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
@@ -510,28 +603,22 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
-			jen.List(jen.Id("raw"), jen.Err()).Op(":=").
-				Id("n").Dot("db").Dot("Select").
-				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
+			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
+				Call(
+					jen.Id("n").Dot("db").Dot("Select").
+						Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
+				),
+
+			jen.If(jen.Qual("errors", "Is").Call(jen.Err(), jen.Qual(def.PkgSurrealDB, "ErrNoRow"))).
+				Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
 
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.If(jen.Qual("errors", "As").Call(jen.Err(), jen.Op("&").Qual(def.PkgSurrealDB, "PermissionError").Values())).
-					Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
-				jen.Return(jen.Nil(), jen.False(), jen.Err()),
-			),
-
-			jen.If(
-				jen.List(jen.Id("_"), jen.Id("ok")).Op(":=").
-					Id("raw").Op(".").Call(jen.Index().Any()),
-				jen.Op("!").Id("ok"),
-			).Block(
-				jen.Id("raw").Op("=").Index().Any().Values(jen.Id("raw")).Comment("temporary fix"),
-			),
-
-			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.False(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
+				jen.Return(
+					jen.Nil(),
+					jen.False(),
+					jen.Qual("fmt", "Errorf").Call(jen.Lit("could not read entity: %w"), jen.Err()),
+				),
 			),
 
 			jen.Id("node").Op(":=").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
@@ -566,18 +653,16 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Add(onUpdatedAt),
 
-			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("db").Dot("Update").
-				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩"), jen.Id("data")),
+			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
+				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
+				Call(
+					jen.Id("n").Dot("db").Dot("Update").
+						Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
+							Op("+").Lit("⟩"), jen.Id("data")),
+				),
+
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not update entity: %w"), jen.Err())),
-			),
-
-			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
-				Call(jen.Index().Any().Values(jen.Id("raw")), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").

@@ -186,7 +186,57 @@ type MemberOfProps struct {
 ### Partial updates
 
 - https://incident.io/blog/code-generation
->>>>>>> main
+
+### ?
+
+```golang
+
+func (r *user) QueryUsersByPartialName(name string) query.User {
+	return r.Query().
+		Filter(
+			where.User.String.FuzzyMatch(name),
+		)
+}
+
+r.QueryUsersByPartialName("some").
+  Filter(
+    where.User.Int.GreaterThan(5),
+    where.User.Int.LessThan(10),
+  ).
+  All(ctx)
+
+```
+
+### Allow for union of connected records
+
+```
+TYPE record(table1, table2, etc...)
+```
+
+```
+type SomeRecordUnion interface {
+    someRecordUnion()
+}
+
+type X struct {
+    som.Node
+    SomeRecordUnion
+}
+
+type Y struct {
+    som.Node
+    SomeRecordUnion
+}
+
+type Z struct {
+    som.Node
+    XY SomeRecordUnion
+}
+```
+
+```
+DEFINE FIELD xy ON z TYPE record(x, y)
+```
 
 ## Optimisations
 

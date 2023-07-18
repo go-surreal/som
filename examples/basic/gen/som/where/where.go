@@ -2,7 +2,7 @@
 
 package where
 
-import "github.com/marcbinz/som/lib"
+import "github.com/marcbinz/som/examples/basic/gen/som/internal/lib"
 
 func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 	return lib.All[T](filters)

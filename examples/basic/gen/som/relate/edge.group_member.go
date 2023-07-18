@@ -3,6 +3,7 @@ package relate
 
 import (
 	"errors"
+	"fmt"
 	conv "github.com/marcbinz/som/examples/basic/gen/som/conv"
 	model "github.com/marcbinz/som/examples/basic/model"
 	surrealdbgo "github.com/surrealdb/surrealdb.go"
@@ -25,32 +26,20 @@ func (e groupMember) Create(edge *model.GroupMember) error {
 	if edge.Group.ID() == "" {
 		return errors.New("ID of the outgoing node 'Group' must not be empty")
 	}
-	query := "RELATE "
-	query += "user:" + edge.User.ID()
-	query += "->group_member->"
-	query += "group:" + edge.Group.ID()
-	query += " CONTENT $data"
+	query := "RELATE " + "user:" + edge.User.ID() + "->group_member->" + "group:" + edge.Group.ID() + " CONTENT $data"
 	data := conv.FromGroupMember(*edge)
-	raw, err := e.db.Query(query, map[string]any{"data": data})
+	convEdge, err := surrealdbgo.SmartUnmarshal[conv.GroupMember](e.db.Query(query, map[string]any{"data": data}))
 	if err != nil {
-		return err
-	}
-	var convEdge conv.GroupMember
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &convEdge)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return errors.New("result is empty")
+		return fmt.Errorf("could not create relation: %w", err)
 	}
 	*edge = conv.ToGroupMember(convEdge)
 	return nil
 }
 
 func (groupMember) Update(edge *model.GroupMember) error {
-	return nil
+	return errors.New("not yet implemented")
 }
 
 func (groupMember) Delete(edge *model.GroupMember) error {
-	return nil
+	return errors.New("not yet implemented")
 }
