@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"nhooyr.io/websocket"
+	"time"
 )
 
 type Request struct {
@@ -87,7 +88,7 @@ func (c *Client) handleMessages(ctx context.Context, resultCh resultChannel[[]by
 				continue
 			}
 
-			var res Response
+			var res *Response
 
 			if err := c.jsonUnmarshal(data, &res); err != nil {
 				c.logger.ErrorContext(ctx, "Could not unmarshal websocket message.", "error", err)
@@ -95,26 +96,51 @@ func (c *Client) handleMessages(ctx context.Context, resultCh resultChannel[[]by
 			}
 
 			if res.ID == "" {
-				var result LiveQueryResult
-
-				if err := c.jsonUnmarshal(res.Result, &result); err != nil {
-					c.logger.ErrorContext(ctx, "Could not unmarshal websocket message.", "error", err)
-					continue
-				}
-
-				uid, _ := uuid.FromBytes(result.ID) // TODO: will only work while serialization issue exists
-
-				fmt.Println("live:", uid, result) // TODO
+				c.handleLiveQuery(ctx, res)
 				continue
 			}
 
-			outCh, ok := c.requests.get(res.ID)
-			if !ok {
-				c.logger.ErrorContext(ctx, "Could not find pending request for ID.", "id", res.ID, "data", res)
-				continue
-			}
-
-			outCh <- string(res.Result)
+			// Do not block here, as the channel might be full.
+			go c.handleResult(ctx, res)
 		}
+	}
+}
+
+func (c *Client) handleResult(ctx context.Context, res *Response) {
+	outCh, ok := c.requests.get(res.ID)
+	if !ok {
+		c.logger.ErrorContext(ctx, "Could not find pending request for ID.", "id", res.ID)
+		return
+	}
+
+	select {
+
+	case outCh <- res.Result:
+		return
+
+	case <-time.After(c.timeout):
+		c.logger.ErrorContext(ctx, "Timeout while sending result to channel.", "id", res.ID)
+	}
+}
+
+func (c *Client) handleLiveQuery(ctx context.Context, res *Response) {
+	var result LiveQueryResult
+
+	if err := c.jsonUnmarshal(res.Result, &result); err != nil {
+		c.logger.ErrorContext(ctx, "Could not unmarshal websocket message.", "error", err)
+		return
+	}
+
+	uid, _ := uuid.FromBytes(result.ID) // TODO: will only work while serialization issue exists
+
+	outCh := c.liveQueries.get(uid.String())
+
+	select {
+
+	case outCh <- res.Result:
+		return
+
+	case <-time.After(c.timeout):
+		c.logger.ErrorContext(ctx, "Timeout while sending result to channel.", "id", res.ID)
 	}
 }

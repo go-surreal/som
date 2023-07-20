@@ -37,14 +37,20 @@ func Test(ctx context.Context) error {
 		return err
 	}
 
-	fmt.Println("live:", live)
+	go func() {
+		for liveRes := range live {
+			fmt.Println("live:", string(liveRes))
+		}
+	}()
 
-	create, err := client.Create(ctx)
+	create, err := client.Create(ctx, "person", map[string]interface{}{
+		"name": "some",
+	})
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("create:", create)
+	fmt.Println("create:", string(create))
 
 	/*liveQuery := res.([]any)[0].(map[string]any)["result"].(string)
 

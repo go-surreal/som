@@ -3,9 +3,11 @@ package sdbd
 import (
 	"encoding/json"
 	"log/slog"
+	"time"
 )
 
 type options struct {
+	timeout       time.Duration
 	logger        *slog.Logger
 	jsonMarshal   JsonMarshal
 	jsonUnmarshal JsonUnmarshal
@@ -13,6 +15,12 @@ type options struct {
 }
 
 type Option func(*options)
+
+func WithTimeout(timeout time.Duration) Option {
+	return func(c *options) {
+		c.timeout = timeout
+	}
+}
 
 func WithLogger(logger *slog.Logger) Option {
 	return func(c *options) {
@@ -37,7 +45,9 @@ type JsonMarshal func(val any) ([]byte, error)
 type JsonUnmarshal func(buf []byte, val any) error
 
 func applyOptions(opts []Option) *options {
-	out := &options{}
+	out := &options{
+		timeout: time.Minute,
+	}
 
 	for _, opt := range opts {
 		opt(out)

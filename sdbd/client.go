@@ -9,8 +9,9 @@ import (
 type Client struct {
 	*options
 
-	socket   *websocket.Conn
-	requests requests
+	socket      *websocket.Conn
+	requests    requests
+	liveQueries liveQueries
 }
 
 type Config struct {
@@ -58,25 +59,6 @@ func (c *Client) Close() error {
 	}
 
 	return nil
-}
-
-func (c *Client) send(ctx context.Context, req Request) (any, error) {
-	reqID, resCh := c.requests.prepare()
-	defer c.requests.cleanup(reqID)
-
-	req.ID = reqID
-
-	data, err := c.jsonMarshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal request: %w", err)
-	}
-
-	err = c.socket.Write(ctx, websocket.MessageText, data)
-	if err != nil {
-		return nil, fmt.Errorf("could not write to websocket: %w", err)
-	}
-
-	return <-resCh, nil
 }
 
 // Used for RawQuery Unmarshaling
