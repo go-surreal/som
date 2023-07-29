@@ -2,8 +2,6 @@ module github.com/marcbinz/som/examples/basic
 
 go 1.20
 
-toolchain go1.20.6
-
 replace github.com/marcbinz/som => ../../
 
 replace github.com/docker/docker => github.com/docker/docker v24.0.3+incompatible // 22.06 branch

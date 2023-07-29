@@ -17,6 +17,8 @@ func (c *ClientImpl) ApplySchema() error {
 
 var tmpl = `
 
+BEGIN TRANSACTION;
+
 DEFINE TABLE person SCHEMAFULL;
 DEFINE FIELD name ON TABLE person TYPE string ASSERT $value != NULL;
 
@@ -26,4 +28,6 @@ DEFINE FIELD title ON TABLE movie TYPE string ASSERT $value != NULL;
 DEFINE TABLE directed SCHEMAFULL;
 
 DEFINE TABLE acted_in SCHEMAFULL;
+
+COMMIT TRANSACTION;
 `
