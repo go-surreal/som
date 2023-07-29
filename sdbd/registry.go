@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"io"
 	"nhooyr.io/websocket"
 	"time"
 )
@@ -41,6 +42,11 @@ func (c *Client) subscribe(ctx context.Context) {
 			}
 
 			if err != nil {
+				if errors.Is(err, io.EOF) {
+					c.logger.Info("Websocket closed.")
+					return
+				}
+
 				c.logger.Error("Could not read from websocket.", "error", err)
 				continue
 			}

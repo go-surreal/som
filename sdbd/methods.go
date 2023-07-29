@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	methodSignin = "signin"
+	methodSignIn = "signin"
 	methodUse    = "use"
 	methodQuery  = "query"
 	methodLive   = "live"
@@ -22,23 +22,27 @@ const (
 	methodModify = "modify"
 )
 
+const (
+	nilValue = "null"
+)
+
 // signIn is a helper method for signing in a user.
 func (c *Client) signIn(ctx context.Context, username, password string) error {
 	res, err := c.send(ctx, Request{
-		Method: methodSignin,
+		Method: methodSignIn,
 		Params: []any{
-			map[string]string{
-				"user": username,
-				"pass": password,
+			signInParams{
+				User: username,
+				Pass: password,
 			},
 		},
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("could not sign in: %w", err)
 	}
 
-	if string(res) != "null" {
-		return fmt.Errorf("could not sign in due to %s", string(res))
+	if string(res) != nilValue {
+		return fmt.Errorf("could not sign in due to unknown response %s", string(res))
 	}
 
 	return nil
@@ -57,7 +61,7 @@ func (c *Client) use(ctx context.Context, namespace, database string) error {
 		return err
 	}
 
-	if string(res) != "null" {
+	if string(res) != nilValue {
 		return fmt.Errorf("could not select database due to %s", string(res))
 	}
 
@@ -251,4 +255,13 @@ func (c *Client) Delete(ctx context.Context) (interface{}, error) {
 	fmt.Println("delete:", res)
 
 	return "", nil
+}
+
+//
+// -- HELPER
+//
+
+type signInParams struct {
+	User string `json:"user"`
+	Pass string `json:"pass"`
 }

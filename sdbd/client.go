@@ -15,7 +15,7 @@ type Client struct {
 }
 
 type Config struct {
-	Host      string
+	Address   string
 	Username  string
 	Password  string
 	Namespace string
@@ -23,7 +23,7 @@ type Config struct {
 }
 
 func NewClient(ctx context.Context, conf Config, opts ...Option) (*Client, error) {
-	ws, _, err := websocket.Dial(ctx, conf.Host, &websocket.DialOptions{
+	ws, _, err := websocket.Dial(ctx, conf.Address, &websocket.DialOptions{
 		CompressionMode: websocket.CompressionContextTakeover,
 	})
 	if err != nil {

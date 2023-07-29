@@ -19,7 +19,7 @@ func Test(ctx context.Context) error {
 
 	client, err := sdbd.NewClient(ctx,
 		sdbd.Config{
-			Host:      "ws://localhost:8020/rpc",
+			Address:   "ws://localhost:8020/rpc",
 			Username:  "root",
 			Password:  "root",
 			Namespace: "test",
