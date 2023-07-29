@@ -325,7 +325,7 @@ func (b *build) buildInterfaceFile() error {
 }
 
 func (b *build) buildSchemaFile() error {
-	statements := []string{"", ""}
+	var statements []string
 
 	var fieldFn func(table string, f field.Field, prefix string)
 	fieldFn = func(table string, f field.Field, prefix string) {
@@ -383,7 +383,11 @@ func (b *build) buildSchemaFile() error {
 		statements = append(statements, "")
 	}
 
-	content := strings.Join(statements, "\n")
+	content := "\n\nBEGIN TRANSACTION;\n\n"
+
+	content += strings.Join(statements, "\n")
+
+	content += "\nCOMMIT TRANSACTION;\n"
 
 	tmpl := `%s
 

@@ -17,10 +17,14 @@ func (c *ClientImpl) ApplySchema() error {
 
 var tmpl = `
 
+BEGIN TRANSACTION;
+
 DEFINE TABLE fields_like_db_response SCHEMAFULL;
 DEFINE FIELD time ON TABLE fields_like_db_response TYPE string ASSERT $value != NULL;
 DEFINE FIELD status ON TABLE fields_like_db_response TYPE string ASSERT $value != NULL;
 DEFINE FIELD detail ON TABLE fields_like_db_response TYPE string ASSERT $value != NULL;
 DEFINE FIELD result ON TABLE fields_like_db_response TYPE array;
 DEFINE FIELD result.* ON TABLE fields_like_db_response TYPE string ASSERT $value != NULL;
+
+COMMIT TRANSACTION;
 `
