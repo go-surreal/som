@@ -7,7 +7,6 @@ const (
 	PkgFetch  = "with"
 	PkgConv   = "conv"
 	PkgRelate = "relate"
-	PkgSchema = "schema"
 
 	PkgLib = "internal/lib"
 )
