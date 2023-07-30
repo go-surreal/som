@@ -173,6 +173,18 @@ jobs:
             ${{ runner.OS }}-build-
             ${{ runner.OS }}-
 
-      - name: Test
+      - name: Test Library
         working-directory: .
+        run: go test -v ./...
+
+      - name: Test Example Testing
+        working-directory: examples/testing
+        run: go test -v ./...
+
+      - name: Test Example Basic
+        working-directory: examples/basic
+        run: go test -v ./...
+
+      - name: Test Example Movie
+        working-directory: examples/movie
         run: go test -v ./...
