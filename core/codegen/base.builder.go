@@ -165,7 +165,7 @@ func NewClient(conf Config) (*ClientImpl, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not create websocket: %v", err)
 	}
-	
+
 	surreal, err := surrealdb.New("<unused>", ws)
 	if err != nil {
 		return nil, fmt.Errorf("could not create surrealdb client: %v", err)
@@ -314,6 +314,7 @@ func (b *build) buildInterfaceFile() error {
 			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
 		}
 
+		g.Id("ApplySchema").Call().Error()
 		g.Id("Close").Call()
 	})
 

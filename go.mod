@@ -1,8 +1,6 @@
 module github.com/marcbinz/som
 
-go 1.21
-
-toolchain go1.21rc3
+go 1.20
 
 require (
 	github.com/dave/jennifer v1.6.1

@@ -43,7 +43,7 @@ func NewClient(conf Config) (*ClientImpl, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not create websocket: %v", err)
 	}
-	
+
 	surreal, err := surrealdb.New("<unused>", ws)
 	if err != nil {
 		return nil, fmt.Errorf("could not create surrealdb client: %v", err)
