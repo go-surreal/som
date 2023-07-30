@@ -178,10 +178,40 @@ func NewClient(conf Config) (*ClientImpl, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	_, err = surreal.Use(conf.Namespace, conf.Database)
 	if err != nil {
 		return nil, err
+	}
+	
+	res, err := surreal.Query(fmt.Sprintf("DEFINE NAMESPACE %s", conf.Namespace), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	x, ok := res.([]any)[0].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("x could not create namespace: %v", res)
+	}
+
+	resu, ok := x["result"]
+	if !ok || resu != nil {
+		return nil, fmt.Errorf("resu could not create namespace: %v", res)
+	}
+
+	res, err = surreal.Query(fmt.Sprintf("DEFINE DATABASE %s", conf.Database), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	x, ok = res.([]any)[0].(map[string]any)
+	if !ok || len(x) < 1{
+		return nil, fmt.Errorf("x could not create database: %v", res)
+	}
+
+	resu, ok = x["result"]
+	if !ok || resu != nil {
+		return nil, fmt.Errorf("resu could not create database: %v", res)
 	}
 
 	return &ClientImpl{db: &database{DB: surreal}}, nil
@@ -314,6 +344,7 @@ func (b *build) buildInterfaceFile() error {
 			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
 		}
 
+		g.Id("ApplySchema").Call().Error()
 		g.Id("Close").Call()
 	})
 
