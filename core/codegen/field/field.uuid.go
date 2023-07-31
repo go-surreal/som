@@ -21,7 +21,11 @@ func (f *UUID) typeConv() jen.Code {
 }
 
 func (f *UUID) TypeDatabase() string {
-	return f.optionWrap("string") // TODO: assert for uuid? (currently fails for unknown reason!)
+	if f.source.Pointer() {
+		return "option<string> ASSERT $value == NONE OR $value == NULL OR is::uuid($value)"
+	}
+
+	return "string ASSERT is::uuid($value)"
 }
 
 func (f *UUID) CodeGen() *CodeGen {
