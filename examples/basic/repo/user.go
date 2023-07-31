@@ -67,7 +67,7 @@ func (r *user) List(ctx context.Context) ([]*model.User, error) {
 
 				where.User.ByteSlice().Equal([]byte("omr4f")),
 
-				where.User.ByteSlicePtr(),
+				where.User.ByteSlicePtr().Equal([]byte("")),
 
 				where.User.StringSlicePtr().Nil(),
 

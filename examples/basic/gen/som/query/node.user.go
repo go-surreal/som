@@ -70,6 +70,10 @@ func (q User) Limit(limit int) User {
 
 // Fetch can be used to return related records.
 // This works for both records links and edges.
+//
+// By default, all record links or edges of the model
+// are not pre-fetched. For those elements only the ID
+// is present if no fetch statement is added to the query.
 func (q User) Fetch(fetch ...with.Fetch_[model.User]) User {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
