@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/docker/docker/api/types/container"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	sombase "github.com/marcbinz/som"
 	"github.com/marcbinz/som/examples/basic/gen/som"
 	"github.com/marcbinz/som/examples/basic/gen/som/where"
@@ -88,9 +89,11 @@ func TestWithDatabase(t *testing.T) {
 	}
 
 	str := "Some User"
+	uid := uuid.New()
 
 	userNew := model.User{
 		String: str,
+		UUID:   uid,
 	}
 
 	userIn := userNew
@@ -112,6 +115,7 @@ func TestWithDatabase(t *testing.T) {
 	}
 
 	assert.Equal(t, str, userOut.String)
+	assert.Equal(t, uid, userOut.UUID)
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
