@@ -19,8 +19,6 @@ type User struct {
 	Bool    bool
 	Bool2   bool
 
-	UUID uuid.UUID
-
 	Login        Login    // struct
 	Role         Role     // enum
 	Groups       []Group  // slice of Nodes
@@ -32,10 +30,9 @@ type User struct {
 
 	MemberOf []GroupMember
 
-	StringPtr         *string
-	IntPtr            *int
-	TimePtr           *time.Time
-	UuidPtr           *uuid.UUID
+	StringPtr *string
+	IntPtr    *int
+
 	StructPtr         *SomeStruct
 	StringPtrSlice    []*string
 	StringSlicePtr    *[]string
@@ -45,6 +42,15 @@ type User struct {
 	NodePtrSlice      []*Group
 	NodePtrSlicePtr   *[]*Group
 	SliceSlice        [][]string
+
+	Time    time.Time
+	TimePtr *time.Time
+
+	Duration    time.Duration
+	DurationPtr *time.Duration
+
+	UUID    uuid.UUID
+	UUIDPtr *uuid.UUID
 
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum

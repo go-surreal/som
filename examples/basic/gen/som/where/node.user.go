@@ -11,46 +11,52 @@ var User = newUser[model.User](lib.NewKey[model.User]())
 
 func newUser[T any](key lib.Key[T]) user[T] {
 	return user[T]{
-		Bool:      lib.NewBool[T](lib.Field(key, "bool")),
-		Bool2:     lib.NewBool[T](lib.Field(key, "bool_2")),
-		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
-		Float32:   lib.NewNumeric[float32, T](lib.Field(key, "float_32")),
-		Float64:   lib.NewNumeric[float64, T](lib.Field(key, "float_64")),
-		ID:        lib.NewID[T](lib.Field(key, "id"), "user"),
-		Int:       lib.NewNumeric[int, T](lib.Field(key, "int")),
-		Int32:     lib.NewNumeric[int32, T](lib.Field(key, "int_32")),
-		Int64:     lib.NewNumeric[int64, T](lib.Field(key, "int_64")),
-		IntPtr:    lib.NewNumericPtr[*int, T](lib.Field(key, "int_ptr")),
-		Role:      lib.NewBase[model.Role, T](lib.Field(key, "role")),
-		String:    lib.NewString[T](lib.Field(key, "string")),
-		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
-		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
-		UUID:      lib.NewBase[uuid.UUID, T](lib.Field(key, "uuid")),
-		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
-		UuidPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
-		key:       key,
+		Bool:        lib.NewBool[T](lib.Field(key, "bool")),
+		Bool2:       lib.NewBool[T](lib.Field(key, "bool_2")),
+		CreatedAt:   lib.NewTime[T](lib.Field(key, "created_at")),
+		Duration:    lib.NewDuration[T](lib.Field(key, "duration")),
+		DurationPtr: lib.NewDurationPtr[T](lib.Field(key, "duration_ptr")),
+		Float32:     lib.NewNumeric[float32, T](lib.Field(key, "float_32")),
+		Float64:     lib.NewNumeric[float64, T](lib.Field(key, "float_64")),
+		ID:          lib.NewID[T](lib.Field(key, "id"), "user"),
+		Int:         lib.NewNumeric[int, T](lib.Field(key, "int")),
+		Int32:       lib.NewNumeric[int32, T](lib.Field(key, "int_32")),
+		Int64:       lib.NewNumeric[int64, T](lib.Field(key, "int_64")),
+		IntPtr:      lib.NewNumericPtr[*int, T](lib.Field(key, "int_ptr")),
+		Role:        lib.NewBase[model.Role, T](lib.Field(key, "role")),
+		String:      lib.NewString[T](lib.Field(key, "string")),
+		StringPtr:   lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
+		Time:        lib.NewTime[T](lib.Field(key, "time")),
+		TimePtr:     lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
+		UUID:        lib.NewBase[uuid.UUID, T](lib.Field(key, "uuid")),
+		UUIDPtr:     lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
+		UpdatedAt:   lib.NewTime[T](lib.Field(key, "updated_at")),
+		key:         key,
 	}
 }
 
 type user[T any] struct {
-	key       lib.Key[T]
-	ID        *lib.ID[T]
-	CreatedAt *lib.Time[T]
-	UpdatedAt *lib.Time[T]
-	String    *lib.String[T]
-	Int       *lib.Numeric[int, T]
-	Int32     *lib.Numeric[int32, T]
-	Int64     *lib.Numeric[int64, T]
-	Float32   *lib.Numeric[float32, T]
-	Float64   *lib.Numeric[float64, T]
-	Bool      *lib.Bool[T]
-	Bool2     *lib.Bool[T]
-	UUID      *lib.Base[uuid.UUID, T]
-	Role      *lib.Base[model.Role, T]
-	StringPtr *lib.StringPtr[T]
-	IntPtr    *lib.NumericPtr[*int, T]
-	TimePtr   *lib.TimePtr[T]
-	UuidPtr   *lib.BasePtr[uuid.UUID, T]
+	key         lib.Key[T]
+	ID          *lib.ID[T]
+	CreatedAt   *lib.Time[T]
+	UpdatedAt   *lib.Time[T]
+	String      *lib.String[T]
+	Int         *lib.Numeric[int, T]
+	Int32       *lib.Numeric[int32, T]
+	Int64       *lib.Numeric[int64, T]
+	Float32     *lib.Numeric[float32, T]
+	Float64     *lib.Numeric[float64, T]
+	Bool        *lib.Bool[T]
+	Bool2       *lib.Bool[T]
+	Role        *lib.Base[model.Role, T]
+	StringPtr   *lib.StringPtr[T]
+	IntPtr      *lib.NumericPtr[*int, T]
+	Time        *lib.Time[T]
+	TimePtr     *lib.TimePtr[T]
+	Duration    *lib.Duration[T]
+	DurationPtr *lib.DurationPtr[T]
+	UUID        *lib.Base[uuid.UUID, T]
+	UUIDPtr     *lib.BasePtr[uuid.UUID, T]
 }
 
 func (n user[T]) Login() login[T] {

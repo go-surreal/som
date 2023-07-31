@@ -125,6 +125,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldDuration:
+		{
+			return &Duration{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldUUID:
 		{
 			return &UUID{

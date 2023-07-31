@@ -89,11 +89,13 @@ func TestWithDatabase(t *testing.T) {
 	}
 
 	str := "Some User"
+	duration := time.Minute * 2
 	uid := uuid.New()
 
 	userNew := model.User{
-		String: str,
-		UUID:   uid,
+		String:   str,
+		Duration: duration,
+		UUID:     uid,
 	}
 
 	userIn := userNew
@@ -115,6 +117,7 @@ func TestWithDatabase(t *testing.T) {
 	}
 
 	assert.Equal(t, str, userOut.String)
+	assert.Equal(t, duration, userOut.Duration)
 	assert.Equal(t, uid, userOut.UUID)
 
 	assert.DeepEqual(t,

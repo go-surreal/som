@@ -285,6 +285,50 @@ func NewTimePtr[R any](key Key[R]) *TimePtr[R] {
 }
 
 //
+// -- DURATION
+//
+
+type Duration[R any] struct {
+	*Base[time.Duration, R]
+	comp *Comparable[time.Time, R]
+}
+
+func NewDuration[R any](key Key[R]) *Duration[R] {
+	return &Duration[R]{
+		Base: &Base[time.Duration, R]{key: key},
+		comp: &Comparable[time.Time, R]{key: key},
+	}
+}
+
+func (t *Duration[R]) Before(val time.Time) Filter[R] {
+	return t.comp.LessThan(val)
+}
+
+func (t *Duration[R]) BeforeOrEqual(val time.Time) Filter[R] {
+	return t.comp.LessThanEqual(val)
+}
+
+func (t *Duration[R]) After(val time.Time) Filter[R] {
+	return t.comp.GreaterThan(val)
+}
+
+func (t *Duration[R]) AfterOrEqual(val time.Time) Filter[R] {
+	return t.comp.GreaterThanEqual(val)
+}
+
+type DurationPtr[R any] struct {
+	*Duration[R]
+	*Nillable[R]
+}
+
+func NewDurationPtr[R any](key Key[R]) *DurationPtr[R] {
+	return &DurationPtr[R]{
+		Duration: NewDuration[R](key),
+		Nillable: &Nillable[R]{key: key},
+	}
+}
+
+//
 // -- SLICE
 //
 

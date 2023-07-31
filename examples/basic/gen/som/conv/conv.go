@@ -25,7 +25,25 @@ func buildDatabaseID(node string, id string) string {
 func parseTime(val any) time.Time {
 	res, err := time.Parse(time.RFC3339, val.(string))
 	if err != nil {
+		// TODO: add logging!
 		return time.Time{}
+	}
+	return res
+}
+
+func durationPtr(val *time.Duration) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
+
+func parseDuration(val string) time.Duration {
+	res, err := time.ParseDuration(val)
+	if err != nil {
+		// TODO: add logging!
+		return 0
 	}
 	return res
 }
