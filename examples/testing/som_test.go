@@ -5,9 +5,9 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/marcbinz/som/examples/testing/gen/som"
 	"github.com/marcbinz/som/examples/testing/model"
-	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -17,7 +17,7 @@ const (
 )
 
 const (
-	surrealDBContainerVersion = "1.0.0-beta.9"
+	surrealDBContainerVersion = "nightly"
 	containerName             = "som_test_surrealdb"
 	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
@@ -56,7 +56,7 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.True(t, exists)
+	assert.Equal(t, true, exists)
 	assert.Equal(t, "some value", readModel.Status)
 
 	readModel.Status = "some other value"
