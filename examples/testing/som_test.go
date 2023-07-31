@@ -2,11 +2,12 @@ package testing
 
 import (
 	"context"
+	"github.com/docker/docker/api/types/container"
 	"github.com/marcbinz/som/examples/testing/gen/som"
 	"github.com/marcbinz/som/examples/testing/model"
-	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"gotest.tools/v3/assert"
 	"testing"
 )
 
@@ -34,42 +35,8 @@ func conf(endpoint string) som.Config {
 func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 	ctx := context.Background()
 
-	req := testcontainers.ContainerRequest{
-		Name:         containerName,
-		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
-		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog(containerStartedMsg),
-	}
-
-	surreal, err := testcontainers.GenericContainer(ctx,
-		testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-			Reuse:            true,
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer func() {
-		if err := surreal.Terminate(ctx); err != nil {
-			t.Fatalf("failed to terminate container: %s", err.Error())
-		}
-	}()
-
-	endpoint, err := surreal.Endpoint(ctx, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client, err := som.NewClient(conf(endpoint))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer client.Close()
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
 
 	if err := client.ApplySchema(); err != nil {
 		t.Fatal(err)
@@ -79,7 +46,7 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 		Status: "some value",
 	}
 
-	err = client.FieldsLikeDBResponseRepo().Create(ctx, newModel)
+	err := client.FieldsLikeDBResponseRepo().Create(ctx, newModel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +56,7 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.True(t, exists)
+	assert.Equal(t, true, exists)
 	assert.Equal(t, "some value", readModel.Status)
 
 	readModel.Status = "some other value"
@@ -107,4 +74,54 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 	}
 
 	// TODO: add database cleanup?
+}
+
+//
+// -- HELPER
+//
+
+func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
+	tb.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+
+	req := testcontainers.ContainerRequest{
+		Name:         containerName,
+		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
+		Cmd:          []string{"start", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
+		ExposedPorts: []string{"8000/tcp"},
+		WaitingFor:   wait.ForLog(containerStartedMsg),
+		HostConfigModifier: func(conf *container.HostConfig) {
+			conf.AutoRemove = true
+		},
+	}
+
+	surreal, err := testcontainers.GenericContainer(ctx,
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+			Reuse:            true,
+		},
+	)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	endpoint, err := surreal.Endpoint(ctx, "")
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	client, err := som.NewClient(conf(endpoint))
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	cleanup := func() {
+		client.Close()
+
+		if err := surreal.Terminate(ctx); err != nil {
+			tb.Fatalf("failed to terminate container: %s", err.Error())
+		}
+	}
+
+	return client, cleanup
 }
