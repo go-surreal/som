@@ -238,9 +238,26 @@ type Z struct {
 DEFINE FIELD xy ON z TYPE record(x, y)
 ```
 
+## Define custom (type-safe) views
+
+```go
+
+db.Define().View("some_name").
+	With(
+	    field.User.Name(),	
+    ).
+	By(
+	    ...	
+    )
+
+```
+
+Based on the definition a view will be created in the database and 
+a type generated that can be consumed by the usual query builder.
+
 ## Optimisations
 
-tbd.
+- replace string concatenation in query builder with buffer (faster execution)
 
 ## Other links
 
