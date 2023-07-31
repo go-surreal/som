@@ -56,10 +56,11 @@ func (b *convBuilder) buildBaseFile() error {
 package conv
 
 import (
-	"github.com/google/uuid"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
+
+	"github.com/google/uuid"
 )
 
 func parseDatabaseID(node string, id string) string {
@@ -166,7 +167,7 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
  		return &out
  	}
 }
-`
+` // TODO: only add uuid functions and import if needed/used
 
 	data := []byte(codegenComment + content)
 

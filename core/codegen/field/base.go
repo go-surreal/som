@@ -81,7 +81,17 @@ func (f *baseField) ptr() jen.Code {
 	if f.source.Pointer() {
 		return jen.Op("*")
 	}
+
 	return jen.Empty()
+}
+
+// optionWrap wraps the given value in an option type if the field is a pointer.
+func (f *baseField) optionWrap(val string) string {
+	if f.source.Pointer() {
+		return "option<" + val + ">"
+	}
+
+	return val
 }
 
 func (f *baseField) NameGo() string {
