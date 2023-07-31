@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
+	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
 	"github.com/urfave/cli/v2"
 	"time"
 )
@@ -68,7 +69,7 @@ type Client struct {
 }
 
 func New(username, password, namespace, database string) (*Client, error) {
-	db, err := surrealdb.New("ws://localhost:8010/rpc")
+	db, err := surrealdb.New("ws://localhost:8010/rpc", gorilla.Create())
 	if err != nil {
 		return nil, fmt.Errorf("new failed: %v", err)
 	}

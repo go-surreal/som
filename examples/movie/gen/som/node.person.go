@@ -44,12 +44,17 @@ func (n *person) Create(ctx context.Context, person *model.Person) error {
 	key := "person"
 	data := conv.FromPerson(*person)
 
-	convNodes, err := surrealdbgo.SmartUnmarshal[[]conv.Person](n.db.Create(key, data))
+	raw, err := n.db.Create(key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
+	var convNodes []conv.Person
+	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal response: %w", err)
+	}
 	if len(convNodes) < 1 {
-		return errors.New("database response is empty")
+		return errors.New("response is empty")
 	}
 	*person = conv.ToPerson(convNodes[0])
 	return nil

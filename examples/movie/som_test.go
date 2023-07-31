@@ -2,6 +2,7 @@ package basic
 
 import (
 	"context"
+	"github.com/docker/docker/api/types/container"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	sombase "github.com/marcbinz/som"
 	"github.com/marcbinz/som/examples/movie/gen/som"
@@ -32,42 +33,8 @@ func conf(endpoint string) som.Config {
 func TestWithDatabase(t *testing.T) {
 	ctx := context.Background()
 
-	req := testcontainers.ContainerRequest{
-		Name:         containerName,
-		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
-		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog(containerStartedMsg),
-	}
-
-	surreal, err := testcontainers.GenericContainer(ctx,
-		testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-			Reuse:            true,
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer func() {
-		if err := surreal.Terminate(ctx); err != nil {
-			t.Fatalf("failed to terminate container: %s", err.Error())
-		}
-	}()
-
-	endpoint, err := surreal.Endpoint(ctx, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client, err := som.NewClient(conf(endpoint))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer client.Close()
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
 
 	if err := client.ApplySchema(); err != nil {
 		t.Fatal(err)
@@ -81,7 +48,7 @@ func TestWithDatabase(t *testing.T) {
 
 	movieIn := movieNew
 
-	err = client.MovieRepo().Create(ctx, &movieIn)
+	err := client.MovieRepo().Create(ctx, &movieIn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,4 +70,54 @@ func TestWithDatabase(t *testing.T) {
 		movieNew, *movieOut,
 		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
 	)
+}
+
+//
+// -- HELPER
+//
+
+func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
+	tb.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+
+	req := testcontainers.ContainerRequest{
+		Name:         containerName,
+		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
+		Cmd:          []string{"start", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
+		ExposedPorts: []string{"8000/tcp"},
+		WaitingFor:   wait.ForLog(containerStartedMsg),
+		HostConfigModifier: func(conf *container.HostConfig) {
+			conf.AutoRemove = true
+		},
+	}
+
+	surreal, err := testcontainers.GenericContainer(ctx,
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+			Reuse:            true,
+		},
+	)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	endpoint, err := surreal.Endpoint(ctx, "")
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	client, err := som.NewClient(conf(endpoint))
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	cleanup := func() {
+		client.Close()
+
+		if err := surreal.Terminate(ctx); err != nil {
+			tb.Fatalf("failed to terminate container: %s", err.Error())
+		}
+	}
+
+	return client, cleanup
 }

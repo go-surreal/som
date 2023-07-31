@@ -25,6 +25,7 @@ type Query[T any] struct {
 	node       string
 	fields     string
 	groupBy    string
+	groupAll   bool
 	Where      []Filter[T]
 	Sort       []*SortBuilder
 	SortRandom bool
@@ -65,7 +66,7 @@ func (q Query[T]) BuildAsAllIDs() *Result {
 
 func (q Query[T]) BuildAsCount() *Result {
 	q.fields = "count()"
-	q.groupBy = "id"
+	q.groupAll = true
 
 	return &Result{
 		Statement: q.render(),
@@ -84,6 +85,10 @@ func (q Query[T]) render() string {
 
 	if q.groupBy != "" {
 		out += "GROUP BY " + q.groupBy + " "
+	}
+
+	if q.groupAll {
+		out += "GROUP ALL "
 	}
 
 	if q.SortRandom {
