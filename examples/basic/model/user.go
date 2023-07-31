@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/google/uuid"
 	"github.com/marcbinz/som"
+	"net/url"
 	"time"
 )
 
@@ -19,8 +20,6 @@ type User struct {
 	Bool    bool
 	Bool2   bool
 
-	UUID uuid.UUID
-
 	Login        Login    // struct
 	Role         Role     // enum
 	Groups       []Group  // slice of Nodes
@@ -32,10 +31,10 @@ type User struct {
 
 	MemberOf []GroupMember
 
-	StringPtr         *string
-	IntPtr            *int
-	TimePtr           *time.Time
-	UuidPtr           *uuid.UUID
+	StringPtr *string
+	IntPtr    *int
+	TimePtr   *time.Time
+
 	StructPtr         *SomeStruct
 	StringPtrSlice    []*string
 	StringSlicePtr    *[]string
@@ -45,6 +44,12 @@ type User struct {
 	NodePtrSlice      []*Group
 	NodePtrSlicePtr   *[]*Group
 	SliceSlice        [][]string
+
+	UUID    uuid.UUID
+	UUIDPtr *uuid.UUID
+
+	URL    url.URL
+	URLPtr *url.URL
 
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum

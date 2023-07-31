@@ -3,6 +3,7 @@
 package conv
 
 import (
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +29,23 @@ func parseTime(val any) time.Time {
 		return time.Time{}
 	}
 	return res
+}
+
+func urlPtr(val *url.URL) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
+
+func parseURL(val string) url.URL {
+	res, err := url.Parse(val)
+	if err != nil {
+		// TODO: add logging!
+		return url.URL{}
+	}
+	return *res
 }
 
 func uuidPtr(val *uuid.UUID) *string {

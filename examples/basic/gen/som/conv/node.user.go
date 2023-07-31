@@ -21,7 +21,6 @@ type User struct {
 	Float64           float64        `json:"float_64"`
 	Bool              bool           `json:"bool"`
 	Bool2             bool           `json:"bool_2"`
-	UUID              string         `json:"uuid"`
 	Login             login          `json:"login"`
 	Role              string         `json:"role"`
 	Groups            []*groupLink   `json:"groups"`
@@ -34,7 +33,6 @@ type User struct {
 	StringPtr         *string        `json:"string_ptr"`
 	IntPtr            *int           `json:"int_ptr"`
 	TimePtr           *time.Time     `json:"time_ptr"`
-	UuidPtr           *string        `json:"uuid_ptr"`
 	StructPtr         *someStruct    `json:"struct_ptr"`
 	StringPtrSlice    []*string      `json:"string_ptr_slice"`
 	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
@@ -44,6 +42,10 @@ type User struct {
 	NodePtrSlice      []*groupLink   `json:"node_ptr_slice"`
 	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
 	SliceSlice        [][]string     `json:"slice_slice"`
+	UUID              string         `json:"uuid"`
+	UUIDPtr           *string        `json:"uuid_ptr"`
+	URL               string         `json:"url"`
+	URLPtr            *string        `json:"url_ptr"`
 }
 
 func FromUser(data model.User) User {
@@ -76,8 +78,10 @@ func FromUser(data model.User) User {
 		StructPtrSlice:    mapPtrSlice(data.StructPtrSlice, fromSomeStruct),
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
 		TimePtr:           data.TimePtr,
+		URL:               data.URL.String(),
+		URLPtr:            urlPtr(data.URLPtr),
 		UUID:              data.UUID.String(),
-		UuidPtr:           uuidPtr(data.UuidPtr),
+		UUIDPtr:           uuidPtr(data.UUIDPtr),
 	}
 }
 
@@ -114,8 +118,10 @@ func ToUser(data User) model.User {
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		URL:               parseURL(data.URL),
+		URLPtr:            ptrFunc(parseURL)(data.URLPtr),
 		UUID:              parseUUID(data.UUID),
-		UuidPtr:           ptrFunc(parseUUID)(data.UuidPtr),
+		UUIDPtr:           ptrFunc(parseUUID)(data.UUIDPtr),
 	}
 }
 

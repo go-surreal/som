@@ -30,7 +30,6 @@ DEFINE FIELD float_32 ON TABLE user TYPE float;
 DEFINE FIELD float_64 ON TABLE user TYPE float;
 DEFINE FIELD bool ON TABLE user TYPE bool;
 DEFINE FIELD bool_2 ON TABLE user TYPE bool;
-DEFINE FIELD uuid ON TABLE user TYPE string;
 DEFINE FIELD login ON TABLE user TYPE object;
 DEFINE FIELD login.username ON TABLE user TYPE string;
 DEFINE FIELD login.password ON TABLE user TYPE string;
@@ -48,7 +47,6 @@ DEFINE FIELD roles.* ON TABLE user TYPE string ASSERT $value INSIDE ["", "admin"
 DEFINE FIELD string_ptr ON TABLE user TYPE option<string>;
 DEFINE FIELD int_ptr ON TABLE user TYPE option<int>;
 DEFINE FIELD time_ptr ON TABLE user TYPE option<datetime>;
-DEFINE FIELD uuid_ptr ON TABLE user TYPE option<string>;
 DEFINE FIELD struct_ptr ON TABLE user TYPE option<object>;
 DEFINE FIELD struct_ptr.string_ptr ON TABLE user TYPE option<string>;
 DEFINE FIELD struct_ptr.int_ptr ON TABLE user TYPE option<int>;
@@ -78,6 +76,10 @@ DEFINE FIELD node_ptr_slice_ptr ON TABLE user TYPE option<array>;
 DEFINE FIELD node_ptr_slice_ptr.* ON TABLE user TYPE option<record(group)>;
 DEFINE FIELD slice_slice ON TABLE user TYPE option<array>;
 DEFINE FIELD slice_slice.* ON TABLE user TYPE option<array>;
+DEFINE FIELD uuid ON TABLE user TYPE string;
+DEFINE FIELD uuid_ptr ON TABLE user TYPE option<string>;
+DEFINE FIELD url ON TABLE user TYPE string ASSERT $value == "" OR is::url($value);
+DEFINE FIELD url_ptr ON TABLE user TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::url($value);
 
 DEFINE TABLE group SCHEMAFULL;
 DEFINE FIELD created_at ON TABLE group TYPE datetime;

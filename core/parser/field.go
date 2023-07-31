@@ -75,6 +75,10 @@ type FieldUUID struct {
 	*fieldAtomic
 }
 
+type FieldURL struct {
+	*fieldAtomic
+}
+
 type FieldNode struct {
 	*fieldAtomic
 	Node string

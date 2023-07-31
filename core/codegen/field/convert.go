@@ -117,39 +117,6 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
-	case *parser.FieldTime:
-		{
-			return &Time{
-				baseField: base,
-				source:    f,
-			}, true
-		}
-
-	case *parser.FieldUUID:
-		{
-			return &UUID{
-				baseField: base,
-				source:    f,
-			}, true
-		}
-
-	case *parser.FieldEnum:
-		{
-			var values []string
-			for _, val := range source.EnumValues {
-				if val.Enum == f.Typ {
-					values = append(values, val.Value)
-				}
-			}
-
-			return &Enum{
-				baseField: base,
-				source:    f,
-				model:     EnumModel(f.Typ),
-				values:    values,
-			}, true
-		}
-
 	case *parser.FieldStruct:
 		{
 			var object *parser.Struct
@@ -158,6 +125,10 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 					object = elem
 					break
 				}
+			}
+
+			if object == nil {
+				return nil, false
 			}
 
 			var fields []Field
@@ -253,6 +224,47 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				baseField: base,
 				source:    f,
 				element:   element,
+			}, true
+		}
+
+	case *parser.FieldEnum:
+		{
+			var values []string
+			for _, val := range source.EnumValues {
+				if val.Enum == f.Typ {
+					values = append(values, val.Value)
+				}
+			}
+
+			return &Enum{
+				baseField: base,
+				source:    f,
+				model:     EnumModel(f.Typ),
+				values:    values,
+			}, true
+		}
+
+	case *parser.FieldTime:
+		{
+			return &Time{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldUUID:
+		{
+			return &UUID{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldURL:
+		{
+			return &URL{
+				baseField: base,
+				source:    f,
 			}, true
 		}
 	}

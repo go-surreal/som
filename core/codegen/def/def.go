@@ -14,6 +14,7 @@ const (
 const (
 	PkgSom = "github.com/marcbinz/som"
 
+	PkgURL       = "net/url"
 	PkgUUID      = "github.com/google/uuid"
 	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"
 )

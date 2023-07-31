@@ -5,6 +5,7 @@ import (
 	uuid "github.com/google/uuid"
 	lib "github.com/marcbinz/som/examples/basic/gen/som/internal/lib"
 	model "github.com/marcbinz/som/examples/basic/model"
+	"net/url"
 )
 
 var User = newUser[model.User](lib.NewKey[model.User]())
@@ -25,9 +26,11 @@ func newUser[T any](key lib.Key[T]) user[T] {
 		String:    lib.NewString[T](lib.Field(key, "string")),
 		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
 		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
+		URL:       lib.NewBase[url.URL, T](lib.Field(key, "url")),
+		URLPtr:    lib.NewBasePtr[url.URL, T](lib.Field(key, "url_ptr")),
 		UUID:      lib.NewBase[uuid.UUID, T](lib.Field(key, "uuid")),
+		UUIDPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
 		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
-		UuidPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
 		key:       key,
 	}
 }
@@ -45,12 +48,14 @@ type user[T any] struct {
 	Float64   *lib.Numeric[float64, T]
 	Bool      *lib.Bool[T]
 	Bool2     *lib.Bool[T]
-	UUID      *lib.Base[uuid.UUID, T]
 	Role      *lib.Base[model.Role, T]
 	StringPtr *lib.StringPtr[T]
 	IntPtr    *lib.NumericPtr[*int, T]
 	TimePtr   *lib.TimePtr[T]
-	UuidPtr   *lib.BasePtr[uuid.UUID, T]
+	UUID      *lib.Base[uuid.UUID, T]
+	UUIDPtr   *lib.BasePtr[uuid.UUID, T]
+	URL       *lib.Base[url.URL, T]
+	URLPtr    *lib.BasePtr[url.URL, T]
 }
 
 func (n user[T]) Login() login[T] {
