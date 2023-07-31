@@ -18,16 +18,17 @@ func (f *Slice) typeGo() jen.Code {
 
 func (f *Slice) typeConv() jen.Code {
 	return jen.Add(f.ptr()).Index().Add(f.element.typeConv())
+	// return jen.Add(f.ptr()).Id("jsonArray").Types(f.element.typeCo
 }
 
 func (f *Slice) TypeDatabase() string {
 	if f.element.TypeDatabase() == "" {
-		return ""
+		return "" // TODO: this seems invalid, no?
 	}
 
-	// Note: No "ASSERT $value != NULL" used here,
-	// because the zero value of a slice is nil.
-	return "array"
+	// Go treats empty slices as nil, so the database needs
+	// to accept the json NULL value for any array field.
+	return "option<array>"
 }
 
 func (f *Slice) Element() Field {

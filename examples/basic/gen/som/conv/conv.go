@@ -3,10 +3,11 @@
 package conv
 
 import (
-	"github.com/google/uuid"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
+
+	"github.com/google/uuid"
 )
 
 func parseDatabaseID(node string, id string) string {
