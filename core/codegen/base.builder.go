@@ -332,7 +332,7 @@ func (b *build) buildSchemaFile() error {
 	fieldFn = func(table string, f field.Field, prefix string) {
 		fieldType := f.TypeDatabase()
 		if fieldType == "" {
-			return
+			return // TODO: is this actually valid?
 		}
 
 		statement := fmt.Sprintf(
@@ -364,6 +364,12 @@ func (b *build) buildSchemaFile() error {
 
 	for _, node := range b.input.nodes {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL;", node.NameDatabase())
+		statements = append(statements, statement)
+
+		statement = fmt.Sprintf(
+			`DEFINE FIELD id ON TABLE %s TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";`,
+			node.NameDatabase(),
+		)
 		statements = append(statements, statement)
 
 		for _, f := range node.GetFields() {
