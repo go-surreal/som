@@ -17,7 +17,7 @@ func (f *UUID) typeGo() jen.Code {
 }
 
 func (f *UUID) typeConv() jen.Code {
-	return jen.Add(f.ptr()).String()
+	return jen.Add(f.ptr()).Id("UUID")
 }
 
 func (f *UUID) TypeDatabase() string {
@@ -65,16 +65,18 @@ func (f *UUID) filterInit(ctx Context) jen.Code {
 
 func (f *UUID) convFrom(ctx Context) jen.Code {
 	if f.source.Pointer() {
-		return jen.Id("uuidPtr").Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Op("&").Id("UUID").Values(jen.Id("data").Dot(f.NameGo()))
 	}
-	return jen.Id("data").Dot(f.NameGo()).Dot("String").Call()
+
+	return jen.Id("UUID").Values(jen.Op("&").Id("data").Dot(f.NameGo()))
 }
 
 func (f *UUID) convTo(ctx Context) jen.Code {
 	if f.source.Pointer() {
-		return jen.Id("ptrFunc").Call(jen.Id("parseUUID")).Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Id("data").Dot(f.NameGo()).Dot("UUID")
 	}
-	return jen.Id("parseUUID").Call(jen.Id("data").Dot(f.NameGo()))
+
+	return jen.Op("*").Id("data").Dot(f.NameGo()).Dot("UUID")
 }
 
 func (f *UUID) fieldDef(ctx Context) jen.Code {
