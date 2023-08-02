@@ -20,6 +20,7 @@ var tmpl = `
 BEGIN TRANSACTION;
 
 DEFINE TABLE user SCHEMAFULL;
+DEFINE FIELD id ON TABLE user TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE user TYPE datetime;
 DEFINE FIELD updated_at ON TABLE user TYPE datetime;
 DEFINE FIELD string ON TABLE user TYPE string;
@@ -82,6 +83,7 @@ DEFINE FIELD url ON TABLE user TYPE string ASSERT $value == "" OR is::url($value
 DEFINE FIELD url_ptr ON TABLE user TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::url($value);
 
 DEFINE TABLE group SCHEMAFULL;
+DEFINE FIELD id ON TABLE group TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE group TYPE datetime;
 DEFINE FIELD updated_at ON TABLE group TYPE datetime;
 DEFINE FIELD name ON TABLE group TYPE string;

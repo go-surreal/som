@@ -3,6 +3,7 @@ package conv
 
 import (
 	"encoding/json"
+	uuid "github.com/google/uuid"
 	som "github.com/marcbinz/som"
 	model "github.com/marcbinz/som/examples/basic/model"
 	"strings"
@@ -42,8 +43,8 @@ type User struct {
 	NodePtrSlice      []*groupLink   `json:"node_ptr_slice"`
 	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
 	SliceSlice        [][]string     `json:"slice_slice"`
-	UUID              string         `json:"uuid"`
-	UUIDPtr           *string        `json:"uuid_ptr"`
+	UUID              uuid.UUID      `json:"uuid"`
+	UUIDPtr           *uuid.UUID     `json:"uuid_ptr"`
 	URL               string         `json:"url"`
 	URLPtr            *string        `json:"url_ptr"`
 }
@@ -80,8 +81,8 @@ func FromUser(data model.User) User {
 		TimePtr:           data.TimePtr,
 		URL:               data.URL.String(),
 		URLPtr:            urlPtr(data.URLPtr),
-		UUID:              data.UUID.String(),
-		UUIDPtr:           uuidPtr(data.UUIDPtr),
+		UUID:              data.UUID,
+		UUIDPtr:           data.UUIDPtr,
 	}
 }
 
@@ -120,8 +121,8 @@ func ToUser(data User) model.User {
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		URL:               parseURL(data.URL),
 		URLPtr:            ptrFunc(parseURL)(data.URLPtr),
-		UUID:              parseUUID(data.UUID),
-		UUIDPtr:           ptrFunc(parseUUID)(data.UUIDPtr),
+		UUID:              data.UUID,
+		UUIDPtr:           data.UUIDPtr,
 	}
 }
 
