@@ -178,8 +178,6 @@ func (u *UUID) UnmarshalJSON(data []byte) error {
 }
 ` // TODO: only add uuid functions and import if needed/used
 
-move content above to embed!!!
-
 	data := []byte(codegenComment + content)
 
 	err := os.WriteFile(path.Join(b.path(), "conv.go"), data, os.ModePerm)
