@@ -63,17 +63,19 @@ func (f *URL) filterInit(ctx Context) jen.Code {
 		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *URL) convFrom(ctx Context) jen.Code {
+func (f *URL) convFrom(_ Context) jen.Code {
 	if f.source.Pointer() {
 		return jen.Id("urlPtr").Call(jen.Id("data").Dot(f.NameGo()))
 	}
+
 	return jen.Id("data").Dot(f.NameGo()).Dot("String").Call()
 }
 
-func (f *URL) convTo(ctx Context) jen.Code {
+func (f *URL) convTo(_ Context) jen.Code {
 	if f.source.Pointer() {
 		return jen.Id("ptrFunc").Call(jen.Id("parseURL")).Call(jen.Id("data").Dot(f.NameGo()))
 	}
+
 	return jen.Id("parseURL").Call(jen.Id("data").Dot(f.NameGo()))
 }
 

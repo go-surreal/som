@@ -3,6 +3,7 @@
 package conv
 
 import (
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -85,4 +86,25 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
 		out := fn(*in)
 		return &out
 	}
+}
+
+//
+// -- URL
+//
+
+func urlPtr(val *url.URL) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
+
+func parseURL(val string) url.URL {
+	res, err := url.Parse(val)
+	if err != nil {
+		// TODO: add logging!
+		return url.URL{}
+	}
+	return *res
 }
