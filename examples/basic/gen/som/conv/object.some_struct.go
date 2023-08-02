@@ -2,6 +2,7 @@
 package conv
 
 import (
+	uuid "github.com/google/uuid"
 	model "github.com/marcbinz/som/examples/basic/model"
 	"time"
 )
@@ -10,7 +11,7 @@ type someStruct struct {
 	StringPtr *string    `json:"string_ptr"`
 	IntPtr    *int       `json:"int_ptr"`
 	TimePtr   *time.Time `json:"time_ptr"`
-	UuidPtr   *UUID      `json:"uuid_ptr"`
+	UuidPtr   *uuid.UUID `json:"uuid_ptr"`
 }
 
 func fromSomeStruct(data model.SomeStruct) someStruct {
@@ -18,7 +19,7 @@ func fromSomeStruct(data model.SomeStruct) someStruct {
 		IntPtr:    data.IntPtr,
 		StringPtr: data.StringPtr,
 		TimePtr:   data.TimePtr,
-		UuidPtr:   &UUID{data.UuidPtr},
+		UuidPtr:   data.UuidPtr,
 	}
 }
 
@@ -27,6 +28,6 @@ func toSomeStruct(data someStruct) model.SomeStruct {
 		IntPtr:    data.IntPtr,
 		StringPtr: data.StringPtr,
 		TimePtr:   data.TimePtr,
-		UuidPtr:   data.UuidPtr.UUID,
+		UuidPtr:   data.UuidPtr,
 	}
 }

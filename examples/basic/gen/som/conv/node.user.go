@@ -3,6 +3,7 @@ package conv
 
 import (
 	"encoding/json"
+	uuid "github.com/google/uuid"
 	som "github.com/marcbinz/som"
 	model "github.com/marcbinz/som/examples/basic/model"
 	"strings"
@@ -21,7 +22,7 @@ type User struct {
 	Float64           float64        `json:"float_64"`
 	Bool              bool           `json:"bool"`
 	Bool2             bool           `json:"bool_2"`
-	UUID              UUID           `json:"uuid"`
+	UUID              uuid.UUID      `json:"uuid"`
 	Login             login          `json:"login"`
 	Role              string         `json:"role"`
 	Groups            []*groupLink   `json:"groups"`
@@ -34,7 +35,7 @@ type User struct {
 	StringPtr         *string        `json:"string_ptr"`
 	IntPtr            *int           `json:"int_ptr"`
 	TimePtr           *time.Time     `json:"time_ptr"`
-	UuidPtr           *UUID          `json:"uuid_ptr"`
+	UuidPtr           *uuid.UUID     `json:"uuid_ptr"`
 	StructPtr         *someStruct    `json:"struct_ptr"`
 	StringPtrSlice    []*string      `json:"string_ptr_slice"`
 	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
@@ -76,8 +77,8 @@ func FromUser(data model.User) User {
 		StructPtrSlice:    mapPtrSlice(data.StructPtrSlice, fromSomeStruct),
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
 		TimePtr:           data.TimePtr,
-		UUID:              UUID{&data.UUID},
-		UuidPtr:           &UUID{data.UuidPtr},
+		UUID:              data.UUID,
+		UuidPtr:           data.UuidPtr,
 	}
 }
 
@@ -114,8 +115,8 @@ func ToUser(data User) model.User {
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-		UUID:              *data.UUID.UUID,
-		UuidPtr:           data.UuidPtr.UUID,
+		UUID:              data.UUID,
+		UuidPtr:           data.UuidPtr,
 	}
 }
 
