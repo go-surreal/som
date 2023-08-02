@@ -1,12 +1,14 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/embed"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 type relateBuilder struct {
@@ -24,7 +26,7 @@ func (b *relateBuilder) build() error {
 		return err
 	}
 
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -43,21 +45,20 @@ func (b *relateBuilder) build() error {
 	return nil
 }
 
-func (b *relateBuilder) buildBaseFile() error {
-	content := `
-
-package relate
-
-type Database interface {
-	Query(statement string, vars any) (any, error)
-}
-`
-
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "relate.go"), data, os.ModePerm)
+func (b *relateBuilder) embedStaticFiles() error {
+	files, err := embed.Relate()
 	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

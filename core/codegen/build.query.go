@@ -1,12 +1,13 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/embed"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -25,7 +26,7 @@ func (b *queryBuilder) build() error {
 		return err
 	}
 
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -38,29 +39,20 @@ func (b *queryBuilder) build() error {
 	return nil
 }
 
-func (b *queryBuilder) buildBaseFile() error {
-	content := `
-
-package query
-
-type Database interface {
-	Query(statement string, vars any) (any, error)
-}
-
-type idNode struct {
-	ID string
-}
-
-type countResult struct {
-	Count int
-}
-`
-
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "query.go"), data, os.ModePerm)
+func (b *queryBuilder) embedStaticFiles() error {
+	files, err := embed.Query()
 	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -26,8 +26,7 @@ func (b *convBuilder) build() error {
 		return err
 	}
 
-	// Generate the base file.
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -52,7 +51,7 @@ func (b *convBuilder) build() error {
 	return nil
 }
 
-func (b *convBuilder) buildBaseFile() error {
+func (b *convBuilder) embedStaticFiles() error {
 	files, err := embed.Conv()
 	if err != nil {
 		return err
@@ -60,9 +59,9 @@ func (b *convBuilder) buildBaseFile() error {
 
 	for _, file := range files {
 		content := string(file.Content)
-		content = strings.Replace(content, "//go:build embed", codegenComment, 1)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-		err := os.WriteFile(filepath.Join(b.path(), "conv.go"), []byte(content), os.ModePerm)
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
 		if err != nil {
 			return err
 		}
