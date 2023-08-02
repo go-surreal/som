@@ -1,12 +1,14 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/embed"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 type convBuilder struct {
@@ -24,8 +26,7 @@ func (b *convBuilder) build() error {
 		return err
 	}
 
-	// Generate the base file.
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -50,102 +51,20 @@ func (b *convBuilder) build() error {
 	return nil
 }
 
-func (b *convBuilder) buildBaseFile() error {
-	content := `
-
-package conv
-
-import (
-	"strconv"
-	"strings"
-)
-
-func parseDatabaseID(node string, id string) string {
-	id = strings.TrimPrefix(id, node+":")
-	id = strings.TrimPrefix(id,"⟨")
-	id = strings.TrimSuffix(id, "⟩")
-	id, _ = strconv.Unquote("\"" + id + "\"")
-	return id
-}
-
-func buildDatabaseID(node string, id string) string {
-	return node + ":" + id
-}
-
-func mapEnum[I, O ~string](in I) O {
- 	return O(in)
-}
-
-func mapSlice[I, O any](in []I, fn func(I) O) []O {
-	if in == nil {
-		return nil
-	}
-
-	out := make([]O, len(in))
-	for _, i := range in {
-		out = append(out, fn(i))
-	}
-	return out
-}
-
-func mapSlicePtr[I, O any](in *[]I, fn func(I) O) *[]O {
-	if in == nil {
-		return nil
-	}
-
-	out := make([]O, len(*in))
-	for _, i := range *in {
-		out = append(out, fn(i))
-	}
-	return &out
-}
-
-func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
-	if in == nil {
-		return nil
-	}
-
- 	ptrFn := ptrFunc(fn)
-
-	out := make([]*O, len(in))
- 	for _, i := range in {
- 		out = append(out, ptrFn(i))
- 	}
-
- 	return out
-}
-
-func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
-	if in == nil {
-		return nil
-	}
-
-	ptrFn := ptrFunc(fn)
-
-	out := make([]*O, len(*in))
-	for _, i := range *in {
-		out = append(out, ptrFn(i))
-	}
-
-	return &out
-}
-
-func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
- 	return func(in *I) *O {
- 		if in == nil {
- 			return nil
- 		}
- 		out := fn(*in)
- 		return &out
- 	}
-}
-` // TODO: only add uuid functions and import if needed/used
-
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "conv.go"), data, os.ModePerm)
+func (b *convBuilder) embedStaticFiles() error {
+	files, err := embed.Conv()
 	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

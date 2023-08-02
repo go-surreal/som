@@ -9,7 +9,7 @@ import (
 
 func parseDatabaseID(node string, id string) string {
 	id = strings.TrimPrefix(id, node+":")
-	id = strings.TrimPrefix(id,"⟨")
+	id = strings.TrimPrefix(id, "⟨")
 	id = strings.TrimSuffix(id, "⟩")
 	id, _ = strconv.Unquote("\"" + id + "\"")
 	return id
@@ -20,7 +20,7 @@ func buildDatabaseID(node string, id string) string {
 }
 
 func mapEnum[I, O ~string](in I) O {
- 	return O(in)
+	return O(in)
 }
 
 func mapSlice[I, O any](in []I, fn func(I) O) []O {
@@ -52,14 +52,14 @@ func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
 		return nil
 	}
 
- 	ptrFn := ptrFunc(fn)
+	ptrFn := ptrFunc(fn)
 
 	out := make([]*O, len(in))
- 	for _, i := range in {
- 		out = append(out, ptrFn(i))
- 	}
+	for _, i := range in {
+		out = append(out, ptrFn(i))
+	}
 
- 	return out
+	return out
 }
 
 func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
@@ -78,11 +78,11 @@ func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
 }
 
 func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
- 	return func(in *I) *O {
- 		if in == nil {
- 			return nil
- 		}
- 		out := fn(*in)
- 		return &out
- 	}
+	return func(in *I) *O {
+		if in == nil {
+			return nil
+		}
+		out := fn(*in)
+		return &out
+	}
 }
