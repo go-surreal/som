@@ -14,9 +14,6 @@ import (
 )
 
 const (
-	filenameClient     = "som.client.go"
-	filenameDatabase   = "som.database.go"
-	filenameFunctions  = "som.functions.go"
 	filenameInterfaces = "som.interfaces.go"
 	filenameSchema     = "som.schema.go"
 )
@@ -51,15 +48,7 @@ func (b *build) build() error {
 		return err
 	}
 
-	if err := b.buildClientFile(); err != nil {
-		return err
-	}
-
-	if err := b.buildDatabaseFile(); err != nil {
-		return err
-	}
-
-	if err := b.buildFunctionsFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -121,184 +110,20 @@ func (b *build) copyInternalPackage() error {
 	return nil
 }
 
-func (b *build) buildClientFile() error {
-	content := `
-
-import (
-	"fmt"
-	"github.com/surrealdb/surrealdb.go"
-	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
-	"github.com/surrealdb/surrealdb.go/pkg/logger"
-	"time"
-)
-
-type Database interface {
-	Close()
-	Create(thing string, data any) (any, error)
-	Select(what string) (any, error)
-	Query(statement string, vars any) (any, error)
-	Update(thing string, data any) (any, error)
-	Delete(what string) (any, error)
-}
-
-type Config struct {
-	Address string
-	Username string
-	Password string
-	Namespace string
-	Database string
-}
-
-type ClientImpl struct {
-	db Database
-}
-
-func NewClient(conf Config) (*ClientImpl, error) {
-	url := conf.Address + "/rpc"
-
-	logData, err := logger.New().Make()
+func (b *build) embedStaticFiles() error {
+	files, err := embed.Som()
 	if err != nil {
-		return nil, fmt.Errorf("could not create logger: %v", err)
+		return err
 	}
 
-	ws, err := gorilla.Create().Logger(logData).SetTimeOut(time.Minute).Connect(url)
-	if err != nil {
-		return nil, fmt.Errorf("could not create websocket: %v", err)
-	}
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-	surreal, err := surrealdb.New("<unused>", ws)
-	if err != nil {
-		return nil, fmt.Errorf("could not create surrealdb client: %v", err)
-	}
-
-	_, err = surreal.Signin(map[string]any{
-		"user": conf.Username,
-		"pass": conf.Password,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = surreal.Use(conf.Namespace, conf.Database)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ClientImpl{db: &database{DB: surreal}}, nil
-}
-
-func (c *ClientImpl) Close() {
-	c.db.Close()
-}
-`
-
-	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
-
-	err := os.WriteFile(path.Join(b.basePath(), filenameClient), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
-
-	return nil
-}
-
-func (b *build) buildDatabaseFile() error {
-	content := `
-
-import (
-	"github.com/surrealdb/surrealdb.go"
-)
-
-type database struct {
-	*surrealdb.DB
-}
-
-func (db *database) Create(thing string, data any) (any, error) {
-	return db.DB.Create(thing, data)
-}
-
-func (db *database) Select(what string) (any, error) {
-	return db.DB.Select(what)
-}
-
-func (db *database) Query(statement string, vars any) (any, error) {
-	raw, err := db.DB.Query(statement, vars)
-	if err != nil {
-		return nil, err
-	}
-
-	return raw, err
-}
-
-func (db *database) Update(what string, data any) (any, error) {
-	return db.DB.Update(what, data)
-}
-
-func (db *database) Delete(what string) (any, error) {
-	return db.DB.Delete(what)
-}
-`
-
-	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
-
-	err := os.WriteFile(path.Join(b.basePath(), filenameDatabase), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
-
-	return nil
-}
-
-func (b *build) buildFunctionsFile() error {
-	content := `
-
-import (
-	"encoding/json"
-	"fmt"
-)
-
-const statusOK = "OK"
-
-type RawQuery[T any] struct {
-	Status string
-	Time   string
-	Result T
-	Detail string 
-}
-
-func Unmarshal[M any](respond interface{}) (model M, err error) {
-	var bytes []byte
-
-	if arrResp, isArr := respond.([]interface{}); len(arrResp) > 0 {
-		if dataMap, ok := arrResp[0].(map[string]interface{}); ok && isArr {
-			if _, ok := dataMap["status"]; ok {
-				if bytes, err = json.Marshal(respond); err == nil {
-					var raw []RawQuery[M]
-					if err = json.Unmarshal(bytes, &raw); err == nil {
-						if raw[0].Status != statusOK {
-							err = fmt.Errorf("%s: %s", raw[0].Status, raw[0].Detail)
-						}
-						model = raw[0].Result
-					}
-				}
-				return model, err
-			}
+		err := os.WriteFile(filepath.Join(b.basePath(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
 		}
-	}
-
-	if bytes, err = json.Marshal(respond); err == nil {
-		err = json.Unmarshal(bytes, &model)
-	}
-
-	return model, err
-}
-`
-
-	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
-
-	err := os.WriteFile(path.Join(b.basePath(), filenameFunctions), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
 	}
 
 	return nil
