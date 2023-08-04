@@ -14,13 +14,34 @@ type User struct {
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`
 	String            string         `json:"string"`
+	StringPtr         *string        `json:"string_ptr"`
 	Int               int            `json:"int"`
+	IntPtr            *int           `json:"int_ptr"`
+	Int8              int8           `json:"int_8"`
+	Int8Ptr           *int8          `json:"int_8_ptr"`
+	Int16             int16          `json:"int_16"`
+	Int16Ptr          *int16         `json:"int_16_ptr"`
 	Int32             int32          `json:"int_32"`
+	Int32Ptr          *int32         `json:"int_32_ptr"`
 	Int64             int64          `json:"int_64"`
+	Int64Ptr          *int64         `json:"int_64_ptr"`
+	Uint              uint           `json:"uint"`
+	UintPtr           *uint          `json:"uint_ptr"`
+	Uint8             uint8          `json:"uint_8"`
+	Uint8Ptr          *uint8         `json:"uint_8_ptr"`
+	Uint16            uint16         `json:"uint_16"`
+	Uint16Ptr         *uint16        `json:"uint_16_ptr"`
+	Uint32            uint32         `json:"uint_32"`
+	Uint32Ptr         *uint32        `json:"uint_32_ptr"`
+	Uint64            uint64         `json:"uint_64"`
+	Uint64Ptr         *uint64        `json:"uint_64_ptr"`
+	Uintptr           uintptr        `json:"uintptr"`
+	UintptrPtr        *uintptr       `json:"uintptr_ptr"`
 	Float32           float32        `json:"float_32"`
 	Float64           float64        `json:"float_64"`
+	Rune              rune           `json:"rune"`
 	Bool              bool           `json:"bool"`
-	Bool2             bool           `json:"bool_2"`
+	BoolPtr           *bool          `json:"bool_ptr"`
 	UUID              string         `json:"uuid"`
 	Login             login          `json:"login"`
 	Role              string         `json:"role"`
@@ -31,8 +52,6 @@ type User struct {
 	More              []float32      `json:"more"`
 	Roles             []string       `json:"roles"`
 	MemberOf          []GroupMember  `json:"member_of,omitempty"`
-	StringPtr         *string        `json:"string_ptr"`
-	IntPtr            *int           `json:"int_ptr"`
 	TimePtr           *time.Time     `json:"time_ptr"`
 	UuidPtr           *string        `json:"uuid_ptr"`
 	StructPtr         *someStruct    `json:"struct_ptr"`
@@ -49,14 +68,20 @@ type User struct {
 func FromUser(data model.User) User {
 	return User{
 		Bool:              data.Bool,
-		Bool2:             data.Bool2,
+		BoolPtr:           data.BoolPtr,
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[model.Role, string])),
 		Float32:           data.Float32,
 		Float64:           data.Float64,
 		Groups:            mapSlice(data.Groups, toGroupLink),
 		Int:               data.Int,
+		Int16:             data.Int16,
+		Int16Ptr:          data.Int16Ptr,
 		Int32:             data.Int32,
+		Int32Ptr:          data.Int32Ptr,
 		Int64:             data.Int64,
+		Int64Ptr:          data.Int64Ptr,
+		Int8:              data.Int8,
+		Int8Ptr:           data.Int8Ptr,
 		IntPtr:            data.IntPtr,
 		Login:             fromLogin(data.Login),
 		MainGroup:         toGroupLink(data.MainGroup),
@@ -67,6 +92,7 @@ func FromUser(data model.User) User {
 		Other:             data.Other,
 		Role:              string(data.Role),
 		Roles:             mapSlice(data.Roles, mapEnum[model.Role, string]),
+		Rune:              data.Rune,
 		SliceSlice:        data.SliceSlice,
 		String:            data.String,
 		StringPtr:         data.StringPtr,
@@ -77,6 +103,18 @@ func FromUser(data model.User) User {
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
 		TimePtr:           data.TimePtr,
 		UUID:              data.UUID.String(),
+		Uint:              data.Uint,
+		Uint16:            data.Uint16,
+		Uint16Ptr:         data.Uint16Ptr,
+		Uint32:            data.Uint32,
+		Uint32Ptr:         data.Uint32Ptr,
+		Uint64:            data.Uint64,
+		Uint64Ptr:         data.Uint64Ptr,
+		Uint8:             data.Uint8,
+		Uint8Ptr:          data.Uint8Ptr,
+		UintPtr:           data.UintPtr,
+		Uintptr:           data.Uintptr,
+		UintptrPtr:        data.UintptrPtr,
 		UuidPtr:           uuidPtr(data.UuidPtr),
 	}
 }
@@ -84,14 +122,20 @@ func FromUser(data model.User) User {
 func ToUser(data User) model.User {
 	return model.User{
 		Bool:              data.Bool,
-		Bool2:             data.Bool2,
+		BoolPtr:           data.BoolPtr,
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[string, model.Role])),
 		Float32:           data.Float32,
 		Float64:           data.Float64,
 		Groups:            mapSlice(data.Groups, fromGroupLink),
 		Int:               data.Int,
+		Int16:             data.Int16,
+		Int16Ptr:          data.Int16Ptr,
 		Int32:             data.Int32,
+		Int32Ptr:          data.Int32Ptr,
 		Int64:             data.Int64,
+		Int64Ptr:          data.Int64Ptr,
+		Int8:              data.Int8,
+		Int8Ptr:           data.Int8Ptr,
 		IntPtr:            data.IntPtr,
 		Login:             toLogin(data.Login),
 		MainGroup:         fromGroupLink(data.MainGroup),
@@ -104,6 +148,7 @@ func ToUser(data User) model.User {
 		Other:             data.Other,
 		Role:              model.Role(data.Role),
 		Roles:             mapSlice(data.Roles, mapEnum[string, model.Role]),
+		Rune:              data.Rune,
 		SliceSlice:        data.SliceSlice,
 		String:            data.String,
 		StringPtr:         data.StringPtr,
@@ -115,6 +160,18 @@ func ToUser(data User) model.User {
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		UUID:              parseUUID(data.UUID),
+		Uint:              data.Uint,
+		Uint16:            data.Uint16,
+		Uint16Ptr:         data.Uint16Ptr,
+		Uint32:            data.Uint32,
+		Uint32Ptr:         data.Uint32Ptr,
+		Uint64:            data.Uint64,
+		Uint64Ptr:         data.Uint64Ptr,
+		Uint8:             data.Uint8,
+		Uint8Ptr:          data.Uint8Ptr,
+		UintPtr:           data.UintPtr,
+		Uintptr:           data.Uintptr,
+		UintptrPtr:        data.UintptrPtr,
 		UuidPtr:           ptrFunc(parseUUID)(data.UuidPtr),
 	}
 }
