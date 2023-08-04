@@ -84,10 +84,6 @@ func TestWithDatabase(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	if err := client.ApplySchema(); err != nil {
-		t.Fatal(err)
-	}
-
 	str := "Some User"
 	uid := uuid.New()
 
@@ -129,10 +125,6 @@ func FuzzWithDatabase(f *testing.F) {
 	client, cleanup := prepareDatabase(ctx, f)
 	defer cleanup()
 
-	if err := client.ApplySchema(); err != nil {
-		f.Fatal(err)
-	}
-
 	f.Add("Some User")
 
 	f.Fuzz(func(t *testing.T, str string) {
@@ -168,10 +160,6 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 	client, cleanup := prepareDatabase(ctx, f)
 	defer cleanup()
-
-	if err := client.ApplySchema(); err != nil {
-		f.Fatal(err)
-	}
 
 	f.Add("v9uitj942tv2403tnv")
 	f.Add("vb92thj29v4tjn20d3")
@@ -265,6 +253,37 @@ func BenchmarkWithDatabase(b *testing.B) {
 	}
 }
 
+func TestAsync(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	err := client.UserRepo().Create(ctx, &model.User{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resCh := client.UserRepo().Query().
+		Filter().
+		CountAsync(ctx)
+
+	assert.NilError(t, <-resCh.Err())
+	assert.Equal(t, 1, <-resCh.Val())
+
+	err = client.UserRepo().Create(ctx, &model.User{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resCh = client.UserRepo().Query().
+		Filter().
+		CountAsync(ctx)
+
+	assert.NilError(t, <-resCh.Err())
+	assert.Equal(t, 2, <-resCh.Val())
+}
+
 //
 // -- HELPER
 //
@@ -301,6 +320,10 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 
 	client, err := som.NewClient(conf(endpoint))
 	if err != nil {
+		tb.Fatal(err)
+	}
+
+	if err := client.ApplySchema(); err != nil {
 		tb.Fatal(err)
 	}
 
