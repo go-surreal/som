@@ -75,55 +75,65 @@ func (q Query[T]) BuildAsCount() *Result {
 }
 
 func (q Query[T]) render() string {
-	out := "SELECT " + q.fields + " FROM " + q.node + " "
+	var out strings.Builder
+
+	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
 
 	var t T
 	whereStatement := All[T](q.Where).build(&q.context, t)
 	if whereStatement != "" {
-		out += "WHERE " + whereStatement + " "
+		out.WriteString(" WHERE ")
+		out.WriteString(whereStatement)
 	}
 
 	if q.groupBy != "" {
-		out += "GROUP BY " + q.groupBy + " "
+		out.WriteString(" GROUP BY ")
+		out.WriteString(q.groupBy)
 	}
 
 	if q.groupAll {
-		out += "GROUP ALL "
+		out.WriteString(" GROUP ALL")
 	}
 
 	if q.SortRandom {
-		out += "ORDER BY RAND() "
+		out.WriteString(" ORDER BY RAND()")
 	} else if len(q.Sort) > 0 {
 		var sorts []string
 		for _, s := range q.Sort {
 			sorts = append(sorts, s.render())
 		}
-		out += "ORDER BY " + strings.Join(sorts, ", ") + " "
+
+		out.WriteString(" ORDER BY ")
+		out.WriteString(strings.Join(sorts, ", "))
 	}
 
 	// LIMIT must come before START.
 	if q.Limit > 0 {
-		out += "LIMIT " + strconv.Itoa(q.Limit) + " "
+		out.WriteString(" LIMIT ")
+		out.WriteString(strconv.Itoa(q.Limit))
 	}
 
 	// START must come after LIMIT.
 	if q.Offset > 0 {
-		out += "START " + strconv.Itoa(q.Offset) + " "
+		out.WriteString(" START ")
+		out.WriteString(strconv.Itoa(q.Offset))
 	}
 
 	if len(q.Fetch) > 0 {
-		out += "FETCH " + strings.Join(q.Fetch, ", ") + " "
+		out.WriteString(" FETCH ")
+		out.WriteString(strings.Join(q.Fetch, ", "))
 	}
 
 	if q.Timeout > 0 {
-		out += "TIMEOUT " + q.Timeout.Round(time.Second).String() + " "
+		out.WriteString(" TIMEOUT ")
+		out.WriteString(q.Timeout.Round(time.Second).String())
 	}
 
 	if q.Parallel {
-		out += "PARALLEL"
+		out.WriteString(" PARALLEL")
 	}
 
-	return out
+	return out.String()
 }
 
 type Result struct {

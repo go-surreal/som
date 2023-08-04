@@ -3,6 +3,7 @@ package conv
 
 import (
 	"encoding/json"
+	uuid "github.com/google/uuid"
 	som "github.com/marcbinz/som"
 	model "github.com/marcbinz/som/examples/basic/model"
 	"strings"
@@ -42,7 +43,7 @@ type User struct {
 	Rune              rune           `json:"rune"`
 	Bool              bool           `json:"bool"`
 	BoolPtr           *bool          `json:"bool_ptr"`
-	UUID              string         `json:"uuid"`
+	UUID              uuid.UUID      `json:"uuid"`
 	Login             login          `json:"login"`
 	Role              string         `json:"role"`
 	Groups            []*groupLink   `json:"groups"`
@@ -53,7 +54,7 @@ type User struct {
 	Roles             []string       `json:"roles"`
 	MemberOf          []GroupMember  `json:"member_of,omitempty"`
 	TimePtr           *time.Time     `json:"time_ptr"`
-	UuidPtr           *string        `json:"uuid_ptr"`
+	UuidPtr           *uuid.UUID     `json:"uuid_ptr"`
 	StructPtr         *someStruct    `json:"struct_ptr"`
 	StringPtrSlice    []*string      `json:"string_ptr_slice"`
 	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
@@ -102,7 +103,7 @@ func FromUser(data model.User) User {
 		StructPtrSlice:    mapPtrSlice(data.StructPtrSlice, fromSomeStruct),
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
 		TimePtr:           data.TimePtr,
-		UUID:              data.UUID.String(),
+		UUID:              data.UUID,
 		Uint:              data.Uint,
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
@@ -115,7 +116,7 @@ func FromUser(data model.User) User {
 		UintPtr:           data.UintPtr,
 		Uintptr:           data.Uintptr,
 		UintptrPtr:        data.UintptrPtr,
-		UuidPtr:           uuidPtr(data.UuidPtr),
+		UuidPtr:           data.UuidPtr,
 	}
 }
 
@@ -159,7 +160,7 @@ func ToUser(data User) model.User {
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-		UUID:              parseUUID(data.UUID),
+		UUID:              data.UUID,
 		Uint:              data.Uint,
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
@@ -172,7 +173,7 @@ func ToUser(data User) model.User {
 		UintPtr:           data.UintPtr,
 		Uintptr:           data.Uintptr,
 		UintptrPtr:        data.UintptrPtr,
-		UuidPtr:           ptrFunc(parseUUID)(data.UuidPtr),
+		UuidPtr:           data.UuidPtr,
 	}
 }
 

@@ -20,11 +20,11 @@ type Database interface {
 }
 
 type Config struct {
-	Address string
-	Username string
-	Password string
+	Address   string
+	Username  string
+	Password  string
 	Namespace string
-	Database string
+	Database  string
 }
 
 type ClientImpl struct {

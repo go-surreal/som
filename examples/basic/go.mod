@@ -4,13 +4,12 @@ go 1.20
 
 replace github.com/marcbinz/som => ../../
 
-replace github.com/docker/docker => github.com/docker/docker v24.0.3+incompatible // 22.06 branch
-
 require (
+	github.com/docker/docker v24.0.5+incompatible
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/marcbinz/som v0.0.0
-	github.com/surrealdb/surrealdb.go v0.2.2-0.20230630121254-0828ede25bb2
+	github.com/surrealdb/surrealdb.go v0.2.2-0.20230725105252-d324ed12f057
 	github.com/testcontainers/testcontainers-go v0.21.0
 	gotest.tools/v3 v3.5.0
 )
@@ -22,7 +21,6 @@ require (
 	github.com/containerd/containerd v1.6.19 // indirect
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v23.0.5+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -43,7 +41,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rs/zerolog v1.29.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1 // indirect
+	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
