@@ -9,7 +9,7 @@ replace github.com/docker/docker => github.com/docker/docker v24.0.3+incompatibl
 require (
 	github.com/docker/docker v24.0.5+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/marcbinz/som v0.0.10-0.20230804174208-e1ea40d0fc48
+	github.com/marcbinz/som v0.0.0
 	github.com/surrealdb/surrealdb.go v0.2.2-0.20230725105252-d324ed12f057
 	github.com/testcontainers/testcontainers-go v0.21.0
 	gotest.tools/v3 v3.5.0
