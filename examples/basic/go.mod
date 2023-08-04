@@ -11,7 +11,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/marcbinz/som v0.0.0
-	github.com/surrealdb/surrealdb.go v0.2.2-0.20230630121254-0828ede25bb2
+	github.com/surrealdb/surrealdb.go v0.2.2-0.20230725105252-d324ed12f057
 	github.com/testcontainers/testcontainers-go v0.21.0
 	gotest.tools/v3 v3.5.0
 )
@@ -43,7 +43,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rs/zerolog v1.29.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1 // indirect
+	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect

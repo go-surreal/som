@@ -9,8 +9,8 @@ replace github.com/docker/docker => github.com/docker/docker v24.0.3+incompatibl
 require (
 	github.com/docker/docker v24.0.5+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/marcbinz/som v0.0.0-00010101000000-000000000000
-	github.com/surrealdb/surrealdb.go v0.2.2-0.20230630121254-0828ede25bb2
+	github.com/marcbinz/som v0.0.0
+	github.com/surrealdb/surrealdb.go v0.2.2-0.20230725105252-d324ed12f057
 	github.com/testcontainers/testcontainers-go v0.21.0
 	gotest.tools/v3 v3.5.0
 )
