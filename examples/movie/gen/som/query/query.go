@@ -36,7 +36,7 @@ func (r *asyncResult[T]) Err() <-chan error {
 }
 
 func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) *asyncResult[T] {
-	resCh, errCh := make(chan T), make(chan error)
+	resCh, errCh := make(chan T, 1), make(chan error, 1)
 
 	go func() {
 		defer close(resCh)
