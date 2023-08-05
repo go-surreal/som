@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/dave/jennifer v1.6.1
+
 	github.com/iancoleman/strcase v0.3.0
 	github.com/surrealdb/surrealdb.go v0.2.2-0.20230725105252-d324ed12f057
 	github.com/urfave/cli/v2 v2.25.7
