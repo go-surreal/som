@@ -3,5 +3,6 @@ package som
 
 type Client interface {
 	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
+	ApplySchema() error
 	Close()
 }

@@ -116,7 +116,12 @@ func (q FieldsLikeDBResponse) Count(ctx context.Context) (int, error) {
 	return rawCount[0].Count, nil
 }
 
-// Exists returns whether at least one record for the conditons
+// CountAsync is the asynchronous version of Count.
+func (q FieldsLikeDBResponse) CountAsync(ctx context.Context) *asyncResult[int] {
+	return async(ctx, q.Count)
+}
+
+// Exists returns whether at least one record for the conditions
 // of the query exists or not. In other words it returns whether
 // the size of the result set is greater than 0.
 func (q FieldsLikeDBResponse) Exists(ctx context.Context) (bool, error) {
@@ -125,6 +130,11 @@ func (q FieldsLikeDBResponse) Exists(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return count > 0, nil
+}
+
+// ExistsAsync is the asynchronous version of Exists.
+func (q FieldsLikeDBResponse) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+	return async(ctx, q.Exists)
 }
 
 // All returns all records matching the conditions of the query.
@@ -142,6 +152,11 @@ func (q FieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeDBRes
 	return nodes, nil
 }
 
+// AllAsync is the asynchronous version of All.
+func (q FieldsLikeDBResponse) AllAsync(ctx context.Context) *asyncResult[[]*model.FieldsLikeDBResponse] {
+	return async(ctx, q.All)
+}
+
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q FieldsLikeDBResponse) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
@@ -154,6 +169,11 @@ func (q FieldsLikeDBResponse) AllIDs(ctx context.Context) ([]string, error) {
 		ids = append(ids, rawNode.ID)
 	}
 	return ids, nil
+}
+
+// AllIDsAsync is the asynchronous version of AllIDs.
+func (q FieldsLikeDBResponse) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
+	return async(ctx, q.AllIDs)
 }
 
 // First returns the first record matching the conditions of the query.
@@ -171,6 +191,11 @@ func (q FieldsLikeDBResponse) First(ctx context.Context) (*model.FieldsLikeDBRes
 	return res[0], nil
 }
 
+// FirstAsync is the asynchronous version of First.
+func (q FieldsLikeDBResponse) FirstAsync(ctx context.Context) *asyncResult[*model.FieldsLikeDBResponse] {
+	return async(ctx, q.First)
+}
+
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
@@ -184,6 +209,11 @@ func (q FieldsLikeDBResponse) FirstID(ctx context.Context) (string, error) {
 		return "", errors.New("empty result")
 	}
 	return res[0], nil
+}
+
+// FirstIDAsync is the asynchronous version of FirstID.
+func (q FieldsLikeDBResponse) FirstIDAsync(ctx context.Context) *asyncResult[string] {
+	return async(ctx, q.FirstID)
 }
 
 // Describe returns a string representation of the query.

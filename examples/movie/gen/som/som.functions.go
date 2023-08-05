@@ -13,7 +13,7 @@ type RawQuery[T any] struct {
 	Status string
 	Time   string
 	Result T
-	Detail string 
+	Detail string
 }
 
 func Unmarshal[M any](respond interface{}) (model M, err error) {

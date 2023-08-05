@@ -20,10 +20,7 @@ func (f *Bool) typeConv() jen.Code {
 }
 
 func (f *Bool) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "bool"
-	}
-	return "bool ASSERT $value != NULL"
+	return f.optionWrap("bool")
 }
 
 func (f *Bool) CodeGen() *CodeGen {

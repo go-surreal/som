@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/iancoleman/strcase"
+	"strings"
 )
 
 type NodeTable struct {
@@ -25,7 +26,7 @@ func (t *NodeTable) NameGo() string {
 }
 
 func (t *NodeTable) NameGoLower() string {
-	return strcase.ToLowerCamel(t.Name)
+	return strings.ToLower(t.Name[:1]) + t.Name[1:]
 }
 
 func (t *NodeTable) NameDatabase() string {

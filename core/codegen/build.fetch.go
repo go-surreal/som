@@ -1,11 +1,13 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/embed"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 type fetchBuilder struct {
@@ -23,8 +25,7 @@ func (b *fetchBuilder) build() error {
 		return err
 	}
 
-	// Generate the base file.
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -37,29 +38,20 @@ func (b *fetchBuilder) build() error {
 	return nil
 }
 
-func (b *fetchBuilder) buildBaseFile() error {
-	content := `
-
-package with
-
-// Fetch_ has a suffix of "_" to prevent clashes with node names.
-type Fetch_[T any] interface {
-	fetch(T)
-}
-
-func keyed[S ~string](base S, key string) string {
-	if base == "" {
-		return key
-	}
-	return string(base) + "." + key
-}
-`
-
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "fetch.go"), data, os.ModePerm)
+func (b *fetchBuilder) embedStaticFiles() error {
+	files, err := embed.Fetch()
 	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

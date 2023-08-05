@@ -4,5 +4,6 @@ package som
 type Client interface {
 	UserRepo() UserRepo
 	GroupRepo() GroupRepo
+	ApplySchema() error
 	Close()
 }

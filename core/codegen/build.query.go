@@ -1,12 +1,13 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/def"
 	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/embed"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -25,7 +26,7 @@ func (b *queryBuilder) build() error {
 		return err
 	}
 
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -38,29 +39,20 @@ func (b *queryBuilder) build() error {
 	return nil
 }
 
-func (b *queryBuilder) buildBaseFile() error {
-	content := `
-
-package query
-
-type Database interface {
-	Query(statement string, vars any) (any, error)
-}
-
-type idNode struct {
-	ID string
-}
-
-type countResult struct {
-	Count int
-}
-`
-
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "query.go"), data, os.ModePerm)
+func (b *queryBuilder) embedStaticFiles() error {
+	files, err := embed.Query()
 	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -265,181 +257,281 @@ This could lead to a faster execution.
 }
 
 func (b *queryBuilder) buildQueryFuncCount(node *field.NodeTable) jen.Code {
-	return jen.
-		Add(comment(`
+	return jen.Add(
+
+		jen.
+			Add(comment(`
 Count returns the size of the result set, in other words the
 number of records matching the conditions of the query.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
-		Id("Count").Params(jen.Id("ctx").Qual("context", "Context")).
-		Params(jen.Int(), jen.Error()).
-		Block(
-			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsCount").Call(),
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("Count").Params(jen.Id("ctx").Qual("context", "Context")).
+			Params(jen.Int(), jen.Error()).
+			Block(
+				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsCount").Call(),
 
-			jen.Id("raw").Op(",").Err().Op(":=").Id("q").Dot("db").Dot("Query").Call(
-				jen.Id("res").Dot("Statement"),
-				jen.Id("res").Dot("Variables"),
+				jen.Id("raw").Op(",").Err().Op(":=").Id("q").Dot("db").Dot("Query").Call(
+					jen.Id("res").Dot("Statement"),
+					jen.Id("res").Dot("Variables"),
+				),
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Lit(0), jen.Err()),
+				),
+
+				jen.Var().Id("rawCount").Index().Id("countResult"),
+				jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
+					Call(jen.Id("raw"), jen.Op("&").Id("rawCount")),
+
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Lit(0), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not count records: %w"), jen.Err())),
+				),
+
+				jen.If(jen.Op("!").Id("ok")).Block(
+					jen.Return(jen.Lit(0), jen.Nil()),
+				),
+
+				jen.If(jen.Len(jen.Id("rawCount")).Op("<").Lit(1)).Block(
+					jen.Return(jen.Lit(0), jen.Nil()),
+				),
+
+				jen.Return(jen.Id("rawCount").Index(jen.Lit(0)).Dot("Count"), jen.Nil()),
 			),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Lit(0), jen.Err()),
+
+		jen.Line(),
+
+		jen.
+			Add(comment(`
+CountAsync is the asynchronous version of Count.
+		`)).
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("CountAsync").Params(jen.Id("ctx").Qual("context", "Context")).
+			Op("*").Id("asyncResult").Types(jen.Int()).
+			Block(
+				jen.Return(jen.Id("async").Call(jen.Id("ctx"), jen.Id("q").Dot("Count"))),
 			),
-
-			jen.Var().Id("rawCount").Index().Id("countResult"),
-			jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
-				Call(jen.Id("raw"), jen.Op("&").Id("rawCount")),
-
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Lit(0), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not count records: %w"), jen.Err())),
-			),
-
-			jen.If(jen.Op("!").Id("ok")).Block(
-				jen.Return(jen.Lit(0), jen.Nil()),
-			),
-
-			jen.If(jen.Len(jen.Id("rawCount")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Lit(0), jen.Nil()),
-			),
-
-			jen.Return(jen.Id("rawCount").Index(jen.Lit(0)).Dot("Count"), jen.Nil()),
-		)
+	)
 }
 
 func (b *queryBuilder) buildQueryFuncExists(node *field.NodeTable) jen.Code {
-	return jen.
-		Add(comment(`
-Exists returns whether at least one record for the conditons
+	return jen.Add(
+
+		jen.
+			Add(comment(`
+Exists returns whether at least one record for the conditions
 of the query exists or not. In other words it returns whether
 the size of the result set is greater than 0.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
-		Id("Exists").Params(jen.Id("ctx").Qual("context", "Context")).
-		Params(jen.Bool(), jen.Error()).
-		Block(
-			jen.List(jen.Id("count"), jen.Err()).Op(":=").Id("q").Dot("Count").Call(jen.Id("ctx")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.False(), jen.Err()),
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("Exists").Params(jen.Id("ctx").Qual("context", "Context")).
+			Params(jen.Bool(), jen.Error()).
+			Block(
+				jen.List(jen.Id("count"), jen.Err()).Op(":=").Id("q").Dot("Count").Call(jen.Id("ctx")),
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.False(), jen.Err()),
+				),
+				jen.Return(jen.Id("count").Op(">").Lit(0), jen.Nil()),
 			),
-			jen.Return(jen.Id("count").Op(">").Lit(0), jen.Nil()),
-		)
+
+		jen.Line(),
+
+		jen.
+			Add(comment(`
+ExistsAsync is the asynchronous version of Exists.
+		`)).
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("ExistsAsync").Params(jen.Id("ctx").Qual("context", "Context")).
+			Op("*").Id("asyncResult").Types(jen.Bool()).
+			Block(
+				jen.Return(jen.Id("async").Call(jen.Id("ctx"), jen.Id("q").Dot("Exists"))),
+			),
+	)
 }
 
 func (b *queryBuilder) buildQueryFuncAll(node *field.NodeTable) jen.Code {
 	pkgConv := b.subPkg(def.PkgConv)
 
-	return jen.
-		Add(comment(`
+	resultType := jen.Index().Op("*").Add(b.SourceQual(node.Name))
+
+	return jen.Add(
+
+		jen.
+			Add(comment(`
 All returns all records matching the conditions of the query.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
-		Id("All").Params(jen.Id("ctx").Qual("context", "Context")).
-		Params(jen.Index().Op("*").Add(b.SourceQual(node.Name)), jen.Error()).
-		Block(
-			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("All").Params(jen.Id("ctx").Qual("context", "Context")).
+			Params(resultType, jen.Error()).
+			Block(
+				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
 
-			jen.List(jen.Id("rawNodes"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Qual(b.subPkg(def.PkgConv), node.NameGo())).
-				Call(
-					jen.Id("q").Dot("db").Dot("Query").
-						Call(
-							jen.Id("res").Dot("Statement"),
-							jen.Id("res").Dot("Variables"),
-						),
+				jen.List(jen.Id("rawNodes"), jen.Err()).Op(":=").
+					Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Qual(b.subPkg(def.PkgConv), node.NameGo())).
+					Call(
+						jen.Id("q").Dot("db").Dot("Query").
+							Call(
+								jen.Id("res").Dot("Statement"),
+								jen.Id("res").Dot("Variables"),
+							),
+					),
+
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query records: %w"), jen.Err())),
 				),
 
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query records: %w"), jen.Err())),
+				jen.Var().Id("nodes").Index().Op("*").Add(b.SourceQual(node.NameGo())),
+				jen.For(jen.Id("_").Op(",").Id("rawNode").Op(":=").Range().Id("rawNodes")).
+					Block(
+						jen.Id("node").Op(":=").Qual(pkgConv, "To"+node.NameGo()).
+							Call(jen.Id("rawNode")),
+						jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Op("&").Id("node")),
+					),
+
+				jen.Return(jen.Id("nodes"), jen.Nil()),
 			),
 
-			jen.Var().Id("nodes").Index().Op("*").Add(b.SourceQual(node.NameGo())),
-			jen.For(jen.Id("_").Op(",").Id("rawNode").Op(":=").Range().Id("rawNodes")).
-				Block(
-					jen.Id("node").Op(":=").Qual(pkgConv, "To"+node.NameGo()).
-						Call(jen.Id("rawNode")),
-					jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Op("&").Id("node")),
-				),
+		jen.Line(),
 
-			jen.Return(jen.Id("nodes"), jen.Nil()),
-		)
+		jen.
+			Add(comment(`
+AllAsync is the asynchronous version of All.
+		`)).
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("AllAsync").Params(jen.Id("ctx").Qual("context", "Context")).
+			Op("*").Id("asyncResult").Types(resultType).
+			Block(
+				jen.Return(jen.Id("async").Call(jen.Id("ctx"), jen.Id("q").Dot("All"))),
+			),
+	)
 }
 
 func (b *queryBuilder) buildQueryFuncAllIDs(node *field.NodeTable) jen.Code {
-	return jen.
-		Add(comment(`
+	return jen.Add(
+
+		jen.
+			Add(comment(`
 AllIDs returns the IDs of all records matching the conditions of the query.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
-		Id("AllIDs").Params(jen.Id("ctx").Qual("context", "Context")).
-		Parens(jen.List(jen.Index().String(), jen.Error())).
-		Block(
-			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAllIDs").Call(),
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("AllIDs").Params(jen.Id("ctx").Qual("context", "Context")).
+			Parens(jen.List(jen.Index().String(), jen.Error())).
+			Block(
+				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAllIDs").Call(),
 
-			jen.List(jen.Id("rawNodes"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Id("idNode")).
-				Call(
-					jen.Id("q").Dot("db").Dot("Query").Call(
-						jen.Id("res").Dot("Statement"),
-						jen.Id("res").Dot("Variables"),
+				jen.List(jen.Id("rawNodes"), jen.Err()).Op(":=").
+					Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Id("idNode")).
+					Call(
+						jen.Id("q").Dot("db").Dot("Query").Call(
+							jen.Id("res").Dot("Statement"),
+							jen.Id("res").Dot("Variables"),
+						),
 					),
+
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query records: %w"), jen.Err())),
 				),
 
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query records: %w"), jen.Err())),
+				jen.Var().Id("ids").Index().String(),
+				jen.For(jen.Id("_").Op(",").Id("rawNode").Op(":=").Range().Id("rawNodes")).
+					Block(
+						jen.Id("ids").Op("=").Append(jen.Id("ids"), jen.Id("rawNode").Dot("ID")),
+					),
+
+				jen.Return(jen.Id("ids"), jen.Nil()),
 			),
 
-			jen.Var().Id("ids").Index().String(),
-			jen.For(jen.Id("_").Op(",").Id("rawNode").Op(":=").Range().Id("rawNodes")).
-				Block(
-					jen.Id("ids").Op("=").Append(jen.Id("ids"), jen.Id("rawNode").Dot("ID")),
-				),
+		jen.Line(),
 
-			jen.Return(jen.Id("ids"), jen.Nil()),
-		)
+		jen.
+			Add(comment(`
+AllIDsAsync is the asynchronous version of AllIDs.
+		`)).
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("AllIDsAsync").Params(jen.Id("ctx").Qual("context", "Context")).
+			Op("*").Id("asyncResult").Types(jen.Index().String()).
+			Block(
+				jen.Return(jen.Id("async").Call(jen.Id("ctx"), jen.Id("q").Dot("AllIDs"))),
+			),
+	)
 }
 
 func (b *queryBuilder) buildQueryFuncFirst(node *field.NodeTable) jen.Code {
-	return jen.
-		Add(comment(`
+	resultType := jen.Op("*").Add(b.SourceQual(node.Name))
+
+	return jen.Add(
+
+		jen.
+			Add(comment(`
 First returns the first record matching the conditions of the query.
 This comes in handy when using a filter for a field with unique values or when
 sorting the result set in a specific order where only the first result is relevant.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
-		Id("First").Params(jen.Id("ctx").Qual("context", "Context")).
-		Params(jen.Op("*").Add(b.SourceQual(node.Name)), jen.Error()).
-		Block(
-			jen.Id("q").Dot("query").Dot("Limit").Op("=").Lit(1),
-			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("q").Dot("All").Call(jen.Id("ctx")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.Err()),
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("First").Params(jen.Id("ctx").Qual("context", "Context")).
+			Params(resultType, jen.Error()).
+			Block(
+				jen.Id("q").Dot("query").Dot("Limit").Op("=").Lit(1),
+				jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("q").Dot("All").Call(jen.Id("ctx")),
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.Err()),
+				),
+				jen.If(jen.Len(jen.Id("res")).Op("<").Lit(1)).Block(
+					jen.Return(jen.Nil(), jen.Qual("errors", "New").Call(jen.Lit("empty result"))),
+				),
+				jen.Return(jen.Id("res").Index(jen.Lit(0)), jen.Nil()),
 			),
-			jen.If(jen.Len(jen.Id("res")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Nil(), jen.Qual("errors", "New").Call(jen.Lit("empty result"))),
+
+		jen.Line(),
+
+		jen.
+			Add(comment(`
+FirstAsync is the asynchronous version of First.
+		`)).
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("FirstAsync").Params(jen.Id("ctx").Qual("context", "Context")).
+			Op("*").Id("asyncResult").Types(resultType).
+			Block(
+				jen.Return(jen.Id("async").Call(jen.Id("ctx"), jen.Id("q").Dot("First"))),
 			),
-			jen.Return(jen.Id("res").Index(jen.Lit(0)), jen.Nil()),
-		)
+	)
 }
 
 func (b *queryBuilder) buildQueryFuncFirstID(node *field.NodeTable) jen.Code {
-	return jen.
-		Add(comment(`
+	return jen.Add(
+
+		jen.
+			Add(comment(`
 FirstID returns the ID of the first record matching the conditions of the query.
 This comes in handy when using a filter for a field with unique values or when
 sorting the result set in a specific order where only the first result is relevant.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
-		Id("FirstID").Params(jen.Id("ctx").Qual("context", "Context")).
-		Params(jen.String(), jen.Error()).
-		Block(
-			jen.Id("q").Dot("query").Dot("Limit").Op("=").Lit(1),
-			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("q").Dot("AllIDs").Call(jen.Id("ctx")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Lit(""), jen.Err()),
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("FirstID").Params(jen.Id("ctx").Qual("context", "Context")).
+			Params(jen.String(), jen.Error()).
+			Block(
+				jen.Id("q").Dot("query").Dot("Limit").Op("=").Lit(1),
+				jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("q").Dot("AllIDs").Call(jen.Id("ctx")),
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Lit(""), jen.Err()),
+				),
+				jen.If(jen.Len(jen.Id("res")).Op("<").Lit(1)).Block(
+					jen.Return(jen.Lit(""), jen.Qual("errors", "New").Call(jen.Lit("empty result"))),
+				),
+				jen.Return(jen.Id("res").Index(jen.Lit(0)), jen.Nil()),
 			),
-			jen.If(jen.Len(jen.Id("res")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Lit(""), jen.Qual("errors", "New").Call(jen.Lit("empty result"))),
+
+		jen.Line(),
+
+		jen.
+			Add(comment(`
+FirstIDAsync is the asynchronous version of FirstID.
+		`)).
+			Func().Params(jen.Id("q").Id(node.Name)).
+			Id("FirstIDAsync").Params(jen.Id("ctx").Qual("context", "Context")).
+			Op("*").Id("asyncResult").Types(jen.String()).
+			Block(
+				jen.Return(jen.Id("async").Call(jen.Id("ctx"), jen.Id("q").Dot("FirstID"))),
 			),
-			jen.Return(jen.Id("res").Index(jen.Lit(0)), jen.Nil()),
-		)
+	)
 }
 
 func (b *queryBuilder) buildQueryFuncDescribe(node *field.NodeTable) jen.Code {
