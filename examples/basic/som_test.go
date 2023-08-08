@@ -2,7 +2,9 @@ package basic
 
 import (
 	"context"
+	"github.com/docker/docker/api/types/container"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	sombase "github.com/marcbinz/som"
 	"github.com/marcbinz/som/examples/basic/gen/som"
 	"github.com/marcbinz/som/examples/basic/gen/som/where"
@@ -79,56 +81,20 @@ func TestQuery(t *testing.T) {
 func TestWithDatabase(t *testing.T) {
 	ctx := context.Background()
 
-	req := testcontainers.ContainerRequest{
-		Name:         containerName,
-		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
-		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog(containerStartedMsg),
-	}
-
-	surreal, err := testcontainers.GenericContainer(ctx,
-		testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-			Reuse:            true,
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer func() {
-		if err := surreal.Terminate(ctx); err != nil {
-			t.Fatalf("failed to terminate container: %s", err.Error())
-		}
-	}()
-
-	endpoint, err := surreal.Endpoint(ctx, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client, err := som.NewClient(conf(endpoint))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer client.Close()
-
-	if err := client.ApplySchema(); err != nil {
-		t.Fatal(err)
-	}
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
 
 	str := "Some User"
+	uid := uuid.New()
 
 	userNew := model.User{
 		String: str,
+		UUID:   uid,
 	}
 
 	userIn := userNew
 
-	err = client.UserRepo().Create(ctx, &userIn)
+	err := client.UserRepo().Create(ctx, &userIn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,6 +111,7 @@ func TestWithDatabase(t *testing.T) {
 	}
 
 	assert.Equal(t, str, userOut.String)
+	assert.Equal(t, uid, userOut.UUID)
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
@@ -155,40 +122,8 @@ func TestWithDatabase(t *testing.T) {
 func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 
-	req := testcontainers.ContainerRequest{
-		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
-		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog(containerStartedMsg),
-	}
-
-	surreal, err := testcontainers.GenericContainer(ctx,
-		testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-		},
-	)
-	if err != nil {
-		f.Fatal(err)
-	}
-
-	defer func() {
-		if err := surreal.Terminate(ctx); err != nil {
-			f.Fatalf("failed to terminate container: %s", err.Error())
-		}
-	}()
-
-	endpoint, err := surreal.Endpoint(ctx, "")
-	if err != nil {
-		f.Fatal(err)
-	}
-
-	client, err := som.NewClient(conf(endpoint))
-	if err != nil {
-		f.Fatal(err)
-	}
-
-	defer client.Close()
+	client, cleanup := prepareDatabase(ctx, f)
+	defer cleanup()
 
 	f.Add("Some User")
 
@@ -197,7 +132,7 @@ func FuzzWithDatabase(f *testing.F) {
 			String: str,
 		}
 
-		err = client.UserRepo().Create(ctx, userIn)
+		err := client.UserRepo().Create(ctx, userIn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -223,50 +158,8 @@ func FuzzWithDatabase(f *testing.F) {
 func FuzzCustomModelIDs(f *testing.F) {
 	ctx := context.Background()
 
-	req := testcontainers.ContainerRequest{
-		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
-		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog(containerStartedMsg),
-	}
-
-	surreal, err := testcontainers.GenericContainer(ctx,
-		testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-		},
-	)
-	if err != nil {
-		f.Fatal(err)
-	}
-
-	// log := ContainerLog(func(log testcontainers.Log) {
-	// 	fmt.Println(log.LogType, string(log.Content))
-	// })
-	//
-	// surreal.FollowOutput(log)
-	//
-	// if err := surreal.StartLogProducer(ctx); err != nil {
-	// 	f.Fatal(err)
-	// }
-
-	defer func() {
-		if err := surreal.Terminate(ctx); err != nil {
-			f.Fatalf("failed to terminate container: %s", err.Error())
-		}
-	}()
-
-	endpoint, err := surreal.Endpoint(ctx, "")
-	if err != nil {
-		f.Fatal(err)
-	}
-
-	client, err := som.NewClient(conf(endpoint))
-	if err != nil {
-		f.Fatal(err)
-	}
-
-	defer client.Close()
+	client, cleanup := prepareDatabase(ctx, f)
+	defer cleanup()
 
 	f.Add("v9uitj942tv2403tnv")
 	f.Add("vb92thj29v4tjn20d3")
@@ -286,7 +179,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			String: "1",
 		}
 
-		err = client.UserRepo().CreateWithID(ctx, id, userIn)
+		err := client.UserRepo().CreateWithID(ctx, id, userIn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -327,40 +220,8 @@ func FuzzCustomModelIDs(f *testing.F) {
 func BenchmarkWithDatabase(b *testing.B) {
 	ctx := context.Background()
 
-	req := testcontainers.ContainerRequest{
-		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--log", "debug", "--user", "root", "--pass", "root", "memory"},
-		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog(containerStartedMsg),
-	}
-
-	surreal, err := testcontainers.GenericContainer(ctx,
-		testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-		},
-	)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	defer func() {
-		if err := surreal.Terminate(ctx); err != nil {
-			b.Errorf("failed to terminate container: %s", err.Error())
-		}
-	}()
-
-	endpoint, err := surreal.Endpoint(ctx, "")
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	client, err := som.NewClient(conf(endpoint))
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	defer client.Close()
+	client, cleanup := prepareDatabase(ctx, b)
+	defer cleanup()
 
 	b.ResetTimer()
 
@@ -369,7 +230,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 			String: "Some User",
 		}
 
-		err = client.UserRepo().Create(ctx, userIn)
+		err := client.UserRepo().Create(ctx, userIn)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -390,4 +251,89 @@ func BenchmarkWithDatabase(b *testing.B) {
 
 		assert.Equal(b, userIn.String, userOut.String)
 	}
+}
+
+func TestAsync(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	err := client.UserRepo().Create(ctx, &model.User{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resCh := client.UserRepo().Query().
+		Filter().
+		CountAsync(ctx)
+
+	assert.NilError(t, <-resCh.Err())
+	assert.Equal(t, 1, <-resCh.Val())
+
+	err = client.UserRepo().Create(ctx, &model.User{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resCh = client.UserRepo().Query().
+		Filter().
+		CountAsync(ctx)
+
+	assert.NilError(t, <-resCh.Err())
+	assert.Equal(t, 2, <-resCh.Val())
+}
+
+//
+// -- HELPER
+//
+
+func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
+	tb.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+
+	req := testcontainers.ContainerRequest{
+		Name:         containerName,
+		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
+		Cmd:          []string{"start", "--strict", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
+		ExposedPorts: []string{"8000/tcp"},
+		WaitingFor:   wait.ForLog(containerStartedMsg),
+		HostConfigModifier: func(conf *container.HostConfig) {
+			conf.AutoRemove = true
+		},
+	}
+
+	surreal, err := testcontainers.GenericContainer(ctx,
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: req,
+			Started:          true,
+			Reuse:            true,
+		},
+	)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	endpoint, err := surreal.Endpoint(ctx, "")
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	client, err := som.NewClient(conf(endpoint))
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	if err := client.ApplySchema(); err != nil {
+		tb.Fatal(err)
+	}
+
+	cleanup := func() {
+		client.Close()
+
+		if err := surreal.Terminate(ctx); err != nil {
+			tb.Fatalf("failed to terminate container: %s", err.Error())
+		}
+	}
+
+	return client, cleanup
 }

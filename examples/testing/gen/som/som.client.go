@@ -20,11 +20,11 @@ type Database interface {
 }
 
 type Config struct {
-	Address string
-	Username string
-	Password string
+	Address   string
+	Username  string
+	Password  string
 	Namespace string
-	Database string
+	Database  string
 }
 
 type ClientImpl struct {
@@ -43,7 +43,7 @@ func NewClient(conf Config) (*ClientImpl, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not create websocket: %v", err)
 	}
-	
+
 	surreal, err := surrealdb.New("<unused>", ws)
 	if err != nil {
 		return nil, fmt.Errorf("could not create surrealdb client: %v", err)
@@ -60,6 +60,36 @@ func NewClient(conf Config) (*ClientImpl, error) {
 	_, err = surreal.Use(conf.Namespace, conf.Database)
 	if err != nil {
 		return nil, err
+	}
+
+	rawRes, err := surreal.Query(fmt.Sprintf("DEFINE NAMESPACE %s", conf.Namespace), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	nsRes, ok := rawRes.([]any)[0].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("could not create namespace: %v", rawRes)
+	}
+
+	ns, ok := nsRes["result"]
+	if !ok || ns != nil {
+		return nil, fmt.Errorf("could not create namespace: %v", nsRes)
+	}
+
+	rawRes, err = surreal.Query(fmt.Sprintf("DEFINE DATABASE %s", conf.Database), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	dbRes, ok := rawRes.([]any)[0].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("could not create database: %v", rawRes)
+	}
+
+	db, ok := dbRes["result"]
+	if !ok || db != nil {
+		return nil, fmt.Errorf("could not create database: %v", dbRes)
 	}
 
 	return &ClientImpl{db: &database{DB: surreal}}, nil

@@ -4,5 +4,6 @@ package som
 type Client interface {
 	PersonRepo() PersonRepo
 	MovieRepo() MovieRepo
+	ApplySchema() error
 	Close()
 }
