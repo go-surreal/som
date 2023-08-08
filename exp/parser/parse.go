@@ -1,18 +1,20 @@
 package parser
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/marcbinz/som/exp/field"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"golang.org/x/exp/maps"
+	"maps"
 )
 
-func Parse() error {
+func Parse(path string) error {
 	fset := token.NewFileSet()
 
-	pkgs, err := parser.ParseDir(fset, "../examples/basic/model", nil, 0)
+	pkgs, err := parser.ParseDir(fset, path, nil, 0)
 	if err != nil {
 		return fmt.Errorf("could not parse code in source path: %w", err)
 	}
@@ -27,104 +29,194 @@ func Parse() error {
 
 	pkg := maps.Values(pkgs)[0]
 
-	fmt.Println("package found:", pkg.Name)
-
-	p := &Parser{
-		structs: map[string]*ast.StructType{},
+	p := &Package{
+		Name: pkg.Name,
 	}
 
 	for _, file := range pkg.Files {
 
-		for _, imp := range file.Imports {
-			fmt.Println("import:", imp.Name, imp.Path.Value)
-		}
+		//for _, imp := range file.Imports {
+		//	fmt.Println("import:", imp.Name, imp.Path.Value)
+		//}
 
 		for _, decl := range file.Decls {
-			parseDecl(p, decl)
+			if err := parseDecl(p, decl); err != nil {
+				return fmt.Errorf("could not parse declaration: %w", err)
+			}
 		}
 
 	}
 
-	p.findNodes()
+	aJSON, _ := json.MarshalIndent(p, "", "  ")
+	fmt.Println(string(aJSON))
 
 	return nil
 }
 
-func parseDecl(p *Parser, decl ast.Decl) {
+func parseDecl(p *Package, decl ast.Decl) error {
 	switch matchedDecl := decl.(type) {
 
 	case *ast.GenDecl:
 		{
 			for _, spec := range matchedDecl.Specs {
-				parseSpec(p, spec)
+				if err := parseSpec(p, spec); err != nil {
+					return fmt.Errorf("could not parse spec: %w", err)
+				}
 			}
+
+			return nil
 		}
+
+	default:
+		return fmt.Errorf("unsupported declaration: %T", matchedDecl)
 	}
 }
 
-func parseSpec(p *Parser, spec ast.Spec) {
+func parseSpec(p *Package, spec ast.Spec) error {
 	switch matchedSpec := spec.(type) {
 
-	case *ast.TypeSpec:
+	case *ast.TypeSpec: // type declaration
 		{
-			parseTypeSpec(p, matchedSpec)
+			err := parseTypeSpec(p, matchedSpec)
+			if err != nil {
+				return fmt.Errorf("could not parse type spec: %w", err)
+			}
+
+			return nil
 		}
+
+	case *ast.ValueSpec: // const or var declaration
+		{
+			parseValueSpec(p, matchedSpec)
+			return nil
+		}
+
+	default:
+		return nil // fmt.Errorf("unsupported spec: %T", matchedSpec)
 	}
 }
 
-func parseTypeSpec(p *Parser, spec *ast.TypeSpec) {
+func parseTypeSpec(p *Package, spec *ast.TypeSpec) error {
 	switch matchedSpec := spec.Type.(type) {
 
 	case *ast.StructType:
 		{
-			p.structs[spec.Name.Name] = matchedSpec
+			s := &Struct{
+				Name: spec.Name.Name,
+			}
+
+			//p.structs[spec.Name.Name] = matchedSpec
+			err := parseStructType(s, matchedSpec)
+			if err != nil {
+				return fmt.Errorf("could not parse struct type: %w", err)
+			}
+
+			p.Structs = append(p.Structs, s)
+
+			return nil
 		}
 
+	default:
+		return fmt.Errorf("unsupported type spec: %T", matchedSpec)
 	}
 }
 
-func parseStructType(name string, t *ast.StructType) {
-	var fields []string
+func parseValueSpec(p *Package, spec *ast.ValueSpec) error {
+	switch matchedSpec := spec.Type.(type) {
 
-	for _, field := range t.Fields.List {
-		fld := ""
-
-		for _, name := range field.Names {
-			fld += " " + name.Name
-		}
-
-		parseExpr(fld, field.Type)
-
-		fields = append(fields, fld)
+	default:
+		return fmt.Errorf("unsupported value spec: %T", matchedSpec)
 	}
-
-	fmt.Println("struct:", name, fields)
 }
 
-func parseExpr(name string, expr ast.Expr) {
+func parseStructType(s *Struct, t *ast.StructType) error {
+	for _, rawField := range t.Fields.List {
+		//fmt.Println("field:", field.Names, field.Type)
+
+		if len(rawField.Names) < 1 {
+			fld, err := parseFieldType("", rawField.Type)
+			if err != nil {
+				return fmt.Errorf("could not parse field type: %w", err)
+			}
+
+			s.Fields = append(s.Fields, fld)
+			continue
+		}
+
+		for _, ident := range rawField.Names {
+			if !ident.IsExported() {
+				continue // skip unexported fields
+			}
+
+			fld, err := parseFieldType(ident.Name, rawField.Type)
+			if err != nil {
+				return fmt.Errorf("could not parse field type: %w", err)
+			}
+
+			s.Fields = append(s.Fields, fld)
+		}
+	}
+
+	return nil
+}
+
+func parseFieldType(name string, expr ast.Expr) (field.Field, error) {
+	base := &field.BaseField{
+		Name: name,
+	}
+
 	switch fieldType := expr.(type) {
 
 	case *ast.Ident:
 		{
-			fmt.Println("IDENT:", fieldType.Name)
+			fmt.Println("IDENT:", base.Name, fieldType.Name)
+			return nil, nil
 		}
 
 	case *ast.SelectorExpr:
 		{
-			fmt.Println("SELECTOR EXPR:", fieldType.X, fieldType.Sel.Name, fieldType)
-			parseExpr(name, fieldType.X)
+			fmt.Println("SELECTOR EXPR:", base.Name, fieldType, fieldType.X, fieldType.Sel.Name, fieldType)
+			//parseExpr(name, fieldType.X)
+			return nil, nil
 		}
 
-	case *ast.IndexListExpr:
+	//case *ast.IndexListExpr:
+	//	{
+	//		fmt.Println("INDEX LIST EXPR:", fieldType.X, fieldType.Indices[0], fieldType.Indices[1])
+	//		//parseExpr(name, fieldType.X)
+	//		return nil, nil
+	//	}
+
+	case *ast.ArrayType:
 		{
-			fmt.Println("INDEX LIST EXPR:", fieldType.X, fieldType.Indices[0], fieldType.Indices[1])
-			parseExpr(name, fieldType.X)
+			fmt.Println("ARRAY TYPE:", base.Name, fieldType)
+			fmt.Println(parseFieldType("", fieldType.Elt))
+			return nil, nil
+		}
+
+	case *ast.StarExpr:
+		{
+			fld, err := parseFieldType(name, fieldType.X)
+			if err != nil {
+				return nil, err
+			}
+
+			return fld, nil
 		}
 
 	default:
-		{
-			fmt.Println("UNMAPPED:", "'"+name+"'", fmt.Sprintf("type: %#v", expr))
-		}
-
+		return nil, fmt.Errorf("unsupported field type: %T", fieldType)
 	}
+}
+
+type Package struct {
+	Name string
+
+	Structs []*Struct
+}
+
+type Struct struct {
+	Name string
+
+	Fields []field.Field
 }
