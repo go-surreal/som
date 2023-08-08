@@ -16,15 +16,15 @@ tasks:
     aliases: [ r ]
     desc: "Run the somgen cli tool."
     cmds:
-      - cd ./cmd/somgen && go run main.go -- {{.CLI_ARGS}}
+      - cd ./cmd/somgen && GOEXPERIMENT=loopvar go run main.go -- {{.CLI_ARGS}}
 
   gen:
     aliases: [ g ]
     desc: "Generate code for the example codebase."
     cmds:
-      - cd examples/testing && go generate gen.go
-      - cd examples/basic && go generate gen.go
-      - cd examples/movie && go generate gen.go
+      - cd examples/testing && GOEXPERIMENT=loopvar go generate gen.go
+      - cd examples/basic && GOEXPERIMENT=loopvar go generate gen.go
+      - cd examples/movie && GOEXPERIMENT=loopvar go generate gen.go
     sources:
       - examples/testing/model/**/*
       - examples/basic/model/**/*
@@ -39,7 +39,7 @@ tasks:
     desc: "Run the test code for the example codebase."
     deps: [gen]
     cmds:
-      - cd ./test && go run main.go
+      - cd ./test && GOEXPERIMENT=loopvar go run main.go
 
   lint:
     aliases: [ l ]
@@ -52,10 +52,10 @@ tasks:
     desc: "Execute all go tests."
     deps: [gen]
     cmds:
-      - go test ./...
-      - cd examples/testing && go test ./...
-      - cd examples/basic && go test ./...
-      - cd examples/movie && go test ./...
+      - GOEXPERIMENT=loopvar go test ./...
+      - cd examples/testing && GOEXPERIMENT=loopvar go test ./...
+      - cd examples/basic && GOEXPERIMENT=loopvar go test ./...
+      - cd examples/movie && GOEXPERIMENT=loopvar go test ./...
 
   benchmark:
     aliases: [ b ]
