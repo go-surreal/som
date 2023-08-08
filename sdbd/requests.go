@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"nhooyr.io/websocket"
 	"sync"
 	"time"
 )
@@ -37,20 +36,32 @@ func (r *requests) cleanup(key string) {
 	}
 }
 
-func (c *Client) send(ctx context.Context, req Request) ([]byte, error) {
+func (r *requests) reset() {
+	r.store.Range(func(key, ch any) bool {
+		close(ch.(chan []byte))
+		r.store.Delete(key)
+		return true
+	})
+}
+
+func (c *Client) send(ctx context.Context, req Request, timeout time.Duration) ([]byte, error) {
 	reqID, resCh := c.requests.prepare()
 	defer c.requests.cleanup(reqID)
 
 	req.ID = reqID
 
-	data, err := c.jsonMarshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal request: %w", err)
+	c.logger.InfoContext(ctx, "Sending request.", "request", req)
+
+	if err := write(ctx, c.conn, req); err != nil {
+		return nil, fmt.Errorf("could not write to websocket: %w", err)
 	}
 
-	err = c.socket.Write(ctx, websocket.MessageText, data)
-	if err != nil {
-		return nil, fmt.Errorf("could not write to websocket: %w", err)
+	if deadline, ok := ctx.Deadline(); ok && timeout == 0 {
+		timeout = time.Until(deadline) // TODO: okay?
+	}
+
+	if timeout == 0 {
+		timeout = c.timeout
 	}
 
 	select {
@@ -58,10 +69,14 @@ func (c *Client) send(ctx context.Context, req Request) ([]byte, error) {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 
-	case <-time.After(c.timeout):
-		return nil, fmt.Errorf("timeout")
+	case <-time.After(timeout):
+		return nil, fmt.Errorf("request timed out")
 
-	case res := <-resCh:
+	case res, open := <-resCh:
+		if !open {
+			return nil, fmt.Errorf("channel closed")
+		}
+
 		return res, nil
 	}
 }

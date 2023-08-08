@@ -25,3 +25,11 @@ func (l *liveQueries) del(key string) {
 		close(ch.(chan []byte))
 	}
 }
+
+func (l *liveQueries) reset() {
+	l.store.Range(func(key, ch any) bool {
+		close(ch.(chan []byte))
+		l.store.Delete(key)
+		return true
+	})
+}

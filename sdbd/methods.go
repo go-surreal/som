@@ -27,16 +27,19 @@ const (
 )
 
 // signIn is a helper method for signing in a user.
-func (c *Client) signIn(ctx context.Context, username, password string) error {
-	res, err := c.send(ctx, Request{
-		Method: methodSignIn,
-		Params: []any{
-			signInParams{
-				User: username,
-				Pass: password,
+func (c *Client) signIn(ctx context.Context, timeout time.Duration, username, password string) error {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodSignIn,
+			Params: []any{
+				signInParams{
+					User: username,
+					Pass: password,
+				},
 			},
 		},
-	})
+		timeout,
+	)
 	if err != nil {
 		return fmt.Errorf("could not sign in: %w", err)
 	}
@@ -49,14 +52,17 @@ func (c *Client) signIn(ctx context.Context, username, password string) error {
 }
 
 // use is a method to select the namespace and table for the connection.
-func (c *Client) use(ctx context.Context, namespace, database string) error {
-	res, err := c.send(ctx, Request{
-		Method: methodUse,
-		Params: []any{
-			namespace,
-			database,
+func (c *Client) use(ctx context.Context, timeout time.Duration, namespace, database string) error {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodUse,
+			Params: []any{
+				namespace,
+				database,
+			},
 		},
-	})
+		timeout,
+	)
 	if err != nil {
 		return err
 	}
@@ -69,13 +75,16 @@ func (c *Client) use(ctx context.Context, namespace, database string) error {
 }
 
 // Query is a convenient method for sending a query to the database.
-func (c *Client) Query(ctx context.Context, query string, vars interface{}) (interface{}, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodQuery,
-		Params: []any{
-			"live " + query,
+func (c *Client) Query(ctx context.Context, timeout time.Duration, query string, vars interface{}) (interface{}, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodQuery,
+			Params: []any{
+				"live " + query,
+			},
 		},
-	})
+		timeout,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -85,13 +94,16 @@ func (c *Client) Query(ctx context.Context, query string, vars interface{}) (int
 	return "", nil
 }
 
-func (c *Client) Live(ctx context.Context, query string) (<-chan []byte, error) {
-	raw, err := c.send(ctx, Request{
-		Method: methodQuery, // TODO: switch to methodLive once its working with it ;)
-		Params: []any{
-			"live " + query,
+func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) (<-chan []byte, error) {
+	raw, err := c.send(ctx,
+		Request{
+			Method: methodQuery, // TODO: switch to methodLive once its working with it ;)
+			Params: []any{
+				"live " + query,
+			},
 		},
-	})
+		timeout,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -136,13 +148,16 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Client) Kill(ctx context.Context, uuid string) (interface{}, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodKill,
-		Params: []any{
-			uuid,
+func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) (interface{}, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodKill,
+			Params: []any{
+				uuid,
+			},
 		},
-	})
+		timeout,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -153,11 +168,14 @@ func (c *Client) Kill(ctx context.Context, uuid string) (interface{}, error) {
 }
 
 // Select a table or record from the database.
-func (c *Client) Select(ctx context.Context) (interface{}, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodSelect,
-		Params: []any{},
-	})
+func (c *Client) Select(ctx context.Context, timeout time.Duration) (interface{}, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodSelect,
+			Params: []any{},
+		},
+		timeout,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -167,14 +185,17 @@ func (c *Client) Select(ctx context.Context) (interface{}, error) {
 	return "", nil
 }
 
-func (c *Client) Create(ctx context.Context, table string, data any) ([]byte, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodCreate,
-		Params: []any{
-			table,
-			data,
+func (c *Client) Create(ctx context.Context, timeout time.Duration, table string, data any) ([]byte, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodCreate,
+			Params: []any{
+				table,
+				data,
+			},
 		},
-	})
+		timeout,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -182,14 +203,17 @@ func (c *Client) Create(ctx context.Context, table string, data any) ([]byte, er
 	return res, nil
 }
 
-func (c *Client) Insert(ctx context.Context, table string, data []any) ([]byte, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodInsert,
-		Params: []any{
-			table,
-			data,
+func (c *Client) Insert(ctx context.Context, timeout time.Duration, table string, data []any) ([]byte, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodInsert,
+			Params: []any{
+				table,
+				data,
+			},
 		},
-	})
+		timeout,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -198,11 +222,14 @@ func (c *Client) Insert(ctx context.Context, table string, data []any) ([]byte, 
 }
 
 // Update a table or record in the database like a PUT request.
-func (c *Client) Update(ctx context.Context) (interface{}, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodUpdate,
-		Params: []any{},
-	})
+func (c *Client) Update(ctx context.Context, timeout time.Duration) (interface{}, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodUpdate,
+			Params: []any{},
+		},
+		timeout,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -213,11 +240,14 @@ func (c *Client) Update(ctx context.Context) (interface{}, error) {
 }
 
 // Change a table or record in the database like a PATCH request.
-func (c *Client) Change(ctx context.Context) (interface{}, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodChange,
-		Params: []any{},
-	})
+func (c *Client) Change(ctx context.Context, timeout time.Duration) (interface{}, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodChange,
+			Params: []any{},
+		},
+		timeout,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -228,11 +258,14 @@ func (c *Client) Change(ctx context.Context) (interface{}, error) {
 }
 
 // Modify applies a series of JSONPatches to a table or record.
-func (c *Client) Modify(ctx context.Context) (interface{}, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodModify,
-		Params: []any{},
-	})
+func (c *Client) Modify(ctx context.Context, timeout time.Duration) (interface{}, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodModify,
+			Params: []any{},
+		},
+		timeout,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -243,11 +276,14 @@ func (c *Client) Modify(ctx context.Context) (interface{}, error) {
 }
 
 // Delete a table or a row from the database like a DELETE request.
-func (c *Client) Delete(ctx context.Context) (interface{}, error) {
-	res, err := c.send(ctx, Request{
-		Method: methodDelete,
-		Params: []any{},
-	})
+func (c *Client) Delete(ctx context.Context, timeout time.Duration) (interface{}, error) {
+	res, err := c.send(ctx,
+		Request{
+			Method: methodDelete,
+			Params: []any{},
+		},
+		timeout,
+	)
 	if err != nil {
 		return "", err
 	}

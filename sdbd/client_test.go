@@ -6,7 +6,10 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
+	"log/slog"
+	"os"
 	"testing"
+	"time"
 )
 
 const (
@@ -63,15 +66,35 @@ func TestClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	slog.SetDefault(slog.New(
+		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+	))
+
+	slog.Info("pn3fo3enf")
+
+	time.Sleep(10 * time.Second)
+
 	client, err := NewClient(ctx, conf(endpoint))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	create, err := client.Create(ctx, "test", nil)
+	slog.Info("304ifn349i")
+
+	defer func() {
+		if err := client.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	slog.Info("pn3fo3enf")
+
+	create, err := client.Create(ctx, 0, "test", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	slog.Info("epo3fm3ßfon34")
 
 	assert.Equal(t, string(create), "")
 }

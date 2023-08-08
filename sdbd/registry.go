@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"io"
+	"net"
 	"nhooyr.io/websocket"
 	"time"
 )
@@ -29,20 +29,28 @@ type LiveQueryResult struct {
 }
 
 func (c *Client) subscribe(ctx context.Context) {
+	defer c.waitGroup.Done()
+
+	ctx, cancel := context.WithCancel(ctx)
+
 	ch := make(resultChannel[[]byte])
 
 	go func(ch resultChannel[[]byte]) {
+		defer cancel()
 		defer close(ch)
 
 		for {
-			typ, data, err := c.socket.Read(ctx)
 
-			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-				return
-			}
+			buf, err := read(ctx, c.conn)
+
+			// typ, data, err := c.conn.Read(ctx)
 
 			if err != nil {
-				if errors.Is(err, io.EOF) {
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					return
+				}
+
+				if errors.Is(err, io.EOF) || websocket.CloseStatus(err) != -1 {
 					c.logger.Info("Websocket closed.")
 					return
 				}
@@ -51,16 +59,11 @@ func (c *Client) subscribe(ctx context.Context) {
 				continue
 			}
 
-			if typ != websocket.MessageText {
-				c.logger.Error("Received message of unsupported type, expected text. Skipping.")
-				continue
-			}
-
-			ch <- result(data, nil)
+			ch <- result(buf, nil)
 		}
 	}(ch)
 
-	go c.handleMessages(ctx, ch)
+	c.handleMessages(ctx, ch)
 }
 
 func result[T any](t T, err error) resultFunc[T] {
@@ -84,7 +87,7 @@ func (c *Client) handleMessages(ctx context.Context, resultCh resultChannel[[]by
 		case result, more := <-resultCh:
 
 			if !more {
-				fmt.Println("no more")
+				c.logger.DebugContext(ctx, "Result channel closed. Stopping message handler.")
 				return
 			}
 
@@ -94,22 +97,31 @@ func (c *Client) handleMessages(ctx context.Context, resultCh resultChannel[[]by
 				continue
 			}
 
-			var res *Response
-
-			if err := c.jsonUnmarshal(data, &res); err != nil {
-				c.logger.ErrorContext(ctx, "Could not unmarshal websocket message.", "error", err)
-				continue
-			}
-
-			if res.ID == "" {
-				c.handleLiveQuery(ctx, res)
-				continue
-			}
-
-			// Do not block here, as the channel might be full.
-			go c.handleResult(ctx, res)
+			go c.handleMessage(ctx, data)
 		}
 	}
+}
+
+func (c *Client) handleMessage(ctx context.Context, data []byte) {
+	c.waitGroup.Add(1)
+	defer c.waitGroup.Done()
+
+	var res *Response
+
+	if err := jsonHandler.Unmarshal(data, &res); err != nil {
+		// c.Close(websocket.StatusInvalidFramePayloadData, "failed to unmarshal JSON")
+		// return fmt.Errorf("failed to unmarshal JSON: %w", err)
+		return
+	}
+
+	c.logger.InfoContext(ctx, "Received message.", "res", res)
+
+	if res.ID == "" {
+		c.handleLiveQuery(ctx, res)
+		return
+	}
+
+	c.handleResult(ctx, res)
 }
 
 func (c *Client) handleResult(ctx context.Context, res *Response) {
@@ -149,4 +161,16 @@ func (c *Client) handleLiveQuery(ctx context.Context, res *Response) {
 	case <-time.After(c.timeout):
 		c.logger.ErrorContext(ctx, "Timeout while sending result to channel.", "id", res.ID)
 	}
+}
+
+func isPermanentError(err error) bool {
+	if websocket.CloseStatus(err) != websocket.StatusNormalClosure {
+		return true
+	}
+
+	if errors.As(err, new(net.Error)) {
+		return true
+	}
+
+	return errors.Is(err, io.EOF)
 }
