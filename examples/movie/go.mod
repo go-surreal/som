@@ -5,7 +5,7 @@ go 1.20
 replace github.com/marcbinz/som => ../../
 
 require (
-	github.com/docker/docker v23.0.5+incompatible
+	github.com/docker/docker v24.0.5+incompatible
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/marcbinz/som v0.0.0
