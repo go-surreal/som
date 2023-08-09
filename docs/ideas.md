@@ -255,6 +255,11 @@ db.Define().View("some_name").
 Based on the definition a view will be created in the database and 
 a type generated that can be consumed by the usual query builder.
 
+### Add dirty flag handling
+
+- cache the data itself within the read model (would double the memory usage)
+- cache the data in a separate cache (would require a cache invalidation strategy)
+
 ## Optimisations
 
 - replace string concatenation in query builder with buffer (faster execution)
