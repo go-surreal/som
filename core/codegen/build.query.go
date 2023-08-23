@@ -278,23 +278,22 @@ number of records matching the conditions of the query.
 					jen.Return(jen.Lit(0), jen.Err()),
 				),
 
-				jen.Var().Id("rawCount").Index().Id("countResult"),
-				jen.List(jen.Id("ok"), jen.Err()).Op(":=").Qual(def.PkgSurrealDB, "UnmarshalRaw").
+				jen.Var().Id("rawCount").Index().Qual(def.PkgSurrealMarshal, "RawQuery").Types(jen.Id("countResult")),
+				jen.Err().Op("=").Qual(def.PkgSurrealMarshal, "UnmarshalRaw").
 					Call(jen.Id("raw"), jen.Op("&").Id("rawCount")),
 
 				jen.If(jen.Err().Op("!=").Nil()).Block(
 					jen.Return(jen.Lit(0), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not count records: %w"), jen.Err())),
 				),
 
-				jen.If(jen.Op("!").Id("ok")).Block(
+				jen.If(
+					jen.Len(jen.Id("rawCount")).Op("<").Lit(1).Op("||").
+						Len(jen.Id("rawCount").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1),
+				).Block(
 					jen.Return(jen.Lit(0), jen.Nil()),
 				),
 
-				jen.If(jen.Len(jen.Id("rawCount")).Op("<").Lit(1)).Block(
-					jen.Return(jen.Lit(0), jen.Nil()),
-				),
-
-				jen.Return(jen.Id("rawCount").Index(jen.Lit(0)).Dot("Count"), jen.Nil()),
+				jen.Return(jen.Id("rawCount").Index(jen.Lit(0)).Dot("Result").Index(jen.Lit(0)).Dot("Count"), jen.Nil()),
 			),
 
 		jen.Line(),
@@ -365,7 +364,7 @@ All returns all records matching the conditions of the query.
 				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
 
 				jen.List(jen.Id("rawNodes"), jen.Err()).Op(":=").
-					Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Qual(b.subPkg(def.PkgConv), node.NameGo())).
+					Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
 					Call(
 						jen.Id("q").Dot("db").Dot("Query").
 							Call(
@@ -418,7 +417,7 @@ AllIDs returns the IDs of all records matching the conditions of the query.
 				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAllIDs").Call(),
 
 				jen.List(jen.Id("rawNodes"), jen.Err()).Op(":=").
-					Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Index().Id("idNode")).
+					Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Id("idNode")).
 					Call(
 						jen.Id("q").Dot("db").Dot("Query").Call(
 							jen.Id("res").Dot("Statement"),
