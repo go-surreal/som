@@ -260,6 +260,21 @@ a type generated that can be consumed by the usual query builder.
 - cache the data itself within the read model (would double the memory usage)
 - cache the data in a separate cache (would require a cache invalidation strategy)
 
+### Read through GORM to find more ideas
+
+- https://gorm.io/docs
+
+### Add ability to deep load models
+
+```go
+
+err := db.User.Fetch(ctx, []model.User{}, 
+	field.User.Groups(),
+	field.User.Groups().Members(),
+)
+
+```
+
 ## Optimisations
 
 - replace string concatenation in query builder with buffer (faster execution)
