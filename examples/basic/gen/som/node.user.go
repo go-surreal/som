@@ -9,7 +9,8 @@ import (
 	query "github.com/marcbinz/som/examples/basic/gen/som/query"
 	relate "github.com/marcbinz/som/examples/basic/gen/som/relate"
 	model "github.com/marcbinz/som/examples/basic/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	constants "github.com/surrealdb/surrealdb.go/pkg/constants"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 	"time"
 )
 
@@ -51,7 +52,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.User
-	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	err = marshal.Unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -73,23 +74,23 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 	data := conv.FromUser(*user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.User](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Create(key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	*user = conv.ToUser(convNode)
+	*user = conv.ToUser(convNode[0])
 	return nil
 }
 
 func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.User](n.db.Select("user:⟨" + id + "⟩"))
-	if errors.Is(err, surrealdbgo.ErrNoRow) {
+	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Select("user:⟨" + id + "⟩"))
+	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	node := conv.ToUser(convNode)
+	node := conv.ToUser(convNode[0])
 	return &node, true, nil
 }
 
@@ -102,11 +103,11 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	}
 	data := conv.FromUser(*user)
 	data.UpdatedAt = time.Now()
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.User](n.db.Update("user:⟨"+user.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Update("user:⟨"+user.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	*user = conv.ToUser(convNode)
+	*user = conv.ToUser(convNode[0])
 	return nil
 }
 
