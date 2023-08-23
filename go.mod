@@ -3,7 +3,7 @@ module github.com/marcbinz/som
 go 1.21.0
 
 require (
-	github.com/dave/jennifer v1.6.1
+	github.com/dave/jennifer v1.7.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/surrealdb/surrealdb.go v0.2.2-0.20230811190808-135edbe49846
 	github.com/urfave/cli/v2 v2.25.7
