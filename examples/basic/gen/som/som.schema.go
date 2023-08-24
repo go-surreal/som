@@ -17,8 +17,6 @@ func (c *ClientImpl) ApplySchema() error {
 
 var tmpl = `
 
-BEGIN TRANSACTION;
-
 DEFINE TABLE user SCHEMAFULL;
 DEFINE FIELD id ON TABLE user TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE user TYPE datetime;
@@ -111,6 +109,4 @@ DEFINE FIELD updated_at ON TABLE group_member TYPE datetime;
 DEFINE FIELD meta ON TABLE group_member TYPE object;
 DEFINE FIELD meta.is_admin ON TABLE group_member TYPE bool;
 DEFINE FIELD meta.is_active ON TABLE group_member TYPE bool;
-
-COMMIT TRANSACTION;
 `
