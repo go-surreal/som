@@ -9,7 +9,8 @@ import (
 	query "github.com/marcbinz/som/examples/testing/gen/som/query"
 	relate "github.com/marcbinz/som/examples/testing/gen/som/relate"
 	model "github.com/marcbinz/som/examples/testing/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	constants "github.com/surrealdb/surrealdb.go/pkg/constants"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 )
 
 type FieldsLikeDBResponseRepo interface {
@@ -49,7 +50,7 @@ func (n *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse 
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.FieldsLikeDBResponse
-	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	err = marshal.Unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -70,23 +71,23 @@ func (n *fieldsLikeDBResponse) CreateWithID(ctx context.Context, id string, fiel
 	key := "fields_like_db_response:" + "⟨" + id + "⟩"
 	data := conv.FromFieldsLikeDBResponse(*fieldsLikeDBResponse)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Create(key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNode)
+	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNode[0])
 	return nil
 }
 
 func (n *fieldsLikeDBResponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Select("fields_like_db_response:⟨" + id + "⟩"))
-	if errors.Is(err, surrealdbgo.ErrNoRow) {
+	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Select("fields_like_db_response:⟨" + id + "⟩"))
+	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	node := conv.ToFieldsLikeDBResponse(convNode)
+	node := conv.ToFieldsLikeDBResponse(convNode[0])
 	return &node, true, nil
 }
 
@@ -99,11 +100,11 @@ func (n *fieldsLikeDBResponse) Update(ctx context.Context, fieldsLikeDBResponse 
 	}
 	data := conv.FromFieldsLikeDBResponse(*fieldsLikeDBResponse)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Update("fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Update("fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNode)
+	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNode[0])
 	return nil
 }
 

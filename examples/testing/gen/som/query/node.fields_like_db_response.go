@@ -9,7 +9,7 @@ import (
 	lib "github.com/marcbinz/som/examples/testing/gen/som/internal/lib"
 	with "github.com/marcbinz/som/examples/testing/gen/som/with"
 	model "github.com/marcbinz/som/examples/testing/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 	"strings"
 	"time"
 )
@@ -102,18 +102,15 @@ func (q FieldsLikeDBResponse) Count(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	var rawCount []countResult
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawCount)
+	var rawCount []marshal.RawQuery[countResult]
+	err = marshal.UnmarshalRaw(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
-	if !ok {
+	if len(rawCount) < 1 || len(rawCount[0].Result) < 1 {
 		return 0, nil
 	}
-	if len(rawCount) < 1 {
-		return 0, nil
-	}
-	return rawCount[0].Count, nil
+	return rawCount[0].Result[0].Count, nil
 }
 
 // CountAsync is the asynchronous version of Count.
@@ -140,7 +137,7 @@ func (q FieldsLikeDBResponse) ExistsAsync(ctx context.Context) *asyncResult[bool
 // All returns all records matching the conditions of the query.
 func (q FieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
 	res := q.query.BuildAsAll()
-	rawNodes, err := surrealdbgo.SmartUnmarshal[[]conv.FieldsLikeDBResponse](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
@@ -160,7 +157,7 @@ func (q FieldsLikeDBResponse) AllAsync(ctx context.Context) *asyncResult[[]*mode
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q FieldsLikeDBResponse) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
-	rawNodes, err := surrealdbgo.SmartUnmarshal[[]idNode](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}

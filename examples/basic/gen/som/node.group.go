@@ -9,7 +9,8 @@ import (
 	query "github.com/marcbinz/som/examples/basic/gen/som/query"
 	relate "github.com/marcbinz/som/examples/basic/gen/som/relate"
 	model "github.com/marcbinz/som/examples/basic/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	constants "github.com/surrealdb/surrealdb.go/pkg/constants"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 	"time"
 )
 
@@ -51,7 +52,7 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.Group
-	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	err = marshal.Unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -73,23 +74,23 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Group](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Create(key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	*group = conv.ToGroup(convNode)
+	*group = conv.ToGroup(convNode[0])
 	return nil
 }
 
 func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Group](n.db.Select("group:⟨" + id + "⟩"))
-	if errors.Is(err, surrealdbgo.ErrNoRow) {
+	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Select("group:⟨" + id + "⟩"))
+	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	node := conv.ToGroup(convNode)
+	node := conv.ToGroup(convNode[0])
 	return &node, true, nil
 }
 
@@ -102,11 +103,11 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	}
 	data := conv.FromGroup(*group)
 	data.UpdatedAt = time.Now()
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Group](n.db.Update("group:⟨"+group.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Update("group:⟨"+group.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	*group = conv.ToGroup(convNode)
+	*group = conv.ToGroup(convNode[0])
 	return nil
 }
 

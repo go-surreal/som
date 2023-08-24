@@ -62,6 +62,36 @@ func NewClient(conf Config) (*ClientImpl, error) {
 		return nil, err
 	}
 
+	rawRes, err := surreal.Query(fmt.Sprintf("DEFINE NAMESPACE %s", conf.Namespace), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	nsRes, ok := rawRes.([]any)[0].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("could not create namespace: %v", rawRes)
+	}
+
+	ns, ok := nsRes["result"]
+	if !ok || ns != nil {
+		return nil, fmt.Errorf("could not create namespace: %v", nsRes)
+	}
+
+	rawRes, err = surreal.Query(fmt.Sprintf("DEFINE DATABASE %s", conf.Database), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	dbRes, ok := rawRes.([]any)[0].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("could not create database: %v", rawRes)
+	}
+
+	db, ok := dbRes["result"]
+	if !ok || db != nil {
+		return nil, fmt.Errorf("could not create database: %v", dbRes)
+	}
+
 	return &ClientImpl{db: &database{DB: surreal}}, nil
 }
 

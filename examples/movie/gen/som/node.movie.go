@@ -9,7 +9,8 @@ import (
 	query "github.com/marcbinz/som/examples/movie/gen/som/query"
 	relate "github.com/marcbinz/som/examples/movie/gen/som/relate"
 	model "github.com/marcbinz/som/examples/movie/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	constants "github.com/surrealdb/surrealdb.go/pkg/constants"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 )
 
 type MovieRepo interface {
@@ -49,7 +50,7 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.Movie
-	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	err = marshal.Unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -70,23 +71,23 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 	key := "movie:" + "⟨" + id + "⟩"
 	data := conv.FromMovie(*movie)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Movie](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Create(key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	*movie = conv.ToMovie(convNode)
+	*movie = conv.ToMovie(convNode[0])
 	return nil
 }
 
 func (n *movie) Read(ctx context.Context, id string) (*model.Movie, bool, error) {
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Movie](n.db.Select("movie:⟨" + id + "⟩"))
-	if errors.Is(err, surrealdbgo.ErrNoRow) {
+	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Select("movie:⟨" + id + "⟩"))
+	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	node := conv.ToMovie(convNode)
+	node := conv.ToMovie(convNode[0])
 	return &node, true, nil
 }
 
@@ -99,11 +100,11 @@ func (n *movie) Update(ctx context.Context, movie *model.Movie) error {
 	}
 	data := conv.FromMovie(*movie)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Movie](n.db.Update("movie:⟨"+movie.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Update("movie:⟨"+movie.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	*movie = conv.ToMovie(convNode)
+	*movie = conv.ToMovie(convNode[0])
 	return nil
 }
 
