@@ -6,7 +6,7 @@ import (
 	"fmt"
 	conv "github.com/marcbinz/som/examples/basic/gen/som/conv"
 	model "github.com/marcbinz/som/examples/basic/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 )
 
 type groupMember struct {
@@ -28,11 +28,11 @@ func (e groupMember) Create(edge *model.GroupMember) error {
 	}
 	query := "RELATE " + "user:" + edge.User.ID() + "->group_member->" + "group:" + edge.Group.ID() + " CONTENT $data"
 	data := conv.FromGroupMember(*edge)
-	convEdge, err := surrealdbgo.SmartUnmarshal[conv.GroupMember](e.db.Query(query, map[string]any{"data": data}))
+	convEdge, err := marshal.SmartUnmarshal[conv.GroupMember](e.db.Query(query, map[string]any{"data": data}))
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
 	}
-	*edge = conv.ToGroupMember(convEdge)
+	*edge = conv.ToGroupMember(convEdge[0])
 	return nil
 }
 

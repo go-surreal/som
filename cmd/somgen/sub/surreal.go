@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
+	"github.com/surrealdb/surrealdb.go/pkg/marshal"
 	"github.com/urfave/cli/v2"
 	"time"
 )
@@ -162,19 +163,19 @@ func (c *Client) Query(what string, vars map[string]any) ([]Data, error) {
 	}
 
 	var res1 *Result
-	err = surrealdb.Unmarshal(raw, &res1)
+	err = marshal.Unmarshal(raw, &res1)
 	if err != nil {
 		return nil, err
 	}
 
-	var res2 *Data
-	ok, err := surrealdb.UnmarshalRaw(raw, &res2)
+	var res2 []marshal.RawQuery[Data]
+	err = marshal.UnmarshalRaw(raw, &res2)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("res1:", ok, res1.Status, res1.Time, res1.Result[0].ID)
-	fmt.Println("res2:", ok, res2)
+	fmt.Println("res1:", res1.Status, res1.Time, res1.Result[0].ID)
+	fmt.Println("res2:", res2)
 
 	return nil, nil
 }
