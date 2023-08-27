@@ -44,9 +44,7 @@ func (c *Client) signIn(ctx context.Context, timeout time.Duration, username, pa
 		return fmt.Errorf("could not sign in: %w", err)
 	}
 
-	if string(res) != nilValue {
-		return fmt.Errorf("could not sign in due to unknown response %s", string(res))
-	}
+	c.token = string(res)
 
 	return nil
 }
@@ -80,7 +78,7 @@ func (c *Client) Query(ctx context.Context, timeout time.Duration, query string,
 		Request{
 			Method: methodQuery,
 			Params: []any{
-				"live " + query,
+				query,
 			},
 		},
 		timeout,
@@ -89,7 +87,7 @@ func (c *Client) Query(ctx context.Context, timeout time.Duration, query string,
 		return "", err
 	}
 
-	fmt.Println("live:", res)
+	fmt.Println("query:", res)
 
 	return "", nil
 }

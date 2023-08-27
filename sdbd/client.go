@@ -19,6 +19,7 @@ type Client struct {
 	conn      *websocket.Conn
 	waitGroup sync.WaitGroup
 
+	token       string
 	requests    requests
 	liveQueries liveQueries
 }
@@ -34,7 +35,9 @@ type Config struct {
 // NewClient creates a new client and connects to
 // the database using a websocket connection.
 func NewClient(ctx context.Context, conf Config, opts ...Option) (*Client, error) {
-	conn, _, err := websocket.Dial(ctx, conf.Address, &websocket.DialOptions{})
+	conn, _, err := websocket.Dial(ctx, conf.Address, &websocket.DialOptions{
+		CompressionMode: websocket.CompressionContextTakeover,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not open websocket connection: %w", err)
 	}
@@ -60,6 +63,20 @@ func NewClient(ctx context.Context, conf Config, opts ...Option) (*Client, error
 	if err := client.use(ctx, 0, conf.Namespace, conf.Database); err != nil {
 		return nil, fmt.Errorf("could not select database: %v", err)
 	}
+
+	query, err := client.Query(ctx, 0, "define namespace "+conf.Namespace, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("ns query:", query)
+
+	query, err = client.Query(ctx, 0, "define database "+conf.Database, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("db query:", query)
 
 	return client, nil
 }

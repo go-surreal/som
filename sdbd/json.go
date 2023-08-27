@@ -67,21 +67,32 @@ func read(ctx context.Context, c *websocket.Conn) ([]byte, error) {
 
 // write writes the JSON message v to c.
 // It will reuse buffers in between calls to avoid allocations.
-func write(ctx context.Context, c *websocket.Conn, v interface{}) error {
+func write(ctx context.Context, conn *websocket.Conn, req any) error {
 	// defer errd.Wrap(&err, "failed to write JSON message")
 
-	// Using Writer instead of Write to stream the message.
-	w, err := c.Writer(ctx, websocket.MessageText)
-	if err != nil {
-		return err
-	}
-
-	// json.Marshal cannot reuse buffers between calls as it has to return
-	// a copy of the byte slice but Encoder does as it directly writes to w.
-	err = jsonHandler.NewEncoder(w).Encode(v)
+	data, err := jsonHandler.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	return w.Close()
+	err = conn.Write(ctx, websocket.MessageText, data)
+	if err != nil {
+		return fmt.Errorf("failed to write message: %w", err)
+	}
+
+	// Using Writer instead of Write to stream the message.
+	// writer, err := conn.Writer(ctx, websocket.MessageText)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// json.Marshal cannot reuse buffers between calls as it has to return
+	// a copy of the byte slice but Encoder does as it directly writes to w.
+	// err = jsonHandler.NewEncoder(writer).Encode(req)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to marshal JSON: %w", err)
+	// }
+
+	// return writer.Close()
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"io"
 	"net"
@@ -20,6 +21,12 @@ type Request struct {
 type Response struct {
 	ID     string          `json:"id"`
 	Result json.RawMessage `json:"result"`
+	Error  *ResponseError  `json:"error"`
+}
+
+type ResponseError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 type LiveQueryResult struct {
@@ -116,6 +123,11 @@ func (c *Client) handleMessage(ctx context.Context, data []byte) {
 
 	c.logger.InfoContext(ctx, "Received message.", "res", res)
 
+	if res.Error != nil {
+		c.logger.ErrorContext(ctx, "Received error response.", "error", res.Error)
+		return
+	}
+
 	if res.ID == "" {
 		c.handleLiveQuery(ctx, res)
 		return
@@ -143,6 +155,8 @@ func (c *Client) handleResult(ctx context.Context, res *Response) {
 
 func (c *Client) handleLiveQuery(ctx context.Context, res *Response) {
 	var result LiveQueryResult
+
+	fmt.Println("live:", string(res.Result))
 
 	if err := c.jsonUnmarshal(res.Result, &result); err != nil {
 		c.logger.ErrorContext(ctx, "Could not unmarshal websocket message.", "error", err)
