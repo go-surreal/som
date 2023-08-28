@@ -139,7 +139,7 @@ func (b *build) buildInterfaceFile() error {
 			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
 		}
 
-		g.Id("ApplySchema").Call().Error()
+		g.Id("ApplySchema").Call(jen.Id("ctx").Qual("context", "Context")).Error()
 		g.Id("Close").Call()
 	})
 
@@ -222,11 +222,12 @@ func (b *build) buildSchemaFile() error {
 package %s
 
 import(
+	"context"
 	"fmt"
 )
 	
-func (c *ClientImpl) ApplySchema() error {
-	_, err := c.db.Query(tmpl, nil)
+func (c *ClientImpl) ApplySchema(ctx context.Context) error {
+	_, err := c.db.Query(ctx, tmpl, nil)
 	if err != nil {
 		return fmt.Errorf("could not apply schema: %%v", err)
 	}
@@ -354,7 +355,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("db").Dot("Create").
-				Call(jen.Id("key"), jen.Id("data")),
+				Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
 			),
@@ -411,7 +412,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
 				Call(
 					jen.Id("n").Dot("db").Dot("Create").
-						Call(jen.Id("key"), jen.Id("data")),
+						Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
 				),
 
 			jen.If(jen.Err().Op("!=").Nil()).Block(
@@ -439,7 +440,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
 				Call(
 					jen.Id("n").Dot("db").Dot("Select").
-						Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
+						Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
 				),
 
 			jen.If(jen.Qual("errors", "Is").Call(jen.Err(), jen.Qual(def.PkgSurrealConstants, "ErrNoRow"))).
@@ -489,7 +490,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
 				Call(
 					jen.Id("n").Dot("db").Dot("Update").
-						Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
+						Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
 							Op("+").Lit("⟩"), jen.Id("data")),
 				),
 
@@ -520,7 +521,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.List(jen.Id("_"), jen.Err()).Op(":=").
 				Id("n").Dot("db").Dot("Delete").
-				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩")),
+				Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not delete entity: %w"), jen.Err())),
 			),

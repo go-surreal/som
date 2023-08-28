@@ -3,23 +3,24 @@
 package som
 
 import (
-	"github.com/surrealdb/surrealdb.go"
+	"context"
+	"github.com/marcbinz/som/sdbc"
 )
 
 type database struct {
-	*surrealdb.DB
+	*sdbc.Client
 }
 
-func (db *database) Create(thing string, data any) (any, error) {
-	return db.DB.Create(thing, data)
+func (db *database) Create(ctx context.Context, thing string, data any) (any, error) {
+	return db.Client.Create(ctx, 0, thing, data)
 }
 
-func (db *database) Select(what string) (any, error) {
-	return db.DB.Select(what)
+func (db *database) Select(ctx context.Context, what string) (any, error) {
+	return db.Client.Select(ctx, 0, what)
 }
 
-func (db *database) Query(statement string, vars any) (any, error) {
-	raw, err := db.DB.Query(statement, vars)
+func (db *database) Query(ctx context.Context, statement string, vars map[string]any) (any, error) {
+	raw, err := db.Client.Query(ctx, 0, statement, vars)
 	if err != nil {
 		return nil, err
 	}
@@ -27,10 +28,10 @@ func (db *database) Query(statement string, vars any) (any, error) {
 	return raw, err
 }
 
-func (db *database) Update(what string, data any) (any, error) {
-	return db.DB.Update(what, data)
+func (db *database) Update(ctx context.Context, what string, data any) (any, error) {
+	return db.Client.Update(ctx, 0, what, data)
 }
 
-func (db *database) Delete(what string) (any, error) {
-	return db.DB.Delete(what)
+func (db *database) Delete(ctx context.Context, what string) (any, error) {
+	return db.Client.Delete(ctx, 0, what)
 }

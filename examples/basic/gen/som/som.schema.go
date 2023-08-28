@@ -3,11 +3,12 @@
 package som
 
 import(
+	"context"
 	"fmt"
 )
 	
-func (c *ClientImpl) ApplySchema() error {
-	_, err := c.db.Query(tmpl, nil)
+func (c *ClientImpl) ApplySchema(ctx context.Context) error {
+	_, err := c.db.Query(ctx, tmpl, nil)
 	if err != nil {
 		return fmt.Errorf("could not apply schema: %v", err)
 	}

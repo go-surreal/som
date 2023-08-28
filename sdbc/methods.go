@@ -1,4 +1,4 @@
-package sdbd
+package sdbc
 
 import (
 	"context"
@@ -73,23 +73,22 @@ func (c *Client) use(ctx context.Context, timeout time.Duration, namespace, data
 }
 
 // Query is a convenient method for sending a query to the database.
-func (c *Client) Query(ctx context.Context, timeout time.Duration, query string, vars interface{}) (interface{}, error) {
+func (c *Client) Query(ctx context.Context, timeout time.Duration, query string, vars map[string]any) ([]byte, error) {
 	res, err := c.send(ctx,
 		Request{
 			Method: methodQuery,
 			Params: []any{
 				query,
+				vars,
 			},
 		},
 		timeout,
 	)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("could not send request: %w", err)
 	}
 
-	fmt.Println("query:", res)
-
-	return "", nil
+	return res, nil
 }
 
 func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) (<-chan []byte, error) {
@@ -166,7 +165,7 @@ func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) (
 }
 
 // Select a table or record from the database.
-func (c *Client) Select(ctx context.Context, timeout time.Duration) (interface{}, error) {
+func (c *Client) Select(ctx context.Context, timeout time.Duration, what string) (interface{}, error) {
 	res, err := c.send(ctx,
 		Request{
 			Method: methodSelect,
@@ -220,7 +219,7 @@ func (c *Client) Insert(ctx context.Context, timeout time.Duration, table string
 }
 
 // Update a table or record in the database like a PUT request.
-func (c *Client) Update(ctx context.Context, timeout time.Duration) (interface{}, error) {
+func (c *Client) Update(ctx context.Context, timeout time.Duration, what string, data any) (interface{}, error) {
 	res, err := c.send(ctx,
 		Request{
 			Method: methodUpdate,
@@ -274,7 +273,7 @@ func (c *Client) Modify(ctx context.Context, timeout time.Duration) (interface{}
 }
 
 // Delete a table or a row from the database like a DELETE request.
-func (c *Client) Delete(ctx context.Context, timeout time.Duration) (interface{}, error) {
+func (c *Client) Delete(ctx context.Context, timeout time.Duration, what string) (interface{}, error) {
 	res, err := c.send(ctx,
 		Request{
 			Method: methodDelete,

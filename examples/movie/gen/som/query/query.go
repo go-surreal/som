@@ -7,7 +7,7 @@ import (
 )
 
 type Database interface {
-	Query(statement string, vars any) (any, error)
+	Query(ctx context.Context, statement string, vars map[string]any) (any, error)
 }
 
 type idNode struct {

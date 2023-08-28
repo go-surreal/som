@@ -1,4 +1,4 @@
-package sdbd
+package sdbc
 
 import (
 	"sync"

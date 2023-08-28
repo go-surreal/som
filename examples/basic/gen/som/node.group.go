@@ -47,7 +47,7 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -74,7 +74,7 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Create(ctx, key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -83,7 +83,7 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 }
 
 func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
-	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Select("group:⟨" + id + "⟩"))
+	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Select(ctx, "group:⟨"+id+"⟩"))
 	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
@@ -103,7 +103,7 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	}
 	data := conv.FromGroup(*group)
 	data.UpdatedAt = time.Now()
-	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Update("group:⟨"+group.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.Group](n.db.Update(ctx, "group:⟨"+group.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
@@ -115,7 +115,7 @@ func (n *group) Delete(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("group:⟨" + group.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "group:⟨"+group.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}

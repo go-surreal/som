@@ -271,6 +271,7 @@ number of records matching the conditions of the query.
 				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsCount").Call(),
 
 				jen.Id("raw").Op(",").Err().Op(":=").Id("q").Dot("db").Dot("Query").Call(
+					jen.Id("ctx"),
 					jen.Id("res").Dot("Statement"),
 					jen.Id("res").Dot("Variables"),
 				),
@@ -368,6 +369,7 @@ All returns all records matching the conditions of the query.
 					Call(
 						jen.Id("q").Dot("db").Dot("Query").
 							Call(
+								jen.Id("ctx"),
 								jen.Id("res").Dot("Statement"),
 								jen.Id("res").Dot("Variables"),
 							),
@@ -420,6 +422,7 @@ AllIDs returns the IDs of all records matching the conditions of the query.
 					Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Id("idNode")).
 					Call(
 						jen.Id("q").Dot("db").Dot("Query").Call(
+							jen.Id("ctx"),
 							jen.Id("res").Dot("Statement"),
 							jen.Id("res").Dot("Variables"),
 						),

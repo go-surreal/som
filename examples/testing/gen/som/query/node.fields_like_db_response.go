@@ -98,7 +98,7 @@ func (q FieldsLikeDBResponse) Parallel(parallel bool) FieldsLikeDBResponse {
 // number of records matching the conditions of the query.
 func (q FieldsLikeDBResponse) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	raw, err := q.db.Query(ctx, res.Statement, res.Variables)
 	if err != nil {
 		return 0, err
 	}
@@ -137,7 +137,7 @@ func (q FieldsLikeDBResponse) ExistsAsync(ctx context.Context) *asyncResult[bool
 // All returns all records matching the conditions of the query.
 func (q FieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
 	res := q.query.BuildAsAll()
-	rawNodes, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](q.db.Query(ctx, res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
@@ -157,7 +157,7 @@ func (q FieldsLikeDBResponse) AllAsync(ctx context.Context) *asyncResult[[]*mode
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q FieldsLikeDBResponse) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
-	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(ctx, res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}

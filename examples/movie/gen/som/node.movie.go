@@ -45,7 +45,7 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 	key := "movie"
 	data := conv.FromMovie(*movie)
 
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -71,7 +71,7 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 	key := "movie:" + "⟨" + id + "⟩"
 	data := conv.FromMovie(*movie)
 
-	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Create(ctx, key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -80,7 +80,7 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 }
 
 func (n *movie) Read(ctx context.Context, id string) (*model.Movie, bool, error) {
-	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Select("movie:⟨" + id + "⟩"))
+	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Select(ctx, "movie:⟨"+id+"⟩"))
 	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
@@ -100,7 +100,7 @@ func (n *movie) Update(ctx context.Context, movie *model.Movie) error {
 	}
 	data := conv.FromMovie(*movie)
 
-	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Update("movie:⟨"+movie.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Update(ctx, "movie:⟨"+movie.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
@@ -112,7 +112,7 @@ func (n *movie) Delete(ctx context.Context, movie *model.Movie) error {
 	if movie == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("movie:⟨" + movie.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "movie:⟨"+movie.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}

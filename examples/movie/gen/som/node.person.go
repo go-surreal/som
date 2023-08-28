@@ -45,7 +45,7 @@ func (n *person) Create(ctx context.Context, person *model.Person) error {
 	key := "person"
 	data := conv.FromPerson(*person)
 
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -71,7 +71,7 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 	key := "person:" + "⟨" + id + "⟩"
 	data := conv.FromPerson(*person)
 
-	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Create(ctx, key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -80,7 +80,7 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 }
 
 func (n *person) Read(ctx context.Context, id string) (*model.Person, bool, error) {
-	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Select("person:⟨" + id + "⟩"))
+	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Select(ctx, "person:⟨"+id+"⟩"))
 	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
@@ -100,7 +100,7 @@ func (n *person) Update(ctx context.Context, person *model.Person) error {
 	}
 	data := conv.FromPerson(*person)
 
-	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Update("person:⟨"+person.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Update(ctx, "person:⟨"+person.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
@@ -112,7 +112,7 @@ func (n *person) Delete(ctx context.Context, person *model.Person) error {
 	if person == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("person:⟨" + person.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "person:⟨"+person.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}

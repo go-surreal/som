@@ -45,7 +45,7 @@ func (n *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse 
 	key := "fields_like_db_response"
 	data := conv.FromFieldsLikeDBResponse(*fieldsLikeDBResponse)
 
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -71,7 +71,7 @@ func (n *fieldsLikeDBResponse) CreateWithID(ctx context.Context, id string, fiel
 	key := "fields_like_db_response:" + "⟨" + id + "⟩"
 	data := conv.FromFieldsLikeDBResponse(*fieldsLikeDBResponse)
 
-	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Create(ctx, key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -80,7 +80,7 @@ func (n *fieldsLikeDBResponse) CreateWithID(ctx context.Context, id string, fiel
 }
 
 func (n *fieldsLikeDBResponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
-	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Select("fields_like_db_response:⟨" + id + "⟩"))
+	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Select(ctx, "fields_like_db_response:⟨"+id+"⟩"))
 	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
@@ -100,7 +100,7 @@ func (n *fieldsLikeDBResponse) Update(ctx context.Context, fieldsLikeDBResponse 
 	}
 	data := conv.FromFieldsLikeDBResponse(*fieldsLikeDBResponse)
 
-	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Update("fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Update(ctx, "fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
@@ -112,7 +112,7 @@ func (n *fieldsLikeDBResponse) Delete(ctx context.Context, fieldsLikeDBResponse 
 	if fieldsLikeDBResponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("fields_like_db_response:⟨" + fieldsLikeDBResponse.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}

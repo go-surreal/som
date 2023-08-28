@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bytedance/sonic"
-	"github.com/marcbinz/som/sdbd"
+	"github.com/marcbinz/som/sdbc"
 	"log/slog"
 	"os"
 	"sync"
@@ -17,22 +17,22 @@ func Test(ctx context.Context) error {
 
 	slog.Info("start")
 
-	client, err := sdbd.NewClient(ctx,
-		sdbd.Config{
+	client, err := sdbc.NewClient(ctx,
+		sdbc.Config{
 			Address:   "ws://localhost:8020/rpc",
 			Username:  "root",
 			Password:  "root",
 			Namespace: "test",
 			Database:  "test",
 		},
-		sdbd.WithLogger(slog.Default()),
-		sdbd.WithJsonHandlers(sonic.Marshal, sonic.Unmarshal),
+		sdbc.WithLogger(slog.Default()),
+		sdbc.WithJsonHandlers(sonic.Marshal, sonic.Unmarshal),
 	)
 	if err != nil {
 		return err
 	}
 
-	live, err := client.Live(ctx, "select * from person")
+	live, err := client.Live(ctx, 0, "select * from person")
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func Test(ctx context.Context) error {
 		}
 	}()
 
-	create, err := client.Create(ctx, "person", map[string]interface{}{
+	create, err := client.Create(ctx, 0, "person", map[string]interface{}{
 		"name": "some",
 	})
 	if err != nil {

@@ -47,7 +47,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	data := conv.FromUser(*user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -74,7 +74,7 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 	data := conv.FromUser(*user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Create(ctx, key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -83,7 +83,7 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 }
 
 func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
-	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Select("user:⟨" + id + "⟩"))
+	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Select(ctx, "user:⟨"+id+"⟩"))
 	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
@@ -103,7 +103,7 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	}
 	data := conv.FromUser(*user)
 	data.UpdatedAt = time.Now()
-	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Update("user:⟨"+user.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.User](n.db.Update(ctx, "user:⟨"+user.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
@@ -115,7 +115,7 @@ func (n *user) Delete(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("user:⟨" + user.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "user:⟨"+user.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}

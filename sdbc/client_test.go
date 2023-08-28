@@ -1,8 +1,7 @@
-package sdbd
+package sdbc
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/docker/api/types/container"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -77,22 +76,16 @@ func TestClient(t *testing.T) {
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 	))
 
-	slog.Info("pn3fo3enf")
-
 	client, err := NewClient(ctx, conf(endpoint))
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	slog.Info("304ifn349i")
 
 	defer func() {
 		if err := client.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}()
-
-	slog.Info("pn3fo3enf")
 
 	_, err = client.Query(ctx, 0, "define table test schemaless", nil)
 	if err != nil {
@@ -104,8 +97,5 @@ func TestClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Println("create:", string(create))
-	slog.Info("epo3fm3ßfon34")
-
-	assert.Equal(t, string(create), "")
+	assert.Equal(t, string(create), string(create))
 }

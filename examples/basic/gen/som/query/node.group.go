@@ -98,7 +98,7 @@ func (q Group) Parallel(parallel bool) Group {
 // number of records matching the conditions of the query.
 func (q Group) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	raw, err := q.db.Query(ctx, res.Statement, res.Variables)
 	if err != nil {
 		return 0, err
 	}
@@ -137,7 +137,7 @@ func (q Group) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 // All returns all records matching the conditions of the query.
 func (q Group) All(ctx context.Context) ([]*model.Group, error) {
 	res := q.query.BuildAsAll()
-	rawNodes, err := marshal.SmartUnmarshal[conv.Group](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := marshal.SmartUnmarshal[conv.Group](q.db.Query(ctx, res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
@@ -157,7 +157,7 @@ func (q Group) AllAsync(ctx context.Context) *asyncResult[[]*model.Group] {
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q Group) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
-	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(ctx, res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
