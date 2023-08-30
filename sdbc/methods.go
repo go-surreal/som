@@ -17,9 +17,6 @@ const (
 	methodDelete = "delete"
 	methodSelect = "select"
 	methodCreate = "create"
-	methodInsert = "insert"
-	methodChange = "change"
-	methodModify = "modify"
 )
 
 const (
@@ -165,30 +162,12 @@ func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) (
 }
 
 // Select a table or record from the database.
-func (c *Client) Select(ctx context.Context, timeout time.Duration, what string) (interface{}, error) {
+func (c *Client) Select(ctx context.Context, timeout time.Duration, thing string) ([]byte, error) {
 	res, err := c.send(ctx,
 		Request{
 			Method: methodSelect,
-			Params: []any{},
-		},
-		timeout,
-	)
-	if err != nil {
-		return "", err
-	}
-
-	fmt.Println("select:", res)
-
-	return "", nil
-}
-
-func (c *Client) Create(ctx context.Context, timeout time.Duration, table string, data any) ([]byte, error) {
-	res, err := c.send(ctx,
-		Request{
-			Method: methodCreate,
 			Params: []any{
-				table,
-				data,
+				thing,
 			},
 		},
 		timeout,
@@ -197,15 +176,17 @@ func (c *Client) Create(ctx context.Context, timeout time.Duration, table string
 		return nil, err
 	}
 
+	fmt.Println("select:", res)
+
 	return res, nil
 }
 
-func (c *Client) Insert(ctx context.Context, timeout time.Duration, table string, data []any) ([]byte, error) {
+func (c *Client) Create(ctx context.Context, timeout time.Duration, thing string, data any) ([]byte, error) {
 	res, err := c.send(ctx,
 		Request{
-			Method: methodInsert,
+			Method: methodCreate,
 			Params: []any{
-				table,
+				thing,
 				data,
 			},
 		},
@@ -219,75 +200,44 @@ func (c *Client) Insert(ctx context.Context, timeout time.Duration, table string
 }
 
 // Update a table or record in the database like a PUT request.
-func (c *Client) Update(ctx context.Context, timeout time.Duration, what string, data any) (interface{}, error) {
+func (c *Client) Update(ctx context.Context, timeout time.Duration, thing string, data any) ([]byte, error) {
 	res, err := c.send(ctx,
 		Request{
 			Method: methodUpdate,
-			Params: []any{},
+			Params: []any{
+				thing,
+				data,
+			},
 		},
 		timeout,
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	fmt.Println("update:", res)
 
-	return "", nil
-}
-
-// Change a table or record in the database like a PATCH request.
-func (c *Client) Change(ctx context.Context, timeout time.Duration) (interface{}, error) {
-	res, err := c.send(ctx,
-		Request{
-			Method: methodChange,
-			Params: []any{},
-		},
-		timeout,
-	)
-	if err != nil {
-		return "", err
-	}
-
-	fmt.Println("change:", res)
-
-	return "", nil
-}
-
-// Modify applies a series of JSONPatches to a table or record.
-func (c *Client) Modify(ctx context.Context, timeout time.Duration) (interface{}, error) {
-	res, err := c.send(ctx,
-		Request{
-			Method: methodModify,
-			Params: []any{},
-		},
-		timeout,
-	)
-	if err != nil {
-		return "", err
-	}
-
-	fmt.Println("modify:", res)
-
-	return "", nil
+	return res, nil
 }
 
 // Delete a table or a row from the database like a DELETE request.
-func (c *Client) Delete(ctx context.Context, timeout time.Duration, what string) (interface{}, error) {
+func (c *Client) Delete(ctx context.Context, timeout time.Duration, thing string) ([]byte, error) {
 	res, err := c.send(ctx,
 		Request{
 			Method: methodDelete,
-			Params: []any{},
+			Params: []any{
+				thing,
+			},
 		},
 		timeout,
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	fmt.Println("delete:", res)
 
-	return "", nil
+	return res, nil
 }
 
 //

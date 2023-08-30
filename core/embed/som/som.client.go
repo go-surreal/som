@@ -5,16 +5,17 @@ package som
 import (
 	"context"
 	"fmt"
+	"github.com/bytedance/sonic"
 	"github.com/marcbinz/som/sdbc"
 )
 
 type Database interface {
 	Close() error
-	Create(ctx context.Context, thing string, data any) (any, error)
-	Select(ctx context.Context, what string) (any, error)
-	Query(ctx context.Context, statement string, vars map[string]any) (any, error)
-	Update(ctx context.Context, thing string, data any) (any, error)
-	Delete(ctx context.Context, what string) (any, error)
+	Create(ctx context.Context, thing string, data any) ([]byte, error)
+	Select(ctx context.Context, what string) ([]byte, error)
+	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
+	Update(ctx context.Context, thing string, data any) ([]byte, error)
+	Delete(ctx context.Context, what string) ([]byte, error)
 }
 
 type Config struct {
@@ -27,6 +28,9 @@ type Config struct {
 
 type ClientImpl struct {
 	db Database
+
+	marshal   func(val any) ([]byte, error)
+	unmarshal func(buf []byte, val any) error
 }
 
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
@@ -43,7 +47,12 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		return nil, fmt.Errorf("could not create sdbc client: %v", err)
 	}
 
-	return &ClientImpl{db: &database{Client: surreal}}, nil
+	return &ClientImpl{
+		db: &database{Client: surreal},
+
+		marshal:   sonic.ConfigFastest.Marshal,
+		unmarshal: sonic.ConfigFastest.Unmarshal,
+	}, nil
 }
 
 func (c *ClientImpl) Close() {

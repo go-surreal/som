@@ -23,6 +23,6 @@ DEFINE FIELD id ON TABLE fields_like_db_response TYPE record ASSERT $value != NO
 DEFINE FIELD time ON TABLE fields_like_db_response TYPE string;
 DEFINE FIELD status ON TABLE fields_like_db_response TYPE string;
 DEFINE FIELD detail ON TABLE fields_like_db_response TYPE string;
-DEFINE FIELD result ON TABLE fields_like_db_response TYPE option<array>;
+DEFINE FIELD result ON TABLE fields_like_db_response TYPE option<array | null>;
 DEFINE FIELD result.* ON TABLE fields_like_db_response TYPE string;
 `

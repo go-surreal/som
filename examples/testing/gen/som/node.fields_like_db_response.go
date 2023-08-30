@@ -9,8 +9,6 @@ import (
 	query "github.com/marcbinz/som/examples/testing/gen/som/query"
 	relate "github.com/marcbinz/som/examples/testing/gen/som/relate"
 	model "github.com/marcbinz/som/examples/testing/model"
-	constants "github.com/surrealdb/surrealdb.go/pkg/constants"
-	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 )
 
 type FieldsLikeDBResponseRepo interface {
@@ -24,15 +22,17 @@ type FieldsLikeDBResponseRepo interface {
 }
 
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
-	return &fieldsLikeDBResponse{db: c.db}
+	return &fieldsLikeDBResponse{db: c.db, marshal: c.marshal, unmarshal: c.unmarshal}
 }
 
 type fieldsLikeDBResponse struct {
-	db Database
+	db        Database
+	marshal   func(val any) ([]byte, error)
+	unmarshal func(buf []byte, val any) error
 }
 
 func (n *fieldsLikeDBResponse) Query() query.FieldsLikeDBResponse {
-	return query.NewFieldsLikeDBResponse(n.db)
+	return query.NewFieldsLikeDBResponse(n.db, n.unmarshal)
 }
 
 func (n *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
@@ -50,7 +50,7 @@ func (n *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse 
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.FieldsLikeDBResponse
-	err = marshal.Unmarshal(raw, &convNodes)
+	err = n.unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -71,23 +71,30 @@ func (n *fieldsLikeDBResponse) CreateWithID(ctx context.Context, id string, fiel
 	key := "fields_like_db_response:" + "⟨" + id + "⟩"
 	data := conv.FromFieldsLikeDBResponse(*fieldsLikeDBResponse)
 
-	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Create(ctx, key, data))
+	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNode[0])
+	var convNode conv.FieldsLikeDBResponse
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
+	}
+	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNode)
 	return nil
 }
 
 func (n *fieldsLikeDBResponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
-	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Select(ctx, "fields_like_db_response:⟨"+id+"⟩"))
-	if errors.Is(err, constants.ErrNoRow) {
-		return nil, false, nil
-	}
+	res, err := n.db.Select(ctx, "fields_like_db_response:⟨"+id+"⟩")
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	node := conv.ToFieldsLikeDBResponse(convNode[0])
+	var convNode conv.FieldsLikeDBResponse
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
+	}
+	node := conv.ToFieldsLikeDBResponse(convNode)
 	return &node, true, nil
 }
 
@@ -100,11 +107,16 @@ func (n *fieldsLikeDBResponse) Update(ctx context.Context, fieldsLikeDBResponse 
 	}
 	data := conv.FromFieldsLikeDBResponse(*fieldsLikeDBResponse)
 
-	convNode, err := marshal.SmartUnmarshal[conv.FieldsLikeDBResponse](n.db.Update(ctx, "fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩", data))
+	res, err := n.db.Update(ctx, "fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNode[0])
+	var convNode conv.FieldsLikeDBResponse
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
+	}
+	*fieldsLikeDBResponse = conv.ToFieldsLikeDBResponse(convNode)
 	return nil
 }
 
@@ -120,5 +132,5 @@ func (n *fieldsLikeDBResponse) Delete(ctx context.Context, fieldsLikeDBResponse 
 }
 
 func (n *fieldsLikeDBResponse) Relate() *relate.FieldsLikeDBResponse {
-	return relate.NewFieldsLikeDBResponse(n.db)
+	return relate.NewFieldsLikeDBResponse(n.db, n.unmarshal)
 }

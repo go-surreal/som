@@ -7,7 +7,7 @@ import (
 )
 
 type Database interface {
-	Query(ctx context.Context, statement string, vars map[string]any) (any, error)
+	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 }
 
 type idNode struct {
@@ -16,6 +16,12 @@ type idNode struct {
 
 type countResult struct {
 	Count int
+}
+
+type queryResult[M any] struct {
+	Result []M    `json:"result"`
+	Status string `json:"status"`
+	Time   string `json:"time"`
 }
 
 //

@@ -301,14 +301,19 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
 		Block(
 			jen.Return(
-				jen.Op("&").Id(node.NameGoLower()).
-					Values(jen.Id("db").Op(":").Id("c").Dot("db")),
+				jen.Op("&").Id(node.NameGoLower()).Values(
+					jen.Id("db").Op(":").Id("c").Dot("db"),
+					jen.Id("marshal").Op(":").Id("c").Dot("marshal"),
+					jen.Id("unmarshal").Op(":").Id("c").Dot("unmarshal"),
+				),
 			),
 		)
 
 	f.Line()
 	f.Type().Id(node.NameGoLower()).Struct(
 		jen.Id("db").Id("Database"),
+		jen.Id("marshal").Func().Params(jen.Id("val").Any()).Parens(jen.List(jen.Index().Byte(), jen.Error())),
+		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 	)
 
 	f.Line()
@@ -317,7 +322,10 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Id("Query").Params().
 		Qual(pkgQuery, node.NameGo()).
 		Block(
-			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(jen.Id("n").Dot("db"))),
+			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
+				jen.Id("n").Dot("db"),
+				jen.Id("n").Dot("unmarshal"),
+			)),
 		)
 
 	onCreatedAt := jen.Empty()
@@ -361,7 +369,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 
 			jen.Var().Id("convNodes").Index().Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealMarshal, "Unmarshal").
+			jen.Err().Op("=").Id("n").Dot("unmarshal").
 				Call(jen.Id("raw"), jen.Op("&").Id("convNodes")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
@@ -408,20 +416,23 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onCreatedAt),
 			jen.Add(onUpdatedAt),
 
-			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
-				Call(
-					jen.Id("n").Dot("db").Dot("Create").
-						Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
-				),
-
+			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Create").
+				Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
 			),
 
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Id("n").Dot("unmarshal").
+				Call(jen.Id("res"), jen.Op("&").Id("convNode")),
+
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
+			),
+
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
 				Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).
-				Call(jen.Id("convNode").Index(jen.Lit(0))),
+				Call(jen.Id("convNode")),
 
 			jen.Return(jen.Nil()),
 		)
@@ -436,25 +447,21 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
-			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
-				Call(
-					jen.Id("n").Dot("db").Dot("Select").
-						Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
-				),
-
-			jen.If(jen.Qual("errors", "Is").Call(jen.Err(), jen.Qual(def.PkgSurrealConstants, "ErrNoRow"))).
-				Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
-
+			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Select").Call(
+				jen.Id("ctx"),
+				jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩"),
+			),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(
-					jen.Nil(),
-					jen.False(),
-					jen.Qual("fmt", "Errorf").Call(jen.Lit("could not read entity: %w"), jen.Err()),
-				),
+				jen.Return(jen.Nil(), jen.False(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not read entity: %w"), jen.Err())),
 			),
 
-			jen.Id("node").Op(":=").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode").Index(jen.Lit(0))),
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Id("n").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.False(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
+			),
+
+			jen.Id("node").Op(":=").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
 			jen.Return(jen.Op("&").Id("node"), jen.True(), jen.Nil()),
 		)
 
@@ -486,20 +493,22 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Add(onUpdatedAt),
 
-			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
-				Call(
-					jen.Id("n").Dot("db").Dot("Update").
-						Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
-							Op("+").Lit("⟩"), jen.Id("data")),
-				),
-
+			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Update").
+				Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
+					Op("+").Lit("⟩"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not update entity: %w"), jen.Err())),
 			),
 
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+
+			jen.Err().Op("=").Id("n").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
+			),
+
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
-				Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode").Index(jen.Lit(0))),
+				Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
 
 			jen.Return(jen.Nil()),
 		)
@@ -534,8 +543,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Id("Relate").Params().
 		Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
 		Block(
-			jen.Return(jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).
-				Call(jen.Id("n").Dot("db"))),
+			jen.Return(
+				jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(
+					jen.Id("n").Dot("db"),
+					jen.Id("n").Dot("unmarshal"),
+				),
+			),
 		)
 
 	if err := f.Save(path.Join(b.basePath(), node.FileName())); err != nil {

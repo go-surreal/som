@@ -9,20 +9,21 @@ import (
 	lib "github.com/marcbinz/som/examples/basic/gen/som/internal/lib"
 	with "github.com/marcbinz/som/examples/basic/gen/som/with"
 	model "github.com/marcbinz/som/examples/basic/model"
-	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 	"strings"
 	"time"
 )
 
 type User struct {
-	db    Database
-	query lib.Query[model.User]
+	db        Database
+	query     lib.Query[model.User]
+	unmarshal func(buf []byte, val any) error
 }
 
-func NewUser(db Database) User {
+func NewUser(db Database, unmarshal func(buf []byte, val any) error) User {
 	return User{
-		db:    db,
-		query: lib.NewQuery[model.User]("user"),
+		db:        db,
+		query:     lib.NewQuery[model.User]("user"),
+		unmarshal: unmarshal,
 	}
 }
 
@@ -97,13 +98,13 @@ func (q User) Parallel(parallel bool) User {
 // Count returns the size of the result set, in other words the
 // number of records matching the conditions of the query.
 func (q User) Count(ctx context.Context) (int, error) {
-	res := q.query.BuildAsCount()
-	raw, err := q.db.Query(ctx, res.Statement, res.Variables)
+	req := q.query.BuildAsCount()
+	raw, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return 0, err
 	}
-	var rawCount []marshal.RawQuery[countResult]
-	err = marshal.UnmarshalRaw(raw, &rawCount)
+	var rawCount []queryResult[countResult]
+	err = q.unmarshal(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
@@ -136,13 +137,21 @@ func (q User) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 
 // All returns all records matching the conditions of the query.
 func (q User) All(ctx context.Context) ([]*model.User, error) {
-	res := q.query.BuildAsAll()
-	rawNodes, err := marshal.SmartUnmarshal[conv.User](q.db.Query(ctx, res.Statement, res.Variables))
+	req := q.query.BuildAsAll()
+	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
+	var rawNodes []queryResult[conv.User]
+	err = q.unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, errors.New("empty result")
+	}
 	var nodes []*model.User
-	for _, rawNode := range rawNodes {
+	for _, rawNode := range rawNodes[0].Result {
 		node := conv.ToUser(rawNode)
 		nodes = append(nodes, &node)
 	}
@@ -156,10 +165,15 @@ func (q User) AllAsync(ctx context.Context) *asyncResult[[]*model.User] {
 
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q User) AllIDs(ctx context.Context) ([]string, error) {
-	res := q.query.BuildAsAllIDs()
-	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(ctx, res.Statement, res.Variables))
+	req := q.query.BuildAsAllIDs()
+	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
+	}
+	var rawNodes []idNode
+	err = q.unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
 	var ids []string
 	for _, rawNode := range rawNodes {
@@ -217,6 +231,6 @@ func (q User) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
 func (q User) Describe() string {
-	res := q.query.BuildAsAll()
-	return strings.TrimSpace(res.Statement)
+	req := q.query.BuildAsAll()
+	return strings.TrimSpace(req.Statement)
 }
