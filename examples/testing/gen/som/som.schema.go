@@ -19,7 +19,7 @@ func (c *ClientImpl) ApplySchema(ctx context.Context) error {
 var tmpl = `
 
 DEFINE TABLE fields_like_db_response SCHEMAFULL;
-DEFINE FIELD id ON TABLE fields_like_db_response TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD id ON TABLE fields_like_db_response TYPE record<fields_like_db_response> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD time ON TABLE fields_like_db_response TYPE string;
 DEFINE FIELD status ON TABLE fields_like_db_response TYPE string;
 DEFINE FIELD detail ON TABLE fields_like_db_response TYPE string;

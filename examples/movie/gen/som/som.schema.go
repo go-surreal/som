@@ -19,11 +19,11 @@ func (c *ClientImpl) ApplySchema(ctx context.Context) error {
 var tmpl = `
 
 DEFINE TABLE person SCHEMAFULL;
-DEFINE FIELD id ON TABLE person TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD id ON TABLE person TYPE record<person> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD name ON TABLE person TYPE string;
 
 DEFINE TABLE movie SCHEMAFULL;
-DEFINE FIELD id ON TABLE movie TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD id ON TABLE movie TYPE record<movie> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD title ON TABLE movie TYPE string;
 
 DEFINE TABLE directed SCHEMAFULL;

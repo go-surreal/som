@@ -294,7 +294,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	req := testcontainers.ContainerRequest{
 		Name:         containerName,
 		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--strict", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
+		Cmd:          []string{"start", "--strict", "--allow-funcs", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog(containerStartedMsg),
 		HostConfigModifier: func(conf *container.HostConfig) {

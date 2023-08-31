@@ -19,7 +19,7 @@ func (c *ClientImpl) ApplySchema(ctx context.Context) error {
 var tmpl = `
 
 DEFINE TABLE user SCHEMAFULL;
-DEFINE FIELD id ON TABLE user TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD id ON TABLE user TYPE record<user> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE user TYPE datetime;
 DEFINE FIELD updated_at ON TABLE user TYPE datetime;
 DEFINE FIELD string ON TABLE user TYPE string;
@@ -36,9 +36,9 @@ DEFINE FIELD login.username ON TABLE user TYPE string;
 DEFINE FIELD login.password ON TABLE user TYPE string;
 DEFINE FIELD role ON TABLE user TYPE string ASSERT $value INSIDE ["", "admin", "user"];
 DEFINE FIELD groups ON TABLE user TYPE option<array | null>;
-DEFINE FIELD groups.* ON TABLE user TYPE option<record(group) | null>;
-DEFINE FIELD main_group ON TABLE user TYPE option<record(group) | null>;
-DEFINE FIELD main_group_ptr ON TABLE user TYPE option<record(group) | null>;
+DEFINE FIELD groups.* ON TABLE user TYPE option<record<group> | null>;
+DEFINE FIELD main_group ON TABLE user TYPE option<record<group> | null>;
+DEFINE FIELD main_group_ptr ON TABLE user TYPE option<record<group> | null>;
 DEFINE FIELD other ON TABLE user TYPE option<array | null>;
 DEFINE FIELD other.* ON TABLE user TYPE string;
 DEFINE FIELD more ON TABLE user TYPE option<array | null>;
@@ -73,14 +73,14 @@ DEFINE FIELD struct_ptr_slice_ptr.*.uuid_ptr ON TABLE user TYPE option<string | 
 DEFINE FIELD enum_ptr_slice ON TABLE user TYPE option<array | null>;
 DEFINE FIELD enum_ptr_slice.* ON TABLE user TYPE option<string> ASSERT $value == NULL OR $value INSIDE ["", "admin", "user"];
 DEFINE FIELD node_ptr_slice ON TABLE user TYPE option<array | null>;
-DEFINE FIELD node_ptr_slice.* ON TABLE user TYPE option<record(group) | null>;
+DEFINE FIELD node_ptr_slice.* ON TABLE user TYPE option<record<group> | null>;
 DEFINE FIELD node_ptr_slice_ptr ON TABLE user TYPE option<array | null>;
-DEFINE FIELD node_ptr_slice_ptr.* ON TABLE user TYPE option<record(group) | null>;
+DEFINE FIELD node_ptr_slice_ptr.* ON TABLE user TYPE option<record<group> | null>;
 DEFINE FIELD slice_slice ON TABLE user TYPE option<array | null>;
 DEFINE FIELD slice_slice.* ON TABLE user TYPE option<array | null>;
 
 DEFINE TABLE group SCHEMAFULL;
-DEFINE FIELD id ON TABLE group TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD id ON TABLE group TYPE record<group> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE group TYPE datetime;
 DEFINE FIELD updated_at ON TABLE group TYPE datetime;
 DEFINE FIELD name ON TABLE group TYPE string;
