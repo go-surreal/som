@@ -4,7 +4,7 @@ services:
 
   surrealdb:
     image: surrealdb/surrealdb:nightly
-    command: start --strict --user root --pass root --log debug file:data/surreal
+    command: start --strict --allow-funcs --user root --pass root --log debug file:data/surreal
     ports:
       - "8020:8000"
     volumes:

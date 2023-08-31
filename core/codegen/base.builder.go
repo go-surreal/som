@@ -192,8 +192,8 @@ func (b *build) buildSchemaFile() error {
 		statements = append(statements, statement)
 
 		statement = fmt.Sprintf(
-			`DEFINE FIELD id ON TABLE %s TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";`,
-			node.NameDatabase(),
+			`DEFINE FIELD id ON TABLE %s TYPE record<%s> ASSERT $value != NONE AND $value != NULL AND $value != "";`,
+			node.NameDatabase(), node.NameDatabase(),
 		)
 		statements = append(statements, statement)
 
