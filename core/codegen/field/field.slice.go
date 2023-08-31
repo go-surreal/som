@@ -28,7 +28,7 @@ func (f *Slice) TypeDatabase() string {
 
 	// Go treats empty slices as nil, so the database needs
 	// to accept the json NULL value for any array field.
-	return "option<array>"
+	return "option<array | null>"
 }
 
 func (f *Slice) Element() Field {
