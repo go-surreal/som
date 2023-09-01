@@ -17,8 +17,8 @@ type myPool struct {
 
 var bpool myPool
 
-// Get returns a buffer from the pool or creates a new one if
-// the pool is empty.
+// Get returns a buffer from the pool or
+// creates a new one if the pool is empty.
 func (p *myPool) Get() *bytes.Buffer {
 	b := p.Pool.Get()
 	if b == nil {
@@ -36,16 +36,13 @@ func (p *myPool) Put(b *bytes.Buffer) {
 // read reads a JSON message from c into v.
 // It will reuse buffers in between calls to avoid allocations.
 func read(ctx context.Context, c *websocket.Conn) ([]byte, error) {
-	// defer errd.Wrap(&err, "failed to read JSON message")
-
 	typ, r, err := c.Reader(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get reader: %w", err)
 	}
 
 	if typ != websocket.MessageText {
-		// c.logger.Error("Received message of unsupported type, expected text. Skipping.")
-		return nil, fmt.Errorf("received message of unsupported type, expected text")
+		return nil, fmt.Errorf("expected message of type text (%d), got %v", websocket.MessageText, typ)
 	}
 
 	b := bpool.Get()
@@ -53,7 +50,7 @@ func read(ctx context.Context, c *websocket.Conn) ([]byte, error) {
 
 	_, err = b.ReadFrom(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read message: %w", err)
 	}
 
 	// err = jsonHandler.Unmarshal(b.Bytes(), v)

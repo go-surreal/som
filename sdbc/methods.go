@@ -59,7 +59,7 @@ func (c *Client) use(ctx context.Context, timeout time.Duration, namespace, data
 		timeout,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not send request: %w", err)
 	}
 
 	if string(res) != nilValue {
@@ -93,23 +93,23 @@ func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) 
 		Request{
 			Method: methodQuery, // TODO: switch to methodLive once its working with it ;)
 			Params: []any{
-				"live " + query,
+				methodLive + " " + query,
 			},
 		},
 		timeout,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not send request: %w", err)
 	}
 
 	var res []basicResponse[string]
 
 	if err := c.jsonUnmarshal(raw, &res); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not unmarshal response: %w", err)
 	}
 
 	if len(res) < 1 {
-		return nil, fmt.Errorf("no response")
+		return nil, fmt.Errorf("empty response")
 	}
 
 	ch := c.liveQueries.get(res[0].Result)
@@ -129,12 +129,12 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	var str string
 
 	if err := json.Unmarshal(data, &str); err != nil {
-		return err
+		return fmt.Errorf("could not unmarshal duration: %w", err)
 	}
 
 	d, err := time.ParseDuration(str)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not parse duration: %w", err)
 	}
 
 	*t = Time(d)
@@ -142,7 +142,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) (interface{}, error) {
+func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) ([]byte, error) {
 	res, err := c.send(ctx,
 		Request{
 			Method: methodKill,
@@ -153,12 +153,10 @@ func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) (
 		timeout,
 	)
 	if err != nil {
-		return "", err
+		return res, fmt.Errorf("could not send request: %w", err)
 	}
 
-	fmt.Println("kill:", res)
-
-	return "", nil
+	return res, nil
 }
 
 // Select a table or record from the database.
@@ -173,10 +171,8 @@ func (c *Client) Select(ctx context.Context, timeout time.Duration, thing string
 		timeout,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not send request: %w", err)
 	}
-
-	fmt.Println("select:", res)
 
 	return res, nil
 }
@@ -193,7 +189,7 @@ func (c *Client) Create(ctx context.Context, timeout time.Duration, thing string
 		timeout,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not send request: %w", err)
 	}
 
 	return res, nil
@@ -212,10 +208,8 @@ func (c *Client) Update(ctx context.Context, timeout time.Duration, thing string
 		timeout,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not send request: %w", err)
 	}
-
-	fmt.Println("update:", res)
 
 	return res, nil
 }
@@ -232,10 +226,8 @@ func (c *Client) Delete(ctx context.Context, timeout time.Duration, thing string
 		timeout,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not send request: %w", err)
 	}
-
-	fmt.Println("delete:", res)
 
 	return res, nil
 }
