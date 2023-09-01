@@ -3,7 +3,7 @@ version: "3.8"
 services:
 
   surrealdb:
-    image: surrealdb/surrealdb:nightly
+    image: surrealdb/surrealdb:1.0.0-beta.10
     command: start --strict --allow-funcs --user root --pass root --log debug file:data/surreal
     ports:
       - "8020:8000"
