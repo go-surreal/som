@@ -19,6 +19,11 @@ var tmpl = `
 
 BEGIN TRANSACTION;
 
+DEFINE TABLE url_example SCHEMAFULL;
+DEFINE FIELD id ON TABLE url_example TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD some_url ON TABLE url_example TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::url($value);
+DEFINE FIELD some_other_url ON TABLE url_example TYPE string ASSERT $value == "" OR is::url($value);
+
 DEFINE TABLE fields_like_db_response SCHEMAFULL;
 DEFINE FIELD id ON TABLE fields_like_db_response TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD time ON TABLE fields_like_db_response TYPE string;

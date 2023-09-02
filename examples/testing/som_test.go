@@ -4,10 +4,12 @@ import (
 	"context"
 	"github.com/docker/docker/api/types/container"
 	"github.com/marcbinz/som/examples/testing/gen/som"
+	"github.com/marcbinz/som/examples/testing/gen/som/where"
 	"github.com/marcbinz/som/examples/testing/model"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
+	"net/url"
 	"testing"
 )
 
@@ -74,6 +76,75 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 	}
 
 	// TODO: add database cleanup?
+}
+
+func TestURLTypes(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	if err := client.ApplySchema(); err != nil {
+		t.Fatal(err)
+	}
+
+	someURL, err := url.Parse("https://surrealdb.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newModel := &model.URLExample{
+		SomeURL:      someURL,
+		SomeOtherURL: *someURL,
+	}
+
+	err = client.URLExampleRepo().Create(ctx, newModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readModel, exists, err := client.URLExampleRepo().Read(ctx, newModel.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, true, exists)
+
+	assert.Equal(t, someURL.String(), readModel.SomeURL.String())
+	assert.Equal(t, someURL.String(), readModel.SomeOtherURL.String())
+
+	someURL, err = url.Parse("https://github.com/surrealdb/surrealdb")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readModel.SomeURL = someURL
+	readModel.SomeOtherURL = *someURL
+
+	err = client.URLExampleRepo().Update(ctx, readModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, someURL.String(), readModel.SomeURL.String())
+	assert.Equal(t, someURL.String(), readModel.SomeOtherURL.String())
+
+	queryModel, err := client.URLExampleRepo().Query().
+		Filter(
+			where.URLExample.SomeURL.Equal(someURL),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, someURL.String(), queryModel.SomeURL.String())
+
+	err = client.URLExampleRepo().Delete(ctx, readModel)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 //

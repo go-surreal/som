@@ -27,7 +27,7 @@ func newUser[T any](key lib.Key[T]) user[T] {
 		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
 		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
 		URL:       lib.NewBase[url.URL, T](lib.Field(key, "url")),
-		URLPtr:    lib.NewBasePtr[url.URL, T](lib.Field(key, "url_ptr")),
+		URLPtr:    lib.NewBasePtr[*url.URL, T](lib.Field(key, "url_ptr")),
 		UUID:      lib.NewBase[uuid.UUID, T](lib.Field(key, "uuid")),
 		UUIDPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
 		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
@@ -55,7 +55,7 @@ type user[T any] struct {
 	UUID      *lib.Base[uuid.UUID, T]
 	UUIDPtr   *lib.BasePtr[uuid.UUID, T]
 	URL       *lib.Base[url.URL, T]
-	URLPtr    *lib.BasePtr[url.URL, T]
+	URLPtr    *lib.BasePtr[*url.URL, T]
 }
 
 func (n user[T]) Login() login[T] {

@@ -2,6 +2,7 @@
 package som
 
 type Client interface {
+	URLExampleRepo() URLExampleRepo
 	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
 	ApplySchema() error
 	Close()
