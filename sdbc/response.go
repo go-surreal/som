@@ -111,7 +111,7 @@ func (c *Client) handleMessage(ctx context.Context, data []byte) {
 	c.waitGroup.Add(1)
 	defer c.waitGroup.Done()
 
-	var res *Response
+	var res *response
 
 	if err := c.jsonUnmarshal(data, &res); err != nil {
 		// c.Close(websocket.StatusInvalidFramePayloadData, "failed to unmarshal JSON")
@@ -134,7 +134,7 @@ func (c *Client) handleMessage(ctx context.Context, data []byte) {
 	c.handleResult(ctx, res)
 }
 
-func (c *Client) handleResult(ctx context.Context, res *Response) {
+func (c *Client) handleResult(ctx context.Context, res *response) {
 	outCh, ok := c.requests.get(res.ID)
 	if !ok {
 		c.logger.ErrorContext(ctx, "Could not find pending request for ID.", "id", res.ID)
@@ -151,19 +151,19 @@ func (c *Client) handleResult(ctx context.Context, res *Response) {
 	}
 }
 
-func (c *Client) handleLiveQuery(ctx context.Context, res *Response) {
-	var result LiveQueryResult
+func (c *Client) handleLiveQuery(ctx context.Context, res *response) {
+	var out liveQueryOutput
 
 	fmt.Println("live:", string(res.Result))
 
-	if err := c.jsonUnmarshal(res.Result, &result); err != nil {
+	if err := c.jsonUnmarshal(res.Result, &out); err != nil {
 		c.logger.ErrorContext(ctx, "Could not unmarshal websocket message.", "error", err)
 		return
 	}
 
-	outCh, ok := c.liveQueries.get(string(result.ID), false)
+	outCh, ok := c.liveQueries.get(string(out.ID), false)
 	if !ok {
-		c.logger.ErrorContext(ctx, "Could not find live query channel.", "id", result.ID)
+		c.logger.ErrorContext(ctx, "Could not find live query channel.", "id", out.ID)
 		return
 	}
 

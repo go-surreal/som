@@ -26,7 +26,7 @@ const (
 // signIn is a helper method for signing in a user.
 func (c *Client) signIn(ctx context.Context, timeout time.Duration, username, password string) error {
 	res, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodSignIn,
 			Params: []any{
 				signInParams{
@@ -49,7 +49,7 @@ func (c *Client) signIn(ctx context.Context, timeout time.Duration, username, pa
 // use is a method to select the namespace and table for the connection.
 func (c *Client) use(ctx context.Context, timeout time.Duration, namespace, database string) error {
 	res, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodUse,
 			Params: []any{
 				namespace,
@@ -72,7 +72,7 @@ func (c *Client) use(ctx context.Context, timeout time.Duration, namespace, data
 // Query is a convenient method for sending a query to the database.
 func (c *Client) Query(ctx context.Context, timeout time.Duration, query string, vars map[string]any) ([]byte, error) {
 	res, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodQuery,
 			Params: []any{
 				query,
@@ -90,7 +90,7 @@ func (c *Client) Query(ctx context.Context, timeout time.Duration, query string,
 
 func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) (<-chan []byte, error) {
 	raw, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodLive,
 			Params: []any{
 				query,
@@ -127,7 +127,7 @@ func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) 
 
 func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) ([]byte, error) {
 	res, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodKill,
 			Params: []any{
 				uuid,
@@ -145,7 +145,7 @@ func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) (
 // Select a table or record from the database.
 func (c *Client) Select(ctx context.Context, timeout time.Duration, thing string) ([]byte, error) {
 	res, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodSelect,
 			Params: []any{
 				thing,
@@ -162,7 +162,7 @@ func (c *Client) Select(ctx context.Context, timeout time.Duration, thing string
 
 func (c *Client) Create(ctx context.Context, timeout time.Duration, thing string, data any) ([]byte, error) {
 	res, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodCreate,
 			Params: []any{
 				thing,
@@ -181,7 +181,7 @@ func (c *Client) Create(ctx context.Context, timeout time.Duration, thing string
 // Update a table or record in the database like a PUT request.
 func (c *Client) Update(ctx context.Context, timeout time.Duration, thing string, data any) ([]byte, error) {
 	res, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodUpdate,
 			Params: []any{
 				thing,
@@ -200,7 +200,7 @@ func (c *Client) Update(ctx context.Context, timeout time.Duration, thing string
 // Delete a table or a row from the database like a DELETE request.
 func (c *Client) Delete(ctx context.Context, timeout time.Duration, thing string) ([]byte, error) {
 	res, err := c.send(ctx,
-		Request{
+		request{
 			Method: methodDelete,
 			Params: []any{
 				thing,
@@ -228,7 +228,7 @@ type signInParams struct {
 // -- INTERNAL
 //
 
-func (c *Client) send(ctx context.Context, req Request, timeout time.Duration) (_ []byte, err error) {
+func (c *Client) send(ctx context.Context, req request, timeout time.Duration) (_ []byte, err error) {
 	defer c.checkWebsocketConn(err)
 
 	reqID, resCh := c.requests.prepare()
@@ -269,7 +269,7 @@ func (c *Client) send(ctx context.Context, req Request, timeout time.Duration) (
 
 // write writes the JSON message v to c.
 // It will reuse buffers in between calls to avoid allocations.
-func (c *Client) write(ctx context.Context, req Request) (err error) {
+func (c *Client) write(ctx context.Context, req request) (err error) {
 	defer c.checkWebsocketConn(err)
 
 	data, err := c.jsonMarshal(req)
@@ -282,19 +282,6 @@ func (c *Client) write(ctx context.Context, req Request) (err error) {
 		return fmt.Errorf("failed to write message: %w", err)
 	}
 
-	// Using Writer instead of Write to stream the message.
-	// writer, err := conn.Writer(ctx, websocket.MessageText)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// json.Marshal cannot reuse buffers between calls as it has to return
-	// a copy of the byte slice but Encoder does as it directly writes to w.
-	// err = jsonHandler.NewEncoder(writer).Encode(req)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to marshal JSON: %w", err)
-	// }
-
-	// return writer.Close()
+	// TODO: use Writer instead of Write to stream the message?
 	return nil
 }

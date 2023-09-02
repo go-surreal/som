@@ -54,7 +54,7 @@ func Test(ctx context.Context) error {
 
 	/*liveQuery := res.([]any)[0].(map[string]any)["result"].(string)
 
-	req = Request{
+	req = request{
 		Method: "create",
 		Params: []interface{}{
 			"person",
@@ -71,7 +71,7 @@ func Test(ctx context.Context) error {
 
 	fmt.Println("res:", res)
 
-	req = Request{
+	req = request{
 		Method: "kill",
 		Params: []interface{}{
 			liveQuery,

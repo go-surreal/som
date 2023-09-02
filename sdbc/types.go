@@ -6,24 +6,24 @@ import (
 	"time"
 )
 
-type Request struct {
+type request struct {
 	ID     string        `json:"id"`
 	Method string        `json:"method"`
 	Params []interface{} `json:"params"`
 }
 
-type Response struct {
+type response struct {
 	ID     string          `json:"id"`
 	Result json.RawMessage `json:"result"`
-	Error  *ResponseError  `json:"error"`
+	Error  *responseError  `json:"error"`
 }
 
-type ResponseError struct {
+type responseError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
-type LiveQueryResult struct {
+type liveQueryOutput struct {
 	ID     []byte `json:"id"`
 	Action string `json:"action"`
 	Result any    `json:"result"`
