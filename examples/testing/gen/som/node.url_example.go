@@ -9,7 +9,6 @@ import (
 	query "github.com/marcbinz/som/examples/testing/gen/som/query"
 	relate "github.com/marcbinz/som/examples/testing/gen/som/relate"
 	model "github.com/marcbinz/som/examples/testing/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 
 type URLExampleRepo interface {
@@ -23,15 +22,17 @@ type URLExampleRepo interface {
 }
 
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
-	return &uRLExample{db: c.db}
+	return &uRLExample{db: c.db, marshal: c.marshal, unmarshal: c.unmarshal}
 }
 
 type uRLExample struct {
-	db Database
+	db        Database
+	marshal   func(val any) ([]byte, error)
+	unmarshal func(buf []byte, val any) error
 }
 
 func (n *uRLExample) Query() query.URLExample {
-	return query.NewURLExample(n.db)
+	return query.NewURLExample(n.db, n.unmarshal)
 }
 
 func (n *uRLExample) Create(ctx context.Context, uRLExample *model.URLExample) error {
@@ -44,12 +45,12 @@ func (n *uRLExample) Create(ctx context.Context, uRLExample *model.URLExample) e
 	key := "url_example"
 	data := conv.FromURLExample(*uRLExample)
 
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.URLExample
-	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	err = n.unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -70,21 +71,28 @@ func (n *uRLExample) CreateWithID(ctx context.Context, id string, uRLExample *mo
 	key := "url_example:" + "⟨" + id + "⟩"
 	data := conv.FromURLExample(*uRLExample)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.URLExample](n.db.Create(key, data))
+	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
+	}
+	var convNode conv.URLExample
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*uRLExample = conv.ToURLExample(convNode)
 	return nil
 }
 
 func (n *uRLExample) Read(ctx context.Context, id string) (*model.URLExample, bool, error) {
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.URLExample](n.db.Select("url_example:⟨" + id + "⟩"))
-	if errors.Is(err, surrealdbgo.ErrNoRow) {
-		return nil, false, nil
-	}
+	res, err := n.db.Select(ctx, "url_example:⟨"+id+"⟩")
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
+	}
+	var convNode conv.URLExample
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	node := conv.ToURLExample(convNode)
 	return &node, true, nil
@@ -99,9 +107,14 @@ func (n *uRLExample) Update(ctx context.Context, uRLExample *model.URLExample) e
 	}
 	data := conv.FromURLExample(*uRLExample)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.URLExample](n.db.Update("url_example:⟨"+uRLExample.ID()+"⟩", data))
+	res, err := n.db.Update(ctx, "url_example:⟨"+uRLExample.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
+	}
+	var convNode conv.URLExample
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*uRLExample = conv.ToURLExample(convNode)
 	return nil
@@ -111,7 +124,7 @@ func (n *uRLExample) Delete(ctx context.Context, uRLExample *model.URLExample) e
 	if uRLExample == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("url_example:⟨" + uRLExample.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "url_example:⟨"+uRLExample.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}
@@ -119,5 +132,5 @@ func (n *uRLExample) Delete(ctx context.Context, uRLExample *model.URLExample) e
 }
 
 func (n *uRLExample) Relate() *relate.URLExample {
-	return relate.NewURLExample(n.db)
+	return relate.NewURLExample(n.db, n.unmarshal)
 }

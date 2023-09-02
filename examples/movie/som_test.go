@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "nightly"
+	surrealDBContainerVersion = "1.0.0-beta.10"
 	containerName             = "som_test_surrealdb"
 	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
@@ -35,10 +35,6 @@ func TestWithDatabase(t *testing.T) {
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
-
-	if err := client.ApplySchema(); err != nil {
-		t.Fatal(err)
-	}
 
 	title := "Some Movie"
 
@@ -82,7 +78,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	req := testcontainers.ContainerRequest{
 		Name:         containerName,
 		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
+		Cmd:          []string{"start", "--strict", "--allow-funcs", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog(containerStartedMsg),
 		HostConfigModifier: func(conf *container.HostConfig) {
@@ -106,8 +102,12 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	client, err := som.NewClient(conf(endpoint))
+	client, err := som.NewClient(ctx, conf(endpoint))
 	if err != nil {
+		tb.Fatal(err)
+	}
+
+	if err := client.ApplySchema(ctx); err != nil {
 		tb.Fatal(err)
 	}
 

@@ -2,18 +2,19 @@
 package relate
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	conv "github.com/marcbinz/som/examples/movie/gen/som/conv"
 	model "github.com/marcbinz/som/examples/movie/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 
 type actedIn struct {
-	db Database
+	db        Database
+	unmarshal func(buf []byte, val any) error
 }
 
-func (e actedIn) Create(edge *model.ActedIn) error {
+func (e actedIn) Create(ctx context.Context, edge *model.ActedIn) error {
 	if edge == nil {
 		return errors.New("the given edge must not be nil")
 	}
@@ -28,9 +29,14 @@ func (e actedIn) Create(edge *model.ActedIn) error {
 	}
 	query := "RELATE " + "person:" + edge.Person.ID() + "->acted_in->" + "movie:" + edge.Movie.ID() + " CONTENT $data"
 	data := conv.FromActedIn(*edge)
-	convEdge, err := surrealdbgo.SmartUnmarshal[conv.ActedIn](e.db.Query(query, map[string]any{"data": data}))
+	res, err := e.db.Query(ctx, query, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
+	}
+	var convEdge conv.ActedIn
+	err = e.unmarshal(res, &convEdge)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}
 	*edge = conv.ToActedIn(convEdge)
 	return nil
