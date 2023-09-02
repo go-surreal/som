@@ -1,11 +1,13 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/marcbinz/som/core/embed"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 type sortBuilder struct {
@@ -23,8 +25,7 @@ func (b *sortBuilder) build() error {
 		return err
 	}
 
-	// Generate the base file.
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -37,24 +38,20 @@ func (b *sortBuilder) build() error {
 	return nil
 }
 
-func (b *sortBuilder) buildBaseFile() error {
-	content := `
-
-package by
-
-func keyed(base, key string) string {
-	if base == "" {
-		return key
-	}
-	return base + "." + key
-}
-`
-
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "sort.go"), data, os.ModePerm)
+func (b *sortBuilder) embedStaticFiles() error {
+	files, err := embed.Sort()
 	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

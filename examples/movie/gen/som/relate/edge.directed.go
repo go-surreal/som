@@ -6,7 +6,7 @@ import (
 	"fmt"
 	conv "github.com/marcbinz/som/examples/movie/gen/som/conv"
 	model "github.com/marcbinz/som/examples/movie/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 )
 
 type directed struct {
@@ -28,11 +28,11 @@ func (e directed) Create(edge *model.Directed) error {
 	}
 	query := "RELATE " + "person:" + edge.Person.ID() + "->directed->" + "movie:" + edge.Movie.ID() + " CONTENT $data"
 	data := conv.FromDirected(*edge)
-	convEdge, err := surrealdbgo.SmartUnmarshal[conv.Directed](e.db.Query(query, map[string]any{"data": data}))
+	convEdge, err := marshal.SmartUnmarshal[conv.Directed](e.db.Query(query, map[string]any{"data": data}))
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
 	}
-	*edge = conv.ToDirected(convEdge)
+	*edge = conv.ToDirected(convEdge[0])
 	return nil
 }
 

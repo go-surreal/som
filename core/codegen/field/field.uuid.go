@@ -17,14 +17,15 @@ func (f *UUID) typeGo() jen.Code {
 }
 
 func (f *UUID) typeConv() jen.Code {
-	return jen.Add(f.ptr()).String()
+	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
 }
 
 func (f *UUID) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "string"
+		return f.optionWrap("string") + " ASSERT $value == NONE OR $value == NULL OR is::uuid($value)"
 	}
-	return "string ASSERT $value != NULL" // TODO: assert for uuid? (currently fails for unknown reason!)
+
+	return "string ASSERT is::uuid($value)"
 }
 
 func (f *UUID) CodeGen() *CodeGen {
@@ -63,17 +64,11 @@ func (f *UUID) filterInit(ctx Context) jen.Code {
 }
 
 func (f *UUID) convFrom(ctx Context) jen.Code {
-	if f.source.Pointer() {
-		return jen.Id("uuidPtr").Call(jen.Id("data").Dot(f.NameGo()))
-	}
-	return jen.Id("data").Dot(f.NameGo()).Dot("String").Call()
+	return jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *UUID) convTo(ctx Context) jen.Code {
-	if f.source.Pointer() {
-		return jen.Id("ptrFunc").Call(jen.Id("parseUUID")).Call(jen.Id("data").Dot(f.NameGo()))
-	}
-	return jen.Id("parseUUID").Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *UUID) fieldDef(ctx Context) jen.Code {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	conv "github.com/marcbinz/som/examples/movie/gen/som/conv"
 	model "github.com/marcbinz/som/examples/movie/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 )
 
 type actedIn struct {
@@ -28,11 +28,11 @@ func (e actedIn) Create(edge *model.ActedIn) error {
 	}
 	query := "RELATE " + "person:" + edge.Person.ID() + "->acted_in->" + "movie:" + edge.Movie.ID() + " CONTENT $data"
 	data := conv.FromActedIn(*edge)
-	convEdge, err := surrealdbgo.SmartUnmarshal[conv.ActedIn](e.db.Query(query, map[string]any{"data": data}))
+	convEdge, err := marshal.SmartUnmarshal[conv.ActedIn](e.db.Query(query, map[string]any{"data": data}))
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
 	}
-	*edge = conv.ToActedIn(convEdge)
+	*edge = conv.ToActedIn(convEdge[0])
 	return nil
 }
 

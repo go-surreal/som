@@ -18,10 +18,12 @@ func (c *ClientImpl) ApplySchema() error {
 var tmpl = `
 
 DEFINE TABLE person SCHEMAFULL;
-DEFINE FIELD name ON TABLE person TYPE string ASSERT $value != NULL;
+DEFINE FIELD id ON TABLE person TYPE record<person> ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD name ON TABLE person TYPE string;
 
 DEFINE TABLE movie SCHEMAFULL;
-DEFINE FIELD title ON TABLE movie TYPE string ASSERT $value != NULL;
+DEFINE FIELD id ON TABLE movie TYPE record<movie> ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD title ON TABLE movie TYPE string;
 
 DEFINE TABLE directed SCHEMAFULL;
 

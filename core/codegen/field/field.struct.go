@@ -21,10 +21,7 @@ func (f *Struct) typeConv() jen.Code {
 }
 
 func (f *Struct) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "object"
-	}
-	return "object ASSERT $value != NULL"
+	return f.optionWrap("object")
 }
 
 func (f *Struct) Table() Table {

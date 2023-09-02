@@ -20,10 +20,7 @@ func (f *String) typeConv() jen.Code {
 }
 
 func (f *String) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "string"
-	}
-	return "string ASSERT $value != NULL"
+	return f.optionWrap("string")
 }
 
 func (f *String) CodeGen() *CodeGen {

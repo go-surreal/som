@@ -9,7 +9,8 @@ import (
 	query "github.com/marcbinz/som/examples/movie/gen/som/query"
 	relate "github.com/marcbinz/som/examples/movie/gen/som/relate"
 	model "github.com/marcbinz/som/examples/movie/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	constants "github.com/surrealdb/surrealdb.go/pkg/constants"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 )
 
 type PersonRepo interface {
@@ -49,7 +50,7 @@ func (n *person) Create(ctx context.Context, person *model.Person) error {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.Person
-	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	err = marshal.Unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -70,23 +71,23 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 	key := "person:" + "⟨" + id + "⟩"
 	data := conv.FromPerson(*person)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Person](n.db.Create(key, data))
+	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Create(key, data))
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	*person = conv.ToPerson(convNode)
+	*person = conv.ToPerson(convNode[0])
 	return nil
 }
 
 func (n *person) Read(ctx context.Context, id string) (*model.Person, bool, error) {
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Person](n.db.Select("person:⟨" + id + "⟩"))
-	if errors.Is(err, surrealdbgo.ErrNoRow) {
+	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Select("person:⟨" + id + "⟩"))
+	if errors.Is(err, constants.ErrNoRow) {
 		return nil, false, nil
 	}
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	node := conv.ToPerson(convNode)
+	node := conv.ToPerson(convNode[0])
 	return &node, true, nil
 }
 
@@ -99,11 +100,11 @@ func (n *person) Update(ctx context.Context, person *model.Person) error {
 	}
 	data := conv.FromPerson(*person)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Person](n.db.Update("person:⟨"+person.ID()+"⟩", data))
+	convNode, err := marshal.SmartUnmarshal[conv.Person](n.db.Update("person:⟨"+person.ID()+"⟩", data))
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	*person = conv.ToPerson(convNode)
+	*person = conv.ToPerson(convNode[0])
 	return nil
 }
 

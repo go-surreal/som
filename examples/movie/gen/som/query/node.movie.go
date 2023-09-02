@@ -9,7 +9,7 @@ import (
 	lib "github.com/marcbinz/som/examples/movie/gen/som/internal/lib"
 	with "github.com/marcbinz/som/examples/movie/gen/som/with"
 	model "github.com/marcbinz/som/examples/movie/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
+	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 	"strings"
 	"time"
 )
@@ -102,21 +102,23 @@ func (q Movie) Count(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	var rawCount []countResult
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawCount)
+	var rawCount []marshal.RawQuery[countResult]
+	err = marshal.UnmarshalRaw(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
-	if !ok {
+	if len(rawCount) < 1 || len(rawCount[0].Result) < 1 {
 		return 0, nil
 	}
-	if len(rawCount) < 1 {
-		return 0, nil
-	}
-	return rawCount[0].Count, nil
+	return rawCount[0].Result[0].Count, nil
 }
 
-// Exists returns whether at least one record for the conditons
+// CountAsync is the asynchronous version of Count.
+func (q Movie) CountAsync(ctx context.Context) *asyncResult[int] {
+	return async(ctx, q.Count)
+}
+
+// Exists returns whether at least one record for the conditions
 // of the query exists or not. In other words it returns whether
 // the size of the result set is greater than 0.
 func (q Movie) Exists(ctx context.Context) (bool, error) {
@@ -127,10 +129,15 @@ func (q Movie) Exists(ctx context.Context) (bool, error) {
 	return count > 0, nil
 }
 
+// ExistsAsync is the asynchronous version of Exists.
+func (q Movie) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+	return async(ctx, q.Exists)
+}
+
 // All returns all records matching the conditions of the query.
 func (q Movie) All(ctx context.Context) ([]*model.Movie, error) {
 	res := q.query.BuildAsAll()
-	rawNodes, err := surrealdbgo.SmartUnmarshal[[]conv.Movie](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := marshal.SmartUnmarshal[conv.Movie](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
@@ -142,10 +149,15 @@ func (q Movie) All(ctx context.Context) ([]*model.Movie, error) {
 	return nodes, nil
 }
 
+// AllAsync is the asynchronous version of All.
+func (q Movie) AllAsync(ctx context.Context) *asyncResult[[]*model.Movie] {
+	return async(ctx, q.All)
+}
+
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q Movie) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
-	rawNodes, err := surrealdbgo.SmartUnmarshal[[]idNode](q.db.Query(res.Statement, res.Variables))
+	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
@@ -154,6 +166,11 @@ func (q Movie) AllIDs(ctx context.Context) ([]string, error) {
 		ids = append(ids, rawNode.ID)
 	}
 	return ids, nil
+}
+
+// AllIDsAsync is the asynchronous version of AllIDs.
+func (q Movie) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
+	return async(ctx, q.AllIDs)
 }
 
 // First returns the first record matching the conditions of the query.
@@ -171,6 +188,11 @@ func (q Movie) First(ctx context.Context) (*model.Movie, error) {
 	return res[0], nil
 }
 
+// FirstAsync is the asynchronous version of First.
+func (q Movie) FirstAsync(ctx context.Context) *asyncResult[*model.Movie] {
+	return async(ctx, q.First)
+}
+
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
@@ -184,6 +206,11 @@ func (q Movie) FirstID(ctx context.Context) (string, error) {
 		return "", errors.New("empty result")
 	}
 	return res[0], nil
+}
+
+// FirstIDAsync is the asynchronous version of FirstID.
+func (q Movie) FirstIDAsync(ctx context.Context) *asyncResult[string] {
+	return async(ctx, q.FirstID)
 }
 
 // Describe returns a string representation of the query.
