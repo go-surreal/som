@@ -9,21 +9,30 @@ import (
 	lib "github.com/marcbinz/som/examples/movie/gen/som/internal/lib"
 	with "github.com/marcbinz/som/examples/movie/gen/som/with"
 	model "github.com/marcbinz/som/examples/movie/model"
-	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 	"strings"
 	"time"
 )
 
-type Movie struct {
-	db    Database
-	query lib.Query[model.Movie]
+type nodeMovie struct {
+	db        Database
+	query     lib.Query[model.Movie]
+	unmarshal func(buf []byte, val any) error
 }
 
-func NewMovie(db Database) Movie {
-	return Movie{
-		db:    db,
-		query: lib.NewQuery[model.Movie]("movie"),
-	}
+type NodeMovie struct {
+	nodeMovie
+}
+
+type NodeMovieNoLive struct {
+	nodeMovie
+}
+
+func NewMovie(db Database, unmarshal func(buf []byte, val any) error) NodeMovie {
+	return NodeMovie{nodeMovie{
+		db:        db,
+		query:     lib.NewQuery[model.Movie]("movie"),
+		unmarshal: unmarshal,
+	}}
 }
 
 // Filter adds a where statement to the query to
@@ -33,77 +42,77 @@ func NewMovie(db Database) Movie {
 // together that all need to match.
 // Use where.Any to chain multiple conditions
 // together where at least one needs to match.
-func (q Movie) Filter(filters ...lib.Filter[model.Movie]) Movie {
+func (q nodeMovie) Filter(filters ...lib.Filter[model.Movie]) NodeMovie {
 	q.query.Where = append(q.query.Where, filters...)
-	return q
+	return NodeMovie{q}
 }
 
 // Order sorts the returned records based on the given conditions.
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
 // it would override the sort conditions.
-func (q Movie) Order(by ...*lib.Sort[model.Movie]) Movie {
+func (q nodeMovie) Order(by ...*lib.Sort[model.Movie]) NodeMovieNoLive {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
-	return q
+	return NodeMovieNoLive{q}
 }
 
 // OrderRandom sorts the returned records in a random order.
 // Note: OrderRandom takes precedence over Order.
-func (q Movie) OrderRandom() Movie {
+func (q nodeMovie) OrderRandom() NodeMovieNoLive {
 	q.query.SortRandom = true
-	return q
+	return NodeMovieNoLive{q}
 }
 
 // Offset skips the first x records for the result set.
-func (q Movie) Offset(offset int) Movie {
+func (q nodeMovie) Offset(offset int) NodeMovieNoLive {
 	q.query.Offset = offset
-	return q
+	return NodeMovieNoLive{q}
 }
 
 // Limit restricts the query to return at most x records.
-func (q Movie) Limit(limit int) Movie {
+func (q nodeMovie) Limit(limit int) NodeMovieNoLive {
 	q.query.Limit = limit
-	return q
+	return NodeMovieNoLive{q}
 }
 
 // Fetch can be used to return related records.
 // This works for both records links and edges.
-func (q Movie) Fetch(fetch ...with.Fetch_[model.Movie]) Movie {
+func (q nodeMovie) Fetch(fetch ...with.Fetch_[model.Movie]) NodeMovie {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			q.query.Fetch = append(q.query.Fetch, field)
 		}
 	}
-	return q
+	return NodeMovie{q}
 }
 
 // Timeout adds an execution time limit to the query.
 // When exceeded, the query call will return with an error.
-func (q Movie) Timeout(timeout time.Duration) Movie {
+func (q nodeMovie) Timeout(timeout time.Duration) NodeMovieNoLive {
 	q.query.Timeout = timeout
-	return q
+	return NodeMovieNoLive{q}
 }
 
 // Parallel tells SurrealDB that individual parts
 // of the query can be calculated in parallel.
 // This could lead to a faster execution.
-func (q Movie) Parallel(parallel bool) Movie {
+func (q nodeMovie) Parallel(parallel bool) NodeMovieNoLive {
 	q.query.Parallel = parallel
-	return q
+	return NodeMovieNoLive{q}
 }
 
 // Count returns the size of the result set, in other words the
 // number of records matching the conditions of the query.
-func (q Movie) Count(ctx context.Context) (int, error) {
-	res := q.query.BuildAsCount()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+func (q nodeMovie) Count(ctx context.Context) (int, error) {
+	req := q.query.BuildAsCount()
+	raw, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return 0, err
 	}
-	var rawCount []marshal.RawQuery[countResult]
-	err = marshal.UnmarshalRaw(raw, &rawCount)
+	var rawCount []queryResult[countResult]
+	err = q.unmarshal(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
@@ -114,14 +123,14 @@ func (q Movie) Count(ctx context.Context) (int, error) {
 }
 
 // CountAsync is the asynchronous version of Count.
-func (q Movie) CountAsync(ctx context.Context) *asyncResult[int] {
+func (q nodeMovie) CountAsync(ctx context.Context) *asyncResult[int] {
 	return async(ctx, q.Count)
 }
 
 // Exists returns whether at least one record for the conditions
 // of the query exists or not. In other words it returns whether
 // the size of the result set is greater than 0.
-func (q Movie) Exists(ctx context.Context) (bool, error) {
+func (q nodeMovie) Exists(ctx context.Context) (bool, error) {
 	count, err := q.Count(ctx)
 	if err != nil {
 		return false, err
@@ -130,19 +139,27 @@ func (q Movie) Exists(ctx context.Context) (bool, error) {
 }
 
 // ExistsAsync is the asynchronous version of Exists.
-func (q Movie) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+func (q nodeMovie) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 	return async(ctx, q.Exists)
 }
 
 // All returns all records matching the conditions of the query.
-func (q Movie) All(ctx context.Context) ([]*model.Movie, error) {
-	res := q.query.BuildAsAll()
-	rawNodes, err := marshal.SmartUnmarshal[conv.Movie](q.db.Query(res.Statement, res.Variables))
+func (q nodeMovie) All(ctx context.Context) ([]*model.Movie, error) {
+	req := q.query.BuildAsAll()
+	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
+	var rawNodes []queryResult[conv.Movie]
+	err = q.unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, errors.New("empty result")
+	}
 	var nodes []*model.Movie
-	for _, rawNode := range rawNodes {
+	for _, rawNode := range rawNodes[0].Result {
 		node := conv.ToMovie(rawNode)
 		nodes = append(nodes, &node)
 	}
@@ -150,16 +167,21 @@ func (q Movie) All(ctx context.Context) ([]*model.Movie, error) {
 }
 
 // AllAsync is the asynchronous version of All.
-func (q Movie) AllAsync(ctx context.Context) *asyncResult[[]*model.Movie] {
+func (q nodeMovie) AllAsync(ctx context.Context) *asyncResult[[]*model.Movie] {
 	return async(ctx, q.All)
 }
 
 // AllIDs returns the IDs of all records matching the conditions of the query.
-func (q Movie) AllIDs(ctx context.Context) ([]string, error) {
-	res := q.query.BuildAsAllIDs()
-	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(res.Statement, res.Variables))
+func (q nodeMovie) AllIDs(ctx context.Context) ([]string, error) {
+	req := q.query.BuildAsAllIDs()
+	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
+	}
+	var rawNodes []idNode
+	err = q.unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
 	var ids []string
 	for _, rawNode := range rawNodes {
@@ -169,14 +191,14 @@ func (q Movie) AllIDs(ctx context.Context) ([]string, error) {
 }
 
 // AllIDsAsync is the asynchronous version of AllIDs.
-func (q Movie) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
+func (q nodeMovie) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
 	return async(ctx, q.AllIDs)
 }
 
 // First returns the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q Movie) First(ctx context.Context) (*model.Movie, error) {
+func (q nodeMovie) First(ctx context.Context) (*model.Movie, error) {
 	q.query.Limit = 1
 	res, err := q.All(ctx)
 	if err != nil {
@@ -189,14 +211,14 @@ func (q Movie) First(ctx context.Context) (*model.Movie, error) {
 }
 
 // FirstAsync is the asynchronous version of First.
-func (q Movie) FirstAsync(ctx context.Context) *asyncResult[*model.Movie] {
+func (q nodeMovie) FirstAsync(ctx context.Context) *asyncResult[*model.Movie] {
 	return async(ctx, q.First)
 }
 
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q Movie) FirstID(ctx context.Context) (string, error) {
+func (q nodeMovie) FirstID(ctx context.Context) (string, error) {
 	q.query.Limit = 1
 	res, err := q.AllIDs(ctx)
 	if err != nil {
@@ -209,14 +231,30 @@ func (q Movie) FirstID(ctx context.Context) (string, error) {
 }
 
 // FirstIDAsync is the asynchronous version of FirstID.
-func (q Movie) FirstIDAsync(ctx context.Context) *asyncResult[string] {
+func (q nodeMovie) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 	return async(ctx, q.FirstID)
+}
+
+// Live returns a channel of changes and a channel of errors.
+// The changes channel will be closed when the context is canceled.
+// The error channel will be closed when the context is canceled or
+// when an error occurs.
+func (q NodeMovie) Live(ctx context.Context) *asyncResult[*model.Movie] {
+	return nil
+}
+
+// Live returns a channel of changes and a channel of errors.
+// The changes channel will be closed when the context is canceled.
+// The error channel will be closed when the context is canceled or
+// when an error occurs.
+func (q NodeMovie) LiveDiff(ctx context.Context) *asyncResult[*model.Movie] {
+	return nil
 }
 
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
-func (q Movie) Describe() string {
-	res := q.query.BuildAsAll()
-	return strings.TrimSpace(res.Statement)
+func (q nodeMovie) Describe() string {
+	req := q.query.BuildAsAll()
+	return strings.TrimSpace(req.Statement)
 }

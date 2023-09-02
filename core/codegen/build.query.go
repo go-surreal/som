@@ -73,6 +73,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	f.Type().Id(nodeType).Struct(
 		jen.Id("db").Id("Database"),
 		jen.Id("query").Qual(pkgLib, "Query").Types(b.SourceQual(node.Name)),
+		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 	)
 
 	f.Line()
@@ -86,14 +87,19 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	)
 
 	f.Line()
-	f.Func().Id("New" + node.Name).Params(jen.Id("db").Id("Database")).
+	f.Func().Id("New"+node.Name).
+		Params(
+			jen.Id("db").Id("Database"),
+			jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
+		).
 		Id(nodeTypeLive).
 		Block(
 			jen.Return(
 				jen.Id(nodeTypeLive).Values(
 					jen.Id(nodeType).Values(jen.Dict{
-						jen.Id("db"):    jen.Id("db"),
-						jen.Id("query"): jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
+						jen.Id("db"):        jen.Id("db"),
+						jen.Id("query"):     jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
+						jen.Id("unmarshal"): jen.Id("unmarshal"),
 					}),
 				),
 			),
@@ -314,18 +320,19 @@ number of records matching the conditions of the query.
 			Id("Count").Params(jen.Id("ctx").Qual("context", "Context")).
 			Params(jen.Int(), jen.Error()).
 			Block(
-				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsCount").Call(),
+				jen.Id("req").Op(":=").Id("q").Dot("query").Dot("BuildAsCount").Call(),
 
 				jen.Id("raw").Op(",").Err().Op(":=").Id("q").Dot("db").Dot("Query").Call(
-					jen.Id("res").Dot("Statement"),
-					jen.Id("res").Dot("Variables"),
+					jen.Id("ctx"),
+					jen.Id("req").Dot("Statement"),
+					jen.Id("req").Dot("Variables"),
 				),
 				jen.If(jen.Err().Op("!=").Nil()).Block(
 					jen.Return(jen.Lit(0), jen.Err()),
 				),
 
-				jen.Var().Id("rawCount").Index().Qual(def.PkgSurrealMarshal, "RawQuery").Types(jen.Id("countResult")),
-				jen.Err().Op("=").Qual(def.PkgSurrealMarshal, "UnmarshalRaw").
+				jen.Var().Id("rawCount").Index().Id("queryResult").Types(jen.Id("countResult")),
+				jen.Err().Op("=").Id("q").Dot("unmarshal").
 					Call(jen.Id("raw"), jen.Op("&").Id("rawCount")),
 
 				jen.If(jen.Err().Op("!=").Nil()).Block(
@@ -411,24 +418,31 @@ All returns all records matching the conditions of the query.
 			Id("All").Params(jen.Id("ctx").Qual("context", "Context")).
 			Params(resultType, jen.Error()).
 			Block(
-				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
+				jen.Id("req").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
 
-				jen.List(jen.Id("rawNodes"), jen.Err()).Op(":=").
-					Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
+				jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("q").Dot("db").Dot("Query").
 					Call(
-						jen.Id("q").Dot("db").Dot("Query").
-							Call(
-								jen.Id("res").Dot("Statement"),
-								jen.Id("res").Dot("Variables"),
-							),
+						jen.Id("ctx"),
+						jen.Id("req").Dot("Statement"),
+						jen.Id("req").Dot("Variables"),
 					),
-
 				jen.If(jen.Err().Op("!=").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query records: %w"), jen.Err())),
 				),
 
+				jen.Var().Id("rawNodes").Index().Id("queryResult").Types(jen.Qual(pkgConv, node.NameGo())),
+
+				jen.Err().Op("=").Id("q").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("rawNodes")),
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal records: %w"), jen.Err())),
+				),
+
+				jen.If(jen.Len(jen.Id("rawNodes")).Op("<").Lit(1)).Block(
+					jen.Return(jen.Nil(), jen.Qual("errors", "New").Call(jen.Lit("empty result"))),
+				),
+
 				jen.Var().Id("nodes").Index().Op("*").Add(b.SourceQual(node.NameGo())),
-				jen.For(jen.Id("_").Op(",").Id("rawNode").Op(":=").Range().Id("rawNodes")).
+				jen.For(jen.Id("_").Op(",").Id("rawNode").Op(":=").Range().Id("rawNodes").Index(jen.Lit(0)).Dot("Result")).
 					Block(
 						jen.Id("node").Op(":=").Qual(pkgConv, "To"+node.NameGo()).
 							Call(jen.Id("rawNode")),
@@ -466,19 +480,21 @@ AllIDs returns the IDs of all records matching the conditions of the query.
 			Id("AllIDs").Params(jen.Id("ctx").Qual("context", "Context")).
 			Parens(jen.List(jen.Index().String(), jen.Error())).
 			Block(
-				jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAllIDs").Call(),
+				jen.Id("req").Op(":=").Id("q").Dot("query").Dot("BuildAsAllIDs").Call(),
 
-				jen.List(jen.Id("rawNodes"), jen.Err()).Op(":=").
-					Qual(def.PkgSurrealMarshal, "SmartUnmarshal").Types(jen.Id("idNode")).
-					Call(
-						jen.Id("q").Dot("db").Dot("Query").Call(
-							jen.Id("res").Dot("Statement"),
-							jen.Id("res").Dot("Variables"),
-						),
-					),
-
+				jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("q").Dot("db").Dot("Query").Call(
+					jen.Id("ctx"),
+					jen.Id("req").Dot("Statement"),
+					jen.Id("req").Dot("Variables"),
+				),
 				jen.If(jen.Err().Op("!=").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query records: %w"), jen.Err())),
+				),
+
+				jen.Var().Id("rawNodes").Index().Id("idNode"),
+				jen.Err().Op("=").Id("q").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("rawNodes")),
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal records: %w"), jen.Err())),
 				),
 
 				jen.Var().Id("ids").Index().String(),
@@ -641,9 +657,9 @@ should only be used for debugging purposes.
 		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Describe").Params().String().
 		Block(
-			jen.Id("res").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
+			jen.Id("req").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),
 			jen.Return(jen.Qual("strings", "TrimSpace").Call(
-				jen.Id("res").Dot("Statement"),
+				jen.Id("req").Dot("Statement"),
 			)),
 		)
 }
