@@ -23,10 +23,8 @@ type responseError struct {
 	Message string `json:"message"`
 }
 
-type liveQueryOutput struct {
-	ID     []byte `json:"id"`
-	Action string `json:"action"`
-	Result any    `json:"result"`
+type liveQueryID struct {
+	ID string `json:"id"`
 }
 
 //

@@ -32,7 +32,7 @@ func Test(ctx context.Context) error {
 		return err
 	}
 
-	live, err := client.Live(ctx, 0, "select * from person")
+	live, err := client.Live(ctx, 0, "select * from person", nil)
 	if err != nil {
 		return err
 	}

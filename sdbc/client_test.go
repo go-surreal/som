@@ -2,10 +2,12 @@ package sdbc
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/docker/docker/api/types/container"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
 	"log/slog"
 	"os"
 	"testing"
@@ -32,6 +34,229 @@ func conf(endpoint string) Config {
 func TestClient(t *testing.T) {
 	ctx := context.Background()
 
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	_, err := client.Query(ctx, 0, "define table test schemaless", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.Create(ctx, 0, "test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClientCRUD(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	// DEFINE TABLE
+
+	_, err := client.Query(ctx, 0, "define table some schemaless", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// CREATE
+
+	modelIn := someModel{
+		Name:  "some_name",
+		Value: 42,
+		Slice: []string{"a", "b", "c"},
+	}
+
+	res, err := client.Create(ctx, 0, "some", modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var modelCreate []someModel
+
+	err = json.Unmarshal(res, &modelCreate)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.Equal(modelIn.Name, modelCreate[0].Name))
+	assert.Check(t, is.Equal(modelIn.Value, modelCreate[0].Value))
+	assert.Check(t, is.DeepEqual(modelIn.Slice, modelCreate[0].Slice))
+
+	// QUERY
+
+	res, err = client.Query(ctx, 0, "select * from some where id = $id", map[string]any{
+		"id": modelCreate[0].ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var modelQuery1 []baseResponse[someModel]
+
+	err = json.Unmarshal(res, &modelQuery1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.DeepEqual(modelCreate[0], modelQuery1[0].Result[0]))
+
+	// UPDATE
+
+	modelIn.Name = "some_other_name"
+
+	res, err = client.Update(ctx, 0, "some", modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var modelUpdate []someModel
+
+	err = json.Unmarshal(res, &modelUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.Equal(modelIn.Name, modelUpdate[0].Name))
+
+	// SELECT
+
+	res, err = client.Select(ctx, 0, modelUpdate[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var modelSelect someModel
+
+	err = json.Unmarshal(res, &modelSelect)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.DeepEqual(modelIn.Name, modelSelect.Name))
+
+	// DELETE
+
+	res, err = client.Delete(ctx, 0, modelCreate[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var modelDelete someModel
+
+	err = json.Unmarshal(res, &modelDelete)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.DeepEqual(modelUpdate[0], modelDelete))
+}
+
+func TestClientLive(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	// DEFINE TABLE
+
+	_, err := client.Query(ctx, 0, "define table some schemaless", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// DEFINE MODEL
+
+	modelIn := someModel{
+		Name:  "some_name",
+		Value: 42,
+		Slice: []string{"a", "b", "c"},
+	}
+
+	// LIVE QUERY
+
+	live, err := client.Live(ctx, 0, "select * from some", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	liveResChan := make(chan *someModel)
+	liveErrChan := make(chan error)
+
+	go func() {
+		defer close(liveResChan)
+		defer close(liveErrChan)
+
+		for liveOut := range live {
+			var liveRes liveResponse[someModel]
+
+			err = json.Unmarshal(liveOut, &liveRes)
+			if err != nil {
+				liveResChan <- nil
+				liveErrChan <- err
+				return
+			}
+
+			liveResChan <- &liveRes.Result
+			liveErrChan <- nil
+		}
+	}()
+
+	// CREATE
+
+	res, err := client.Create(ctx, 0, "some", modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var modelCreate []someModel
+
+	err = json.Unmarshal(res, &modelCreate)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.Equal(modelIn.Name, modelCreate[0].Name))
+	assert.Check(t, is.Equal(modelIn.Value, modelCreate[0].Value))
+	assert.Check(t, is.DeepEqual(modelIn.Slice, modelCreate[0].Slice))
+
+	liveRes := <-liveResChan
+	liveErr := <-liveErrChan
+
+	assert.Check(t, is.Nil(liveErr))
+	assert.Check(t, is.DeepEqual(modelCreate[0], *liveRes))
+}
+
+//
+// -- TYPES
+//
+
+type baseResponse[T any] struct {
+	Result []T    `json:"result"`
+	Status string `json:"status"`
+	Time   string `json:"time"`
+}
+
+type liveResponse[T any] struct {
+	ID     string `json:"id"`
+	Action string `json:"action"`
+	Result T      `json:"result"`
+}
+
+type someModel struct {
+	ID    string   `json:"id,omitempty"`
+	Name  string   `json:"name"`
+	Value int      `json:"value"`
+	Slice []string `json:"slice"`
+}
+
+//
+// -- HELPER
+//
+
+func prepareDatabase(ctx context.Context, tb testing.TB) (*Client, func()) {
 	req := testcontainers.ContainerRequest{
 		Name:  containerName,
 		Image: "surrealdb/surrealdb:" + surrealDBContainerVersion,
@@ -56,18 +281,12 @@ func TestClient(t *testing.T) {
 		},
 	)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
-
-	defer func() {
-		if err := surreal.Terminate(ctx); err != nil {
-			t.Fatalf("failed to terminate container: %s", err.Error())
-		}
-	}()
 
 	endpoint, err := surreal.Endpoint(ctx, "")
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	slog.SetDefault(slog.New(
@@ -76,24 +295,18 @@ func TestClient(t *testing.T) {
 
 	client, err := NewClient(ctx, conf(endpoint))
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
-	defer func() {
+	cleanup := func() {
 		if err := client.Close(); err != nil {
-			t.Fatal(err)
+			tb.Fatalf("failed to close client: %s", err.Error())
 		}
-	}()
 
-	_, err = client.Query(ctx, 0, "define table test schemaless", nil)
-	if err != nil {
-		t.Fatal(err)
+		if err := surreal.Terminate(ctx); err != nil {
+			tb.Fatalf("failed to terminate container: %s", err.Error())
+		}
 	}
 
-	create, err := client.Create(ctx, 0, "test", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, string(create), string(create))
+	return client, cleanup
 }

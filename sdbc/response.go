@@ -119,6 +119,8 @@ func (c *Client) handleMessage(ctx context.Context, data []byte) {
 		return
 	}
 
+	fmt.Println("res:", fmt.Sprintf("%+v", string(data)))
+
 	c.logger.DebugContext(ctx, "Received message.", "res", res)
 
 	if res.Error != nil {
@@ -152,18 +154,16 @@ func (c *Client) handleResult(ctx context.Context, res *response) {
 }
 
 func (c *Client) handleLiveQuery(ctx context.Context, res *response) {
-	var out liveQueryOutput
+	var rawID liveQueryID
 
-	fmt.Println("live:", string(res.Result))
-
-	if err := c.jsonUnmarshal(res.Result, &out); err != nil {
+	if err := c.jsonUnmarshal(res.Result, &rawID); err != nil {
 		c.logger.ErrorContext(ctx, "Could not unmarshal websocket message.", "error", err)
 		return
 	}
 
-	outCh, ok := c.liveQueries.get(string(out.ID), false)
+	outCh, ok := c.liveQueries.get(rawID.ID, false)
 	if !ok {
-		c.logger.ErrorContext(ctx, "Could not find live query channel.", "id", out.ID)
+		c.logger.ErrorContext(ctx, "Could not find live query channel.", "id", rawID.ID)
 		return
 	}
 

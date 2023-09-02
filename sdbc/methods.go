@@ -88,12 +88,13 @@ func (c *Client) Query(ctx context.Context, timeout time.Duration, query string,
 	return res, nil
 }
 
-func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) (<-chan []byte, error) {
+func (c *Client) Live(ctx context.Context, timeout time.Duration, query string, vars map[string]any) (<-chan []byte, error) {
 	raw, err := c.send(ctx,
 		request{
-			Method: methodLive,
+			Method: methodQuery, // TODO: "live" is not yet working as a dedicated method
 			Params: []any{
-				query,
+				methodLive + " " + query,
+				vars,
 			},
 		},
 		timeout,
@@ -108,19 +109,27 @@ func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) 
 		return nil, fmt.Errorf("could not unmarshal response: %w", err)
 	}
 
-	if len(res) < 1 {
+	if len(res) < 1 || res[0].Result == "" {
 		return nil, fmt.Errorf("empty response")
 	}
 
-	ch, ok := c.liveQueries.get(res[0].Result, true)
+	liveKey := res[0].Result
+
+	ch, ok := c.liveQueries.get(liveKey, true)
 	if !ok {
 		return nil, fmt.Errorf("could not get live query channel")
 	}
 
 	go func(key string) {
 		<-ctx.Done()
+		c.logger.DebugContext(ctx, "Closing live query channel.", "key", key)
+
+		if _, err := c.Kill(ctx, 0, key); err != nil {
+			c.logger.ErrorContext(ctx, "Could not kill live query.", "key", key, "error", err)
+		}
+
 		c.liveQueries.del(key)
-	}(res[0].Result)
+	}(liveKey)
 
 	return ch, nil
 }
