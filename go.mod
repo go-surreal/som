@@ -12,7 +12,6 @@ require (
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/wzshiming/gotype v0.7.3
-	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	golang.org/x/mod v0.12.0
 	gotest.tools/v3 v3.5.0
 	nhooyr.io/websocket v1.8.7
@@ -58,6 +57,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
+	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/tools v0.12.0 // indirect
