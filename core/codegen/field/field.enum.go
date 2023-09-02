@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/parser"
-	"golang.org/x/exp/slices"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -40,7 +40,7 @@ func (f *Enum) TypeDatabase() string {
 	in := strings.Join(values, ", ")
 
 	if f.source.Pointer() {
-		return "string ASSERT $value == NULL OR $value INSIDE [" + in + "]"
+		return "option<string> ASSERT $value == NULL OR $value INSIDE [" + in + "]"
 	}
 
 	return "string ASSERT $value INSIDE [" + in + "]"

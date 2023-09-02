@@ -9,7 +9,6 @@ import (
 	query "github.com/marcbinz/som/examples/basic/gen/som/query"
 	relate "github.com/marcbinz/som/examples/basic/gen/som/relate"
 	model "github.com/marcbinz/som/examples/basic/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
 	"time"
 )
 
@@ -24,15 +23,17 @@ type GroupRepo interface {
 }
 
 func (c *ClientImpl) GroupRepo() GroupRepo {
-	return &group{db: c.db}
+	return &group{db: c.db, marshal: c.marshal, unmarshal: c.unmarshal}
 }
 
 type group struct {
-	db Database
+	db        Database
+	marshal   func(val any) ([]byte, error)
+	unmarshal func(buf []byte, val any) error
 }
 
 func (n *group) Query() query.Group {
-	return query.NewGroup(n.db)
+	return query.NewGroup(n.db, n.unmarshal)
 }
 
 func (n *group) Create(ctx context.Context, group *model.Group) error {
@@ -46,12 +47,12 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.Group
-	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	err = n.unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -73,21 +74,28 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	data := conv.FromGroup(*group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Group](n.db.Create(key, data))
+	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
+	}
+	var convNode conv.Group
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*group = conv.ToGroup(convNode)
 	return nil
 }
 
 func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Group](n.db.Select("group:⟨" + id + "⟩"))
-	if errors.Is(err, surrealdbgo.ErrNoRow) {
-		return nil, false, nil
-	}
+	res, err := n.db.Select(ctx, "group:⟨"+id+"⟩")
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
+	}
+	var convNode conv.Group
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	node := conv.ToGroup(convNode)
 	return &node, true, nil
@@ -102,9 +110,14 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	}
 	data := conv.FromGroup(*group)
 	data.UpdatedAt = time.Now()
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Group](n.db.Update("group:⟨"+group.ID()+"⟩", data))
+	res, err := n.db.Update(ctx, "group:⟨"+group.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
+	}
+	var convNode conv.Group
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*group = conv.ToGroup(convNode)
 	return nil
@@ -114,7 +127,7 @@ func (n *group) Delete(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("group:⟨" + group.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "group:⟨"+group.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}
@@ -122,5 +135,5 @@ func (n *group) Delete(ctx context.Context, group *model.Group) error {
 }
 
 func (n *group) Relate() *relate.Group {
-	return relate.NewGroup(n.db)
+	return relate.NewGroup(n.db, n.unmarshal)
 }

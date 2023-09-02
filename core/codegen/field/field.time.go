@@ -20,10 +20,7 @@ func (f *Time) typeConv() jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "datetime"
-	}
-	return "datetime ASSERT $value != NULL"
+	return f.optionWrap("datetime")
 }
 
 func (f *Time) CodeGen() *CodeGen {
