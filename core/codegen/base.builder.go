@@ -14,9 +14,6 @@ import (
 )
 
 const (
-	filenameClient     = "som.client.go"
-	filenameDatabase   = "som.database.go"
-	filenameFunctions  = "som.functions.go"
 	filenameInterfaces = "som.interfaces.go"
 	filenameSchema     = "som.schema.go"
 )
@@ -51,15 +48,7 @@ func (b *build) build() error {
 		return err
 	}
 
-	if err := b.buildClientFile(); err != nil {
-		return err
-	}
-
-	if err := b.buildDatabaseFile(); err != nil {
-		return err
-	}
-
-	if err := b.buildFunctionsFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -110,7 +99,7 @@ func (b *build) copyInternalPackage() error {
 
 	for _, file := range files {
 		content := string(file.Content)
-		content = strings.Replace(content, "//go:build embed", codegenComment, 1)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
 
 		err := os.WriteFile(filepath.Join(dir, file.Path), []byte(content), os.ModePerm)
 		if err != nil {
@@ -121,184 +110,20 @@ func (b *build) copyInternalPackage() error {
 	return nil
 }
 
-func (b *build) buildClientFile() error {
-	content := `
-
-import (
-	"fmt"
-	"github.com/surrealdb/surrealdb.go"
-	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
-	"github.com/surrealdb/surrealdb.go/pkg/logger"
-	"time"
-)
-
-type Database interface {
-	Close()
-	Create(thing string, data any) (any, error)
-	Select(what string) (any, error)
-	Query(statement string, vars any) (any, error)
-	Update(thing string, data any) (any, error)
-	Delete(what string) (any, error)
-}
-
-type Config struct {
-	Address string
-	Username string
-	Password string
-	Namespace string
-	Database string
-}
-
-type ClientImpl struct {
-	db Database
-}
-
-func NewClient(conf Config) (*ClientImpl, error) {
-	url := conf.Address + "/rpc"
-
-	logData, err := logger.New().Make()
+func (b *build) embedStaticFiles() error {
+	files, err := embed.Som()
 	if err != nil {
-		return nil, fmt.Errorf("could not create logger: %v", err)
+		return err
 	}
 
-	ws, err := gorilla.Create().Logger(logData).SetTimeOut(time.Minute).Connect(url)
-	if err != nil {
-		return nil, fmt.Errorf("could not create websocket: %v", err)
-	}
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-	surreal, err := surrealdb.New("<unused>", ws)
-	if err != nil {
-		return nil, fmt.Errorf("could not create surrealdb client: %v", err)
-	}
-
-	_, err = surreal.Signin(map[string]any{
-		"user": conf.Username,
-		"pass": conf.Password,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = surreal.Use(conf.Namespace, conf.Database)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ClientImpl{db: &database{DB: surreal}}, nil
-}
-
-func (c *ClientImpl) Close() {
-	c.db.Close()
-}
-`
-
-	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
-
-	err := os.WriteFile(path.Join(b.basePath(), filenameClient), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
-
-	return nil
-}
-
-func (b *build) buildDatabaseFile() error {
-	content := `
-
-import (
-	"github.com/surrealdb/surrealdb.go"
-)
-
-type database struct {
-	*surrealdb.DB
-}
-
-func (db *database) Create(thing string, data any) (any, error) {
-	return db.DB.Create(thing, data)
-}
-
-func (db *database) Select(what string) (any, error) {
-	return db.DB.Select(what)
-}
-
-func (db *database) Query(statement string, vars any) (any, error) {
-	raw, err := db.DB.Query(statement, vars)
-	if err != nil {
-		return nil, err
-	}
-
-	return raw, err
-}
-
-func (db *database) Update(what string, data any) (any, error) {
-	return db.DB.Update(what, data)
-}
-
-func (db *database) Delete(what string) (any, error) {
-	return db.DB.Delete(what)
-}
-`
-
-	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
-
-	err := os.WriteFile(path.Join(b.basePath(), filenameDatabase), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
-
-	return nil
-}
-
-func (b *build) buildFunctionsFile() error {
-	content := `
-
-import (
-	"encoding/json"
-	"fmt"
-)
-
-const statusOK = "OK"
-
-type RawQuery[T any] struct {
-	Status string
-	Time   string
-	Result T
-	Detail string 
-}
-
-func Unmarshal[M any](respond interface{}) (model M, err error) {
-	var bytes []byte
-
-	if arrResp, isArr := respond.([]interface{}); len(arrResp) > 0 {
-		if dataMap, ok := arrResp[0].(map[string]interface{}); ok && isArr {
-			if _, ok := dataMap["status"]; ok {
-				if bytes, err = json.Marshal(respond); err == nil {
-					var raw []RawQuery[M]
-					if err = json.Unmarshal(bytes, &raw); err == nil {
-						if raw[0].Status != statusOK {
-							err = fmt.Errorf("%s: %s", raw[0].Status, raw[0].Detail)
-						}
-						model = raw[0].Result
-					}
-				}
-				return model, err
-			}
+		err := os.WriteFile(filepath.Join(b.basePath(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
 		}
-	}
-
-	if bytes, err = json.Marshal(respond); err == nil {
-		err = json.Unmarshal(bytes, &model)
-	}
-
-	return model, err
-}
-`
-
-	data := []byte(codegenComment + "\n\npackage " + b.basePkgName() + content)
-
-	err := os.WriteFile(path.Join(b.basePath(), filenameFunctions), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
 	}
 
 	return nil
@@ -314,7 +139,7 @@ func (b *build) buildInterfaceFile() error {
 			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
 		}
 
-		g.Id("ApplySchema").Call().Error()
+		g.Id("ApplySchema").Call(jen.Id("ctx").Qual("context", "Context")).Error()
 		g.Id("Close").Call()
 	})
 
@@ -326,13 +151,13 @@ func (b *build) buildInterfaceFile() error {
 }
 
 func (b *build) buildSchemaFile() error {
-	var statements []string
+	statements := []string{"", ""}
 
 	var fieldFn func(table string, f field.Field, prefix string)
 	fieldFn = func(table string, f field.Field, prefix string) {
 		fieldType := f.TypeDatabase()
 		if fieldType == "" {
-			return
+			return // TODO: is this actually valid?
 		}
 
 		statement := fmt.Sprintf(
@@ -366,6 +191,12 @@ func (b *build) buildSchemaFile() error {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL;", node.NameDatabase())
 		statements = append(statements, statement)
 
+		statement = fmt.Sprintf(
+			`DEFINE FIELD id ON TABLE %s TYPE record<%s> ASSERT $value != NONE AND $value != NULL AND $value != "";`,
+			node.NameDatabase(), node.NameDatabase(),
+		)
+		statements = append(statements, statement)
+
 		for _, f := range node.GetFields() {
 			fieldFn(node.NameDatabase(), f, "")
 		}
@@ -384,22 +215,19 @@ func (b *build) buildSchemaFile() error {
 		statements = append(statements, "")
 	}
 
-	content := "\n\nBEGIN TRANSACTION;\n\n"
-
-	content += strings.Join(statements, "\n")
-
-	content += "\nCOMMIT TRANSACTION;\n"
+	content := strings.Join(statements, "\n")
 
 	tmpl := `%s
 
 package %s
 
 import(
+	"context"
 	"fmt"
 )
 	
-func (c *ClientImpl) ApplySchema() error {
-	_, err := c.db.Query(tmpl, nil)
+func (c *ClientImpl) ApplySchema(ctx context.Context) error {
+	_, err := c.db.Query(ctx, tmpl, nil)
 	if err != nil {
 		return fmt.Errorf("could not apply schema: %%v", err)
 	}
@@ -473,14 +301,19 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
 		Block(
 			jen.Return(
-				jen.Op("&").Id(node.NameGoLower()).
-					Values(jen.Id("db").Op(":").Id("c").Dot("db")),
+				jen.Op("&").Id(node.NameGoLower()).Values(
+					jen.Id("db").Op(":").Id("c").Dot("db"),
+					jen.Id("marshal").Op(":").Id("c").Dot("marshal"),
+					jen.Id("unmarshal").Op(":").Id("c").Dot("unmarshal"),
+				),
 			),
 		)
 
 	f.Line()
 	f.Type().Id(node.NameGoLower()).Struct(
 		jen.Id("db").Id("Database"),
+		jen.Id("marshal").Func().Params(jen.Id("val").Any()).Parens(jen.List(jen.Index().Byte(), jen.Error())),
+		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 	)
 
 	f.Line()
@@ -489,7 +322,10 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Id("Query").Params().
 		Qual(pkgQuery, node.NameGo()).
 		Block(
-			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(jen.Id("n").Dot("db"))),
+			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
+				jen.Id("n").Dot("db"),
+				jen.Id("n").Dot("unmarshal"),
+			)),
 		)
 
 	onCreatedAt := jen.Empty()
@@ -527,13 +363,13 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("db").Dot("Create").
-				Call(jen.Id("key"), jen.Id("data")),
+				Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
 			),
 
 			jen.Var().Id("convNodes").Index().Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Qual(def.PkgSurrealDB, "Unmarshal").
+			jen.Err().Op("=").Id("n").Dot("unmarshal").
 				Call(jen.Id("raw"), jen.Op("&").Id("convNodes")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
@@ -580,15 +416,18 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Add(onCreatedAt),
 			jen.Add(onUpdatedAt),
 
-			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
-				Call(
-					jen.Id("n").Dot("db").Dot("Create").
-						Call(jen.Id("key"), jen.Id("data")),
-				),
-
+			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Create").
+				Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
+			),
+
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Id("n").Dot("unmarshal").
+				Call(jen.Id("res"), jen.Op("&").Id("convNode")),
+
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
@@ -608,22 +447,18 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
-			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
-				Call(
-					jen.Id("n").Dot("db").Dot("Select").
-						Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩")),
-				),
-
-			jen.If(jen.Qual("errors", "Is").Call(jen.Err(), jen.Qual(def.PkgSurrealDB, "ErrNoRow"))).
-				Block(jen.Return(jen.Nil(), jen.False(), jen.Nil())),
-
+			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Select").Call(
+				jen.Id("ctx"),
+				jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩"),
+			),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(
-					jen.Nil(),
-					jen.False(),
-					jen.Qual("fmt", "Errorf").Call(jen.Lit("could not read entity: %w"), jen.Err()),
-				),
+				jen.Return(jen.Nil(), jen.False(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not read entity: %w"), jen.Err())),
+			),
+
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Err().Op("=").Id("n").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.False(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
 			),
 
 			jen.Id("node").Op(":=").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
@@ -658,16 +493,18 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Add(onUpdatedAt),
 
-			jen.List(jen.Id("convNode"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), node.NameGo())).
-				Call(
-					jen.Id("n").Dot("db").Dot("Update").
-						Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
-							Op("+").Lit("⟩"), jen.Id("data")),
-				),
-
+			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Update").
+				Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
+					Op("+").Lit("⟩"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not update entity: %w"), jen.Err())),
+			),
+
+			jen.Var().Id("convNode").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+
+			jen.Err().Op("=").Id("n").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convNode")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
 			),
 
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
@@ -693,7 +530,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.List(jen.Id("_"), jen.Err()).Op(":=").
 				Id("n").Dot("db").Dot("Delete").
-				Call(jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩")),
+				Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not delete entity: %w"), jen.Err())),
 			),
@@ -706,8 +543,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		Id("Relate").Params().
 		Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
 		Block(
-			jen.Return(jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).
-				Call(jen.Id("n").Dot("db"))),
+			jen.Return(
+				jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(
+					jen.Id("n").Dot("db"),
+					jen.Id("n").Dot("unmarshal"),
+				),
+			),
 		)
 
 	if err := f.Save(path.Join(b.basePath(), node.FileName())); err != nil {

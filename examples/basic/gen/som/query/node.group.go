@@ -9,20 +9,21 @@ import (
 	lib "github.com/marcbinz/som/examples/basic/gen/som/internal/lib"
 	with "github.com/marcbinz/som/examples/basic/gen/som/with"
 	model "github.com/marcbinz/som/examples/basic/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
 	"strings"
 	"time"
 )
 
 type Group struct {
-	db    Database
-	query lib.Query[model.Group]
+	db        Database
+	query     lib.Query[model.Group]
+	unmarshal func(buf []byte, val any) error
 }
 
-func NewGroup(db Database) Group {
+func NewGroup(db Database, unmarshal func(buf []byte, val any) error) Group {
 	return Group{
-		db:    db,
-		query: lib.NewQuery[model.Group]("group"),
+		db:        db,
+		query:     lib.NewQuery[model.Group]("group"),
+		unmarshal: unmarshal,
 	}
 }
 
@@ -97,26 +98,28 @@ func (q Group) Parallel(parallel bool) Group {
 // Count returns the size of the result set, in other words the
 // number of records matching the conditions of the query.
 func (q Group) Count(ctx context.Context) (int, error) {
-	res := q.query.BuildAsCount()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	req := q.query.BuildAsCount()
+	raw, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return 0, err
 	}
-	var rawCount []countResult
-	ok, err := surrealdbgo.UnmarshalRaw(raw, &rawCount)
+	var rawCount []queryResult[countResult]
+	err = q.unmarshal(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
-	if !ok {
+	if len(rawCount) < 1 || len(rawCount[0].Result) < 1 {
 		return 0, nil
 	}
-	if len(rawCount) < 1 {
-		return 0, nil
-	}
-	return rawCount[0].Count, nil
+	return rawCount[0].Result[0].Count, nil
 }
 
-// Exists returns whether at least one record for the conditons
+// CountAsync is the asynchronous version of Count.
+func (q Group) CountAsync(ctx context.Context) *asyncResult[int] {
+	return async(ctx, q.Count)
+}
+
+// Exists returns whether at least one record for the conditions
 // of the query exists or not. In other words it returns whether
 // the size of the result set is greater than 0.
 func (q Group) Exists(ctx context.Context) (bool, error) {
@@ -127,33 +130,61 @@ func (q Group) Exists(ctx context.Context) (bool, error) {
 	return count > 0, nil
 }
 
+// ExistsAsync is the asynchronous version of Exists.
+func (q Group) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+	return async(ctx, q.Exists)
+}
+
 // All returns all records matching the conditions of the query.
 func (q Group) All(ctx context.Context) ([]*model.Group, error) {
-	res := q.query.BuildAsAll()
-	rawNodes, err := surrealdbgo.SmartUnmarshal[[]conv.Group](q.db.Query(res.Statement, res.Variables))
+	req := q.query.BuildAsAll()
+	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
+	var rawNodes []queryResult[conv.Group]
+	err = q.unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, errors.New("empty result")
+	}
 	var nodes []*model.Group
-	for _, rawNode := range rawNodes {
+	for _, rawNode := range rawNodes[0].Result {
 		node := conv.ToGroup(rawNode)
 		nodes = append(nodes, &node)
 	}
 	return nodes, nil
 }
 
+// AllAsync is the asynchronous version of All.
+func (q Group) AllAsync(ctx context.Context) *asyncResult[[]*model.Group] {
+	return async(ctx, q.All)
+}
+
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q Group) AllIDs(ctx context.Context) ([]string, error) {
-	res := q.query.BuildAsAllIDs()
-	rawNodes, err := surrealdbgo.SmartUnmarshal[[]idNode](q.db.Query(res.Statement, res.Variables))
+	req := q.query.BuildAsAllIDs()
+	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
+	}
+	var rawNodes []idNode
+	err = q.unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
 	var ids []string
 	for _, rawNode := range rawNodes {
 		ids = append(ids, rawNode.ID)
 	}
 	return ids, nil
+}
+
+// AllIDsAsync is the asynchronous version of AllIDs.
+func (q Group) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
+	return async(ctx, q.AllIDs)
 }
 
 // First returns the first record matching the conditions of the query.
@@ -171,6 +202,11 @@ func (q Group) First(ctx context.Context) (*model.Group, error) {
 	return res[0], nil
 }
 
+// FirstAsync is the asynchronous version of First.
+func (q Group) FirstAsync(ctx context.Context) *asyncResult[*model.Group] {
+	return async(ctx, q.First)
+}
+
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
@@ -186,10 +222,15 @@ func (q Group) FirstID(ctx context.Context) (string, error) {
 	return res[0], nil
 }
 
+// FirstIDAsync is the asynchronous version of FirstID.
+func (q Group) FirstIDAsync(ctx context.Context) *asyncResult[string] {
+	return async(ctx, q.FirstID)
+}
+
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
 func (q Group) Describe() string {
-	res := q.query.BuildAsAll()
-	return strings.TrimSpace(res.Statement)
+	req := q.query.BuildAsAll()
+	return strings.TrimSpace(req.Statement)
 }

@@ -9,7 +9,6 @@ import (
 	query "github.com/marcbinz/som/examples/movie/gen/som/query"
 	relate "github.com/marcbinz/som/examples/movie/gen/som/relate"
 	model "github.com/marcbinz/som/examples/movie/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 
 type PersonRepo interface {
@@ -23,15 +22,17 @@ type PersonRepo interface {
 }
 
 func (c *ClientImpl) PersonRepo() PersonRepo {
-	return &person{db: c.db}
+	return &person{db: c.db, marshal: c.marshal, unmarshal: c.unmarshal}
 }
 
 type person struct {
-	db Database
+	db        Database
+	marshal   func(val any) ([]byte, error)
+	unmarshal func(buf []byte, val any) error
 }
 
 func (n *person) Query() query.Person {
-	return query.NewPerson(n.db)
+	return query.NewPerson(n.db, n.unmarshal)
 }
 
 func (n *person) Create(ctx context.Context, person *model.Person) error {
@@ -44,12 +45,12 @@ func (n *person) Create(ctx context.Context, person *model.Person) error {
 	key := "person"
 	data := conv.FromPerson(*person)
 
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.Person
-	err = surrealdbgo.Unmarshal(raw, &convNodes)
+	err = n.unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -70,21 +71,28 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 	key := "person:" + "⟨" + id + "⟩"
 	data := conv.FromPerson(*person)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Person](n.db.Create(key, data))
+	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
+	}
+	var convNode conv.Person
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*person = conv.ToPerson(convNode)
 	return nil
 }
 
 func (n *person) Read(ctx context.Context, id string) (*model.Person, bool, error) {
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Person](n.db.Select("person:⟨" + id + "⟩"))
-	if errors.Is(err, surrealdbgo.ErrNoRow) {
-		return nil, false, nil
-	}
+	res, err := n.db.Select(ctx, "person:⟨"+id+"⟩")
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
+	}
+	var convNode conv.Person
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	node := conv.ToPerson(convNode)
 	return &node, true, nil
@@ -99,9 +107,14 @@ func (n *person) Update(ctx context.Context, person *model.Person) error {
 	}
 	data := conv.FromPerson(*person)
 
-	convNode, err := surrealdbgo.SmartUnmarshal[conv.Person](n.db.Update("person:⟨"+person.ID()+"⟩", data))
+	res, err := n.db.Update(ctx, "person:⟨"+person.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
+	}
+	var convNode conv.Person
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*person = conv.ToPerson(convNode)
 	return nil
@@ -111,7 +124,7 @@ func (n *person) Delete(ctx context.Context, person *model.Person) error {
 	if person == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("person:⟨" + person.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "person:⟨"+person.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}
@@ -119,5 +132,5 @@ func (n *person) Delete(ctx context.Context, person *model.Person) error {
 }
 
 func (n *person) Relate() *relate.Person {
-	return relate.NewPerson(n.db)
+	return relate.NewPerson(n.db, n.unmarshal)
 }

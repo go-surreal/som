@@ -3,6 +3,7 @@ package conv
 
 import (
 	"encoding/json"
+	uuid "github.com/google/uuid"
 	som "github.com/marcbinz/som"
 	model "github.com/marcbinz/som/examples/basic/model"
 	"strings"
@@ -45,8 +46,8 @@ type User struct {
 	TimePtr           *time.Time     `json:"time_ptr"`
 	Duration          string         `json:"duration"`
 	DurationPtr       *string        `json:"duration_ptr"`
-	UUID              string         `json:"uuid"`
-	UUIDPtr           *string        `json:"uuid_ptr"`
+	UUID              uuid.UUID      `json:"uuid"`
+	UUIDPtr           *uuid.UUID     `json:"uuid_ptr"`
 }
 
 func FromUser(data model.User) User {
@@ -82,8 +83,8 @@ func FromUser(data model.User) User {
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
 		Time:              data.Time,
 		TimePtr:           data.TimePtr,
-		UUID:              data.UUID.String(),
-		UUIDPtr:           uuidPtr(data.UUIDPtr),
+		UUID:              data.UUID,
+		UUIDPtr:           data.UUIDPtr,
 	}
 }
 
@@ -123,8 +124,8 @@ func ToUser(data User) model.User {
 		Time:              data.Time,
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-		UUID:              parseUUID(data.UUID),
-		UUIDPtr:           ptrFunc(parseUUID)(data.UUIDPtr),
+		UUID:              data.UUID,
+		UUIDPtr:           data.UUIDPtr,
 	}
 }
 

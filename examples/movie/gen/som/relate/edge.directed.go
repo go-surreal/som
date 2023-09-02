@@ -2,18 +2,19 @@
 package relate
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	conv "github.com/marcbinz/som/examples/movie/gen/som/conv"
 	model "github.com/marcbinz/som/examples/movie/model"
-	surrealdbgo "github.com/surrealdb/surrealdb.go"
 )
 
 type directed struct {
-	db Database
+	db        Database
+	unmarshal func(buf []byte, val any) error
 }
 
-func (e directed) Create(edge *model.Directed) error {
+func (e directed) Create(ctx context.Context, edge *model.Directed) error {
 	if edge == nil {
 		return errors.New("the given edge must not be nil")
 	}
@@ -28,9 +29,14 @@ func (e directed) Create(edge *model.Directed) error {
 	}
 	query := "RELATE " + "person:" + edge.Person.ID() + "->directed->" + "movie:" + edge.Movie.ID() + " CONTENT $data"
 	data := conv.FromDirected(*edge)
-	convEdge, err := surrealdbgo.SmartUnmarshal[conv.Directed](e.db.Query(query, map[string]any{"data": data}))
+	res, err := e.db.Query(ctx, query, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
+	}
+	var convEdge conv.Directed
+	err = e.unmarshal(res, &convEdge)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}
 	*edge = conv.ToDirected(convEdge)
 	return nil
