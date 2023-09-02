@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "nightly"
+	surrealDBContainerVersion = "1.0.0-beta.10"
 	containerName             = "sdbd_test_surrealdb"
 	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 	surrealUser               = "root"
@@ -30,18 +30,16 @@ func conf(endpoint string) Config {
 }
 
 func TestClient(t *testing.T) {
-	t.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
 		Name:  containerName,
 		Image: "surrealdb/surrealdb:" + surrealDBContainerVersion,
 		Cmd: []string{
-			"start", "--strict",
+			"start", "--auth", "--strict", "--allow-funcs",
 			"--user", surrealUser,
 			"--pass", surrealPass,
-			"--log", "debug", "memory",
+			"--log", "trace", "memory",
 		},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog(containerStartedMsg),
@@ -98,4 +96,85 @@ func TestClient(t *testing.T) {
 	}
 
 	assert.Equal(t, string(create), string(create))
+}
+
+//
+// -- TiKV
+//
+
+func TestTiKV(t *testing.T) {
+	ctx := context.Background()
+
+	pdReq := testcontainers.ContainerRequest{
+		Name:  "tikv-pd",
+		Image: "pingcap/pd:latest",
+		Cmd: []string{
+			`--name="pd1"`,
+			`--data-dir="/data/pd1"`,
+			`--client-urls="http://0.0.0.0:2379"`,
+			`--advertise-client-urls="http://192.168.1.101:2379"`,
+			`--peer-urls="http://0.0.0.0:2380"`,
+			`--advertise-peer-urls="http://192.168.1.101:2380"`,
+			`--initial-cluster="pd1=http://192.168.1.101:2380,pd2=http://192.168.1.102:2380,pd3=http://192.168.1.103:2380"`,
+		},
+		Mounts: testcontainers.Mounts(
+			testcontainers.BindMount("/etc/localtime", "/etc/localtime"),
+		),
+		ExposedPorts: []string{"8000/tcp"},
+		WaitingFor:   wait.ForLog(containerStartedMsg),
+		HostConfigModifier: func(conf *container.HostConfig) {
+			conf.AutoRemove = true
+		},
+	}
+
+	pd, err := testcontainers.GenericContainer(ctx,
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: pdReq,
+			Started:          true,
+			Reuse:            true,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	network, err := testcontainers.GenericNetwork(ctx, testcontainers.GenericNetworkRequest{
+		NetworkRequest: testcontainers.NetworkRequest{
+			Name: "",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tikvReq := testcontainers.ContainerRequest{
+		Name:  "tikv-pd",
+		Image: "pingcap/tikv:latest",
+		Cmd: []string{
+			`--addr="0.0.0.0:20160"`,
+			`--advertise-addr="192.168.1.104:20160"`,
+			`--data-dir="/data/tikv1"`,
+			`--pd="192.168.1.101:2379,192.168.1.102:2379,192.168.1.103:2379"`,
+		},
+		Mounts: testcontainers.Mounts(
+			testcontainers.BindMount("/etc/localtime", "/etc/localtime"),
+		),
+		ExposedPorts: []string{"8000/tcp"},
+		WaitingFor:   wait.ForLog(containerStartedMsg),
+		HostConfigModifier: func(conf *container.HostConfig) {
+			conf.AutoRemove = true
+		},
+	}
+
+	tikv, err := testcontainers.GenericContainer(ctx,
+		testcontainers.GenericContainerRequest{
+			ContainerRequest: tikvReq,
+			Started:          true,
+			Reuse:            true,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 }

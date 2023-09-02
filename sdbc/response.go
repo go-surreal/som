@@ -2,40 +2,16 @@ package sdbc
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"io"
 	"net"
 	"nhooyr.io/websocket"
 	"time"
 )
 
-type Request struct {
-	ID     string        `json:"id"`
-	Method string        `json:"method"`
-	Params []interface{} `json:"params"`
-}
-
-type Response struct {
-	ID     string          `json:"id"`
-	Result json.RawMessage `json:"result"`
-	Error  *ResponseError  `json:"error"`
-}
-
-type ResponseError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-type LiveQueryResult struct {
-	ID     []byte `json:"id"`
-	Action string `json:"action"`
-	Result any    `json:"result"`
-}
-
 func (c *Client) subscribe(ctx context.Context) {
+	c.waitGroup.Add(1)
 	defer c.waitGroup.Done()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -47,8 +23,7 @@ func (c *Client) subscribe(ctx context.Context) {
 		defer close(ch)
 
 		for {
-
-			buf, err := read(ctx, c.conn)
+			buf, err := c.read(ctx)
 
 			// typ, data, err := c.conn.Read(ctx)
 
@@ -73,38 +48,60 @@ func (c *Client) subscribe(ctx context.Context) {
 	c.handleMessages(ctx, ch)
 }
 
-func result[T any](t T, err error) resultFunc[T] {
-	return func() (T, error) {
-		return t, err
+// read reads a JSON message from c into v.
+// It will reuse buffers in between calls to avoid allocations.
+func (c *Client) read(ctx context.Context) ([]byte, error) {
+	typ, r, err := c.conn.Reader(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get reader: %w", err)
 	}
+
+	if typ != websocket.MessageText {
+		return nil, fmt.Errorf("expected message of type text (%d), got %v", websocket.MessageText, typ)
+	}
+
+	b := c.buffers.Get()
+	defer c.buffers.Put(b)
+
+	_, err = b.ReadFrom(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read message: %w", err)
+	}
+
+	// err = jsonHandler.Unmarshal(b.Bytes(), v)
+	// if err != nil {
+	// 	c.Close(websocket.StatusInvalidFramePayloadData, "failed to unmarshal JSON")
+	// 	return fmt.Errorf("failed to unmarshal JSON: %w", err)
+	// }
+
+	return b.Bytes(), nil
 }
-
-type resultFunc[T any] func() (T, error)
-
-type resultChannel[T any] chan resultFunc[T]
 
 func (c *Client) handleMessages(ctx context.Context, resultCh resultChannel[[]byte]) {
 	for {
 		select {
 
 		case <-ctx.Done():
-			c.logger.DebugContext(ctx, "Context done. Stopping message handler.")
-			return
-
-		case result, more := <-resultCh:
-
-			if !more {
-				c.logger.DebugContext(ctx, "Result channel closed. Stopping message handler.")
+			{
+				c.logger.DebugContext(ctx, "Context done. Stopping message handler.")
 				return
 			}
 
-			data, err := result()
-			if err != nil {
-				c.logger.ErrorContext(ctx, "Could not get result from channel.", "error", err)
-				continue
-			}
+		case result, more := <-resultCh:
+			{
+				if !more {
+					c.logger.DebugContext(ctx, "Result channel closed. Stopping message handler.")
+					return
+				}
 
-			go c.handleMessage(ctx, data)
+				data, err := result()
+				if err != nil {
+					c.logger.ErrorContext(ctx, "Could not get result from channel.", "error", err)
+					continue
+				}
+
+				go c.handleMessage(ctx, data)
+			}
 		}
 	}
 }
@@ -115,13 +112,13 @@ func (c *Client) handleMessage(ctx context.Context, data []byte) {
 
 	var res *Response
 
-	if err := jsonHandler.Unmarshal(data, &res); err != nil {
+	if err := c.jsonUnmarshal(data, &res); err != nil {
 		// c.Close(websocket.StatusInvalidFramePayloadData, "failed to unmarshal JSON")
 		// return fmt.Errorf("failed to unmarshal JSON: %w", err)
 		return
 	}
 
-	c.logger.InfoContext(ctx, "Received message.", "res", res)
+	c.logger.DebugContext(ctx, "Received message.", "res", res)
 
 	if res.Error != nil {
 		c.logger.ErrorContext(ctx, "Received error response.", "error", res.Error)
@@ -163,9 +160,11 @@ func (c *Client) handleLiveQuery(ctx context.Context, res *Response) {
 		return
 	}
 
-	uid, _ := uuid.FromBytes(result.ID) // TODO: will only work while serialization issue exists
-
-	outCh := c.liveQueries.get(uid.String())
+	outCh, ok := c.liveQueries.get(string(result.ID), false)
+	if !ok {
+		c.logger.ErrorContext(ctx, "Could not find live query channel.", "id", result.ID)
+		return
+	}
 
 	select {
 

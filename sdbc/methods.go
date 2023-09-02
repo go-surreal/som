@@ -2,8 +2,8 @@ package sdbc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"nhooyr.io/websocket"
 	"time"
 )
 
@@ -91,9 +91,9 @@ func (c *Client) Query(ctx context.Context, timeout time.Duration, query string,
 func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) (<-chan []byte, error) {
 	raw, err := c.send(ctx,
 		Request{
-			Method: methodQuery, // TODO: switch to methodLive once its working with it ;)
+			Method: methodLive,
 			Params: []any{
-				methodLive + " " + query,
+				query,
 			},
 		},
 		timeout,
@@ -112,34 +112,12 @@ func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) 
 		return nil, fmt.Errorf("empty response")
 	}
 
-	ch := c.liveQueries.get(res[0].Result)
+	ch, ok := c.liveQueries.get(res[0].Result, true)
+	if !ok {
+		return nil, fmt.Errorf("could not get live query channel")
+	}
 
 	return ch, nil
-}
-
-type basicResponse[R any] struct {
-	Status string `json:"status"`
-	Result R      `json:"result"`
-	Time   Time   `json:"time"`
-}
-
-type Time time.Duration
-
-func (t *Time) UnmarshalJSON(data []byte) error {
-	var str string
-
-	if err := json.Unmarshal(data, &str); err != nil {
-		return fmt.Errorf("could not unmarshal duration: %w", err)
-	}
-
-	d, err := time.ParseDuration(str)
-	if err != nil {
-		return fmt.Errorf("could not parse duration: %w", err)
-	}
-
-	*t = Time(d)
-
-	return nil
 }
 
 func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) ([]byte, error) {
@@ -233,10 +211,83 @@ func (c *Client) Delete(ctx context.Context, timeout time.Duration, thing string
 }
 
 //
-// -- HELPER
+// -- TYPES
 //
 
 type signInParams struct {
 	User string `json:"user"`
 	Pass string `json:"pass"`
+}
+
+//
+// -- INTERNAL
+//
+
+func (c *Client) send(ctx context.Context, req Request, timeout time.Duration) ([]byte, error) {
+	reqID, resCh := c.requests.prepare()
+	defer c.requests.cleanup(reqID)
+
+	req.ID = reqID
+
+	c.logger.DebugContext(ctx, "Sending request.", "request", req)
+
+	if err := c.write(ctx, req); err != nil {
+		return nil, fmt.Errorf("could not write to websocket: %w", err)
+	}
+
+	if deadline, ok := ctx.Deadline(); ok && timeout == 0 {
+		timeout = time.Until(deadline)
+	}
+
+	if timeout == 0 {
+		timeout = c.timeout
+	}
+
+	select {
+
+	case <-ctx.Done():
+		return nil, fmt.Errorf("context done: %w", ctx.Err())
+
+	case <-time.After(timeout):
+		return nil, fmt.Errorf("request timed out")
+
+	case res, open := <-resCh:
+		if !open {
+			return nil, fmt.Errorf("channel closed")
+		}
+
+		return res, nil
+	}
+}
+
+// write writes the JSON message v to c.
+// It will reuse buffers in between calls to avoid allocations.
+func (c *Client) write(ctx context.Context, req Request) error {
+	// defer errd.Wrap(&err, "failed to write JSON message")
+
+	data, err := c.jsonMarshal(req)
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
+	err = c.conn.Write(ctx, websocket.MessageText, data)
+	if err != nil {
+		return fmt.Errorf("failed to write message: %w", err)
+	}
+
+	// Using Writer instead of Write to stream the message.
+	// writer, err := conn.Writer(ctx, websocket.MessageText)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// json.Marshal cannot reuse buffers between calls as it has to return
+	// a copy of the byte slice but Encoder does as it directly writes to w.
+	// err = jsonHandler.NewEncoder(writer).Encode(req)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to marshal JSON: %w", err)
+	// }
+
+	// return writer.Close()
+	return nil
 }

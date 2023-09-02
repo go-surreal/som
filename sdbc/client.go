@@ -8,83 +8,172 @@ import (
 	"time"
 )
 
-const (
-	maxReadBufferSize  = 100 * 1024
-	maxWriteBufferSize = 100 * 1024
-)
-
 type Client struct {
 	*options
 
+	conf  Config
+	token string
+
+	connCtx   context.Context
 	conn      *websocket.Conn
+	connMutex sync.Mutex
+
 	waitGroup sync.WaitGroup
 
-	token       string
+	buffers     bufPool
 	requests    requests
 	liveQueries liveQueries
 }
 
+// Config is the configuration for the client.
 type Config struct {
-	Address   string
-	Username  string
-	Password  string
+
+	// Address is the address of the database.
+	Address string
+
+	// Username is the username to use for authentication.
+	Username string
+
+	// Password is the password to use for authentication.
+	Password string
+
+	// Namespace is the namespace to use.
+	// It will automatically be created if it does not exist.
 	Namespace string
-	Database  string
+
+	// Database is the database to use.
+	// It will automatically be created if it does not exist.
+	Database string
 }
 
 // NewClient creates a new client and connects to
 // the database using a websocket connection.
 func NewClient(ctx context.Context, conf Config, opts ...Option) (*Client, error) {
-	conn, _, err := websocket.Dial(ctx, conf.Address, &websocket.DialOptions{
-		CompressionMode: websocket.CompressionContextTakeover,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("could not open websocket connection: %w", err)
-	}
-
 	client := &Client{
 		options: applyOptions(opts),
-		conn:    conn,
+		conf:    conf,
+		connCtx: ctx,
 	}
 
-	if client.options.readLimit > 0 {
-		conn.SetReadLimit(client.options.readLimit)
-	} else {
-		conn.SetReadLimit(maxReadBufferSize)
-	}
-
-	client.waitGroup.Add(1)
-	go client.subscribe(ctx)
-
-	if err := client.signIn(ctx, 0, conf.Username, conf.Password); err != nil {
-		return nil, fmt.Errorf("could not sign in: %v", err)
-	}
-
-	if err := client.use(ctx, 0, conf.Namespace, conf.Database); err != nil {
-		return nil, fmt.Errorf("could not select database: %v", err)
-	}
-
-	query, err := client.Query(ctx, 0, "define namespace "+conf.Namespace, nil)
-	if err != nil {
+	if err := client.openWebsocket(ctx); err != nil {
 		return nil, err
 	}
 
-	fmt.Println("ns query:", query)
-
-	query, err = client.Query(ctx, 0, "define database "+conf.Database, nil)
-	if err != nil {
-		return nil, err
+	if err := client.init(ctx, conf); err != nil {
+		return nil, fmt.Errorf("could not initialize client: %v", err)
 	}
-
-	fmt.Println("db query:", query)
 
 	return client, nil
 }
 
+func (c *Client) openWebsocket(ctx context.Context) error {
+	c.connMutex.Lock()
+	defer c.connMutex.Unlock()
+
+	// make sure the previous connection is closed
+	if c.conn != nil {
+		if err := c.conn.Close(websocket.StatusServiceRestart, "reconnect"); err != nil {
+			return fmt.Errorf("could not close websocket connection: %w", err)
+		}
+	}
+
+	conn, _, err := websocket.Dial(ctx, c.conf.Address, &websocket.DialOptions{
+		CompressionMode: websocket.CompressionContextTakeover,
+	})
+	if err != nil {
+		return fmt.Errorf("could not open websocket connection: %w", err)
+	}
+
+	conn.SetReadLimit(c.options.readLimit)
+
+	c.conn = conn
+
+	go c.subscribe(ctx)
+
+	return nil
+}
+
+func (c *Client) checkWebsocketConn(err error) {
+	if err == nil {
+		return
+	}
+
+	status := websocket.CloseStatus(err)
+
+	if status == -1 || status == websocket.StatusNormalClosure {
+		return
+	}
+
+	select {
+
+	case <-c.connCtx.Done():
+		return
+
+	default:
+		{
+			c.logger.Error("Websocket connection closed unexpectedly. Trying to reconnect.", "error", err)
+
+			if err := c.openWebsocket(c.connCtx); err != nil {
+				c.logger.Error("Could not reconnect to websocket.", "error", err)
+			}
+		}
+	}
+}
+
+func (c *Client) init(ctx context.Context, conf Config) error {
+	if err := c.signIn(ctx, 0, conf.Username, conf.Password); err != nil {
+		return fmt.Errorf("could not sign in: %v", err)
+	}
+
+	if err := c.use(ctx, 0, conf.Namespace, conf.Database); err != nil {
+		return fmt.Errorf("could not select namespace and database: %v", err)
+	}
+
+	response, err := c.Query(ctx, 0, "define namespace "+conf.Namespace, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := c.checkBasicResponse(response); err != nil {
+		return fmt.Errorf("could not define namespace: %w", err)
+	}
+
+	response, err = c.Query(ctx, 0, "define database "+conf.Database, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := c.checkBasicResponse(response); err != nil {
+		return fmt.Errorf("could not define database: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) checkBasicResponse(resp []byte) error {
+	var res []basicResponse[string]
+
+	if err := c.jsonUnmarshal(resp, &res); err != nil {
+		return fmt.Errorf("could not unmarshal response: %w", err)
+	}
+
+	if len(res) < 1 {
+		return fmt.Errorf("empty response")
+	}
+
+	if res[0].Status != "OK" {
+		return fmt.Errorf("response status is not OK")
+	}
+
+	return nil
+}
+
+// Close closes the client and the websocket connection.
+// Furthermore, it cleans up all idle goroutines.
 func (c *Client) Close() error {
 	c.logger.Info("Closing client.")
 
-	err := c.conn.Close(websocket.StatusNormalClosure, "")
+	err := c.conn.Close(websocket.StatusNormalClosure, "closing client")
 	if err != nil {
 		return fmt.Errorf("could not close websocket connection: %v", err)
 	}
@@ -92,7 +181,7 @@ func (c *Client) Close() error {
 	defer c.requests.reset()
 	defer c.liveQueries.reset()
 
-	c.logger.Info("Waiting for goroutines to finish.")
+	c.logger.Debug("Waiting for goroutines to finish.")
 
 	ch := make(chan struct{})
 
@@ -106,15 +195,7 @@ func (c *Client) Close() error {
 	case <-ch:
 		return nil
 
-	case <-time.After(time.Second * 5):
+	case <-time.After(10 * time.Second):
 		return fmt.Errorf("could not close websocket connection: timeout")
 	}
 }
-
-// Used for RawQuery Unmarshaling
-/*type RawQuery[I any] struct {
-	Status string `json:"status"`
-	Time   string `json:"time"`
-	Result I      `json:"result"`
-	Detail string `json:"detail"`
-}*/
