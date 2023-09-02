@@ -14,7 +14,6 @@ func main() {
 		Action: generate,
 		Commands: []*cli.Command{
 			sub.Surreal(),
-			sub.Test(),
 		},
 	}
 

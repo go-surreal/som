@@ -12,21 +12,21 @@ type database struct {
 }
 
 func (db *database) Create(ctx context.Context, thing string, data any) ([]byte, error) {
-	return db.Client.Create(ctx, 0, thing, data)
+	return db.Client.Create(ctx, thing, data)
 }
 
 func (db *database) Select(ctx context.Context, what string) ([]byte, error) {
-	return db.Client.Select(ctx, 0, what)
+	return db.Client.Select(ctx, what)
 }
 
 func (db *database) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
-	return db.Client.Query(ctx, 0, statement, vars)
+	return db.Client.Query(ctx, statement, vars)
 }
 
 func (db *database) Update(ctx context.Context, what string, data any) ([]byte, error) {
-	return db.Client.Update(ctx, 0, what, data)
+	return db.Client.Update(ctx, what, data)
 }
 
 func (db *database) Delete(ctx context.Context, what string) ([]byte, error) {
-	return db.Client.Delete(ctx, 0, what)
+	return db.Client.Delete(ctx, what)
 }

@@ -121,15 +121,15 @@ func (c *Client) checkWebsocketConn(err error) {
 }
 
 func (c *Client) init(ctx context.Context, conf Config) error {
-	if err := c.signIn(ctx, 0, conf.Username, conf.Password); err != nil {
+	if err := c.signIn(ctx, conf.Username, conf.Password); err != nil {
 		return fmt.Errorf("could not sign in: %v", err)
 	}
 
-	if err := c.use(ctx, 0, conf.Namespace, conf.Database); err != nil {
+	if err := c.use(ctx, conf.Namespace, conf.Database); err != nil {
 		return fmt.Errorf("could not select namespace and database: %v", err)
 	}
 
-	response, err := c.Query(ctx, 0, "define namespace "+conf.Namespace, nil)
+	response, err := c.Query(ctx, "define namespace "+conf.Namespace, nil)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (c *Client) init(ctx context.Context, conf Config) error {
 		return fmt.Errorf("could not define namespace: %w", err)
 	}
 
-	response, err = c.Query(ctx, 0, "define database "+conf.Database, nil)
+	response, err = c.Query(ctx, "define database "+conf.Database, nil)
 	if err != nil {
 		return err
 	}

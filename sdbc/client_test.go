@@ -37,12 +37,12 @@ func TestClient(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	_, err := client.Query(ctx, 0, "define table test schemaless", nil)
+	_, err := client.Query(ctx, "define table test schemaless", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = client.Create(ctx, 0, "test", nil)
+	_, err = client.Create(ctx, "test", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestClientCRUD(t *testing.T) {
 
 	// DEFINE TABLE
 
-	_, err := client.Query(ctx, 0, "define table some schemaless", nil)
+	_, err := client.Query(ctx, "define table some schemaless", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestClientCRUD(t *testing.T) {
 		Slice: []string{"a", "b", "c"},
 	}
 
-	res, err := client.Create(ctx, 0, "some", modelIn)
+	res, err := client.Create(ctx, "some", modelIn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestClientCRUD(t *testing.T) {
 
 	// QUERY
 
-	res, err = client.Query(ctx, 0, "select * from some where id = $id", map[string]any{
+	res, err = client.Query(ctx, "select * from some where id = $id", map[string]any{
 		"id": modelCreate[0].ID,
 	})
 	if err != nil {
@@ -107,7 +107,7 @@ func TestClientCRUD(t *testing.T) {
 
 	modelIn.Name = "some_other_name"
 
-	res, err = client.Update(ctx, 0, "some", modelIn)
+	res, err = client.Update(ctx, "some", modelIn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestClientCRUD(t *testing.T) {
 
 	// SELECT
 
-	res, err = client.Select(ctx, 0, modelUpdate[0].ID)
+	res, err = client.Select(ctx, modelUpdate[0].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestClientCRUD(t *testing.T) {
 
 	// DELETE
 
-	res, err = client.Delete(ctx, 0, modelCreate[0].ID)
+	res, err = client.Delete(ctx, modelCreate[0].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +162,7 @@ func TestClientLive(t *testing.T) {
 
 	// DEFINE TABLE
 
-	_, err := client.Query(ctx, 0, "define table some schemaless", nil)
+	_, err := client.Query(ctx, "define table some schemaless", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func TestClientLive(t *testing.T) {
 
 	// LIVE QUERY
 
-	live, err := client.Live(ctx, 0, "select * from some", nil)
+	live, err := client.Live(ctx, "select * from some", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +206,7 @@ func TestClientLive(t *testing.T) {
 
 	// CREATE
 
-	res, err := client.Create(ctx, 0, "some", modelIn)
+	res, err := client.Create(ctx, "some", modelIn)
 	if err != nil {
 		t.Fatal(err)
 	}

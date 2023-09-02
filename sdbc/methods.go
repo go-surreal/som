@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"nhooyr.io/websocket"
-	"time"
 )
 
 const (
@@ -24,7 +23,7 @@ const (
 )
 
 // signIn is a helper method for signing in a user.
-func (c *Client) signIn(ctx context.Context, timeout time.Duration, username, password string) error {
+func (c *Client) signIn(ctx context.Context, username, password string) error {
 	res, err := c.send(ctx,
 		request{
 			Method: methodSignIn,
@@ -35,7 +34,6 @@ func (c *Client) signIn(ctx context.Context, timeout time.Duration, username, pa
 				},
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return fmt.Errorf("could not sign in: %w", err)
@@ -47,7 +45,7 @@ func (c *Client) signIn(ctx context.Context, timeout time.Duration, username, pa
 }
 
 // use is a method to select the namespace and table for the connection.
-func (c *Client) use(ctx context.Context, timeout time.Duration, namespace, database string) error {
+func (c *Client) use(ctx context.Context, namespace, database string) error {
 	res, err := c.send(ctx,
 		request{
 			Method: methodUse,
@@ -56,7 +54,6 @@ func (c *Client) use(ctx context.Context, timeout time.Duration, namespace, data
 				database,
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return fmt.Errorf("could not send request: %w", err)
@@ -70,7 +67,7 @@ func (c *Client) use(ctx context.Context, timeout time.Duration, namespace, data
 }
 
 // Query is a convenient method for sending a query to the database.
-func (c *Client) Query(ctx context.Context, timeout time.Duration, query string, vars map[string]any) ([]byte, error) {
+func (c *Client) Query(ctx context.Context, query string, vars map[string]any) ([]byte, error) {
 	res, err := c.send(ctx,
 		request{
 			Method: methodQuery,
@@ -79,7 +76,6 @@ func (c *Client) Query(ctx context.Context, timeout time.Duration, query string,
 				vars,
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not send request: %w", err)
@@ -88,7 +84,7 @@ func (c *Client) Query(ctx context.Context, timeout time.Duration, query string,
 	return res, nil
 }
 
-func (c *Client) Live(ctx context.Context, timeout time.Duration, query string, vars map[string]any) (<-chan []byte, error) {
+func (c *Client) Live(ctx context.Context, query string, vars map[string]any) (<-chan []byte, error) {
 	raw, err := c.send(ctx,
 		request{
 			Method: methodQuery, // TODO: "live" is not yet working as a dedicated method
@@ -97,7 +93,6 @@ func (c *Client) Live(ctx context.Context, timeout time.Duration, query string, 
 				vars,
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not send request: %w", err)
@@ -124,7 +119,7 @@ func (c *Client) Live(ctx context.Context, timeout time.Duration, query string, 
 		<-ctx.Done()
 		c.logger.DebugContext(ctx, "Closing live query channel.", "key", key)
 
-		if _, err := c.Kill(ctx, 0, key); err != nil {
+		if _, err := c.Kill(ctx, key); err != nil {
 			c.logger.ErrorContext(ctx, "Could not kill live query.", "key", key, "error", err)
 		}
 
@@ -134,7 +129,7 @@ func (c *Client) Live(ctx context.Context, timeout time.Duration, query string, 
 	return ch, nil
 }
 
-func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) ([]byte, error) {
+func (c *Client) Kill(ctx context.Context, uuid string) ([]byte, error) {
 	res, err := c.send(ctx,
 		request{
 			Method: methodKill,
@@ -142,7 +137,6 @@ func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) (
 				uuid,
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return res, fmt.Errorf("could not send request: %w", err)
@@ -152,7 +146,7 @@ func (c *Client) Kill(ctx context.Context, timeout time.Duration, uuid string) (
 }
 
 // Select a table or record from the database.
-func (c *Client) Select(ctx context.Context, timeout time.Duration, thing string) ([]byte, error) {
+func (c *Client) Select(ctx context.Context, thing string) ([]byte, error) {
 	res, err := c.send(ctx,
 		request{
 			Method: methodSelect,
@@ -160,7 +154,6 @@ func (c *Client) Select(ctx context.Context, timeout time.Duration, thing string
 				thing,
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not send request: %w", err)
@@ -169,7 +162,7 @@ func (c *Client) Select(ctx context.Context, timeout time.Duration, thing string
 	return res, nil
 }
 
-func (c *Client) Create(ctx context.Context, timeout time.Duration, thing string, data any) ([]byte, error) {
+func (c *Client) Create(ctx context.Context, thing string, data any) ([]byte, error) {
 	res, err := c.send(ctx,
 		request{
 			Method: methodCreate,
@@ -178,7 +171,6 @@ func (c *Client) Create(ctx context.Context, timeout time.Duration, thing string
 				data,
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not send request: %w", err)
@@ -188,7 +180,7 @@ func (c *Client) Create(ctx context.Context, timeout time.Duration, thing string
 }
 
 // Update a table or record in the database like a PUT request.
-func (c *Client) Update(ctx context.Context, timeout time.Duration, thing string, data any) ([]byte, error) {
+func (c *Client) Update(ctx context.Context, thing string, data any) ([]byte, error) {
 	res, err := c.send(ctx,
 		request{
 			Method: methodUpdate,
@@ -197,7 +189,6 @@ func (c *Client) Update(ctx context.Context, timeout time.Duration, thing string
 				data,
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not send request: %w", err)
@@ -207,7 +198,7 @@ func (c *Client) Update(ctx context.Context, timeout time.Duration, thing string
 }
 
 // Delete a table or a row from the database like a DELETE request.
-func (c *Client) Delete(ctx context.Context, timeout time.Duration, thing string) ([]byte, error) {
+func (c *Client) Delete(ctx context.Context, thing string) ([]byte, error) {
 	res, err := c.send(ctx,
 		request{
 			Method: methodDelete,
@@ -215,7 +206,6 @@ func (c *Client) Delete(ctx context.Context, timeout time.Duration, thing string
 				thing,
 			},
 		},
-		timeout,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not send request: %w", err)
@@ -237,7 +227,7 @@ type signInParams struct {
 // -- INTERNAL
 //
 
-func (c *Client) send(ctx context.Context, req request, timeout time.Duration) (_ []byte, err error) {
+func (c *Client) send(ctx context.Context, req request) (_ []byte, err error) {
 	defer c.checkWebsocketConn(err)
 
 	reqID, resCh := c.requests.prepare()
@@ -251,21 +241,10 @@ func (c *Client) send(ctx context.Context, req request, timeout time.Duration) (
 		return nil, fmt.Errorf("could not write to websocket: %w", err)
 	}
 
-	if deadline, ok := ctx.Deadline(); ok && timeout == 0 {
-		timeout = time.Until(deadline)
-	}
-
-	if timeout == 0 {
-		timeout = c.timeout
-	}
-
 	select {
 
 	case <-ctx.Done():
 		return nil, fmt.Errorf("context done: %w", ctx.Err())
-
-	case <-time.After(timeout):
-		return nil, fmt.Errorf("request timed out")
 
 	case res, open := <-resCh:
 		if !open {
