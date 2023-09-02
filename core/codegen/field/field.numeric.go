@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/parser"
+	"math"
 )
 
 type Numeric struct {
@@ -59,25 +60,25 @@ func (f *Numeric) TypeDatabase() string {
 
 	switch f.source.Type {
 	case parser.NumberInt8:
-		return f.optionWrap("int") + " ASSERT " + nilCheck + "$value >= -128 AND $value <= 127"
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, math.MinInt8, math.MaxInt8)
 	case parser.NumberInt16:
-		return f.optionWrap("int") + " ASSERT " + nilCheck + "$value >= -32768 AND $value <= 32767"
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, math.MinInt16, math.MaxInt16)
 	case parser.NumberInt32, parser.NumberRune:
-		return f.optionWrap("int") + " ASSERT " + nilCheck + "$value >= -2147483648 AND $value <= 2147483647"
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, math.MinInt32, math.MaxInt32)
 	case parser.NumberInt64, parser.NumberInt:
-		return f.optionWrap("int") + " ASSERT " + nilCheck + "$value >= -9223372036854775808 AND $value <= 9223372036854775807"
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, math.MinInt64, math.MaxInt64)
 	case parser.NumberUint8:
-		return f.optionWrap("int") + " ASSERT " + nilCheck + "$value >= 0 AND $value <= 255"
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint8)
 	case parser.NumberUint16:
-		return f.optionWrap("int") + " ASSERT " + nilCheck + "$value >= 0 AND $value <= 65535"
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint16)
 	case parser.NumberUint32:
-		return f.optionWrap("int") + " ASSERT " + nilCheck + "$value >= 0 AND $value <= 4294967295"
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint32)
 	case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-		return f.optionWrap("int") + " ASSERT " + nilCheck + "$value >= 0 AND $value <= 18446744073709551615"
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, uint64(math.MaxUint64))
 	case parser.NumberFloat32:
-		return f.optionWrap("float") + " ASSERT " + nilCheck + "$value >= -3.402823466E+38 AND $value <= 3.402823466E+38"
+		return f.optionWrap("float") // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "1.2E-38", "3.4E+38")
 	case parser.NumberFloat64:
-		return f.optionWrap("float") + " ASSERT " + nilCheck + "$value >= -1.7976931348623157E+308 AND $value <= 1.7976931348623157E+308"
+		return f.optionWrap("float") // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "2.2E-308", "1.7E+308")
 	default:
 		panic(fmt.Sprintf("unmapped numeric type: %d", f.source.Type))
 	}

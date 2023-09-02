@@ -12,6 +12,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
+	"math"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -112,6 +113,55 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.Equal(t, str, userOut.String)
 	assert.Equal(t, uid, userOut.UUID)
+
+	assert.DeepEqual(t,
+		userNew, *userOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+	)
+}
+
+func TestNumerics(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	str := "user"
+
+	userNew := model.User{
+		String:  str,
+		Int:     math.MaxInt,
+		Int8:    math.MaxInt8,
+		Int16:   math.MaxInt16,
+		Int32:   math.MaxInt32,
+		Int64:   math.MaxInt64,
+		Uint:    math.MaxUint,
+		Uint8:   math.MaxUint8,
+		Uint16:  math.MaxUint16,
+		Uint32:  math.MaxUint32,
+		Uint64:  math.MaxUint64,
+		Uintptr: math.MaxUint64,
+		Float32: math.MaxFloat32,
+		Float64: math.MaxFloat64,
+		Rune:    math.MaxInt32,
+	}
+
+	userIn := userNew
+
+	err := client.UserRepo().Create(ctx, &userIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userOut, err := client.UserRepo().Query().
+		Filter(
+			where.User.ID.Equal(userIn.ID()),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
