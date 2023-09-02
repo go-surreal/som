@@ -318,12 +318,12 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	client, err := som.NewClient(conf(endpoint))
+	client, err := som.NewClient(ctx, conf(endpoint))
 	if err != nil {
 		tb.Fatal(err)
 	}
 
-	if err := client.ApplySchema(); err != nil {
+	if err := client.ApplySchema(ctx); err != nil {
 		tb.Fatal(err)
 	}
 

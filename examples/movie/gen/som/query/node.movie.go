@@ -9,20 +9,21 @@ import (
 	lib "github.com/marcbinz/som/examples/movie/gen/som/internal/lib"
 	with "github.com/marcbinz/som/examples/movie/gen/som/with"
 	model "github.com/marcbinz/som/examples/movie/model"
-	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 	"strings"
 	"time"
 )
 
 type Movie struct {
-	db    Database
-	query lib.Query[model.Movie]
+	db        Database
+	query     lib.Query[model.Movie]
+	unmarshal func(buf []byte, val any) error
 }
 
-func NewMovie(db Database) Movie {
+func NewMovie(db Database, unmarshal func(buf []byte, val any) error) Movie {
 	return Movie{
-		db:    db,
-		query: lib.NewQuery[model.Movie]("movie"),
+		db:        db,
+		query:     lib.NewQuery[model.Movie]("movie"),
+		unmarshal: unmarshal,
 	}
 }
 
@@ -97,13 +98,13 @@ func (q Movie) Parallel(parallel bool) Movie {
 // Count returns the size of the result set, in other words the
 // number of records matching the conditions of the query.
 func (q Movie) Count(ctx context.Context) (int, error) {
-	res := q.query.BuildAsCount()
-	raw, err := q.db.Query(res.Statement, res.Variables)
+	req := q.query.BuildAsCount()
+	raw, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return 0, err
 	}
-	var rawCount []marshal.RawQuery[countResult]
-	err = marshal.UnmarshalRaw(raw, &rawCount)
+	var rawCount []queryResult[countResult]
+	err = q.unmarshal(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
@@ -136,13 +137,21 @@ func (q Movie) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 
 // All returns all records matching the conditions of the query.
 func (q Movie) All(ctx context.Context) ([]*model.Movie, error) {
-	res := q.query.BuildAsAll()
-	rawNodes, err := marshal.SmartUnmarshal[conv.Movie](q.db.Query(res.Statement, res.Variables))
+	req := q.query.BuildAsAll()
+	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
+	var rawNodes []queryResult[conv.Movie]
+	err = q.unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, errors.New("empty result")
+	}
 	var nodes []*model.Movie
-	for _, rawNode := range rawNodes {
+	for _, rawNode := range rawNodes[0].Result {
 		node := conv.ToMovie(rawNode)
 		nodes = append(nodes, &node)
 	}
@@ -156,10 +165,15 @@ func (q Movie) AllAsync(ctx context.Context) *asyncResult[[]*model.Movie] {
 
 // AllIDs returns the IDs of all records matching the conditions of the query.
 func (q Movie) AllIDs(ctx context.Context) ([]string, error) {
-	res := q.query.BuildAsAllIDs()
-	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(res.Statement, res.Variables))
+	req := q.query.BuildAsAllIDs()
+	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
+	}
+	var rawNodes []idNode
+	err = q.unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
 	var ids []string
 	for _, rawNode := range rawNodes {
@@ -217,6 +231,6 @@ func (q Movie) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
 func (q Movie) Describe() string {
-	res := q.query.BuildAsAll()
-	return strings.TrimSpace(res.Statement)
+	req := q.query.BuildAsAll()
+	return strings.TrimSpace(req.Statement)
 }

@@ -238,6 +238,16 @@ type Z struct {
 DEFINE FIELD xy ON z TYPE record(x, y)
 ```
 
+### Indexing for schemaless (needed?)
+
+```
+DEFINE EVENT example_uid_setting ON TABLE example WHEN $before = null AND $before!=$after THEN {
+    LET $next = (SELECT val FROM counter:example) +1 ;
+    UPDATE $after SET uid = $next  
+    UPDATE counter:example SET val = $next;
+};
+```
+
 ## Optimisations
 
 tbd.
