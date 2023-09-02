@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/marcbinz/som/core/parser"
-	"golang.org/x/exp/slices"
+	"slices"
 	"sort"
 	"strings"
 )
