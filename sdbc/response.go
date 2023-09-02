@@ -24,8 +24,6 @@ func (c *Client) subscribe(ctx context.Context) {
 		for {
 			buf, err := c.read(ctx)
 
-			// typ, data, err := c.conn.Read(ctx)
-
 			if err != nil {
 				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 					return
@@ -47,7 +45,7 @@ func (c *Client) subscribe(ctx context.Context) {
 	c.handleMessages(ctx, ch)
 }
 
-// read reads a JSON message from c into v.
+// read reads a single websocket message.
 // It will reuse buffers in between calls to avoid allocations.
 func (c *Client) read(ctx context.Context) (_ []byte, err error) {
 	defer c.checkWebsocketConn(err)
@@ -68,12 +66,6 @@ func (c *Client) read(ctx context.Context) (_ []byte, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read message: %w", err)
 	}
-
-	// err = jsonHandler.Unmarshal(b.Bytes(), v)
-	// if err != nil {
-	// 	c.Close(websocket.StatusInvalidFramePayloadData, "failed to unmarshal JSON")
-	// 	return fmt.Errorf("failed to unmarshal JSON: %w", err)
-	// }
 
 	return b.Bytes(), nil
 }
@@ -114,10 +106,9 @@ func (c *Client) handleMessage(ctx context.Context, data []byte) {
 	var res *response
 
 	if err := c.jsonUnmarshal(data, &res); err != nil {
+		c.logger.ErrorContext(ctx, "Could not unmarshal websocket message.", "error", err)
 		return
 	}
-
-	fmt.Println("res:", fmt.Sprintf("%+v", string(data)))
 
 	c.logger.DebugContext(ctx, "Received message.", "res", res)
 
