@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"nhooyr.io/websocket"
 	"time"
 )
@@ -50,7 +49,9 @@ func (c *Client) subscribe(ctx context.Context) {
 
 // read reads a JSON message from c into v.
 // It will reuse buffers in between calls to avoid allocations.
-func (c *Client) read(ctx context.Context) ([]byte, error) {
+func (c *Client) read(ctx context.Context) (_ []byte, err error) {
+	defer c.checkWebsocketConn(err)
+
 	typ, r, err := c.conn.Reader(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get reader: %w", err)
@@ -174,16 +175,4 @@ func (c *Client) handleLiveQuery(ctx context.Context, res *Response) {
 	case <-time.After(c.timeout):
 		c.logger.ErrorContext(ctx, "Timeout while sending result to channel.", "id", res.ID)
 	}
-}
-
-func isPermanentError(err error) bool {
-	if websocket.CloseStatus(err) != websocket.StatusNormalClosure {
-		return true
-	}
-
-	if errors.As(err, new(net.Error)) {
-		return true
-	}
-
-	return errors.Is(err, io.EOF)
 }

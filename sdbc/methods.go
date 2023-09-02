@@ -117,6 +117,11 @@ func (c *Client) Live(ctx context.Context, timeout time.Duration, query string) 
 		return nil, fmt.Errorf("could not get live query channel")
 	}
 
+	go func(key string) {
+		<-ctx.Done()
+		c.liveQueries.del(key)
+	}(res[0].Result)
+
 	return ch, nil
 }
 
@@ -223,7 +228,9 @@ type signInParams struct {
 // -- INTERNAL
 //
 
-func (c *Client) send(ctx context.Context, req Request, timeout time.Duration) ([]byte, error) {
+func (c *Client) send(ctx context.Context, req Request, timeout time.Duration) (_ []byte, err error) {
+	defer c.checkWebsocketConn(err)
+
 	reqID, resCh := c.requests.prepare()
 	defer c.requests.cleanup(reqID)
 
@@ -262,8 +269,8 @@ func (c *Client) send(ctx context.Context, req Request, timeout time.Duration) (
 
 // write writes the JSON message v to c.
 // It will reuse buffers in between calls to avoid allocations.
-func (c *Client) write(ctx context.Context, req Request) error {
-	// defer errd.Wrap(&err, "failed to write JSON message")
+func (c *Client) write(ctx context.Context, req Request) (err error) {
+	defer c.checkWebsocketConn(err)
 
 	data, err := c.jsonMarshal(req)
 	if err != nil {
