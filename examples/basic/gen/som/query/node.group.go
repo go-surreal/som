@@ -14,16 +14,24 @@ import (
 	"time"
 )
 
-type Group struct {
+type nodeGroup struct {
 	db    Database
 	query lib.Query[model.Group]
 }
 
-func NewGroup(db Database) Group {
-	return Group{
+type NodeGroup struct {
+	nodeGroup
+}
+
+type NodeGroupNoLive struct {
+	nodeGroup
+}
+
+func NewGroup(db Database) NodeGroup {
+	return NodeGroup{nodeGroup{
 		db:    db,
 		query: lib.NewQuery[model.Group]("group"),
-	}
+	}}
 }
 
 // Filter adds a where statement to the query to
@@ -33,70 +41,70 @@ func NewGroup(db Database) Group {
 // together that all need to match.
 // Use where.Any to chain multiple conditions
 // together where at least one needs to match.
-func (q Group) Filter(filters ...lib.Filter[model.Group]) Group {
+func (q nodeGroup) Filter(filters ...lib.Filter[model.Group]) NodeGroup {
 	q.query.Where = append(q.query.Where, filters...)
-	return q
+	return NodeGroup{q}
 }
 
 // Order sorts the returned records based on the given conditions.
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
 // it would override the sort conditions.
-func (q Group) Order(by ...*lib.Sort[model.Group]) Group {
+func (q nodeGroup) Order(by ...*lib.Sort[model.Group]) NodeGroupNoLive {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
-	return q
+	return NodeGroupNoLive{q}
 }
 
 // OrderRandom sorts the returned records in a random order.
 // Note: OrderRandom takes precedence over Order.
-func (q Group) OrderRandom() Group {
+func (q nodeGroup) OrderRandom() NodeGroupNoLive {
 	q.query.SortRandom = true
-	return q
+	return NodeGroupNoLive{q}
 }
 
 // Offset skips the first x records for the result set.
-func (q Group) Offset(offset int) Group {
+func (q nodeGroup) Offset(offset int) NodeGroupNoLive {
 	q.query.Offset = offset
-	return q
+	return NodeGroupNoLive{q}
 }
 
 // Limit restricts the query to return at most x records.
-func (q Group) Limit(limit int) Group {
+func (q nodeGroup) Limit(limit int) NodeGroupNoLive {
 	q.query.Limit = limit
-	return q
+	return NodeGroupNoLive{q}
 }
 
 // Fetch can be used to return related records.
 // This works for both records links and edges.
-func (q Group) Fetch(fetch ...with.Fetch_[model.Group]) Group {
+func (q nodeGroup) Fetch(fetch ...with.Fetch_[model.Group]) NodeGroup {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			q.query.Fetch = append(q.query.Fetch, field)
 		}
 	}
-	return q
+	return NodeGroup{q}
 }
 
 // Timeout adds an execution time limit to the query.
 // When exceeded, the query call will return with an error.
-func (q Group) Timeout(timeout time.Duration) Group {
+func (q nodeGroup) Timeout(timeout time.Duration) NodeGroupNoLive {
 	q.query.Timeout = timeout
-	return q
+	return NodeGroupNoLive{q}
 }
 
 // Parallel tells SurrealDB that individual parts
 // of the query can be calculated in parallel.
 // This could lead to a faster execution.
-func (q Group) Parallel(parallel bool) Group {
+func (q nodeGroup) Parallel(parallel bool) NodeGroupNoLive {
 	q.query.Parallel = parallel
-	return q
+	return NodeGroupNoLive{q}
 }
 
 // Count returns the size of the result set, in other words the
 // number of records matching the conditions of the query.
-func (q Group) Count(ctx context.Context) (int, error) {
+func (q nodeGroup) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -114,14 +122,14 @@ func (q Group) Count(ctx context.Context) (int, error) {
 }
 
 // CountAsync is the asynchronous version of Count.
-func (q Group) CountAsync(ctx context.Context) *asyncResult[int] {
+func (q nodeGroup) CountAsync(ctx context.Context) *asyncResult[int] {
 	return async(ctx, q.Count)
 }
 
 // Exists returns whether at least one record for the conditions
 // of the query exists or not. In other words it returns whether
 // the size of the result set is greater than 0.
-func (q Group) Exists(ctx context.Context) (bool, error) {
+func (q nodeGroup) Exists(ctx context.Context) (bool, error) {
 	count, err := q.Count(ctx)
 	if err != nil {
 		return false, err
@@ -130,12 +138,12 @@ func (q Group) Exists(ctx context.Context) (bool, error) {
 }
 
 // ExistsAsync is the asynchronous version of Exists.
-func (q Group) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+func (q nodeGroup) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 	return async(ctx, q.Exists)
 }
 
 // All returns all records matching the conditions of the query.
-func (q Group) All(ctx context.Context) ([]*model.Group, error) {
+func (q nodeGroup) All(ctx context.Context) ([]*model.Group, error) {
 	res := q.query.BuildAsAll()
 	rawNodes, err := marshal.SmartUnmarshal[conv.Group](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
@@ -150,12 +158,12 @@ func (q Group) All(ctx context.Context) ([]*model.Group, error) {
 }
 
 // AllAsync is the asynchronous version of All.
-func (q Group) AllAsync(ctx context.Context) *asyncResult[[]*model.Group] {
+func (q nodeGroup) AllAsync(ctx context.Context) *asyncResult[[]*model.Group] {
 	return async(ctx, q.All)
 }
 
 // AllIDs returns the IDs of all records matching the conditions of the query.
-func (q Group) AllIDs(ctx context.Context) ([]string, error) {
+func (q nodeGroup) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
@@ -169,14 +177,14 @@ func (q Group) AllIDs(ctx context.Context) ([]string, error) {
 }
 
 // AllIDsAsync is the asynchronous version of AllIDs.
-func (q Group) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
+func (q nodeGroup) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
 	return async(ctx, q.AllIDs)
 }
 
 // First returns the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q Group) First(ctx context.Context) (*model.Group, error) {
+func (q nodeGroup) First(ctx context.Context) (*model.Group, error) {
 	q.query.Limit = 1
 	res, err := q.All(ctx)
 	if err != nil {
@@ -189,14 +197,14 @@ func (q Group) First(ctx context.Context) (*model.Group, error) {
 }
 
 // FirstAsync is the asynchronous version of First.
-func (q Group) FirstAsync(ctx context.Context) *asyncResult[*model.Group] {
+func (q nodeGroup) FirstAsync(ctx context.Context) *asyncResult[*model.Group] {
 	return async(ctx, q.First)
 }
 
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q Group) FirstID(ctx context.Context) (string, error) {
+func (q nodeGroup) FirstID(ctx context.Context) (string, error) {
 	q.query.Limit = 1
 	res, err := q.AllIDs(ctx)
 	if err != nil {
@@ -209,14 +217,30 @@ func (q Group) FirstID(ctx context.Context) (string, error) {
 }
 
 // FirstIDAsync is the asynchronous version of FirstID.
-func (q Group) FirstIDAsync(ctx context.Context) *asyncResult[string] {
+func (q nodeGroup) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 	return async(ctx, q.FirstID)
+}
+
+// Live returns a channel of changes and a channel of errors.
+// The changes channel will be closed when the context is canceled.
+// The error channel will be closed when the context is canceled or
+// when an error occurs.
+func (q NodeGroup) Live(ctx context.Context) *asyncResult[*model.Group] {
+	return nil
+}
+
+// Live returns a channel of changes and a channel of errors.
+// The changes channel will be closed when the context is canceled.
+// The error channel will be closed when the context is canceled or
+// when an error occurs.
+func (q NodeGroup) LiveDiff(ctx context.Context) *asyncResult[*model.Group] {
+	return nil
 }
 
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
-func (q Group) Describe() string {
+func (q nodeGroup) Describe() string {
 	res := q.query.BuildAsAll()
 	return strings.TrimSpace(res.Statement)
 }

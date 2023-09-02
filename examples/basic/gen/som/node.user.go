@@ -15,7 +15,7 @@ import (
 )
 
 type UserRepo interface {
-	Query() query.User
+	Query() query.NodeUser
 	Create(ctx context.Context, user *model.User) error
 	CreateWithID(ctx context.Context, id string, user *model.User) error
 	Read(ctx context.Context, id string) (*model.User, bool, error)
@@ -32,7 +32,7 @@ type user struct {
 	db Database
 }
 
-func (n *user) Query() query.User {
+func (n *user) Query() query.NodeUser {
 	return query.NewUser(n.db)
 }
 

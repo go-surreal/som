@@ -14,16 +14,24 @@ import (
 	"time"
 )
 
-type User struct {
+type nodeUser struct {
 	db    Database
 	query lib.Query[model.User]
 }
 
-func NewUser(db Database) User {
-	return User{
+type NodeUser struct {
+	nodeUser
+}
+
+type NodeUserNoLive struct {
+	nodeUser
+}
+
+func NewUser(db Database) NodeUser {
+	return NodeUser{nodeUser{
 		db:    db,
 		query: lib.NewQuery[model.User]("user"),
-	}
+	}}
 }
 
 // Filter adds a where statement to the query to
@@ -33,70 +41,70 @@ func NewUser(db Database) User {
 // together that all need to match.
 // Use where.Any to chain multiple conditions
 // together where at least one needs to match.
-func (q User) Filter(filters ...lib.Filter[model.User]) User {
+func (q nodeUser) Filter(filters ...lib.Filter[model.User]) NodeUser {
 	q.query.Where = append(q.query.Where, filters...)
-	return q
+	return NodeUser{q}
 }
 
 // Order sorts the returned records based on the given conditions.
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
 // it would override the sort conditions.
-func (q User) Order(by ...*lib.Sort[model.User]) User {
+func (q nodeUser) Order(by ...*lib.Sort[model.User]) NodeUserNoLive {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
-	return q
+	return NodeUserNoLive{q}
 }
 
 // OrderRandom sorts the returned records in a random order.
 // Note: OrderRandom takes precedence over Order.
-func (q User) OrderRandom() User {
+func (q nodeUser) OrderRandom() NodeUserNoLive {
 	q.query.SortRandom = true
-	return q
+	return NodeUserNoLive{q}
 }
 
 // Offset skips the first x records for the result set.
-func (q User) Offset(offset int) User {
+func (q nodeUser) Offset(offset int) NodeUserNoLive {
 	q.query.Offset = offset
-	return q
+	return NodeUserNoLive{q}
 }
 
 // Limit restricts the query to return at most x records.
-func (q User) Limit(limit int) User {
+func (q nodeUser) Limit(limit int) NodeUserNoLive {
 	q.query.Limit = limit
-	return q
+	return NodeUserNoLive{q}
 }
 
 // Fetch can be used to return related records.
 // This works for both records links and edges.
-func (q User) Fetch(fetch ...with.Fetch_[model.User]) User {
+func (q nodeUser) Fetch(fetch ...with.Fetch_[model.User]) NodeUser {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			q.query.Fetch = append(q.query.Fetch, field)
 		}
 	}
-	return q
+	return NodeUser{q}
 }
 
 // Timeout adds an execution time limit to the query.
 // When exceeded, the query call will return with an error.
-func (q User) Timeout(timeout time.Duration) User {
+func (q nodeUser) Timeout(timeout time.Duration) NodeUserNoLive {
 	q.query.Timeout = timeout
-	return q
+	return NodeUserNoLive{q}
 }
 
 // Parallel tells SurrealDB that individual parts
 // of the query can be calculated in parallel.
 // This could lead to a faster execution.
-func (q User) Parallel(parallel bool) User {
+func (q nodeUser) Parallel(parallel bool) NodeUserNoLive {
 	q.query.Parallel = parallel
-	return q
+	return NodeUserNoLive{q}
 }
 
 // Count returns the size of the result set, in other words the
 // number of records matching the conditions of the query.
-func (q User) Count(ctx context.Context) (int, error) {
+func (q nodeUser) Count(ctx context.Context) (int, error) {
 	res := q.query.BuildAsCount()
 	raw, err := q.db.Query(res.Statement, res.Variables)
 	if err != nil {
@@ -114,14 +122,14 @@ func (q User) Count(ctx context.Context) (int, error) {
 }
 
 // CountAsync is the asynchronous version of Count.
-func (q User) CountAsync(ctx context.Context) *asyncResult[int] {
+func (q nodeUser) CountAsync(ctx context.Context) *asyncResult[int] {
 	return async(ctx, q.Count)
 }
 
 // Exists returns whether at least one record for the conditions
 // of the query exists or not. In other words it returns whether
 // the size of the result set is greater than 0.
-func (q User) Exists(ctx context.Context) (bool, error) {
+func (q nodeUser) Exists(ctx context.Context) (bool, error) {
 	count, err := q.Count(ctx)
 	if err != nil {
 		return false, err
@@ -130,12 +138,12 @@ func (q User) Exists(ctx context.Context) (bool, error) {
 }
 
 // ExistsAsync is the asynchronous version of Exists.
-func (q User) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+func (q nodeUser) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 	return async(ctx, q.Exists)
 }
 
 // All returns all records matching the conditions of the query.
-func (q User) All(ctx context.Context) ([]*model.User, error) {
+func (q nodeUser) All(ctx context.Context) ([]*model.User, error) {
 	res := q.query.BuildAsAll()
 	rawNodes, err := marshal.SmartUnmarshal[conv.User](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
@@ -150,12 +158,12 @@ func (q User) All(ctx context.Context) ([]*model.User, error) {
 }
 
 // AllAsync is the asynchronous version of All.
-func (q User) AllAsync(ctx context.Context) *asyncResult[[]*model.User] {
+func (q nodeUser) AllAsync(ctx context.Context) *asyncResult[[]*model.User] {
 	return async(ctx, q.All)
 }
 
 // AllIDs returns the IDs of all records matching the conditions of the query.
-func (q User) AllIDs(ctx context.Context) ([]string, error) {
+func (q nodeUser) AllIDs(ctx context.Context) ([]string, error) {
 	res := q.query.BuildAsAllIDs()
 	rawNodes, err := marshal.SmartUnmarshal[idNode](q.db.Query(res.Statement, res.Variables))
 	if err != nil {
@@ -169,14 +177,14 @@ func (q User) AllIDs(ctx context.Context) ([]string, error) {
 }
 
 // AllIDsAsync is the asynchronous version of AllIDs.
-func (q User) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
+func (q nodeUser) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
 	return async(ctx, q.AllIDs)
 }
 
 // First returns the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q User) First(ctx context.Context) (*model.User, error) {
+func (q nodeUser) First(ctx context.Context) (*model.User, error) {
 	q.query.Limit = 1
 	res, err := q.All(ctx)
 	if err != nil {
@@ -189,14 +197,14 @@ func (q User) First(ctx context.Context) (*model.User, error) {
 }
 
 // FirstAsync is the asynchronous version of First.
-func (q User) FirstAsync(ctx context.Context) *asyncResult[*model.User] {
+func (q nodeUser) FirstAsync(ctx context.Context) *asyncResult[*model.User] {
 	return async(ctx, q.First)
 }
 
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q User) FirstID(ctx context.Context) (string, error) {
+func (q nodeUser) FirstID(ctx context.Context) (string, error) {
 	q.query.Limit = 1
 	res, err := q.AllIDs(ctx)
 	if err != nil {
@@ -209,14 +217,71 @@ func (q User) FirstID(ctx context.Context) (string, error) {
 }
 
 // FirstIDAsync is the asynchronous version of FirstID.
-func (q User) FirstIDAsync(ctx context.Context) *asyncResult[string] {
+func (q nodeUser) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 	return async(ctx, q.FirstID)
+}
+
+// Live returns a channel of changes and a channel of errors.
+// The changes channel will be closed when the context is canceled.
+// The error channel will be closed when the context is canceled or
+// when an error occurs.
+func (q NodeUser) Live(ctx context.Context) *asyncResult[*model.User] {
+	req := q.query.BuildAsLive()
+
+	resChan := q.db.Live(req.Statement, req.Variables)
+
+	resCh, errCh := make(chan *model.User, 1), make(chan error, 1)
+
+	go func() {
+		defer close(resCh)
+		defer close(errCh)
+
+		for {
+			select {
+
+			case <-ctx.Done():
+				errCh <- fmt.Errorf("context done: %w", ctx.Err())
+				return
+
+			case res := <-resChan:
+				var convNode conv.User
+
+				err := marshal.Unmarshal(res, &convNode)
+				if err != nil {
+					errCh <- fmt.Errorf("could not unmarshal user record: %w", err)
+					return
+				}
+
+				node := conv.ToUser(convNode)
+				resCh <- &node
+			}
+		}
+	}()
+
+	return &asyncResult[*model.User]{
+		res: resCh,
+		err: errCh,
+	}
+}
+
+// Live returns a channel of changes and a channel of errors.
+// The changes channel will be closed when the context is canceled.
+// The error channel will be closed when the context is canceled or
+// when an error occurs.
+func (q NodeUser) LiveDiff(ctx context.Context) *asyncResult[*model.User] {
+	return nil
+}
+
+type Diff struct {
+	Op string `json:"op"`
+	Path string `json:"path"`
+	Value any `json:"value"`
 }
 
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
-func (q User) Describe() string {
+func (q nodeUser) Describe() string {
 	res := q.query.BuildAsAll()
 	return strings.TrimSpace(res.Statement)
 }

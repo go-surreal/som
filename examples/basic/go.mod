@@ -1,8 +1,6 @@
 module github.com/marcbinz/som/examples/basic
 
-go 1.20
-
-toolchain go1.20.6
+go 1.21.0
 
 replace github.com/marcbinz/som => ../../
 
