@@ -114,8 +114,6 @@ func (c *Client) handleMessage(ctx context.Context, data []byte) {
 	var res *response
 
 	if err := c.jsonUnmarshal(data, &res); err != nil {
-		// c.Close(websocket.StatusInvalidFramePayloadData, "failed to unmarshal JSON")
-		// return fmt.Errorf("failed to unmarshal JSON: %w", err)
 		return
 	}
 
