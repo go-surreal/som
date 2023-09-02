@@ -19,7 +19,7 @@ func TestQueryCount(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	if err := client.ApplySchema(); err != nil {
+	if err := client.ApplySchema(ctx); err != nil {
 		t.Fatal(err)
 	}
 

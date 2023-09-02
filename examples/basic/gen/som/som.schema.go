@@ -3,11 +3,12 @@
 package som
 
 import(
+	"context"
 	"fmt"
 )
 	
-func (c *ClientImpl) ApplySchema() error {
-	_, err := c.db.Query(tmpl, nil)
+func (c *ClientImpl) ApplySchema(ctx context.Context) error {
+	_, err := c.db.Query(ctx, tmpl, nil)
 	if err != nil {
 		return fmt.Errorf("could not apply schema: %v", err)
 	}
@@ -18,87 +19,87 @@ func (c *ClientImpl) ApplySchema() error {
 var tmpl = `
 
 DEFINE TABLE user SCHEMAFULL;
-DEFINE FIELD id ON TABLE user TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD id ON TABLE user TYPE record<user> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE user TYPE datetime;
 DEFINE FIELD updated_at ON TABLE user TYPE datetime;
 DEFINE FIELD string ON TABLE user TYPE string;
-DEFINE FIELD string_ptr ON TABLE user TYPE option<string>;
+DEFINE FIELD string_ptr ON TABLE user TYPE option<string | null>;
 DEFINE FIELD int ON TABLE user TYPE int ASSERT $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD int_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
+DEFINE FIELD int_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 DEFINE FIELD int_8 ON TABLE user TYPE int ASSERT $value >= -128 AND $value <= 127;
-DEFINE FIELD int_8_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -128 AND $value <= 127;
+DEFINE FIELD int_8_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -128 AND $value <= 127;
 DEFINE FIELD int_16 ON TABLE user TYPE int ASSERT $value >= -32768 AND $value <= 32767;
-DEFINE FIELD int_16_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -32768 AND $value <= 32767;
+DEFINE FIELD int_16_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -32768 AND $value <= 32767;
 DEFINE FIELD int_32 ON TABLE user TYPE int ASSERT $value >= -2147483648 AND $value <= 2147483647;
-DEFINE FIELD int_32_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -2147483648 AND $value <= 2147483647;
+DEFINE FIELD int_32_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -2147483648 AND $value <= 2147483647;
 DEFINE FIELD int_64 ON TABLE user TYPE int ASSERT $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD int_64_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
+DEFINE FIELD int_64_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 DEFINE FIELD uint ON TABLE user TYPE int ASSERT $value >= 0 AND $value <= 18446744073709551615;
-DEFINE FIELD uint_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615;
+DEFINE FIELD uint_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615;
 DEFINE FIELD uint_8 ON TABLE user TYPE int ASSERT $value >= 0 AND $value <= 255;
-DEFINE FIELD uint_8_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
+DEFINE FIELD uint_8_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
 DEFINE FIELD uint_16 ON TABLE user TYPE int ASSERT $value >= 0 AND $value <= 65535;
-DEFINE FIELD uint_16_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 65535;
+DEFINE FIELD uint_16_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 65535;
 DEFINE FIELD uint_32 ON TABLE user TYPE int ASSERT $value >= 0 AND $value <= 4294967295;
-DEFINE FIELD uint_32_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 4294967295;
+DEFINE FIELD uint_32_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 4294967295;
 DEFINE FIELD uint_64 ON TABLE user TYPE int ASSERT $value >= 0 AND $value <= 18446744073709551615;
-DEFINE FIELD uint_64_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615;
+DEFINE FIELD uint_64_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615;
 DEFINE FIELD uintptr ON TABLE user TYPE int ASSERT $value >= 0 AND $value <= 18446744073709551615;
-DEFINE FIELD uintptr_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615;
+DEFINE FIELD uintptr_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615;
 DEFINE FIELD float_32 ON TABLE user TYPE float ASSERT $value >= -3.402823466E+38 AND $value <= 3.402823466E+38;
 DEFINE FIELD float_64 ON TABLE user TYPE float ASSERT $value >= -1.7976931348623157E+308 AND $value <= 1.7976931348623157E+308;
 DEFINE FIELD rune ON TABLE user TYPE int ASSERT $value >= -2147483648 AND $value <= 2147483647;
 DEFINE FIELD bool ON TABLE user TYPE bool;
-DEFINE FIELD bool_ptr ON TABLE user TYPE option<bool>;
+DEFINE FIELD bool_ptr ON TABLE user TYPE option<bool | null>;
 DEFINE FIELD uuid ON TABLE user TYPE string ASSERT is::uuid($value);
 DEFINE FIELD login ON TABLE user TYPE object;
 DEFINE FIELD login.username ON TABLE user TYPE string;
 DEFINE FIELD login.password ON TABLE user TYPE string;
 DEFINE FIELD role ON TABLE user TYPE string ASSERT $value INSIDE ["", "admin", "user"];
-DEFINE FIELD groups ON TABLE user TYPE option<array>;
-DEFINE FIELD groups.* ON TABLE user TYPE option<record(group)>;
-DEFINE FIELD main_group ON TABLE user TYPE option<record(group)>;
-DEFINE FIELD main_group_ptr ON TABLE user TYPE option<record(group)>;
-DEFINE FIELD other ON TABLE user TYPE option<array>;
+DEFINE FIELD groups ON TABLE user TYPE option<array | null>;
+DEFINE FIELD groups.* ON TABLE user TYPE option<record<group> | null>;
+DEFINE FIELD main_group ON TABLE user TYPE option<record<group> | null>;
+DEFINE FIELD main_group_ptr ON TABLE user TYPE option<record<group> | null>;
+DEFINE FIELD other ON TABLE user TYPE option<array | null>;
 DEFINE FIELD other.* ON TABLE user TYPE string;
-DEFINE FIELD more ON TABLE user TYPE option<array>;
+DEFINE FIELD more ON TABLE user TYPE option<array | null>;
 DEFINE FIELD more.* ON TABLE user TYPE float ASSERT $value >= -3.402823466E+38 AND $value <= 3.402823466E+38;
-DEFINE FIELD roles ON TABLE user TYPE option<array>;
+DEFINE FIELD roles ON TABLE user TYPE option<array | null>;
 DEFINE FIELD roles.* ON TABLE user TYPE string ASSERT $value INSIDE ["", "admin", "user"];
-DEFINE FIELD time_ptr ON TABLE user TYPE option<datetime>;
-DEFINE FIELD uuid_ptr ON TABLE user TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::uuid($value);
-DEFINE FIELD struct_ptr ON TABLE user TYPE option<object>;
-DEFINE FIELD struct_ptr.string_ptr ON TABLE user TYPE option<string>;
-DEFINE FIELD struct_ptr.int_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD struct_ptr.time_ptr ON TABLE user TYPE option<datetime>;
-DEFINE FIELD struct_ptr.uuid_ptr ON TABLE user TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::uuid($value);
-DEFINE FIELD string_ptr_slice ON TABLE user TYPE option<array>;
-DEFINE FIELD string_ptr_slice.* ON TABLE user TYPE option<string>;
-DEFINE FIELD string_slice_ptr ON TABLE user TYPE option<array>;
+DEFINE FIELD time_ptr ON TABLE user TYPE option<datetime | null>;
+DEFINE FIELD uuid_ptr ON TABLE user TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR is::uuid($value);
+DEFINE FIELD struct_ptr ON TABLE user TYPE option<object | null>;
+DEFINE FIELD struct_ptr.string_ptr ON TABLE user TYPE option<string | null>;
+DEFINE FIELD struct_ptr.int_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
+DEFINE FIELD struct_ptr.time_ptr ON TABLE user TYPE option<datetime | null>;
+DEFINE FIELD struct_ptr.uuid_ptr ON TABLE user TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR is::uuid($value);
+DEFINE FIELD string_ptr_slice ON TABLE user TYPE option<array | null>;
+DEFINE FIELD string_ptr_slice.* ON TABLE user TYPE option<string | null>;
+DEFINE FIELD string_slice_ptr ON TABLE user TYPE option<array | null>;
 DEFINE FIELD string_slice_ptr.* ON TABLE user TYPE string;
-DEFINE FIELD struct_ptr_slice ON TABLE user TYPE option<array>;
-DEFINE FIELD struct_ptr_slice.* ON TABLE user TYPE option<object>;
-DEFINE FIELD struct_ptr_slice.*.string_ptr ON TABLE user TYPE option<string>;
-DEFINE FIELD struct_ptr_slice.*.int_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD struct_ptr_slice.*.time_ptr ON TABLE user TYPE option<datetime>;
-DEFINE FIELD struct_ptr_slice.*.uuid_ptr ON TABLE user TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::uuid($value);
-DEFINE FIELD struct_ptr_slice_ptr ON TABLE user TYPE option<array>;
-DEFINE FIELD struct_ptr_slice_ptr.* ON TABLE user TYPE option<object>;
-DEFINE FIELD struct_ptr_slice_ptr.*.string_ptr ON TABLE user TYPE option<string>;
-DEFINE FIELD struct_ptr_slice_ptr.*.int_ptr ON TABLE user TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD struct_ptr_slice_ptr.*.time_ptr ON TABLE user TYPE option<datetime>;
-DEFINE FIELD struct_ptr_slice_ptr.*.uuid_ptr ON TABLE user TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::uuid($value);
-DEFINE FIELD enum_ptr_slice ON TABLE user TYPE option<array>;
+DEFINE FIELD struct_ptr_slice ON TABLE user TYPE option<array | null>;
+DEFINE FIELD struct_ptr_slice.* ON TABLE user TYPE option<object | null>;
+DEFINE FIELD struct_ptr_slice.*.string_ptr ON TABLE user TYPE option<string | null>;
+DEFINE FIELD struct_ptr_slice.*.int_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
+DEFINE FIELD struct_ptr_slice.*.time_ptr ON TABLE user TYPE option<datetime | null>;
+DEFINE FIELD struct_ptr_slice.*.uuid_ptr ON TABLE user TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR is::uuid($value);
+DEFINE FIELD struct_ptr_slice_ptr ON TABLE user TYPE option<array | null>;
+DEFINE FIELD struct_ptr_slice_ptr.* ON TABLE user TYPE option<object | null>;
+DEFINE FIELD struct_ptr_slice_ptr.*.string_ptr ON TABLE user TYPE option<string | null>;
+DEFINE FIELD struct_ptr_slice_ptr.*.int_ptr ON TABLE user TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
+DEFINE FIELD struct_ptr_slice_ptr.*.time_ptr ON TABLE user TYPE option<datetime | null>;
+DEFINE FIELD struct_ptr_slice_ptr.*.uuid_ptr ON TABLE user TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR is::uuid($value);
+DEFINE FIELD enum_ptr_slice ON TABLE user TYPE option<array | null>;
 DEFINE FIELD enum_ptr_slice.* ON TABLE user TYPE option<string> ASSERT $value == NULL OR $value INSIDE ["", "admin", "user"];
-DEFINE FIELD node_ptr_slice ON TABLE user TYPE option<array>;
-DEFINE FIELD node_ptr_slice.* ON TABLE user TYPE option<record(group)>;
-DEFINE FIELD node_ptr_slice_ptr ON TABLE user TYPE option<array>;
-DEFINE FIELD node_ptr_slice_ptr.* ON TABLE user TYPE option<record(group)>;
-DEFINE FIELD slice_slice ON TABLE user TYPE option<array>;
-DEFINE FIELD slice_slice.* ON TABLE user TYPE option<array>;
+DEFINE FIELD node_ptr_slice ON TABLE user TYPE option<array | null>;
+DEFINE FIELD node_ptr_slice.* ON TABLE user TYPE option<record<group> | null>;
+DEFINE FIELD node_ptr_slice_ptr ON TABLE user TYPE option<array | null>;
+DEFINE FIELD node_ptr_slice_ptr.* ON TABLE user TYPE option<record<group> | null>;
+DEFINE FIELD slice_slice ON TABLE user TYPE option<array | null>;
+DEFINE FIELD slice_slice.* ON TABLE user TYPE option<array | null>;
 
 DEFINE TABLE group SCHEMAFULL;
-DEFINE FIELD id ON TABLE group TYPE record ASSERT $value != NONE AND $value != NULL AND $value != "";
+DEFINE FIELD id ON TABLE group TYPE record<group> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE group TYPE datetime;
 DEFINE FIELD updated_at ON TABLE group TYPE datetime;
 DEFINE FIELD name ON TABLE group TYPE string;

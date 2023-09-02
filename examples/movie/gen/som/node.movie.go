@@ -9,8 +9,6 @@ import (
 	query "github.com/marcbinz/som/examples/movie/gen/som/query"
 	relate "github.com/marcbinz/som/examples/movie/gen/som/relate"
 	model "github.com/marcbinz/som/examples/movie/model"
-	constants "github.com/surrealdb/surrealdb.go/pkg/constants"
-	marshal "github.com/surrealdb/surrealdb.go/pkg/marshal"
 )
 
 type MovieRepo interface {
@@ -24,15 +22,17 @@ type MovieRepo interface {
 }
 
 func (c *ClientImpl) MovieRepo() MovieRepo {
-	return &movie{db: c.db}
+	return &movie{db: c.db, marshal: c.marshal, unmarshal: c.unmarshal}
 }
 
 type movie struct {
-	db Database
+	db        Database
+	marshal   func(val any) ([]byte, error)
+	unmarshal func(buf []byte, val any) error
 }
 
 func (n *movie) Query() query.Movie {
-	return query.NewMovie(n.db)
+	return query.NewMovie(n.db, n.unmarshal)
 }
 
 func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
@@ -45,12 +45,12 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 	key := "movie"
 	data := conv.FromMovie(*movie)
 
-	raw, err := n.db.Create(key, data)
+	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	var convNodes []conv.Movie
-	err = marshal.Unmarshal(raw, &convNodes)
+	err = n.unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -71,23 +71,30 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 	key := "movie:" + "⟨" + id + "⟩"
 	data := conv.FromMovie(*movie)
 
-	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Create(key, data))
+	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	*movie = conv.ToMovie(convNode[0])
+	var convNode conv.Movie
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
+	}
+	*movie = conv.ToMovie(convNode)
 	return nil
 }
 
 func (n *movie) Read(ctx context.Context, id string) (*model.Movie, bool, error) {
-	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Select("movie:⟨" + id + "⟩"))
-	if errors.Is(err, constants.ErrNoRow) {
-		return nil, false, nil
-	}
+	res, err := n.db.Select(ctx, "movie:⟨"+id+"⟩")
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	node := conv.ToMovie(convNode[0])
+	var convNode conv.Movie
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
+	}
+	node := conv.ToMovie(convNode)
 	return &node, true, nil
 }
 
@@ -100,11 +107,16 @@ func (n *movie) Update(ctx context.Context, movie *model.Movie) error {
 	}
 	data := conv.FromMovie(*movie)
 
-	convNode, err := marshal.SmartUnmarshal[conv.Movie](n.db.Update("movie:⟨"+movie.ID()+"⟩", data))
+	res, err := n.db.Update(ctx, "movie:⟨"+movie.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	*movie = conv.ToMovie(convNode[0])
+	var convNode conv.Movie
+	err = n.unmarshal(res, &convNode)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal entity: %w", err)
+	}
+	*movie = conv.ToMovie(convNode)
 	return nil
 }
 
@@ -112,7 +124,7 @@ func (n *movie) Delete(ctx context.Context, movie *model.Movie) error {
 	if movie == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete("movie:⟨" + movie.ID() + "⟩")
+	_, err := n.db.Delete(ctx, "movie:⟨"+movie.ID()+"⟩")
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}
@@ -120,5 +132,5 @@ func (n *movie) Delete(ctx context.Context, movie *model.Movie) error {
 }
 
 func (n *movie) Relate() *relate.Movie {
-	return relate.NewMovie(n.db)
+	return relate.NewMovie(n.db, n.unmarshal)
 }
