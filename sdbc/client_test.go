@@ -257,6 +257,8 @@ type someModel struct {
 //
 
 func prepareDatabase(ctx context.Context, tb testing.TB) (*Client, func()) {
+	tb.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+
 	req := testcontainers.ContainerRequest{
 		Name:  containerName,
 		Image: "surrealdb/surrealdb:" + surrealDBContainerVersion,
