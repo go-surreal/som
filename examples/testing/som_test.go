@@ -3,8 +3,8 @@ package testing
 import (
 	"context"
 	"github.com/docker/docker/api/types/container"
-	"github.com/marcbinz/som/examples/testing/gen/som"
-	"github.com/marcbinz/som/examples/testing/model"
+	"github.com/go-surreal/som/examples/testing/gen/som"
+	"github.com/go-surreal/som/examples/testing/model"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"

@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/marcbinz/som/example/gen/som"
-	"github.com/marcbinz/som/example/gen/som/where"
+	"github.com/go-surreal/som/example/gen/som"
+	"github.com/go-surreal/som/example/gen/som/where"
 	"log"
 )
 

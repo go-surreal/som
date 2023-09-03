@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bytedance/sonic"
-	"github.com/marcbinz/som/sdbc"
+	"github.com/go-surreal/som/sdbc"
 )
 
 type Database interface {

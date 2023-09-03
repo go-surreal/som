@@ -2,7 +2,7 @@ package basic
 
 import (
 	"context"
-	"github.com/marcbinz/som/examples/basic/model"
+	"github.com/go-surreal/som/examples/basic/model"
 	"gotest.tools/v3/assert"
 	"math/rand"
 	"testing"

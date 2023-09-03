@@ -2,9 +2,9 @@ package codegen
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/codegen/field"
-	"github.com/marcbinz/som/core/embed"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/embed"
 	"os"
 	"path"
 	"path/filepath"

@@ -11,8 +11,8 @@
   <a href="https://go.dev/doc/devel/release">
     <img src="https://img.shields.io/badge/go-1.21rc3-informational" alt="Go 1.21rc3">
   </a>
-  <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
-    <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
+  <a href="https://github.com/go-surreal/som/actions/workflows/pull_request.yml">
+    <img src="https://github.com/go-surreal/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
   </a>
   <a href="https://discord.gg/surrealdb">
     <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord">
@@ -79,10 +79,10 @@ But still, please try it out and give us some feedback. We would highly apprecia
 Generate the client code:
 
 ```
-go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
+go run github.com/go-surreal/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
 
-The package `github.com/marcbinz/som` can be considered an invisible dependency for your project. All it does is to
+The package `github.com/go-surreal/som` can be considered an invisible dependency for your project. All it does is to
 generate code that lives within your project, but the package itself does not need to be added to the `go.mod` file.
 
 The generated code uses the official SurrealDB go client:
