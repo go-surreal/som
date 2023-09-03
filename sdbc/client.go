@@ -2,6 +2,7 @@ package sdbc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"nhooyr.io/websocket"
 	"sync"
@@ -14,9 +15,11 @@ type Client struct {
 	conf  Config
 	token string
 
-	connCtx   context.Context
-	conn      *websocket.Conn
-	connMutex sync.Mutex
+	conn       *websocket.Conn
+	connCtx    context.Context
+	connCancel context.CancelFunc
+	connMutex  sync.Mutex
+	connClosed bool
 
 	waitGroup sync.WaitGroup
 
@@ -52,10 +55,11 @@ func NewClient(ctx context.Context, conf Config, opts ...Option) (*Client, error
 	client := &Client{
 		options: applyOptions(opts),
 		conf:    conf,
-		connCtx: ctx,
 	}
 
-	if err := client.openWebsocket(ctx); err != nil {
+	client.connCtx, client.connCancel = context.WithCancel(ctx)
+
+	if err := client.openWebsocket(); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +70,7 @@ func NewClient(ctx context.Context, conf Config, opts ...Option) (*Client, error
 	return client, nil
 }
 
-func (c *Client) openWebsocket(ctx context.Context) error {
+func (c *Client) openWebsocket() error {
 	c.connMutex.Lock()
 	defer c.connMutex.Unlock()
 
@@ -77,7 +81,7 @@ func (c *Client) openWebsocket(ctx context.Context) error {
 		}
 	}
 
-	conn, _, err := websocket.Dial(ctx, c.conf.Address, &websocket.DialOptions{
+	conn, _, err := websocket.Dial(c.connCtx, c.conf.Address, &websocket.DialOptions{
 		CompressionMode: websocket.CompressionContextTakeover,
 	})
 	if err != nil {
@@ -88,7 +92,11 @@ func (c *Client) openWebsocket(ctx context.Context) error {
 
 	c.conn = conn
 
-	go c.subscribe(ctx)
+	c.waitGroup.Add(1)
+	go func() {
+		defer c.waitGroup.Done()
+		c.subscribe()
+	}()
 
 	return nil
 }
@@ -113,7 +121,7 @@ func (c *Client) checkWebsocketConn(err error) {
 		{
 			c.logger.Error("Websocket connection closed unexpectedly. Trying to reconnect.", "error", err)
 
-			if err := c.openWebsocket(c.connCtx); err != nil {
+			if err := c.openWebsocket(); err != nil {
 				c.logger.Error("Could not reconnect to websocket.", "error", err)
 			}
 		}
@@ -171,6 +179,14 @@ func (c *Client) checkBasicResponse(resp []byte) error {
 // Close closes the client and the websocket connection.
 // Furthermore, it cleans up all idle goroutines.
 func (c *Client) Close() error {
+	c.connMutex.Lock()
+	defer c.connMutex.Unlock()
+
+	if c.connClosed {
+		return nil
+	}
+	c.connClosed = true
+
 	c.logger.Info("Closing client.")
 
 	err := c.conn.Close(websocket.StatusNormalClosure, "closing client")
@@ -180,6 +196,9 @@ func (c *Client) Close() error {
 
 	defer c.requests.reset()
 	defer c.liveQueries.reset()
+
+	// cancel the connection context
+	c.connCancel()
 
 	c.logger.Debug("Waiting for goroutines to finish.")
 
@@ -196,6 +215,6 @@ func (c *Client) Close() error {
 		return nil
 
 	case <-time.After(10 * time.Second):
-		return fmt.Errorf("could not close websocket connection: timeout")
+		return errors.New("internal goroutines did not finish in time")
 	}
 }
