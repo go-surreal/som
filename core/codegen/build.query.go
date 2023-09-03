@@ -121,7 +121,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		b.buildQueryFuncFirst(node),
 		b.buildQueryFuncFirstID(node),
 		b.buildQueryFuncLive(node),
-		b.buildQueryFuncLiveDiff(node),
+		// TODO: b.buildQueryFuncLiveDiff(node),
 		b.buildQueryFuncDescribe(node), // TODO
 	}
 
@@ -612,10 +612,10 @@ func (b *queryBuilder) buildQueryFuncLive(node *field.NodeTable) jen.Code {
 
 	return jen.
 		Add(comment(`
-Live returns a channel of changes and a channel of errors.
-The changes channel will be closed when the context is canceled.
-The error channel will be closed when the context is canceled or
-when an error occurs.
+Live registers the constructed query as a live query.
+Whenever something in the database changes that matches the 
+query conditions, the result channel will receive an update.
+If the context is canceled, the result channel will be closed.
 		`)).
 		Func().Params(jen.Id("q").Id(nodeTypeLive)).
 		Id("Live").Params(jen.Id("ctx").Qual("context", "Context")).
@@ -653,16 +653,14 @@ func (b *queryBuilder) buildQueryFuncLiveDiff(node *field.NodeTable) jen.Code {
 
 	return jen.
 		Add(comment(`
-Live returns a channel of changes and a channel of errors.
-The changes channel will be closed when the context is canceled.
-The error channel will be closed when the context is canceled or
-when an error occurs.
+LiveDiff behaves like Live, but instead of receiving the full result
+set on every change, it only receives the actual changes.
 		`)).
 		Func().Params(jen.Id("q").Id(nodeTypeLive)).
 		Id("LiveDiff").Params(jen.Id("ctx").Qual("context", "Context")).
 		Op("*").Id("asyncResult").Types(resultType).
 		Block(
-			jen.Return(jen.Nil()),
+			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not implemented"))),
 		)
 }
 
