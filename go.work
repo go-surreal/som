@@ -5,7 +5,6 @@ toolchain go1.21.0
 use (
 	.
 	examples/basic
-	examples/live
 	examples/movie
 	examples/testing
 )

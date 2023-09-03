@@ -184,7 +184,3 @@ func (*liveResult[M]) live() {}
 func (r *liveResult[M]) Get() (M, error) {
 	return r.res, r.err
 }
-
-// questions:
-// - do the live query channels block the reading of new websocket messages?
-// - should identical liver queries only be registered once?
