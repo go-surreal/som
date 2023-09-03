@@ -256,8 +256,8 @@ func (c *Client) send(ctx context.Context, req request) (_ []byte, err error) {
 	case <-ctx.Done():
 		return nil, fmt.Errorf("context done: %w", ctx.Err())
 
-	case res, open := <-resCh:
-		if !open {
+	case res, more := <-resCh:
+		if !more {
 			return nil, fmt.Errorf("channel closed")
 		}
 
