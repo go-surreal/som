@@ -239,7 +239,7 @@ func (q nodeFieldsLikeDBResponse) FirstIDAsync(ctx context.Context) *asyncResult
 // The changes channel will be closed when the context is canceled.
 // The error channel will be closed when the context is canceled or
 // when an error occurs.
-func (q NodeFieldsLikeDBResponse) Live(ctx context.Context) (<-chan *liveResult[*model.FieldsLikeDBResponse], error) {
+func (q NodeFieldsLikeDBResponse) Live(ctx context.Context) (<-chan LiveResult[*model.FieldsLikeDBResponse], error) {
 	req := q.query.BuildAsLive()
 	resChan, err := q.db.Live(ctx, req.Statement, req.Variables)
 	if err != nil {

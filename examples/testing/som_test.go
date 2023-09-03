@@ -3,11 +3,15 @@ package testing
 import (
 	"context"
 	"github.com/docker/docker/api/types/container"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	somlib "github.com/marcbinz/som"
 	"github.com/marcbinz/som/examples/testing/gen/som"
+	"github.com/marcbinz/som/examples/testing/gen/som/query"
 	"github.com/marcbinz/som/examples/testing/model"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
 	"testing"
 )
 
@@ -68,8 +72,57 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
 
-	// TODO: add database cleanup?
+func TestLiveQueries(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	newModel := &model.FieldsLikeDBResponse{
+		Status: "some value",
+	}
+
+	liveRes, err := client.FieldsLikeDBResponseRepo().Query().Live(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	liveChan := make(chan *model.FieldsLikeDBResponse, 1)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer close(liveChan)
+		defer close(errChan)
+
+		res, open := <-liveRes
+		if !open {
+			return
+		}
+
+		liveModel, err := res.(query.LiveCreate[*model.FieldsLikeDBResponse]).Get()
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		liveChan <- liveModel
+	}()
+
+	err = client.FieldsLikeDBResponseRepo().Create(ctx, newModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.NilError(t, <-errChan)
+
+	liveModel, open := <-liveChan
+	if !open {
+		t.Fatal("liveChan closed unexpectedly")
+	}
+
+	assert.Check(t, is.DeepEqual(newModel, liveModel, cmpopts.IgnoreUnexported(somlib.Node{})))
 }
 
 //

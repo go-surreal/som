@@ -620,7 +620,7 @@ when an error occurs.
 		Func().Params(jen.Id("q").Id(nodeTypeLive)).
 		Id("Live").Params(jen.Id("ctx").Qual("context", "Context")).
 		Params(
-			jen.Op("<-").Chan().Op("*").Id("liveResult").Types(resultType),
+			jen.Op("<-").Chan().Id("LiveResult").Types(resultType),
 			jen.Error(),
 		).
 		Block(

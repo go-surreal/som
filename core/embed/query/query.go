@@ -5,6 +5,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
 type Database interface {
@@ -24,6 +25,11 @@ type queryResult[M any] struct {
 	Result []M    `json:"result"`
 	Status string `json:"status"`
 	Time   string `json:"time"`
+}
+
+type liveResponse[M any] struct {
+	Action string `json:"action"`
+	Result M      `json:"result"`
 }
 
 //
@@ -66,17 +72,8 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 // -- LIVE
 //
 
-type liveResult[T any] struct {
-	res T
-	err error
-}
-
-func (r *liveResult[T]) Get() (T, error) {
-	return r.res, r.err
-}
-
-func live[T any](ctx context.Context, in <-chan []byte, unmarshal func(buf []byte, val any) error) <-chan *liveResult[T] {
-	out := make(chan *liveResult[T], 1)
+func live[M any](ctx context.Context, in <-chan []byte, unmarshal func(buf []byte, val any) error) <-chan LiveResult[M] {
+	out := make(chan LiveResult[M], 1)
 
 	go func() {
 		defer close(out)
@@ -87,27 +84,105 @@ func live[T any](ctx context.Context, in <-chan []byte, unmarshal func(buf []byt
 			case <-ctx.Done():
 				return
 
-			case data, closed := <-in:
-				if closed {
+			case data, open := <-in:
+				if !open {
 					return
 				}
 
-				var res T
-				var outErr error
-
-				if err := unmarshal(data, &res); err != nil {
-					outErr = fmt.Errorf("could not unmarshal live result: %w", err)
-				}
-
-				out <- &liveResult[T]{
-					res: res,
-					err: outErr,
-				}
+				out <- toLiveResult[M](data, unmarshal)
 			}
 		}
 	}()
 
 	return out
+}
+
+func toLiveResult[M any](in []byte, unmarshal func(buf []byte, val any) error) LiveResult[M] {
+	var out liveResult[M]
+
+	var response liveResponse[M]
+
+	if err := unmarshal(in, &response); err != nil {
+		out.err = fmt.Errorf("could not unmarshal live result: %w", err)
+	}
+
+	out.res = response.Result
+
+	switch strings.ToLower(response.Action) {
+
+	case "create":
+		return &liveCreate[M]{
+			liveResult: out,
+		}
+
+	case "update":
+		return &liveUpdate[M]{
+			liveResult: out,
+		}
+
+	case "delete":
+		return &liveDelete[M]{
+			liveResult: out,
+		}
+
+	default:
+		out.err = fmt.Errorf("unknown action type %s", response.Action)
+
+		return &out
+	}
+}
+
+type LiveResult[M any] interface {
+	live()
+}
+
+type LiveAny[M any] interface {
+	LiveResult[M]
+	Get() (M, error)
+}
+
+type LiveCreate[M any] interface {
+	LiveAny[M]
+	create()
+}
+
+type LiveUpdate[M any] interface {
+	LiveAny[M]
+	update()
+}
+
+type LiveDelete[M any] interface {
+	LiveAny[M]
+	delete()
+}
+
+type liveCreate[M any] struct {
+	liveResult[M]
+}
+
+func (*liveCreate[M]) create() {}
+
+type liveUpdate[M any] struct {
+	liveResult[M]
+}
+
+func (*liveUpdate[M]) update() {}
+
+type liveDelete[M any] struct {
+	liveResult[M]
+}
+
+func (*liveDelete[M]) delete() {}
+
+type liveResult[M any] struct {
+	res M
+	err error
+}
+
+func (*liveResult[M]) live() {}
+
+func (r *liveResult[M]) Get() (M, error) {
+	return r.res, r.err
 }
 
 // questions:
