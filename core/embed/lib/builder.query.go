@@ -98,10 +98,6 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 func (q Query[T]) render() string {
 	var out strings.Builder
 
-	if q.live {
-		out.WriteString("LIVE ")
-	}
-
 	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
 
 	var t T

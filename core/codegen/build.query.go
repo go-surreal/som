@@ -619,9 +619,30 @@ when an error occurs.
 		`)).
 		Func().Params(jen.Id("q").Id(nodeTypeLive)).
 		Id("Live").Params(jen.Id("ctx").Qual("context", "Context")).
-		Op("*").Id("asyncResult").Types(resultType).
+		Params(
+			jen.Op("<-").Chan().Op("*").Id("liveResult").Types(resultType),
+			jen.Error(),
+		).
 		Block(
-			jen.Return(jen.Nil()),
+			jen.Id("req").Op(":=").Id("q").Dot("query").Dot("BuildAsLive").Call(),
+
+			jen.List(jen.Id("resChan"), jen.Err()).Op(":=").Id("q").Dot("db").Dot("Live").Call(
+				jen.Id("ctx"),
+				jen.Id("req").Dot("Statement"),
+				jen.Id("req").Dot("Variables"),
+			),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query live records: %w"), jen.Err())),
+			),
+
+			jen.Return(
+				jen.Id("live").Types(resultType).Call(
+					jen.Id("ctx"),
+					jen.Id("resChan"),
+					jen.Id("q").Dot("unmarshal"),
+				),
+				jen.Nil(),
+			),
 		)
 }
 

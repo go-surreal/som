@@ -239,8 +239,13 @@ func (q nodeGroup) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 // The changes channel will be closed when the context is canceled.
 // The error channel will be closed when the context is canceled or
 // when an error occurs.
-func (q NodeGroup) Live(ctx context.Context) *asyncResult[*model.Group] {
-	return nil
+func (q NodeGroup) Live(ctx context.Context) (<-chan *liveResult[*model.Group], error) {
+	req := q.query.BuildAsLive()
+	resChan, err := q.db.Live(ctx, req.Statement, req.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("could not query live records: %w", err)
+	}
+	return live[*model.Group](ctx, resChan, q.unmarshal), nil
 }
 
 // Live returns a channel of changes and a channel of errors.

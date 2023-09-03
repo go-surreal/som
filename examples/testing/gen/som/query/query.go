@@ -4,10 +4,12 @@ package query
 
 import (
 	"context"
+	"fmt"
 )
 
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
+	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
 }
 
 type idNode struct {
@@ -59,3 +61,55 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 		err: errCh,
 	}
 }
+
+//
+// -- LIVE
+//
+
+type liveResult[T any] struct {
+	res T
+	err error
+}
+
+func (r *liveResult[T]) Get() (T, error) {
+	return r.res, r.err
+}
+
+func live[T any](ctx context.Context, in <-chan []byte, unmarshal func(buf []byte, val any) error) <-chan *liveResult[T] {
+	out := make(chan *liveResult[T], 1)
+
+	go func() {
+		defer close(out)
+
+		for {
+			select {
+
+			case <-ctx.Done():
+				return
+
+			case data, closed := <-in:
+				if closed {
+					return
+				}
+
+				var res T
+				var outErr error
+
+				if err := unmarshal(data, &res); err != nil {
+					outErr = fmt.Errorf("could not unmarshal live result: %w", err)
+				}
+
+				out <- &liveResult[T]{
+					res: res,
+					err: outErr,
+				}
+			}
+		}
+	}()
+
+	return out
+}
+
+// questions:
+// - do the live query channels block the reading of new websocket messages?
+// - should identical liver queries only be registered once?
