@@ -22,7 +22,6 @@ type User struct {
 	Float64           float64        `json:"float_64"`
 	Bool              bool           `json:"bool"`
 	Bool2             bool           `json:"bool_2"`
-	UUID              uuid.UUID      `json:"uuid"`
 	Login             login          `json:"login"`
 	Role              string         `json:"role"`
 	Groups            []*groupLink   `json:"groups"`
@@ -34,8 +33,6 @@ type User struct {
 	MemberOf          []GroupMember  `json:"member_of,omitempty"`
 	StringPtr         *string        `json:"string_ptr"`
 	IntPtr            *int           `json:"int_ptr"`
-	TimePtr           *time.Time     `json:"time_ptr"`
-	UuidPtr           *uuid.UUID     `json:"uuid_ptr"`
 	StructPtr         *someStruct    `json:"struct_ptr"`
 	StringPtrSlice    []*string      `json:"string_ptr_slice"`
 	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
@@ -45,12 +42,20 @@ type User struct {
 	NodePtrSlice      []*groupLink   `json:"node_ptr_slice"`
 	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
 	SliceSlice        [][]string     `json:"slice_slice"`
+	Time              time.Time      `json:"time"`
+	TimePtr           *time.Time     `json:"time_ptr"`
+	Duration          string         `json:"duration"`
+	DurationPtr       *string        `json:"duration_ptr"`
+	UUID              uuid.UUID      `json:"uuid"`
+	UUIDPtr           *uuid.UUID     `json:"uuid_ptr"`
 }
 
 func FromUser(data model.User) User {
 	return User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
+		Duration:          data.Duration.String(),
+		DurationPtr:       durationPtr(data.DurationPtr),
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[model.Role, string])),
 		Float32:           data.Float32,
 		Float64:           data.Float64,
@@ -76,9 +81,10 @@ func FromUser(data model.User) User {
 		StructPtr:         ptrFunc(fromSomeStruct)(data.StructPtr),
 		StructPtrSlice:    mapPtrSlice(data.StructPtrSlice, fromSomeStruct),
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
+		Time:              data.Time,
 		TimePtr:           data.TimePtr,
 		UUID:              data.UUID,
-		UuidPtr:           data.UuidPtr,
+		UUIDPtr:           data.UUIDPtr,
 	}
 }
 
@@ -86,6 +92,8 @@ func ToUser(data User) model.User {
 	return model.User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
+		Duration:          parseDuration(data.Duration),
+		DurationPtr:       ptrFunc(parseDuration)(data.DurationPtr),
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[string, model.Role])),
 		Float32:           data.Float32,
 		Float64:           data.Float64,
@@ -113,10 +121,11 @@ func ToUser(data User) model.User {
 		StructPtr:         ptrFunc(toSomeStruct)(data.StructPtr),
 		StructPtrSlice:    mapPtrSlice(data.StructPtrSlice, toSomeStruct),
 		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
+		Time:              data.Time,
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		UUID:              data.UUID,
-		UuidPtr:           data.UuidPtr,
+		UUIDPtr:           data.UUIDPtr,
 	}
 }
 

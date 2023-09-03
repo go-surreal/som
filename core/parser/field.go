@@ -71,6 +71,10 @@ type FieldTime struct {
 	*fieldAtomic
 }
 
+type FieldDuration struct {
+	*fieldAtomic
+}
+
 type FieldUUID struct {
 	*fieldAtomic
 }

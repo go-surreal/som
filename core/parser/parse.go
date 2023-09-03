@@ -329,7 +329,17 @@ func parseField(t gotype.Type) (Field, error) {
 
 	case gotype.Int64:
 		{
-			return &FieldNumeric{atomic, NumberInt64}, nil
+			switch {
+			case t.Elem().PkgPath() == "time" && t.Elem().Name() == "Duration":
+				{
+					return &FieldDuration{atomic}, nil
+				}
+			default:
+				{
+					return &FieldNumeric{atomic, NumberInt64}, nil
+				}
+			}
+
 		}
 
 	case gotype.Float32:
@@ -351,7 +361,7 @@ func parseField(t gotype.Type) (Field, error) {
 		{
 			// TODO: prevent structs (or general types) from another package (except time and uuid)!
 			switch {
-			case t.Elem().PkgPath() == "time":
+			case t.Elem().PkgPath() == "time" && t.Elem().Name() == "Time":
 				{
 					return &FieldTime{atomic}, nil
 				}

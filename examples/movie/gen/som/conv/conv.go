@@ -86,3 +86,20 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
 		return &out
 	}
 }
+
+func durationPtr(val *time.Duration) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
+
+func parseDuration(val string) time.Duration {
+	res, err := time.ParseDuration(val)
+	if err != nil {
+		// TODO: add logging!
+		return 0
+	}
+	return res
+}
