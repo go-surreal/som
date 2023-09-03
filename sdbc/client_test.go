@@ -257,6 +257,8 @@ type someModel struct {
 //
 
 func prepareDatabase(ctx context.Context, tb testing.TB) (*Client, func()) {
+	tb.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+
 	req := testcontainers.ContainerRequest{
 		Name:  containerName,
 		Image: "surrealdb/surrealdb:" + surrealDBContainerVersion,
@@ -289,11 +291,14 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (*Client, func()) {
 		tb.Fatal(err)
 	}
 
-	slog.SetDefault(slog.New(
-		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-	))
-
-	client, err := NewClient(ctx, conf(endpoint))
+	client, err := NewClient(ctx,
+		conf(endpoint),
+		WithLogger(
+			slog.New(
+				slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+			),
+		),
+	)
 	if err != nil {
 		tb.Fatal(err)
 	}

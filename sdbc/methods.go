@@ -116,11 +116,21 @@ func (c *Client) Live(ctx context.Context, query string, vars map[string]any) (<
 	}
 
 	go func(key string) {
-		<-ctx.Done()
-		c.logger.DebugContext(ctx, "Closing live query channel.", "key", key)
+		c.waitGroup.Add(1)
+		defer c.waitGroup.Done()
 
-		if _, err := c.Kill(ctx, key); err != nil {
-			c.logger.ErrorContext(ctx, "Could not kill live query.", "key", key, "error", err)
+		select {
+
+		case <-c.connCtx.Done():
+			// no kill needed, because the connection is already closed
+			return
+
+		case <-ctx.Done():
+			c.logger.DebugContext(ctx, "Context done, closing live query channel.", "key", key)
+		}
+
+		if _, err := c.Kill(c.connCtx, key); err != nil {
+			c.logger.ErrorContext(c.connCtx, "Could not kill live query.", "key", key, "error", err)
 		}
 
 		c.liveQueries.del(key)
