@@ -646,23 +646,23 @@ If the context is canceled, the result channel will be closed.
 		)
 }
 
-func (b *queryBuilder) buildQueryFuncLiveDiff(node *field.NodeTable) jen.Code {
-	nodeTypeLive := "Node" + node.NameGo()
-
-	resultType := jen.Op("*").Add(b.SourceQual(node.Name))
-
-	return jen.
-		Add(comment(`
-LiveDiff behaves like Live, but instead of receiving the full result
-set on every change, it only receives the actual changes.
-		`)).
-		Func().Params(jen.Id("q").Id(nodeTypeLive)).
-		Id("LiveDiff").Params(jen.Id("ctx").Qual("context", "Context")).
-		Op("*").Id("asyncResult").Types(resultType).
-		Block(
-			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not implemented"))),
-		)
-}
+// func (b *queryBuilder) buildQueryFuncLiveDiff(node *field.NodeTable) jen.Code {
+// 	nodeTypeLive := "Node" + node.NameGo()
+//
+// 	resultType := jen.Op("*").Add(b.SourceQual(node.Name))
+//
+// 	return jen.
+// 		Add(comment(`
+// LiveDiff behaves like Live, but instead of receiving the full result
+// set on every change, it only receives the actual changes.
+// 		`)).
+// 		Func().Params(jen.Id("q").Id(nodeTypeLive)).
+// 		Id("LiveDiff").Params(jen.Id("ctx").Qual("context", "Context")).
+// 		Op("*").Id("asyncResult").Types(resultType).
+// 		Block(
+// 			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not implemented"))),
+// 		)
+// }
 
 func (b *queryBuilder) buildQueryFuncDescribe(node *field.NodeTable) jen.Code {
 	nodeType := "node" + node.NameGo()
