@@ -10,13 +10,10 @@ import (
 )
 
 func (c *Client) subscribe() {
-	c.waitGroup.Add(1)
-	defer c.waitGroup.Done()
-
 	ch := make(resultChannel[[]byte])
 
+	c.waitGroup.Add(1)
 	go func(ch resultChannel[[]byte]) {
-		c.waitGroup.Add(1)
 		defer c.waitGroup.Done()
 
 		defer close(ch)
@@ -93,16 +90,17 @@ func (c *Client) handleMessages(resultCh resultChannel[[]byte]) {
 					continue
 				}
 
-				go c.handleMessage(data)
+				c.waitGroup.Add(1)
+				go func() {
+					defer c.waitGroup.Done()
+					c.handleMessage(data)
+				}()
 			}
 		}
 	}
 }
 
 func (c *Client) handleMessage(data []byte) {
-	c.waitGroup.Add(1)
-	defer c.waitGroup.Done()
-
 	var res *response
 
 	if err := c.jsonUnmarshal(data, &res); err != nil {

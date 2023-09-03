@@ -15,9 +15,9 @@ type Client struct {
 	conf  Config
 	token string
 
+	conn       *websocket.Conn
 	connCtx    context.Context
 	connCancel context.CancelFunc
-	conn       *websocket.Conn
 	connMutex  sync.Mutex
 	connClosed bool
 
@@ -92,7 +92,11 @@ func (c *Client) openWebsocket() error {
 
 	c.conn = conn
 
-	go c.subscribe()
+	c.waitGroup.Add(1)
+	go func() {
+		defer c.waitGroup.Done()
+		c.subscribe()
+	}()
 
 	return nil
 }

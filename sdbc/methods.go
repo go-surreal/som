@@ -115,8 +115,8 @@ func (c *Client) Live(ctx context.Context, query string, vars map[string]any) (<
 		return nil, fmt.Errorf("could not get live query channel")
 	}
 
+	c.waitGroup.Add(1)
 	go func(key string) {
-		c.waitGroup.Add(1)
 		defer c.waitGroup.Done()
 
 		select {
