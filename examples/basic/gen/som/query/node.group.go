@@ -150,7 +150,7 @@ func (q nodeGroup) All(ctx context.Context) ([]*model.Group, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	var rawNodes []queryResult[conv.Group]
+	var rawNodes []queryResult[*conv.Group]
 	err = q.unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
@@ -161,7 +161,7 @@ func (q nodeGroup) All(ctx context.Context) ([]*model.Group, error) {
 	var nodes []*model.Group
 	for _, rawNode := range rawNodes[0].Result {
 		node := conv.ToGroup(rawNode)
-		nodes = append(nodes, &node)
+		nodes = append(nodes, node)
 	}
 	return nodes, nil
 }

@@ -150,7 +150,7 @@ func (q nodeFieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeD
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	var rawNodes []queryResult[conv.FieldsLikeDBResponse]
+	var rawNodes []queryResult[*conv.FieldsLikeDBResponse]
 	err = q.unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
@@ -161,7 +161,7 @@ func (q nodeFieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeD
 	var nodes []*model.FieldsLikeDBResponse
 	for _, rawNode := range rawNodes[0].Result {
 		node := conv.ToFieldsLikeDBResponse(rawNode)
-		nodes = append(nodes, &node)
+		nodes = append(nodes, node)
 	}
 	return nodes, nil
 }

@@ -188,11 +188,15 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	}
 
 	return jen.Func().
-		Id(methodPrefix + elem.NameGo()).
-		Params(jen.Id("data").Add(b.SourceQual(elem.NameGo()))).
-		Id(localName).
+		Id(methodPrefix+elem.NameGo()).
+		Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
+		Op("*").Id(localName).
 		Block(
-			jen.Return(jen.Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
+			jen.If(jen.Id("data").Op("==").Nil()).Block(
+				jen.Return(jen.Nil()),
+			),
+
+			jen.Return(jen.Op("&").Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
 					if elem.HasTimestamps() {
 						if f.NameGo() == "CreatedAt" || f.NameGo() == "UpdatedAt" {
@@ -227,11 +231,15 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 	}
 
 	return jen.Func().
-		Id(methodPrefix + elem.NameGo()).
-		Params(jen.Id("data").Id(localName)).
-		Add(b.SourceQual(elem.NameGo())).
+		Id(methodPrefix+elem.NameGo()).
+		Params(jen.Id("data").Op("*").Id(localName)).
+		Op("*").Add(b.SourceQual(elem.NameGo())).
 		Block(
-			jen.Return(jen.Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
+			jen.If(jen.Id("data").Op("==").Nil()).Block(
+				jen.Return(jen.Nil()),
+			),
+
+			jen.Return(jen.Op("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
 					if elem.HasTimestamps() {
 						if f.NameGo() == "CreatedAt" || f.NameGo() == "UpdatedAt" {
@@ -280,7 +288,9 @@ func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
 			jen.If(jen.Id("link").Op("==").Nil()).Block(
 				jen.Return(jen.Add(b.SourceQual(node.NameGo())).Values()),
 			),
-			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())))),
+			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
+			jen.Id("out").Op(":=").Id("To"+node.NameGo()).Call(jen.Op("&").Id("res")),
+			jen.Return(jen.Op("*").Id("out")),
 		)
 }
 
@@ -293,8 +303,8 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 			jen.If(jen.Id("link").Op("==").Nil()).Block(
 				jen.Return(jen.Nil()),
 			),
-			jen.Id("node").Op(":=").Id("To"+node.NameGo()).Call(jen.Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo()))),
-			jen.Return(jen.Op("&").Id("node")),
+			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
+			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Op("&").Id("res"))),
 		)
 }
 
@@ -308,7 +318,7 @@ func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Nil()),
 			),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Id("node")),
+				jen.Id(node.NameGo()).Op(":").Op("*").Id("From"+node.NameGo()).Call(jen.Op("&").Id("node")),
 				jen.Id("ID").Op(":").Id("buildDatabaseID").Call(
 					jen.Lit(node.NameDatabase()),
 					jen.Id("node").Dot("ID").Call(),
@@ -333,7 +343,7 @@ func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 					jen.Return(jen.Nil()),
 				),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Op("*").Id("node")),
+				jen.Id(node.NameGo()).Op(":").Op("*").Id("From"+node.NameGo()).Call(jen.Id("node")),
 				jen.Id("ID").Op(":").Id("buildDatabaseID").Call(
 					jen.Lit(node.NameDatabase()),
 					jen.Id("node").Dot("ID").Call(),

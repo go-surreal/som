@@ -150,7 +150,7 @@ func (q nodeMovie) All(ctx context.Context) ([]*model.Movie, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	var rawNodes []queryResult[conv.Movie]
+	var rawNodes []queryResult[*conv.Movie]
 	err = q.unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
@@ -161,7 +161,7 @@ func (q nodeMovie) All(ctx context.Context) ([]*model.Movie, error) {
 	var nodes []*model.Movie
 	for _, rawNode := range rawNodes[0].Result {
 		node := conv.ToMovie(rawNode)
-		nodes = append(nodes, &node)
+		nodes = append(nodes, node)
 	}
 	return nodes, nil
 }
