@@ -44,14 +44,14 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 		return errors.New("given node already has an id")
 	}
 	key := "user"
-	data := conv.FromUser(*user)
+	data := conv.FromUser(user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNodes []conv.User
+	var convNodes []*conv.User
 	err = n.unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
@@ -59,7 +59,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	if len(convNodes) < 1 {
 		return errors.New("response is empty")
 	}
-	*user = conv.ToUser(convNodes[0])
+	*user = *conv.ToUser(convNodes[0])
 	return nil
 }
 
@@ -71,19 +71,19 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
 	}
 	key := "user:" + "⟨" + id + "⟩"
-	data := conv.FromUser(*user)
+	data := conv.FromUser(user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
 	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNode conv.User
+	var convNode *conv.User
 	err = n.unmarshal(res, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	*user = conv.ToUser(convNode)
+	*user = *conv.ToUser(convNode)
 	return nil
 }
 
@@ -92,13 +92,12 @@ func (n *user) Read(ctx context.Context, id string) (*model.User, bool, error) {
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	var convNode conv.User
+	var convNode *conv.User
 	err = n.unmarshal(res, &convNode)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	node := conv.ToUser(convNode)
-	return &node, true, nil
+	return conv.ToUser(convNode), true, nil
 }
 
 func (n *user) Update(ctx context.Context, user *model.User) error {
@@ -108,18 +107,18 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 	if user.ID() == "" {
 		return errors.New("cannot update User without existing record ID")
 	}
-	data := conv.FromUser(*user)
+	data := conv.FromUser(user)
 	data.UpdatedAt = time.Now()
 	res, err := n.db.Update(ctx, "user:⟨"+user.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	var convNode conv.User
+	var convNode *conv.User
 	err = n.unmarshal(res, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	*user = conv.ToUser(convNode)
+	*user = *conv.ToUser(convNode)
 	return nil
 }
 

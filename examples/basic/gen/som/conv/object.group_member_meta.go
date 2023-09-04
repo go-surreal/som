@@ -8,15 +8,21 @@ type groupMemberMeta struct {
 	IsActive bool `json:"is_active"`
 }
 
-func fromGroupMemberMeta(data model.GroupMemberMeta) groupMemberMeta {
-	return groupMemberMeta{
+func fromGroupMemberMeta(data *model.GroupMemberMeta) *groupMemberMeta {
+	if data == nil {
+		return nil
+	}
+	return &groupMemberMeta{
 		IsActive: data.IsActive,
 		IsAdmin:  data.IsAdmin,
 	}
 }
 
-func toGroupMemberMeta(data groupMemberMeta) model.GroupMemberMeta {
-	return model.GroupMemberMeta{
+func toGroupMemberMeta(data *groupMemberMeta) *model.GroupMemberMeta {
+	if data == nil {
+		return nil
+	}
+	return &model.GroupMemberMeta{
 		IsActive: data.IsActive,
 		IsAdmin:  data.IsAdmin,
 	}
