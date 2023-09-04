@@ -15,35 +15,39 @@ type User struct {
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`
 	String            string         `json:"string"`
+	StringPtr         *string        `json:"string_ptr"`
+	Other             []string       `json:"other"`
+	StringPtrSlice    []*string      `json:"string_ptr_slice"`
+	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
 	Int               int            `json:"int"`
+	IntPtr            *int           `json:"int_ptr"`
 	Int32             int32          `json:"int_32"`
 	Int64             int64          `json:"int_64"`
 	Float32           float32        `json:"float_32"`
+	More              []float32      `json:"more"`
 	Float64           float64        `json:"float_64"`
 	Bool              bool           `json:"bool"`
 	Bool2             bool           `json:"bool_2"`
-	UUID              uuid.UUID      `json:"uuid"`
-	Login             login          `json:"login"`
-	Role              string         `json:"role"`
-	Groups            []*groupLink   `json:"groups"`
-	MainGroup         *groupLink     `json:"main_group"`
-	MainGroupPtr      *groupLink     `json:"main_group_ptr"`
-	Other             []string       `json:"other"`
-	More              []float32      `json:"more"`
-	Roles             []string       `json:"roles"`
-	MemberOf          []GroupMember  `json:"member_of,omitempty"`
-	StringPtr         *string        `json:"string_ptr"`
-	IntPtr            *int           `json:"int_ptr"`
+	Time              time.Time      `json:"time"`
 	TimePtr           *time.Time     `json:"time_ptr"`
-	UuidPtr           *uuid.UUID     `json:"uuid_ptr"`
+	UUID              uuid.UUID      `json:"uuid"`
+	UUIDPtr           *uuid.UUID     `json:"uuid_ptr"`
+	Role              model.Role     `json:"role"`
+	EnumPtr           *model.Role    `json:"enum_ptr"`
+	Roles             []model.Role   `json:"roles"`
+	EnumPtrSlice      []*model.Role  `json:"enum_ptr_slice"`
+	EnumPtrSlicePtr   *[]*model.Role `json:"enum_ptr_slice_ptr"`
+	Login             login          `json:"login"`
 	StructPtr         *someStruct    `json:"struct_ptr"`
-	StringPtrSlice    []*string      `json:"string_ptr_slice"`
-	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
+	StructSlice       []someStruct   `json:"struct_slice"`
 	StructPtrSlice    []*someStruct  `json:"struct_ptr_slice"`
 	StructPtrSlicePtr *[]*someStruct `json:"struct_ptr_slice_ptr"`
-	EnumPtrSlice      []*string      `json:"enum_ptr_slice"`
+	MainGroup         *groupLink     `json:"main_group"`
+	MainGroupPtr      *groupLink     `json:"main_group_ptr"`
+	Groups            []*groupLink   `json:"groups"`
 	NodePtrSlice      []*groupLink   `json:"node_ptr_slice"`
 	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
+	MemberOf          []GroupMember  `json:"member_of,omitempty"`
 	SliceSlice        [][]string     `json:"slice_slice"`
 }
 
@@ -54,7 +58,9 @@ func FromUser(data *model.User) *User {
 	return &User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
-		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[model.Role, string])),
+		EnumPtr:           data.EnumPtr,
+		EnumPtrSlice:      data.EnumPtrSlice,
+		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
 		Float32:           data.Float32,
 		Float64:           data.Float64,
 		Groups:            mapSlice(data.Groups, toGroupLink),
@@ -69,8 +75,8 @@ func FromUser(data *model.User) *User {
 		NodePtrSlice:      mapSlice(data.NodePtrSlice, toGroupLinkPtr),
 		NodePtrSlicePtr:   mapSlicePtr(data.NodePtrSlicePtr, toGroupLinkPtr),
 		Other:             data.Other,
-		Role:              string(data.Role),
-		Roles:             mapSlice(data.Roles, mapEnum[model.Role, string]),
+		Role:              data.Role,
+		Roles:             data.Roles,
 		SliceSlice:        data.SliceSlice,
 		String:            data.String,
 		StringPtr:         data.StringPtr,
@@ -79,9 +85,11 @@ func FromUser(data *model.User) *User {
 		StructPtr:         fromSomeStruct(data.StructPtr),
 		StructPtrSlice:    mapSlice(data.StructPtrSlice, fromSomeStruct),
 		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
+		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(fromSomeStruct)),
+		Time:              data.Time,
 		TimePtr:           data.TimePtr,
 		UUID:              data.UUID,
-		UuidPtr:           data.UuidPtr,
+		UUIDPtr:           data.UUIDPtr,
 	}
 }
 
@@ -92,7 +100,9 @@ func ToUser(data *User) *model.User {
 	return &model.User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
-		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[string, model.Role])),
+		EnumPtr:           data.EnumPtr,
+		EnumPtrSlice:      data.EnumPtrSlice,
+		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
 		Float32:           data.Float32,
 		Float64:           data.Float64,
 		Groups:            mapSlice(data.Groups, fromGroupLink),
@@ -109,8 +119,8 @@ func ToUser(data *User) *model.User {
 		NodePtrSlice:      mapSlice(data.NodePtrSlice, fromGroupLinkPtr),
 		NodePtrSlicePtr:   mapSlicePtr(data.NodePtrSlicePtr, fromGroupLinkPtr),
 		Other:             data.Other,
-		Role:              model.Role(data.Role),
-		Roles:             mapSlice(data.Roles, mapEnum[string, model.Role]),
+		Role:              data.Role,
+		Roles:             data.Roles,
 		SliceSlice:        data.SliceSlice,
 		String:            data.String,
 		StringPtr:         data.StringPtr,
@@ -119,10 +129,12 @@ func ToUser(data *User) *model.User {
 		StructPtr:         toSomeStruct(data.StructPtr),
 		StructPtrSlice:    mapSlice(data.StructPtrSlice, toSomeStruct),
 		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
+		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(toSomeStruct)),
+		Time:              data.Time,
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		UUID:              data.UUID,
-		UuidPtr:           data.UuidPtr,
+		UUIDPtr:           data.UUIDPtr,
 	}
 }
 
