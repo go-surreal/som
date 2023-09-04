@@ -21,6 +21,9 @@ func (f *Time) typeConv() jen.Code {
 
 func (f *Time) TypeDatabase() string {
 	return f.optionWrap("datetime")
+
+	// DEFAULT time::now()
+	// VALUE time::now()
 }
 
 func (f *Time) CodeGen() *CodeGen {
