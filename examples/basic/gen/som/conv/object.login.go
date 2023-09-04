@@ -8,15 +8,21 @@ type login struct {
 	Password string `json:"password"`
 }
 
-func fromLogin(data model.Login) login {
-	return login{
+func fromLogin(data *model.Login) *login {
+	if data == nil {
+		return nil
+	}
+	return &login{
 		Password: data.Password,
 		Username: data.Username,
 	}
 }
 
-func toLogin(data login) model.Login {
-	return model.Login{
+func toLogin(data *login) *model.Login {
+	if data == nil {
+		return nil
+	}
+	return &model.Login{
 		Password: data.Password,
 		Username: data.Username,
 	}

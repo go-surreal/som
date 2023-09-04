@@ -380,7 +380,7 @@ All returns all records matching the conditions of the query.
 					jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query records: %w"), jen.Err())),
 				),
 
-				jen.Var().Id("rawNodes").Index().Id("queryResult").Types(jen.Qual(pkgConv, node.NameGo())),
+				jen.Var().Id("rawNodes").Index().Id("queryResult").Types(jen.Op("*").Qual(pkgConv, node.NameGo())),
 
 				jen.Err().Op("=").Id("q").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("rawNodes")),
 				jen.If(jen.Err().Op("!=").Nil()).Block(
@@ -396,7 +396,7 @@ All returns all records matching the conditions of the query.
 					Block(
 						jen.Id("node").Op(":=").Qual(pkgConv, "To"+node.NameGo()).
 							Call(jen.Id("rawNode")),
-						jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Op("&").Id("node")),
+						jen.Id("nodes").Op("=").Append(jen.Id("nodes"), jen.Id("node")),
 					),
 
 				jen.Return(jen.Id("nodes"), jen.Nil()),

@@ -142,7 +142,7 @@ func (q User) All(ctx context.Context) ([]*model.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	var rawNodes []queryResult[conv.User]
+	var rawNodes []queryResult[*conv.User]
 	err = q.unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
@@ -153,7 +153,7 @@ func (q User) All(ctx context.Context) ([]*model.User, error) {
 	var nodes []*model.User
 	for _, rawNode := range rawNodes[0].Result {
 		node := conv.ToUser(rawNode)
-		nodes = append(nodes, &node)
+		nodes = append(nodes, node)
 	}
 	return nodes, nil
 }

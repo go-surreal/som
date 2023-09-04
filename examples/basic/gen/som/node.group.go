@@ -44,14 +44,14 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 		return errors.New("given node already has an id")
 	}
 	key := "group"
-	data := conv.FromGroup(*group)
+	data := conv.FromGroup(group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNodes []conv.Group
+	var convNodes []*conv.Group
 	err = n.unmarshal(raw, &convNodes)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
@@ -59,7 +59,7 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	if len(convNodes) < 1 {
 		return errors.New("response is empty")
 	}
-	*group = conv.ToGroup(convNodes[0])
+	*group = *conv.ToGroup(convNodes[0])
 	return nil
 }
 
@@ -71,19 +71,19 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
 	}
 	key := "group:" + "⟨" + id + "⟩"
-	data := conv.FromGroup(*group)
+	data := conv.FromGroup(group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
 	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNode conv.Group
+	var convNode *conv.Group
 	err = n.unmarshal(res, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	*group = conv.ToGroup(convNode)
+	*group = *conv.ToGroup(convNode)
 	return nil
 }
 
@@ -92,13 +92,12 @@ func (n *group) Read(ctx context.Context, id string) (*model.Group, bool, error)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	var convNode conv.Group
+	var convNode *conv.Group
 	err = n.unmarshal(res, &convNode)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	node := conv.ToGroup(convNode)
-	return &node, true, nil
+	return conv.ToGroup(convNode), true, nil
 }
 
 func (n *group) Update(ctx context.Context, group *model.Group) error {
@@ -108,18 +107,18 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 	if group.ID() == "" {
 		return errors.New("cannot update Group without existing record ID")
 	}
-	data := conv.FromGroup(*group)
+	data := conv.FromGroup(group)
 	data.UpdatedAt = time.Now()
 	res, err := n.db.Update(ctx, "group:⟨"+group.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	var convNode conv.Group
+	var convNode *conv.Group
 	err = n.unmarshal(res, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	*group = conv.ToGroup(convNode)
+	*group = *conv.ToGroup(convNode)
 	return nil
 }
 

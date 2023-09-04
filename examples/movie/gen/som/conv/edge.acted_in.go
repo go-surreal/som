@@ -10,10 +10,16 @@ type ActedIn struct {
 	ID string `json:"id,omitempty"`
 }
 
-func FromActedIn(data model.ActedIn) ActedIn {
-	return ActedIn{}
+func FromActedIn(data *model.ActedIn) *ActedIn {
+	if data == nil {
+		return nil
+	}
+	return &ActedIn{}
 }
 
-func ToActedIn(data ActedIn) model.ActedIn {
-	return model.ActedIn{Edge: som.NewEdge(parseDatabaseID("acted_in", data.ID))}
+func ToActedIn(data *ActedIn) *model.ActedIn {
+	if data == nil {
+		return nil
+	}
+	return &model.ActedIn{Edge: som.NewEdge(parseDatabaseID("acted_in", data.ID))}
 }

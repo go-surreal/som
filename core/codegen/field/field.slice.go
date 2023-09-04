@@ -199,12 +199,12 @@ func (f *Slice) convFrom(ctx Context) jen.Code {
 				mapFn = "mapSlicePtr"
 			}
 
-			if element.source.Pointer() {
-				mapFn = "mapPtrSlice"
-				if f.source.Pointer() {
-					mapFn = "mapPtrSlicePtr"
-				}
-			}
+			// if element.source.Pointer() {
+			// 	mapFn = "mapPtrSlice"
+			// 	if f.source.Pointer() {
+			// 		mapFn = "mapPtrSlicePtr"
+			// 	}
+			// }
 
 			return jen.Id(mapFn).Call(
 				jen.Id("data").Dot(f.NameGo()),
@@ -264,12 +264,12 @@ func (f *Slice) convTo(ctx Context) jen.Code {
 				mapFn = "mapSlicePtr"
 			}
 
-			if element.source.Pointer() {
-				mapFn = "mapPtrSlice"
-				if f.source.Pointer() {
-					mapFn = "mapPtrSlicePtr"
-				}
-			}
+			// if element.source.Pointer() {
+			// 	mapFn = "mapPtrSlice"
+			// 	if f.source.Pointer() {
+			// 		mapFn = "mapPtrSlicePtr"
+			// 	}
+			// }
 
 			return jen.Id(mapFn).Call(
 				jen.Id("data").Dot(f.NameGo()),
@@ -278,7 +278,10 @@ func (f *Slice) convTo(ctx Context) jen.Code {
 		}
 
 	case *Edge:
-		return jen.Id("mapSlice").Call(jen.Id("data").Dot(f.NameGo()), jen.Id("To"+element.table.NameGo()))
+		return jen.Id("mapSlice").Call(
+			jen.Id("data").Dot(f.NameGo()),
+			jen.Id("noPtrFunc").Call(jen.Id("To"+element.table.NameGo())),
+		)
 
 	case *Enum:
 		{

@@ -47,8 +47,11 @@ type User struct {
 	SliceSlice        [][]string     `json:"slice_slice"`
 }
 
-func FromUser(data model.User) User {
-	return User{
+func FromUser(data *model.User) *User {
+	if data == nil {
+		return nil
+	}
+	return &User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[model.Role, string])),
@@ -59,7 +62,7 @@ func FromUser(data model.User) User {
 		Int32:             data.Int32,
 		Int64:             data.Int64,
 		IntPtr:            data.IntPtr,
-		Login:             fromLogin(data.Login),
+		Login:             noPtrFunc(fromLogin)(data.Login),
 		MainGroup:         toGroupLink(data.MainGroup),
 		MainGroupPtr:      toGroupLinkPtr(data.MainGroupPtr),
 		More:              data.More,
@@ -73,17 +76,20 @@ func FromUser(data model.User) User {
 		StringPtr:         data.StringPtr,
 		StringPtrSlice:    data.StringPtrSlice,
 		StringSlicePtr:    data.StringSlicePtr,
-		StructPtr:         ptrFunc(fromSomeStruct)(data.StructPtr),
-		StructPtrSlice:    mapPtrSlice(data.StructPtrSlice, fromSomeStruct),
-		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
+		StructPtr:         fromSomeStruct(data.StructPtr),
+		StructPtrSlice:    mapSlice(data.StructPtrSlice, fromSomeStruct),
+		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
 		TimePtr:           data.TimePtr,
 		UUID:              data.UUID,
 		UuidPtr:           data.UuidPtr,
 	}
 }
 
-func ToUser(data User) model.User {
-	return model.User{
+func ToUser(data *User) *model.User {
+	if data == nil {
+		return nil
+	}
+	return &model.User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
 		EnumPtrSlice:      mapSlice(data.EnumPtrSlice, ptrFunc(mapEnum[string, model.Role])),
@@ -94,10 +100,10 @@ func ToUser(data User) model.User {
 		Int32:             data.Int32,
 		Int64:             data.Int64,
 		IntPtr:            data.IntPtr,
-		Login:             toLogin(data.Login),
+		Login:             noPtrFunc(toLogin)(data.Login),
 		MainGroup:         fromGroupLink(data.MainGroup),
 		MainGroupPtr:      fromGroupLinkPtr(data.MainGroupPtr),
-		MemberOf:          mapSlice(data.MemberOf, ToGroupMember),
+		MemberOf:          mapSlice(data.MemberOf, noPtrFunc(ToGroupMember)),
 		More:              data.More,
 		Node:              som.NewNode(parseDatabaseID("user", data.ID)),
 		NodePtrSlice:      mapSlice(data.NodePtrSlice, fromGroupLinkPtr),
@@ -110,9 +116,9 @@ func ToUser(data User) model.User {
 		StringPtr:         data.StringPtr,
 		StringPtrSlice:    data.StringPtrSlice,
 		StringSlicePtr:    data.StringSlicePtr,
-		StructPtr:         ptrFunc(toSomeStruct)(data.StructPtr),
-		StructPtrSlice:    mapPtrSlice(data.StructPtrSlice, toSomeStruct),
-		StructPtrSlicePtr: mapPtrSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
+		StructPtr:         toSomeStruct(data.StructPtr),
+		StructPtrSlice:    mapSlice(data.StructPtrSlice, toSomeStruct),
+		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		UUID:              data.UUID,
@@ -152,22 +158,24 @@ func fromUserLink(link *userLink) model.User {
 	if link == nil {
 		return model.User{}
 	}
-	return ToUser(User(link.User))
+	res := User(link.User)
+	out := ToUser(&res)
+	return *out
 }
 
 func fromUserLinkPtr(link *userLink) *model.User {
 	if link == nil {
 		return nil
 	}
-	node := ToUser(User(link.User))
-	return &node
+	res := User(link.User)
+	return ToUser(&res)
 }
 
 func toUserLink(node model.User) *userLink {
 	if node.ID() == "" {
 		return nil
 	}
-	link := userLink{User: FromUser(node), ID: buildDatabaseID("user", node.ID())}
+	link := userLink{User: *FromUser(&node), ID: buildDatabaseID("user", node.ID())}
 	return &link
 }
 
@@ -175,6 +183,6 @@ func toUserLinkPtr(node *model.User) *userLink {
 	if node == nil || node.ID() == "" {
 		return nil
 	}
-	link := userLink{User: FromUser(*node), ID: buildDatabaseID("user", node.ID())}
+	link := userLink{User: *FromUser(node), ID: buildDatabaseID("user", node.ID())}
 	return &link
 }
