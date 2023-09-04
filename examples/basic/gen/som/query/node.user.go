@@ -245,7 +245,7 @@ func (q NodeUser) Live(ctx context.Context) (<-chan LiveResult[*model.User], err
 	if err != nil {
 		return nil, fmt.Errorf("could not query live records: %w", err)
 	}
-	return live[*model.User](ctx, resChan, q.unmarshal), nil
+	return live(ctx, resChan, q.unmarshal, conv.ToUser), nil
 }
 
 // Describe returns a string representation of the query.

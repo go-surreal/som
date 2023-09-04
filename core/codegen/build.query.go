@@ -636,10 +636,11 @@ If the context is canceled, the result channel will be closed.
 			),
 
 			jen.Return(
-				jen.Id("live").Types(resultType).Call(
+				jen.Id("live").Call(
 					jen.Id("ctx"),
 					jen.Id("resChan"),
 					jen.Id("q").Dot("unmarshal"),
+					jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()),
 				),
 				jen.Nil(),
 			),

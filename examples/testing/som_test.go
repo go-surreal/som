@@ -3,8 +3,6 @@ package testing
 import (
 	"context"
 	"github.com/docker/docker/api/types/container"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	somlib "github.com/marcbinz/som"
 	"github.com/marcbinz/som/examples/testing/gen/som"
 	"github.com/marcbinz/som/examples/testing/gen/som/query"
 	"github.com/marcbinz/som/examples/testing/model"
@@ -84,45 +82,83 @@ func TestLiveQueries(t *testing.T) {
 		Status: "some value",
 	}
 
-	liveRes, err := client.FieldsLikeDBResponseRepo().Query().Live(ctx)
+	liveChan, err := client.FieldsLikeDBResponseRepo().Query().Live(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	liveChan := make(chan *model.FieldsLikeDBResponse, 1)
-	errChan := make(chan error, 1)
-
-	go func() {
-		defer close(liveChan)
-		defer close(errChan)
-
-		res, open := <-liveRes
-		if !open {
-			return
-		}
-
-		liveModel, err := res.(query.LiveCreate[*model.FieldsLikeDBResponse]).Get()
-		if err != nil {
-			errChan <- err
-			return
-		}
-
-		liveChan <- liveModel
-	}()
 
 	err = client.FieldsLikeDBResponseRepo().Create(ctx, newModel)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.NilError(t, <-errChan)
+	newModel.Status = "some other value"
+	err = client.FieldsLikeDBResponseRepo().Update(ctx, newModel)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	liveModel, open := <-liveChan
-	if !open {
+	err = client.FieldsLikeDBResponseRepo().Delete(ctx, newModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// LIVE CREATE
+
+	liveRes, more := <-liveChan
+	if !more {
 		t.Fatal("liveChan closed unexpectedly")
 	}
 
-	assert.Check(t, is.DeepEqual(newModel, liveModel, cmpopts.IgnoreUnexported(somlib.Node{})))
+	liveCreate, ok := liveRes.(query.LiveCreate[*model.FieldsLikeDBResponse])
+	if !ok {
+		t.Fatal("liveChan did not receive a create event")
+	}
+
+	createdID, err := liveCreate.Get()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.Equal(newModel.ID(), createdID.ID()))
+
+	// LIVE UPDATE
+
+	liveRes, more = <-liveChan
+	if !more {
+		t.Fatal("liveChan closed unexpectedly")
+	}
+
+	liveUpdate, ok := liveRes.(query.LiveUpdate[*model.FieldsLikeDBResponse])
+	if !ok {
+		t.Fatal("liveChan did not receive an update event")
+	}
+
+	updatedID, err := liveUpdate.Get()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.Equal(newModel.ID(), updatedID.ID()))
+
+	// LIVE DELETE
+
+	liveRes, more = <-liveChan
+	if !more {
+		t.Fatal("liveChan closed unexpectedly")
+	}
+
+	liveDelete, ok := liveRes.(query.LiveDelete)
+	if !ok {
+		t.Fatal("liveChan did not receive a delete event")
+	}
+
+	deletedID, err := liveDelete.Get()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, is.Equal("fields_like_db_response:"+newModel.ID(), deletedID))
 }
 
 //

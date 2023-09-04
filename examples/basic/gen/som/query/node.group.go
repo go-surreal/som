@@ -245,7 +245,7 @@ func (q NodeGroup) Live(ctx context.Context) (<-chan LiveResult[*model.Group], e
 	if err != nil {
 		return nil, fmt.Errorf("could not query live records: %w", err)
 	}
-	return live[*model.Group](ctx, resChan, q.unmarshal), nil
+	return live(ctx, resChan, q.unmarshal, conv.ToGroup), nil
 }
 
 // Describe returns a string representation of the query.

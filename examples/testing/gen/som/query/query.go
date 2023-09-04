@@ -4,6 +4,7 @@ package query
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -27,9 +28,9 @@ type queryResult[M any] struct {
 	Time   string `json:"time"`
 }
 
-type liveResponse[M any] struct {
-	Action string `json:"action"`
-	Result M      `json:"result"`
+type liveResponse struct {
+	Action string          `json:"action"`
+	Result json.RawMessage `json:"result"`
 }
 
 //
@@ -72,7 +73,12 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 // -- LIVE
 //
 
-func live[M any](ctx context.Context, in <-chan []byte, unmarshal func(buf []byte, val any) error) <-chan LiveResult[M] {
+func live[C, M any](
+	ctx context.Context,
+	in <-chan []byte,
+	unmarshal func(buf []byte, val any) error,
+	convert func(C) M,
+) <-chan LiveResult[M] {
 	out := make(chan LiveResult[M], 1)
 
 	go func() {
@@ -89,7 +95,7 @@ func live[M any](ctx context.Context, in <-chan []byte, unmarshal func(buf []byt
 					return
 				}
 
-				out <- toLiveResult[M](data, unmarshal)
+				out <- toLiveResult[C, M](data, unmarshal, convert)
 			}
 		}
 	}()
@@ -97,38 +103,70 @@ func live[M any](ctx context.Context, in <-chan []byte, unmarshal func(buf []byt
 	return out
 }
 
-func toLiveResult[M any](in []byte, unmarshal func(buf []byte, val any) error) LiveResult[M] {
-	var out liveResult[M]
-
-	var response liveResponse[M]
+func toLiveResult[C, M any](
+	in []byte,
+	unmarshal func(buf []byte, val any) error,
+	convert func(C) M,
+) LiveResult[M] {
+	var response liveResponse
 
 	if err := unmarshal(in, &response); err != nil {
-		out.err = fmt.Errorf("could not unmarshal live result: %w", err)
+		return &liveResult[M]{
+			err: fmt.Errorf("could not unmarshal live response: %w", err),
+		}
 	}
-
-	out.res = response.Result
 
 	switch strings.ToLower(response.Action) {
 
 	case "create":
+		var out liveResult[M]
+
+		var result C
+
+		if err := unmarshal(response.Result, &result); err != nil {
+			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
+		}
+
+		if out.err == nil {
+			out.res = convert(result)
+		}
+
 		return &liveCreate[M]{
 			liveResult: out,
 		}
 
 	case "update":
+		var out liveResult[M]
+
+		var result C
+
+		if err := unmarshal(response.Result, &result); err != nil {
+			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
+		}
+
+		if out.err == nil {
+			out.res = convert(result)
+		}
+
 		return &liveUpdate[M]{
 			liveResult: out,
 		}
 
 	case "delete":
-		return &liveDelete[M]{
+		var out liveResult[string]
+
+		if err := unmarshal(response.Result, &out.res); err != nil {
+			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
+		}
+
+		return &liveDelete{
 			liveResult: out,
 		}
 
 	default:
-		out.err = fmt.Errorf("unknown action type %s", response.Action)
-
-		return &out
+		return &liveResult[M]{
+			err: fmt.Errorf("unknown action type %s", response.Action),
+		}
 	}
 }
 
@@ -136,23 +174,18 @@ type LiveResult[M any] interface {
 	live()
 }
 
-type LiveAny[M any] interface {
-	LiveResult[M]
-	Get() (M, error)
-}
-
 type LiveCreate[M any] interface {
-	LiveAny[M]
+	Get() (M, error)
 	create()
 }
 
 type LiveUpdate[M any] interface {
-	LiveAny[M]
+	Get() (M, error)
 	update()
 }
 
-type LiveDelete[M any] interface {
-	LiveAny[M]
+type LiveDelete interface {
+	Get() (string, error)
 	delete()
 }
 
@@ -168,11 +201,11 @@ type liveUpdate[M any] struct {
 
 func (*liveUpdate[M]) update() {}
 
-type liveDelete[M any] struct {
-	liveResult[M]
+type liveDelete struct {
+	liveResult[string]
 }
 
-func (*liveDelete[M]) delete() {}
+func (*liveDelete) delete() {}
 
 type liveResult[M any] struct {
 	res M

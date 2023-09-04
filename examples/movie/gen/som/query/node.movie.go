@@ -245,7 +245,7 @@ func (q NodeMovie) Live(ctx context.Context) (<-chan LiveResult[*model.Movie], e
 	if err != nil {
 		return nil, fmt.Errorf("could not query live records: %w", err)
 	}
-	return live[*model.Movie](ctx, resChan, q.unmarshal), nil
+	return live(ctx, resChan, q.unmarshal, conv.ToMovie), nil
 }
 
 // Describe returns a string representation of the query.
