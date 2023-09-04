@@ -195,20 +195,19 @@ func (f *Slice) convFrom(ctx Context) jen.Code {
 	case *Struct:
 		{
 			mapFn := "mapSlice"
+			fromFn := jen.Id("from" + element.table.NameGo())
+
 			if f.source.Pointer() {
 				mapFn = "mapSlicePtr"
 			}
 
-			// if element.source.Pointer() {
-			// 	mapFn = "mapPtrSlice"
-			// 	if f.source.Pointer() {
-			// 		mapFn = "mapPtrSlicePtr"
-			// 	}
-			// }
+			if !element.source.Pointer() {
+				fromFn = jen.Id("noPtrFunc").Call(fromFn)
+			}
 
 			return jen.Id(mapFn).Call(
 				jen.Id("data").Dot(f.NameGo()),
-				jen.Id("from"+element.table.NameGo()),
+				fromFn,
 			)
 		}
 
@@ -219,12 +218,7 @@ func (f *Slice) convFrom(ctx Context) jen.Code {
 
 	case *Enum:
 		{
-			mapEnumFn := jen.Id("mapEnum").Types(jen.Qual(f.SourcePkg, element.model.NameGo()), jen.String())
-			if element.source.Pointer() {
-				mapEnumFn = jen.Id("ptrFunc").Call(mapEnumFn)
-			}
-
-			return jen.Id("mapSlice").Call(jen.Id("data").Dot(f.NameGo()), mapEnumFn)
+			return jen.Id("data").Dot(f.NameGo())
 		}
 
 	default:
@@ -260,20 +254,19 @@ func (f *Slice) convTo(ctx Context) jen.Code {
 	case *Struct:
 		{
 			mapFn := "mapSlice"
+			toFn := jen.Id("to" + element.table.NameGo())
+
 			if f.source.Pointer() {
 				mapFn = "mapSlicePtr"
 			}
 
-			// if element.source.Pointer() {
-			// 	mapFn = "mapPtrSlice"
-			// 	if f.source.Pointer() {
-			// 		mapFn = "mapPtrSlicePtr"
-			// 	}
-			// }
+			if !element.source.Pointer() {
+				toFn = jen.Id("noPtrFunc").Call(toFn)
+			}
 
 			return jen.Id(mapFn).Call(
 				jen.Id("data").Dot(f.NameGo()),
-				jen.Id("to"+element.table.NameGo()),
+				toFn,
 			)
 		}
 
@@ -285,12 +278,7 @@ func (f *Slice) convTo(ctx Context) jen.Code {
 
 	case *Enum:
 		{
-			mapEnumFn := jen.Id("mapEnum").Types(jen.String(), jen.Qual(f.SourcePkg, element.model.NameGo()))
-			if element.source.Pointer() {
-				mapEnumFn = jen.Id("ptrFunc").Call(mapEnumFn)
-			}
-
-			return jen.Id("mapSlice").Call(jen.Id("data").Dot(f.NameGo()), mapEnumFn)
+			return jen.Id("data").Dot(f.NameGo())
 		}
 
 	default:
