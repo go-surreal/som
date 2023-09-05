@@ -12,7 +12,7 @@ import (
 )
 
 type MovieRepo interface {
-	Query() query.Movie
+	Query() query.NodeMovie
 	Create(ctx context.Context, user *model.Movie) error
 	CreateWithID(ctx context.Context, id string, user *model.Movie) error
 	Read(ctx context.Context, id string) (*model.Movie, bool, error)
@@ -31,7 +31,7 @@ type movie struct {
 	unmarshal func(buf []byte, val any) error
 }
 
-func (n *movie) Query() query.Movie {
+func (n *movie) Query() query.NodeMovie {
 	return query.NewMovie(n.db, n.unmarshal)
 }
 

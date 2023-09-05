@@ -12,7 +12,7 @@ import (
 )
 
 type PersonRepo interface {
-	Query() query.Person
+	Query() query.NodePerson
 	Create(ctx context.Context, user *model.Person) error
 	CreateWithID(ctx context.Context, id string, user *model.Person) error
 	Read(ctx context.Context, id string) (*model.Person, bool, error)
@@ -31,7 +31,7 @@ type person struct {
 	unmarshal func(buf []byte, val any) error
 }
 
-func (n *person) Query() query.Person {
+func (n *person) Query() query.NodePerson {
 	return query.NewPerson(n.db, n.unmarshal)
 }
 

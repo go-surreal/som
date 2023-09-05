@@ -12,7 +12,7 @@ import (
 )
 
 type FieldsLikeDBResponseRepo interface {
-	Query() query.FieldsLikeDBResponse
+	Query() query.NodeFieldsLikeDBResponse
 	Create(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	CreateWithID(ctx context.Context, id string, user *model.FieldsLikeDBResponse) error
 	Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error)
@@ -31,7 +31,7 @@ type fieldsLikeDBResponse struct {
 	unmarshal func(buf []byte, val any) error
 }
 
-func (n *fieldsLikeDBResponse) Query() query.FieldsLikeDBResponse {
+func (n *fieldsLikeDBResponse) Query() query.NodeFieldsLikeDBResponse {
 	return query.NewFieldsLikeDBResponse(n.db, n.unmarshal)
 }
 

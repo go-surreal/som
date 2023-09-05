@@ -13,18 +13,26 @@ import (
 	"time"
 )
 
-type FieldsLikeDBResponse struct {
+type nodeFieldsLikeDBResponse struct {
 	db        Database
 	query     lib.Query[model.FieldsLikeDBResponse]
 	unmarshal func(buf []byte, val any) error
 }
 
-func NewFieldsLikeDBResponse(db Database, unmarshal func(buf []byte, val any) error) FieldsLikeDBResponse {
-	return FieldsLikeDBResponse{
+type NodeFieldsLikeDBResponse struct {
+	nodeFieldsLikeDBResponse
+}
+
+type NodeFieldsLikeDBResponseNoLive struct {
+	nodeFieldsLikeDBResponse
+}
+
+func NewFieldsLikeDBResponse(db Database, unmarshal func(buf []byte, val any) error) NodeFieldsLikeDBResponse {
+	return NodeFieldsLikeDBResponse{nodeFieldsLikeDBResponse{
 		db:        db,
 		query:     lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
 		unmarshal: unmarshal,
-	}
+	}}
 }
 
 // Filter adds a where statement to the query to
@@ -34,70 +42,70 @@ func NewFieldsLikeDBResponse(db Database, unmarshal func(buf []byte, val any) er
 // together that all need to match.
 // Use where.Any to chain multiple conditions
 // together where at least one needs to match.
-func (q FieldsLikeDBResponse) Filter(filters ...lib.Filter[model.FieldsLikeDBResponse]) FieldsLikeDBResponse {
+func (q nodeFieldsLikeDBResponse) Filter(filters ...lib.Filter[model.FieldsLikeDBResponse]) NodeFieldsLikeDBResponse {
 	q.query.Where = append(q.query.Where, filters...)
-	return q
+	return NodeFieldsLikeDBResponse{q}
 }
 
 // Order sorts the returned records based on the given conditions.
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
 // it would override the sort conditions.
-func (q FieldsLikeDBResponse) Order(by ...*lib.Sort[model.FieldsLikeDBResponse]) FieldsLikeDBResponse {
+func (q nodeFieldsLikeDBResponse) Order(by ...*lib.Sort[model.FieldsLikeDBResponse]) NodeFieldsLikeDBResponseNoLive {
 	for _, s := range by {
 		q.query.Sort = append(q.query.Sort, (*lib.SortBuilder)(s))
 	}
-	return q
+	return NodeFieldsLikeDBResponseNoLive{q}
 }
 
 // OrderRandom sorts the returned records in a random order.
 // Note: OrderRandom takes precedence over Order.
-func (q FieldsLikeDBResponse) OrderRandom() FieldsLikeDBResponse {
+func (q nodeFieldsLikeDBResponse) OrderRandom() NodeFieldsLikeDBResponseNoLive {
 	q.query.SortRandom = true
-	return q
+	return NodeFieldsLikeDBResponseNoLive{q}
 }
 
 // Offset skips the first x records for the result set.
-func (q FieldsLikeDBResponse) Offset(offset int) FieldsLikeDBResponse {
+func (q nodeFieldsLikeDBResponse) Offset(offset int) NodeFieldsLikeDBResponseNoLive {
 	q.query.Offset = offset
-	return q
+	return NodeFieldsLikeDBResponseNoLive{q}
 }
 
 // Limit restricts the query to return at most x records.
-func (q FieldsLikeDBResponse) Limit(limit int) FieldsLikeDBResponse {
+func (q nodeFieldsLikeDBResponse) Limit(limit int) NodeFieldsLikeDBResponseNoLive {
 	q.query.Limit = limit
-	return q
+	return NodeFieldsLikeDBResponseNoLive{q}
 }
 
 // Fetch can be used to return related records.
 // This works for both records links and edges.
-func (q FieldsLikeDBResponse) Fetch(fetch ...with.Fetch_[model.FieldsLikeDBResponse]) FieldsLikeDBResponse {
+func (q nodeFieldsLikeDBResponse) Fetch(fetch ...with.Fetch_[model.FieldsLikeDBResponse]) NodeFieldsLikeDBResponse {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			q.query.Fetch = append(q.query.Fetch, field)
 		}
 	}
-	return q
+	return NodeFieldsLikeDBResponse{q}
 }
 
 // Timeout adds an execution time limit to the query.
 // When exceeded, the query call will return with an error.
-func (q FieldsLikeDBResponse) Timeout(timeout time.Duration) FieldsLikeDBResponse {
+func (q nodeFieldsLikeDBResponse) Timeout(timeout time.Duration) NodeFieldsLikeDBResponseNoLive {
 	q.query.Timeout = timeout
-	return q
+	return NodeFieldsLikeDBResponseNoLive{q}
 }
 
 // Parallel tells SurrealDB that individual parts
 // of the query can be calculated in parallel.
 // This could lead to a faster execution.
-func (q FieldsLikeDBResponse) Parallel(parallel bool) FieldsLikeDBResponse {
+func (q nodeFieldsLikeDBResponse) Parallel(parallel bool) NodeFieldsLikeDBResponseNoLive {
 	q.query.Parallel = parallel
-	return q
+	return NodeFieldsLikeDBResponseNoLive{q}
 }
 
 // Count returns the size of the result set, in other words the
 // number of records matching the conditions of the query.
-func (q FieldsLikeDBResponse) Count(ctx context.Context) (int, error) {
+func (q nodeFieldsLikeDBResponse) Count(ctx context.Context) (int, error) {
 	req := q.query.BuildAsCount()
 	raw, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -115,14 +123,14 @@ func (q FieldsLikeDBResponse) Count(ctx context.Context) (int, error) {
 }
 
 // CountAsync is the asynchronous version of Count.
-func (q FieldsLikeDBResponse) CountAsync(ctx context.Context) *asyncResult[int] {
+func (q nodeFieldsLikeDBResponse) CountAsync(ctx context.Context) *asyncResult[int] {
 	return async(ctx, q.Count)
 }
 
 // Exists returns whether at least one record for the conditions
 // of the query exists or not. In other words it returns whether
 // the size of the result set is greater than 0.
-func (q FieldsLikeDBResponse) Exists(ctx context.Context) (bool, error) {
+func (q nodeFieldsLikeDBResponse) Exists(ctx context.Context) (bool, error) {
 	count, err := q.Count(ctx)
 	if err != nil {
 		return false, err
@@ -131,12 +139,12 @@ func (q FieldsLikeDBResponse) Exists(ctx context.Context) (bool, error) {
 }
 
 // ExistsAsync is the asynchronous version of Exists.
-func (q FieldsLikeDBResponse) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+func (q nodeFieldsLikeDBResponse) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 	return async(ctx, q.Exists)
 }
 
 // All returns all records matching the conditions of the query.
-func (q FieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
+func (q nodeFieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
 	req := q.query.BuildAsAll()
 	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -159,12 +167,12 @@ func (q FieldsLikeDBResponse) All(ctx context.Context) ([]*model.FieldsLikeDBRes
 }
 
 // AllAsync is the asynchronous version of All.
-func (q FieldsLikeDBResponse) AllAsync(ctx context.Context) *asyncResult[[]*model.FieldsLikeDBResponse] {
+func (q nodeFieldsLikeDBResponse) AllAsync(ctx context.Context) *asyncResult[[]*model.FieldsLikeDBResponse] {
 	return async(ctx, q.All)
 }
 
 // AllIDs returns the IDs of all records matching the conditions of the query.
-func (q FieldsLikeDBResponse) AllIDs(ctx context.Context) ([]string, error) {
+func (q nodeFieldsLikeDBResponse) AllIDs(ctx context.Context) ([]string, error) {
 	req := q.query.BuildAsAllIDs()
 	res, err := q.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -183,14 +191,14 @@ func (q FieldsLikeDBResponse) AllIDs(ctx context.Context) ([]string, error) {
 }
 
 // AllIDsAsync is the asynchronous version of AllIDs.
-func (q FieldsLikeDBResponse) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
+func (q nodeFieldsLikeDBResponse) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
 	return async(ctx, q.AllIDs)
 }
 
 // First returns the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q FieldsLikeDBResponse) First(ctx context.Context) (*model.FieldsLikeDBResponse, error) {
+func (q nodeFieldsLikeDBResponse) First(ctx context.Context) (*model.FieldsLikeDBResponse, error) {
 	q.query.Limit = 1
 	res, err := q.All(ctx)
 	if err != nil {
@@ -203,14 +211,14 @@ func (q FieldsLikeDBResponse) First(ctx context.Context) (*model.FieldsLikeDBRes
 }
 
 // FirstAsync is the asynchronous version of First.
-func (q FieldsLikeDBResponse) FirstAsync(ctx context.Context) *asyncResult[*model.FieldsLikeDBResponse] {
+func (q nodeFieldsLikeDBResponse) FirstAsync(ctx context.Context) *asyncResult[*model.FieldsLikeDBResponse] {
 	return async(ctx, q.First)
 }
 
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (q FieldsLikeDBResponse) FirstID(ctx context.Context) (string, error) {
+func (q nodeFieldsLikeDBResponse) FirstID(ctx context.Context) (string, error) {
 	q.query.Limit = 1
 	res, err := q.AllIDs(ctx)
 	if err != nil {
@@ -223,14 +231,32 @@ func (q FieldsLikeDBResponse) FirstID(ctx context.Context) (string, error) {
 }
 
 // FirstIDAsync is the asynchronous version of FirstID.
-func (q FieldsLikeDBResponse) FirstIDAsync(ctx context.Context) *asyncResult[string] {
+func (q nodeFieldsLikeDBResponse) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 	return async(ctx, q.FirstID)
+}
+
+// Live registers the constructed query as a live query.
+// Whenever something in the database changes that matches the
+// query conditions, the result channel will receive an update.
+// If the context is canceled, the result channel will be closed.
+//
+// Note: If you want both the current result set and live updates,
+// it is advised to execute the live query first. This is to ensure
+// data consistency. The other way around there could be missing
+// updates happening between the initial query and the live query.
+func (q NodeFieldsLikeDBResponse) Live(ctx context.Context) (<-chan LiveResult[*model.FieldsLikeDBResponse], error) {
+	req := q.query.BuildAsLive()
+	resChan, err := q.db.Live(ctx, req.Statement, req.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("could not query live records: %w", err)
+	}
+	return live(ctx, resChan, q.unmarshal, conv.ToFieldsLikeDBResponse), nil
 }
 
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
-func (q FieldsLikeDBResponse) Describe() string {
+func (q nodeFieldsLikeDBResponse) Describe() string {
 	req := q.query.BuildAsAll()
 	return strings.TrimSpace(req.Statement)
 }

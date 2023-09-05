@@ -13,7 +13,7 @@ import (
 )
 
 type GroupRepo interface {
-	Query() query.Group
+	Query() query.NodeGroup
 	Create(ctx context.Context, user *model.Group) error
 	CreateWithID(ctx context.Context, id string, user *model.Group) error
 	Read(ctx context.Context, id string) (*model.Group, bool, error)
@@ -32,7 +32,7 @@ type group struct {
 	unmarshal func(buf []byte, val any) error
 }
 
-func (n *group) Query() query.Group {
+func (n *group) Query() query.NodeGroup {
 	return query.NewGroup(n.db, n.unmarshal)
 }
 

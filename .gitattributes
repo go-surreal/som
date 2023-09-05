@@ -2,3 +2,4 @@ docs linguist-documentation
 
 examples/basic/gen linguist-generated
 examples/movie/gen linguist-generated
+examples/testing/gen linguist-generated

@@ -65,11 +65,25 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
+	nodeType := "node" + node.NameGo()
+	nodeTypeLive := "Node" + node.NameGo()
+	nodeTypeNoLive := "Node" + node.NameGo() + "NoLive"
+
 	f.Line()
-	f.Type().Id(node.Name).Struct(
+	f.Type().Id(nodeType).Struct(
 		jen.Id("db").Id("Database"),
 		jen.Id("query").Qual(pkgLib, "Query").Types(b.SourceQual(node.Name)),
 		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
+	)
+
+	f.Line()
+	f.Type().Id(nodeTypeLive).Struct(
+		jen.Id(nodeType),
+	)
+
+	f.Line()
+	f.Type().Id(nodeTypeNoLive).Struct(
+		jen.Id(nodeType),
 	)
 
 	f.Line()
@@ -78,13 +92,17 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			jen.Id("db").Id("Database"),
 			jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 		).
-		Id(node.Name).
+		Id(nodeTypeLive).
 		Block(
-			jen.Return(jen.Id(node.Name).Values(jen.Dict{
-				jen.Id("db"):        jen.Id("db"),
-				jen.Id("query"):     jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
-				jen.Id("unmarshal"): jen.Id("unmarshal"),
-			})),
+			jen.Return(
+				jen.Id(nodeTypeLive).Values(
+					jen.Id(nodeType).Values(jen.Dict{
+						jen.Id("db"):        jen.Id("db"),
+						jen.Id("query"):     jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
+						jen.Id("unmarshal"): jen.Id("unmarshal"),
+					}),
+				),
+			),
 		)
 
 	functions := []jen.Code{
@@ -102,6 +120,8 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		b.buildQueryFuncAllIDs(node),
 		b.buildQueryFuncFirst(node),
 		b.buildQueryFuncFirstID(node),
+		b.buildQueryFuncLive(node),
+		// TODO: b.buildQueryFuncLiveDiff(node),
 		b.buildQueryFuncDescribe(node), // TODO
 	}
 
@@ -120,6 +140,9 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 func (b *queryBuilder) buildQueryFuncFilter(node *field.NodeTable) jen.Code {
 	pkgLib := b.subPkg(def.PkgLib)
 
+	nodeType := "node" + node.NameGo()
+	nodeTypeLive := "Node" + node.NameGo()
+
 	return jen.
 		Add(comment(`
 Filter adds a where statement to the query to
@@ -130,18 +153,21 @@ together that all need to match.
 Use where.Any to chain multiple conditions
 together where at least one needs to match.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Filter").Params(jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(b.SourceQual(node.Name))).
-		Id(node.Name).
+		Id(nodeTypeLive).
 		Block(
 			jen.Id("q").Dot("query").Dot("Where").Op("=").
 				Append(jen.Id("q").Dot("query").Dot("Where"), jen.Id("filters").Op("...")),
-			jen.Return(jen.Id("q")),
+			jen.Return(jen.Id(nodeTypeLive).Values(jen.Id("q"))),
 		)
 }
 
 func (b *queryBuilder) buildQueryFuncOrder(node *field.NodeTable) jen.Code {
 	pkgLib := b.subPkg(def.PkgLib)
+
+	nodeType := "node" + node.NameGo()
+	nodeTypeNoLive := "Node" + node.NameGo() + "NoLive"
 
 	return jen.
 		Add(comment(`
@@ -150,71 +176,83 @@ If multiple conditions are given, they are applied one after the other.
 Note: If OrderRandom is used within the same query,
 it would override the sort conditions.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Order").Params(jen.Id("by").Op("...").Op("*").Qual(pkgLib, "Sort").Types(b.SourceQual(node.Name))).
-		Id(node.Name).
+		Id(nodeTypeNoLive).
 		Block(
 			jen.For(jen.Id("_").Op(",").Id("s").Op(":=").Range().Id("by")).
 				Block(
 					jen.Id("q").Dot("query").Dot("Sort").Op("=").
 						Append(jen.Id("q").Dot("query").Dot("Sort"), jen.Parens(jen.Op("*").Qual(pkgLib, "SortBuilder")).Parens(jen.Id("s"))),
 				),
-			jen.Return(jen.Id("q")),
+			jen.Return(jen.Id(nodeTypeNoLive).Values(jen.Id("q"))),
 		)
 }
 
 func (b *queryBuilder) buildQueryFuncOrderRandom(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+	nodeTypeNoLive := "Node" + node.NameGo() + "NoLive"
+
 	return jen.
 		Add(comment(`
 OrderRandom sorts the returned records in a random order.
 Note: OrderRandom takes precedence over Order.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("OrderRandom").Params().
-		Id(node.Name).
+		Id(nodeTypeNoLive).
 		Block(
 			jen.Id("q").Dot("query").Dot("SortRandom").Op("=").True(),
-			jen.Return(jen.Id("q")),
+			jen.Return(jen.Id(nodeTypeNoLive).Values(jen.Id("q"))),
 		)
 }
 
 func (b *queryBuilder) buildQueryFuncOffset(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+	nodeTypeNoLive := "Node" + node.NameGo() + "NoLive"
+
 	return jen.
 		Add(comment(`
 Offset skips the first x records for the result set.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Offset").Params(jen.Id("offset").Int()).
-		Id(node.Name).
+		Id(nodeTypeNoLive).
 		Block(
 			jen.Id("q").Dot("query").Dot("Offset").Op("=").Id("offset"),
-			jen.Return(jen.Id("q")),
+			jen.Return(jen.Id(nodeTypeNoLive).Values(jen.Id("q"))),
 		)
 }
 
 func (b *queryBuilder) buildQueryFuncLimit(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+	nodeTypeNoLive := "Node" + node.NameGo() + "NoLive"
+
 	return jen.
 		Add(comment(`
 Limit restricts the query to return at most x records.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Limit").Params(jen.Id("limit").Int()).
-		Id(node.Name).
+		Id(nodeTypeNoLive).
 		Block(
 			jen.Id("q").Dot("query").Dot("Limit").Op("=").Id("limit"),
-			jen.Return(jen.Id("q")),
+			jen.Return(jen.Id(nodeTypeNoLive).Values(jen.Id("q"))),
 		)
 }
 
 func (b *queryBuilder) buildQueryFuncFetch(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+	nodeTypeLive := "Node" + node.NameGo()
+
 	return jen.
 		Add(comment(`
 Fetch can be used to return related records.
 This works for both records links and edges.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Fetch").Params(jen.Id("fetch").Op("...").Qual(b.subPkg(def.PkgFetch), "Fetch_").Types(b.SourceQual(node.Name))).
-		Id(node.Name).
+		Id(nodeTypeLive).
 		Block(
 			jen.For(jen.List(jen.Id("_"), jen.Id("f")).Op(":=").Range().Id("fetch")).
 				Block(
@@ -227,42 +265,50 @@ This works for both records links and edges.
 								Append(jen.Id("q").Dot("query").Dot("Fetch"), jen.Id("field")),
 						),
 				),
-			jen.Return(jen.Id("q")),
+			jen.Return(jen.Id(nodeTypeLive).Values(jen.Id("q"))),
 		)
 }
 
 func (b *queryBuilder) buildQueryFuncTimeout(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+	nodeTypeNoLive := "Node" + node.NameGo() + "NoLive"
+
 	return jen.
 		Add(comment(`
 Timeout adds an execution time limit to the query.
 When exceeded, the query call will return with an error.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Timeout").Params(jen.Id("timeout").Qual("time", "Duration")).
-		Id(node.Name).
+		Id(nodeTypeNoLive).
 		Block(
 			jen.Id("q").Dot("query").Dot("Timeout").Op("=").Id("timeout"),
-			jen.Return(jen.Id("q")),
+			jen.Return(jen.Id(nodeTypeNoLive).Values(jen.Id("q"))),
 		)
 }
 
 func (b *queryBuilder) buildQueryFuncParallel(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+	nodeTypeNoLive := "Node" + node.NameGo() + "NoLive"
+
 	return jen.
 		Add(comment(`
 Parallel tells SurrealDB that individual parts
 of the query can be calculated in parallel.
 This could lead to a faster execution.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Parallel").Params(jen.Id("parallel").Bool()).
-		Id(node.Name).
+		Id(nodeTypeNoLive).
 		Block(
 			jen.Id("q").Dot("query").Dot("Parallel").Op("=").Id("parallel"),
-			jen.Return(jen.Id("q")),
+			jen.Return(jen.Id(nodeTypeNoLive).Values(jen.Id("q"))),
 		)
 }
 
 func (b *queryBuilder) buildQueryFuncCount(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+
 	return jen.Add(
 
 		jen.
@@ -270,7 +316,7 @@ func (b *queryBuilder) buildQueryFuncCount(node *field.NodeTable) jen.Code {
 Count returns the size of the result set, in other words the
 number of records matching the conditions of the query.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("Count").Params(jen.Id("ctx").Qual("context", "Context")).
 			Params(jen.Int(), jen.Error()).
 			Block(
@@ -309,7 +355,7 @@ number of records matching the conditions of the query.
 			Add(comment(`
 CountAsync is the asynchronous version of Count.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("CountAsync").Params(jen.Id("ctx").Qual("context", "Context")).
 			Op("*").Id("asyncResult").Types(jen.Int()).
 			Block(
@@ -319,6 +365,8 @@ CountAsync is the asynchronous version of Count.
 }
 
 func (b *queryBuilder) buildQueryFuncExists(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+
 	return jen.Add(
 
 		jen.
@@ -327,7 +375,7 @@ Exists returns whether at least one record for the conditions
 of the query exists or not. In other words it returns whether
 the size of the result set is greater than 0.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("Exists").Params(jen.Id("ctx").Qual("context", "Context")).
 			Params(jen.Bool(), jen.Error()).
 			Block(
@@ -344,7 +392,7 @@ the size of the result set is greater than 0.
 			Add(comment(`
 ExistsAsync is the asynchronous version of Exists.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("ExistsAsync").Params(jen.Id("ctx").Qual("context", "Context")).
 			Op("*").Id("asyncResult").Types(jen.Bool()).
 			Block(
@@ -356,6 +404,8 @@ ExistsAsync is the asynchronous version of Exists.
 func (b *queryBuilder) buildQueryFuncAll(node *field.NodeTable) jen.Code {
 	pkgConv := b.subPkg(def.PkgConv)
 
+	nodeType := "node" + node.NameGo()
+
 	resultType := jen.Index().Op("*").Add(b.SourceQual(node.Name))
 
 	return jen.Add(
@@ -364,7 +414,7 @@ func (b *queryBuilder) buildQueryFuncAll(node *field.NodeTable) jen.Code {
 			Add(comment(`
 All returns all records matching the conditions of the query.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("All").Params(jen.Id("ctx").Qual("context", "Context")).
 			Params(resultType, jen.Error()).
 			Block(
@@ -408,7 +458,7 @@ All returns all records matching the conditions of the query.
 			Add(comment(`
 AllAsync is the asynchronous version of All.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("AllAsync").Params(jen.Id("ctx").Qual("context", "Context")).
 			Op("*").Id("asyncResult").Types(resultType).
 			Block(
@@ -418,13 +468,15 @@ AllAsync is the asynchronous version of All.
 }
 
 func (b *queryBuilder) buildQueryFuncAllIDs(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+
 	return jen.Add(
 
 		jen.
 			Add(comment(`
 AllIDs returns the IDs of all records matching the conditions of the query.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("AllIDs").Params(jen.Id("ctx").Qual("context", "Context")).
 			Parens(jen.List(jen.Index().String(), jen.Error())).
 			Block(
@@ -460,7 +512,7 @@ AllIDs returns the IDs of all records matching the conditions of the query.
 			Add(comment(`
 AllIDsAsync is the asynchronous version of AllIDs.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("AllIDsAsync").Params(jen.Id("ctx").Qual("context", "Context")).
 			Op("*").Id("asyncResult").Types(jen.Index().String()).
 			Block(
@@ -470,6 +522,8 @@ AllIDsAsync is the asynchronous version of AllIDs.
 }
 
 func (b *queryBuilder) buildQueryFuncFirst(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+
 	resultType := jen.Op("*").Add(b.SourceQual(node.Name))
 
 	return jen.Add(
@@ -480,7 +534,7 @@ First returns the first record matching the conditions of the query.
 This comes in handy when using a filter for a field with unique values or when
 sorting the result set in a specific order where only the first result is relevant.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("First").Params(jen.Id("ctx").Qual("context", "Context")).
 			Params(resultType, jen.Error()).
 			Block(
@@ -501,7 +555,7 @@ sorting the result set in a specific order where only the first result is releva
 			Add(comment(`
 FirstAsync is the asynchronous version of First.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("FirstAsync").Params(jen.Id("ctx").Qual("context", "Context")).
 			Op("*").Id("asyncResult").Types(resultType).
 			Block(
@@ -511,6 +565,8 @@ FirstAsync is the asynchronous version of First.
 }
 
 func (b *queryBuilder) buildQueryFuncFirstID(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+
 	return jen.Add(
 
 		jen.
@@ -519,7 +575,7 @@ FirstID returns the ID of the first record matching the conditions of the query.
 This comes in handy when using a filter for a field with unique values or when
 sorting the result set in a specific order where only the first result is relevant.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("FirstID").Params(jen.Id("ctx").Qual("context", "Context")).
 			Params(jen.String(), jen.Error()).
 			Block(
@@ -540,7 +596,7 @@ sorting the result set in a specific order where only the first result is releva
 			Add(comment(`
 FirstIDAsync is the asynchronous version of FirstID.
 		`)).
-			Func().Params(jen.Id("q").Id(node.Name)).
+			Func().Params(jen.Id("q").Id(nodeType)).
 			Id("FirstIDAsync").Params(jen.Id("ctx").Qual("context", "Context")).
 			Op("*").Id("asyncResult").Types(jen.String()).
 			Block(
@@ -549,14 +605,81 @@ FirstIDAsync is the asynchronous version of FirstID.
 	)
 }
 
+func (b *queryBuilder) buildQueryFuncLive(node *field.NodeTable) jen.Code {
+	nodeTypeLive := "Node" + node.NameGo()
+
+	resultType := jen.Op("*").Add(b.SourceQual(node.Name))
+
+	return jen.
+		Add(comment(`
+Live registers the constructed query as a live query.
+Whenever something in the database changes that matches the 
+query conditions, the result channel will receive an update.
+If the context is canceled, the result channel will be closed.
+
+Note: If you want both the current result set and live updates,
+it is advised to execute the live query first. This is to ensure
+data consistency. The other way around there could be missing
+updates happening between the initial query and the live query.
+		`)).
+		Func().Params(jen.Id("q").Id(nodeTypeLive)).
+		Id("Live").Params(jen.Id("ctx").Qual("context", "Context")).
+		Params(
+			jen.Op("<-").Chan().Id("LiveResult").Types(resultType),
+			jen.Error(),
+		).
+		Block(
+			jen.Id("req").Op(":=").Id("q").Dot("query").Dot("BuildAsLive").Call(),
+
+			jen.List(jen.Id("resChan"), jen.Err()).Op(":=").Id("q").Dot("db").Dot("Live").Call(
+				jen.Id("ctx"),
+				jen.Id("req").Dot("Statement"),
+				jen.Id("req").Dot("Variables"),
+			),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query live records: %w"), jen.Err())),
+			),
+
+			jen.Return(
+				jen.Id("live").Call(
+					jen.Id("ctx"),
+					jen.Id("resChan"),
+					jen.Id("q").Dot("unmarshal"),
+					jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()),
+				),
+				jen.Nil(),
+			),
+		)
+}
+
+// func (b *queryBuilder) buildQueryFuncLiveDiff(node *field.NodeTable) jen.Code {
+// 	nodeTypeLive := "Node" + node.NameGo()
+//
+// 	resultType := jen.Op("*").Add(b.SourceQual(node.Name))
+//
+// 	return jen.
+// 		Add(comment(`
+// LiveDiff behaves like Live, but instead of receiving the full result
+// set on every change, it only receives the actual changes.
+// 		`)).
+// 		Func().Params(jen.Id("q").Id(nodeTypeLive)).
+// 		Id("LiveDiff").Params(jen.Id("ctx").Qual("context", "Context")).
+// 		Op("*").Id("asyncResult").Types(resultType).
+// 		Block(
+// 			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not implemented"))),
+// 		)
+// }
+
 func (b *queryBuilder) buildQueryFuncDescribe(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+
 	return jen.
 		Add(comment(`
 Describe returns a string representation of the query.
 While this might be a valid SurrealDB query, it
 should only be used for debugging purposes.
 		`)).
-		Func().Params(jen.Id("q").Id(node.Name)).
+		Func().Params(jen.Id("q").Id(nodeType)).
 		Id("Describe").Params().String().
 		Block(
 			jen.Id("req").Op(":=").Id("q").Dot("query").Dot("BuildAsAll").Call(),

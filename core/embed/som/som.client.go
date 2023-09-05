@@ -14,6 +14,7 @@ type Database interface {
 	Create(ctx context.Context, thing string, data any) ([]byte, error)
 	Select(ctx context.Context, what string) ([]byte, error)
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
+	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
 	Update(ctx context.Context, thing string, data any) ([]byte, error)
 	Delete(ctx context.Context, what string) ([]byte, error)
 }
