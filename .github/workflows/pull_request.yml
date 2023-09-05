@@ -2,6 +2,21 @@ name: PR
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/pull_request.yml"
+      - "cmd/**/*"
+      - "core/**/*"
+      - "examples/**/*"
+      - "sdbc/**/*"
+      - ".envrc"
+      - ".golangci.yml"
+      - ".tool-versions"
+      - "go.mod"
+      - "go.sum"
+      - "go.work"
+      - "go.work.sum"
+      - "som.go"
 
 jobs:
 
