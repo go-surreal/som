@@ -2,7 +2,7 @@
 
 This document holds new ideas and upcoming additions to the library.
 The main usage of this document is brainstorming on whether the listed ideas are useful and actually possible.
-For more in-depth talk about single points, a [GitHub discussion](https://github.com/marcbinz/som/discussions)
+For more in-depth talk about single points, a [GitHub discussion](https://github.com/go-surreal/som/discussions)
 can be created at any point and linked back to this document.
 
 ## References 
@@ -236,6 +236,16 @@ type Z struct {
 
 ```
 DEFINE FIELD xy ON z TYPE record(x, y)
+```
+
+### Indexing for schemaless (needed?)
+
+```
+DEFINE EVENT example_uid_setting ON TABLE example WHEN $before = null AND $before!=$after THEN {
+    LET $next = (SELECT val FROM counter:example) +1 ;
+    UPDATE $after SET uid = $next  
+    UPDATE counter:example SET val = $next;
+};
 ```
 
 ## Optimisations

@@ -2,7 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type String struct {
@@ -20,10 +20,7 @@ func (f *String) typeConv() jen.Code {
 }
 
 func (f *String) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "string"
-	}
-	return "string ASSERT $value != NULL"
+	return f.optionWrap("string")
 }
 
 func (f *String) CodeGen() *CodeGen {

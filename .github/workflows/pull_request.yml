@@ -2,6 +2,21 @@ name: PR
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/pull_request.yml"
+      - "cmd/**/*"
+      - "core/**/*"
+      - "examples/**/*"
+      - "sdbc/**/*"
+      - ".envrc"
+      - ".golangci.yml"
+      - ".tool-versions"
+      - "go.mod"
+      - "go.sum"
+      - "go.work"
+      - "go.work.sum"
+      - "som.go"
 
 jobs:
 
@@ -11,7 +26,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -22,7 +37,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21.0-rc.3 # ${{ steps.asdf.outputs.golang_version }}
+          go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
 
       - name: Check Go Version
@@ -56,7 +71,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -67,7 +82,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21.0-rc.3 # ${{ steps.asdf.outputs.golang_version }}
+          go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
 
       - name: Check Go Version
@@ -105,7 +120,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -116,7 +131,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21.0-rc.3 # ${{ steps.asdf.outputs.golang_version }}
+          go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
 
       - name: Check Go Version
@@ -144,7 +159,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -155,7 +170,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21.0-rc.3 # ${{ steps.asdf.outputs.golang_version }}
+          go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
 
       - name: Check Go Version
@@ -173,6 +188,18 @@ jobs:
             ${{ runner.OS }}-build-
             ${{ runner.OS }}-
 
-      - name: Test
+      - name: Test Library
         working-directory: .
+        run: go test -v ./...
+
+      - name: Test Example Testing
+        working-directory: examples/testing
+        run: go test -v ./...
+
+      - name: Test Example Basic
+        working-directory: examples/basic
+        run: go test -v ./...
+
+      - name: Test Example Movie
+        working-directory: examples/movie
         run: go test -v ./...

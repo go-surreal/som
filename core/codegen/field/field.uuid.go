@@ -2,8 +2,8 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type UUID struct {
@@ -17,14 +17,15 @@ func (f *UUID) typeGo() jen.Code {
 }
 
 func (f *UUID) typeConv() jen.Code {
-	return jen.Add(f.ptr()).String()
+	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
 }
 
 func (f *UUID) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "string"
+		return "option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::uuid($value)"
 	}
-	return "string ASSERT $value != NULL" // TODO: assert for uuid? (currently fails for unknown reason!)
+
+	return "string ASSERT string::is::uuid($value)"
 }
 
 func (f *UUID) CodeGen() *CodeGen {
@@ -63,17 +64,11 @@ func (f *UUID) filterInit(ctx Context) jen.Code {
 }
 
 func (f *UUID) convFrom(ctx Context) jen.Code {
-	if f.source.Pointer() {
-		return jen.Id("uuidPtr").Call(jen.Id("data").Dot(f.NameGo()))
-	}
-	return jen.Id("data").Dot(f.NameGo()).Dot("String").Call()
+	return jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *UUID) convTo(ctx Context) jen.Code {
-	if f.source.Pointer() {
-		return jen.Id("ptrFunc").Call(jen.Id("parseUUID")).Call(jen.Id("data").Dot(f.NameGo()))
-	}
-	return jen.Id("parseUUID").Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *UUID) fieldDef(ctx Context) jen.Code {

@@ -2,7 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Struct struct {
@@ -21,10 +21,7 @@ func (f *Struct) typeConv() jen.Code {
 }
 
 func (f *Struct) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "object"
-	}
-	return "object ASSERT $value != NULL"
+	return f.optionWrap("object")
 }
 
 func (f *Struct) Table() Table {
@@ -59,16 +56,16 @@ func (f *Struct) filterFunc(ctx Context) jen.Code {
 
 func (f *Struct) convFrom(ctx Context) jen.Code {
 	code := jen.Id("from" + f.table.NameGo())
-	if f.source.Pointer() {
-		code = jen.Id("ptrFunc").Call(jen.Id("from" + f.table.NameGo()))
+	if !f.source.Pointer() {
+		code = jen.Id("noPtrFunc").Call(jen.Id("from" + f.table.NameGo()))
 	}
 	return code.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Struct) convTo(ctx Context) jen.Code {
 	code := jen.Id("to" + f.table.NameGo())
-	if f.source.Pointer() {
-		code = jen.Id("ptrFunc").Call(jen.Id("to" + f.table.NameGo()))
+	if !f.source.Pointer() {
+		code = jen.Id("noPtrFunc").Call(jen.Id("to" + f.table.NameGo()))
 	}
 	return code.Call(jen.Id("data").Dot(f.NameGo()))
 }
