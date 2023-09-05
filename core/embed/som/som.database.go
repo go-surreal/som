@@ -4,7 +4,7 @@ package som
 
 import (
 	"context"
-	"github.com/marcbinz/som/sdbc"
+	"github.com/go-surreal/som/sdbc"
 )
 
 type database struct {
@@ -21,6 +21,10 @@ func (db *database) Select(ctx context.Context, what string) ([]byte, error) {
 
 func (db *database) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
 	return db.Client.Query(ctx, statement, vars)
+}
+
+func (db *database) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
+	return db.Client.Live(ctx, statement, vars)
 }
 
 func (db *database) Update(ctx context.Context, what string, data any) ([]byte, error) {

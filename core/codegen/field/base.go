@@ -2,8 +2,8 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/parser"
 )
 
 // type Edge struct {

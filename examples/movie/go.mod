@@ -1,14 +1,14 @@
-module github.com/marcbinz/som/examples/movie
+module github.com/go-surreal/som/examples/movie
 
 go 1.21.0
 
-replace github.com/marcbinz/som => ../../
+replace github.com/go-surreal/som => ../../
 
 require (
 	github.com/bytedance/sonic v1.9.2
 	github.com/docker/docker v24.0.5+incompatible
 	github.com/google/go-cmp v0.5.9
-	github.com/marcbinz/som v0.0.0
+	github.com/go-surreal/som v0.0.0
 	github.com/testcontainers/testcontainers-go v0.23.0
 	gotest.tools/v3 v3.5.0
 )
