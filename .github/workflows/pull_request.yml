@@ -4,6 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
+      - ".github/workflows/pull_request.yml"
       - "cmd/**/*"
       - "core/**/*"
       - "examples/**/*"
