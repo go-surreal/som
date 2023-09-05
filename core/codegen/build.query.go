@@ -616,6 +616,11 @@ Live registers the constructed query as a live query.
 Whenever something in the database changes that matches the 
 query conditions, the result channel will receive an update.
 If the context is canceled, the result channel will be closed.
+
+Note: If you want both the current result set and live updates,
+it is advised to execute the live query first. This is to ensure
+data consistency. The other way around there could be missing
+updates happening between the initial query and the live query.
 		`)).
 		Func().Params(jen.Id("q").Id(nodeTypeLive)).
 		Id("Live").Params(jen.Id("ctx").Qual("context", "Context")).

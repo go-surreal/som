@@ -239,6 +239,11 @@ func (q nodeMovie) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 // Whenever something in the database changes that matches the
 // query conditions, the result channel will receive an update.
 // If the context is canceled, the result channel will be closed.
+//
+// Note: If you want both the current result set and live updates,
+// it is advised to execute the live query first. This is to ensure
+// data consistency. The other way around there could be missing
+// updates happening between the initial query and the live query.
 func (q NodeMovie) Live(ctx context.Context) (<-chan LiveResult[*model.Movie], error) {
 	req := q.query.BuildAsLive()
 	resChan, err := q.db.Live(ctx, req.Statement, req.Variables)
