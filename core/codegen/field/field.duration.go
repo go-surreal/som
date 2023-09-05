@@ -20,7 +20,7 @@ func (f *Duration) typeConv() jen.Code {
 }
 
 func (f *Duration) TypeDatabase() string {
-	return f.optionWrap("duration") + " VALUE type::duration($value)"
+	return f.optionWrap("duration")
 }
 
 func (f *Duration) CodeGen() *CodeGen {
