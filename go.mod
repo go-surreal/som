@@ -1,4 +1,4 @@
-module github.com/marcbinz/som
+module github.com/go-surreal/som
 
 go 1.21.0
 

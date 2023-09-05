@@ -3,7 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Node struct {

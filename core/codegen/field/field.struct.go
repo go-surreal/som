@@ -2,7 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Struct struct {
