@@ -13,12 +13,18 @@ type Person struct {
 	Name string `json:"name"`
 }
 
-func FromPerson(data model.Person) Person {
-	return Person{Name: data.Name}
+func FromPerson(data *model.Person) *Person {
+	if data == nil {
+		return nil
+	}
+	return &Person{Name: data.Name}
 }
 
-func ToPerson(data Person) model.Person {
-	return model.Person{
+func ToPerson(data *Person) *model.Person {
+	if data == nil {
+		return nil
+	}
+	return &model.Person{
 		Name: data.Name,
 		Node: som.NewNode(parseDatabaseID("person", data.ID)),
 	}
@@ -56,22 +62,24 @@ func fromPersonLink(link *personLink) model.Person {
 	if link == nil {
 		return model.Person{}
 	}
-	return ToPerson(Person(link.Person))
+	res := Person(link.Person)
+	out := ToPerson(&res)
+	return *out
 }
 
 func fromPersonLinkPtr(link *personLink) *model.Person {
 	if link == nil {
 		return nil
 	}
-	node := ToPerson(Person(link.Person))
-	return &node
+	res := Person(link.Person)
+	return ToPerson(&res)
 }
 
 func toPersonLink(node model.Person) *personLink {
 	if node.ID() == "" {
 		return nil
 	}
-	link := personLink{Person: FromPerson(node), ID: buildDatabaseID("person", node.ID())}
+	link := personLink{Person: *FromPerson(&node), ID: buildDatabaseID("person", node.ID())}
 	return &link
 }
 
@@ -79,6 +87,6 @@ func toPersonLinkPtr(node *model.Person) *personLink {
 	if node == nil || node.ID() == "" {
 		return nil
 	}
-	link := personLink{Person: FromPerson(*node), ID: buildDatabaseID("person", node.ID())}
+	link := personLink{Person: *FromPerson(node), ID: buildDatabaseID("person", node.ID())}
 	return &link
 }

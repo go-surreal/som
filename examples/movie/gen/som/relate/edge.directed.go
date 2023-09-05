@@ -28,17 +28,17 @@ func (e directed) Create(ctx context.Context, edge *model.Directed) error {
 		return errors.New("ID of the outgoing node 'Movie' must not be empty")
 	}
 	query := "RELATE " + "person:" + edge.Person.ID() + "->directed->" + "movie:" + edge.Movie.ID() + " CONTENT $data"
-	data := conv.FromDirected(*edge)
+	data := conv.FromDirected(edge)
 	res, err := e.db.Query(ctx, query, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
 	}
-	var convEdge conv.Directed
+	var convEdge *conv.Directed
 	err = e.unmarshal(res, &convEdge)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}
-	*edge = conv.ToDirected(convEdge)
+	*edge = *conv.ToDirected(convEdge)
 	return nil
 }
 

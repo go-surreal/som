@@ -13,12 +13,18 @@ type Movie struct {
 	Title string `json:"title"`
 }
 
-func FromMovie(data model.Movie) Movie {
-	return Movie{Title: data.Title}
+func FromMovie(data *model.Movie) *Movie {
+	if data == nil {
+		return nil
+	}
+	return &Movie{Title: data.Title}
 }
 
-func ToMovie(data Movie) model.Movie {
-	return model.Movie{
+func ToMovie(data *Movie) *model.Movie {
+	if data == nil {
+		return nil
+	}
+	return &model.Movie{
 		Node:  som.NewNode(parseDatabaseID("movie", data.ID)),
 		Title: data.Title,
 	}
@@ -56,22 +62,24 @@ func fromMovieLink(link *movieLink) model.Movie {
 	if link == nil {
 		return model.Movie{}
 	}
-	return ToMovie(Movie(link.Movie))
+	res := Movie(link.Movie)
+	out := ToMovie(&res)
+	return *out
 }
 
 func fromMovieLinkPtr(link *movieLink) *model.Movie {
 	if link == nil {
 		return nil
 	}
-	node := ToMovie(Movie(link.Movie))
-	return &node
+	res := Movie(link.Movie)
+	return ToMovie(&res)
 }
 
 func toMovieLink(node model.Movie) *movieLink {
 	if node.ID() == "" {
 		return nil
 	}
-	link := movieLink{Movie: FromMovie(node), ID: buildDatabaseID("movie", node.ID())}
+	link := movieLink{Movie: *FromMovie(&node), ID: buildDatabaseID("movie", node.ID())}
 	return &link
 }
 
@@ -79,6 +87,6 @@ func toMovieLinkPtr(node *model.Movie) *movieLink {
 	if node == nil || node.ID() == "" {
 		return nil
 	}
-	link := movieLink{Movie: FromMovie(*node), ID: buildDatabaseID("movie", node.ID())}
+	link := movieLink{Movie: *FromMovie(node), ID: buildDatabaseID("movie", node.ID())}
 	return &link
 }

@@ -28,17 +28,17 @@ func (e groupMember) Create(ctx context.Context, edge *model.GroupMember) error 
 		return errors.New("ID of the outgoing node 'Group' must not be empty")
 	}
 	query := "RELATE " + "user:" + edge.User.ID() + "->group_member->" + "group:" + edge.Group.ID() + " CONTENT $data"
-	data := conv.FromGroupMember(*edge)
+	data := conv.FromGroupMember(edge)
 	res, err := e.db.Query(ctx, query, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
 	}
-	var convEdge conv.GroupMember
+	var convEdge *conv.GroupMember
 	err = e.unmarshal(res, &convEdge)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}
-	*edge = conv.ToGroupMember(convEdge)
+	*edge = *conv.ToGroupMember(convEdge)
 	return nil
 }
 

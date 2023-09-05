@@ -84,15 +84,16 @@ func (c *Client) handleMessages(resultCh resultChannel[[]byte]) {
 					return
 				}
 
-				data, err := result()
-				if err != nil {
-					c.logger.ErrorContext(c.connCtx, "Could not get result from channel.", "error", err)
-					continue
-				}
-
 				c.waitGroup.Add(1)
 				go func() {
 					defer c.waitGroup.Done()
+
+					data, err := result()
+					if err != nil {
+						c.logger.ErrorContext(c.connCtx, "Could not get result from channel.", "error", err)
+						return
+					}
+
 					c.handleMessage(data)
 				}()
 			}
@@ -133,6 +134,9 @@ func (c *Client) handleResult(res *response) {
 	select {
 
 	case outCh <- res.Result:
+		return
+
+	case <-c.connCtx.Done():
 		return
 
 	case <-time.After(c.timeout):

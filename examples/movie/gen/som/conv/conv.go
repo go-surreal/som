@@ -86,3 +86,14 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
 		return &out
 	}
 }
+
+func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
+	return func(in I) O {
+		out := fn(&in)
+		if out == nil {
+			var o O
+			return o
+		}
+		return *out
+	}
+}

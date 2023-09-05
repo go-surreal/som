@@ -56,16 +56,16 @@ func (f *Struct) filterFunc(ctx Context) jen.Code {
 
 func (f *Struct) convFrom(ctx Context) jen.Code {
 	code := jen.Id("from" + f.table.NameGo())
-	if f.source.Pointer() {
-		code = jen.Id("ptrFunc").Call(jen.Id("from" + f.table.NameGo()))
+	if !f.source.Pointer() {
+		code = jen.Id("noPtrFunc").Call(jen.Id("from" + f.table.NameGo()))
 	}
 	return code.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Struct) convTo(ctx Context) jen.Code {
 	code := jen.Id("to" + f.table.NameGo())
-	if f.source.Pointer() {
-		code = jen.Id("ptrFunc").Call(jen.Id("to" + f.table.NameGo()))
+	if !f.source.Pointer() {
+		code = jen.Id("noPtrFunc").Call(jen.Id("to" + f.table.NameGo()))
 	}
 	return code.Call(jen.Id("data").Dot(f.NameGo()))
 }

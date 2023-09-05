@@ -22,10 +22,10 @@ func (f *UUID) typeConv() jen.Code {
 
 func (f *UUID) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "option<string | null> ASSERT $value == NONE OR $value == NULL OR is::uuid($value)"
+		return "option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::uuid($value)"
 	}
 
-	return "string ASSERT is::uuid($value)"
+	return "string ASSERT string::is::uuid($value)"
 }
 
 func (f *UUID) CodeGen() *CodeGen {
