@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"github.com/marcbinz/som/examples/basic/gen/som"
+	"github.com/go-surreal/som/examples/basic/gen/som"
 )
 
 type GroupRepo interface {

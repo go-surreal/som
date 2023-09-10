@@ -3,12 +3,12 @@ package basic
 import (
 	"context"
 	"github.com/docker/docker/api/types/container"
+	sombase "github.com/go-surreal/som"
+	"github.com/go-surreal/som/examples/basic/gen/som"
+	"github.com/go-surreal/som/examples/basic/gen/som/where"
+	"github.com/go-surreal/som/examples/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	sombase "github.com/marcbinz/som"
-	"github.com/marcbinz/som/examples/basic/gen/som"
-	"github.com/marcbinz/som/examples/basic/gen/som/where"
-	"github.com/marcbinz/som/examples/basic/model"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "1.0.0-beta.10"
+	surrealDBContainerVersion = "1.0.0-beta.11"
 	containerName             = "som_test_surrealdb"
 	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )

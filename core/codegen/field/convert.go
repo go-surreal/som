@@ -3,7 +3,7 @@ package field
 import (
 	"errors"
 	"fmt"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Def struct {

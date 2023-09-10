@@ -2,6 +2,21 @@ name: PR
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/pull_request.yml"
+      - "cmd/**/*"
+      - "core/**/*"
+      - "examples/**/*"
+      - "sdbc/**/*"
+      - ".envrc"
+      - ".golangci.yml"
+      - ".tool-versions"
+      - "go.mod"
+      - "go.sum"
+      - "go.work"
+      - "go.work.sum"
+      - "som.go"
 
 jobs:
 
@@ -11,7 +26,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -56,7 +71,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -105,7 +120,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -144,7 +159,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf

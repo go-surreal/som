@@ -1,8 +1,8 @@
 package model
 
 import (
+	"github.com/go-surreal/som"
 	"github.com/google/uuid"
-	"github.com/marcbinz/som"
 	"time"
 )
 
@@ -10,8 +10,13 @@ type User struct {
 	som.Node
 	som.Timestamps
 
-	String    string
-	StringPtr *string
+	// basic types
+
+	String         string
+	StringPtr      *string
+	Other          []string
+	StringPtrSlice []*string
+	StringSlicePtr *[]string
 
 	Int      int
 	IntPtr   *int
@@ -39,6 +44,8 @@ type User struct {
 	UintptrPtr *uintptr
 
 	Float32 float32 // -3.4e+38 to 3.4e+38.
+	More    []float32
+
 	Float64 float64 // -1.7e+308 to +1.7e+308.
 
 	// Complex64  complex64
@@ -56,31 +63,47 @@ type User struct {
 	// BigRat   big.Rat
 	// BigFloat big.Float
 
-	UUID uuid.UUID
+	// special types
 
-	Login        Login    // struct
-	Role         Role     // enum
-	Groups       []Group  // slice of Nodes
-	MainGroup    Group    // node
-	MainGroupPtr *Group   // node pointer
-	Other        []string // slice of strings
-	More         []float32
-	Roles        []Role // slice of enum
+	Time    time.Time
+	TimePtr *time.Time
+
+	UUID    uuid.UUID
+	UUIDPtr *uuid.UUID
+
+	// enums
+
+	Role            Role
+	EnumPtr         *Role
+	Roles           []Role
+	EnumPtrSlice    []*Role
+	EnumPtrSlicePtr *[]*Role
+
+	// structs
+
+	Login             Login
+	StructPtr         *SomeStruct
+	StructSlice       []SomeStruct
+	StructPtrSlice    []*SomeStruct
+	StructPtrSlicePtr *[]*SomeStruct
+
+	// nodes
+
+	MainGroup       Group   // node
+	MainGroupPtr    *Group  // node pointer
+	Groups          []Group // slice of Nodes
+	NodePtrSlice    []*Group
+	NodePtrSlicePtr *[]*Group
+
+	// edges
 
 	MemberOf []GroupMember // slice of edges
 
-	TimePtr   *time.Time
-	UuidPtr   *uuid.UUID
-	StructPtr *SomeStruct
+	// other
 
-	StringPtrSlice    []*string
-	StringSlicePtr    *[]string
-	StructPtrSlice    []*SomeStruct
-	StructPtrSlicePtr *[]*SomeStruct
-	EnumPtrSlice      []*Role
-	NodePtrSlice      []*Group
-	NodePtrSlicePtr   *[]*Group
-	SliceSlice        [][]string
+	SliceSlice [][]string
+
+	// maps (not (yet?) supported)
 
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum
