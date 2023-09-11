@@ -122,6 +122,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		b.buildQueryFuncFirstID(node),
 		b.buildQueryFuncLive(node),
 		// TODO: b.buildQueryFuncLiveDiff(node),
+		b.buildPaginateFunc(node),
 		b.buildQueryFuncDescribe(node), // TODO
 	}
 
@@ -669,6 +670,72 @@ updates happening between the initial query and the live query.
 // 			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not implemented"))),
 // 		)
 // }
+
+func (b *queryBuilder) buildPaginateFunc(node *field.NodeTable) jen.Code {
+	nodeType := "node" + node.NameGo()
+
+	resultType := jen.Op("*").Add(b.SourceQual(node.Name))
+
+	return jen.Add(
+
+		jen.Add(comment(`
+Paginate returns a paginated version of the query.
+		`)).
+			Func().Params(jen.Id("q").Id(nodeType)).
+			Id("Paginate").
+			Params(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("pageSize").Int(),
+				jen.Id("cursor").String(),
+			).
+			Params(
+				jen.Op("<-").Chan().Id("LiveResult").Types(resultType),
+				jen.Error(),
+			).
+			Block(
+				jen.Id("req").Op(":=").Id("q").Dot("query").Dot("BuildAsLive").Call(),
+
+				jen.List(jen.Id("resChan"), jen.Err()).Op(":=").Id("q").Dot("db").Dot("Live").Call(
+					jen.Id("ctx"),
+					jen.Id("req").Dot("Statement"),
+					jen.Id("req").Dot("Variables"),
+				),
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not query live records: %w"), jen.Err())),
+				),
+
+				jen.Return(
+					jen.Id("live").Call(
+						jen.Id("ctx"),
+						jen.Id("resChan"),
+						jen.Id("q").Dot("unmarshal"),
+						jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()),
+					),
+					jen.Nil(),
+				),
+			),
+
+		jen.Line(),
+
+		jen.
+			Add(comment(`
+PaginateAsync is the asynchronous version of Paginate.
+		`)).
+			Func().Params(jen.Id("q").Id(nodeType)).
+			Id("PaginateAsync").
+			Params(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("pageSize").Int(),
+				jen.Id("cursor").String(),
+			).
+			Op("*").Id("asyncResult").Types(jen.String()).
+			Block(
+				jen.Return(jen.Id("async").Call(
+					jen.Id("ctx"), jen.Id("q").Dot("Paginate"),
+				)),
+			),
+	)
+}
 
 func (b *queryBuilder) buildQueryFuncDescribe(node *field.NodeTable) jen.Code {
 	nodeType := "node" + node.NameGo()
