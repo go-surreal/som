@@ -1,8 +1,8 @@
 package model
 
 import (
+	"github.com/go-surreal/som"
 	"github.com/google/uuid"
-	"github.com/marcbinz/som"
 	"time"
 )
 
@@ -10,41 +10,68 @@ type User struct {
 	som.Node
 	som.Timestamps
 
-	String  string
-	Int     int
-	Int32   int32
-	Int64   int64
+	// basic types
+
+	String         string
+	StringPtr      *string
+	Other          []string
+	StringPtrSlice []*string
+	StringSlicePtr *[]string
+
+	Int    int
+	IntPtr *int
+
+	Int32 int32
+	Int64 int64
+
 	Float32 float32
+	More    []float32
+
 	Float64 float64
 	Bool    bool
 	Bool2   bool
 
-	UUID uuid.UUID
+	// special types
 
-	Login        Login    // struct
-	Role         Role     // enum
-	Groups       []Group  // slice of Nodes
-	MainGroup    Group    // node
-	MainGroupPtr *Group   // node pointer
-	Other        []string // slice of strings
-	More         []float32
-	Roles        []Role // slice of enum
+	Time    time.Time
+	TimePtr *time.Time
+
+	UUID    uuid.UUID
+	UUIDPtr *uuid.UUID
+
+	// enums
+
+	Role            Role
+	EnumPtr         *Role
+	Roles           []Role
+	EnumPtrSlice    []*Role
+	EnumPtrSlicePtr *[]*Role
+
+	// structs
+
+	Login             Login
+	StructPtr         *SomeStruct
+	StructSlice       []SomeStruct
+	StructPtrSlice    []*SomeStruct
+	StructPtrSlicePtr *[]*SomeStruct
+
+	// nodes
+
+	MainGroup       Group   // node
+	MainGroupPtr    *Group  // node pointer
+	Groups          []Group // slice of Nodes
+	NodePtrSlice    []*Group
+	NodePtrSlicePtr *[]*Group
+
+	// edges
 
 	MemberOf []GroupMember
 
-	StringPtr         *string
-	IntPtr            *int
-	TimePtr           *time.Time
-	UuidPtr           *uuid.UUID
-	StructPtr         *SomeStruct
-	StringPtrSlice    []*string
-	StringSlicePtr    *[]string
-	StructPtrSlice    []*SomeStruct
-	StructPtrSlicePtr *[]*SomeStruct
-	EnumPtrSlice      []*Role
-	NodePtrSlice      []*Group
-	NodePtrSlicePtr   *[]*Group
-	SliceSlice        [][]string
+	// other
+
+	SliceSlice [][]string
+
+	// maps (not (yet?) supported)
 
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum

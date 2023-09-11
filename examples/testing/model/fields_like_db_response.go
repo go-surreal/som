@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/marcbinz/som"
+	"github.com/go-surreal/som"
 )
 
 type FieldsLikeDBResponse struct {
