@@ -287,7 +287,7 @@ DEFINE EVENT example_uid_setting ON TABLE example WHEN $before = null AND $befor
 
 ## Optimisations
 
-- replace string concatenation in query builder with buffer (faster execution)
+tbd.
 
 ## Other links
 
