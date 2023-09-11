@@ -2,7 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Bool struct {
@@ -20,10 +20,7 @@ func (f *Bool) typeConv() jen.Code {
 }
 
 func (f *Bool) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "bool"
-	}
-	return "bool ASSERT $value != NULL"
+	return f.optionWrap("bool")
 }
 
 func (f *Bool) CodeGen() *CodeGen {

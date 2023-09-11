@@ -3,7 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Node struct {
@@ -22,7 +22,8 @@ func (f *Node) typeConv() jen.Code {
 }
 
 func (f *Node) TypeDatabase() string {
-	return fmt.Sprintf("record(%s)", f.table.NameDatabase())
+	// Linked records are always considered optional.
+	return fmt.Sprintf("option<record<%s> | null>", f.table.NameDatabase())
 }
 
 func (f *Node) Table() *NodeTable {

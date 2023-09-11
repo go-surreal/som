@@ -3,11 +3,12 @@ package basic
 import (
 	"context"
 	"github.com/docker/docker/api/types/container"
+	sombase "github.com/go-surreal/som"
+	"github.com/go-surreal/som/examples/basic/gen/som"
+	"github.com/go-surreal/som/examples/basic/gen/som/where"
+	"github.com/go-surreal/som/examples/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	sombase "github.com/marcbinz/som"
-	"github.com/marcbinz/som/examples/basic/gen/som"
-	"github.com/marcbinz/som/examples/basic/gen/som/where"
-	"github.com/marcbinz/som/examples/basic/model"
+	"github.com/google/uuid"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "1.0.0-beta.9"
+	surrealDBContainerVersion = "1.0.0-beta.11"
 	containerName             = "som_test_surrealdb"
 	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
@@ -83,14 +84,12 @@ func TestWithDatabase(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	if err := client.ApplySchema(); err != nil {
-		t.Fatal(err)
-	}
-
 	str := "Some User"
+	uid := uuid.New()
 
 	userNew := model.User{
 		String: str,
+		UUID:   uid,
 	}
 
 	userIn := userNew
@@ -112,6 +111,7 @@ func TestWithDatabase(t *testing.T) {
 	}
 
 	assert.Equal(t, str, userOut.String)
+	assert.Equal(t, uid, userOut.UUID)
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
@@ -124,10 +124,6 @@ func FuzzWithDatabase(f *testing.F) {
 
 	client, cleanup := prepareDatabase(ctx, f)
 	defer cleanup()
-
-	if err := client.ApplySchema(); err != nil {
-		f.Fatal(err)
-	}
 
 	f.Add("Some User")
 
@@ -164,10 +160,6 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 	client, cleanup := prepareDatabase(ctx, f)
 	defer cleanup()
-
-	if err := client.ApplySchema(); err != nil {
-		f.Fatal(err)
-	}
 
 	f.Add("v9uitj942tv2403tnv")
 	f.Add("vb92thj29v4tjn20d3")
@@ -261,6 +253,37 @@ func BenchmarkWithDatabase(b *testing.B) {
 	}
 }
 
+func TestAsync(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	err := client.UserRepo().Create(ctx, &model.User{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resCh := client.UserRepo().Query().
+		Filter().
+		CountAsync(ctx)
+
+	assert.NilError(t, <-resCh.Err())
+	assert.Equal(t, 1, <-resCh.Val())
+
+	err = client.UserRepo().Create(ctx, &model.User{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resCh = client.UserRepo().Query().
+		Filter().
+		CountAsync(ctx)
+
+	assert.NilError(t, <-resCh.Err())
+	assert.Equal(t, 2, <-resCh.Val())
+}
+
 //
 // -- HELPER
 //
@@ -271,7 +294,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	req := testcontainers.ContainerRequest{
 		Name:         containerName,
 		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
+		Cmd:          []string{"start", "--strict", "--allow-funcs", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog(containerStartedMsg),
 		HostConfigModifier: func(conf *container.HostConfig) {
@@ -295,8 +318,12 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	client, err := som.NewClient(conf(endpoint))
+	client, err := som.NewClient(ctx, conf(endpoint))
 	if err != nil {
+		tb.Fatal(err)
+	}
+
+	if err := client.ApplySchema(ctx); err != nil {
 		tb.Fatal(err)
 	}
 

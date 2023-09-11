@@ -2,7 +2,7 @@ package basic
 
 import (
 	"context"
-	"github.com/marcbinz/som/examples/basic/model"
+	"github.com/go-surreal/som/examples/basic/model"
 	"gotest.tools/v3/assert"
 	"math/rand"
 	"testing"
@@ -19,7 +19,7 @@ func TestQueryCount(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	if err := client.ApplySchema(); err != nil {
+	if err := client.ApplySchema(ctx); err != nil {
 		t.Fatal(err)
 	}
 

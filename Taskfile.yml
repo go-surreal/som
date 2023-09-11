@@ -37,7 +37,7 @@ tasks:
   example:
     aliases: [ e ]
     desc: "Run the test code for the example codebase."
-    deps: [gen]
+    deps: [ gen ]
     cmds:
       - cd ./test && go run main.go
 
@@ -50,7 +50,7 @@ tasks:
   test:
     aliases: [ t ]
     desc: "Execute all go tests."
-    deps: [gen]
+    deps: [ gen ]
     cmds:
       - go test ./...
       - cd examples/testing && go test ./...

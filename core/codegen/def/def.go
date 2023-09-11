@@ -12,8 +12,10 @@ const (
 )
 
 const (
-	PkgSom = "github.com/marcbinz/som"
+	PkgSom = "github.com/go-surreal/som"
 
-	PkgUUID      = "github.com/google/uuid"
-	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"
+	PkgUUID             = "github.com/google/uuid"
+	PkgSurrealDB        = "github.com/surrealdb/surrealdb.go"
+	PkgSurrealMarshal   = "github.com/surrealdb/surrealdb.go/pkg/marshal"
+	PkgSurrealConstants = "github.com/surrealdb/surrealdb.go/pkg/constants"
 )

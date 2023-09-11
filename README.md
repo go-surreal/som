@@ -11,8 +11,8 @@
   <a href="https://go.dev/doc/devel/release">
     <img src="https://img.shields.io/badge/go-1.21rc3-informational" alt="Go 1.21rc3">
   </a>
-  <a href="https://github.com/marcbinz/som/actions/workflows/pull_request.yml">
-    <img src="https://github.com/marcbinz/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
+  <a href="https://github.com/go-surreal/som/actions/workflows/pull_request.yml">
+    <img src="https://github.com/go-surreal/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
   </a>
   <a href="https://discord.gg/surrealdb">
     <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord">
@@ -51,12 +51,12 @@ in the database, without the use of complicated JOINs and without bringing the d
 ## Getting started
 
 *Please note: This package is currently tested against version 
-[1.0.0-beta.9](https://github.com/surrealdb/surrealdb/releases/tag/v1.0.0-beta.9%2B20230402)
+[1.0.0-beta.11](https://surrealdb.com/releases#v1-0-0-beta-11)
 of SurrealDB.*
 
 ### Disclaimer
 
-This library is currently considered **HIGHLY EXPERIMENTAL**.
+This library is currently considered **HIGHLY EXPERIMENTAL** and under heavy development.
 
 Som is in the stage of (very) early development. While the basic functionality should be working as expected,
 there could be unknown and critical bugs. This could theoretically lead to your database and especially 
@@ -79,17 +79,19 @@ But still, please try it out and give us some feedback. We would highly apprecia
 Generate the client code:
 
 ```
-go run github.com/marcbinz/som/cmd/somgen@latest <input_dir> <output_dir>
+go run github.com/go-surreal/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
 
-The package `github.com/marcbinz/som` can be considered an invisible dependency for your project. All it does is to
+<!--
+The package `github.com/go-surreal/som` can be considered an invisible dependency for your project. All it does is to
 generate code that lives within your project, but the package itself does not need to be added to the `go.mod` file.
+-->
 
-The generated code uses the official SurrealDB go client:
-
-```
-go get github.com/surrealdb/surrealdb.go
-```
+Currently, the generated code does not make use of the official SurrealDB go client.
+Instead, it is using a custom implementation called [sdbc](https://github.com/go-surreal/sdbc).
+Until the official client is considered stable, this will likely not change.
+Final goal would be to make it possible to use both the official client and the custom implementation.
+As of now, this might change at any time.
 
 ### Versioning
 
@@ -103,7 +105,8 @@ This go project makes heavy use of generics. As this feature has been introduced
 earliest to be supported by this library.
 
 In general, the two latest (minor) versions of go - and within those, only the latest patch - will be supported 
-officially. This means that older versions might still work, but could also break at any time and with any new release.
+officially. This means that older versions might still work, but could also break at any time, with any new 
+release and without further notice.
 
 Deprecating an "outdated" go version does not yield a new major version of this library. There will be no support for 
 older versions whatsoever. This rather hard handling is intended, because it is the official handling for the go 
@@ -112,15 +115,7 @@ language itself. For further information, please refer to the
 
 ### Features
 
-- Fully type-safe SurrealDB access via generated code.
-- Supports most atomic go types: `string`, `int`, `int32`, `int64`, `float32`, `float64`, `bool`
-  - Coming soon: `byte`, `[]byte`, `rune`, `uint` ...
-- Supports slice values of all atomic types.
-- Supports pointer fields.
-- Supports complex types `time.Time` (standard lib) and `uuid.UUID` (google)
-  - Maybe future: support any external type with custom encoders and decoders?
-- Supports record links (references to other nodes/models).
-- Supports graph connections (edges) between nodes/models.
+tbd.
 
 ## Roadmap
 
@@ -151,7 +146,7 @@ list of all planned changes, please take a look at the issue section on GitHub a
 
 ## FAQ
 
-You can find a separate document for the FAQ [here](FAQ.md).
+You can find a separate document for the FAQs [here](FAQ.md).
 
 ## Maintainers & Contributors
 
