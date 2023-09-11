@@ -253,6 +253,21 @@ func (q NodeUser) Live(ctx context.Context) (<-chan LiveResult[*model.User], err
 	return live(ctx, resChan, q.unmarshal, conv.ToUser), nil
 }
 
+// Paginate returns a paginated version of the query.
+func (q nodeUser) Paginate(ctx context.Context, pageSize int, cursor string) (<-chan LiveResult[*model.User], error) {
+	req := q.query.BuildAsLive()
+	resChan, err := q.db.Live(ctx, req.Statement, req.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("could not query live records: %w", err)
+	}
+	return live(ctx, resChan, q.unmarshal, conv.ToUser), nil
+}
+
+// PaginateAsync is the asynchronous version of Paginate.
+func (q nodeUser) PaginateAsync(ctx context.Context, pageSize int, cursor string) *asyncResult[string] {
+	return async(ctx, q.Paginate)
+}
+
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.

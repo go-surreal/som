@@ -110,7 +110,7 @@ func TestWithDatabase(t *testing.T) {
 		Order(
 			by.User.Time.Desc(),
 		).
-		Paginate(ctx, 50, cursor)
+		PaginateAsync(ctx, 50, cursor)
 
 	if err != nil {
 		t.Fatal(err)
