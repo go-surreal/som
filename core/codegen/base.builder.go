@@ -355,7 +355,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
 				),
 
-			jen.Id("key").Op(":=").Lit(node.NameDatabase()),
+			jen.Id("key").Op(":=").Lit(node.NameDatabase()+":ulid()"),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
 
 			jen.Add(onCreatedAt),
@@ -368,19 +368,15 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
 			),
 
-			jen.Var().Id("convNodes").Index().Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
+			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
 			jen.Err().Op("=").Id("n").Dot("unmarshal").
-				Call(jen.Id("raw"), jen.Op("&").Id("convNodes")),
+				Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
 			),
 
-			jen.If(jen.Len(jen.Id("convNodes")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("response is empty"))),
-			),
-
 			jen.Op("*").Id(node.NameGoLower()).Op("=").
-				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNodes").Index(jen.Lit(0))),
+				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
 
 			jen.Return(jen.Nil()),
 		)

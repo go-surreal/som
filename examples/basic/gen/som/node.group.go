@@ -43,7 +43,7 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	if group.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	key := "group"
+	key := "group:ulid()"
 	data := conv.FromGroup(group)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
@@ -51,15 +51,12 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNodes []*conv.Group
-	err = n.unmarshal(raw, &convNodes)
+	var convNode *conv.Group
+	err = n.unmarshal(raw, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
-	if len(convNodes) < 1 {
-		return errors.New("response is empty")
-	}
-	*group = *conv.ToGroup(convNodes[0])
+	*group = *conv.ToGroup(convNode)
 	return nil
 }
 
