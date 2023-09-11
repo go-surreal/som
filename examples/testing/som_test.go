@@ -231,7 +231,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 				t.Fatal("for beta.11 live queries with filters should not work yet")
 			}
 
-		case <-time.After(5 * time.Second):
+		case <-time.After(1 * time.Second):
 			// t.Fatal("timeout waiting for live event")
 			t.Log("correct, becuase live queries with filters are not supported yet")
 		}

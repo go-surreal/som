@@ -43,7 +43,7 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	if user.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	key := "user"
+	key := "user:ulid()"
 	data := conv.FromUser(user)
 	data.CreatedAt = time.Now()
 	data.UpdatedAt = data.CreatedAt
@@ -51,15 +51,12 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNodes []*conv.User
-	err = n.unmarshal(raw, &convNodes)
+	var convNode *conv.User
+	err = n.unmarshal(raw, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
-	if len(convNodes) < 1 {
-		return errors.New("response is empty")
-	}
-	*user = *conv.ToUser(convNodes[0])
+	*user = *conv.ToUser(convNode)
 	return nil
 }
 
