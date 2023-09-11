@@ -4,7 +4,7 @@ package som
 
 import (
 	"context"
-	"github.com/go-surreal/som/sdbc"
+	"github.com/go-surreal/sdbc"
 )
 
 type database struct {
