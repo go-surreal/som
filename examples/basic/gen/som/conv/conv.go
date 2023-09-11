@@ -97,3 +97,12 @@ func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
 		return *out
 	}
 }
+
+func parseNumeric[N ~uint | ~uint64 | ~uintptr](in N) string {
+	return strconv.Itoa(int(in))
+}
+
+func unparseNumeric[N ~uint | ~uint64 | ~uintptr](val string) N {
+	n, _ := strconv.ParseUint(val, 10, 64)
+	return N(n)
+}

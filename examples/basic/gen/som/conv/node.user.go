@@ -6,6 +6,7 @@ import (
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/examples/basic/model"
 	uuid "github.com/google/uuid"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,18 +30,18 @@ type User struct {
 	Int32Ptr          *int32         `json:"int_32_ptr"`
 	Int64             int64          `json:"int_64"`
 	Int64Ptr          *int64         `json:"int_64_ptr"`
-	Uint              uint           `json:"uint"`
-	UintPtr           *uint          `json:"uint_ptr"`
+	Uint              string           `json:"uint"`
+	UintPtr           *string          `json:"uint_ptr"`
 	Uint8             uint8          `json:"uint_8"`
 	Uint8Ptr          *uint8         `json:"uint_8_ptr"`
 	Uint16            uint16         `json:"uint_16"`
 	Uint16Ptr         *uint16        `json:"uint_16_ptr"`
 	Uint32            uint32         `json:"uint_32"`
 	Uint32Ptr         *uint32        `json:"uint_32_ptr"`
-	Uint64            uint64         `json:"uint_64"`
-	Uint64Ptr         *uint64        `json:"uint_64_ptr"`
-	Uintptr           uintptr        `json:"uintptr"`
-	UintptrPtr        *uintptr       `json:"uintptr_ptr"`
+	Uint64            string         `json:"uint_64"`
+	Uint64Ptr         *string        `json:"uint_64_ptr"`
+	Uintptr           string        `json:"uintptr"`
+	UintptrPtr        *string       `json:"uintptr_ptr"`
 	Float32           float32        `json:"float_32"`
 	More              []float32      `json:"more"`
 	Float64           float64        `json:"float_64"`
@@ -111,23 +112,23 @@ func FromUser(data *model.User) *User {
 		StructPtr:         fromSomeStruct(data.StructPtr),
 		StructPtrSlice:    mapSlice(data.StructPtrSlice, fromSomeStruct),
 		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
-		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(fromSomeStruct)),
-		Time:              data.Time,
-		TimePtr:           data.TimePtr,
-		UUID:              data.UUID,
-		UUIDPtr:           data.UUIDPtr,
-		Uint:              data.Uint,
-		Uint16:            data.Uint16,
-		Uint16Ptr:         data.Uint16Ptr,
-		Uint32:            data.Uint32,
-		Uint32Ptr:         data.Uint32Ptr,
-		Uint64:            data.Uint64,
-		Uint64Ptr:         data.Uint64Ptr,
-		Uint8:             data.Uint8,
-		Uint8Ptr:          data.Uint8Ptr,
-		UintPtr:           data.UintPtr,
-		Uintptr:           data.Uintptr,
-		UintptrPtr:        data.UintptrPtr,
+		StructSlice: mapSlice(data.StructSlice, noPtrFunc(fromSomeStruct)),
+		Time:        data.Time,
+		TimePtr:     data.TimePtr,
+		UUID:        data.UUID,
+		UUIDPtr:     data.UUIDPtr,
+		Uint:        strconv.Itoa(int(data.Uint)),
+		Uint16:      data.Uint16,
+		Uint16Ptr:   data.Uint16Ptr,
+		Uint32:      data.Uint32,
+		Uint32Ptr:   data.Uint32Ptr,
+		Uint64: parseNumeric(data.Uint64),
+		Uint64Ptr:   ptrFunc(parseNumeric[uint64])(data.Uint64Ptr),
+		Uint8:       data.Uint8,
+		Uint8Ptr:    data.Uint8Ptr,
+		UintPtr:     ptrFunc(parseNumeric[uint])(data.UintPtr),
+		Uintptr:     parseNumeric(data.Uintptr),
+		UintptrPtr:  ptrFunc(parseNumeric[uintptr])(data.UintptrPtr),
 	}
 }
 
@@ -180,18 +181,18 @@ func ToUser(data *User) *model.User {
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
-		Uint:              data.Uint,
+		Uint:              unparseNumeric[uint](data.Uint),
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
 		Uint32:            data.Uint32,
 		Uint32Ptr:         data.Uint32Ptr,
-		Uint64:            data.Uint64,
-		Uint64Ptr:         data.Uint64Ptr,
+		Uint64:            unparseNumeric[uint64](data.Uint64),
+		Uint64Ptr:         ptrFunc(unparseNumeric[uint64])(data.Uint64Ptr),
 		Uint8:             data.Uint8,
 		Uint8Ptr:          data.Uint8Ptr,
-		UintPtr:           data.UintPtr,
-		Uintptr:           data.Uintptr,
-		UintptrPtr:        data.UintptrPtr,
+		UintPtr:           ptrFunc(unparseNumeric[uint])(data.UintPtr),
+		Uintptr:           unparseNumeric[uintptr](data.Uintptr),
+		UintptrPtr:        ptrFunc(unparseNumeric[uintptr])(data.UintptrPtr),
 	}
 }
 
