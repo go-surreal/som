@@ -20,10 +20,16 @@ func (f *Time) typeConv() jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
-	return f.optionWrap("datetime")
 
-	// DEFAULT time::now()
-	// VALUE time::now()
+	if f.NameDatabase() == "created_at" {
+		return "datetime DEFAULT time::now()"
+	}
+
+	if f.NameDatabase() == "updated_at" {
+		return "datetime DEFAULT time::now() VALUE time::now()"
+	}
+
+	return f.optionWrap("datetime")
 }
 
 func (f *Time) CodeGen() *CodeGen {
@@ -79,6 +85,12 @@ func (f *Time) convTo(ctx Context) jen.Code {
 }
 
 func (f *Time) fieldDef(ctx Context) jen.Code {
+
+	if f.NameDatabase() == "created_at" || f.NameDatabase() == "updated_at" {
+		return jen.Id(f.NameGo()).Add(f.typeConv()).
+			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	}
+
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

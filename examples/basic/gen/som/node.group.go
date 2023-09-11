@@ -9,7 +9,6 @@ import (
 	query "github.com/go-surreal/som/examples/basic/gen/som/query"
 	relate "github.com/go-surreal/som/examples/basic/gen/som/relate"
 	model "github.com/go-surreal/som/examples/basic/model"
-	"time"
 )
 
 type GroupRepo interface {
@@ -45,8 +44,6 @@ func (n *group) Create(ctx context.Context, group *model.Group) error {
 	}
 	key := "group:ulid()"
 	data := conv.FromGroup(group)
-	data.CreatedAt = time.Now()
-	data.UpdatedAt = data.CreatedAt
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -69,8 +66,6 @@ func (n *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	}
 	key := "group:" + "⟨" + id + "⟩"
 	data := conv.FromGroup(group)
-	data.CreatedAt = time.Now()
-	data.UpdatedAt = data.CreatedAt
 	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -105,7 +100,6 @@ func (n *group) Update(ctx context.Context, group *model.Group) error {
 		return errors.New("cannot update Group without existing record ID")
 	}
 	data := conv.FromGroup(group)
-	data.UpdatedAt = time.Now()
 	res, err := n.db.Update(ctx, "group:⟨"+group.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)

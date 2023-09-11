@@ -328,12 +328,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			)),
 		)
 
-	onCreatedAt := jen.Empty()
-	onUpdatedAt := jen.Empty()
-	if node.HasTimestamps() {
-		onCreatedAt = jen.Id("data").Dot("CreatedAt").Op("=").Qual("time", "Now").Call()
-		onUpdatedAt = jen.Id("data").Dot("UpdatedAt").Op("=").Id("data").Dot("CreatedAt")
-	}
+	// onCreatedAt := jen.Empty()
+	// onUpdatedAt := jen.Empty()
+	// if node.HasTimestamps() {
+	// 	onCreatedAt = jen.Id("data").Dot("CreatedAt").Op("=").Qual("time", "Now").Call()
+	// 	onUpdatedAt = jen.Id("data").Dot("UpdatedAt").Op("=").Id("data").Dot("CreatedAt")
+	// }
 
 	f.Line()
 	f.Func().
@@ -358,8 +358,8 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id("key").Op(":=").Lit(node.NameDatabase()+":ulid()"),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
 
-			jen.Add(onCreatedAt),
-			jen.Add(onUpdatedAt),
+			// jen.Add(onCreatedAt),
+			// jen.Add(onUpdatedAt),
 
 			jen.Id("raw").Op(",").Err().Op(":=").
 				Id("n").Dot("db").Dot("Create").
@@ -408,8 +408,8 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				Lit("⟨").Op("+").Id("id").Op("+").Lit("⟩"),
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
 
-			jen.Add(onCreatedAt),
-			jen.Add(onUpdatedAt),
+			// jen.Add(onCreatedAt),
+			// jen.Add(onUpdatedAt),
 
 			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Create").
 				Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
@@ -458,9 +458,9 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")), jen.True(), jen.Nil()),
 		)
 
-	if node.HasTimestamps() {
-		onUpdatedAt = jen.Id("data").Dot("UpdatedAt").Op("=").Qual("time", "Now").Call()
-	}
+	// if node.HasTimestamps() {
+	// 	onUpdatedAt = jen.Id("data").Dot("UpdatedAt").Op("=").Qual("time", "Now").Call()
+	// }
 
 	f.Line()
 	f.Func().
@@ -484,7 +484,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
 
-			jen.Add(onUpdatedAt),
+			// jen.Add(onUpdatedAt),
 
 			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Update").
 				Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().

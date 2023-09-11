@@ -44,7 +44,6 @@ func (n *person) Create(ctx context.Context, person *model.Person) error {
 	}
 	key := "person:ulid()"
 	data := conv.FromPerson(person)
-
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -67,7 +66,6 @@ func (n *person) CreateWithID(ctx context.Context, id string, person *model.Pers
 	}
 	key := "person:" + "⟨" + id + "⟩"
 	data := conv.FromPerson(person)
-
 	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -102,7 +100,6 @@ func (n *person) Update(ctx context.Context, person *model.Person) error {
 		return errors.New("cannot update Person without existing record ID")
 	}
 	data := conv.FromPerson(person)
-
 	res, err := n.db.Update(ctx, "person:⟨"+person.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)

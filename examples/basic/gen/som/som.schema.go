@@ -20,8 +20,8 @@ var tmpl = `
 
 DEFINE TABLE user SCHEMAFULL;
 DEFINE FIELD id ON TABLE user TYPE record<user> ASSERT $value != NONE AND $value != NULL AND $value != "";
-DEFINE FIELD created_at ON TABLE user TYPE datetime;
-DEFINE FIELD updated_at ON TABLE user TYPE datetime;
+DEFINE FIELD created_at ON TABLE user TYPE datetime DEFAULT time::now();
+DEFINE FIELD updated_at ON TABLE user TYPE datetime DEFAULT time::now() VALUE time::now();
 DEFINE FIELD string ON TABLE user TYPE string;
 DEFINE FIELD string_ptr ON TABLE user TYPE option<string | null>;
 DEFINE FIELD other ON TABLE user TYPE option<array | null>;
@@ -91,13 +91,13 @@ DEFINE FIELD slice_slice.* ON TABLE user TYPE option<array | null>;
 
 DEFINE TABLE group SCHEMAFULL;
 DEFINE FIELD id ON TABLE group TYPE record<group> ASSERT $value != NONE AND $value != NULL AND $value != "";
-DEFINE FIELD created_at ON TABLE group TYPE datetime;
-DEFINE FIELD updated_at ON TABLE group TYPE datetime;
+DEFINE FIELD created_at ON TABLE group TYPE datetime DEFAULT time::now();
+DEFINE FIELD updated_at ON TABLE group TYPE datetime DEFAULT time::now() VALUE time::now();
 DEFINE FIELD name ON TABLE group TYPE string;
 
 DEFINE TABLE group_member SCHEMAFULL;
-DEFINE FIELD created_at ON TABLE group_member TYPE datetime;
-DEFINE FIELD updated_at ON TABLE group_member TYPE datetime;
+DEFINE FIELD created_at ON TABLE group_member TYPE datetime DEFAULT time::now();
+DEFINE FIELD updated_at ON TABLE group_member TYPE datetime DEFAULT time::now() VALUE time::now();
 DEFINE FIELD meta ON TABLE group_member TYPE object;
 DEFINE FIELD meta.is_admin ON TABLE group_member TYPE bool;
 DEFINE FIELD meta.is_active ON TABLE group_member TYPE bool;
