@@ -124,7 +124,7 @@ func (g *Group) GetMembers() []User {
 }
 
 type GroupMember struct {
-	som.Edge
+	som.Edge[User, Group]
 	som.Timestamps
 
 	User  User  `som:"in"`
