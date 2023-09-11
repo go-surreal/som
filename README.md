@@ -88,10 +88,10 @@ generate code that lives within your project, but the package itself does not ne
 -->
 
 Currently, the generated code does not make use of the official SurrealDB go client.
-Instead, it is using a custom implementation found in the `sdbc` package of this repo.
+Instead, it is using a custom implementation called [sdbc](https://github.com/go-surreal/sdbc).
 Until the official client is considered stable, this will likely not change.
-In the future, the `sdbc` package might be moved to a separate repository.
 Final goal would be to make it possible to use both the official client and the custom implementation.
+As of now, this might change at any time.
 
 ### Versioning
 

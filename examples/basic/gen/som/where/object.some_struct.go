@@ -2,9 +2,9 @@
 package where
 
 import (
-	uuid "github.com/google/uuid"
 	lib "github.com/go-surreal/som/examples/basic/gen/som/internal/lib"
 	model "github.com/go-surreal/som/examples/basic/model"
+	uuid "github.com/google/uuid"
 )
 
 func newSomeStruct[T any](key lib.Key[T]) someStruct[T] {
