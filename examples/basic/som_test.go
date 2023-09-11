@@ -5,6 +5,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	sombase "github.com/go-surreal/som"
 	"github.com/go-surreal/som/examples/basic/gen/som"
+	"github.com/go-surreal/som/examples/basic/gen/som/by"
 	"github.com/go-surreal/som/examples/basic/gen/som/where"
 	"github.com/go-surreal/som/examples/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -99,12 +100,17 @@ func TestWithDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cursor := ""
+
 	userOut, err := client.UserRepo().Query().
 		Filter(
 			where.User.ID.Equal(userIn.ID()),
 			where.User.String.Equal(str),
 		).
-		First(ctx)
+		Order(
+			by.User.Time.Desc(),
+		).
+		Paginate(ctx, 50, cursor)
 
 	if err != nil {
 		t.Fatal(err)
