@@ -42,22 +42,19 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 	if movie.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	key := "movie"
+	key := "movie:ulid()"
 	data := conv.FromMovie(movie)
 
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNodes []*conv.Movie
-	err = n.unmarshal(raw, &convNodes)
+	var convNode *conv.Movie
+	err = n.unmarshal(raw, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
-	if len(convNodes) < 1 {
-		return errors.New("response is empty")
-	}
-	*movie = *conv.ToMovie(convNodes[0])
+	*movie = *conv.ToMovie(convNode)
 	return nil
 }
 

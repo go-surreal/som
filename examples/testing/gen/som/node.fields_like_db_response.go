@@ -42,22 +42,19 @@ func (n *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse 
 	if fieldsLikeDBResponse.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	key := "fields_like_db_response"
+	key := "fields_like_db_response:ulid()"
 	data := conv.FromFieldsLikeDBResponse(fieldsLikeDBResponse)
 
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNodes []*conv.FieldsLikeDBResponse
-	err = n.unmarshal(raw, &convNodes)
+	var convNode *conv.FieldsLikeDBResponse
+	err = n.unmarshal(raw, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
-	if len(convNodes) < 1 {
-		return errors.New("response is empty")
-	}
-	*fieldsLikeDBResponse = *conv.ToFieldsLikeDBResponse(convNodes[0])
+	*fieldsLikeDBResponse = *conv.ToFieldsLikeDBResponse(convNode)
 	return nil
 }
 

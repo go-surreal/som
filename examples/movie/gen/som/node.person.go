@@ -42,22 +42,19 @@ func (n *person) Create(ctx context.Context, person *model.Person) error {
 	if person.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	key := "person"
+	key := "person:ulid()"
 	data := conv.FromPerson(person)
 
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var convNodes []*conv.Person
-	err = n.unmarshal(raw, &convNodes)
+	var convNode *conv.Person
+	err = n.unmarshal(raw, &convNode)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
-	if len(convNodes) < 1 {
-		return errors.New("response is empty")
-	}
-	*person = *conv.ToPerson(convNodes[0])
+	*person = *conv.ToPerson(convNode)
 	return nil
 }
 
