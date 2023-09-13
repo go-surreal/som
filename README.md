@@ -51,7 +51,7 @@ in the database, without the use of complicated JOINs and without bringing the d
 ## Getting started
 
 *Please note: This package is currently tested against version 
-[1.0.0-beta.11](https://surrealdb.com/releases#v1-0-0-beta-11)
+[1.0.0-beta.12](https://surrealdb.com/releases#v1-0-0-beta-12)
 of SurrealDB.*
 
 ### Disclaimer
