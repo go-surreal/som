@@ -44,7 +44,6 @@ func (n *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse 
 	}
 	key := "fields_like_db_response:ulid()"
 	data := conv.FromFieldsLikeDBResponse(fieldsLikeDBResponse)
-
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -67,7 +66,6 @@ func (n *fieldsLikeDBResponse) CreateWithID(ctx context.Context, id string, fiel
 	}
 	key := "fields_like_db_response:" + "⟨" + id + "⟩"
 	data := conv.FromFieldsLikeDBResponse(fieldsLikeDBResponse)
-
 	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -102,7 +100,6 @@ func (n *fieldsLikeDBResponse) Update(ctx context.Context, fieldsLikeDBResponse 
 		return errors.New("cannot update FieldsLikeDBResponse without existing record ID")
 	}
 	data := conv.FromFieldsLikeDBResponse(fieldsLikeDBResponse)
-
 	res, err := n.db.Update(ctx, "fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)

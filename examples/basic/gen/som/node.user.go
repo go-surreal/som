@@ -9,7 +9,6 @@ import (
 	query "github.com/go-surreal/som/examples/basic/gen/som/query"
 	relate "github.com/go-surreal/som/examples/basic/gen/som/relate"
 	model "github.com/go-surreal/som/examples/basic/model"
-	"time"
 )
 
 type UserRepo interface {
@@ -45,8 +44,6 @@ func (n *user) Create(ctx context.Context, user *model.User) error {
 	}
 	key := "user:ulid()"
 	data := conv.FromUser(user)
-	data.CreatedAt = time.Now()
-	data.UpdatedAt = data.CreatedAt
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -69,8 +66,6 @@ func (n *user) CreateWithID(ctx context.Context, id string, user *model.User) er
 	}
 	key := "user:" + "⟨" + id + "⟩"
 	data := conv.FromUser(user)
-	data.CreatedAt = time.Now()
-	data.UpdatedAt = data.CreatedAt
 	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -105,7 +100,6 @@ func (n *user) Update(ctx context.Context, user *model.User) error {
 		return errors.New("cannot update User without existing record ID")
 	}
 	data := conv.FromUser(user)
-	data.UpdatedAt = time.Now()
 	res, err := n.db.Update(ctx, "user:⟨"+user.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)

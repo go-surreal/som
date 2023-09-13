@@ -44,7 +44,6 @@ func (n *movie) Create(ctx context.Context, movie *model.Movie) error {
 	}
 	key := "movie:ulid()"
 	data := conv.FromMovie(movie)
-
 	raw, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -67,7 +66,6 @@ func (n *movie) CreateWithID(ctx context.Context, id string, movie *model.Movie)
 	}
 	key := "movie:" + "⟨" + id + "⟩"
 	data := conv.FromMovie(movie)
-
 	res, err := n.db.Create(ctx, key, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
@@ -102,7 +100,6 @@ func (n *movie) Update(ctx context.Context, movie *model.Movie) error {
 		return errors.New("cannot update Movie without existing record ID")
 	}
 	data := conv.FromMovie(movie)
-
 	res, err := n.db.Update(ctx, "movie:⟨"+movie.ID()+"⟩", data)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)

@@ -11,8 +11,8 @@ import (
 
 type Group struct {
 	ID        string        `json:"id,omitempty"`
-	CreatedAt time.Time     `json:"created_at"`
-	UpdatedAt time.Time     `json:"updated_at"`
+	CreatedAt *time.Time    `json:"created_at,omitempty"`
+	UpdatedAt *time.Time    `json:"updated_at,omitempty"`
 	Name      string        `json:"name"`
 	Members   []GroupMember `json:"members,omitempty"`
 }
@@ -32,7 +32,7 @@ func ToGroup(data *Group) *model.Group {
 		Members:    mapSlice(data.Members, noPtrFunc(ToGroupMember)),
 		Name:       data.Name,
 		Node:       som.NewNode(parseDatabaseID("group", data.ID)),
-		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		Timestamps: som.NewTimestamps(*data.CreatedAt, *data.UpdatedAt),
 	}
 }
 

@@ -119,6 +119,37 @@ func TestWithDatabase(t *testing.T) {
 	)
 }
 
+func TestTimestamps(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	user := &model.User{}
+
+	err := client.UserRepo().Create(ctx, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, !user.CreatedAt().IsZero())
+	assert.Check(t, !user.UpdatedAt().IsZero())
+	assert.Check(t, time.Since(user.CreatedAt()) < time.Second)
+	assert.Check(t, time.Since(user.UpdatedAt()) < time.Second)
+
+	time.Sleep(time.Second)
+
+	err = client.UserRepo().Update(ctx, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, !user.CreatedAt().IsZero())
+	assert.Check(t, !user.UpdatedAt().IsZero())
+	assert.Check(t, time.Since(user.CreatedAt()) > time.Second)
+	assert.Check(t, time.Since(user.UpdatedAt()) < time.Second)
+}
+
 func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 
