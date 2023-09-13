@@ -3,7 +3,7 @@ package conv
 
 import (
 	som "github.com/go-surreal/som"
-	model "github.com/go-surreal/som/examples/movie/model"
+	model "github.com/go-surreal/som/tests/movie/model"
 )
 
 type ActedIn struct {

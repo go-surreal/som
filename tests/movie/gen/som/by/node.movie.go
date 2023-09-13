@@ -2,8 +2,8 @@
 package by
 
 import (
-	lib "github.com/go-surreal/som/examples/movie/gen/som/internal/lib"
-	model "github.com/go-surreal/som/examples/movie/model"
+	lib "github.com/go-surreal/som/tests/movie/gen/som/internal/lib"
+	model "github.com/go-surreal/som/tests/movie/model"
 )
 
 var Movie = newMovie[model.Movie]("")

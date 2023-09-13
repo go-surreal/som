@@ -2,8 +2,8 @@
 package where
 
 import (
-	lib "github.com/go-surreal/som/examples/testing/gen/som/internal/lib"
-	model "github.com/go-surreal/som/examples/testing/model"
+	lib "github.com/go-surreal/som/tests/testing/gen/som/internal/lib"
+	model "github.com/go-surreal/som/tests/testing/model"
 )
 
 var FieldsLikeDBResponse = newFieldsLikeDBResponse[model.FieldsLikeDBResponse](lib.NewKey[model.FieldsLikeDBResponse]())

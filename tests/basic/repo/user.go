@@ -2,11 +2,11 @@ package repo
 
 import (
 	"context"
-	"github.com/go-surreal/som/examples/basic/gen/som"
-	"github.com/go-surreal/som/examples/basic/gen/som/by"
-	"github.com/go-surreal/som/examples/basic/gen/som/where"
-	"github.com/go-surreal/som/examples/basic/gen/som/with"
-	"github.com/go-surreal/som/examples/basic/model"
+	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/by"
+	"github.com/go-surreal/som/tests/basic/gen/som/where"
+	"github.com/go-surreal/som/tests/basic/gen/som/with"
+	"github.com/go-surreal/som/tests/basic/model"
 	"time"
 )
 

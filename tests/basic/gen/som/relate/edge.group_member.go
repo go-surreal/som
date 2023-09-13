@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	conv "github.com/go-surreal/som/examples/basic/gen/som/conv"
-	model "github.com/go-surreal/som/examples/basic/model"
+	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type groupMember struct {

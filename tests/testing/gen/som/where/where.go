@@ -2,7 +2,7 @@
 
 package where
 
-import "github.com/go-surreal/som/examples/testing/gen/som/internal/lib"
+import "github.com/go-surreal/som/tests/testing/gen/som/internal/lib"
 
 func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 	return lib.All[T](filters)

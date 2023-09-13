@@ -4,7 +4,7 @@ package conv
 import (
 	"encoding/json"
 	som "github.com/go-surreal/som"
-	model "github.com/go-surreal/som/examples/movie/model"
+	model "github.com/go-surreal/som/tests/movie/model"
 	"strings"
 )
 

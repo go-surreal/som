@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	conv "github.com/go-surreal/som/examples/movie/gen/som/conv"
-	query "github.com/go-surreal/som/examples/movie/gen/som/query"
-	relate "github.com/go-surreal/som/examples/movie/gen/som/relate"
-	model "github.com/go-surreal/som/examples/movie/model"
+	conv "github.com/go-surreal/som/tests/movie/gen/som/conv"
+	query "github.com/go-surreal/som/tests/movie/gen/som/query"
+	relate "github.com/go-surreal/som/tests/movie/gen/som/relate"
+	model "github.com/go-surreal/som/tests/movie/model"
 )
 
 type MovieRepo interface {

@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	conv "github.com/go-surreal/som/examples/testing/gen/som/conv"
-	query "github.com/go-surreal/som/examples/testing/gen/som/query"
-	relate "github.com/go-surreal/som/examples/testing/gen/som/relate"
-	model "github.com/go-surreal/som/examples/testing/model"
+	conv "github.com/go-surreal/som/tests/testing/gen/som/conv"
+	query "github.com/go-surreal/som/tests/testing/gen/som/query"
+	relate "github.com/go-surreal/som/tests/testing/gen/som/relate"
+	model "github.com/go-surreal/som/tests/testing/model"
 )
 
 type FieldsLikeDBResponseRepo interface {

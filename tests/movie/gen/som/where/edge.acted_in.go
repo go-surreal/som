@@ -2,8 +2,8 @@
 package where
 
 import (
-	lib "github.com/go-surreal/som/examples/movie/gen/som/internal/lib"
-	model "github.com/go-surreal/som/examples/movie/model"
+	lib "github.com/go-surreal/som/tests/movie/gen/som/internal/lib"
+	model "github.com/go-surreal/som/tests/movie/model"
 )
 
 var ActedIn = newActedIn[model.ActedIn](lib.NewKey[model.ActedIn]())

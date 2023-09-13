@@ -3,11 +3,11 @@ package testing
 import (
 	"context"
 	"github.com/docker/docker/api/types/container"
-	"github.com/go-surreal/som/examples/testing/gen/som/query"
-	"github.com/go-surreal/som/examples/testing/gen/som/where"
+	"github.com/go-surreal/som/tests/testing/gen/som/query"
+	"github.com/go-surreal/som/tests/testing/gen/som/where"
 
-	"github.com/go-surreal/som/examples/testing/gen/som"
-	"github.com/go-surreal/som/examples/testing/model"
+	"github.com/go-surreal/som/tests/testing/gen/som"
+	"github.com/go-surreal/som/tests/testing/model"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"

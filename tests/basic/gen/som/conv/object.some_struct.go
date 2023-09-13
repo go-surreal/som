@@ -2,7 +2,7 @@
 package conv
 
 import (
-	model "github.com/go-surreal/som/examples/basic/model"
+	model "github.com/go-surreal/som/tests/basic/model"
 	uuid "github.com/google/uuid"
 	"time"
 )

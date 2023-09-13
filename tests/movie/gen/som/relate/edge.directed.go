@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	conv "github.com/go-surreal/som/examples/movie/gen/som/conv"
-	model "github.com/go-surreal/som/examples/movie/model"
+	conv "github.com/go-surreal/som/tests/movie/gen/som/conv"
+	model "github.com/go-surreal/som/tests/movie/model"
 )
 
 type directed struct {

@@ -1,4 +1,4 @@
-module github.com/go-surreal/som/examples/testing
+module github.com/go-surreal/som/tests/testing
 
 go 1.21.0
 

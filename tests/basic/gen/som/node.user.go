@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	conv "github.com/go-surreal/som/examples/basic/gen/som/conv"
-	query "github.com/go-surreal/som/examples/basic/gen/som/query"
-	relate "github.com/go-surreal/som/examples/basic/gen/som/relate"
-	model "github.com/go-surreal/som/examples/basic/model"
+	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
+	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type UserRepo interface {

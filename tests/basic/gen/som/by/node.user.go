@@ -2,8 +2,8 @@
 package by
 
 import (
-	lib "github.com/go-surreal/som/examples/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/examples/basic/model"
+	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 var User = newUser[model.User]("")

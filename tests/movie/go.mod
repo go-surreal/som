@@ -1,4 +1,4 @@
-module github.com/go-surreal/som/examples/movie
+module github.com/go-surreal/som/tests/movie
 
 go 1.21.0
 

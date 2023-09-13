@@ -22,17 +22,17 @@ tasks:
     aliases: [ g ]
     desc: "Generate code for the example codebase."
     cmds:
-      - cd examples/testing && go generate gen.go
-      - cd examples/basic && go generate gen.go
-      - cd examples/movie && go generate gen.go
+      - cd tests/testing && go generate gen.go
+      - cd tests/basic && go generate gen.go
+      - cd tests/movie && go generate gen.go
     sources:
-      - examples/testing/model/**/*
-      - examples/basic/model/**/*
-      - examples/movie/model/**/*
+      - tests/testing/model/**/*
+      - tests/basic/model/**/*
+      - tests/movie/model/**/*
     generates:
-      - examples/testing/gen/som/**/*
-      - examples/basic/gen/som/**/*
-      - examples/movie/gen/som/**/*
+      - tests/testing/gen/som/**/*
+      - tests/basic/gen/som/**/*
+      - tests/movie/gen/som/**/*
 
   example:
     aliases: [ e ]
@@ -53,9 +53,9 @@ tasks:
     deps: [ gen ]
     cmds:
       - go test ./...
-      - cd examples/testing && go test ./...
-      - cd examples/basic && go test ./...
-      - cd examples/movie && go test ./...
+      - cd tests/testing && go test ./...
+      - cd tests/basic && go test ./...
+      - cd tests/movie && go test ./...
 
   benchmark:
     aliases: [ b ]

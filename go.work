@@ -4,7 +4,7 @@ toolchain go1.21.0
 
 use (
 	.
-	examples/basic
-	examples/movie
-	examples/testing
+	tests/basic
+	tests/movie
+	tests/testing
 )
