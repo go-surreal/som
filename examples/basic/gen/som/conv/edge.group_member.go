@@ -18,11 +18,7 @@ func FromGroupMember(data *model.GroupMember) *GroupMember {
 	if data == nil {
 		return nil
 	}
-	return &GroupMember{
-		CreatedAt: mapTimestamp(data.CreatedAt()),
-		Meta:      noPtrFunc(fromGroupMemberMeta)(data.Meta),
-		UpdatedAt: mapTimestamp(data.UpdatedAt()),
-	}
+	return &GroupMember{Meta: noPtrFunc(fromGroupMemberMeta)(data.Meta)}
 }
 
 func ToGroupMember(data *GroupMember) *model.GroupMember {

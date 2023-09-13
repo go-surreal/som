@@ -22,11 +22,17 @@ func (f *Time) typeConv() jen.Code {
 
 func (f *Time) TypeDatabase() string {
 	if f.source.IsCreatedAt {
-		return "datetime DEFAULT time::now()"
+		// The type must be optional for now, otherwise the database will complain that the field
+		// is none/null, even though it should always receive a value from the database itself.
+		// In practice this field can never be empty thanks to the definition.
+		return "option<datetime> VALUE $before OR time::now()"
 	}
 
 	if f.source.IsUpdatedAt {
-		return "datetime DEFAULT time::now() VALUE time::now()"
+		// The type must be optional for now, otherwise the database will complain that the field
+		// is none/null, even though it should always receive a value from the database itself.
+		// In practice this field can never be empty thanks to the definition.
+		return "option<datetime> VALUE time::now()"
 	}
 
 	return f.optionWrap("datetime")
@@ -79,9 +85,7 @@ func (f *Time) sortInit(ctx Context) jen.Code {
 
 func (f *Time) convFrom(ctx Context) jen.Code {
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return jen.Id("mapTimestamp").Call(
-			jen.Id("data").Dot(f.NameGo()).Call(),
-		)
+		return nil // never sent a timestamp to the database, as it will be set automatically
 	}
 
 	return jen.Id("data").Dot(f.NameGo())
@@ -89,6 +93,7 @@ func (f *Time) convFrom(ctx Context) jen.Code {
 
 func (f *Time) convTo(ctx Context) jen.Code {
 	if f.source.IsCreatedAt {
+		// TODO: unsafe nil dereference (okay, because it can never really be nil?)
 		return jen.Qual(def.PkgSom, "NewTimestamps").Call(
 			jen.Op("*").Id("data").Dot("CreatedAt"),
 			jen.Op("*").Id("data").Dot("UpdatedAt"),

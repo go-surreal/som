@@ -58,7 +58,6 @@ func FromUser(data *model.User) *User {
 	return &User{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
-		CreatedAt:         mapTimestamp(data.CreatedAt()),
 		EnumPtr:           data.EnumPtr,
 		EnumPtrSlice:      data.EnumPtrSlice,
 		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
@@ -91,7 +90,6 @@ func FromUser(data *model.User) *User {
 		TimePtr:           data.TimePtr,
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
-		UpdatedAt:         mapTimestamp(data.UpdatedAt()),
 	}
 }
 
