@@ -38,7 +38,5 @@ func TestQueryCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// TODO: add database cleanup?
-
 	assert.Equal(t, count, dbCount)
 }
