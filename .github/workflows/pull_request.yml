@@ -215,14 +215,6 @@ jobs:
         working-directory: .
         run: go test -v ./...
 
-      - name: Test Example Testing
-        working-directory: tests/testing
-        run: go test -v ./...
-
-      - name: Test Example Basic
+      - name: Test Basic
         working-directory: tests/basic
-        run: go test -v ./...
-
-      - name: Test Example Movie
-        working-directory: tests/movie
         run: go test -v ./...

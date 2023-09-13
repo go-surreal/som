@@ -4,8 +4,9 @@ package som
 import "context"
 
 type Client interface {
-	UserRepo() UserRepo
 	GroupRepo() GroupRepo
+	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
+	AllFieldTypesRepo() AllFieldTypesRepo
 	ApplySchema(ctx context.Context) error
 	Close()
 }
