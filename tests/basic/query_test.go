@@ -26,13 +26,13 @@ func TestQueryCount(t *testing.T) {
 	count := rand.Intn(randMax-randMin) + randMin
 
 	for i := 0; i < count; i++ {
-		err := client.UserRepo().Create(ctx, &model.User{})
+		err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{})
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	dbCount, err := client.UserRepo().Query().Count(ctx)
+	dbCount, err := client.AllFieldTypesRepo().Query().Count(ctx)
 
 	if err != nil {
 		t.Fatal(err)

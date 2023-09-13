@@ -36,7 +36,7 @@ func conf(endpoint string) som.Config {
 func TestQuery(t *testing.T) {
 	client := &som.ClientImpl{}
 
-	query := client.UserRepo().Query().
+	query := client.AllFieldTypesRepo().Query().
 		Filter(
 			// where.User.Groups(
 			// 	where.Group.Name.Equal(""),
@@ -44,7 +44,7 @@ func TestQuery(t *testing.T) {
 			// ).Count().GreaterThan(3),
 			// where.User.Groups(where.Group.CreatedAt.After(time.Now())),
 
-			where.User.
+			where.AllFieldTypes.
 				MemberOf(
 					where.GroupMember.CreatedAt.Before(time.Now()),
 				).
@@ -57,7 +57,7 @@ func TestQuery(t *testing.T) {
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM user WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)])",
+		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)])",
 		// "SELECT * FROM user WHERE (count(groups[WHERE (name = $0 AND created_at INSIDE $1)]) > $2 "+
 		// 	"AND groups[WHERE (created_at > $3)]) ",
 		query.Describe(),
@@ -87,22 +87,22 @@ func TestWithDatabase(t *testing.T) {
 	str := "Some User"
 	uid := uuid.New()
 
-	userNew := model.User{
+	userNew := model.AllFieldTypes{
 		String: str,
 		UUID:   uid,
 	}
 
 	userIn := userNew
 
-	err := client.UserRepo().Create(ctx, &userIn)
+	err := client.AllFieldTypesRepo().Create(ctx, &userIn)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	userOut, err := client.UserRepo().Query().
+	userOut, err := client.AllFieldTypesRepo().Query().
 		Filter(
-			where.User.ID.Equal(userIn.ID()),
-			where.User.String.Equal(str),
+			where.AllFieldTypes.ID.Equal(userIn.ID()),
+			where.AllFieldTypes.String.Equal(str),
 		).
 		First(ctx)
 
@@ -125,9 +125,9 @@ func TestTimestamps(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	user := &model.User{}
+	user := &model.AllFieldTypes{}
 
-	err := client.UserRepo().Create(ctx, user)
+	err := client.AllFieldTypesRepo().Create(ctx, user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestTimestamps(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	err = client.UserRepo().Update(ctx, user)
+	err = client.AllFieldTypesRepo().Update(ctx, user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,11 +159,11 @@ func FuzzWithDatabase(f *testing.F) {
 	f.Add("Some User")
 
 	f.Fuzz(func(t *testing.T, str string) {
-		userIn := &model.User{
+		userIn := &model.AllFieldTypes{
 			String: str,
 		}
 
-		err := client.UserRepo().Create(ctx, userIn)
+		err := client.AllFieldTypesRepo().Create(ctx, userIn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -172,9 +172,9 @@ func FuzzWithDatabase(f *testing.F) {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
-		userOut, err := client.UserRepo().Query().
+		userOut, err := client.AllFieldTypesRepo().Query().
 			Filter(
-				where.User.ID.Equal(userIn.ID()),
+				where.AllFieldTypes.ID.Equal(userIn.ID()),
 			).
 			First(ctx)
 
@@ -206,11 +206,11 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Skip("id is not a valid utf8 string")
 		}
 
-		userIn := &model.User{
+		userIn := &model.AllFieldTypes{
 			String: "1",
 		}
 
-		err := client.UserRepo().CreateWithID(ctx, id, userIn)
+		err := client.AllFieldTypesRepo().CreateWithID(ctx, id, userIn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -219,7 +219,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
-		userOut, ok, err := client.UserRepo().Read(ctx, userIn.ID())
+		userOut, ok, err := client.AllFieldTypesRepo().Read(ctx, userIn.ID())
 
 		if err != nil {
 			t.Fatal(err)
@@ -234,14 +234,14 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 		userOut.String = "2"
 
-		err = client.UserRepo().Update(ctx, userOut)
+		err = client.AllFieldTypesRepo().Update(ctx, userOut)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		assert.Equal(t, "2", userOut.String)
 
-		err = client.UserRepo().Delete(ctx, userOut)
+		err = client.AllFieldTypesRepo().Delete(ctx, userOut)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -257,11 +257,11 @@ func BenchmarkWithDatabase(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		userIn := &model.User{
+		userIn := &model.AllFieldTypes{
 			String: "Some User",
 		}
 
-		err := client.UserRepo().Create(ctx, userIn)
+		err := client.AllFieldTypesRepo().Create(ctx, userIn)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -270,9 +270,9 @@ func BenchmarkWithDatabase(b *testing.B) {
 			b.Fatal("user ID must not be empty after create call")
 		}
 
-		userOut, err := client.UserRepo().Query().
+		userOut, err := client.AllFieldTypesRepo().Query().
 			Filter(
-				where.User.ID.Equal(userIn.ID()),
+				where.AllFieldTypes.ID.Equal(userIn.ID()),
 			).
 			First(ctx)
 
@@ -290,24 +290,24 @@ func TestAsync(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	err := client.UserRepo().Create(ctx, &model.User{})
+	err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	resCh := client.UserRepo().Query().
+	resCh := client.AllFieldTypesRepo().Query().
 		Filter().
 		CountAsync(ctx)
 
 	assert.NilError(t, <-resCh.Err())
 	assert.Equal(t, 1, <-resCh.Val())
 
-	err = client.UserRepo().Create(ctx, &model.User{})
+	err = client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	resCh = client.UserRepo().Query().
+	resCh = client.AllFieldTypesRepo().Query().
 		Filter().
 		CountAsync(ctx)
 

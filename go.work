@@ -5,6 +5,4 @@ toolchain go1.21.0
 use (
 	.
 	tests/basic
-	tests/movie
-	tests/testing
 )
