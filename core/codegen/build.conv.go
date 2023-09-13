@@ -272,8 +272,8 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 
 				if elem.HasTimestamps() {
 					d[jen.Id("Timestamps")] = jen.Qual(def.PkgSom, "NewTimestamps").Call(
-						jen.Id("data").Dot("CreatedAt"),
-						jen.Id("data").Dot("UpdatedAt"),
+						jen.Op("*").Id("data").Dot("CreatedAt"),
+						jen.Op("*").Id("data").Dot("UpdatedAt"),
 					)
 				}
 			}))))

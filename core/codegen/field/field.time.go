@@ -20,12 +20,11 @@ func (f *Time) typeConv() jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
-
-	if f.NameDatabase() == "created_at" {
+	if f.source.IsCreatedAt {
 		return "datetime DEFAULT time::now()"
 	}
 
-	if f.NameDatabase() == "updated_at" {
+	if f.source.IsUpdatedAt {
 		return "datetime DEFAULT time::now() VALUE time::now()"
 	}
 
@@ -87,7 +86,7 @@ func (f *Time) convTo(ctx Context) jen.Code {
 func (f *Time) fieldDef(ctx Context) jen.Code {
 
 	if f.NameDatabase() == "created_at" || f.NameDatabase() == "updated_at" {
-		return jen.Id(f.NameGo()).Add(f.typeConv()).
+		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv()).
 			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 	}
 

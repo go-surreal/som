@@ -12,8 +12,8 @@ import (
 
 type User struct {
 	ID                string         `json:"id,omitempty"`
-	CreatedAt         time.Time      `json:"created_at,omitempty"`
-	UpdatedAt         time.Time      `json:"updated_at,omitempty"`
+	CreatedAt         *time.Time     `json:"created_at,omitempty"`
+	UpdatedAt         *time.Time     `json:"updated_at,omitempty"`
 	String            string         `json:"string"`
 	StringPtr         *string        `json:"string_ptr"`
 	Other             []string       `json:"other"`
@@ -132,7 +132,7 @@ func ToUser(data *User) *model.User {
 		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(toSomeStruct)),
 		Time:              data.Time,
 		TimePtr:           data.TimePtr,
-		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		Timestamps:        som.NewTimestamps(*data.CreatedAt, *data.UpdatedAt),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
 	}
