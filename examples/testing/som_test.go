@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "1.0.0-beta.11"
+	surrealDBContainerVersion = "1.0.0-beta.12"
 	containerName             = "som_test_surrealdb"
 	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
@@ -228,7 +228,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 				//
 				// assert.Check(t, is.Equal(status, created.Status))
 
-				t.Fatal("for beta.11 live queries with filters should not work yet")
+				t.Fatal("for beta.12 live queries with filters should not work yet")
 			}
 
 		case <-time.After(1 * time.Second):
