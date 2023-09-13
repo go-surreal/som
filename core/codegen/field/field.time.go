@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -41,9 +42,10 @@ func (f *Time) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		convFrom:    f.convFrom,
+		convTo:      f.convTo,
+		convToField: f.convToField,
+		fieldDef:    f.fieldDef,
 	}
 }
 
@@ -76,16 +78,41 @@ func (f *Time) sortInit(ctx Context) jen.Code {
 }
 
 func (f *Time) convFrom(ctx Context) jen.Code {
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return jen.Id("mapTimestamp").Call(
+			jen.Id("data").Dot(f.NameGo()).Call(),
+		)
+	}
+
 	return jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Time) convTo(ctx Context) jen.Code {
+	if f.source.IsCreatedAt {
+		return jen.Qual(def.PkgSom, "NewTimestamps").Call(
+			jen.Op("*").Id("data").Dot("CreatedAt"),
+			jen.Op("*").Id("data").Dot("UpdatedAt"),
+		)
+	}
+
+	if f.source.IsUpdatedAt {
+		return nil
+	}
+
 	return jen.Id("data").Dot(f.NameGo())
+}
+
+func (f *Time) convToField(ctx Context) jen.Code {
+	if !f.source.IsCreatedAt {
+		return nil
+	}
+
+	return jen.Id("Timestamps")
 }
 
 func (f *Time) fieldDef(ctx Context) jen.Code {
 
-	if f.NameDatabase() == "created_at" || f.NameDatabase() == "updated_at" {
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv()).
 			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 	}

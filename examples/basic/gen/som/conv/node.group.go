@@ -21,7 +21,11 @@ func FromGroup(data *model.Group) *Group {
 	if data == nil {
 		return nil
 	}
-	return &Group{Name: data.Name}
+	return &Group{
+		CreatedAt: mapTimestamp(data.CreatedAt()),
+		Name:      data.Name,
+		UpdatedAt: mapTimestamp(data.UpdatedAt()),
+	}
 }
 
 func ToGroup(data *Group) *model.Group {

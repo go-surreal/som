@@ -5,6 +5,7 @@ package conv
 import (
 	"strconv"
 	"strings"
+	"time"
 )
 
 func parseDatabaseID(node string, id string) string {
@@ -96,4 +97,12 @@ func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
 		}
 		return *out
 	}
+}
+
+func mapTimestamp(val time.Time) *time.Time {
+	if val.IsZero() {
+		return nil
+	}
+
+	return &val
 }
