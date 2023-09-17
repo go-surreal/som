@@ -140,6 +140,7 @@ import (
     "log"
     
     "<root>/gen/som"
+    "<root>/gen/som/where"
     "<root>/model"
 )
 
