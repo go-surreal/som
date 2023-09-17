@@ -14,8 +14,11 @@
   <a href="https://goreportcard.com/report/github.com/go-surreal/som">
     <img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card">
   </a>
-  <a href="https://github.com/go-surreal/som/actions/workflows/pull_request.yml">
-    <img src="https://github.com/go-surreal/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
+  <a href="https://github.com/go-surreal/sdbc/actions/workflows/tests_codecov.yml">
+    <img src="https://github.com/go-surreal/sdbc/actions/workflows/tests_codecov.yml/badge.svg?branch=main" alt="Tests">
+  </a>
+  <a href="https://codecov.io/gh/go-surreal/som" > 
+    <img src="https://codecov.io/gh/go-surreal/som/graph/badge.svg?token=" alt="Codecov"/> 
   </a>
   <a href="https://discord.gg/surrealdb">
     <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord">
