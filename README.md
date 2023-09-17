@@ -82,11 +82,6 @@ Generate the client code:
 go run github.com/go-surreal/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
 
-<!--
-The package `github.com/go-surreal/som` can be considered an invisible dependency for your project. All it does is to
-generate code that lives within your project, but the package itself does not need to be added to the `go.mod` file.
--->
-
 Currently, the generated code does not make use of the official SurrealDB go client.
 Instead, it is using a custom implementation called [sdbc](https://github.com/go-surreal/sdbc).
 Until the official client is considered stable, this will likely not change.
@@ -117,10 +112,12 @@ language itself. For further information, please refer to the
 
 tbd.
 
-## Roadmap
+[//]: # (## Roadmap)
 
-You can find the official roadmap [here](ROADMAP.md). As this might not always be the full
-list of all planned changes, please take a look at the issue section on GitHub as well.
+[//]: # ()
+[//]: # (You can find the official roadmap [here]&#40;ROADMAP.md&#41;. As this might not always be the full)
+
+[//]: # (list of all planned changes, please take a look at the issue section on GitHub as well.)
 
 ## How to contribute
 
@@ -150,15 +147,8 @@ You can find a separate document for the FAQs [here](FAQ.md).
 
 ## Maintainers & Contributors
 
-- Marc Binz (Author/Owner)
+Please take a look at the [MAINTAINERS.md](MAINTAINERS.md) file.
 
 ## References
 
-- https://surrealdb.com/docs
-- https://entgo.io
-- https://github.com/d-tsuji/awesome-go-orms
-- https://github.com/doug-martin/goqu
-- https://github.com/sharovik/orm
-- https://github.com/StarlaneStudios/cirql
-- https://github.com/uptrace/bun
-- https://atlasgo.io/
+- [Official SurrealDB documentation](https://surrealdb.com/docs)
