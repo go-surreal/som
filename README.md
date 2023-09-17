@@ -18,7 +18,7 @@
     <img src="https://github.com/go-surreal/sdbc/actions/workflows/tests_codecov.yml/badge.svg?branch=main" alt="Tests">
   </a>
   <a href="https://codecov.io/gh/go-surreal/som" > 
-    <img src="https://codecov.io/gh/go-surreal/som/graph/badge.svg?token=" alt="Codecov"/> 
+    <img src="https://codecov.io/gh/go-surreal/som/graph/badge.svg?token=FHSP3ZAKRC" alt="Codecov"/> 
   </a>
   <a href="https://discord.gg/surrealdb">
     <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord">
