@@ -238,6 +238,43 @@ type Z struct {
 DEFINE FIELD xy ON z TYPE record(x, y)
 ```
 
+## Define custom (type-safe) views
+
+```go
+
+db.Define().View("some_name").
+	With(
+	    field.User.Name(),	
+    ).
+	By(
+	    ...	
+    )
+
+```
+
+Based on the definition a view will be created in the database and 
+a type generated that can be consumed by the usual query builder.
+
+### Add dirty flag handling
+
+- cache the data itself within the read model (would double the memory usage)
+- cache the data in a separate cache (would require a cache invalidation strategy)
+
+### Read through GORM to find more ideas
+
+- https://gorm.io/docs
+
+### Add ability to deep load models
+
+```go
+
+err := db.User.Fetch(ctx, []model.User{}, 
+	field.User.Groups(),
+	field.User.Groups().Members(),
+)
+
+```
+
 ### Indexing for schemaless (needed?)
 
 ```
