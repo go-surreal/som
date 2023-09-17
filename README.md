@@ -28,26 +28,26 @@ mapping and type-safe query operation generator. It provides an easy and sophist
 
 ## What is SurrealDB?
 
-SurrealDB is a relatively new database approach.
-It provides a SQL-style query language with real-time queries and highly-efficient related data retrieval.
-Both schemafull and schemaless handling of the data is possible.
+SurrealDB is a cutting-edge database system that offers a SQL-style query language with real-time queries  
+and efficient related data retrieval. It supports both schema-full and schema-less data handling.
+With its full graph database functionality, SurrealDB enables advanced querying and analysis by allowing
+records (or vertices) to be connected with edges, each with its own properties and metadata.
+This facilitates multi-table, multi-depth document retrieval without complex JOINs, all within the database.
 
-With full graph database functionality, SurrealDB enables more advanced querying and analysis.
-Records (or vertices) can be connected to one another with edges, each with its own record properties and metadata.
-Simple extensions to traditional SQL queries allow for multi-table, multi-depth document retrieval, efficiently 
-in the database, without the use of complicated JOINs and without bringing the data down to the client.
-
-*(Information extracted from the [official homepage]((https://surrealdb.com)))*
+*(Information extracted from the [official homepage](https://surrealdb.com))*.
 
 ## Table of contents
 
 * [Getting started](#getting-started)
+  * [Disclaimer](#disclaimer)
   * [Basic usage](#basic-usage)
+    * [Example](#example)
+* [Development](#development)
   * [Versioning](#versioning)
   * [Compatibility](#compatibility)
   * [Features](#features)
-* [Roadmap](#roadmap)
 * [How to contribute](#how-to-contribute)
+* [FAQ](#faq)
 * [Maintainers & Contributors](#maintainers--contributors)
 * [References](#references)
 
@@ -90,6 +90,105 @@ Instead, it is using a custom implementation called [sdbc](https://github.com/go
 Until the official client is considered stable, this will likely not change.
 Final goal would be to make it possible to use both the official client and the custom implementation.
 As of now, this might change at any time.
+
+#### Example
+
+Let's say we have the following model at `<root>/model/user.go`:
+
+```go
+package model
+
+type User struct {
+    ID       string `som:"id"`
+    Username string `som:"username"`
+    Password string `som:"password"`
+    Email    string `som:"email"`
+}
+```
+
+In order for it to be considered by the generator, it must embed `som.Node`:
+
+```go
+package model
+
+import "github.com/go-surreal/som"
+
+type User struct {
+    som.Node
+    
+    // ID string `som:"id"` --> provided by som!
+    
+    Username string `som:"username"`
+    Password string `som:"password"`
+    Email    string `som:"email"`
+}
+```
+
+Now, we can generate the client code:
+
+```
+go run github.com/go-surreal/som/cmd/somgen@latest <root>/model <root>/gen/som
+```
+
+With the generated client, we can now perform operations on the database:
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    
+    "<root>/gen/som"
+    "<root>/gen/som/where"
+    "<root>/model"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // create a new client
+    client, err := som.NewClient(ctx, som.Config{
+        Address:   "ws://localhost:8000",
+        Username:  "root",
+        Password:  "root",
+        Namespace: "test",
+        Database:  "test",
+    })
+    
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // initialize the model
+    user := &model.User{
+        Username: "test",
+        Password: "test",
+        Email:    "test@example.com",
+    }
+    
+    // insert the user into the database
+    err = client.UserRepo().Create(ctx, user)
+    if err != nil {
+        log.Fatal(err)
+    }
+		
+    // query the user by email
+    read, err := client.UserRepo().Query().
+        Filter(
+            where.User.Email.Equal("test@example.com"),
+        ).
+        First(ctx)
+
+    if err != nil {
+        log.Fatal(err)
+    }
+		
+    fmt.Println(read)
+}
+```
+
+## Development
 
 ### Versioning
 
