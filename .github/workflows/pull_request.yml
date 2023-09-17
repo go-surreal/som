@@ -22,13 +22,7 @@ jobs:
   sync:
     name: Sync
     runs-on: ubuntu-latest
-    env:
-      GOPRIVATE: github.com/go-surreal/sdbc
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
     steps:
-
-      - name: Setup Access Token
-        run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,13 +67,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    env:
-      GOPRIVATE: github.com/go-surreal/sdbc
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
     steps:
-
-      - name: Setup Access Token
-        run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -128,13 +116,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    env:
-      GOPRIVATE: github.com/go-surreal/sdbc
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
     steps:
-
-      - name: Setup Access Token
-        run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -173,13 +155,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    env:
-      GOPRIVATE: github.com/go-surreal/sdbc
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
     steps:
-
-      - name: Setup Access Token
-        run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
 
       - name: Checkout
         uses: actions/checkout@v4
