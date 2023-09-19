@@ -189,8 +189,16 @@ func parseNode(v gotype.Type) (*Node, error) {
 			if f.Name() == "Timestamps" {
 				node.Timestamps = true
 				node.Fields = append(node.Fields,
-					&FieldTime{&fieldAtomic{"CreatedAt", false}},
-					&FieldTime{&fieldAtomic{"UpdatedAt", false}},
+					&FieldTime{
+						&fieldAtomic{"CreatedAt", false},
+						true,
+						false,
+					},
+					&FieldTime{
+						&fieldAtomic{"UpdatedAt", false},
+						false,
+						true,
+					},
 				)
 				continue
 			}
@@ -241,8 +249,16 @@ func parseEdge(v gotype.Type) (*Edge, error) {
 			if f.Name() == "Timestamps" {
 				edge.Timestamps = true
 				edge.Fields = append(edge.Fields,
-					&FieldTime{&fieldAtomic{"CreatedAt", false}},
-					&FieldTime{&fieldAtomic{"UpdatedAt", false}},
+					&FieldTime{
+						&fieldAtomic{"CreatedAt", false},
+						true,
+						false,
+					},
+					&FieldTime{
+						&fieldAtomic{"UpdatedAt", false},
+						false,
+						true,
+					},
 				)
 				continue
 			}
@@ -398,7 +414,7 @@ func parseField(t gotype.Type) (Field, error) {
 			switch {
 			case t.Elem().PkgPath() == "time":
 				{
-					return &FieldTime{atomic}, nil
+					return &FieldTime{atomic, false, false}, nil
 				}
 			case isNode(t.Elem()):
 				{

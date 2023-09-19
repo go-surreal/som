@@ -237,16 +237,16 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 	file.Func().
 		Params(jen.Id("i").Id(edge.NameGoLower()+"In").Types(jen.Id("T"))).Id(edge.Out.NameGo()).
 		Params(
-			jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(b.SourceQual(edge.Out.NameGo())),
+			jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(b.SourceQual(edge.Out.Table().NameGo())),
 		).
-		Id(edge.Out.NameGoLower()+"Edges").Types(jen.Id("T")).
+		Id(edge.Out.Table().NameGoLower()+"Edges").Types(jen.Id("T")).
 		Block(
 			jen.Id("key").Op(":=").Qual(pkgLib, "EdgeIn").Call(
 				jen.Id("i").Dot("key"),
 				jen.Lit(edge.Out.NameDatabase()),
 				jen.Id("filters"),
 			),
-			jen.Return(jen.Id(edge.Out.NameGoLower()+"Edges").Types(jen.Id("T")).
+			jen.Return(jen.Id(edge.Out.Table().NameGoLower()+"Edges").Types(jen.Id("T")).
 				Values(
 					jen.Qual(pkgLib, "KeyFilter").Call(jen.Id("key")),
 					jen.Id("key"),
@@ -279,16 +279,16 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 	file.Func().
 		Params(jen.Id("o").Id(edge.NameGoLower()+"Out").Types(jen.Id("T"))).Id(edge.In.NameGo()).
 		Params(
-			jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(b.SourceQual(edge.In.NameGo())),
+			jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(b.SourceQual(edge.In.Table().NameGo())),
 		).
-		Id(edge.In.NameGoLower()+"Edges").Types(jen.Id("T")).
+		Id(edge.In.Table().NameGoLower()+"Edges").Types(jen.Id("T")).
 		Block(
 			jen.Id("key").Op(":=").Qual(pkgLib, "EdgeOut").Call(
 				jen.Id("o").Dot("key"),
 				jen.Lit(edge.In.NameDatabase()),
 				jen.Id("filters"),
 			),
-			jen.Return(jen.Id(edge.In.NameGoLower()+"Edges").Types(jen.Id("T")).
+			jen.Return(jen.Id(edge.In.Table().NameGoLower()+"Edges").Types(jen.Id("T")).
 				Values(
 					jen.Qual(pkgLib, "KeyFilter").Call(jen.Id("key")),
 					jen.Id("key"),

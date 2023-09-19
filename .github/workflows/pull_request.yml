@@ -7,8 +7,7 @@ on:
       - ".github/workflows/pull_request.yml"
       - "cmd/**/*"
       - "core/**/*"
-      - "examples/**/*"
-      - "sdbc/**/*"
+      - "tests/**/*"
       - ".envrc"
       - ".golangci.yml"
       - ".tool-versions"
@@ -192,14 +191,6 @@ jobs:
         working-directory: .
         run: go test -v ./...
 
-      - name: Test Example Testing
-        working-directory: examples/testing
-        run: go test -v ./...
-
-      - name: Test Example Basic
-        working-directory: examples/basic
-        run: go test -v ./...
-
-      - name: Test Example Movie
-        working-directory: examples/movie
+      - name: Test Basic
+        working-directory: tests/basic
         run: go test -v ./...

@@ -74,7 +74,7 @@ func (f *Numeric) TypeDatabase() string {
 	case parser.NumberUint32:
 		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint32)
 	case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, uint64(math.MaxUint64))
+		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %ddec", f.optionWrap("decimal"), nilCheck, 0, uint64(math.MaxUint64))
 	case parser.NumberFloat32:
 		return f.optionWrap("float") // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "1.2E-38", "3.4E+38")
 	case parser.NumberFloat64:
