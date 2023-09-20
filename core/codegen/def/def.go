@@ -12,7 +12,7 @@ const (
 )
 
 const (
-	PkgSom = "github.com/marcbinz/som"
+	PkgSom = "github.com/go-surreal/som"
 
 	PkgUUID             = "github.com/google/uuid"
 	PkgSurrealDB        = "github.com/surrealdb/surrealdb.go"

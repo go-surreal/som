@@ -3,9 +3,9 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/codegen/field"
-	"github.com/marcbinz/som/core/parser"
 )
 
 type input struct {

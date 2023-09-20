@@ -3,7 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Node struct {
@@ -63,7 +63,7 @@ func (f *Node) filterFunc(ctx Context) jen.Code {
 
 func (f *Node) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameDatabase()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
