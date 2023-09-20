@@ -61,12 +61,12 @@ const (
 	NumberInt16
 	NumberInt32
 	NumberInt64
-	NumberUint
+	// NumberUint
 	NumberUint8
 	NumberUint16
 	NumberUint32
-	NumberUint64
-	NumberUintptr
+	// NumberUint64
+	// NumberUintptr
 	NumberFloat32
 	NumberFloat64
 	NumberRune

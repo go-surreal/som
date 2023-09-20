@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/bytedance/sonic"
 	"github.com/go-surreal/sdbc"
-	"log/slog"
 )
 
 type Database interface {
@@ -38,16 +37,13 @@ type ClientImpl struct {
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	url := conf.Address + "/rpc"
 
-	surreal, err := sdbc.NewClient(ctx,
-		sdbc.Config{
-			Address:   url,
-			Username:  conf.Username,
-			Password:  conf.Password,
-			Namespace: conf.Namespace,
-			Database:  conf.Database,
-		},
-		sdbc.WithLogger(slog.Default()),
-	)
+	surreal, err := sdbc.NewClient(ctx, sdbc.Config{
+		Address:   url,
+		Username:  conf.Username,
+		Password:  conf.Password,
+		Namespace: conf.Namespace,
+		Database:  conf.Database,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("could not create sdbc client: %v", err)
 	}

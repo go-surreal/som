@@ -125,25 +125,27 @@ func TestNumerics(t *testing.T) {
 
 	str := "user"
 
-	userNew := model.AllFieldTypes{
-		String:  str,
-		Int:     math.MaxInt,
-		Int8:    math.MaxInt8,
-		Int16:   math.MaxInt16,
-		Int32:   math.MaxInt32,
-		Int64:   math.MaxInt64,
-		Uint:    math.MaxUint,
-		Uint8:   math.MaxUint8,
-		Uint16:  math.MaxUint16,
-		Uint32:  math.MaxUint32,
-		Uint64:  18446744073709550000, // math.MaxUint64,
-		Uintptr: 18446744073709550000, // math.MaxUint64,
+	// MAX
+
+	userMax := model.AllFieldTypes{
+		String: str,
+		Int:    math.MaxInt,
+		Int8:   math.MaxInt8,
+		Int16:  math.MaxInt16,
+		Int32:  math.MaxInt32,
+		Int64:  math.MaxInt64,
+		// Uint:    math.MaxUint,
+		Uint8:  math.MaxUint8,
+		Uint16: math.MaxUint16,
+		Uint32: math.MaxUint32,
+		// Uint64:  0, // math.MaxUint64,
+		// Uintptr: 0, // math.MaxUint64,
 		Float32: math.MaxFloat32,
 		Float64: math.MaxFloat64,
 		Rune:    math.MaxInt32,
 	}
 
-	userIn := userNew
+	userIn := userMax
 
 	err := client.AllFieldTypesRepo().Create(ctx, &userIn)
 	if err != nil {
@@ -160,7 +162,48 @@ func TestNumerics(t *testing.T) {
 	}
 
 	assert.DeepEqual(t,
-		userNew, *userOut,
+		userMax, *userOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+	)
+
+	// MIN
+
+	userMin := model.AllFieldTypes{
+		String: str,
+		Int:    math.MinInt,
+		Int8:   math.MinInt8,
+		Int16:  math.MinInt16,
+		Int32:  math.MinInt32,
+		Int64:  math.MinInt64,
+		// Uint:    math.MaxUint,
+		Uint8:  0,
+		Uint16: 0,
+		Uint32: 0,
+		// Uint64:  0, // math.MaxUint64,
+		// Uintptr: 0, // math.MaxUint64,
+		Float32: math.SmallestNonzeroFloat32,
+		Float64: math.SmallestNonzeroFloat64,
+		Rune:    math.MinInt32,
+	}
+
+	userIn = userMin
+
+	err = client.AllFieldTypesRepo().Create(ctx, &userIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.ID.Equal(userIn.ID()),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t,
+		userMin, *userOut,
 		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
 	)
 }

@@ -4,10 +4,12 @@ go 1.21.1
 
 replace github.com/go-surreal/som => ../../
 
+replace github.com/go-surreal/sdbc => ../../../sdbc
+
 require (
 	github.com/bytedance/sonic v1.10.1
 	github.com/docker/docker v24.0.6+incompatible
-	github.com/go-surreal/sdbc v0.1.0
+	github.com/go-surreal/sdbc v0.1.1
 	github.com/go-surreal/som v0.0.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.1

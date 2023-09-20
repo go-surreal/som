@@ -54,18 +54,12 @@ DEFINE FIELD int_32 ON TABLE all_field_types TYPE int ASSERT $value >= -21474836
 DEFINE FIELD int_32_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -2147483648 AND $value <= 2147483647;
 DEFINE FIELD int_64 ON TABLE all_field_types TYPE int ASSERT $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 DEFINE FIELD int_64_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD uint ON TABLE all_field_types TYPE decimal ASSERT $value >= 0 AND $value <= 18446744073709551615dec;
-DEFINE FIELD uint_ptr ON TABLE all_field_types TYPE option<decimal | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615dec;
 DEFINE FIELD uint_8 ON TABLE all_field_types TYPE int ASSERT $value >= 0 AND $value <= 255;
 DEFINE FIELD uint_8_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
 DEFINE FIELD uint_16 ON TABLE all_field_types TYPE int ASSERT $value >= 0 AND $value <= 65535;
 DEFINE FIELD uint_16_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 65535;
 DEFINE FIELD uint_32 ON TABLE all_field_types TYPE int ASSERT $value >= 0 AND $value <= 4294967295;
 DEFINE FIELD uint_32_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 4294967295;
-DEFINE FIELD uint_64 ON TABLE all_field_types TYPE decimal ASSERT $value >= 0 AND $value <= 18446744073709551615dec;
-DEFINE FIELD uint_64_ptr ON TABLE all_field_types TYPE option<decimal | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615dec;
-DEFINE FIELD uintptr ON TABLE all_field_types TYPE decimal ASSERT $value >= 0 AND $value <= 18446744073709551615dec;
-DEFINE FIELD uintptr_ptr ON TABLE all_field_types TYPE option<decimal | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 18446744073709551615dec;
 DEFINE FIELD float_32 ON TABLE all_field_types TYPE float;
 DEFINE FIELD more ON TABLE all_field_types TYPE option<array | null>;
 DEFINE FIELD more.* ON TABLE all_field_types TYPE float;

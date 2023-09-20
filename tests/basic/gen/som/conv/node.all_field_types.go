@@ -29,18 +29,12 @@ type AllFieldTypes struct {
 	Int32Ptr          *int32         `json:"int_32_ptr"`
 	Int64             int64          `json:"int_64"`
 	Int64Ptr          *int64         `json:"int_64_ptr"`
-	Uint              uint           `json:"uint"`
-	UintPtr           *uint          `json:"uint_ptr"`
 	Uint8             uint8          `json:"uint_8"`
 	Uint8Ptr          *uint8         `json:"uint_8_ptr"`
 	Uint16            uint16         `json:"uint_16"`
 	Uint16Ptr         *uint16        `json:"uint_16_ptr"`
 	Uint32            uint32         `json:"uint_32"`
 	Uint32Ptr         *uint32        `json:"uint_32_ptr"`
-	Uint64            uint64         `json:"uint_64"`
-	Uint64Ptr         *uint64        `json:"uint_64_ptr"`
-	Uintptr           uintptr        `json:"uintptr"`
-	UintptrPtr        *uintptr       `json:"uintptr_ptr"`
 	Float32           float32        `json:"float_32"`
 	More              []float32      `json:"more"`
 	Float64           float64        `json:"float_64"`
@@ -116,18 +110,12 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		TimePtr:           data.TimePtr,
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
-		Uint:              data.Uint,
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
 		Uint32:            data.Uint32,
 		Uint32Ptr:         data.Uint32Ptr,
-		Uint64:            data.Uint64,
-		Uint64Ptr:         data.Uint64Ptr,
 		Uint8:             data.Uint8,
 		Uint8Ptr:          data.Uint8Ptr,
-		UintPtr:           data.UintPtr,
-		Uintptr:           data.Uintptr,
-		UintptrPtr:        data.UintptrPtr,
 	}
 }
 
@@ -180,18 +168,12 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		Timestamps:        som.NewTimestamps(*data.CreatedAt, *data.UpdatedAt),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
-		Uint:              data.Uint,
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
 		Uint32:            data.Uint32,
 		Uint32Ptr:         data.Uint32Ptr,
-		Uint64:            data.Uint64,
-		Uint64Ptr:         data.Uint64Ptr,
 		Uint8:             data.Uint8,
 		Uint8Ptr:          data.Uint8Ptr,
-		UintPtr:           data.UintPtr,
-		Uintptr:           data.Uintptr,
-		UintptrPtr:        data.UintptrPtr,
 	}
 }
 
