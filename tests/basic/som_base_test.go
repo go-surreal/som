@@ -181,8 +181,8 @@ func TestNumerics(t *testing.T) {
 		Uint32: 0,
 		// Uint64:  0, // math.MaxUint64,
 		// Uintptr: 0, // math.MaxUint64,
-		Float32: math.SmallestNonzeroFloat32,
-		Float64: math.SmallestNonzeroFloat64,
+		Float32: -math.MaxFloat32,
+		Float64: -math.MaxFloat64,
 		Rune:    math.MinInt32,
 	}
 
