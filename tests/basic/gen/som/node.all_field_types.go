@@ -4,7 +4,6 @@ package som
 import (
 	"context"
 	"errors"
-	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -22,108 +21,64 @@ type AllFieldTypesRepo interface {
 }
 
 func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
-	return &allFieldTypes{db: c.db, marshal: c.marshal, unmarshal: c.unmarshal}
+	return &allFieldTypes{repo: &repo[model.AllFieldTypes, conv.AllFieldTypes]{
+		db:        c.db,
+		marshal:   c.marshal,
+		unmarshal: c.unmarshal,
+		name:      "all_field_types",
+		convTo:    conv.ToAllFieldTypes,
+		convFrom:  conv.FromAllFieldTypes}}
 }
 
 type allFieldTypes struct {
-	db        Database
-	marshal   func(val any) ([]byte, error)
-	unmarshal func(buf []byte, val any) error
+	*repo[model.AllFieldTypes, conv.AllFieldTypes]
 }
 
-func (n *allFieldTypes) Query() query.NodeAllFieldTypes {
-	return query.NewAllFieldTypes(n.db, n.unmarshal)
+func (r *allFieldTypes) Query() query.NodeAllFieldTypes {
+	return query.NewAllFieldTypes(r.db, r.unmarshal)
 }
 
-func (n *allFieldTypes) Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
+func (r *allFieldTypes) Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if allFieldTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	key := "all_field_types:ulid()"
-	data := conv.FromAllFieldTypes(allFieldTypes)
-	raw, err := n.db.Create(ctx, key, data)
-	if err != nil {
-		return fmt.Errorf("could not create entity: %w", err)
-	}
-	var convNode *conv.AllFieldTypes
-	err = n.unmarshal(raw, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
-	}
-	*allFieldTypes = *conv.ToAllFieldTypes(convNode)
-	return nil
+	return r.create(ctx, allFieldTypes)
 }
 
-func (n *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error {
+func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if allFieldTypes.ID() != "" {
-		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
+		return errors.New("given node already has an id")
 	}
-	key := "all_field_types:" + "⟨" + id + "⟩"
-	data := conv.FromAllFieldTypes(allFieldTypes)
-	res, err := n.db.Create(ctx, key, data)
-	if err != nil {
-		return fmt.Errorf("could not create entity: %w", err)
-	}
-	var convNode *conv.AllFieldTypes
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	*allFieldTypes = *conv.ToAllFieldTypes(convNode)
-	return nil
+	return r.createWithID(ctx, allFieldTypes.ID(), allFieldTypes)
 }
 
-func (n *allFieldTypes) Read(ctx context.Context, id string) (*model.AllFieldTypes, bool, error) {
-	res, err := n.db.Select(ctx, "all_field_types:⟨"+id+"⟩")
-	if err != nil {
-		return nil, false, fmt.Errorf("could not read entity: %w", err)
-	}
-	var convNode *conv.AllFieldTypes
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	return conv.ToAllFieldTypes(convNode), true, nil
+func (r *allFieldTypes) Read(ctx context.Context, id string) (*model.AllFieldTypes, bool, error) {
+	return r.read(ctx, id)
 }
 
-func (n *allFieldTypes) Update(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
+func (r *allFieldTypes) Update(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if allFieldTypes.ID() == "" {
 		return errors.New("cannot update AllFieldTypes without existing record ID")
 	}
-	data := conv.FromAllFieldTypes(allFieldTypes)
-	res, err := n.db.Update(ctx, "all_field_types:⟨"+allFieldTypes.ID()+"⟩", data)
-	if err != nil {
-		return fmt.Errorf("could not update entity: %w", err)
-	}
-	var convNode *conv.AllFieldTypes
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	*allFieldTypes = *conv.ToAllFieldTypes(convNode)
-	return nil
+	return r.update(ctx, allFieldTypes.ID(), allFieldTypes)
 }
 
-func (n *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
+func (r *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete(ctx, "all_field_types:⟨"+allFieldTypes.ID()+"⟩")
-	if err != nil {
-		return fmt.Errorf("could not delete entity: %w", err)
-	}
-	return nil
+	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes)
 }
 
-func (n *allFieldTypes) Relate() *relate.AllFieldTypes {
-	return relate.NewAllFieldTypes(n.db, n.unmarshal)
+func (r *allFieldTypes) Relate() *relate.AllFieldTypes {
+	return relate.NewAllFieldTypes(r.db, r.unmarshal)
 }
