@@ -6,6 +6,8 @@ import (
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"log/slog"
+	"os"
 	"testing"
 )
 
@@ -39,7 +41,23 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	client, err := som.NewClient(ctx, conf(endpoint))
+	config := som.Config{
+		Address:   "ws://" + endpoint,
+		Username:  "root",
+		Password:  "root",
+		Namespace: "som_test",
+		Database:  "example_basic",
+	}
+
+	opts := []som.Option{
+		som.WithLogger(slog.New(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+				Level: slog.LevelDebug,
+			}),
+		)),
+	}
+
+	client, err := som.NewClient(ctx, config, opts...)
 	if err != nil {
 		tb.Fatal(err)
 	}
