@@ -4,7 +4,6 @@ package som
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/go-surreal/sdbc"
 )
@@ -37,6 +36,8 @@ type ClientImpl struct {
 func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, error) {
 	url := conf.Address + "/rpc"
 
+	opt := applyOptions(opts)
+
 	surreal, err := sdbc.NewClient(ctx,
 		sdbc.Config{
 			Address:   url,
@@ -45,7 +46,7 @@ func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, e
 			Namespace: conf.Namespace,
 			Database:  conf.Database,
 		},
-		applyOptions(opts)...,
+		opt.sdbc...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not create sdbc client: %v", err)
@@ -54,8 +55,8 @@ func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, e
 	return &ClientImpl{
 		db: &database{Client: surreal},
 
-		marshal:   json.Marshal,
-		unmarshal: json.Unmarshal,
+		marshal:   opt.jsonMarshal,
+		unmarshal: opt.jsonUnmarshal,
 	}, nil
 }
 
