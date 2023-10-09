@@ -1,3 +1,6 @@
 .DS_Store
 .idea
 .task
+
+buildtime/compile_time.txt
+buildtime/version.txt
