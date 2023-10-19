@@ -8,6 +8,7 @@ import (
 	"github.com/go-surreal/som/examples/movie/gen/som/where"
 	"github.com/go-surreal/som/examples/movie/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gotest.tools/v3/assert"
 	"testing"

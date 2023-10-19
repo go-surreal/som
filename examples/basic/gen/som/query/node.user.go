@@ -27,6 +27,10 @@ type NodeUserNoLive struct {
 	nodeUser
 }
 
+type NodeUserSearch struct {
+	NodeUser
+}
+
 func NewUser(db Database, unmarshal func(buf []byte, val any) error) NodeUser {
 	return NodeUser{nodeUser{
 		db:        db,
@@ -45,6 +49,16 @@ func NewUser(db Database, unmarshal func(buf []byte, val any) error) NodeUser {
 func (q nodeUser) Filter(filters ...lib.Filter[model.User]) NodeUser {
 	q.query.Where = append(q.query.Where, filters...)
 	return NodeUser{q}
+}
+
+func (q nodeUser) Fulltext(search ...lib.Search[model.User]) NodeUserSearch {
+	q.query.Where = append(q.query.Where, search...)
+	return NodeUserSearch{NodeUser{q}}
+}
+
+func (q NodeUserSearch) WithHighlights() NodeUserSearch {
+	q.query.Highlights = true
+	return NodeUserSearch{NodeUser{q}}
 }
 
 // Order sorts the returned records based on the given conditions.
