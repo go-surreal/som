@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -20,6 +21,20 @@ func (f *Time) typeConv() jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
+	if f.source.IsCreatedAt {
+		// The type must be optional for now, otherwise the database will complain that the field
+		// is none/null, even though it should always receive a value from the database itself.
+		// In practice this field can never be empty thanks to the definition.
+		return "option<datetime> VALUE $before OR time::now()"
+	}
+
+	if f.source.IsUpdatedAt {
+		// The type must be optional for now, otherwise the database will complain that the field
+		// is none/null, even though it should always receive a value from the database itself.
+		// In practice this field can never be empty thanks to the definition.
+		return "option<datetime> VALUE time::now()"
+	}
+
 	return f.optionWrap("datetime")
 }
 
@@ -33,9 +48,10 @@ func (f *Time) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		convFrom:    f.convFrom,
+		convTo:      f.convTo,
+		convToField: f.convToField,
+		fieldDef:    f.fieldDef,
 	}
 }
 
@@ -67,15 +83,44 @@ func (f *Time) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Time) convFrom(ctx Context) jen.Code {
+func (f *Time) convFrom(_ Context) jen.Code {
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return nil // never sent a timestamp to the database, as it will be set automatically
+	}
+
 	return jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Time) convTo(ctx Context) jen.Code {
+func (f *Time) convTo(_ Context) jen.Code {
+	if f.source.IsCreatedAt {
+		return jen.Qual(def.PkgSom, "NewTimestamps").Call(
+			jen.Id("data").Dot("CreatedAt"),
+			jen.Id("data").Dot("UpdatedAt"),
+		)
+	}
+
+	if f.source.IsUpdatedAt {
+		return nil
+	}
+
 	return jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Time) fieldDef(ctx Context) jen.Code {
+func (f *Time) convToField(_ Context) jen.Code {
+	if !f.source.IsCreatedAt {
+		return nil
+	}
+
+	return jen.Id("Timestamps")
+}
+
+func (f *Time) fieldDef(_ Context) jen.Code {
+
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv()).
+			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	}
+
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

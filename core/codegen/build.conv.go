@@ -198,12 +198,6 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 
 			jen.Return(jen.Op("&").Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
-					if elem.HasTimestamps() {
-						if f.NameGo() == "CreatedAt" || f.NameGo() == "UpdatedAt" {
-							continue
-						}
-					}
-
 					if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
 					}
@@ -241,13 +235,12 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 
 			jen.Return(jen.Op("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
-					if elem.HasTimestamps() {
-						if f.NameGo() == "CreatedAt" || f.NameGo() == "UpdatedAt" {
+					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
+						if fieldCode := f.CodeGen().ConvToField(fieldCtx); fieldCode != nil {
+							d[fieldCode] = code
 							continue
 						}
-					}
 
-					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
 					}
 				}
@@ -267,13 +260,6 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 							jen.Lit(elem.NameDatabase()),
 							jen.Id("data").Dot("ID"),
 						),
-					)
-				}
-
-				if elem.HasTimestamps() {
-					d[jen.Id("Timestamps")] = jen.Qual(def.PkgSom, "NewTimestamps").Call(
-						jen.Id("data").Dot("CreatedAt"),
-						jen.Id("data").Dot("UpdatedAt"),
 					)
 				}
 			}))))
