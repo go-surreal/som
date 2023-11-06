@@ -144,7 +144,7 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(toSomeStruct)),
 		Time:              data.Time,
 		TimePtr:           data.TimePtr,
-		Timestamps:        som.NewTimestamps(*data.CreatedAt, *data.UpdatedAt),
+		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
 	}
