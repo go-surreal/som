@@ -254,3 +254,8 @@ Please take a look at the [MAINTAINERS.md](MAINTAINERS.md) file.
 ## References
 
 - [Official SurrealDB documentation](https://surrealdb.com/docs)
+
+
+https://www.npmjs.com/package/suorm
+https://www.prisma.io/docs/concepts/components/prisma-migrate
+https://github.com/Odonno/surrealdb-migrations/tree/main/templates
