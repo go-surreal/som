@@ -22,6 +22,8 @@ jobs:
   sync:
     name: Sync
     runs-on: ubuntu-latest
+    permissions: "write-all"
+    timeout-minutes: 1
     steps:
 
       - name: Checkout
@@ -67,6 +69,8 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions: "write-all"
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
@@ -116,6 +120,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
@@ -155,6 +160,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
