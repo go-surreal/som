@@ -21,16 +21,6 @@ const (
 	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
 
-func conf(endpoint string) som.Config {
-	return som.Config{
-		Address:   "ws://" + endpoint,
-		Username:  "root",
-		Password:  "root",
-		Namespace: "som_test",
-		Database:  "example_basic",
-	}
-}
-
 func TestQuery(t *testing.T) {
 	client := &som.ClientImpl{}
 

@@ -28,6 +28,6 @@ func ToGroupMember(data *GroupMember) *model.GroupMember {
 	return &model.GroupMember{
 		Edge:       som.NewEdge(parseDatabaseID("group_member", data.ID)),
 		Meta:       noPtrFunc(toGroupMemberMeta)(data.Meta),
-		Timestamps: som.NewTimestamps(*data.CreatedAt, *data.UpdatedAt),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }

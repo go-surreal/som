@@ -83,7 +83,7 @@ func (f *Time) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Time) convFrom(ctx Context) jen.Code {
+func (f *Time) convFrom(_ Context) jen.Code {
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		return nil // never sent a timestamp to the database, as it will be set automatically
 	}
@@ -91,12 +91,11 @@ func (f *Time) convFrom(ctx Context) jen.Code {
 	return jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Time) convTo(ctx Context) jen.Code {
+func (f *Time) convTo(_ Context) jen.Code {
 	if f.source.IsCreatedAt {
-		// TODO: unsafe nil dereference (okay, because it can never really be nil?)
 		return jen.Qual(def.PkgSom, "NewTimestamps").Call(
-			jen.Op("*").Id("data").Dot("CreatedAt"),
-			jen.Op("*").Id("data").Dot("UpdatedAt"),
+			jen.Id("data").Dot("CreatedAt"),
+			jen.Id("data").Dot("UpdatedAt"),
 		)
 	}
 
@@ -107,7 +106,7 @@ func (f *Time) convTo(ctx Context) jen.Code {
 	return jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Time) convToField(ctx Context) jen.Code {
+func (f *Time) convToField(_ Context) jen.Code {
 	if !f.source.IsCreatedAt {
 		return nil
 	}
@@ -115,7 +114,7 @@ func (f *Time) convToField(ctx Context) jen.Code {
 	return jen.Id("Timestamps")
 }
 
-func (f *Time) fieldDef(ctx Context) jen.Code {
+func (f *Time) fieldDef(_ Context) jen.Code {
 
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv()).
