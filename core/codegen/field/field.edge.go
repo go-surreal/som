@@ -65,15 +65,15 @@ func (f *Edge) sortFunc(ctx Context) jen.Code {
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
-func (f *Edge) convFrom(ctx Context) jen.Code {
-	return jen.Id("To" + f.table.NameGo()).Call(jen.Op("&").Id("data").Dot(f.NameGo()))
+func (f *Edge) convFrom(_ Context) jen.Code {
+	return jen.Id("From" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Edge) convTo(ctx Context) jen.Code {
-	return jen.Op("*").Id("From" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
+func (f *Edge) convTo(_ Context) jen.Code {
+	return jen.Id("To" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Edge) fieldDef(ctx Context) jen.Code {
+func (f *Edge) fieldDef(_ Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }
