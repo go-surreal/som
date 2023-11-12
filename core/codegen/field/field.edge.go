@@ -36,7 +36,7 @@ func (f *Edge) CodeGen() *CodeGen {
 
 		sortDefine: nil,
 		sortInit:   nil,
-		sortFunc:   f.sortFunc,
+		sortFunc:   nil, // TODO: f.sortFunc, // edge currently not sortable
 
 		convFrom: f.convFrom,
 		convTo:   f.convTo,
@@ -54,9 +54,10 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
+//nolint:unused // currently not fully implemented
 func (f *Edge) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameDatabase()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
 		Id(f.NameGoLower()).Types(jen.Id("T")).
 		Block(

@@ -4,6 +4,7 @@ import (
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
+	"strings"
 )
 
 // type Edge struct {
@@ -99,7 +100,7 @@ func (f *baseField) NameGo() string {
 }
 
 func (f *baseField) NameGoLower() string {
-	return strcase.ToLowerCamel(f.NameGo())
+	return strings.ToLower(f.source.Name())
 }
 
 func (f *baseField) NameDatabase() string {
