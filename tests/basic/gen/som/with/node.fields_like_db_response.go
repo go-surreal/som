@@ -3,8 +3,8 @@ package with
 
 import model "github.com/go-surreal/som/tests/basic/model"
 
-var FieldsLikeDBResponse = fieldsLikeDBResponse[model.FieldsLikeDBResponse]("")
+var FieldsLikeDBResponse = fieldsLikeDbresponse[model.FieldsLikeDBResponse]("")
 
-type fieldsLikeDBResponse[T any] string
+type fieldsLikeDbresponse[T any] string
 
-func (n fieldsLikeDBResponse[T]) fetch(T) {}
+func (n fieldsLikeDbresponse[T]) fetch(T) {}
