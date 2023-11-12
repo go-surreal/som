@@ -160,6 +160,10 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				}
 			}
 
+			if object == nil {
+				return nil, false // TODO: anonymous struct type not supported // return error msg!
+			}
+
 			var fields []Field
 			for _, field := range object.Fields {
 				fld, ok := Convert(source, conf, field)
