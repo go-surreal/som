@@ -1,6 +1,6 @@
 module github.com/go-surreal/som
 
-go 1.21.1
+go 1.21.4
 
 require (
 	github.com/dave/jennifer v1.7.0
