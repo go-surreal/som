@@ -5,7 +5,7 @@ go 1.21.1
 replace github.com/go-surreal/som => ../../
 
 require (
-	github.com/docker/docker v24.0.6+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/go-surreal/sdbc v0.1.1
 	github.com/go-surreal/som v0.1.2
 	github.com/google/go-cmp v0.5.9
@@ -43,7 +43,7 @@ require (
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234030-28d5490b6b19 // indirect
-	google.golang.org/grpc v1.57.0 // indirect
+	google.golang.org/grpc v1.57.1 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	nhooyr.io/websocket v1.8.10 // indirect
 )
