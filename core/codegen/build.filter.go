@@ -126,6 +126,13 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 			}
 		})
 
+	for _, fld := range elem.GetFields() {
+		if code := fld.CodeGen().FilterFunc(fieldCtx); code != nil {
+			file.Line()
+			file.Add(code)
+		}
+	}
+
 	file.Line()
 	file.Type().Id(elem.NameGoLower()+"Edges").
 		Types(jen.Id("T").Any()).
