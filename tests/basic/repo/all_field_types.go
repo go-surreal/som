@@ -69,8 +69,6 @@ func (r *user) List(ctx context.Context) ([]*model.AllFieldTypes, error) {
 
 				where.AllFieldTypes.ByteSlicePtr().Equal([]byte("")),
 
-				where.AllFieldTypes.StringSlicePtr().Nil(),
-
 				//
 				// where.User.Groups().ID.In(nil),
 				// where.User.Groups().Name.In(nil),

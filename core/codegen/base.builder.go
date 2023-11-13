@@ -173,6 +173,13 @@ func (b *build) buildSchemaFile() error {
 		}
 
 		if slice, ok := f.(*field.Slice); ok {
+
+			if _, ok := slice.Element().(*field.Byte); ok {
+				// byte slice has the type "bytes" in the database,
+				// so we do not need to specify its elements.
+				return
+			}
+
 			statement := fmt.Sprintf(
 				"DEFINE FIELD %s ON TABLE %s TYPE %s;",
 				prefix+f.NameDatabase()+".*", table, slice.Element().TypeDatabase(),

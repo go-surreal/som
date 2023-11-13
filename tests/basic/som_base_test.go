@@ -75,8 +75,9 @@ func TestWithDatabase(t *testing.T) {
 	uid := uuid.New()
 
 	userNew := model.AllFieldTypes{
-		String: str,
-		UUID:   uid,
+		String:    str,
+		UUID:      uid,
+		ByteSlice: []byte("some value"),
 	}
 
 	userIn := userNew

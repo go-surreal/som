@@ -140,12 +140,12 @@ func (n allFieldTypes[T]) SliceSlice() *lib.Slice[T, []string] {
 	return lib.NewSlice[T, []string](lib.Field(n.key, "slice_slice"))
 }
 
-func (n allFieldTypes[T]) ByteSlice() *lib.Slice[T, byte] {
-	return lib.NewSlice[T, byte](lib.Field(n.key, "byte_slice"))
+func (n allFieldTypes[T]) ByteSlice() *lib.ByteSlice[T] {
+	return lib.NewByteSlice[T](lib.Field(n.key, "byte_slice"))
 }
 
-func (n allFieldTypes[T]) ByteSlicePtr() *lib.Slice[T, byte] {
-	return lib.NewSlice[T, byte](lib.Field(n.key, "byte_slice_ptr"))
+func (n allFieldTypes[T]) ByteSlicePtr() *lib.ByteSlice[T] {
+	return lib.NewByteSlice[T](lib.Field(n.key, "byte_slice_ptr"))
 }
 
 type allFieldTypesEdges[T any] struct {

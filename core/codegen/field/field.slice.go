@@ -23,7 +23,11 @@ func (f *Slice) typeConv() jen.Code {
 
 func (f *Slice) TypeDatabase() string {
 	if f.element.TypeDatabase() == "" {
-		return "" // TODO: this seems invalid, no?
+		return "" // TODO: this is invalid, no?
+	}
+
+	if _, ok := f.element.(*Byte); ok {
+		return "option<bytes | null>"
 	}
 
 	// Go treats empty slices as nil, so the database needs
@@ -152,10 +156,25 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 				)
 		}
 
+	case *Byte:
+		{
+			return jen.Func().
+				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+				Id(f.NameGo()).Params().
+				Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(jen.Id("T")).
+				Block(
+					jen.Return(
+						jen.Qual(ctx.pkgLib(), "NewByteSlice").Types(jen.Id("T"))).
+						Call(
+							jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())),
+						),
+				)
+		}
+
 	default:
 		{
 			// TODO: does not need to be a filterFunc, use filterDefine/filterInit instead ?!
-		
+
 			return jen.Func().
 				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 				Id(f.NameGo()).Params().

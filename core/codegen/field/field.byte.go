@@ -1,8 +1,10 @@
 package field
 
 import (
+	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/parser"
+	"math"
 )
 
 type Byte struct {
@@ -20,21 +22,26 @@ func (f *Byte) typeConv() jen.Code {
 }
 
 func (f *Byte) TypeDatabase() string {
+	nilCheck := ""
 	if f.source.Pointer() {
-		return "string"
+		nilCheck = "$value == NONE OR $value == NULL OR "
 	}
-	return "string ASSERT $value != NULL"
+
+	return fmt.Sprintf(
+		"%s ASSERT %s$value >= %d AND $value <= %d",
+		f.optionWrap("int"), nilCheck, 0, math.MaxUint8,
+	)
 }
 
 func (f *Byte) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
-		filterFunc:   nil, // Bool does not need a filter function.
+		filterFunc:   nil, // Byte does not need a filter function.
 
-		sortDefine: nil, // TODO: should bool be sortable?
+		sortDefine: nil, // TODO: should be sortable
 		sortInit:   nil,
-		sortFunc:   nil, // Bool does not need a sort function.
+		sortFunc:   nil, // Byte does not need a sort function.
 
 		convFrom: f.convFrom,
 		convTo:   f.convTo,
