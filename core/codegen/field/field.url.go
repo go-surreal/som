@@ -22,10 +22,11 @@ func (f *URL) typeConv() jen.Code {
 
 func (f *URL) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "option<string> ASSERT $value == NONE OR $value == NULL OR is::url($value)"
+		return "option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
+		// TODO: should field be omitted (omitempty) if value is null (instead of being set to null)?
 	}
 
-	return `string ASSERT $value == "" OR is::url($value)`
+	return `string ASSERT $value == "" OR string::is::url($value)`
 }
 
 func (f *URL) CodeGen() *CodeGen {

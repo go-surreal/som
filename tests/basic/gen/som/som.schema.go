@@ -20,8 +20,8 @@ var tmpl = `
 
 DEFINE TABLE url_example SCHEMAFULL;
 DEFINE FIELD id ON TABLE url_example TYPE record<url_example> ASSERT $value != NONE AND $value != NULL AND $value != "";
-DEFINE FIELD some_url ON TABLE url_example TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::url($value);
-DEFINE FIELD some_other_url ON TABLE url_example TYPE string ASSERT $value == "" OR is::url($value);
+DEFINE FIELD some_url ON TABLE url_example TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
+DEFINE FIELD some_other_url ON TABLE url_example TYPE string ASSERT $value == "" OR string::is::url($value);
 
 DEFINE TABLE group SCHEMAFULL;
 DEFINE FIELD id ON TABLE group TYPE record<group> ASSERT $value != NONE AND $value != NULL AND $value != "";
@@ -63,8 +63,8 @@ DEFINE FIELD time ON TABLE all_field_types TYPE datetime;
 DEFINE FIELD time_ptr ON TABLE all_field_types TYPE option<datetime | null>;
 DEFINE FIELD uuid ON TABLE all_field_types TYPE string ASSERT string::is::uuid($value);
 DEFINE FIELD uuid_ptr ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::uuid($value);
-DEFINE FIELD url ON TABLE all_field_types TYPE string ASSERT $value == "" OR is::url($value);
-DEFINE FIELD url_ptr ON TABLE all_field_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR is::url($value);
+DEFINE FIELD url ON TABLE all_field_types TYPE string ASSERT $value == "" OR string::is::url($value);
+DEFINE FIELD url_ptr ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
 DEFINE FIELD role ON TABLE all_field_types TYPE string ASSERT $value INSIDE ["", "admin", "user"];
 DEFINE FIELD enum_ptr ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NULL OR $value INSIDE ["", "admin", "user"];
 DEFINE FIELD roles ON TABLE all_field_types TYPE option<array | null>;
