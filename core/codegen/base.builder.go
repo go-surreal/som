@@ -175,7 +175,7 @@ func (b *build) buildSchemaFile() error {
 		if slice, ok := f.(*field.Slice); ok {
 
 			if _, ok := slice.Element().(*field.Byte); ok {
-				// byte slice has the type "bytes" in the database,
+				// byte slice has the type "string" in the database,
 				// so we do not need to specify its elements.
 				return
 			}
