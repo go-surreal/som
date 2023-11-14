@@ -67,8 +67,14 @@ type FieldBool struct {
 	*fieldAtomic
 }
 
+type FieldByte struct {
+	*fieldAtomic
+}
+
 type FieldTime struct {
 	*fieldAtomic
+	IsCreatedAt bool
+	IsUpdatedAt bool
 }
 
 type FieldUUID struct {

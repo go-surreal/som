@@ -2,9 +2,9 @@ package codegen
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/codegen/field"
-	"github.com/marcbinz/som/core/embed"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/embed"
 	"os"
 	"path"
 	"path/filepath"
@@ -150,7 +150,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 				Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("+").
 				Lit(" CONTENT $data"),
 
-			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
+			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Id("edge")),
 
 			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("e").Dot("db").Dot("Query").Call(
 				jen.Id("ctx"),
@@ -161,13 +161,15 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create relation: %w"), jen.Err())),
 			),
 
-			jen.Var().Id("convEdge").Qual(b.subPkg(def.PkgConv), edge.NameGo()),
+			jen.Var().Id("convEdge").Op("*").Qual(b.subPkg(def.PkgConv), edge.NameGo()),
 			jen.Err().Op("=").Id("e").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convEdge")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal relation: %w"), jen.Err())),
 			),
 
-			jen.Op("*").Id("edge").Op("=").Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
+			jen.Op("*").Id("edge").Op("=").
+				Op("*").Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
+
 			jen.Return(jen.Nil()),
 		)
 

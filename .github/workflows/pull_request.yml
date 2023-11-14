@@ -2,16 +2,32 @@ name: PR
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/pull_request.yml"
+      - "cmd/**/*"
+      - "core/**/*"
+      - "tests/**/*"
+      - ".envrc"
+      - ".golangci.yml"
+      - ".tool-versions"
+      - "go.mod"
+      - "go.sum"
+      - "go.work"
+      - "go.work.sum"
+      - "som.go"
 
 jobs:
 
   sync:
     name: Sync
     runs-on: ubuntu-latest
+    permissions: "write-all"
+    timeout-minutes: 1
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -53,10 +69,12 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions: "write-all"
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -102,10 +120,11 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -141,10 +160,11 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -177,14 +197,6 @@ jobs:
         working-directory: .
         run: go test -v ./...
 
-      - name: Test Example Testing
-        working-directory: examples/testing
-        run: go test -v ./...
-
-      - name: Test Example Basic
-        working-directory: examples/basic
-        run: go test -v ./...
-
-      - name: Test Example Movie
-        working-directory: examples/movie
+      - name: Test Basic
+        working-directory: tests/basic
         run: go test -v ./...

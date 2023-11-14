@@ -12,7 +12,7 @@ const (
 )
 
 const (
-	PkgSom = "github.com/marcbinz/som"
+	PkgSom = "github.com/go-surreal/som"
 
 	PkgURL              = "net/url"
 	PkgUUID             = "github.com/google/uuid"

@@ -2,9 +2,9 @@ package core
 
 import (
 	"fmt"
-	"github.com/marcbinz/som/core/codegen"
-	"github.com/marcbinz/som/core/parser"
-	"github.com/marcbinz/som/core/util"
+	"github.com/go-surreal/som/core/codegen"
+	"github.com/go-surreal/som/core/parser"
+	"github.com/go-surreal/som/core/util"
 	"os"
 	"path"
 	"path/filepath"

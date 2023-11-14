@@ -23,6 +23,7 @@ func (c *context) asVar(val any) string {
 type Query[T any] struct {
 	context
 	node       string
+	live       bool
 	fields     string
 	groupBy    string
 	groupAll   bool
@@ -74,6 +75,26 @@ func (q Query[T]) BuildAsCount() *Result {
 	}
 }
 
+func (q Query[T]) BuildAsLive() *Result {
+	q.live = true
+	q.fields = "*"
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+func (q Query[T]) BuildAsLiveDiff() *Result {
+	q.live = true
+	q.fields = "DIFF"
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
 func (q Query[T]) render() string {
 	var out strings.Builder
 
@@ -86,18 +107,18 @@ func (q Query[T]) render() string {
 		out.WriteString(whereStatement)
 	}
 
-	if q.groupBy != "" {
+	if !q.live && q.groupBy != "" {
 		out.WriteString(" GROUP BY ")
 		out.WriteString(q.groupBy)
 	}
 
-	if q.groupAll {
+	if !q.live && q.groupAll {
 		out.WriteString(" GROUP ALL")
 	}
 
-	if q.SortRandom {
+	if !q.live && q.SortRandom {
 		out.WriteString(" ORDER BY RAND()")
-	} else if len(q.Sort) > 0 {
+	} else if !q.live && len(q.Sort) > 0 {
 		var sorts []string
 		for _, s := range q.Sort {
 			sorts = append(sorts, s.render())
@@ -108,13 +129,13 @@ func (q Query[T]) render() string {
 	}
 
 	// LIMIT must come before START.
-	if q.Limit > 0 {
+	if !q.live && q.Limit > 0 {
 		out.WriteString(" LIMIT ")
 		out.WriteString(strconv.Itoa(q.Limit))
 	}
 
 	// START must come after LIMIT.
-	if q.Offset > 0 {
+	if !q.live && q.Offset > 0 {
 		out.WriteString(" START ")
 		out.WriteString(strconv.Itoa(q.Offset))
 	}
@@ -124,12 +145,12 @@ func (q Query[T]) render() string {
 		out.WriteString(strings.Join(q.Fetch, ", "))
 	}
 
-	if q.Timeout > 0 {
+	if !q.live && q.Timeout > 0 {
 		out.WriteString(" TIMEOUT ")
 		out.WriteString(q.Timeout.Round(time.Second).String())
 	}
 
-	if q.Parallel {
+	if !q.live && q.Parallel {
 		out.WriteString(" PARALLEL")
 	}
 

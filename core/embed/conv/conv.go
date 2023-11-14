@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func parseDatabaseID(node string, id string) string {
@@ -86,6 +87,25 @@ func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
 		out := fn(*in)
 		return &out
 	}
+}
+
+func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
+	return func(in I) O {
+		out := fn(&in)
+		if out == nil {
+			var o O
+			return o
+		}
+		return *out
+	}
+}
+
+func mapTimestamp(val time.Time) *time.Time {
+	if val.IsZero() {
+		return nil
+	}
+
+	return &val
 }
 
 //
