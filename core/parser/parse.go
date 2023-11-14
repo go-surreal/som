@@ -363,6 +363,11 @@ func parseField(t gotype.Type) (Field, error) {
 			return &FieldBool{atomic}, nil
 		}
 
+	case gotype.Byte:
+		{
+			return &FieldByte{atomic}, nil
+		}
+
 	case gotype.Struct:
 		{
 			// TODO: prevent structs (or general types) from another package (except time and uuid)!

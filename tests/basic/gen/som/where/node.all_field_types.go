@@ -13,6 +13,8 @@ func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
 	return allFieldTypes[T]{
 		Bool:      lib.NewBool[T](lib.Field(key, "bool")),
 		Bool2:     lib.NewBool[T](lib.Field(key, "bool_2")),
+		Byte:      lib.NewBase[byte, T](lib.Field(key, "byte")),
+		BytePtr:   lib.NewBasePtr[byte, T](lib.Field(key, "byte_ptr")),
 		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
 		EnumPtr:   lib.NewBasePtr[model.Role, T](lib.Field(key, "enum_ptr")),
 		Float32:   lib.NewNumeric[float32, T](lib.Field(key, "float_32")),
@@ -55,6 +57,8 @@ type allFieldTypes[T any] struct {
 	UUIDPtr   *lib.BasePtr[uuid.UUID, T]
 	Role      *lib.Base[model.Role, T]
 	EnumPtr   *lib.BasePtr[model.Role, T]
+	Byte      *lib.Base[byte, T]
+	BytePtr   *lib.BasePtr[byte, T]
 }
 
 func (n allFieldTypes[T]) Other() *lib.Slice[T, string] {
@@ -134,6 +138,14 @@ func (n allFieldTypes[T]) MemberOf(filters ...lib.Filter[model.GroupMember]) gro
 
 func (n allFieldTypes[T]) SliceSlice() *lib.Slice[T, []string] {
 	return lib.NewSlice[T, []string](lib.Field(n.key, "slice_slice"))
+}
+
+func (n allFieldTypes[T]) ByteSlice() *lib.ByteSlice[T] {
+	return lib.NewByteSlice[T](lib.Field(n.key, "byte_slice"))
+}
+
+func (n allFieldTypes[T]) ByteSlicePtr() *lib.ByteSlice[T] {
+	return lib.NewByteSlice[T](lib.Field(n.key, "byte_slice_ptr"))
 }
 
 type allFieldTypesEdges[T any] struct {

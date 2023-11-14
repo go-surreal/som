@@ -339,6 +339,37 @@ func NewSlicePtr[T, E, F any](key Key[T]) *SlicePtr[T, E] {
 }
 
 //
+// -- BYTE SLICE
+//
+
+// ByteSlice is a filter that can be used for byte slice fields.
+// T is the type of the outgoing table for the filter statement.
+type ByteSlice[T any] struct {
+	*Base[[]byte, T]
+}
+
+// NewSlice creates a new slice filter.
+func NewByteSlice[T any](key Key[T]) *ByteSlice[T] {
+	return &ByteSlice[T]{
+		Base: &Base[[]byte, T]{key: key},
+	}
+}
+
+type ByteSlicePtr[T any] struct {
+	*ByteSlice[T]
+	*Nillable[T]
+}
+
+func NewByteSlicePtr[T any](key Key[T]) *ByteSlicePtr[T] {
+	return &ByteSlicePtr[T]{
+		ByteSlice: &ByteSlice[T]{
+			Base: &Base[[]byte, T]{key: key},
+		},
+		Nillable: &Nillable[T]{key: key},
+	}
+}
+
+//
 // -- NODE SLICE
 //
 

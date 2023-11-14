@@ -49,6 +49,10 @@ type AllFieldTypes struct {
 	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
 	MemberOf          []GroupMember  `json:"member_of,omitempty"`
 	SliceSlice        [][]string     `json:"slice_slice"`
+	Byte              byte           `json:"byte"`
+	BytePtr           *byte          `json:"byte_ptr"`
+	ByteSlice         []byte         `json:"byte_slice"`
+	ByteSlicePtr      *[]byte        `json:"byte_slice_ptr"`
 }
 
 func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
@@ -58,6 +62,10 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 	return &AllFieldTypes{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
+		Byte:              data.Byte,
+		BytePtr:           data.BytePtr,
+		ByteSlice:         data.ByteSlice,
+		ByteSlicePtr:      data.ByteSlicePtr,
 		EnumPtr:           data.EnumPtr,
 		EnumPtrSlice:      data.EnumPtrSlice,
 		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
@@ -100,6 +108,10 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 	return &model.AllFieldTypes{
 		Bool:              data.Bool,
 		Bool2:             data.Bool2,
+		Byte:              data.Byte,
+		BytePtr:           data.BytePtr,
+		ByteSlice:         data.ByteSlice,
+		ByteSlicePtr:      data.ByteSlicePtr,
 		EnumPtr:           data.EnumPtr,
 		EnumPtrSlice:      data.EnumPtrSlice,
 		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,

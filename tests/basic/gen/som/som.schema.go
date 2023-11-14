@@ -102,6 +102,10 @@ DEFINE FIELD node_ptr_slice_ptr ON TABLE all_field_types TYPE option<array | nul
 DEFINE FIELD node_ptr_slice_ptr.* ON TABLE all_field_types TYPE option<record<group> | null>;
 DEFINE FIELD slice_slice ON TABLE all_field_types TYPE option<array | null>;
 DEFINE FIELD slice_slice.* ON TABLE all_field_types TYPE option<array | null>;
+DEFINE FIELD byte ON TABLE all_field_types TYPE int ASSERT $value >= 0 AND $value <= 255;
+DEFINE FIELD byte_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
+DEFINE FIELD byte_slice ON TABLE all_field_types TYPE option<string | null>;
+DEFINE FIELD byte_slice_ptr ON TABLE all_field_types TYPE option<string | null>;
 
 DEFINE TABLE group_member SCHEMAFULL;
 DEFINE FIELD created_at ON TABLE group_member TYPE option<datetime> VALUE $before OR time::now();
