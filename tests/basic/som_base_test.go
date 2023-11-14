@@ -77,6 +77,7 @@ func TestWithDatabase(t *testing.T) {
 	userNew := model.AllFieldTypes{
 		String:    str,
 		UUID:      uid,
+		Byte:      []byte("x")[0],
 		ByteSlice: []byte("some value"),
 	}
 
@@ -100,6 +101,8 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.Equal(t, str, userOut.String)
 	assert.Equal(t, uid, userOut.UUID)
+	assert.Equal(t, userNew.Byte, userOut.Byte)
+	assert.DeepEqual(t, userNew.ByteSlice, userOut.ByteSlice)
 
 	assert.DeepEqual(t,
 		userNew, *userOut,

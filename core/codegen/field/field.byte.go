@@ -49,6 +49,8 @@ func (f *Byte) CodeGen() *CodeGen {
 	}
 }
 
+// IMP: https://github.com/orgs/surrealdb/discussions/1451
+
 func (f *Byte) filterDefine(ctx Context) jen.Code {
 	filter := "Base"
 	if f.source.Pointer() {

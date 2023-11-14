@@ -3,27 +3,12 @@ package conv
 
 import (
 	"encoding/json"
-	"fmt"
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/tests/basic/model"
 	uuid "github.com/google/uuid"
 	"strings"
 	"time"
 )
-
-type JSONableSlice []byte
-
-func (u JSONableSlice) MarshalJSON() ([]byte, error) {
-	var result string
-
-	if u == nil {
-		result = "null"
-	} else {
-		result = strings.Join(strings.Fields(fmt.Sprintf("%d", u)), ",")
-	}
-
-	return []byte(result), nil
-}
 
 type AllFieldTypes struct {
 	ID                string         `json:"id,omitempty"`
@@ -66,7 +51,7 @@ type AllFieldTypes struct {
 	SliceSlice        [][]string     `json:"slice_slice"`
 	Byte              byte           `json:"byte"`
 	BytePtr           *byte          `json:"byte_ptr"`
-	ByteSlice         JSONableSlice         `json:"byte_slice"`
+	ByteSlice         []byte         `json:"byte_slice"`
 	ByteSlicePtr      *[]byte        `json:"byte_slice_ptr"`
 }
 
