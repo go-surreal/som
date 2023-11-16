@@ -46,21 +46,21 @@ func (f *URL) CodeGen() *CodeGen {
 }
 
 func (f *URL) filterDefine(ctx Context) jen.Code {
-	filter := "Base"
+	filter := "URL"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Add(f.ptr()).Qual(def.PkgURL, "URL"), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
 }
 
 func (f *URL) filterInit(ctx Context) jen.Code {
-	filter := "NewBase"
+	filter := "NewURL"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Add(f.ptr()).Qual(def.PkgURL, "URL"), jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
 		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

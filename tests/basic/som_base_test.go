@@ -191,7 +191,7 @@ func TestURLTypes(t *testing.T) {
 
 	queryModel, err := client.URLExampleRepo().Query().
 		Filter(
-			where.URLExample.SomeURL.Equal(someURL),
+			where.URLExample.SomeURL.Equal(*someURL),
 		).
 		First(ctx)
 

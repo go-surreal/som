@@ -4,7 +4,6 @@ package where
 import (
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"net/url"
 )
 
 var URLExample = newURLExample[model.URLExample](lib.NewKey[model.URLExample]())
@@ -12,8 +11,8 @@ var URLExample = newURLExample[model.URLExample](lib.NewKey[model.URLExample]())
 func newURLExample[T any](key lib.Key[T]) urlexample[T] {
 	return urlexample[T]{
 		ID:           lib.NewID[T](lib.Field(key, "id"), "url_example"),
-		SomeOtherURL: lib.NewBase[url.URL, T](lib.Field(key, "some_other_url")),
-		SomeURL:      lib.NewBasePtr[*url.URL, T](lib.Field(key, "some_url")),
+		SomeOtherURL: lib.NewURL[T](lib.Field(key, "some_other_url")),
+		SomeURL:      lib.NewURLPtr[T](lib.Field(key, "some_url")),
 		key:          key,
 	}
 }
@@ -21,8 +20,8 @@ func newURLExample[T any](key lib.Key[T]) urlexample[T] {
 type urlexample[T any] struct {
 	key          lib.Key[T]
 	ID           *lib.ID[T]
-	SomeURL      *lib.BasePtr[*url.URL, T]
-	SomeOtherURL *lib.Base[url.URL, T]
+	SomeURL      *lib.URLPtr[T]
+	SomeOtherURL *lib.URL[T]
 }
 
 type urlexampleEdges[T any] struct {
