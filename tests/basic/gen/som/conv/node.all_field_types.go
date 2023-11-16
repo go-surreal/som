@@ -45,6 +45,8 @@ type AllFieldTypes struct {
 	TimePtr           *time.Time     `json:"time_ptr"`
 	UUID              uuid.UUID      `json:"uuid"`
 	UUIDPtr           *uuid.UUID     `json:"uuid_ptr"`
+	URL               string         `json:"url"`
+	URLPtr            *string        `json:"url_ptr"`
 	Role              model.Role     `json:"role"`
 	EnumPtr           *model.Role    `json:"enum_ptr"`
 	Roles             []model.Role   `json:"roles"`
@@ -62,6 +64,10 @@ type AllFieldTypes struct {
 	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
 	MemberOf          []GroupMember  `json:"member_of,omitempty"`
 	SliceSlice        [][]string     `json:"slice_slice"`
+	Byte              byte           `json:"byte"`
+	BytePtr           *byte          `json:"byte_ptr"`
+	ByteSlice         []byte         `json:"byte_slice"`
+	ByteSlicePtr      *[]byte        `json:"byte_slice_ptr"`
 }
 
 func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
@@ -71,6 +77,10 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 	return &AllFieldTypes{
 		Bool:              data.Bool,
 		BoolPtr:           data.BoolPtr,
+		Byte:              data.Byte,
+		BytePtr:           data.BytePtr,
+		ByteSlice:         data.ByteSlice,
+		ByteSlicePtr:      data.ByteSlicePtr,
 		EnumPtr:           data.EnumPtr,
 		EnumPtrSlice:      data.EnumPtrSlice,
 		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
@@ -108,6 +118,8 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(fromSomeStruct)),
 		Time:              data.Time,
 		TimePtr:           data.TimePtr,
+		URL:               data.URL.String(),
+		URLPtr:            urlPtr(data.URLPtr),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
 		Uint16:            data.Uint16,
@@ -126,6 +138,10 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 	return &model.AllFieldTypes{
 		Bool:              data.Bool,
 		BoolPtr:           data.BoolPtr,
+		Byte:              data.Byte,
+		BytePtr:           data.BytePtr,
+		ByteSlice:         data.ByteSlice,
+		ByteSlicePtr:      data.ByteSlicePtr,
 		EnumPtr:           data.EnumPtr,
 		EnumPtrSlice:      data.EnumPtrSlice,
 		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
@@ -166,6 +182,8 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		Time:              data.Time,
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		URL:               parseURL(data.URL),
+		URLPtr:            ptrFunc(parseURL)(data.URLPtr),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
 		Uint16:            data.Uint16,

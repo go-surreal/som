@@ -4,6 +4,7 @@ package som
 import "context"
 
 type Client interface {
+	URLExampleRepo() URLExampleRepo
 	GroupRepo() GroupRepo
 	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
 	AllFieldTypesRepo() AllFieldTypesRepo

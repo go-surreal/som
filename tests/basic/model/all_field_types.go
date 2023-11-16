@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/go-surreal/som"
 	"github.com/google/uuid"
+	"net/url"
 	"time"
 )
 
@@ -16,7 +17,7 @@ type AllFieldTypes struct {
 	StringPtr      *string
 	Other          []string
 	StringPtrSlice []*string
-	StringSlicePtr *[]string
+	StringSlicePtr *[]string // TODO: cannot be filtered for nil!
 
 	Int      int
 	IntPtr   *int
@@ -71,6 +72,9 @@ type AllFieldTypes struct {
 	UUID    uuid.UUID
 	UUIDPtr *uuid.UUID
 
+	URL    url.URL
+	URLPtr *url.URL
+
 	// enums
 
 	Role            Role
@@ -104,6 +108,11 @@ type AllFieldTypes struct {
 	SliceSlice [][]string
 
 	// maps (not (yet?) supported)
+
+	Byte         byte
+	BytePtr      *byte
+	ByteSlice    []byte
+	ByteSlicePtr *[]byte // TODO: cannot be filtered for nil!
 
 	// MappedLogin  map[string]Login // map of string and struct
 	// MappedRoles  map[string]Role  // map of string and enum

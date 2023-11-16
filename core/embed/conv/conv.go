@@ -4,6 +4,7 @@ package conv
 
 import (
 	"encoding/json"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -108,6 +109,10 @@ func mapTimestamp(val time.Time) *time.Time {
 	return &val
 }
 
+//
+// -- NUMBER
+//
+
 // func uintToString[T uint | uint64 | uintptr](val T) string {
 // 	return strconv.FormatUint(uint64(val), 10)
 // }
@@ -152,4 +157,25 @@ func (n *unsignedNumber[T]) UnmarshalJSON(data []byte) error {
 	n.val = &val
 
 	return nil
+}
+
+//
+// -- URL
+//
+
+func urlPtr(val *url.URL) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
+
+func parseURL(val string) url.URL {
+	res, err := url.Parse(val)
+	if err != nil {
+		// TODO: add logging!
+		return url.URL{}
+	}
+	return *res
 }

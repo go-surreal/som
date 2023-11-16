@@ -408,13 +408,22 @@ func parseField(t gotype.Type) (Field, error) {
 			return &FieldBool{atomic}, nil
 		}
 
+	case gotype.Byte:
+		{
+			return &FieldByte{atomic}, nil
+		}
+
 	case gotype.Struct:
 		{
 			// TODO: prevent structs (or general types) from another package (except time and uuid)!
 			switch {
-			case t.Elem().PkgPath() == "time":
+			case t.Elem().PkgPath() == "time" && t.Elem().Name() == "Time":
 				{
 					return &FieldTime{atomic, false, false}, nil
+				}
+			case t.Elem().PkgPath() == "net/url" && t.Elem().Name() == "URL":
+				{
+					return &FieldURL{atomic}, nil
 				}
 			case isNode(t.Elem()):
 				{

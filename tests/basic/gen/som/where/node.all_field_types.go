@@ -13,6 +13,8 @@ func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
 	return allFieldTypes[T]{
 		Bool:      lib.NewBool[T](lib.Field(key, "bool")),
 		BoolPtr:   lib.NewBoolPtr[T](lib.Field(key, "bool_ptr")),
+		Byte:      lib.NewBase[byte, T](lib.Field(key, "byte")),
+		BytePtr:   lib.NewBasePtr[byte, T](lib.Field(key, "byte_ptr")),
 		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
 		EnumPtr:   lib.NewBasePtr[model.Role, T](lib.Field(key, "enum_ptr")),
 		Float32:   lib.NewNumeric[float32, T](lib.Field(key, "float_32")),
@@ -34,6 +36,8 @@ func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
 		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
 		Time:      lib.NewTime[T](lib.Field(key, "time")),
 		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
+		URL:       lib.NewURL[T](lib.Field(key, "url")),
+		URLPtr:    lib.NewURLPtr[T](lib.Field(key, "url_ptr")),
 		UUID:      lib.NewBase[uuid.UUID, T](lib.Field(key, "uuid")),
 		UUIDPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
 		Uint16:    lib.NewNumeric[uint16, T](lib.Field(key, "uint_16")),
@@ -79,8 +83,12 @@ type allFieldTypes[T any] struct {
 	TimePtr   *lib.TimePtr[T]
 	UUID      *lib.Base[uuid.UUID, T]
 	UUIDPtr   *lib.BasePtr[uuid.UUID, T]
+	URL       *lib.URL[T]
+	URLPtr    *lib.URLPtr[T]
 	Role      *lib.Base[model.Role, T]
 	EnumPtr   *lib.BasePtr[model.Role, T]
+	Byte      *lib.Base[byte, T]
+	BytePtr   *lib.BasePtr[byte, T]
 }
 
 func (n allFieldTypes[T]) Other() *lib.Slice[T, string] {
@@ -160,6 +168,14 @@ func (n allFieldTypes[T]) MemberOf(filters ...lib.Filter[model.GroupMember]) gro
 
 func (n allFieldTypes[T]) SliceSlice() *lib.Slice[T, []string] {
 	return lib.NewSlice[T, []string](lib.Field(n.key, "slice_slice"))
+}
+
+func (n allFieldTypes[T]) ByteSlice() *lib.ByteSlice[T] {
+	return lib.NewByteSlice[T](lib.Field(n.key, "byte_slice"))
+}
+
+func (n allFieldTypes[T]) ByteSlicePtr() *lib.ByteSlice[T] {
+	return lib.NewByteSlice[T](lib.Field(n.key, "byte_slice_ptr"))
 }
 
 type allFieldTypesEdges[T any] struct {
