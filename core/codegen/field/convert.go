@@ -141,6 +141,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldURL:
+		{
+			return &URL{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldEnum:
 		{
 			var values []string

@@ -3,6 +3,7 @@
 package lib
 
 import (
+	"net/url"
 	"strings"
 	"time"
 )
@@ -281,6 +282,58 @@ func NewTimePtr[R any](key Key[R]) *TimePtr[R] {
 	return &TimePtr[R]{
 		Time:     NewTime[R](key),
 		Nillable: &Nillable[R]{key: key},
+	}
+}
+
+//
+// -- URL
+//
+
+type URL[T any] struct {
+	key Key[T]
+}
+
+func NewURL[T any](key Key[T]) *URL[T] {
+	return &URL[T]{key: key}
+}
+
+func (b *URL[T]) Equal(val url.URL) Filter[T] {
+	return Filter[T](b.key.Op(OpEqual, val.String()))
+}
+
+func (b *URL[T]) NotEqual(val url.URL) Filter[T] {
+	return Filter[T](b.key.Op(OpNotEqual, val.String()))
+}
+
+func (b *URL[T]) In(vals []url.URL) Filter[T] {
+	var mapped []string
+
+	for _, val := range vals {
+		mapped = append(mapped, val.String())
+	}
+
+	return Filter[T](b.key.Op(OpInside, mapped))
+}
+
+func (b *URL[T]) NotIn(vals []url.URL) Filter[T] {
+	var mapped []string
+
+	for _, val := range vals {
+		mapped = append(mapped, val.String())
+	}
+
+	return Filter[T](b.key.Op(OpNotInside, mapped))
+}
+
+type URLPtr[T any] struct {
+	*URL[T]
+	*Nillable[T]
+}
+
+func NewURLPtr[T any](key Key[T]) *URLPtr[T] {
+	return &URLPtr[T]{
+		URL:      &URL[T]{key: key},
+		Nillable: &Nillable[T]{key: key},
 	}
 }
 

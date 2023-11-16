@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gotest.tools/v3/assert"
+	"net/url"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -139,6 +140,71 @@ func TestTimestamps(t *testing.T) {
 	assert.Check(t, !user.UpdatedAt().IsZero())
 	assert.Check(t, time.Since(user.CreatedAt()) > time.Second)
 	assert.Check(t, time.Since(user.UpdatedAt()) < time.Second)
+}
+
+func TestURLTypes(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	someURL, err := url.Parse("https://surrealdb.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newModel := &model.URLExample{
+		SomeURL:      someURL,
+		SomeOtherURL: *someURL,
+	}
+
+	err = client.URLExampleRepo().Create(ctx, newModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readModel, exists, err := client.URLExampleRepo().Read(ctx, newModel.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, true, exists)
+
+	assert.Equal(t, someURL.String(), readModel.SomeURL.String())
+	assert.Equal(t, someURL.String(), readModel.SomeOtherURL.String())
+
+	someURL, err = url.Parse("https://github.com/surrealdb/surrealdb")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readModel.SomeURL = someURL
+	readModel.SomeOtherURL = *someURL
+
+	err = client.URLExampleRepo().Update(ctx, readModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, someURL.String(), readModel.SomeURL.String())
+	assert.Equal(t, someURL.String(), readModel.SomeOtherURL.String())
+
+	queryModel, err := client.URLExampleRepo().Query().
+		Filter(
+			where.URLExample.SomeURL.Equal(*someURL),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, someURL.String(), queryModel.SomeURL.String())
+
+	err = client.URLExampleRepo().Delete(ctx, readModel)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func FuzzWithDatabase(f *testing.F) {

@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/go-surreal/som"
 	"github.com/google/uuid"
+	"net/url"
 	"time"
 )
 
@@ -38,6 +39,9 @@ type AllFieldTypes struct {
 
 	UUID    uuid.UUID
 	UUIDPtr *uuid.UUID
+
+	URL    url.URL
+	URLPtr *url.URL
 
 	// enums
 

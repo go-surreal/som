@@ -29,6 +29,8 @@ func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
 		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
 		Time:      lib.NewTime[T](lib.Field(key, "time")),
 		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
+		URL:       lib.NewURL[T](lib.Field(key, "url")),
+		URLPtr:    lib.NewURLPtr[T](lib.Field(key, "url_ptr")),
 		UUID:      lib.NewBase[uuid.UUID, T](lib.Field(key, "uuid")),
 		UUIDPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
 		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
@@ -55,6 +57,8 @@ type allFieldTypes[T any] struct {
 	TimePtr   *lib.TimePtr[T]
 	UUID      *lib.Base[uuid.UUID, T]
 	UUIDPtr   *lib.BasePtr[uuid.UUID, T]
+	URL       *lib.URL[T]
+	URLPtr    *lib.URLPtr[T]
 	Role      *lib.Base[model.Role, T]
 	EnumPtr   *lib.BasePtr[model.Role, T]
 	Byte      *lib.Base[byte, T]

@@ -32,6 +32,8 @@ type AllFieldTypes struct {
 	TimePtr           *time.Time     `json:"time_ptr"`
 	UUID              uuid.UUID      `json:"uuid"`
 	UUIDPtr           *uuid.UUID     `json:"uuid_ptr"`
+	URL               string         `json:"url"`
+	URLPtr            *string        `json:"url_ptr"`
 	Role              model.Role     `json:"role"`
 	EnumPtr           *model.Role    `json:"enum_ptr"`
 	Roles             []model.Role   `json:"roles"`
@@ -96,6 +98,8 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(fromSomeStruct)),
 		Time:              data.Time,
 		TimePtr:           data.TimePtr,
+		URL:               data.URL.String(),
+		URLPtr:            urlPtr(data.URLPtr),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
 	}
@@ -145,6 +149,8 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		Time:              data.Time,
 		TimePtr:           data.TimePtr,
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		URL:               parseURL(data.URL),
+		URLPtr:            ptrFunc(parseURL)(data.URLPtr),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
 	}
