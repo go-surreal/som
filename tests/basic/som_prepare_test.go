@@ -54,7 +54,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	opts := []som.Option{
 		som.WithLogger(slog.New(
 			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-				Level: slog.LevelInfo,
+				Level: slog.LevelDebug,
 			}),
 		)),
 	}

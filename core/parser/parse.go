@@ -358,10 +358,10 @@ func parseField(t gotype.Type) (Field, error) {
 			return &FieldNumeric{atomic, NumberInt64}, nil
 		}
 
-	// case gotype.Uint:
-	// 	{
-	// 		return &FieldNumeric{atomic, NumberUint}, nil
-	// 	}
+	case gotype.Uint:
+		{
+			return &FieldNumeric{atomic, NumberUint}, nil
+		}
 
 	case gotype.Uint8:
 		{
@@ -378,15 +378,15 @@ func parseField(t gotype.Type) (Field, error) {
 			return &FieldNumeric{atomic, NumberUint32}, nil
 		}
 
-	// case gotype.Uint64:
-	// 	{
-	// 		return &FieldNumeric{atomic, NumberUint64}, nil
-	// 	}
-	//
-	// case gotype.Uintptr:
-	// 	{
-	// 		return &FieldNumeric{atomic, NumberUintptr}, nil
-	// 	}
+	case gotype.Uint64:
+		{
+			return &FieldNumeric{atomic, NumberUint64}, nil
+		}
+
+	case gotype.Uintptr:
+		{
+			return &FieldNumeric{atomic, NumberUintptr}, nil
+		}
 
 	case gotype.Float32:
 		{

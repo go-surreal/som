@@ -30,19 +30,19 @@ type AllFieldTypes struct {
 	Int64    int64 // -2^63 to 2^63-1 (-9223372036854775808 to 9223372036854775807)
 	Int64Ptr *int64
 
-	// Uint      uint
-	// UintPtr   *uint
+	Uint      uint
+	UintPtr   *uint
 	Uint8     uint8 // 0 to 255
 	Uint8Ptr  *uint8
 	Uint16    uint16 // 0 to 2^16-1 (0 to 65535)
 	Uint16Ptr *uint16
 	Uint32    uint32 // 0 to 2^32-1 (0 to 4294967295)
 	Uint32Ptr *uint32
-	// Uint64    uint64 // 0 to 2^64-1 (0 to 18446744073709551615)
-	// Uint64Ptr *uint64
+	Uint64    uint64 // 0 to 2^64-1 (0 to 18446744073709551615)
+	Uint64Ptr *uint64
 
-	// Uintptr    uintptr
-	// UintptrPtr *uintptr
+	Uintptr    uintptr
+	UintptrPtr *uintptr
 
 	Float32 float32 // -3.4e+38 to 3.4e+38.
 	More    []float32
