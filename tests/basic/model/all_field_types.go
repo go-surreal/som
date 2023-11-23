@@ -19,18 +19,50 @@ type AllFieldTypes struct {
 	StringPtrSlice []*string
 	StringSlicePtr *[]string // TODO: cannot be filtered for nil!
 
-	Int    int
-	IntPtr *int
+	Int      int
+	IntPtr   *int
+	Int8     int8 // -128 to 127
+	Int8Ptr  *int8
+	Int16    int16 // -2^15 to 2^15-1 (-32768 to 32767)
+	Int16Ptr *int16
+	Int32    int32 // -2^31 to 2^31-1 (-2147483648 to 2147483647)
+	Int32Ptr *int32
+	Int64    int64 // -2^63 to 2^63-1 (-9223372036854775808 to 9223372036854775807)
+	Int64Ptr *int64
 
-	Int32 int32
-	Int64 int64
+	//Uint      uint
+	//UintPtr   *uint
+	Uint8     uint8 // 0 to 255
+	Uint8Ptr  *uint8
+	Uint16    uint16 // 0 to 2^16-1 (0 to 65535)
+	Uint16Ptr *uint16
+	Uint32    uint32 // 0 to 2^32-1 (0 to 4294967295)
+	Uint32Ptr *uint32
+	//Uint64    uint64 // 0 to 2^64-1 (0 to 18446744073709551615)
+	//Uint64Ptr *uint64
 
-	Float32 float32
+	//Uintptr    uintptr
+	//UintptrPtr *uintptr
+
+	Float32 float32 // -3.4e+38 to 3.4e+38.
 	More    []float32
 
-	Float64 float64
+	Float64 float64 // -1.7e+308 to +1.7e+308.
+
+	// Complex64  complex64
+	// Complex128 complex128
+
+	Rune rune
+
 	Bool    bool
-	Bool2   bool
+	BoolPtr *bool
+
+	// TODO: should we support the any type? (surrealdb seems to support it)
+
+	// TODO: support math types?
+	// BigInt   big.Int
+	// BigRat   big.Rat
+	// BigFloat big.Float
 
 	// special types
 
@@ -69,7 +101,7 @@ type AllFieldTypes struct {
 
 	// edges
 
-	MemberOf []GroupMember
+	MemberOf []GroupMember // slice of edges
 
 	// other
 

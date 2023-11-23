@@ -21,13 +21,26 @@ type AllFieldTypes struct {
 	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
 	Int               int            `json:"int"`
 	IntPtr            *int           `json:"int_ptr"`
+	Int8              int8           `json:"int_8"`
+	Int8Ptr           *int8          `json:"int_8_ptr"`
+	Int16             int16          `json:"int_16"`
+	Int16Ptr          *int16         `json:"int_16_ptr"`
 	Int32             int32          `json:"int_32"`
+	Int32Ptr          *int32         `json:"int_32_ptr"`
 	Int64             int64          `json:"int_64"`
+	Int64Ptr          *int64         `json:"int_64_ptr"`
+	Uint8             uint8          `json:"uint_8"`
+	Uint8Ptr          *uint8         `json:"uint_8_ptr"`
+	Uint16            uint16         `json:"uint_16"`
+	Uint16Ptr         *uint16        `json:"uint_16_ptr"`
+	Uint32            uint32         `json:"uint_32"`
+	Uint32Ptr         *uint32        `json:"uint_32_ptr"`
 	Float32           float32        `json:"float_32"`
 	More              []float32      `json:"more"`
 	Float64           float64        `json:"float_64"`
+	Rune              rune           `json:"rune"`
 	Bool              bool           `json:"bool"`
-	Bool2             bool           `json:"bool_2"`
+	BoolPtr           *bool          `json:"bool_ptr"`
 	Time              time.Time      `json:"time"`
 	TimePtr           *time.Time     `json:"time_ptr"`
 	UUID              uuid.UUID      `json:"uuid"`
@@ -63,7 +76,7 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 	}
 	return &AllFieldTypes{
 		Bool:              data.Bool,
-		Bool2:             data.Bool2,
+		BoolPtr:           data.BoolPtr,
 		Byte:              data.Byte,
 		BytePtr:           data.BytePtr,
 		ByteSlice:         data.ByteSlice,
@@ -75,8 +88,14 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		Float64:           data.Float64,
 		Groups:            mapSlice(data.Groups, toGroupLink),
 		Int:               data.Int,
+		Int16:             data.Int16,
+		Int16Ptr:          data.Int16Ptr,
 		Int32:             data.Int32,
+		Int32Ptr:          data.Int32Ptr,
 		Int64:             data.Int64,
+		Int64Ptr:          data.Int64Ptr,
+		Int8:              data.Int8,
+		Int8Ptr:           data.Int8Ptr,
 		IntPtr:            data.IntPtr,
 		Login:             noPtrFunc(fromLogin)(data.Login),
 		MainGroup:         toGroupLink(data.MainGroup),
@@ -87,6 +106,7 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		Other:             data.Other,
 		Role:              data.Role,
 		Roles:             data.Roles,
+		Rune:              data.Rune,
 		SliceSlice:        data.SliceSlice,
 		String:            data.String,
 		StringPtr:         data.StringPtr,
@@ -102,6 +122,12 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		URLPtr:            urlPtr(data.URLPtr),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
+		Uint16:            data.Uint16,
+		Uint16Ptr:         data.Uint16Ptr,
+		Uint32:            data.Uint32,
+		Uint32Ptr:         data.Uint32Ptr,
+		Uint8:             data.Uint8,
+		Uint8Ptr:          data.Uint8Ptr,
 	}
 }
 
@@ -111,7 +137,7 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 	}
 	return &model.AllFieldTypes{
 		Bool:              data.Bool,
-		Bool2:             data.Bool2,
+		BoolPtr:           data.BoolPtr,
 		Byte:              data.Byte,
 		BytePtr:           data.BytePtr,
 		ByteSlice:         data.ByteSlice,
@@ -123,8 +149,14 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		Float64:           data.Float64,
 		Groups:            mapSlice(data.Groups, fromGroupLink),
 		Int:               data.Int,
+		Int16:             data.Int16,
+		Int16Ptr:          data.Int16Ptr,
 		Int32:             data.Int32,
+		Int32Ptr:          data.Int32Ptr,
 		Int64:             data.Int64,
+		Int64Ptr:          data.Int64Ptr,
+		Int8:              data.Int8,
+		Int8Ptr:           data.Int8Ptr,
 		IntPtr:            data.IntPtr,
 		Login:             noPtrFunc(toLogin)(data.Login),
 		MainGroup:         fromGroupLink(data.MainGroup),
@@ -137,6 +169,7 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		Other:             data.Other,
 		Role:              data.Role,
 		Roles:             data.Roles,
+		Rune:              data.Rune,
 		SliceSlice:        data.SliceSlice,
 		String:            data.String,
 		StringPtr:         data.StringPtr,
@@ -153,6 +186,12 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		URLPtr:            ptrFunc(parseURL)(data.URLPtr),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
+		Uint16:            data.Uint16,
+		Uint16Ptr:         data.Uint16Ptr,
+		Uint32:            data.Uint32,
+		Uint32Ptr:         data.Uint32Ptr,
+		Uint8:             data.Uint8,
+		Uint8Ptr:          data.Uint8Ptr,
 	}
 }
 

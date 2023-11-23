@@ -12,7 +12,7 @@ var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes](lib.NewKey[model.AllFi
 func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
 	return allFieldTypes[T]{
 		Bool:      lib.NewBool[T](lib.Field(key, "bool")),
-		Bool2:     lib.NewBool[T](lib.Field(key, "bool_2")),
+		BoolPtr:   lib.NewBoolPtr[T](lib.Field(key, "bool_ptr")),
 		Byte:      lib.NewBase[byte, T](lib.Field(key, "byte")),
 		BytePtr:   lib.NewBasePtr[byte, T](lib.Field(key, "byte_ptr")),
 		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
@@ -21,10 +21,17 @@ func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
 		Float64:   lib.NewNumeric[float64, T](lib.Field(key, "float_64")),
 		ID:        lib.NewID[T](lib.Field(key, "id"), "all_field_types"),
 		Int:       lib.NewNumeric[int, T](lib.Field(key, "int")),
+		Int16:     lib.NewNumeric[int16, T](lib.Field(key, "int_16")),
+		Int16Ptr:  lib.NewNumericPtr[*int16, T](lib.Field(key, "int_16_ptr")),
 		Int32:     lib.NewNumeric[int32, T](lib.Field(key, "int_32")),
+		Int32Ptr:  lib.NewNumericPtr[*int32, T](lib.Field(key, "int_32_ptr")),
 		Int64:     lib.NewNumeric[int64, T](lib.Field(key, "int_64")),
+		Int64Ptr:  lib.NewNumericPtr[*int64, T](lib.Field(key, "int_64_ptr")),
+		Int8:      lib.NewNumeric[int8, T](lib.Field(key, "int_8")),
+		Int8Ptr:   lib.NewNumericPtr[*int8, T](lib.Field(key, "int_8_ptr")),
 		IntPtr:    lib.NewNumericPtr[*int, T](lib.Field(key, "int_ptr")),
 		Role:      lib.NewBase[model.Role, T](lib.Field(key, "role")),
+		Rune:      lib.NewNumeric[rune, T](lib.Field(key, "rune")),
 		String:    lib.NewString[T](lib.Field(key, "string")),
 		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
 		Time:      lib.NewTime[T](lib.Field(key, "time")),
@@ -33,6 +40,12 @@ func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
 		URLPtr:    lib.NewURLPtr[T](lib.Field(key, "url_ptr")),
 		UUID:      lib.NewBase[uuid.UUID, T](lib.Field(key, "uuid")),
 		UUIDPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
+		Uint16:    lib.NewNumeric[uint16, T](lib.Field(key, "uint_16")),
+		Uint16Ptr: lib.NewNumericPtr[*uint16, T](lib.Field(key, "uint_16_ptr")),
+		Uint32:    lib.NewNumeric[uint32, T](lib.Field(key, "uint_32")),
+		Uint32Ptr: lib.NewNumericPtr[*uint32, T](lib.Field(key, "uint_32_ptr")),
+		Uint8:     lib.NewNumeric[uint8, T](lib.Field(key, "uint_8")),
+		Uint8Ptr:  lib.NewNumericPtr[*uint8, T](lib.Field(key, "uint_8_ptr")),
 		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
 		key:       key,
 	}
@@ -47,12 +60,25 @@ type allFieldTypes[T any] struct {
 	StringPtr *lib.StringPtr[T]
 	Int       *lib.Numeric[int, T]
 	IntPtr    *lib.NumericPtr[*int, T]
+	Int8      *lib.Numeric[int8, T]
+	Int8Ptr   *lib.NumericPtr[*int8, T]
+	Int16     *lib.Numeric[int16, T]
+	Int16Ptr  *lib.NumericPtr[*int16, T]
 	Int32     *lib.Numeric[int32, T]
+	Int32Ptr  *lib.NumericPtr[*int32, T]
 	Int64     *lib.Numeric[int64, T]
+	Int64Ptr  *lib.NumericPtr[*int64, T]
+	Uint8     *lib.Numeric[uint8, T]
+	Uint8Ptr  *lib.NumericPtr[*uint8, T]
+	Uint16    *lib.Numeric[uint16, T]
+	Uint16Ptr *lib.NumericPtr[*uint16, T]
+	Uint32    *lib.Numeric[uint32, T]
+	Uint32Ptr *lib.NumericPtr[*uint32, T]
 	Float32   *lib.Numeric[float32, T]
 	Float64   *lib.Numeric[float64, T]
+	Rune      *lib.Numeric[rune, T]
 	Bool      *lib.Bool[T]
-	Bool2     *lib.Bool[T]
+	BoolPtr   *lib.BoolPtr[T]
 	Time      *lib.Time[T]
 	TimePtr   *lib.TimePtr[T]
 	UUID      *lib.Base[uuid.UUID, T]
