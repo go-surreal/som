@@ -65,26 +65,15 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
-	nodeType := "node" + node.NameGo()
-	nodeTypeLive := "Node" + node.NameGo()
-	nodeTypeNoLive := "Node" + node.NameGo() + "NoLive"
-
-	f.Line()
-	f.Type().Id(nodeType).Struct(
-		jen.Id("db").Id("Database"),
-		jen.Id("query").Qual(pkgLib, "Query").Types(b.SourceQual(node.Name)),
-		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
-	)
-
-	f.Line()
-	f.Type().Id(nodeTypeLive).Struct(
-		jen.Id(nodeType),
-	)
-
-	f.Line()
-	f.Type().Id(nodeTypeNoLive).Struct(
-		jen.Id(nodeType),
-	)
+	// func NewGroup(db Database, unmarshal func(buf []byte, val any) error) Builder[model.Group, conv.Group] {
+	//	return Builder[model.Group, conv.Group]{builder[model.Group, conv.Group]{
+	//		db:        db,
+	//		query:     lib.NewQuery[model.Group]("group"),
+	//		unmarshal: unmarshal,
+	//		convFrom:  conv.FromGroup,
+	//		convTo:    conv.ToGroup,
+	//	}}
+	//}
 
 	f.Line()
 	f.Func().Id("New"+node.Name).
@@ -92,43 +81,47 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			jen.Id("db").Id("Database"),
 			jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 		).
-		Id(nodeTypeLive).
+		Id("Builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
 		Block(
 			jen.Return(
-				jen.Id(nodeTypeLive).Values(
-					jen.Id(nodeType).Values(jen.Dict{
-						jen.Id("db"):        jen.Id("db"),
-						jen.Id("query"):     jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
-						jen.Id("unmarshal"): jen.Id("unmarshal"),
-					}),
-				),
+				jen.Id("Builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
+					Values(
+						jen.Id("builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
+							Values(jen.Dict{
+								jen.Id("db"):        jen.Id("db"),
+								jen.Id("query"):     jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
+								jen.Id("unmarshal"): jen.Id("unmarshal"),
+								jen.Id("convFrom"):  jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()),
+								jen.Id("convTo"):    jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()),
+							}),
+					),
 			),
 		)
 
-	functions := []jen.Code{
-		b.buildQueryFuncFilter(node),
-		b.buildQueryFuncOrder(node),
-		b.buildQueryFuncOrderRandom(node),
-		b.buildQueryFuncOffset(node),
-		b.buildQueryFuncLimit(node),
-		b.buildQueryFuncFetch(node), // TODO
-		b.buildQueryFuncTimeout(node),
-		b.buildQueryFuncParallel(node),
-		b.buildQueryFuncCount(node),
-		b.buildQueryFuncExists(node),
-		b.buildQueryFuncAll(node),
-		b.buildQueryFuncAllIDs(node),
-		b.buildQueryFuncFirst(node),
-		b.buildQueryFuncFirstID(node),
-		b.buildQueryFuncLive(node),
-		// TODO: b.buildQueryFuncLiveDiff(node),
-		b.buildQueryFuncDescribe(node), // TODO
-	}
-
-	for _, fn := range functions {
-		f.Line()
-		f.Add(fn)
-	}
+	//functions := []jen.Code{
+	//	b.buildQueryFuncFilter(node),
+	//	b.buildQueryFuncOrder(node),
+	//	b.buildQueryFuncOrderRandom(node),
+	//	b.buildQueryFuncOffset(node),
+	//	b.buildQueryFuncLimit(node),
+	//	b.buildQueryFuncFetch(node), // TODO
+	//	b.buildQueryFuncTimeout(node),
+	//	b.buildQueryFuncParallel(node),
+	//	b.buildQueryFuncCount(node),
+	//	b.buildQueryFuncExists(node),
+	//	b.buildQueryFuncAll(node),
+	//	b.buildQueryFuncAllIDs(node),
+	//	b.buildQueryFuncFirst(node),
+	//	b.buildQueryFuncFirstID(node),
+	//	b.buildQueryFuncLive(node),
+	//	// TODO: b.buildQueryFuncLiveDiff(node),
+	//	b.buildQueryFuncDescribe(node), // TODO
+	//}
+	//
+	//for _, fn := range functions {
+	//	f.Line()
+	//	f.Add(fn)
+	//}
 
 	if err := f.Save(path.Join(b.path(), node.FileName())); err != nil {
 		return err

@@ -12,7 +12,7 @@ import (
 )
 
 type AllFieldTypesRepo interface {
-	Query() query.NodeAllFieldTypes
+	Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes]
 	Create(ctx context.Context, user *model.AllFieldTypes) error
 	CreateWithID(ctx context.Context, id string, user *model.AllFieldTypes) error
 	Read(ctx context.Context, id string) (*model.AllFieldTypes, bool, error)
@@ -31,7 +31,7 @@ type allFieldTypes struct {
 	unmarshal func(buf []byte, val any) error
 }
 
-func (n *allFieldTypes) Query() query.NodeAllFieldTypes {
+func (n *allFieldTypes) Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes] {
 	return query.NewAllFieldTypes(n.db, n.unmarshal)
 }
 

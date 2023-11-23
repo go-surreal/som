@@ -12,7 +12,7 @@ import (
 )
 
 type URLExampleRepo interface {
-	Query() query.NodeURLExample
+	Query() query.Builder[model.URLExample, conv.URLExample]
 	Create(ctx context.Context, user *model.URLExample) error
 	CreateWithID(ctx context.Context, id string, user *model.URLExample) error
 	Read(ctx context.Context, id string) (*model.URLExample, bool, error)
@@ -31,7 +31,7 @@ type urlexample struct {
 	unmarshal func(buf []byte, val any) error
 }
 
-func (n *urlexample) Query() query.NodeURLExample {
+func (n *urlexample) Query() query.Builder[model.URLExample, conv.URLExample] {
 	return query.NewURLExample(n.db, n.unmarshal)
 }
 

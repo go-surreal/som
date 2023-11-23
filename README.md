@@ -263,3 +263,6 @@ Please take a look at the [MAINTAINERS.md](MAINTAINERS.md) file.
 ## References
 
 - [Official SurrealDB documentation](https://surrealdb.com/docs)
+
+// som hooks:
+// Note: When using the hooks in a multi-node application setup, it will only trigger on the node that triggers the change.
