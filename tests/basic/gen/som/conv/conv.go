@@ -130,11 +130,7 @@ type unsignedNumber[T uint | uint64 | uintptr] struct {
 }
 
 func (n *unsignedNumber[T]) MarshalJSON() ([]byte, error) {
-	if n == nil || n.val == nil {
-		return json.Marshal(nil)
-	}
-
-	return json.Marshal(n.val) // strconv.FormatUint(uint64(*n.val), 10)
+	return json.Marshal(strconv.FormatUint(uint64(*n.val), 10) + "dec")
 }
 
 func (n *unsignedNumber[T]) UnmarshalJSON(data []byte) error {
@@ -145,18 +141,20 @@ func (n *unsignedNumber[T]) UnmarshalJSON(data []byte) error {
 	var raw string
 	err := json.Unmarshal(data, &raw)
 	if err != nil {
-		raw = string(data)
+		return err
 	}
 
-	if raw != "" {
-		res, err := strconv.ParseUint(raw, 10, 64)
-		if err != nil {
-			return err
-		}
-
-		val := T(res)
-		n.val = &val
+	if raw == "" {
+		return nil
 	}
+
+	res, err := strconv.ParseUint(raw, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	val := T(res)
+	n.val = &val
 
 	return nil
 }

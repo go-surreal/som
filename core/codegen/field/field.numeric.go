@@ -25,18 +25,18 @@ func (f *Numeric) typeGo() jen.Code {
 		return jen.Add(f.ptr()).Int32()
 	case parser.NumberInt64:
 		return jen.Add(f.ptr()).Int64()
-	case parser.NumberUint:
-		return jen.Add(f.ptr()).Uint()
+	//case parser.NumberUint:
+	//	return jen.Add(f.ptr()).Uint()
 	case parser.NumberUint8:
 		return jen.Add(f.ptr()).Uint8()
 	case parser.NumberUint16:
 		return jen.Add(f.ptr()).Uint16()
 	case parser.NumberUint32:
 		return jen.Add(f.ptr()).Uint32()
-	case parser.NumberUint64:
-		return jen.Add(f.ptr()).Uint64()
-	case parser.NumberUintptr:
-		return jen.Add(f.ptr()).Uintptr()
+	//case parser.NumberUint64:
+	//	return jen.Add(f.ptr()).Uint64()
+	//case parser.NumberUintptr:
+	//	return jen.Add(f.ptr()).Uintptr()
 	case parser.NumberFloat32:
 		return jen.Add(f.ptr()).Float32()
 	case parser.NumberFloat64:
@@ -51,21 +51,21 @@ func (f *Numeric) typeGo() jen.Code {
 func (f *Numeric) typeConv() jen.Code {
 	switch f.source.Type {
 
-	case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-		{
-			var typ jen.Code
-			//// Qual(def.PkgJson, "Number")
-			switch f.source.Type {
-			case parser.NumberUint:
-				typ = jen.Uint()
-			case parser.NumberUint64:
-				typ = jen.Uint64()
-			case parser.NumberUintptr:
-				typ = jen.Uintptr()
-			}
-
-			return jen.Id("unsignedNumber").Types(typ)
-		}
+	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
+	//	{
+	//		var typ jen.Code
+	//		//// Qual(def.PkgJson, "Number")
+	//		switch f.source.Type {
+	//		case parser.NumberUint:
+	//			typ = jen.Uint()
+	//		case parser.NumberUint64:
+	//			typ = jen.Uint64()
+	//		case parser.NumberUintptr:
+	//			typ = jen.Uintptr()
+	//		}
+	//
+	//		return jen.Id("unsignedNumber").Types(typ)
+	//	}
 
 	default:
 		return f.typeGo()
@@ -93,8 +93,8 @@ func (f *Numeric) TypeDatabase() string {
 		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint16)
 	case parser.NumberUint32:
 		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint32)
-	case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-		return fmt.Sprintf("%s ASSERT %s$value >= %ddec AND $value <= %ddec", f.optionWrap("number"), nilCheck, 0, uint64(math.MaxUint64))
+	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
+	//	return fmt.Sprintf("%s ASSERT %s$value >= %ddec AND $value <= %ddec", f.optionWrap("number"), nilCheck, 0, uint64(math.MaxUint64))
 	case parser.NumberFloat32:
 		return f.optionWrap("float") // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "1.2E-38", "3.4E+38")
 	case parser.NumberFloat64:
@@ -150,44 +150,44 @@ func (f *Numeric) sortInit(ctx Context) jen.Code {
 
 func (f *Numeric) convFrom(ctx Context) jen.Code {
 	switch f.source.Type {
-	// json.Number(strconv.FormatUint(uint64(data.Uint), 10))
-	case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-		{
-			var typ jen.Code
 
-			switch f.source.Type {
-			case parser.NumberUint:
-				typ = jen.Uint()
-			case parser.NumberUint64:
-				typ = jen.Uint64()
-			case parser.NumberUintptr:
-				typ = jen.Uintptr()
-			}
-
-			field := jen.Id("data").Dot(f.NameGo())
-			if !f.source.Pointer() {
-				field = jen.Op("&").Add(field)
-			}
-
-			return jen.Id("unsignedNumber").Types(typ).Values(field)
-		}
+	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
+	//	{
+	//		var typ jen.Code
+	//
+	//		switch f.source.Type {
+	//		case parser.NumberUint:
+	//			typ = jen.Uint()
+	//		case parser.NumberUint64:
+	//			typ = jen.Uint64()
+	//		case parser.NumberUintptr:
+	//			typ = jen.Uintptr()
+	//		}
+	//
+	//		field := jen.Id("data").Dot(f.NameGo())
+	//		if !f.source.Pointer() {
+	//			field = jen.Op("&").Add(field)
+	//		}
+	//
+	//		return jen.Id("unsignedNumber").Types(typ).Values(field)
+	//	}
 
 	default:
 		return jen.Id("data").Dot(f.NameGo())
 	}
 }
 
-func (f *Numeric) convTo(ctx Context) jen.Code {
+func (f *Numeric) convTo(_ Context) jen.Code {
 	switch f.source.Type {
 
-	case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-		{
-			if !f.source.Pointer() {
-				return jen.Op("*").Id("data").Dot(f.NameGo()).Dot("val")
-			}
-
-			return jen.Id("data").Dot(f.NameGo()).Dot("val")
-		}
+	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
+	//	{
+	//		if !f.source.Pointer() {
+	//			return jen.Op("*").Id("data").Dot(f.NameGo()).Dot("val")
+	//		}
+	//
+	//		return jen.Id("data").Dot(f.NameGo()).Dot("val")
+	//	}
 
 	default:
 		return jen.Id("data").Dot(f.NameGo())

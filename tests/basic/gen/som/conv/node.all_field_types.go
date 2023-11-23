@@ -11,69 +11,63 @@ import (
 )
 
 type AllFieldTypes struct {
-	ID                string                  `json:"id,omitempty"`
-	CreatedAt         *time.Time              `json:"created_at,omitempty"`
-	UpdatedAt         *time.Time              `json:"updated_at,omitempty"`
-	String            string                  `json:"string"`
-	StringPtr         *string                 `json:"string_ptr"`
-	Other             []string                `json:"other"`
-	StringPtrSlice    []*string               `json:"string_ptr_slice"`
-	StringSlicePtr    *[]string               `json:"string_slice_ptr"`
-	Int               int                     `json:"int"`
-	IntPtr            *int                    `json:"int_ptr"`
-	Int8              int8                    `json:"int_8"`
-	Int8Ptr           *int8                   `json:"int_8_ptr"`
-	Int16             int16                   `json:"int_16"`
-	Int16Ptr          *int16                  `json:"int_16_ptr"`
-	Int32             int32                   `json:"int_32"`
-	Int32Ptr          *int32                  `json:"int_32_ptr"`
-	Int64             int64                   `json:"int_64"`
-	Int64Ptr          *int64                  `json:"int_64_ptr"`
-	Uint              unsignedNumber[uint]    `json:"uint"`
-	UintPtr           unsignedNumber[uint]    `json:"uint_ptr"`
-	Uint8             uint8                   `json:"uint_8"`
-	Uint8Ptr          *uint8                  `json:"uint_8_ptr"`
-	Uint16            uint16                  `json:"uint_16"`
-	Uint16Ptr         *uint16                 `json:"uint_16_ptr"`
-	Uint32            uint32                  `json:"uint_32"`
-	Uint32Ptr         *uint32                 `json:"uint_32_ptr"`
-	Uint64            unsignedNumber[uint64]  `json:"uint_64"`
-	Uint64Ptr         unsignedNumber[uint64]  `json:"uint_64_ptr"`
-	Uintptr           unsignedNumber[uintptr] `json:"uintptr"`
-	UintptrPtr        unsignedNumber[uintptr] `json:"uintptr_ptr"`
-	Float32           float32                 `json:"float_32"`
-	More              []float32               `json:"more"`
-	Float64           float64                 `json:"float_64"`
-	Rune              rune                    `json:"rune"`
-	Bool              bool                    `json:"bool"`
-	BoolPtr           *bool                   `json:"bool_ptr"`
-	Time              time.Time               `json:"time"`
-	TimePtr           *time.Time              `json:"time_ptr"`
-	UUID              uuid.UUID               `json:"uuid"`
-	UUIDPtr           *uuid.UUID              `json:"uuid_ptr"`
-	URL               string                  `json:"url"`
-	URLPtr            *string                 `json:"url_ptr"`
-	Role              model.Role              `json:"role"`
-	EnumPtr           *model.Role             `json:"enum_ptr"`
-	Roles             []model.Role            `json:"roles"`
-	EnumPtrSlice      []*model.Role           `json:"enum_ptr_slice"`
-	EnumPtrSlicePtr   *[]*model.Role          `json:"enum_ptr_slice_ptr"`
-	Login             login                   `json:"login"`
-	StructPtr         *someStruct             `json:"struct_ptr"`
-	StructSlice       []someStruct            `json:"struct_slice"`
-	StructPtrSlice    []*someStruct           `json:"struct_ptr_slice"`
-	StructPtrSlicePtr *[]*someStruct          `json:"struct_ptr_slice_ptr"`
-	MainGroup         *groupLink              `json:"main_group"`
-	MainGroupPtr      *groupLink              `json:"main_group_ptr"`
-	Groups            []*groupLink            `json:"groups"`
-	NodePtrSlice      []*groupLink            `json:"node_ptr_slice"`
-	NodePtrSlicePtr   *[]*groupLink           `json:"node_ptr_slice_ptr"`
-	MemberOf          []GroupMember           `json:"member_of,omitempty"`
-	SliceSlice        [][]string              `json:"slice_slice"`
-	Byte              byte                    `json:"byte"`
-	BytePtr           *byte                   `json:"byte_ptr"`
-	ByteSlice         []byte                  `json:"byte_slice"`
-	ByteSlicePtr      *[]byte                 `json:"byte_slice_ptr"`
+	ID                string         `json:"id,omitempty"`
+	CreatedAt         *time.Time     `json:"created_at,omitempty"`
+	UpdatedAt         *time.Time     `json:"updated_at,omitempty"`
+	String            string         `json:"string"`
+	StringPtr         *string        `json:"string_ptr"`
+	Other             []string       `json:"other"`
+	StringPtrSlice    []*string      `json:"string_ptr_slice"`
+	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
+	Int               int            `json:"int"`
+	IntPtr            *int           `json:"int_ptr"`
+	Int8              int8           `json:"int_8"`
+	Int8Ptr           *int8          `json:"int_8_ptr"`
+	Int16             int16          `json:"int_16"`
+	Int16Ptr          *int16         `json:"int_16_ptr"`
+	Int32             int32          `json:"int_32"`
+	Int32Ptr          *int32         `json:"int_32_ptr"`
+	Int64             int64          `json:"int_64"`
+	Int64Ptr          *int64         `json:"int_64_ptr"`
+	Uint8             uint8          `json:"uint_8"`
+	Uint8Ptr          *uint8         `json:"uint_8_ptr"`
+	Uint16            uint16         `json:"uint_16"`
+	Uint16Ptr         *uint16        `json:"uint_16_ptr"`
+	Uint32            uint32         `json:"uint_32"`
+	Uint32Ptr         *uint32        `json:"uint_32_ptr"`
+	Float32           float32        `json:"float_32"`
+	More              []float32      `json:"more"`
+	Float64           float64        `json:"float_64"`
+	Rune              rune           `json:"rune"`
+	Bool              bool           `json:"bool"`
+	BoolPtr           *bool          `json:"bool_ptr"`
+	Time              time.Time      `json:"time"`
+	TimePtr           *time.Time     `json:"time_ptr"`
+	UUID              uuid.UUID      `json:"uuid"`
+	UUIDPtr           *uuid.UUID     `json:"uuid_ptr"`
+	URL               string         `json:"url"`
+	URLPtr            *string        `json:"url_ptr"`
+	Role              model.Role     `json:"role"`
+	EnumPtr           *model.Role    `json:"enum_ptr"`
+	Roles             []model.Role   `json:"roles"`
+	EnumPtrSlice      []*model.Role  `json:"enum_ptr_slice"`
+	EnumPtrSlicePtr   *[]*model.Role `json:"enum_ptr_slice_ptr"`
+	Login             login          `json:"login"`
+	StructPtr         *someStruct    `json:"struct_ptr"`
+	StructSlice       []someStruct   `json:"struct_slice"`
+	StructPtrSlice    []*someStruct  `json:"struct_ptr_slice"`
+	StructPtrSlicePtr *[]*someStruct `json:"struct_ptr_slice_ptr"`
+	MainGroup         *groupLink     `json:"main_group"`
+	MainGroupPtr      *groupLink     `json:"main_group_ptr"`
+	Groups            []*groupLink   `json:"groups"`
+	NodePtrSlice      []*groupLink   `json:"node_ptr_slice"`
+	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
+	MemberOf          []GroupMember  `json:"member_of,omitempty"`
+	SliceSlice        [][]string     `json:"slice_slice"`
+	Byte              byte           `json:"byte"`
+	BytePtr           *byte          `json:"byte_ptr"`
+	ByteSlice         []byte         `json:"byte_slice"`
+	ByteSlicePtr      *[]byte        `json:"byte_slice_ptr"`
 }
 
 func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
@@ -128,18 +122,12 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		URLPtr:            urlPtr(data.URLPtr),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
-		Uint:              unsignedNumber[uint]{&data.Uint},
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
 		Uint32:            data.Uint32,
 		Uint32Ptr:         data.Uint32Ptr,
-		Uint64:            unsignedNumber[uint64]{&data.Uint64},
-		Uint64Ptr:         unsignedNumber[uint64]{data.Uint64Ptr},
 		Uint8:             data.Uint8,
 		Uint8Ptr:          data.Uint8Ptr,
-		UintPtr:           unsignedNumber[uint]{data.UintPtr},
-		Uintptr:           unsignedNumber[uintptr]{&data.Uintptr},
-		UintptrPtr:        unsignedNumber[uintptr]{data.UintptrPtr},
 	}
 }
 
@@ -198,18 +186,12 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		URLPtr:            ptrFunc(parseURL)(data.URLPtr),
 		UUID:              data.UUID,
 		UUIDPtr:           data.UUIDPtr,
-		Uint:              *data.Uint.val,
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
 		Uint32:            data.Uint32,
 		Uint32Ptr:         data.Uint32Ptr,
-		Uint64:            *data.Uint64.val,
-		Uint64Ptr:         data.Uint64Ptr.val,
 		Uint8:             data.Uint8,
 		Uint8Ptr:          data.Uint8Ptr,
-		UintPtr:           data.UintPtr.val,
-		Uintptr:           *data.Uintptr.val,
-		UintptrPtr:        data.UintptrPtr.val,
 	}
 }
 
