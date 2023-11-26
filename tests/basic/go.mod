@@ -4,6 +4,8 @@ go 1.21.4
 
 replace github.com/go-surreal/som => ../../
 
+replace github.com/go-surreal/sdbc => ../../../sdbc
+
 require (
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/go-surreal/sdbc v0.1.1

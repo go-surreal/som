@@ -249,6 +249,12 @@ func (b builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*M], error) 
 	return live(ctx, resChan, b.unmarshal, b.convTo), nil
 }
 
+// LiveDiff behaves like Live, but instead of receiving the full result
+// set on every change, it only receives the actual changes.
+//func (b builder[M, C]) LiveDiff(ctx context.Context) (<-chan LiveResult[*M], error) {
+//	panic("not yet implemented") // TODO: implement!
+//}
+
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
