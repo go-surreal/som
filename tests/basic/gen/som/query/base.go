@@ -6,10 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	with "github.com/go-surreal/som/tests/basic/gen/som/with"
-	model "github.com/go-surreal/som/tests/basic/model"
 	"strings"
 	"time"
 )
@@ -242,13 +240,13 @@ func (b builder[M, C]) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 // it is advised to execute the live query first. This is to ensure
 // data consistency. The other way around, there could be missing
 // updates happening between the initial query and the live query.
-func (b builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*model.Group], error) {
+func (b builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
 	req := b.query.BuildAsLive()
 	resChan, err := b.db.Live(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query live records: %w", err)
 	}
-	return live(ctx, resChan, b.unmarshal, conv.ToGroup), nil
+	return live(ctx, resChan, b.unmarshal, b.convTo), nil
 }
 
 // Describe returns a string representation of the query.
