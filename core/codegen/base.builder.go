@@ -267,7 +267,8 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	// type {NodeName}Repo interface {...}
 	//
 	f.Type().Id(node.NameGo()+"Repo").Interface(
-		jen.Id("Query").Call().Qual(pkgQuery, "Node"+node.NameGo()),
+		jen.Id("Query").Call().Qual(pkgQuery, "Builder").
+			Types(b.input.SourceQual(node.NameGo()), jen.Qual(b.subPkg(def.PkgConv), node.NameGo())),
 
 		jen.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -327,7 +328,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	f.Func().
 		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
-		Qual(pkgQuery, "Node"+node.NameGo()).
+		Qual(pkgQuery, "Builder").
+		Types(
+			b.input.SourceQual(node.NameGo()),
+			jen.Qual(b.subPkg(def.PkgConv), node.NameGo()),
+		).
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
 				jen.Id("n").Dot("db"),
