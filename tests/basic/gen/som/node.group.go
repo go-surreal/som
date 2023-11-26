@@ -11,7 +11,7 @@ import (
 )
 
 type GroupRepo interface {
-	Query() query.NodeGroup
+	Query() query.Builder[model.Group, conv.Group]
 	Create(ctx context.Context, user *model.Group) error
 	CreateWithID(ctx context.Context, id string, user *model.Group) error
 	Read(ctx context.Context, id string) (*model.Group, bool, error)
@@ -34,7 +34,7 @@ type group struct {
 	*repo[model.Group, conv.Group]
 }
 
-func (r *group) Query() query.NodeGroup {
+func (r *group) Query() query.Builder[model.Group, conv.Group] {
 	return query.NewGroup(r.db, r.unmarshal)
 }
 

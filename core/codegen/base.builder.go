@@ -173,6 +173,13 @@ func (b *build) buildSchemaFile() error {
 		}
 
 		if slice, ok := f.(*field.Slice); ok {
+
+			if _, ok := slice.Element().(*field.Byte); ok {
+				// byte slice has the type "string" in the database,
+				// so we do not need to specify its elements.
+				return
+			}
+
 			statement := fmt.Sprintf(
 				"DEFINE FIELD %s ON TABLE %s TYPE %s;",
 				prefix+f.NameDatabase()+".*", table, slice.Element().TypeDatabase(),
@@ -260,7 +267,8 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	// type {NodeName}Repo interface {...}
 	//
 	f.Type().Id(node.NameGo()+"Repo").Interface(
-		jen.Id("Query").Call().Qual(pkgQuery, "Node"+node.NameGo()),
+		jen.Id("Query").Call().Qual(pkgQuery, "Builder").
+			Types(b.input.SourceQual(node.NameGo()), jen.Qual(b.subPkg(def.PkgConv), node.NameGo())),
 
 		jen.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -349,7 +357,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	f.Func().
 		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
-		Qual(pkgQuery, "Node"+node.NameGo()).
+		Qual(pkgQuery, "Builder").
+		Types(
+			b.input.SourceQual(node.NameGo()),
+			jen.Qual(b.subPkg(def.PkgConv), node.NameGo()),
+		).
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
 				jen.Id("r").Dot("db"),

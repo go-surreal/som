@@ -11,7 +11,7 @@ import (
 )
 
 type FieldsLikeDBResponseRepo interface {
-	Query() query.NodeFieldsLikeDBResponse
+	Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 	Create(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	CreateWithID(ctx context.Context, id string, user *model.FieldsLikeDBResponse) error
 	Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error)
@@ -21,7 +21,7 @@ type FieldsLikeDBResponseRepo interface {
 }
 
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
-	return &fieldsLikeDBResponse{repo: &repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
+	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
 		db:        c.db,
 		marshal:   c.marshal,
 		unmarshal: c.unmarshal,
@@ -30,55 +30,55 @@ func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
 		convFrom:  conv.FromFieldsLikeDBResponse}}
 }
 
-type fieldsLikeDBResponse struct {
+type fieldsLikeDbresponse struct {
 	*repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 }
 
-func (r *fieldsLikeDBResponse) Query() query.NodeFieldsLikeDBResponse {
+func (r *fieldsLikeDbresponse) Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
 	return query.NewFieldsLikeDBResponse(r.db, r.unmarshal)
 }
 
-func (r *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
-	if fieldsLikeDBResponse == nil {
+func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDBResponse.ID() != "" {
+	if fieldsLikeDbresponse.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, fieldsLikeDBResponse)
+	return r.create(ctx, fieldsLikeDbresponse)
 }
 
-func (r *fieldsLikeDBResponse) CreateWithID(ctx context.Context, id string, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
-	if fieldsLikeDBResponse == nil {
+func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDBResponse.ID() != "" {
+	if fieldsLikeDbresponse.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, fieldsLikeDBResponse.ID(), fieldsLikeDBResponse)
+	return r.createWithID(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
-func (r *fieldsLikeDBResponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
+func (r *fieldsLikeDbresponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
 	return r.read(ctx, id)
 }
 
-func (r *fieldsLikeDBResponse) Update(ctx context.Context, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
-	if fieldsLikeDBResponse == nil {
+func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDBResponse.ID() == "" {
+	if fieldsLikeDbresponse.ID() == "" {
 		return errors.New("cannot update FieldsLikeDBResponse without existing record ID")
 	}
-	return r.update(ctx, fieldsLikeDBResponse.ID(), fieldsLikeDBResponse)
+	return r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
-func (r *fieldsLikeDBResponse) Delete(ctx context.Context, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
-	if fieldsLikeDBResponse == nil {
+func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, fieldsLikeDBResponse.ID(), fieldsLikeDBResponse)
+	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
-func (r *fieldsLikeDBResponse) Relate() *relate.FieldsLikeDBResponse {
+func (r *fieldsLikeDbresponse) Relate() *relate.FieldsLikeDBResponse {
 	return relate.NewFieldsLikeDBResponse(r.db, r.unmarshal)
 }

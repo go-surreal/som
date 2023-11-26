@@ -32,6 +32,6 @@ func TestNodeTable(t *testing.T) {
 
 	assert.Equal(t, "node.fields_like_db_response.go", nodeTable.FileName())
 	assert.Equal(t, "FieldsLikeDBResponse", nodeTable.NameGo())
-	assert.Equal(t, "fieldsLikeDBResponse", nodeTable.NameGoLower())
+	assert.Equal(t, "fieldsLikeDbresponse", nodeTable.NameGoLower())
 	assert.Equal(t, "fields_like_db_response", nodeTable.NameDatabase())
 }

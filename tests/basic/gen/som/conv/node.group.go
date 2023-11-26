@@ -32,7 +32,7 @@ func ToGroup(data *Group) *model.Group {
 		Members:    mapSlice(data.Members, noPtrFunc(ToGroupMember)),
 		Name:       data.Name,
 		Node:       som.NewNode(parseDatabaseID("group", data.ID)),
-		Timestamps: som.NewTimestamps(*data.CreatedAt, *data.UpdatedAt),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }
 
