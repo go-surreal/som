@@ -21,6 +21,7 @@ type FieldsLikeDBResponseRepo interface {
 	Relate() *relate.FieldsLikeDBResponse
 }
 
+// FieldsLikeDBResponseRepo returns a new repository instance for the FieldsLikeDBResponse model.
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
 	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
 		db:        c.db,
@@ -35,10 +36,13 @@ type fieldsLikeDbresponse struct {
 	*repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 }
 
+// Query returns a new query builder for the underlying model.
 func (r *fieldsLikeDbresponse) Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
 	return query.NewFieldsLikeDBResponse(r.db, r.unmarshal)
 }
 
+// Create creates a new record for the given model.
+// The ID will be generated automatically as a ULID.
 func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
@@ -49,6 +53,7 @@ func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse 
 	return r.create(ctx, fieldsLikeDbresponse)
 }
 
+// CreateWithID creates a new record for the given model with the given id.
 func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
@@ -59,10 +64,13 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 	return r.createWithID(ctx, id, fieldsLikeDbresponse)
 }
 
+// Read returns the record for the given id, if it exists.
+// The returned bool indicates whether the record was found or not.
 func (r *fieldsLikeDbresponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
 	return r.read(ctx, id)
 }
 
+// Update updates the record for the given model.
 func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
@@ -73,6 +81,7 @@ func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse 
 	return r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
+// Delete deletes the record for the given model.
 func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
@@ -80,6 +89,7 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
+// Refresh refreshes the given model with the remote data.
 func (r *fieldsLikeDbresponse) Refresh(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
@@ -90,6 +100,7 @@ func (r *fieldsLikeDbresponse) Refresh(ctx context.Context, fieldsLikeDbresponse
 	return r.refresh(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
+// Relate returns a new relate instance for the underlying model.
 func (r *fieldsLikeDbresponse) Relate() *relate.FieldsLikeDBResponse {
 	return relate.NewFieldsLikeDBResponse(r.db, r.unmarshal)
 }

@@ -21,6 +21,7 @@ type URLExampleRepo interface {
 	Relate() *relate.URLExample
 }
 
+// URLExampleRepo returns a new repository instance for the URLExample model.
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
 	return &urlexample{repo: &repo[model.URLExample, conv.URLExample]{
 		db:        c.db,
@@ -35,10 +36,13 @@ type urlexample struct {
 	*repo[model.URLExample, conv.URLExample]
 }
 
+// Query returns a new query builder for the underlying model.
 func (r *urlexample) Query() query.Builder[model.URLExample, conv.URLExample] {
 	return query.NewURLExample(r.db, r.unmarshal)
 }
 
+// Create creates a new record for the given model.
+// The ID will be generated automatically as a ULID.
 func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
@@ -49,6 +53,7 @@ func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) e
 	return r.create(ctx, urlexample)
 }
 
+// CreateWithID creates a new record for the given model with the given id.
 func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
@@ -59,10 +64,13 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 	return r.createWithID(ctx, id, urlexample)
 }
 
+// Read returns the record for the given id, if it exists.
+// The returned bool indicates whether the record was found or not.
 func (r *urlexample) Read(ctx context.Context, id string) (*model.URLExample, bool, error) {
 	return r.read(ctx, id)
 }
 
+// Update updates the record for the given model.
 func (r *urlexample) Update(ctx context.Context, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
@@ -73,6 +81,7 @@ func (r *urlexample) Update(ctx context.Context, urlexample *model.URLExample) e
 	return r.update(ctx, urlexample.ID(), urlexample)
 }
 
+// Delete deletes the record for the given model.
 func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
@@ -80,6 +89,7 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 	return r.delete(ctx, urlexample.ID(), urlexample)
 }
 
+// Refresh refreshes the given model with the remote data.
 func (r *urlexample) Refresh(ctx context.Context, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
@@ -90,6 +100,7 @@ func (r *urlexample) Refresh(ctx context.Context, urlexample *model.URLExample) 
 	return r.refresh(ctx, urlexample.ID(), urlexample)
 }
 
+// Relate returns a new relate instance for the underlying model.
 func (r *urlexample) Relate() *relate.URLExample {
 	return relate.NewURLExample(r.db, r.unmarshal)
 }
