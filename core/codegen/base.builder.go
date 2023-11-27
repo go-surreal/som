@@ -308,9 +308,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
 	)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("c").Op("*").Id("ClientImpl")).
+	f.Line().
+		Add(comment(`
+` + node.NameGo() + `Repo returns a new repository instance for the ` + node.NameGo() + ` model.
+		`)).
+		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
 		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
 		Block(
 			jen.Return(
@@ -358,9 +360,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		),
 	)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Query returns a new query builder for the underlying model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
 		Qual(pkgQuery, "Builder").
 		Types(
@@ -374,9 +378,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			)),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Create creates a new record for the given model.
+The ID will be generated automatically as a ULID.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Create").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -402,9 +409,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+CreateWithID creates a new record for the given model with the given id.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("CreateWithID").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -432,9 +441,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Read returns the record for the given id, if it exists.
+The returned bool indicates whether the record was found or not.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -450,9 +462,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Update updates the record for the given model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Update").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -479,9 +493,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Delete deletes the record for the given model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Delete").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -503,9 +519,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Refresh refreshes the given model with the remote data.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Refresh").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -532,9 +550,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Relate returns a new relate instance for the underlying model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Relate").Params().
 		Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
 		Block(
@@ -592,4 +612,21 @@ func (b *build) basePkgName() string {
 
 func (b *build) subPkg(pkg string) string {
 	return path.Join(b.basePkg(), pkg)
+}
+
+//
+// -- HELPER
+//
+
+func comment(text string) jen.Code {
+	var code jen.Statement
+
+	text = strings.TrimSpace(text)
+	lines := strings.Split(text, "\n")
+
+	for _, line := range lines {
+		code.Comment(line).Line()
+	}
+
+	return &code
 }
