@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gotest.tools/v3/assert"
+	"math"
+	"net/url"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -75,8 +77,10 @@ func TestWithDatabase(t *testing.T) {
 	uid := uuid.New()
 
 	userNew := model.AllFieldTypes{
-		String: str,
-		UUID:   uid,
+		String:    str,
+		UUID:      uid,
+		Byte:      []byte("x")[0],
+		ByteSlice: []byte("some value"),
 	}
 
 	userIn := userNew
@@ -99,9 +103,102 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.Equal(t, str, userOut.String)
 	assert.Equal(t, uid, userOut.UUID)
+	assert.Equal(t, userNew.Byte, userOut.Byte)
+	assert.DeepEqual(t, userNew.ByteSlice, userOut.ByteSlice)
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+	)
+}
+
+func TestNumerics(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	str := "user"
+
+	// MAX
+
+	userMax := model.AllFieldTypes{
+		String: str,
+		Int:    math.MaxInt,
+		Int8:   math.MaxInt8,
+		Int16:  math.MaxInt16,
+		Int32:  math.MaxInt32,
+		Int64:  math.MaxInt64,
+		//Uint:    1, //math.MaxUint,
+		Uint8:  math.MaxUint8,
+		Uint16: math.MaxUint16,
+		Uint32: math.MaxUint32,
+		//Uint64:  1, //math.MaxUint64,
+		//Uintptr: 1, //math.MaxUint64,
+		Float32: math.MaxFloat32,
+		Float64: math.MaxFloat64,
+		Rune:    math.MaxInt32,
+	}
+
+	userIn := userMax
+
+	err := client.AllFieldTypesRepo().Create(ctx, &userIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userOut, err := client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.ID.Equal(userIn.ID()),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t,
+		userMax, *userOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+	)
+
+	// MIN
+
+	userMin := model.AllFieldTypes{
+		String: str,
+		Int:    math.MinInt,
+		Int8:   math.MinInt8,
+		Int16:  math.MinInt16,
+		Int32:  math.MinInt32,
+		Int64:  math.MinInt64,
+		//Uint:    math.MaxUint,
+		Uint8:  0,
+		Uint16: 0,
+		Uint32: 0,
+		//Uint64:  0,
+		//Uintptr: 0,
+		Float32: -math.MaxFloat32,
+		Float64: -math.MaxFloat64,
+		Rune:    math.MinInt32,
+	}
+
+	userIn = userMin
+
+	err = client.AllFieldTypesRepo().Create(ctx, &userIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.ID.Equal(userIn.ID()),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t,
+		userMin, *userOut,
 		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
 	)
 }
@@ -135,6 +232,71 @@ func TestTimestamps(t *testing.T) {
 	assert.Check(t, !user.UpdatedAt().IsZero())
 	assert.Check(t, time.Since(user.CreatedAt()) > time.Second)
 	assert.Check(t, time.Since(user.UpdatedAt()) < time.Second)
+}
+
+func TestURLTypes(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	someURL, err := url.Parse("https://surrealdb.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newModel := &model.URLExample{
+		SomeURL:      someURL,
+		SomeOtherURL: *someURL,
+	}
+
+	err = client.URLExampleRepo().Create(ctx, newModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readModel, exists, err := client.URLExampleRepo().Read(ctx, newModel.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, true, exists)
+
+	assert.Equal(t, someURL.String(), readModel.SomeURL.String())
+	assert.Equal(t, someURL.String(), readModel.SomeOtherURL.String())
+
+	someURL, err = url.Parse("https://github.com/surrealdb/surrealdb")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readModel.SomeURL = someURL
+	readModel.SomeOtherURL = *someURL
+
+	err = client.URLExampleRepo().Update(ctx, readModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, someURL.String(), readModel.SomeURL.String())
+	assert.Equal(t, someURL.String(), readModel.SomeOtherURL.String())
+
+	queryModel, err := client.URLExampleRepo().Query().
+		Filter(
+			where.URLExample.SomeURL.Equal(*someURL),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, someURL.String(), queryModel.SomeURL.String())
+
+	err = client.URLExampleRepo().Delete(ctx, readModel)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func FuzzWithDatabase(f *testing.F) {

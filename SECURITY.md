@@ -9,7 +9,7 @@ This might not change for the near future, as there is still a lot of work to be
 Until then, the versioning will stay at 0.x.x. The first major release will be 1.0.0.
 As long as there is no major release, we will only provide support for the most recent (minor) version.
 
-Our library is built using Golang, specifically version 1.21.1, and we aim to stay as close
+Our library is built using Golang, specifically version 1.21.4, and we aim to stay as close
 to the current version of Go as possible to ensure security and compatibility.
 
 As of now, this library only supports Go 1.21.x. This will most likely be the case until version 1.22.0 is released.

@@ -41,22 +41,6 @@ func WithReadLimit(limit int64) Option {
 	}
 }
 
-// WithJsonHandlers sets custom json marshal and unmarshal functions.
-// If not set, the default json marshal and unmarshal functions are used.
-func WithJsonHandlers(marshal JsonMarshal, unmarshal JsonUnmarshal) Option {
-	return func(opts *options) {
-		opts.jsonMarshal = json.Marshal
-		opts.jsonUnmarshal = json.Unmarshal
-
-		opts.sdbc = append(opts.sdbc,
-			sdbc.WithJsonHandlers(
-				sdbc.JsonMarshal(marshal),
-				sdbc.JsonUnmarshal(unmarshal),
-			),
-		)
-	}
-}
-
 type JsonMarshal func(val any) ([]byte, error)
 type JsonUnmarshal func(buf []byte, val any) error
 

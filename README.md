@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.21.1-informational" alt="Go 1.21.1">
+    <img src="https://img.shields.io/badge/go-1.21.4-informational" alt="Go 1.21.4">
   </a>
   <a href="https://goreportcard.com/report/github.com/go-surreal/som">
     <img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card">
@@ -41,7 +41,7 @@ This facilitates multi-table, multi-depth document retrieval without complex JOI
 * [Getting started](#getting-started)
   * [Disclaimer](#disclaimer)
   * [Basic usage](#basic-usage)
-    * [Example](#example)
+  * [Known limitations](#known-limitations)
 * [Development](#development)
   * [Versioning](#versioning)
   * [Compatibility](#compatibility)
@@ -188,6 +188,15 @@ func main() {
 }
 ```
 
+### Known limitations
+
+### Unsupported native go types
+
+Currently, the native go types `uint`, `uint64` and `uintptr` are not supported.
+Reason for this is that working with very big integers is not yet fully working with the 
+current version of SurrealDB (as of writing: 1.0.0). This should be fixed in a future release of SurrealDB.
+As soon as this is fixed, Som will support these types as well.
+
 ## Development
 
 ### Versioning
@@ -254,3 +263,6 @@ Please take a look at the [MAINTAINERS.md](MAINTAINERS.md) file.
 ## References
 
 - [Official SurrealDB documentation](https://surrealdb.com/docs)
+
+// som hooks:
+// Note: When using the hooks in a multi-node application setup, it will only trigger on the node that triggers the change.
