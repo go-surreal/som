@@ -4,6 +4,7 @@ package som
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
 
@@ -84,5 +85,20 @@ func (r *repo[N, C]) delete(ctx context.Context, id string, node *N) error {
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}
+	return nil
+}
+
+func (r *repo[N, C]) refresh(ctx context.Context, id string, node *N) error {
+	read, exists, err := r.read(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to read node: %w", err)
+	}
+
+	if !exists {
+		return errors.New("given node does not exist")
+	}
+
+	*node = *read
+
 	return nil
 }

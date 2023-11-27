@@ -17,6 +17,7 @@ type AllFieldTypesRepo interface {
 	Read(ctx context.Context, id string) (*model.AllFieldTypes, bool, error)
 	Update(ctx context.Context, user *model.AllFieldTypes) error
 	Delete(ctx context.Context, user *model.AllFieldTypes) error
+	Refresh(ctx context.Context, user *model.AllFieldTypes) error
 	Relate() *relate.AllFieldTypes
 }
 
@@ -77,6 +78,16 @@ func (r *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFiel
 		return errors.New("the passed node must not be nil")
 	}
 	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes)
+}
+
+func (r *allFieldTypes) Refresh(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
+	if allFieldTypes == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if allFieldTypes.ID() == "" {
+		return errors.New("cannot refresh AllFieldTypes without existing record ID")
+	}
+	return r.refresh(ctx, allFieldTypes.ID(), allFieldTypes)
 }
 
 func (r *allFieldTypes) Relate() *relate.AllFieldTypes {

@@ -17,6 +17,7 @@ type GroupRepo interface {
 	Read(ctx context.Context, id string) (*model.Group, bool, error)
 	Update(ctx context.Context, user *model.Group) error
 	Delete(ctx context.Context, user *model.Group) error
+	Refresh(ctx context.Context, user *model.Group) error
 	Relate() *relate.Group
 }
 
@@ -77,6 +78,16 @@ func (r *group) Delete(ctx context.Context, group *model.Group) error {
 		return errors.New("the passed node must not be nil")
 	}
 	return r.delete(ctx, group.ID(), group)
+}
+
+func (r *group) Refresh(ctx context.Context, group *model.Group) error {
+	if group == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if group.ID() == "" {
+		return errors.New("cannot refresh Group without existing record ID")
+	}
+	return r.refresh(ctx, group.ID(), group)
 }
 
 func (r *group) Relate() *relate.Group {
