@@ -4,7 +4,6 @@ package som
 import (
 	"context"
 	"errors"
-	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -22,108 +21,64 @@ type URLExampleRepo interface {
 }
 
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
-	return &urlexample{db: c.db, marshal: c.marshal, unmarshal: c.unmarshal}
+	return &urlexample{repo: &repo[model.URLExample, conv.URLExample]{
+		db:        c.db,
+		marshal:   c.marshal,
+		unmarshal: c.unmarshal,
+		name:      "url_example",
+		convTo:    conv.ToURLExample,
+		convFrom:  conv.FromURLExample}}
 }
 
 type urlexample struct {
-	db        Database
-	marshal   func(val any) ([]byte, error)
-	unmarshal func(buf []byte, val any) error
+	*repo[model.URLExample, conv.URLExample]
 }
 
-func (n *urlexample) Query() query.Builder[model.URLExample, conv.URLExample] {
-	return query.NewURLExample(n.db, n.unmarshal)
+func (r *urlexample) Query() query.Builder[model.URLExample, conv.URLExample] {
+	return query.NewURLExample(r.db, r.unmarshal)
 }
 
-func (n *urlexample) Create(ctx context.Context, urlexample *model.URLExample) error {
+func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if urlexample.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	key := "url_example:ulid()"
-	data := conv.FromURLExample(urlexample)
-	raw, err := n.db.Create(ctx, key, data)
-	if err != nil {
-		return fmt.Errorf("could not create entity: %w", err)
-	}
-	var convNode *conv.URLExample
-	err = n.unmarshal(raw, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
-	}
-	*urlexample = *conv.ToURLExample(convNode)
-	return nil
+	return r.create(ctx, urlexample)
 }
 
-func (n *urlexample) CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error {
+func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if urlexample.ID() != "" {
-		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
+		return errors.New("given node already has an id")
 	}
-	key := "url_example:" + "⟨" + id + "⟩"
-	data := conv.FromURLExample(urlexample)
-	res, err := n.db.Create(ctx, key, data)
-	if err != nil {
-		return fmt.Errorf("could not create entity: %w", err)
-	}
-	var convNode *conv.URLExample
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	*urlexample = *conv.ToURLExample(convNode)
-	return nil
+	return r.createWithID(ctx, id, urlexample)
 }
 
-func (n *urlexample) Read(ctx context.Context, id string) (*model.URLExample, bool, error) {
-	res, err := n.db.Select(ctx, "url_example:⟨"+id+"⟩")
-	if err != nil {
-		return nil, false, fmt.Errorf("could not read entity: %w", err)
-	}
-	var convNode *conv.URLExample
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	return conv.ToURLExample(convNode), true, nil
+func (r *urlexample) Read(ctx context.Context, id string) (*model.URLExample, bool, error) {
+	return r.read(ctx, id)
 }
 
-func (n *urlexample) Update(ctx context.Context, urlexample *model.URLExample) error {
+func (r *urlexample) Update(ctx context.Context, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if urlexample.ID() == "" {
 		return errors.New("cannot update URLExample without existing record ID")
 	}
-	data := conv.FromURLExample(urlexample)
-	res, err := n.db.Update(ctx, "url_example:⟨"+urlexample.ID()+"⟩", data)
-	if err != nil {
-		return fmt.Errorf("could not update entity: %w", err)
-	}
-	var convNode *conv.URLExample
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	*urlexample = *conv.ToURLExample(convNode)
-	return nil
+	return r.update(ctx, urlexample.ID(), urlexample)
 }
 
-func (n *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) error {
+func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete(ctx, "url_example:⟨"+urlexample.ID()+"⟩")
-	if err != nil {
-		return fmt.Errorf("could not delete entity: %w", err)
-	}
-	return nil
+	return r.delete(ctx, urlexample.ID(), urlexample)
 }
 
-func (n *urlexample) Relate() *relate.URLExample {
-	return relate.NewURLExample(n.db, n.unmarshal)
+func (r *urlexample) Relate() *relate.URLExample {
+	return relate.NewURLExample(r.db, r.unmarshal)
 }
