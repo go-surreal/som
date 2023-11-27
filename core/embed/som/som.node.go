@@ -7,6 +7,8 @@ import (
 	"fmt"
 )
 
+// N is a placeholder for the node type.
+// C is a placeholder for the conversion type.
 type repo[N any, C any] struct {
 	db        Database
 	marshal   func(val any) ([]byte, error)
