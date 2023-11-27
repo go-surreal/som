@@ -55,7 +55,7 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 	if allFieldTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, allFieldTypes.ID(), allFieldTypes)
+	return r.createWithID(ctx, id, allFieldTypes)
 }
 
 func (r *allFieldTypes) Read(ctx context.Context, id string) (*model.AllFieldTypes, bool, error) {

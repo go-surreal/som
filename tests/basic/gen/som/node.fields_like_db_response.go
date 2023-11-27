@@ -55,7 +55,7 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 	if fieldsLikeDbresponse.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
+	return r.createWithID(ctx, id, fieldsLikeDbresponse)
 }
 
 func (r *fieldsLikeDbresponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {

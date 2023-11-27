@@ -55,7 +55,7 @@ func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	if group.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, group.ID(), group)
+	return r.createWithID(ctx, id, group)
 }
 
 func (r *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {

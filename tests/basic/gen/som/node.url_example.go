@@ -55,7 +55,7 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 	if urlexample.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, urlexample.ID(), urlexample)
+	return r.createWithID(ctx, id, urlexample)
 }
 
 func (r *urlexample) Read(ctx context.Context, id string) (*model.URLExample, bool, error) {

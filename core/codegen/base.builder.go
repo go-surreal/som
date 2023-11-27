@@ -421,7 +421,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Return(
 				jen.Id("r").Dot("createWithID").Call(
 					jen.Id("ctx"),
-					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id("id"),
 					jen.Id(node.NameGoLower()),
 				),
 			),
