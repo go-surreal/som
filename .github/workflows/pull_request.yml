@@ -195,8 +195,14 @@ jobs:
 
       - name: Test Library
         working-directory: .
-        run: go test -v ./...
+        run: go test -coverprofile=coverage.txt -covermode=atomic -v ./...
 
       - name: Test Basic
         working-directory: tests/basic
-        run: go test -v ./...
+        run: go test -coverprofile=coverage.txt -covermode=atomic -v ./...
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.txt,./tests/basic/coverage.txt
