@@ -300,6 +300,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
+		jen.Id("Refresh").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Error(),
+
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
 	)
 
@@ -491,6 +496,35 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.Return(
 				jen.Id("r").Dot("delete").Call(
+					jen.Id("ctx"),
+					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id(node.NameGoLower()),
+				),
+			),
+		)
+
+	f.Line()
+	f.Func().
+		Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("Refresh").
+		Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).
+		Error().
+		Block(
+			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+				),
+
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot refresh "+node.NameGo()+" without existing record ID"))),
+				),
+
+			jen.Return(
+				jen.Id("r").Dot("refresh").Call(
 					jen.Id("ctx"),
 					jen.Id(node.NameGoLower()).Dot("ID").Call(),
 					jen.Id(node.NameGoLower()),

@@ -463,3 +463,28 @@ func TestAsync(t *testing.T) {
 	assert.NilError(t, <-resCh.Err())
 	assert.Equal(t, 2, <-resCh.Val())
 }
+
+func TestRefresh(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	allFieldTypes := &model.AllFieldTypes{
+		String: "some value",
+	}
+
+	err := client.AllFieldTypesRepo().Create(ctx, allFieldTypes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	allFieldTypes.String = "some other value"
+
+	err = client.AllFieldTypesRepo().Refresh(ctx, allFieldTypes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "some value", allFieldTypes.String)
+}

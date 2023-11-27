@@ -17,6 +17,7 @@ type URLExampleRepo interface {
 	Read(ctx context.Context, id string) (*model.URLExample, bool, error)
 	Update(ctx context.Context, user *model.URLExample) error
 	Delete(ctx context.Context, user *model.URLExample) error
+	Refresh(ctx context.Context, user *model.URLExample) error
 	Relate() *relate.URLExample
 }
 
@@ -77,6 +78,16 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 		return errors.New("the passed node must not be nil")
 	}
 	return r.delete(ctx, urlexample.ID(), urlexample)
+}
+
+func (r *urlexample) Refresh(ctx context.Context, urlexample *model.URLExample) error {
+	if urlexample == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if urlexample.ID() == "" {
+		return errors.New("cannot refresh URLExample without existing record ID")
+	}
+	return r.refresh(ctx, urlexample.ID(), urlexample)
 }
 
 func (r *urlexample) Relate() *relate.URLExample {

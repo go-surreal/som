@@ -17,6 +17,7 @@ type FieldsLikeDBResponseRepo interface {
 	Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error)
 	Update(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	Delete(ctx context.Context, user *model.FieldsLikeDBResponse) error
+	Refresh(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	Relate() *relate.FieldsLikeDBResponse
 }
 
@@ -77,6 +78,16 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 		return errors.New("the passed node must not be nil")
 	}
 	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
+}
+
+func (r *fieldsLikeDbresponse) Refresh(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if fieldsLikeDbresponse.ID() == "" {
+		return errors.New("cannot refresh FieldsLikeDBResponse without existing record ID")
+	}
+	return r.refresh(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
 func (r *fieldsLikeDbresponse) Relate() *relate.FieldsLikeDBResponse {
