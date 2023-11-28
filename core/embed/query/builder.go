@@ -1,4 +1,4 @@
-//go:build embed
+///go:build embed
 
 package query
 
@@ -8,6 +8,7 @@ import (
 	"fmt"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	with "github.com/go-surreal/som/tests/basic/gen/som/with"
+	"io"
 	"strings"
 	"time"
 )
@@ -141,7 +142,10 @@ func (b builder[M, C]) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 
 // All returns all records matching the conditions of the query.
 func (b builder[M, C]) All(ctx context.Context) ([]*M, error) {
-	req := b.query.BuildAsAll()
+	return b.all(ctx, b.query.BuildAsAll())
+}
+
+func (b builder[M, C]) all(ctx context.Context, req *lib.Result) ([]*M, error) {
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
@@ -261,4 +265,54 @@ func (b builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*M], error) 
 func (b builder[M, C]) Describe() string {
 	req := b.query.BuildAsAll()
 	return strings.TrimSpace(req.Statement)
+}
+
+func (b builder[M, C]) Iterator(batch int) *Iterator[M] {
+	return &Iterator[M]{
+		partialQuery: b.query,
+		executor:     b.all,
+
+		batch:  batch,
+		offset: b.query.Offset,
+		limit:  b.query.Limit,
+	}
+}
+
+type Iterator[M any] struct {
+	partialQuery lib.Query[M]
+	executor     func(ctx context.Context, req *lib.Result) ([]*M, error)
+
+	current []*M
+	index   int
+
+	batch  int
+	offset int
+	limit  int
+}
+
+func (i *Iterator[M]) Next() (*M, error) {
+	if i.index < len(i.current) {
+		val := i.current[i.index]
+		i.index++
+		return val, nil
+	}
+
+	query := i.partialQuery
+	query.Offset = i.offset
+	query.Limit = i.limit
+
+	var err error
+	i.current, err = query.BuildAsAll()
+	if err != nil {
+		var t T
+		return t, err
+	}
+
+	if len(i.current) == 0 {
+		var t T
+		return t, io.EOF
+	}
+
+	i.index = 0
+	return i.Next()
 }
