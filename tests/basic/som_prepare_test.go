@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
+func prepareDatabase(ctx context.Context, tb testing.TB) som.Client {
 	tb.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 	req := testcontainers.ContainerRequest{
@@ -68,13 +68,13 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	cleanup := func() {
+	tb.Cleanup(func() {
 		client.Close()
 
 		if err := surreal.Terminate(ctx); err != nil {
 			tb.Fatalf("failed to terminate container: %s", err.Error())
 		}
-	}
+	})
 
-	return client, cleanup
+	return client
 }
