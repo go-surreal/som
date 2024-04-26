@@ -56,6 +56,9 @@ func TestLiveQueries(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	newModel := &model.FieldsLikeDBResponse{
 		Status: "some value",
 	}
@@ -138,7 +141,20 @@ func TestLiveQueries(t *testing.T) {
 
 	assert.Check(t, is.Equal(newModel.ID(), deleted.ID()))
 
-	// TODO: test closing the context should close the live channel
+	// Test the automatic closing of the live channel when the context is canceled:
+
+	cancel()
+
+	select {
+
+	case _, more = <-liveChan:
+		if more {
+			t.Fatal("liveChan did not close after context was canceled")
+		}
+
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout waiting for live channel to close after context was canceled")
+	}
 }
 
 func TestLiveQueriesFilter(t *testing.T) {
