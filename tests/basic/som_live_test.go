@@ -126,17 +126,19 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal("liveChan closed unexpectedly")
 	}
 
-	liveDelete, ok := liveRes.(query.LiveDelete)
+	liveDelete, ok := liveRes.(query.LiveDelete[*model.FieldsLikeDBResponse])
 	if !ok {
 		t.Fatal("liveChan did not receive a delete event")
 	}
 
-	deletedID, err := liveDelete.Get()
+	deleted, err := liveDelete.Get()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, is.Equal("fields_like_db_response:"+newModel.ID(), deletedID))
+	assert.Check(t, is.Equal(newModel.ID(), deleted.ID()))
+
+	// TODO: test closing the context should close the live channel
 }
 
 func TestLiveQueriesFilter(t *testing.T) {
@@ -213,7 +215,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 		case <-time.After(1 * time.Second):
 			// t.Fatal("timeout waiting for live event")
-			t.Log("correct, becuase live queries with filters are not supported yet")
+			t.Log("correct, because live queries with filters are not supported yet")
 		}
 	}
 }
