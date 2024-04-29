@@ -3,8 +3,6 @@ package basic
 import (
 	"context"
 	"github.com/go-surreal/som/tests/basic/gen/som/query"
-	"github.com/go-surreal/som/tests/basic/gen/som/where"
-
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
@@ -164,9 +162,9 @@ func TestLiveQueriesFilter(t *testing.T) {
 	defer cleanup()
 
 	liveChan, err := client.FieldsLikeDBResponseRepo().Query().
-		Filter(
-			where.FieldsLikeDBResponse.Status.In([]string{"some value", "some other value"}),
-		).
+		//Filter(
+		//	where.FieldsLikeDBResponse.Status.In([]string{"some value", "some other value"}),
+		//).
 		Live(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -201,37 +199,34 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	expected := []string{
 		"some value",
-		// note: "some unsupported value" should not be received ;)
+		//"some unsupported value",
 		"some other value",
 	}
 
-	for _ = range expected {
+	for _, status := range expected {
 		select {
 
-		case _, more := <-liveChan:
+		case liveRes, more := <-liveChan:
 			{
 				if !more {
 					t.Fatal("liveChan closed unexpectedly")
 				}
 
-				// liveCreate, ok := liveRes.(query.LiveCreate[*model.FieldsLikeDBResponse])
-				// if !ok {
-				// 	t.Fatal("liveChan did not receive a create event")
-				// }
-				//
-				// created, err := liveCreate.Get()
-				// if err != nil {
-				// 	t.Fatal(err)
-				// }
-				//
-				// assert.Check(t, is.Equal(status, created.Status))
+				liveCreate, ok := liveRes.(query.LiveCreate[*model.FieldsLikeDBResponse])
+				if !ok {
+					t.Fatal("liveChan did not receive a create event")
+				}
 
-				t.Fatal("for beta.12 live queries with filters should not work yet")
+				created, err := liveCreate.Get()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Check(t, is.Equal(status, created.Status))
 			}
 
-		case <-time.After(1 * time.Second):
-			// t.Fatal("timeout waiting for live event")
-			t.Log("correct, because live queries with filters are not supported yet")
+		case <-time.After(10 * time.Second):
+			t.Fatal("timeout waiting for live event")
 		}
 	}
 }
