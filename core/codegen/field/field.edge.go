@@ -36,7 +36,7 @@ func (f *Edge) CodeGen() *CodeGen {
 
 		sortDefine: nil,
 		sortInit:   nil,
-		sortFunc:   f.sortFunc,
+		sortFunc:   nil, // TODO: f.sortFunc, // edge currently not sortable
 
 		convFrom: f.convFrom,
 		convTo:   f.convTo,
@@ -45,8 +45,13 @@ func (f *Edge) CodeGen() *CodeGen {
 }
 
 func (f *Edge) filterFunc(ctx Context) jen.Code {
+	receiver := jen.Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))
+	if ctx.Receiver != nil {
+		receiver = ctx.Receiver
+	}
+
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Add(receiver)).
 		Id(f.NameGo()).Params().
 		Id(f.table.NameGoLower()).Types(jen.Id("T")).
 		Block(
@@ -54,9 +59,10 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
+//nolint:unused // currently not fully implemented
 func (f *Edge) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameDatabase()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
 		Id(f.NameGoLower()).Types(jen.Id("T")).
 		Block(
@@ -64,15 +70,15 @@ func (f *Edge) sortFunc(ctx Context) jen.Code {
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
-func (f *Edge) convFrom(ctx Context) jen.Code {
-	return jen.Id("To" + f.table.NameGo()).Call(jen.Op("&").Id("data").Dot(f.NameGo()))
+func (f *Edge) convFrom(_ Context) jen.Code {
+	return jen.Id("From" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Edge) convTo(ctx Context) jen.Code {
-	return jen.Op("*").Id("From" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
+func (f *Edge) convTo(_ Context) jen.Code {
+	return jen.Id("To" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Edge) fieldDef(ctx Context) jen.Code {
+func (f *Edge) fieldDef(_ Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

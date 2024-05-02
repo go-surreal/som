@@ -4,7 +4,6 @@ package som
 import (
 	"context"
 	"errors"
-	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -12,118 +11,85 @@ import (
 )
 
 type FieldsLikeDBResponseRepo interface {
-	Query() query.NodeFieldsLikeDBResponse
+	Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 	Create(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	CreateWithID(ctx context.Context, id string, user *model.FieldsLikeDBResponse) error
 	Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error)
 	Update(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	Delete(ctx context.Context, user *model.FieldsLikeDBResponse) error
+	Refresh(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	Relate() *relate.FieldsLikeDBResponse
 }
 
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
-	return &fieldsLikeDBResponse{db: c.db, marshal: c.marshal, unmarshal: c.unmarshal}
+	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
+		db:        c.db,
+		marshal:   c.marshal,
+		unmarshal: c.unmarshal,
+		name:      "fields_like_db_response",
+		convTo:    conv.ToFieldsLikeDBResponse,
+		convFrom:  conv.FromFieldsLikeDBResponse}}
 }
 
-type fieldsLikeDBResponse struct {
-	db        Database
-	marshal   func(val any) ([]byte, error)
-	unmarshal func(buf []byte, val any) error
+type fieldsLikeDbresponse struct {
+	*repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 }
 
-func (n *fieldsLikeDBResponse) Query() query.NodeFieldsLikeDBResponse {
-	return query.NewFieldsLikeDBResponse(n.db, n.unmarshal)
+func (r *fieldsLikeDbresponse) Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
+	return query.NewFieldsLikeDBResponse(r.db, r.unmarshal)
 }
 
-func (n *fieldsLikeDBResponse) Create(ctx context.Context, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
-	if fieldsLikeDBResponse == nil {
+func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDBResponse.ID() != "" {
+	if fieldsLikeDbresponse.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	key := "fields_like_db_response:ulid()"
-	data := conv.FromFieldsLikeDBResponse(fieldsLikeDBResponse)
-	raw, err := n.db.Create(ctx, key, data)
-	if err != nil {
-		return fmt.Errorf("could not create entity: %w", err)
-	}
-	var convNode *conv.FieldsLikeDBResponse
-	err = n.unmarshal(raw, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
-	}
-	*fieldsLikeDBResponse = *conv.ToFieldsLikeDBResponse(convNode)
-	return nil
+	return r.create(ctx, fieldsLikeDbresponse)
 }
 
-func (n *fieldsLikeDBResponse) CreateWithID(ctx context.Context, id string, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
-	if fieldsLikeDBResponse == nil {
+func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDBResponse.ID() != "" {
-		return errors.New("creating node with preset ID not allowed, use CreateWithID for that")
+	if fieldsLikeDbresponse.ID() != "" {
+		return errors.New("given node already has an id")
 	}
-	key := "fields_like_db_response:" + "⟨" + id + "⟩"
-	data := conv.FromFieldsLikeDBResponse(fieldsLikeDBResponse)
-	res, err := n.db.Create(ctx, key, data)
-	if err != nil {
-		return fmt.Errorf("could not create entity: %w", err)
-	}
-	var convNode *conv.FieldsLikeDBResponse
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	*fieldsLikeDBResponse = *conv.ToFieldsLikeDBResponse(convNode)
-	return nil
+	return r.createWithID(ctx, id, fieldsLikeDbresponse)
 }
 
-func (n *fieldsLikeDBResponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
-	res, err := n.db.Select(ctx, "fields_like_db_response:⟨"+id+"⟩")
-	if err != nil {
-		return nil, false, fmt.Errorf("could not read entity: %w", err)
-	}
-	var convNode *conv.FieldsLikeDBResponse
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	return conv.ToFieldsLikeDBResponse(convNode), true, nil
+func (r *fieldsLikeDbresponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
+	return r.read(ctx, id)
 }
 
-func (n *fieldsLikeDBResponse) Update(ctx context.Context, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
-	if fieldsLikeDBResponse == nil {
+func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDBResponse.ID() == "" {
+	if fieldsLikeDbresponse.ID() == "" {
 		return errors.New("cannot update FieldsLikeDBResponse without existing record ID")
 	}
-	data := conv.FromFieldsLikeDBResponse(fieldsLikeDBResponse)
-	res, err := n.db.Update(ctx, "fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩", data)
-	if err != nil {
-		return fmt.Errorf("could not update entity: %w", err)
-	}
-	var convNode *conv.FieldsLikeDBResponse
-	err = n.unmarshal(res, &convNode)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	*fieldsLikeDBResponse = *conv.ToFieldsLikeDBResponse(convNode)
-	return nil
+	return r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
-func (n *fieldsLikeDBResponse) Delete(ctx context.Context, fieldsLikeDBResponse *model.FieldsLikeDBResponse) error {
-	if fieldsLikeDBResponse == nil {
+func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	_, err := n.db.Delete(ctx, "fields_like_db_response:⟨"+fieldsLikeDBResponse.ID()+"⟩")
-	if err != nil {
-		return fmt.Errorf("could not delete entity: %w", err)
-	}
-	return nil
+	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
-func (n *fieldsLikeDBResponse) Relate() *relate.FieldsLikeDBResponse {
-	return relate.NewFieldsLikeDBResponse(n.db, n.unmarshal)
+func (r *fieldsLikeDbresponse) Refresh(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
+	if fieldsLikeDbresponse == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if fieldsLikeDbresponse.ID() == "" {
+		return errors.New("cannot refresh FieldsLikeDBResponse without existing record ID")
+	}
+	return r.refresh(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
+}
+
+func (r *fieldsLikeDbresponse) Relate() *relate.FieldsLikeDBResponse {
+	return relate.NewFieldsLikeDBResponse(r.db, r.unmarshal)
 }
