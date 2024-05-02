@@ -3,6 +3,7 @@ package basic
 import (
 	"context"
 	"github.com/go-surreal/som/tests/basic/gen/som/query"
+	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
@@ -162,9 +163,9 @@ func TestLiveQueriesFilter(t *testing.T) {
 	defer cleanup()
 
 	liveChan, err := client.FieldsLikeDBResponseRepo().Query().
-		//Filter(
-		//	where.FieldsLikeDBResponse.Status.In([]string{"some value", "some other value"}),
-		//).
+		Filter(
+			where.FieldsLikeDBResponse.Status.In([]string{"some value", "some other value"}),
+		).
 		Live(ctx)
 	if err != nil {
 		t.Fatal(err)
