@@ -6,7 +6,7 @@ replace github.com/go-surreal/som => ../../
 
 require (
 	github.com/docker/docker v24.0.9+incompatible
-	github.com/go-surreal/sdbc v0.2.0
+	github.com/go-surreal/sdbc v0.3.0
 	github.com/go-surreal/som v0.3.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.6.0
