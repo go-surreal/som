@@ -147,7 +147,7 @@ func TestLiveQueries(t *testing.T) {
 
 	select {
 
-	case _, more = <-liveChan:
+	case _, more := <-liveChan:
 		if more {
 			t.Fatal("liveChan did not close after context was canceled")
 		}
@@ -239,6 +239,9 @@ func TestLiveQueryCount(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	if err := client.ApplySchema(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -282,5 +285,20 @@ func TestLiveQueryCount(t *testing.T) {
 		t.Fatal("liveCount should not receive any more messages")
 
 	case <-time.After(1 * time.Second):
+	}
+
+	// Test the automatic closing of the live channel when the context is canceled:
+
+	cancel()
+
+	select {
+
+	case _, more := <-liveCount:
+		if more {
+			t.Fatal("liveCount did not close after context was canceled")
+		}
+
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout waiting for live channel to close after context was canceled")
 	}
 }
