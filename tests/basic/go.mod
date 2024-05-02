@@ -6,7 +6,7 @@ replace github.com/go-surreal/som => ../../
 
 require (
 	github.com/docker/docker v24.0.9+incompatible
-	github.com/go-surreal/sdbc v0.2.0
+	github.com/go-surreal/sdbc v0.3.0
 	github.com/go-surreal/som v0.3.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.6.0
@@ -28,7 +28,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/klauspost/compress v1.17.2 // indirect
+	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
