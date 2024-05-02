@@ -251,6 +251,9 @@ func (b Builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*M], error) 
 	return live(ctx, resChan, b.unmarshal, b.convTo), nil
 }
 
+// LiveCount is the live version of Count.
+// Whenever a record is created or deleted that matches the
+// conditions of the query, the count will be updated.
 func (b Builder[M, C]) LiveCount(ctx context.Context) (<-chan int, error) {
 	count, err := b.Count(ctx)
 	if err != nil {
