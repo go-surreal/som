@@ -21,6 +21,7 @@ type AllFieldTypesRepo interface {
 	Relate() *relate.AllFieldTypes
 }
 
+// AllFieldTypesRepo returns a new repository instance for the AllFieldTypes model.
 func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
 	return &allFieldTypes{repo: &repo[model.AllFieldTypes, conv.AllFieldTypes]{
 		db:        c.db,
@@ -35,10 +36,13 @@ type allFieldTypes struct {
 	*repo[model.AllFieldTypes, conv.AllFieldTypes]
 }
 
+// Query returns a new query builder for the AllFieldTypes model.
 func (r *allFieldTypes) Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes] {
 	return query.NewAllFieldTypes(r.db, r.unmarshal)
 }
 
+// Create creates a new record for the AllFieldTypes model.
+// The ID will be generated automatically as a ULID.
 func (r *allFieldTypes) Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -49,6 +53,7 @@ func (r *allFieldTypes) Create(ctx context.Context, allFieldTypes *model.AllFiel
 	return r.create(ctx, allFieldTypes)
 }
 
+// CreateWithID creates a new record for the AllFieldTypes model with the given id.
 func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -59,10 +64,13 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 	return r.createWithID(ctx, id, allFieldTypes)
 }
 
+// Read returns the record for the given id, if it exists.
+// The returned bool indicates whether the record was found or not.
 func (r *allFieldTypes) Read(ctx context.Context, id string) (*model.AllFieldTypes, bool, error) {
 	return r.read(ctx, id)
 }
 
+// Update updates the record for the given model.
 func (r *allFieldTypes) Update(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -73,6 +81,7 @@ func (r *allFieldTypes) Update(ctx context.Context, allFieldTypes *model.AllFiel
 	return r.update(ctx, allFieldTypes.ID(), allFieldTypes)
 }
 
+// Delete deletes the record for the given model.
 func (r *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -80,6 +89,7 @@ func (r *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFiel
 	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes)
 }
 
+// Refresh refreshes the given model with the remote data.
 func (r *allFieldTypes) Refresh(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -90,6 +100,7 @@ func (r *allFieldTypes) Refresh(ctx context.Context, allFieldTypes *model.AllFie
 	return r.refresh(ctx, allFieldTypes.ID(), allFieldTypes)
 }
 
+// Relate returns a new relate instance for the AllFieldTypes model.
 func (r *allFieldTypes) Relate() *relate.AllFieldTypes {
 	return relate.NewAllFieldTypes(r.db, r.unmarshal)
 }

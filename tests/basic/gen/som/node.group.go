@@ -21,6 +21,7 @@ type GroupRepo interface {
 	Relate() *relate.Group
 }
 
+// GroupRepo returns a new repository instance for the Group model.
 func (c *ClientImpl) GroupRepo() GroupRepo {
 	return &group{repo: &repo[model.Group, conv.Group]{
 		db:        c.db,
@@ -35,10 +36,13 @@ type group struct {
 	*repo[model.Group, conv.Group]
 }
 
+// Query returns a new query builder for the Group model.
 func (r *group) Query() query.Builder[model.Group, conv.Group] {
 	return query.NewGroup(r.db, r.unmarshal)
 }
 
+// Create creates a new record for the Group model.
+// The ID will be generated automatically as a ULID.
 func (r *group) Create(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -49,6 +53,7 @@ func (r *group) Create(ctx context.Context, group *model.Group) error {
 	return r.create(ctx, group)
 }
 
+// CreateWithID creates a new record for the Group model with the given id.
 func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -59,10 +64,13 @@ func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	return r.createWithID(ctx, id, group)
 }
 
+// Read returns the record for the given id, if it exists.
+// The returned bool indicates whether the record was found or not.
 func (r *group) Read(ctx context.Context, id string) (*model.Group, bool, error) {
 	return r.read(ctx, id)
 }
 
+// Update updates the record for the given model.
 func (r *group) Update(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -73,6 +81,7 @@ func (r *group) Update(ctx context.Context, group *model.Group) error {
 	return r.update(ctx, group.ID(), group)
 }
 
+// Delete deletes the record for the given model.
 func (r *group) Delete(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -80,6 +89,7 @@ func (r *group) Delete(ctx context.Context, group *model.Group) error {
 	return r.delete(ctx, group.ID(), group)
 }
 
+// Refresh refreshes the given model with the remote data.
 func (r *group) Refresh(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -90,6 +100,7 @@ func (r *group) Refresh(ctx context.Context, group *model.Group) error {
 	return r.refresh(ctx, group.ID(), group)
 }
 
+// Relate returns a new relate instance for the Group model.
 func (r *group) Relate() *relate.Group {
 	return relate.NewGroup(r.db, r.unmarshal)
 }
