@@ -36,12 +36,12 @@ type group struct {
 	*repo[model.Group, conv.Group]
 }
 
-// Query returns a new query builder for the underlying model.
+// Query returns a new query builder for the Group model.
 func (r *group) Query() query.Builder[model.Group, conv.Group] {
 	return query.NewGroup(r.db, r.unmarshal)
 }
 
-// Create creates a new record for the given model.
+// Create creates a new record for the Group model.
 // The ID will be generated automatically as a ULID.
 func (r *group) Create(ctx context.Context, group *model.Group) error {
 	if group == nil {
@@ -53,7 +53,7 @@ func (r *group) Create(ctx context.Context, group *model.Group) error {
 	return r.create(ctx, group)
 }
 
-// CreateWithID creates a new record for the given model with the given id.
+// CreateWithID creates a new record for the Group model with the given id.
 func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
@@ -100,7 +100,7 @@ func (r *group) Refresh(ctx context.Context, group *model.Group) error {
 	return r.refresh(ctx, group.ID(), group)
 }
 
-// Relate returns a new relate instance for the underlying model.
+// Relate returns a new relate instance for the Group model.
 func (r *group) Relate() *relate.Group {
 	return relate.NewGroup(r.db, r.unmarshal)
 }

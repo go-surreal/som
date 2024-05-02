@@ -36,12 +36,12 @@ type fieldsLikeDbresponse struct {
 	*repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 }
 
-// Query returns a new query builder for the underlying model.
+// Query returns a new query builder for the FieldsLikeDBResponse model.
 func (r *fieldsLikeDbresponse) Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
 	return query.NewFieldsLikeDBResponse(r.db, r.unmarshal)
 }
 
-// Create creates a new record for the given model.
+// Create creates a new record for the FieldsLikeDBResponse model.
 // The ID will be generated automatically as a ULID.
 func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
 	if fieldsLikeDbresponse == nil {
@@ -53,7 +53,7 @@ func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse 
 	return r.create(ctx, fieldsLikeDbresponse)
 }
 
-// CreateWithID creates a new record for the given model with the given id.
+// CreateWithID creates a new record for the FieldsLikeDBResponse model with the given id.
 func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error {
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
@@ -100,7 +100,7 @@ func (r *fieldsLikeDbresponse) Refresh(ctx context.Context, fieldsLikeDbresponse
 	return r.refresh(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
 }
 
-// Relate returns a new relate instance for the underlying model.
+// Relate returns a new relate instance for the FieldsLikeDBResponse model.
 func (r *fieldsLikeDbresponse) Relate() *relate.FieldsLikeDBResponse {
 	return relate.NewFieldsLikeDBResponse(r.db, r.unmarshal)
 }

@@ -36,12 +36,12 @@ type urlexample struct {
 	*repo[model.URLExample, conv.URLExample]
 }
 
-// Query returns a new query builder for the underlying model.
+// Query returns a new query builder for the URLExample model.
 func (r *urlexample) Query() query.Builder[model.URLExample, conv.URLExample] {
 	return query.NewURLExample(r.db, r.unmarshal)
 }
 
-// Create creates a new record for the given model.
+// Create creates a new record for the URLExample model.
 // The ID will be generated automatically as a ULID.
 func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) error {
 	if urlexample == nil {
@@ -53,7 +53,7 @@ func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) e
 	return r.create(ctx, urlexample)
 }
 
-// CreateWithID creates a new record for the given model with the given id.
+// CreateWithID creates a new record for the URLExample model with the given id.
 func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error {
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
@@ -100,7 +100,7 @@ func (r *urlexample) Refresh(ctx context.Context, urlexample *model.URLExample) 
 	return r.refresh(ctx, urlexample.ID(), urlexample)
 }
 
-// Relate returns a new relate instance for the underlying model.
+// Relate returns a new relate instance for the URLExample model.
 func (r *urlexample) Relate() *relate.URLExample {
 	return relate.NewURLExample(r.db, r.unmarshal)
 }

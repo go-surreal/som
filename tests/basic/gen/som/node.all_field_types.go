@@ -36,12 +36,12 @@ type allFieldTypes struct {
 	*repo[model.AllFieldTypes, conv.AllFieldTypes]
 }
 
-// Query returns a new query builder for the underlying model.
+// Query returns a new query builder for the AllFieldTypes model.
 func (r *allFieldTypes) Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes] {
 	return query.NewAllFieldTypes(r.db, r.unmarshal)
 }
 
-// Create creates a new record for the given model.
+// Create creates a new record for the AllFieldTypes model.
 // The ID will be generated automatically as a ULID.
 func (r *allFieldTypes) Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
@@ -53,7 +53,7 @@ func (r *allFieldTypes) Create(ctx context.Context, allFieldTypes *model.AllFiel
 	return r.create(ctx, allFieldTypes)
 }
 
-// CreateWithID creates a new record for the given model with the given id.
+// CreateWithID creates a new record for the AllFieldTypes model with the given id.
 func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error {
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -100,7 +100,7 @@ func (r *allFieldTypes) Refresh(ctx context.Context, allFieldTypes *model.AllFie
 	return r.refresh(ctx, allFieldTypes.ID(), allFieldTypes)
 }
 
-// Relate returns a new relate instance for the underlying model.
+// Relate returns a new relate instance for the AllFieldTypes model.
 func (r *allFieldTypes) Relate() *relate.AllFieldTypes {
 	return relate.NewAllFieldTypes(r.db, r.unmarshal)
 }
