@@ -200,7 +200,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	expected := []string{
 		"some value",
-		//"some unsupported value",
+		//"some unsupported value", // this one should be filtered out
 		"some other value",
 	}
 
