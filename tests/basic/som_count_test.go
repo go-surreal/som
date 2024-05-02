@@ -40,31 +40,3 @@ func TestQueryCount(t *testing.T) {
 
 	assert.Equal(t, count, dbCount)
 }
-
-func TestQueryCountLive(t *testing.T) {
-	ctx := context.Background()
-
-	client, cleanup := prepareDatabase(ctx, t)
-	defer cleanup()
-
-	if err := client.ApplySchema(ctx); err != nil {
-		t.Fatal(err)
-	}
-
-	count := rand.Intn(randMax-randMin) + randMin
-
-	for i := 0; i < count; i++ {
-		err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	dbCount, err := client.AllFieldTypesRepo().Query().LiveCount(ctx)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, count, dbCount)
-}

@@ -7,6 +7,7 @@ import (
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -229,5 +230,57 @@ func TestLiveQueriesFilter(t *testing.T) {
 		case <-time.After(10 * time.Second):
 			t.Fatal("timeout waiting for live event")
 		}
+	}
+}
+
+func TestLiveQueryCount(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	if err := client.ApplySchema(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	liveCount, err := client.AllFieldTypesRepo().Query().LiveCount(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count := rand.Intn(randMax-randMin) + randMin
+
+	var models []*model.AllFieldTypes
+
+	for i := 0; i < count; i++ {
+		newModel := &model.AllFieldTypes{}
+
+		if err := client.AllFieldTypesRepo().Create(ctx, newModel); err != nil {
+			t.Fatal(err)
+		}
+
+		models = append(models, newModel)
+	}
+
+	for i := 0; i <= count; i++ {
+		assert.Equal(t, i, <-liveCount)
+	}
+
+	for _, delModel := range models {
+		if err := client.AllFieldTypesRepo().Delete(ctx, delModel); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for i := count; i > 0; i-- {
+		assert.Equal(t, i-1, <-liveCount)
+	}
+
+	select {
+
+	case <-liveCount:
+		t.Fatal("liveCount should not receive any more messages")
+
+	case <-time.After(1 * time.Second):
 	}
 }
