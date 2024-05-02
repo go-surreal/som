@@ -362,7 +362,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 	f.Line().
 		Add(comment(`
-Query returns a new query builder for the underlying model.
+Query returns a new query builder for the `+node.NameGo()+` model.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
@@ -380,7 +380,7 @@ Query returns a new query builder for the underlying model.
 
 	f.Line().
 		Add(comment(`
-Create creates a new record for the given model.
+Create creates a new record for the `+node.NameGo()+` model.
 The ID will be generated automatically as a ULID.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
@@ -411,7 +411,7 @@ The ID will be generated automatically as a ULID.
 
 	f.Line().
 		Add(comment(`
-CreateWithID creates a new record for the given model with the given id.
+CreateWithID creates a new record for the `+node.NameGo()+` model with the given id.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("CreateWithID").
@@ -552,7 +552,7 @@ Refresh refreshes the given model with the remote data.
 
 	f.Line().
 		Add(comment(`
-Relate returns a new relate instance for the underlying model.
+Relate returns a new relate instance for the `+node.NameGo()+` model.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Relate").Params().
