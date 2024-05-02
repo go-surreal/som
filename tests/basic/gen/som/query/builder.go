@@ -75,13 +75,15 @@ func (b builder[M, C]) Limit(limit int) BuilderNoLive[M, C] {
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
-func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) Builder[M, C] {
+//
+// TODO: Allow fetch for live queries as soon as SurrealDB supports it.
+func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) BuilderNoLive[M, C] {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			b.query.Fetch = append(b.query.Fetch, field)
 		}
 	}
-	return Builder[M, C]{b}
+	return BuilderNoLive[M, C]{b}
 }
 
 // Timeout adds an execution time limit to the query.
@@ -240,13 +242,62 @@ func (b builder[M, C]) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 // it is advised to execute the live query first. This is to ensure
 // data consistency. The other way around, there could be missing
 // updates happening between the initial query and the live query.
-func (b builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
+func (b Builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
 	req := b.query.BuildAsLive()
 	resChan, err := b.db.Live(ctx, req.Statement, req.Variables)
 	if err != nil {
-		return nil, fmt.Errorf("could not query live records: %w", err)
+		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
 	return live(ctx, resChan, b.unmarshal, b.convTo), nil
+}
+
+// LiveCount is the live version of Count.
+// Whenever a record is created or deleted that matches the
+// conditions of the query, the count will be updated.
+func (b Builder[M, C]) LiveCount(ctx context.Context) (<-chan int, error) {
+	count, err := b.Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute initial count: %w", err)
+	}
+
+	resChan, err := b.Live(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute live query: %w", err)
+	}
+
+	countChan := make(chan int, 1)
+
+	go func() {
+		defer close(countChan)
+
+		for {
+			select {
+
+			case <-ctx.Done():
+				return
+
+			case res, open := <-resChan:
+				if !open {
+					return
+				}
+
+				switch res.(type) {
+
+				case LiveCreate[*M]:
+					count++
+
+				case LiveDelete[*M]:
+					count--
+				}
+
+				countChan <- count
+			}
+		}
+	}()
+
+	countChan <- count
+
+	return countChan, nil
 }
 
 // LiveDiff behaves like Live, but instead of receiving the full result
