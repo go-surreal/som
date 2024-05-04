@@ -9,7 +9,10 @@
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.21.4-informational" alt="Go 1.21.4">
+    <img src="https://img.shields.io/badge/go-1.21.9_--_1.22.2-informational" alt="Go 1.21.9 - 1.22.2">
+  </a>
+  <a href="https://github.com/go-surreal/sdbc/releases/tag/v0.3.0">
+    <img src="https://img.shields.io/badge/sdbc-0.3.0-informational" alt="SDBC 0.3.0">
   </a>
   <a href="https://goreportcard.com/report/github.com/go-surreal/som">
     <img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card">
@@ -229,6 +232,16 @@ tbd.
 [//]: # (You can find the official roadmap [here]&#40;ROADMAP.md&#41;. As this might not always be the full)
 
 [//]: # (list of all planned changes, please take a look at the issue section on GitHub as well.)
+
+#### Upcoming
+
+This section holds a list of upcoming features and changes that are planned to be implemented in the near future.
+It is directly linked to upcoming features of SurrealDB itself.
+They can only be implemented after SurrealDB supports them.
+So this is more a list of features that are planned to be implemented in the future.
+
+- CronJobs: https://github.com/surrealdb/surrealdb/issues/192
+- TTL for records: https://github.com/surrealdb/surrealdb/issues/1317
 
 ## How to contribute
 
