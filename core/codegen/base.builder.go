@@ -85,14 +85,18 @@ func (b *build) build() error {
 }
 
 func (b *build) copyInternalPackage() error {
-	files, err := embed.Lib()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.outPkg,
+	}
+
+	files, err := embed.Lib(tmpl)
 	if err != nil {
 		return err
 	}
 
-	dir := filepath.Join(b.outDir, "internal")
+	dir := filepath.Join(b.outDir, "internal", "lib")
 
-	err = os.MkdirAll(filepath.Join(dir, "lib"), os.ModePerm)
+	err = os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -111,7 +115,11 @@ func (b *build) copyInternalPackage() error {
 }
 
 func (b *build) embedStaticFiles() error {
-	files, err := embed.Som()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.outPkg,
+	}
+
+	files, err := embed.Som(tmpl)
 	if err != nil {
 		return err
 	}

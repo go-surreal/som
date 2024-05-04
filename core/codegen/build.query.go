@@ -40,7 +40,11 @@ func (b *queryBuilder) build() error {
 }
 
 func (b *queryBuilder) embedStaticFiles() error {
-	files, err := embed.Query()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Query(tmpl)
 	if err != nil {
 		return err
 	}

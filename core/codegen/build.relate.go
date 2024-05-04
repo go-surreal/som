@@ -46,7 +46,11 @@ func (b *relateBuilder) build() error {
 }
 
 func (b *relateBuilder) embedStaticFiles() error {
-	files, err := embed.Relate()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Relate(tmpl)
 	if err != nil {
 		return err
 	}

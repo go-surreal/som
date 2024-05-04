@@ -39,7 +39,11 @@ func (b *fetchBuilder) build() error {
 }
 
 func (b *fetchBuilder) embedStaticFiles() error {
-	files, err := embed.Fetch()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Fetch(tmpl)
 	if err != nil {
 		return err
 	}
