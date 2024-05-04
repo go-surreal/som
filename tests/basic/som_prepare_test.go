@@ -44,7 +44,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
 
 	config := som.Config{
-		Address:   "ws://" + endpoint,
+		Host:      endpoint,
 		Username:  "root",
 		Password:  "root",
 		Namespace: "som_test",
