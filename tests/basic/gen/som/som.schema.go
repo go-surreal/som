@@ -18,18 +18,18 @@ func (c *ClientImpl) ApplySchema(ctx context.Context) error {
 
 var tmpl = `
 
-DEFINE TABLE url_example SCHEMAFULL;
+DEFINE TABLE url_example SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE url_example TYPE record<url_example> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD some_url ON TABLE url_example TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
 DEFINE FIELD some_other_url ON TABLE url_example TYPE string ASSERT $value == "" OR string::is::url($value);
 
-DEFINE TABLE group SCHEMAFULL;
+DEFINE TABLE group SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE group TYPE record<group> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE group TYPE option<datetime> VALUE $before OR time::now();
 DEFINE FIELD updated_at ON TABLE group TYPE option<datetime> VALUE time::now();
 DEFINE FIELD name ON TABLE group TYPE string;
 
-DEFINE TABLE fields_like_db_response SCHEMAFULL;
+DEFINE TABLE fields_like_db_response SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE fields_like_db_response TYPE record<fields_like_db_response> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD time ON TABLE fields_like_db_response TYPE string;
 DEFINE FIELD status ON TABLE fields_like_db_response TYPE string;
@@ -37,7 +37,7 @@ DEFINE FIELD detail ON TABLE fields_like_db_response TYPE string;
 DEFINE FIELD result ON TABLE fields_like_db_response TYPE option<array | null>;
 DEFINE FIELD result.* ON TABLE fields_like_db_response TYPE string;
 
-DEFINE TABLE all_field_types SCHEMAFULL;
+DEFINE TABLE all_field_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_field_types TYPE record<all_field_types> ASSERT $value != NONE AND $value != NULL AND $value != "";
 DEFINE FIELD created_at ON TABLE all_field_types TYPE option<datetime> VALUE $before OR time::now();
 DEFINE FIELD updated_at ON TABLE all_field_types TYPE option<datetime> VALUE time::now();
@@ -127,7 +127,7 @@ DEFINE FIELD byte_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $v
 DEFINE FIELD byte_slice ON TABLE all_field_types TYPE option<string | null>;
 DEFINE FIELD byte_slice_ptr ON TABLE all_field_types TYPE option<string | null>;
 
-DEFINE TABLE group_member SCHEMAFULL;
+DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group PERMISSIONS FULL;
 DEFINE FIELD created_at ON TABLE group_member TYPE option<datetime> VALUE $before OR time::now();
 DEFINE FIELD updated_at ON TABLE group_member TYPE option<datetime> VALUE time::now();
 DEFINE FIELD meta ON TABLE group_member TYPE object;
