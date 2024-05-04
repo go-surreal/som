@@ -19,7 +19,8 @@ type Database interface {
 }
 
 type Config struct {
-	Address   string
+	Host      string
+	Secure    bool
 	Username  string
 	Password  string
 	Namespace string
@@ -34,18 +35,10 @@ type ClientImpl struct {
 }
 
 func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, error) {
-	url := conf.Address + "/rpc"
-
 	opt := applyOptions(opts)
 
 	surreal, err := sdbc.NewClient(ctx,
-		sdbc.Config{
-			Address:   url,
-			Username:  conf.Username,
-			Password:  conf.Password,
-			Namespace: conf.Namespace,
-			Database:  conf.Database,
-		},
+		sdbc.Config(conf),
 		opt.sdbc...,
 	)
 	if err != nil {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/go-surreal/som/tests/basic/gen/som/query"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
-
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -55,6 +55,9 @@ func TestLiveQueries(t *testing.T) {
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	newModel := &model.FieldsLikeDBResponse{
 		Status: "some value",
@@ -126,17 +129,32 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal("liveChan closed unexpectedly")
 	}
 
-	liveDelete, ok := liveRes.(query.LiveDelete)
+	liveDelete, ok := liveRes.(query.LiveDelete[*model.FieldsLikeDBResponse])
 	if !ok {
 		t.Fatal("liveChan did not receive a delete event")
 	}
 
-	deletedID, err := liveDelete.Get()
+	deleted, err := liveDelete.Get()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, is.Equal("fields_like_db_response:"+newModel.ID(), deletedID))
+	assert.Check(t, is.Equal(newModel.ID(), deleted.ID()))
+
+	// Test the automatic closing of the live channel when the context is canceled:
+
+	cancel()
+
+	select {
+
+	case _, more := <-liveChan:
+		if more {
+			t.Fatal("liveChan did not close after context was canceled")
+		}
+
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout waiting for live channel to close after context was canceled")
+	}
 }
 
 func TestLiveQueriesFilter(t *testing.T) {
@@ -183,37 +201,104 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	expected := []string{
 		"some value",
-		// note: "some unsupported value" should not be received ;)
+		//"some unsupported value", // this one should be filtered out
 		"some other value",
 	}
 
-	for _ = range expected {
+	for _, status := range expected {
 		select {
 
-		case _, more := <-liveChan:
+		case liveRes, more := <-liveChan:
 			{
 				if !more {
 					t.Fatal("liveChan closed unexpectedly")
 				}
 
-				// liveCreate, ok := liveRes.(query.LiveCreate[*model.FieldsLikeDBResponse])
-				// if !ok {
-				// 	t.Fatal("liveChan did not receive a create event")
-				// }
-				//
-				// created, err := liveCreate.Get()
-				// if err != nil {
-				// 	t.Fatal(err)
-				// }
-				//
-				// assert.Check(t, is.Equal(status, created.Status))
+				liveCreate, ok := liveRes.(query.LiveCreate[*model.FieldsLikeDBResponse])
+				if !ok {
+					t.Fatal("liveChan did not receive a create event")
+				}
 
-				t.Fatal("for beta.12 live queries with filters should not work yet")
+				created, err := liveCreate.Get()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assert.Check(t, is.Equal(status, created.Status))
 			}
 
-		case <-time.After(1 * time.Second):
-			// t.Fatal("timeout waiting for live event")
-			t.Log("correct, becuase live queries with filters are not supported yet")
+		case <-time.After(10 * time.Second):
+			t.Fatal("timeout waiting for live event")
 		}
+	}
+}
+
+func TestLiveQueryCount(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	if err := client.ApplySchema(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	liveCount, err := client.AllFieldTypesRepo().Query().LiveCount(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count := rand.Intn(randMax-randMin) + randMin
+
+	var models []*model.AllFieldTypes
+
+	for i := 0; i < count; i++ {
+		newModel := &model.AllFieldTypes{}
+
+		if err := client.AllFieldTypesRepo().Create(ctx, newModel); err != nil {
+			t.Fatal(err)
+		}
+
+		models = append(models, newModel)
+	}
+
+	for i := 0; i <= count; i++ {
+		assert.Equal(t, i, <-liveCount)
+	}
+
+	for _, delModel := range models {
+		if err := client.AllFieldTypesRepo().Delete(ctx, delModel); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for i := count; i > 0; i-- {
+		assert.Equal(t, i-1, <-liveCount)
+	}
+
+	select {
+
+	case <-liveCount:
+		t.Fatal("liveCount should not receive any more messages")
+
+	case <-time.After(1 * time.Second):
+	}
+
+	// Test the automatic closing of the live channel when the context is canceled:
+
+	cancel()
+
+	select {
+
+	case _, more := <-liveCount:
+		if more {
+			t.Fatal("liveCount did not close after context was canceled")
+		}
+
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout waiting for live channel to close after context was canceled")
 	}
 }

@@ -39,7 +39,11 @@ func (b *sortBuilder) build() error {
 }
 
 func (b *sortBuilder) embedStaticFiles() error {
-	files, err := embed.Sort()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Sort(tmpl)
 	if err != nil {
 		return err
 	}

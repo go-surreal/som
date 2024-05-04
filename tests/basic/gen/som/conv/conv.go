@@ -3,6 +3,8 @@
 package conv
 
 import (
+	"encoding/json"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -105,4 +107,75 @@ func mapTimestamp(val time.Time) *time.Time {
 	}
 
 	return &val
+}
+
+//
+// -- NUMBER
+//
+
+// func uintToString[T uint | uint64 | uintptr](val T) string {
+// 	return strconv.FormatUint(uint64(val), 10)
+// }
+//
+// func stringToUint[T uint | uint64 | uintptr](val string) T {
+// 	res, err := strconv.ParseUint(val, 10, 64)
+// 	if err != nil {
+// 		return 0
+// 	}
+// 	return T(res)
+// }
+
+type unsignedNumber[T uint | uint64 | uintptr] struct {
+	val *T
+}
+
+func (n *unsignedNumber[T]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strconv.FormatUint(uint64(*n.val), 10) + "dec")
+}
+
+func (n *unsignedNumber[T]) UnmarshalJSON(data []byte) error {
+	if n == nil {
+		return nil
+	}
+
+	var raw string
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return err
+	}
+
+	if raw == "" {
+		return nil
+	}
+
+	res, err := strconv.ParseUint(raw, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	val := T(res)
+	n.val = &val
+
+	return nil
+}
+
+//
+// -- URL
+//
+
+func urlPtr(val *url.URL) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
+
+func parseURL(val string) url.URL {
+	res, err := url.Parse(val)
+	if err != nil {
+		// TODO: add logging!
+		return url.URL{}
+	}
+	return *res
 }

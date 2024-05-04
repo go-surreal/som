@@ -41,35 +41,35 @@ func ToFieldsLikeDBResponse(data *FieldsLikeDBResponse) *model.FieldsLikeDBRespo
 	}
 }
 
-type fieldsLikeDBResponseLink struct {
+type fieldsLikeDbresponseLink struct {
 	FieldsLikeDBResponse
 	ID string
 }
 
-func (f *fieldsLikeDBResponseLink) MarshalJSON() ([]byte, error) {
+func (f *fieldsLikeDbresponseLink) MarshalJSON() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
 	return json.Marshal(f.ID)
 }
 
-func (f *fieldsLikeDBResponseLink) UnmarshalJSON(data []byte) error {
+func (f *fieldsLikeDbresponseLink) UnmarshalJSON(data []byte) error {
 	raw := string(data)
 	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
 		raw = raw[1 : len(raw)-1]
 		f.ID = parseDatabaseID("fields_like_db_response", raw)
 		return nil
 	}
-	type alias fieldsLikeDBResponseLink
+	type alias fieldsLikeDbresponseLink
 	var link alias
 	err := json.Unmarshal(data, &link)
 	if err == nil {
-		*f = fieldsLikeDBResponseLink(link)
+		*f = fieldsLikeDbresponseLink(link)
 	}
 	return err
 }
 
-func fromFieldsLikeDBResponseLink(link *fieldsLikeDBResponseLink) model.FieldsLikeDBResponse {
+func fromFieldsLikeDBResponseLink(link *fieldsLikeDbresponseLink) model.FieldsLikeDBResponse {
 	if link == nil {
 		return model.FieldsLikeDBResponse{}
 	}
@@ -78,7 +78,7 @@ func fromFieldsLikeDBResponseLink(link *fieldsLikeDBResponseLink) model.FieldsLi
 	return *out
 }
 
-func fromFieldsLikeDBResponseLinkPtr(link *fieldsLikeDBResponseLink) *model.FieldsLikeDBResponse {
+func fromFieldsLikeDBResponseLinkPtr(link *fieldsLikeDbresponseLink) *model.FieldsLikeDBResponse {
 	if link == nil {
 		return nil
 	}
@@ -86,18 +86,18 @@ func fromFieldsLikeDBResponseLinkPtr(link *fieldsLikeDBResponseLink) *model.Fiel
 	return ToFieldsLikeDBResponse(&res)
 }
 
-func toFieldsLikeDBResponseLink(node model.FieldsLikeDBResponse) *fieldsLikeDBResponseLink {
+func toFieldsLikeDBResponseLink(node model.FieldsLikeDBResponse) *fieldsLikeDbresponseLink {
 	if node.ID() == "" {
 		return nil
 	}
-	link := fieldsLikeDBResponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(&node), ID: buildDatabaseID("fields_like_db_response", node.ID())}
+	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(&node), ID: buildDatabaseID("fields_like_db_response", node.ID())}
 	return &link
 }
 
-func toFieldsLikeDBResponseLinkPtr(node *model.FieldsLikeDBResponse) *fieldsLikeDBResponseLink {
+func toFieldsLikeDBResponseLinkPtr(node *model.FieldsLikeDBResponse) *fieldsLikeDbresponseLink {
 	if node == nil || node.ID() == "" {
 		return nil
 	}
-	link := fieldsLikeDBResponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(node), ID: buildDatabaseID("fields_like_db_response", node.ID())}
+	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(node), ID: buildDatabaseID("fields_like_db_response", node.ID())}
 	return &link
 }

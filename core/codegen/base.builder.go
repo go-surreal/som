@@ -85,14 +85,18 @@ func (b *build) build() error {
 }
 
 func (b *build) copyInternalPackage() error {
-	files, err := embed.Lib()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Lib(tmpl)
 	if err != nil {
 		return err
 	}
 
-	dir := filepath.Join(b.outDir, "internal")
+	dir := filepath.Join(b.outDir, "internal", "lib")
 
-	err = os.MkdirAll(filepath.Join(dir, "lib"), os.ModePerm)
+	err = os.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -111,7 +115,11 @@ func (b *build) copyInternalPackage() error {
 }
 
 func (b *build) embedStaticFiles() error {
-	files, err := embed.Som()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Som(tmpl)
 	if err != nil {
 		return err
 	}
@@ -173,6 +181,13 @@ func (b *build) buildSchemaFile() error {
 		}
 
 		if slice, ok := f.(*field.Slice); ok {
+
+			if _, ok := slice.Element().(*field.Byte); ok {
+				// byte slice has the type "string" in the database,
+				// so we do not need to specify its elements.
+				return
+			}
+
 			statement := fmt.Sprintf(
 				"DEFINE FIELD %s ON TABLE %s TYPE %s;",
 				prefix+f.NameDatabase()+".*", table, slice.Element().TypeDatabase(),
@@ -260,7 +275,8 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	// type {NodeName}Repo interface {...}
 	//
 	f.Type().Id(node.NameGo()+"Repo").Interface(
-		jen.Id("Query").Call().Qual(pkgQuery, "Node"+node.NameGo()),
+		jen.Id("Query").Call().Qual(pkgQuery, "Builder").
+			Types(b.input.SourceQual(node.NameGo()), jen.Qual(b.subPkg(def.PkgConv), node.NameGo())),
 
 		jen.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -292,45 +308,90 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
+		jen.Id("Refresh").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Error(),
+
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
 	)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("c").Op("*").Id("ClientImpl")).
+	f.Line().
+		Add(comment(`
+` + node.NameGo() + `Repo returns a new repository instance for the ` + node.NameGo() + ` model.
+		`)).
+		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
 		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
 		Block(
 			jen.Return(
 				jen.Op("&").Id(node.NameGoLower()).Values(
-					jen.Id("db").Op(":").Id("c").Dot("db"),
-					jen.Id("marshal").Op(":").Id("c").Dot("marshal"),
-					jen.Id("unmarshal").Op(":").Id("c").Dot("unmarshal"),
+					jen.Id("repo").Op(":").Op("&").Id("repo").
+						Types(
+							b.input.SourceQual(node.NameGo()),
+							jen.Id("conv."+node.NameGo()),
+						).
+						Values(
+							jen.Add(
+								jen.Line(),
+								jen.Id("db").Op(":").Id("c").Dot("db"),
+							),
+							jen.Add(
+								jen.Line(),
+								jen.Id("marshal").Op(":").Id("c").Dot("marshal"),
+							),
+							jen.Add(
+								jen.Line(),
+								jen.Id("unmarshal").Op(":").Id("c").Dot("unmarshal"),
+							),
+							jen.Add(
+								jen.Line(),
+								jen.Id("name").Op(":").Lit(node.NameDatabase()),
+							),
+							jen.Add(
+								jen.Line(),
+								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()),
+							),
+							jen.Add(
+								jen.Line(),
+								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()),
+							),
+						),
 				),
 			),
 		)
 
 	f.Line()
 	f.Type().Id(node.NameGoLower()).Struct(
-		jen.Id("db").Id("Database"),
-		jen.Id("marshal").Func().Params(jen.Id("val").Any()).Parens(jen.List(jen.Index().Byte(), jen.Error())),
-		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
+		jen.Op("*").Id("repo").Types(
+			b.input.SourceQual(node.NameGo()),
+			jen.Id("conv."+node.NameGo()),
+		),
 	)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Query returns a new query builder for the `+node.NameGo()+` model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
-		Qual(pkgQuery, "Node"+node.NameGo()).
+		Qual(pkgQuery, "Builder").
+		Types(
+			b.input.SourceQual(node.NameGo()),
+			jen.Qual(b.subPkg(def.PkgConv), node.NameGo()),
+		).
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
-				jen.Id("n").Dot("db"),
-				jen.Id("n").Dot("unmarshal"),
+				jen.Id("r").Dot("db"),
+				jen.Id("r").Dot("unmarshal"),
 			)),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Create creates a new record for the `+node.NameGo()+` model.
+The ID will be generated automatically as a ULID.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Create").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -348,32 +409,19 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
 				),
 
-			jen.Id("key").Op(":=").Lit(node.NameDatabase()+":ulid()"),
-			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
-
-			jen.Id("raw").Op(",").Err().Op(":=").
-				Id("n").Dot("db").Dot("Create").
-				Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
+			jen.Return(
+				jen.Id("r").Dot("create").Call(
+					jen.Id("ctx"),
+					jen.Id(node.NameGoLower()),
+				),
 			),
-
-			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Id("n").Dot("unmarshal").
-				Call(jen.Id("raw"), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal response: %w"), jen.Err())),
-			),
-
-			jen.Op("*").Id(node.NameGoLower()).Op("=").
-				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
-
-			jen.Return(jen.Nil()),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+CreateWithID creates a new record for the `+node.NameGo()+` model with the given id.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("CreateWithID").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -389,38 +437,24 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
 				Block(
-					jen.Return(jen.Qual("errors", "New").Call(
-						jen.Lit("creating node with preset ID not allowed, use CreateWithID for that")),
-					),
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
 				),
 
-			jen.Id("key").Op(":=").Lit(node.NameDatabase()+":").Op("+").
-				Lit("⟨").Op("+").Id("id").Op("+").Lit("⟩"),
-			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
-
-			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Create").
-				Call(jen.Id("ctx"), jen.Id("key"), jen.Id("data")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create entity: %w"), jen.Err())),
+			jen.Return(
+				jen.Id("r").Dot("createWithID").Call(
+					jen.Id("ctx"),
+					jen.Id("id"),
+					jen.Id(node.NameGoLower()),
+				),
 			),
-
-			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Id("n").Dot("unmarshal").
-				Call(jen.Id("res"), jen.Op("&").Id("convNode")),
-
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
-			),
-
-			jen.Op("*").Id(node.NameGoLower()).Op("=").
-				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
-
-			jen.Return(jen.Nil()),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Read returns the record for the given id, if it exists.
+The returned bool indicates whether the record was found or not.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -428,26 +462,19 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
-			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Select").Call(
-				jen.Id("ctx"),
-				jen.Lit(node.NameDatabase()+":⟨").Op("+").Id("id").Op("+").Lit("⟩"),
+			jen.Return(
+				jen.Id("r").Dot("read").Call(
+					jen.Id("ctx"),
+					jen.Id("id"),
+				),
 			),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.False(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not read entity: %w"), jen.Err())),
-			),
-
-			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-			jen.Err().Op("=").Id("n").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.False(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
-			),
-
-			jen.Return(jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")), jen.True(), jen.Nil()),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Update updates the record for the given model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Update").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -465,31 +492,20 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
 				),
 
-			jen.Id("data").Op(":=").Qual(pkgConv, "From"+node.NameGo()).Call(jen.Id(node.NameGoLower())),
-
-			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("n").Dot("db").Dot("Update").
-				Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().
-					Op("+").Lit("⟩"), jen.Id("data")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not update entity: %w"), jen.Err())),
+			jen.Return(
+				jen.Id("r").Dot("update").Call(
+					jen.Id("ctx"),
+					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id(node.NameGoLower()),
+				),
 			),
-
-			jen.Var().Id("convNode").Op("*").Qual(b.subPkg(def.PkgConv), node.NameGo()),
-
-			jen.Err().Op("=").Id("n").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convNode")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal entity: %w"), jen.Err())),
-			),
-
-			jen.Op("*").Id(node.NameGoLower()).Op("=").
-				Op("*").Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()).Call(jen.Id("convNode")),
-
-			jen.Return(jen.Nil()),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Delete deletes the record for the given model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Delete").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -502,25 +518,58 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.List(jen.Id("_"), jen.Err()).Op(":=").
-				Id("n").Dot("db").Dot("Delete").
-				Call(jen.Id("ctx"), jen.Lit(node.NameDatabase()+":⟨").Op("+").Id(node.NameGoLower()).Dot("ID").Call().Op("+").Lit("⟩")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not delete entity: %w"), jen.Err())),
+			jen.Return(
+				jen.Id("r").Dot("delete").Call(
+					jen.Id("ctx"),
+					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id(node.NameGoLower()),
+				),
 			),
-			jen.Return(jen.Nil()),
 		)
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Op("*").Id(node.NameGoLower())).
+	f.Line().
+		Add(comment(`
+Refresh refreshes the given model with the remote data.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("Refresh").
+		Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).
+		Error().
+		Block(
+			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+				),
+
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot refresh "+node.NameGo()+" without existing record ID"))),
+				),
+
+			jen.Return(
+				jen.Id("r").Dot("refresh").Call(
+					jen.Id("ctx"),
+					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id(node.NameGoLower()),
+				),
+			),
+		)
+
+	f.Line().
+		Add(comment(`
+Relate returns a new relate instance for the `+node.NameGo()+` model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Relate").Params().
 		Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
 		Block(
 			jen.Return(
 				jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(
-					jen.Id("n").Dot("db"),
-					jen.Id("n").Dot("unmarshal"),
+					jen.Id("r").Dot("db"),
+					jen.Id("r").Dot("unmarshal"),
 				),
 			),
 		)
@@ -571,4 +620,21 @@ func (b *build) basePkgName() string {
 
 func (b *build) subPkg(pkg string) string {
 	return path.Join(b.basePkg(), pkg)
+}
+
+//
+// -- HELPER
+//
+
+func comment(text string) jen.Code {
+	var code jen.Statement
+
+	text = strings.TrimSpace(text)
+	lines := strings.Split(text, "\n")
+
+	for _, line := range lines {
+		code.Comment(line).Line()
+	}
+
+	return &code
 }

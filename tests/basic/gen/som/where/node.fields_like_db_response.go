@@ -8,8 +8,8 @@ import (
 
 var FieldsLikeDBResponse = newFieldsLikeDBResponse[model.FieldsLikeDBResponse](lib.NewKey[model.FieldsLikeDBResponse]())
 
-func newFieldsLikeDBResponse[T any](key lib.Key[T]) fieldsLikeDBResponse[T] {
-	return fieldsLikeDBResponse[T]{
+func newFieldsLikeDBResponse[T any](key lib.Key[T]) fieldsLikeDbresponse[T] {
+	return fieldsLikeDbresponse[T]{
 		Detail: lib.NewString[T](lib.Field(key, "detail")),
 		ID:     lib.NewID[T](lib.Field(key, "id"), "fields_like_db_response"),
 		Status: lib.NewString[T](lib.Field(key, "status")),
@@ -18,7 +18,7 @@ func newFieldsLikeDBResponse[T any](key lib.Key[T]) fieldsLikeDBResponse[T] {
 	}
 }
 
-type fieldsLikeDBResponse[T any] struct {
+type fieldsLikeDbresponse[T any] struct {
 	key    lib.Key[T]
 	ID     *lib.ID[T]
 	Time   *lib.String[T]
@@ -26,16 +26,16 @@ type fieldsLikeDBResponse[T any] struct {
 	Detail *lib.String[T]
 }
 
-func (n fieldsLikeDBResponse[T]) Result() *lib.Slice[T, string] {
+func (n fieldsLikeDbresponse[T]) Result() *lib.Slice[T, string] {
 	return lib.NewSlice[T, string](lib.Field(n.key, "result"))
 }
 
-type fieldsLikeDBResponseEdges[T any] struct {
+type fieldsLikeDbresponseEdges[T any] struct {
 	lib.Filter[T]
 	key lib.Key[T]
 }
 
-type fieldsLikeDBResponseSlice[T any] struct {
+type fieldsLikeDbresponseSlice[T any] struct {
 	lib.Filter[T]
 	*lib.Slice[T, model.FieldsLikeDBResponse]
 }
