@@ -203,7 +203,7 @@ func (b *build) buildSchemaFile() error {
 	}
 
 	for _, node := range b.input.nodes {
-		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL;", node.NameDatabase())
+		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
 		statements = append(statements, statement)
 
 		statement = fmt.Sprintf(
@@ -220,7 +220,12 @@ func (b *build) buildSchemaFile() error {
 	}
 
 	for _, edge := range b.input.edges {
-		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL;", edge.NameDatabase())
+		statement := fmt.Sprintf(
+			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s PERMISSIONS FULL;",
+			edge.NameDatabase(),
+			edge.In.NameDatabase(),
+			edge.Out.NameDatabase(), // can be OR'ed with "|"
+		)
 		statements = append(statements, statement)
 
 		for _, f := range edge.GetFields() {
