@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/go-surreal/som/cmd/somgen/sub"
 	"github.com/go-surreal/som/core"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -12,9 +11,6 @@ func main() {
 	app := cli.App{
 		Name:   "somgen",
 		Action: generate,
-		Commands: []*cli.Command{
-			sub.Surreal(),
-		},
 	}
 
 	if err := app.Run(os.Args); err != nil {

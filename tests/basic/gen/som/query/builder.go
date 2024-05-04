@@ -6,10 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	"strings"
 	"time"
+
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	"github.com/go-surreal/som/tests/basic/gen/som/with"
 )
 
 // M is a placeholder for the model type.
