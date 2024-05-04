@@ -86,7 +86,7 @@ func (b *build) build() error {
 
 func (b *build) copyInternalPackage() error {
 	tmpl := &embed.Template{
-		GenerateOutPath: b.outPkg,
+		GenerateOutPath: b.subPkg(""),
 	}
 
 	files, err := embed.Lib(tmpl)
@@ -116,7 +116,7 @@ func (b *build) copyInternalPackage() error {
 
 func (b *build) embedStaticFiles() error {
 	tmpl := &embed.Template{
-		GenerateOutPath: b.outPkg,
+		GenerateOutPath: b.subPkg(""),
 	}
 
 	files, err := embed.Som(tmpl)
