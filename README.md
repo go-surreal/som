@@ -127,7 +127,11 @@ type User struct {
 Now, we can generate the client code:
 
 ```
-go run github.com/go-surreal/som/cmd/somgen@latest <root>/model <root>/gen/som
+go run github.com/go-surreal/som/cmd/som@latest gen <in_model_path> <out_gen_path>
+
+// e.g.
+
+go run github.com/go-surreal/som/cmd/som@latest gen <root>/model <root>/gen/som
 ```
 
 With the generated client, we can now perform operations on the database:

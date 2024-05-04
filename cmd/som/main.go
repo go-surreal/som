@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/go-surreal/som/buildtime"
-	"github.com/go-surreal/som/cmd/somgen/gen"
+	"github.com/go-surreal/som/cmd/som/gen"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+	"runtime/debug"
 )
 
 func main() {
@@ -21,15 +21,23 @@ func main() {
 		DefaultCommand: "gen",
 		Suggest:        true,
 
-		Version:  buildtime.Version(),
-		Compiled: buildtime.CompiledAt(),
-
 		Authors: []*cli.Author{
 			{
 				Name: "Marc Binz",
 			},
 		},
 		Copyright: "github.com/go-surreal/som",
+
+		ExtraInfo: func() map[string]string {
+			info, ok := debug.ReadBuildInfo()
+			if !ok {
+				return nil
+			}
+
+			return map[string]string{
+				"GoVersion": info.GoVersion,
+			}
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
