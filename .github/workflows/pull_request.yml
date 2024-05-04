@@ -118,7 +118,7 @@ jobs:
         run: go version
 
       - name: Build
-        working-directory: cmd/somgen
+        working-directory: cmd/som
         run: go build -v ./...
 
   test:
