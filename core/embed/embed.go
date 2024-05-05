@@ -21,6 +21,9 @@ var queryContent embed.FS
 //go:embed relate/*
 var relateContent embed.FS
 
+//go:embed define/*
+var defineContent embed.FS
+
 //go:embed sort/*
 var sortContent embed.FS
 
@@ -164,6 +167,35 @@ func Relate() ([]*File, error) {
 		filePath := filepath.Join("relate", entry.Name())
 
 		content, err := relateContent.ReadFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		files = append(files, &File{
+			Path:    entry.Name(),
+			Content: content,
+		})
+	}
+
+	return files, nil
+}
+
+func Define() ([]*File, error) {
+	dir, err := defineContent.ReadDir("define")
+	if err != nil {
+		return nil, err
+	}
+
+	var files []*File
+
+	for _, entry := range dir {
+		if entry.IsDir() {
+			return nil, errors.New("define package contains unexpected directory")
+		}
+
+		filePath := filepath.Join("define", entry.Name())
+
+		content, err := defineContent.ReadFile(filePath)
 		if err != nil {
 			return nil, err
 		}
