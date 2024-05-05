@@ -40,7 +40,11 @@ func (b *defineBuilder) build() error {
 }
 
 func (b *defineBuilder) embedStaticFiles() error {
-	files, err := embed.Define()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Define(tmpl)
 	if err != nil {
 		return err
 	}
