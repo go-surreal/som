@@ -52,7 +52,11 @@ func (b *convBuilder) build() error {
 }
 
 func (b *convBuilder) embedStaticFiles() error {
-	files, err := embed.Conv()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Conv(tmpl)
 	if err != nil {
 		return err
 	}

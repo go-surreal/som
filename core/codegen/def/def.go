@@ -15,6 +15,8 @@ const (
 const (
 	PkgSom = "github.com/go-surreal/som"
 
+	PkgJson             = "encoding/json"
+	PkgURL              = "net/url"
 	PkgUUID             = "github.com/google/uuid"
 	PkgSurrealDB        = "github.com/surrealdb/surrealdb.go"
 	PkgSurrealMarshal   = "github.com/surrealdb/surrealdb.go/pkg/marshal"

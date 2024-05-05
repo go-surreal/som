@@ -22,6 +22,8 @@ jobs:
   sync:
     name: Sync
     runs-on: ubuntu-latest
+    permissions: "write-all"
+    timeout-minutes: 1
     steps:
 
       - name: Checkout
@@ -41,18 +43,6 @@ jobs:
 
       - name: Check Go Version
         run: go version
-
-      - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
 
       - name: Sync
         working-directory: .
@@ -67,6 +57,8 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions: "write-all"
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
@@ -86,18 +78,6 @@ jobs:
 
       - name: Check Go Version
         run: go version
-
-      - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
@@ -116,6 +96,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
@@ -136,25 +117,14 @@ jobs:
       - name: Check Go Version
         run: go version
 
-      - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
-
       - name: Build
-        working-directory: cmd/somgen
+        working-directory: cmd/som
         run: go build -v ./...
 
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
@@ -174,18 +144,6 @@ jobs:
 
       - name: Check Go Version
         run: go version
-
-      - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
 
       - name: Test Library
         working-directory: .
