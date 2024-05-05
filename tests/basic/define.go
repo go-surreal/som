@@ -1,7 +1,7 @@
 package basic
 
 import (
-	"github.com/go-surreal/som/core/embed/som"
+	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/define"
 )
 
