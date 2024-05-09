@@ -3,9 +3,9 @@ package codegen
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/codegen/field"
-	"github.com/marcbinz/som/core/parser"
 )
 
 type input struct {
@@ -24,34 +24,6 @@ func newInput(source *parser.Output) (*input, error) {
 	var in input
 
 	in.sourcePkgPath = source.PkgPath
-
-	// getElement := func(name string) (field.Element, bool) {
-	// 	for _, node := range in.nodes {
-	// 		if node.Name == name {
-	// 			return node, true
-	// 		}
-	// 	}
-	//
-	// 	for _, edge := range in.edges {
-	// 		if edge.Name == name {
-	// 			return edge, true
-	// 		}
-	// 	}
-	//
-	// 	for _, obj := range in.objects {
-	// 		if obj.Name == name {
-	// 			return obj, true
-	// 		}
-	// 	}
-	//
-	// 	// for _, enum := range in.enums {
-	// 	// 	if enum.Name == name {
-	// 	// 		return enum, true
-	// 	// 	}
-	// 	// }
-	//
-	// 	return nil, false
-	// }
 
 	def, err := field.NewDef(source, buildConf)
 	if err != nil {

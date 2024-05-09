@@ -1,12 +1,14 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/embed"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 type convBuilder struct {
@@ -24,8 +26,7 @@ func (b *convBuilder) build() error {
 		return err
 	}
 
-	// Generate the base file.
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -50,117 +51,24 @@ func (b *convBuilder) build() error {
 	return nil
 }
 
-func (b *convBuilder) buildBaseFile() error {
-	content := `
+func (b *convBuilder) embedStaticFiles() error {
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
 
-package conv
-
-import (
-	"github.com/google/uuid"
-	"strings"
-	"time"
-	"strconv"
-)
-
-func parseDatabaseID(node string, id string) string {
-	id = strings.TrimPrefix(id, node+":")
-	id = strings.TrimPrefix(id,"⟨")
-	id = strings.TrimSuffix(id, "⟩")
-	id, _ = strconv.Unquote("\"" + id + "\"")
-	return id
-}
-
-func buildDatabaseID(node string, id string) string {
-	return node + ":" + id
-}
-
-func parseTime(val any) time.Time {
-	res, err := time.Parse(time.RFC3339, val.(string))
+	files, err := embed.Conv(tmpl)
 	if err != nil {
-		return time.Time{}
-	}
-	return res
-}
-
-func uuidPtr(val *uuid.UUID) *string {
-	if val == nil {
-		return nil
-	}
-	str := val.String()
-	return &str
-}
-
-func parseUUID(val string) uuid.UUID {
-	res, err := uuid.Parse(val)
-	if err != nil {
-		// TODO: add logging!
-		return uuid.UUID{}
-	}
-	return res
-}
-
-func mapSlice[I, O any](in []I, fn func(I) O) []O {
-	if in == nil {
-		return nil
+		return err
 	}
 
-	out := make([]O, len(in))
-	for _, i := range in {
-		out = append(out, fn(i))
-	}
-	return out
-}
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-func mapEnum[I, O ~string](in I) O {
- 	return O(in)
-}
-
-func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
- 	return func(in *I) *O {
- 		if in == nil {
- 			return nil
- 		}
- 		out := fn(*in)
- 		return &out
- 	}
-}
-
-func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
-	if in == nil {
-		return nil
-	}
-
- 	ptrFn := ptrFunc(fn)
-
-	out := make([]*O, len(in))
- 	for _, i := range in {
- 		out = append(out, ptrFn(i))
- 	}
-
- 	return out
-}
-
-func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
-	if in == nil {
-		return nil
-	}
-
-	ptrFn := ptrFunc(fn)
-
-	out := make([]*O, len(*in))
-	for _, i := range *in {
-		out = append(out, ptrFn(i))
-	}
-
-	return &out
-}
-`
-
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "conv.go"), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -169,6 +77,7 @@ func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
 func (b *convBuilder) buildFile(elem field.Element) error {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     elem,
 	}
 
@@ -184,6 +93,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		typeName = elem.NameGo()
 	}
 
+	f.Line()
 	f.Type().Id(typeName).StructFunc(func(g *jen.Group) {
 		for _, f := range elem.GetFields() {
 			if code := f.CodeGen().FieldDef(fieldCtx); code != nil {
@@ -192,12 +102,20 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		}
 	})
 
+	f.Line()
 	f.Add(b.buildFrom(elem))
+
+	f.Line()
 	f.Add(b.buildTo(elem))
 
 	if node, ok := elem.(*field.NodeTable); ok {
-		f.Type().Id(node.NameGoLower() + "Link").Id(node.NameGo())
+		f.Line()
+		f.Type().Id(node.NameGoLower()+"Link").Struct(
+			jen.Id(node.NameGo()),
+			jen.Id("ID").String(),
+		)
 
+		f.Line()
 		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGoLower()+"Link")).
 			Id("MarshalJSON").Params().
 			Params(jen.Index().Byte(), jen.Error()).
@@ -208,6 +126,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.Return(jen.Qual("encoding/json", "Marshal").Call(jen.Id("f").Dot("ID"))),
 			)
 
+		f.Line()
 		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGoLower()+"Link")).
 			Id("UnmarshalJSON").Params(jen.Id("data").Index().Byte()).
 			Error().
@@ -234,8 +153,17 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.Return(jen.Err()),
 			)
 
+		f.Line()
 		f.Add(b.buildFromLink(node))
+
+		f.Line()
+		f.Add(b.buildFromLinkPtr(node))
+
+		f.Line()
 		f.Add(b.buildToLink(node))
+
+		f.Line()
+		f.Add(b.buildToLinkPtr(node))
 	}
 
 	if err := f.Save(path.Join(b.path(), elem.FileName())); err != nil {
@@ -248,6 +176,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     elem,
 	}
 
@@ -263,18 +192,16 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	}
 
 	return jen.Func().
-		Id(methodPrefix + elem.NameGo()).
-		Params(jen.Id("data").Add(b.SourceQual(elem.NameGo()))).
-		Id(localName).
+		Id(methodPrefix+elem.NameGo()).
+		Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
+		Op("*").Id(localName).
 		Block(
-			jen.Return(jen.Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
-				for _, f := range elem.GetFields() {
-					if elem.HasTimestamps() {
-						if f.NameGo() == "CreatedAt" || f.NameGo() == "UpdatedAt" {
-							continue
-						}
-					}
+			jen.If(jen.Id("data").Op("==").Nil()).Block(
+				jen.Return(jen.Nil()),
+			),
 
+			jen.Return(jen.Op("&").Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
+				for _, f := range elem.GetFields() {
 					if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
 					}
@@ -286,6 +213,7 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
 		Table:     elem,
 	}
 
@@ -301,19 +229,22 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 	}
 
 	return jen.Func().
-		Id(methodPrefix + elem.NameGo()).
-		Params(jen.Id("data").Id(localName)).
-		Add(b.SourceQual(elem.NameGo())).
+		Id(methodPrefix+elem.NameGo()).
+		Params(jen.Id("data").Op("*").Id(localName)).
+		Op("*").Add(b.SourceQual(elem.NameGo())).
 		Block(
-			jen.Return(jen.Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
+			jen.If(jen.Id("data").Op("==").Nil()).Block(
+				jen.Return(jen.Nil()),
+			),
+
+			jen.Return(jen.Op("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
 				for _, f := range elem.GetFields() {
-					if elem.HasTimestamps() {
-						if f.NameGo() == "CreatedAt" || f.NameGo() == "UpdatedAt" {
+					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
+						if fieldCode := f.CodeGen().ConvToField(fieldCtx); fieldCode != nil {
+							d[fieldCode] = code
 							continue
 						}
-					}
 
-					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
 						d[jen.Id(f.NameGo())] = code
 					}
 				}
@@ -335,32 +266,79 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 						),
 					)
 				}
-
-				if elem.HasTimestamps() {
-					d[jen.Id("Timestamps")] = jen.Qual(def.PkgSom, "NewTimestamps").Call(
-						jen.Id("data").Dot("CreatedAt"),
-						jen.Id("data").Dot("UpdatedAt"),
-					)
-				}
 			}))))
 }
 
 func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Id("from" + node.NameGo() + "Link").
-		Params(jen.Id("link").Id(node.NameGoLower() + "Link")).
+		Id("from"+node.NameGo()+"Link").
+		Params(jen.Id("link").Op("*").Id(node.NameGoLower()+"Link")).
 		Add(b.SourceQual(node.NameGo())).
 		Block(
-			jen.Return(jen.Id("To" + node.NameGo()).Call(jen.Id(node.NameGo()).Call(jen.Id("link")))),
+			jen.If(jen.Id("link").Op("==").Nil()).Block(
+				jen.Return(jen.Add(b.SourceQual(node.NameGo())).Values()),
+			),
+			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
+			jen.Id("out").Op(":=").Id("To"+node.NameGo()).Call(jen.Op("&").Id("res")),
+			jen.Return(jen.Op("*").Id("out")),
+		)
+}
+
+func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
+	return jen.Func().
+		Id("from"+node.NameGo()+"LinkPtr").
+		Params(jen.Id("link").Op("*").Id(node.NameGoLower()+"Link")).
+		Op("*").Add(b.SourceQual(node.NameGo())).
+		Block(
+			jen.If(jen.Id("link").Op("==").Nil()).Block(
+				jen.Return(jen.Nil()),
+			),
+			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
+			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Op("&").Id("res"))),
 		)
 }
 
 func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Id("to" + node.NameGo() + "Link").
+		Id("to"+node.NameGo()+"Link").
 		Params(jen.Id("node").Add(b.SourceQual(node.NameGo()))).
-		Id(node.NameGoLower() + "Link").
+		Op("*").Id(node.NameGoLower()+"Link").
 		Block(
-			jen.Return(jen.Id(node.NameGoLower() + "Link").Call(jen.Id("From" + node.NameGo()).Call(jen.Id("node")))),
+			jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
+				jen.Return(jen.Nil()),
+			),
+			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
+				jen.Id(node.NameGo()).Op(":").Op("*").Id("From"+node.NameGo()).Call(jen.Op("&").Id("node")),
+				jen.Id("ID").Op(":").Id("buildDatabaseID").Call(
+					jen.Lit(node.NameDatabase()),
+					jen.Id("node").Dot("ID").Call(),
+				),
+			),
+			jen.Return(jen.Op("&").Id("link")),
+		)
+}
+
+func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
+	return jen.Func().
+		Id("to"+node.NameGo()+"LinkPtr").
+		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).
+		Op("*").Id(node.NameGoLower()+"Link").
+		Block(
+			jen.
+				If(
+					jen.Id("node").Op("==").Nil().Op("||").
+						Id("node").Dot("ID").Call().Op("==").Lit(""),
+				).
+				Block(
+					jen.Return(jen.Nil()),
+				),
+			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
+				jen.Id(node.NameGo()).Op(":").Op("*").Id("From"+node.NameGo()).Call(jen.Id("node")),
+				jen.Id("ID").Op(":").Id("buildDatabaseID").Call(
+					jen.Lit(node.NameDatabase()),
+					jen.Id("node").Dot("ID").Call(),
+				),
+			),
+			jen.Return(jen.Op("&").Id("link")),
 		)
 }

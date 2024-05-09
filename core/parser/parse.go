@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"github.com/go-surreal/som/core/util"
 	"github.com/wzshiming/gotype"
 	"go/ast"
 	"os"
@@ -10,9 +11,7 @@ import (
 	"strings"
 )
 
-const fileGoMod = "go.mod"
-
-const packagePath = "github.com/marcbinz/som"
+const packagePath = "github.com/go-surreal/som"
 
 func Parse(dir string) (*Output, error) {
 	res := &Output{}
@@ -38,7 +37,7 @@ func Parse(dir string) (*Output, error) {
 		return nil, fmt.Errorf("could not find absolute path: %v", err)
 	}
 
-	pkgPath, modPath, err := parseMod(absDir)
+	pkgPath, modPath, err := util.ParseMod(absDir)
 	if err != nil {
 		return nil, err
 	}
@@ -190,8 +189,16 @@ func parseNode(v gotype.Type) (*Node, error) {
 			if f.Name() == "Timestamps" {
 				node.Timestamps = true
 				node.Fields = append(node.Fields,
-					&FieldTime{&fieldAtomic{"CreatedAt", false}},
-					&FieldTime{&fieldAtomic{"UpdatedAt", false}},
+					&FieldTime{
+						&fieldAtomic{"CreatedAt", false},
+						true,
+						false,
+					},
+					&FieldTime{
+						&fieldAtomic{"UpdatedAt", false},
+						false,
+						true,
+					},
 				)
 				continue
 			}
@@ -242,8 +249,16 @@ func parseEdge(v gotype.Type) (*Edge, error) {
 			if f.Name() == "Timestamps" {
 				edge.Timestamps = true
 				edge.Fields = append(edge.Fields,
-					&FieldTime{&fieldAtomic{"CreatedAt", false}},
-					&FieldTime{&fieldAtomic{"UpdatedAt", false}},
+					&FieldTime{
+						&fieldAtomic{"CreatedAt", false},
+						true,
+						false,
+					},
+					&FieldTime{
+						&fieldAtomic{"UpdatedAt", false},
+						false,
+						true,
+					},
 				)
 				continue
 			}
@@ -323,6 +338,16 @@ func parseField(t gotype.Type) (Field, error) {
 			return &FieldNumeric{atomic, NumberInt}, nil
 		}
 
+	case gotype.Int8:
+		{
+			return &FieldNumeric{atomic, NumberInt8}, nil
+		}
+
+	case gotype.Int16:
+		{
+			return &FieldNumeric{atomic, NumberInt16}, nil
+		}
+
 	case gotype.Int32:
 		{
 			return &FieldNumeric{atomic, NumberInt32}, nil
@@ -332,6 +357,36 @@ func parseField(t gotype.Type) (Field, error) {
 		{
 			return &FieldNumeric{atomic, NumberInt64}, nil
 		}
+
+	//case gotype.Uint:
+	//	{
+	//		return &FieldNumeric{atomic, NumberUint}, nil
+	//	}
+
+	case gotype.Uint8:
+		{
+			return &FieldNumeric{atomic, NumberUint8}, nil
+		}
+
+	case gotype.Uint16:
+		{
+			return &FieldNumeric{atomic, NumberUint16}, nil
+		}
+
+	case gotype.Uint32:
+		{
+			return &FieldNumeric{atomic, NumberUint32}, nil
+		}
+
+	//case gotype.Uint64:
+	//	{
+	//		return &FieldNumeric{atomic, NumberUint64}, nil
+	//	}
+
+	//case gotype.Uintptr:
+	//	{
+	//		return &FieldNumeric{atomic, NumberUintptr}, nil
+	//	}
 
 	case gotype.Float32:
 		{
@@ -343,18 +398,32 @@ func parseField(t gotype.Type) (Field, error) {
 			return &FieldNumeric{atomic, NumberFloat64}, nil
 		}
 
+	case gotype.Rune:
+		{
+			return &FieldNumeric{atomic, NumberRune}, nil
+		}
+
 	case gotype.Bool:
 		{
 			return &FieldBool{atomic}, nil
+		}
+
+	case gotype.Byte:
+		{
+			return &FieldByte{atomic}, nil
 		}
 
 	case gotype.Struct:
 		{
 			// TODO: prevent structs (or general types) from another package (except time and uuid)!
 			switch {
-			case t.Elem().PkgPath() == "time":
+			case t.Elem().PkgPath() == "time" && t.Elem().Name() == "Time":
 				{
-					return &FieldTime{atomic}, nil
+					return &FieldTime{atomic, false, false}, nil
+				}
+			case t.Elem().PkgPath() == "net/url" && t.Elem().Name() == "URL":
+				{
+					return &FieldURL{atomic}, nil
 				}
 			case isNode(t.Elem()):
 				{

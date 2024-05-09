@@ -2,8 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Bool struct {
@@ -21,10 +20,7 @@ func (f *Bool) typeConv() jen.Code {
 }
 
 func (f *Bool) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "bool"
-	}
-	return "bool ASSERT $value != NULL"
+	return f.optionWrap("bool")
 }
 
 func (f *Bool) CodeGen() *CodeGen {
@@ -49,7 +45,7 @@ func (f *Bool) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
 }
 
 func (f *Bool) filterInit(ctx Context) jen.Code {
@@ -58,8 +54,8 @@ func (f *Bool) filterInit(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(def.PkgLib, filter).Types(jen.Id("T")).
-		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
+		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Bool) convFrom(ctx Context) jen.Code {

@@ -1,38 +1,40 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
   "timezone": "Europe/Berlin",
-  "labels": ["cc | build"],
+  "dependencyDashboard": true,
   "packageRules": [
+    {
+      "matchPackagePatterns": ["action"],
+      "groupName": "workflow updates",
+      "commitMessage": "ci: apply workflow updates",
+      "labels": ["cc | ci"],
+      "schedule": ["after 7am before 9am on Monday"]
+    },
     {
       "matchDatasources": ["golang-version"],
       "groupName": "go version update",
-      "labels": ["cc | build"],
-      "schedule": ["before 8am"]
+      "labels": ["cc | test"],
+      "commitMessage": "build(go): update language version {{{commitMessageExtra}}}",
+      "schedule": ["after 7am before 9am on Monday"]
     },
     {
       "matchDatasources": ["go"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "go minor package updates",
+      "matchUpdateTypes": ["minor", "patch", "pin", "pinDigest", "digest", "lockFileMaintenance", "rollback", "bump"],
+      "groupName": "go minor/patch package updates",
+      "commitMessage": "build(go): apply minor/patch package updates",
       "labels": ["cc | build"],
-      "schedule": ["before 8am"]
+      "schedule": ["after 7am before 9am on Monday"]
     },
     {
       "matchDatasources": ["go"],
       "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "3 days",
       "groupName": "go major package updates",
+      "commitMessage": "build(go): apply major package updates",
       "labels": ["cc | build"],
-      "schedule": ["before 8am"]
-    },
-    {
-      "matchPackagePatterns": ["github-actions"],
-      "groupName": "github workflow updates",
-      "labels": ["cc | ci"],
-      "schedule": ["before 8am"]
+      "schedule": ["after 7am before 9am on Monday"]
     }
   ],
   "additionalReviewers": ["marcbinz"],
-  "branchConcurrentLimit": 10
+  "branchConcurrentLimit": 5
 }

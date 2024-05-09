@@ -2,8 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type String struct {
@@ -21,10 +20,7 @@ func (f *String) typeConv() jen.Code {
 }
 
 func (f *String) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "string"
-	}
-	return "string ASSERT $value != NULL"
+	return f.optionWrap("string")
 }
 
 func (f *String) CodeGen() *CodeGen {
@@ -49,7 +45,7 @@ func (f *String) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
 }
 
 func (f *String) filterInit(ctx Context) jen.Code {
@@ -58,16 +54,16 @@ func (f *String) filterInit(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(def.PkgLib, filter).Types(jen.Id("T")).
-		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
+		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *String) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, "StringSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "StringSort").Types(jen.Id("T"))
 }
 
 func (f *String) sortInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLib, "NewStringSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewStringSort").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

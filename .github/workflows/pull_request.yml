@@ -2,16 +2,32 @@ name: PR
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/pull_request.yml"
+      - "cmd/**/*"
+      - "core/**/*"
+      - "tests/**/*"
+      - ".envrc"
+      - ".golangci.yml"
+      - ".tool-versions"
+      - "go.mod"
+      - "go.sum"
+      - "go.work"
+      - "go.work.sum"
+      - "som.go"
 
 jobs:
 
   sync:
     name: Sync
     runs-on: ubuntu-latest
+    permissions: "write-all"
+    timeout-minutes: 1
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -20,7 +36,7 @@ jobs:
           path_to_tool_versions: "./.tool-versions"
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
@@ -28,24 +44,12 @@ jobs:
       - name: Check Go Version
         run: go version
 
-      - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
-
       - name: Sync
         working-directory: .
         run: go mod download
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Apply dependency sync"
           branch: ${{ github.head_ref }}
@@ -53,10 +57,12 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions: "write-all"
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -65,7 +71,7 @@ jobs:
           path_to_tool_versions: "./.tool-versions"
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
@@ -73,27 +79,15 @@ jobs:
       - name: Check Go Version
         run: go version
 
-      - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
-
       - name: Lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
           version: "v${{ steps.asdf.outputs.golangci-lint_version }}"
           working-directory: .
           args: --path-prefix=. --go ${{ steps.asdf.outputs.golang_version }} --timeout 5m
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         if: always()
         with:
           commit_message: "Apply golangci-lint auto-fix changes"
@@ -102,10 +96,11 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -114,7 +109,7 @@ jobs:
           path_to_tool_versions: "./.tool-versions"
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
@@ -122,29 +117,18 @@ jobs:
       - name: Check Go Version
         run: go version
 
-      - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
-
       - name: Build
-        working-directory: cmd/somgen
+        working-directory: cmd/som
         run: go build -v ./...
 
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ASDF Environment
         id: asdf
@@ -153,7 +137,7 @@ jobs:
           path_to_tool_versions: "./.tool-versions"
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
@@ -161,18 +145,10 @@ jobs:
       - name: Check Go Version
         run: go version
 
-      - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
-
-      - name: Test
+      - name: Test Library
         working-directory: .
+        run: go test -v ./...
+
+      - name: Test Basic
+        working-directory: tests/basic
         run: go test -v ./...

@@ -2,8 +2,8 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Time struct {
@@ -21,10 +21,19 @@ func (f *Time) typeConv() jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "datetime"
+	if f.source.IsCreatedAt {
+		// READONLY not working as expected, so using permissions as workaround for now.
+		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
+		return "option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE"
 	}
-	return "datetime ASSERT $value != NULL"
+
+	if f.source.IsUpdatedAt {
+		// READONLY not working as expected, so using permissions as workaround for now.
+		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
+		return "option<datetime> VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE"
+	}
+
+	return f.optionWrap("datetime")
 }
 
 func (f *Time) CodeGen() *CodeGen {
@@ -37,9 +46,10 @@ func (f *Time) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		convFrom:    f.convFrom,
+		convTo:      f.convTo,
+		convToField: f.convToField,
+		fieldDef:    f.fieldDef,
 	}
 }
 
@@ -49,7 +59,7 @@ func (f *Time) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
 }
 
 func (f *Time) filterInit(ctx Context) jen.Code {
@@ -58,28 +68,57 @@ func (f *Time) filterInit(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(def.PkgLib, filter).Types(jen.Id("T")).
-		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
+		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Time) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, "BaseSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(jen.Id("T"))
 }
 
 func (f *Time) sortInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLib, "NewBaseSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(jen.Id("T")).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Time) convFrom(ctx Context) jen.Code {
+func (f *Time) convFrom(_ Context) jen.Code {
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return nil // never sent a timestamp to the database, as it will be set automatically
+	}
+
 	return jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Time) convTo(ctx Context) jen.Code {
+func (f *Time) convTo(_ Context) jen.Code {
+	if f.source.IsCreatedAt {
+		return jen.Qual(def.PkgSom, "NewTimestamps").Call(
+			jen.Id("data").Dot("CreatedAt"),
+			jen.Id("data").Dot("UpdatedAt"),
+		)
+	}
+
+	if f.source.IsUpdatedAt {
+		return nil
+	}
+
 	return jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Time) fieldDef(ctx Context) jen.Code {
+func (f *Time) convToField(_ Context) jen.Code {
+	if !f.source.IsCreatedAt {
+		return nil
+	}
+
+	return jen.Id("Timestamps")
+}
+
+func (f *Time) fieldDef(_ Context) jen.Code {
+
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv()).
+			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+	}
+
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

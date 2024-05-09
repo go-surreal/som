@@ -1,11 +1,13 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/field"
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/embed"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 type fetchBuilder struct {
@@ -23,8 +25,7 @@ func (b *fetchBuilder) build() error {
 		return err
 	}
 
-	// Generate the base file.
-	if err := b.buildBaseFile(); err != nil {
+	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
 
@@ -37,29 +38,24 @@ func (b *fetchBuilder) build() error {
 	return nil
 }
 
-func (b *fetchBuilder) buildBaseFile() error {
-	content := `
-
-package with
-
-// Fetch_ has a suffix of "_" to prevent clashes with node names.
-type Fetch_[T any] interface {
-	fetch(T)
-}
-
-func keyed[S ~string](base S, key string) string {
-	if base == "" {
-		return key
+func (b *fetchBuilder) embedStaticFiles() error {
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
 	}
-	return string(base) + "." + key
-}
-`
 
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "fetch.go"), data, os.ModePerm)
+	files, err := embed.Fetch(tmpl)
 	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -70,18 +66,22 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(codegenComment)
 
+	f.Line()
 	f.Var().Id(node.Name).Op("=").Id(node.NameGoLower()).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 
+	f.Line()
 	f.Type().Id(node.NameGoLower()).
 		Types(jen.Id("T").Any()).
 		String()
 
+	f.Line()
 	f.Func().
 		Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
 		Id("fetch").Params(jen.Id("T")).Block()
 
 	for _, fld := range node.GetFields() {
 		if nodeField, ok := fld.(*field.Node); ok {
+			f.Line()
 			f.Func().
 				Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
 				Id(nodeField.NameGo()).Params().
