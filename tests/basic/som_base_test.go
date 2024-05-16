@@ -488,3 +488,16 @@ func TestRefresh(t *testing.T) {
 
 	assert.Equal(t, "some value", allFieldTypes.String)
 }
+
+func TestVersioned(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	example := &model.VersionedExample{
+		String: "some value",
+	}
+
+	err := client.VersionedExampleRepo().Create(ctx, example)
+}
