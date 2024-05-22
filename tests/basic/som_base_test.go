@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	surrealDBContainerVersion = "v1.5.0"
-	containerName             = "som_test_surrealdb"
-	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
+	surrealDBVersion    = "1.5.0"
+	containerName       = "som_test_surrealdb"
+	containerStartedMsg = "Started web server on "
 )
 
 func TestQuery(t *testing.T) {

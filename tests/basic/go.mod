@@ -1,10 +1,13 @@
 module github.com/go-surreal/som/tests/basic
 
-go 1.21.9
+go 1.22
+
+toolchain go1.22.3
 
 replace github.com/go-surreal/som => ../../
 
 require (
+	github.com/brianvoe/gofakeit/v7 v7.0.3
 	github.com/docker/docker v26.1.2+incompatible
 	github.com/go-surreal/sdbc v0.4.0
 	github.com/go-surreal/som v0.4.0
