@@ -7,15 +7,18 @@ import (
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"log/slog"
-	"os"
+	"regexp"
+	"strings"
 	"testing"
+)
+
+const (
+	surrealDBVersion    = "1.5.0"
+	containerStartedMsg = "Started web server on "
 )
 
 func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	tb.Helper()
-
-	//tb.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 	username := gofakeit.Username()
 	password := gofakeit.Password(true, true, true, true, true, 32)
@@ -23,7 +26,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	database := gofakeit.Noun()
 
 	req := testcontainers.ContainerRequest{
-		Name:  "sdbc_" + containerName,
+		Name:  "sdbc_" + toSlug(tb.Name()),
 		Image: "surrealdb/surrealdb:v" + surrealDBVersion,
 		Env: map[string]string{
 			"SURREAL_PATH":   "memory",
@@ -58,7 +61,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
+	//slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
 
 	config := som.Config{
 		Host:      endpoint,
@@ -69,11 +72,11 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	}
 
 	opts := []som.Option{
-		som.WithLogger(slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-				Level: slog.LevelDebug,
-			}),
-		)),
+		//som.WithLogger(slog.New(
+		//	slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		//		Level: slog.LevelDebug,
+		//	}),
+		//)),
 	}
 
 	client, err := som.NewClient(ctx, config, opts...)
@@ -94,4 +97,24 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	}
 
 	return client, cleanup
+}
+
+func toSlug(input string) string {
+	// Remove special characters
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		panic(err)
+	}
+	processedString := reg.ReplaceAllString(input, " ")
+
+	// Remove leading and trailing spaces
+	processedString = strings.TrimSpace(processedString)
+
+	// Replace spaces with dashes
+	slug := strings.ReplaceAll(processedString, " ", "-")
+
+	// Convert to lowercase
+	slug = strings.ToLower(slug)
+
+	return slug
 }

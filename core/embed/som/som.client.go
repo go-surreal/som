@@ -42,7 +42,7 @@ func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, e
 		opt.sdbc...,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not create sdbc client: %v", err)
+		return nil, fmt.Errorf("failed to create sdbc client: %v", err)
 	}
 
 	return &ClientImpl{

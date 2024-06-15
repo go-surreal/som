@@ -16,12 +16,6 @@ import (
 	"unicode/utf8"
 )
 
-const (
-	surrealDBVersion    = "1.5.0"
-	containerName       = "som_test_surrealdb"
-	containerStartedMsg = "Started web server on "
-)
-
 func TestQuery(t *testing.T) {
 	client := &som.ClientImpl{}
 
