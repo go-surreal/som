@@ -8,7 +8,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/urfave/cli/v2 v2.27.2
 	github.com/wzshiming/gotype v0.7.3
-	golang.org/x/mod v0.17.0
+	golang.org/x/mod v0.18.0
 	gotest.tools/v3 v3.5.1
 )
 
