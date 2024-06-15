@@ -12,7 +12,13 @@ func Cmd() *cli.Command {
 		Usage:       "Generate code for the database access based on input models",
 		Description: "Takes the models from <input_path> and generates a typesafe access layer at <output_path>.",
 		ArgsUsage:   "<input_path> <output_path>",
-		Action:      generate,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "nocheck",
+				Usage: "Disable version checks for go, som and sdbc",
+			},
+		},
+		Action: generate,
 	}
 }
 

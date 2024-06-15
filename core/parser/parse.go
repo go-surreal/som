@@ -37,13 +37,13 @@ func Parse(dir string) (*Output, error) {
 		return nil, fmt.Errorf("could not find absolute path: %v", err)
 	}
 
-	pkgPath, modPath, err := util.ParseMod(absDir)
+	mod, err := util.FindGoMod(absDir)
 	if err != nil {
 		return nil, err
 	}
 
-	diff := strings.TrimPrefix(absDir, modPath)
-	res.PkgPath = path.Join(pkgPath, diff)
+	diff := strings.TrimPrefix(absDir, mod.Dir())
+	res.PkgPath = path.Join(mod.Module(), diff)
 
 	nc := n.NumChild()
 	for i := 0; i < nc; i++ {
