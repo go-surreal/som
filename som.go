@@ -61,11 +61,18 @@ type Timestamps struct {
 	updatedAt time.Time
 }
 
-func NewTimestamps(createdAt time.Time, updatedAt time.Time) Timestamps {
-	return Timestamps{
-		createdAt: createdAt,
-		updatedAt: updatedAt,
+func NewTimestamps(createdAt *time.Time, updatedAt *time.Time) Timestamps {
+	var ts Timestamps
+
+	if createdAt != nil {
+		ts.createdAt = *createdAt
 	}
+
+	if updatedAt != nil {
+		ts.updatedAt = *updatedAt
+	}
+
+	return ts
 }
 
 func (t Timestamps) CreatedAt() time.Time {

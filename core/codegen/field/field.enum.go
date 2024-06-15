@@ -3,8 +3,8 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/parser"
-	"golang.org/x/exp/slices"
+	"github.com/go-surreal/som/core/parser"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -22,7 +22,7 @@ func (f *Enum) typeGo() jen.Code {
 }
 
 func (f *Enum) typeConv() jen.Code {
-	return jen.Add(f.ptr()).String() // TODO: support other enum base types (atomic)
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo()) // TODO: support other enum base types (atomic)
 }
 
 func (f *Enum) TypeDatabase() string {
@@ -40,7 +40,7 @@ func (f *Enum) TypeDatabase() string {
 	in := strings.Join(values, ", ")
 
 	if f.source.Pointer() {
-		return "option<string> ASSERT $value == NULL OR $value INSIDE [" + in + "]"
+		return "option<string | null> ASSERT $value == NULL OR $value INSIDE [" + in + "]"
 	}
 
 	return "string ASSERT $value INSIDE [" + in + "]"
@@ -82,11 +82,11 @@ func (f *Enum) filterInit(ctx Context) jen.Code {
 }
 
 func (f *Enum) convFrom(ctx Context) jen.Code {
-	return jen.String().Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Enum) convTo(ctx Context) jen.Code {
-	return jen.Qual(ctx.SourcePkg, f.source.Typ).Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Enum) fieldDef(ctx Context) jen.Code {

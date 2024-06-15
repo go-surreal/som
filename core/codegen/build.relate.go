@@ -2,9 +2,9 @@ package codegen
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/codegen/field"
-	"github.com/marcbinz/som/core/embed"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/embed"
 	"os"
 	"path"
 	"path/filepath"
@@ -46,7 +46,11 @@ func (b *relateBuilder) build() error {
 }
 
 func (b *relateBuilder) embedStaticFiles() error {
-	files, err := embed.Relate()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Relate(tmpl)
 	if err != nil {
 		return err
 	}
@@ -75,6 +79,7 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 	file.Line()
 	file.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),
+		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 	)
 
 	for _, fld := range node.GetFields() {
@@ -112,11 +117,15 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 	file.Line()
 	file.Type().Id(edge.NameGoLower()).Struct(
 		jen.Id("db").Id("Database"),
+		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 	)
 
 	file.Line()
-	file.Func().Params(jen.Id("e").Id(edge.NameGoLower())).
-		Id("Create").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name))).
+	file.Func().Params(jen.Id("e").Id(edge.NameGoLower())).Id("Create").
+		Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name)),
+		).
 		Error().
 		Block(
 			jen.If(jen.Id("edge").Op("==").Nil()).
@@ -145,20 +154,26 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 				Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("+").
 				Lit(" CONTENT $data"),
 
-			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
+			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Id("edge")),
 
-			jen.List(jen.Id("convEdge"), jen.Err()).Op(":=").
-				Qual(def.PkgSurrealDB, "SmartUnmarshal").Types(jen.Qual(b.subPkg(def.PkgConv), edge.NameGo())).
-				Call(
-					jen.Id("e").Dot("db").Dot("Query").
-						Call(jen.Id("query"), jen.Map(jen.String()).Any().Values(jen.Lit("data").Op(":").Id("data"))),
-				),
-
+			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("e").Dot("db").Dot("Query").Call(
+				jen.Id("ctx"),
+				jen.Id("query"),
+				jen.Map(jen.String()).Any().Values(jen.Lit("data").Op(":").Id("data")),
+			),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create relation: %w"), jen.Err())),
 			),
 
-			jen.Op("*").Id("edge").Op("=").Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
+			jen.Var().Id("convEdge").Op("*").Qual(b.subPkg(def.PkgConv), edge.NameGo()),
+			jen.Err().Op("=").Id("e").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convEdge")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal relation: %w"), jen.Err())),
+			),
+
+			jen.Op("*").Id("edge").Op("=").
+				Op("*").Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
+
 			jen.Return(jen.Nil()),
 		)
 
@@ -186,13 +201,17 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 }
 
 func (b *relateBuilder) byNew(node field.Element) jen.Code {
-	return jen.Func().Id("New" + node.NameGo()).
-		Params(jen.Id("db").Id("Database")).
+	return jen.Func().Id("New"+node.NameGo()).
+		Params(
+			jen.Id("db").Id("Database"),
+			jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
+		).
 		Id("*").Id(node.NameGo()).
 		Block(
 			jen.Return(
 				jen.Id("&").Id(node.NameGo()).Values(
 					jen.Id("db").Op(":").Id("db"),
+					jen.Id("unmarshal").Op(":").Id("unmarshal"),
 				),
 			),
 		)

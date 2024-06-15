@@ -22,22 +22,16 @@ tasks:
     aliases: [ g ]
     desc: "Generate code for the example codebase."
     cmds:
-      - cd examples/testing && go generate gen.go
-      - cd examples/basic && go generate gen.go
-      - cd examples/movie && go generate gen.go
+      - cd tests/basic && go generate gen.go
     sources:
-      - examples/testing/model/**/*
-      - examples/basic/model/**/*
-      - examples/movie/model/**/*
+      - tests/basic/model/**/*
     generates:
-      - examples/testing/gen/som/**/*
-      - examples/basic/gen/som/**/*
-      - examples/movie/gen/som/**/*
+      - tests/basic/gen/som/**/*
 
   example:
     aliases: [ e ]
     desc: "Run the test code for the example codebase."
-    deps: [gen]
+    deps: [ gen ]
     cmds:
       - cd ./test && go run main.go
 
@@ -50,12 +44,18 @@ tasks:
   test:
     aliases: [ t ]
     desc: "Execute all go tests."
-    deps: [gen]
+    deps: [ gen ]
     cmds:
       - go test ./...
-      - cd examples/testing && go test ./...
-      - cd examples/basic && go test ./...
-      - cd examples/movie && go test ./...
+      - cd tests/basic && go test ./...
+
+  test-clean:
+    aliases: [ tc ]
+    desc: "Execute all go tests without cache."
+    deps: [ gen ]
+    cmds:
+      - go test -count=1 ./...
+      - cd tests/basic && go test -count=1 ./...
 
   benchmark:
     aliases: [ b ]

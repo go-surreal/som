@@ -3,24 +3,24 @@
 package som
 
 import (
+	"context"
 	"fmt"
-	"github.com/surrealdb/surrealdb.go"
-	"github.com/surrealdb/surrealdb.go/pkg/gorilla"
-	"github.com/surrealdb/surrealdb.go/pkg/logger"
-	"time"
+	"github.com/go-surreal/sdbc"
 )
 
 type Database interface {
-	Close()
-	Create(thing string, data any) (any, error)
-	Select(what string) (any, error)
-	Query(statement string, vars any) (any, error)
-	Update(thing string, data any) (any, error)
-	Delete(what string) (any, error)
+	Close() error
+	Create(ctx context.Context, thing string, data any) ([]byte, error)
+	Select(ctx context.Context, what string) ([]byte, error)
+	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
+	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
+	Update(ctx context.Context, thing string, data any) ([]byte, error)
+	Delete(ctx context.Context, what string) ([]byte, error)
 }
 
 type Config struct {
-	Address   string
+	Host      string
+	Secure    bool
 	Username  string
 	Password  string
 	Namespace string
@@ -29,70 +29,28 @@ type Config struct {
 
 type ClientImpl struct {
 	db Database
+
+	marshal   func(val any) ([]byte, error)
+	unmarshal func(buf []byte, val any) error
 }
 
-func NewClient(conf Config) (*ClientImpl, error) {
-	url := conf.Address + "/rpc"
+func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, error) {
+	opt := applyOptions(opts)
 
-	logData, err := logger.New().Make()
+	surreal, err := sdbc.NewClient(ctx,
+		sdbc.Config(conf),
+		opt.sdbc...,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("could not create logger: %v", err)
+		return nil, fmt.Errorf("failed to create sdbc client: %v", err)
 	}
 
-	ws, err := gorilla.Create().Logger(logData).SetTimeOut(time.Minute).Connect(url)
-	if err != nil {
-		return nil, fmt.Errorf("could not create websocket: %v", err)
-	}
+	return &ClientImpl{
+		db: &database{Client: surreal},
 
-	surreal, err := surrealdb.New("<unused>", ws)
-	if err != nil {
-		return nil, fmt.Errorf("could not create surrealdb client: %v", err)
-	}
-
-	_, err = surreal.Signin(map[string]any{
-		"user": conf.Username,
-		"pass": conf.Password,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = surreal.Use(conf.Namespace, conf.Database)
-	if err != nil {
-		return nil, err
-	}
-
-	rawRes, err := surreal.Query(fmt.Sprintf("DEFINE NAMESPACE %s", conf.Namespace), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	nsRes, ok := rawRes.([]any)[0].(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("could not create namespace: %v", rawRes)
-	}
-
-	ns, ok := nsRes["result"]
-	if !ok || ns != nil {
-		return nil, fmt.Errorf("could not create namespace: %v", nsRes)
-	}
-
-	rawRes, err = surreal.Query(fmt.Sprintf("DEFINE DATABASE %s", conf.Database), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	dbRes, ok := rawRes.([]any)[0].(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("could not create database: %v", rawRes)
-	}
-
-	db, ok := dbRes["result"]
-	if !ok || db != nil {
-		return nil, fmt.Errorf("could not create database: %v", dbRes)
-	}
-
-	return &ClientImpl{db: &database{DB: surreal}}, nil
+		marshal:   opt.jsonMarshal,
+		unmarshal: opt.jsonUnmarshal,
+	}, nil
 }
 
 func (c *ClientImpl) Close() {

@@ -2,8 +2,8 @@ package codegen
 
 import (
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/field"
-	"github.com/marcbinz/som/core/embed"
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/embed"
 	"os"
 	"path"
 	"path/filepath"
@@ -39,7 +39,11 @@ func (b *sortBuilder) build() error {
 }
 
 func (b *sortBuilder) embedStaticFiles() error {
-	files, err := embed.Sort()
+	tmpl := &embed.Template{
+		GenerateOutPath: b.subPkg(""),
+	}
+
+	files, err := embed.Sort(tmpl)
 	if err != nil {
 		return err
 	}

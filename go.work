@@ -1,8 +1,8 @@
-go 1.21
+go 1.22.3
+
+toolchain go1.22.3
 
 use (
 	.
-	examples/basic
-	examples/movie
-	examples/testing
+	tests/basic
 )
