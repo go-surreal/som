@@ -7,6 +7,8 @@ import (
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"log/slog"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -22,8 +24,8 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 
 	username := gofakeit.Username()
 	password := gofakeit.Password(true, true, true, true, true, 32)
-	namespace := gofakeit.Noun()
-	database := gofakeit.Noun()
+	namespace := gofakeit.FirstName()
+	database := gofakeit.LastName()
 
 	req := testcontainers.ContainerRequest{
 		Name:  "sdbc_" + toSlug(tb.Name()),
@@ -72,11 +74,11 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	}
 
 	opts := []som.Option{
-		//som.WithLogger(slog.New(
-		//	slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		//		Level: slog.LevelDebug,
-		//	}),
-		//)),
+		som.WithLogger(slog.New(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+				Level: slog.LevelDebug,
+			}),
+		)),
 	}
 
 	client, err := som.NewClient(ctx, config, opts...)
