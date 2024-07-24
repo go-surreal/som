@@ -3,6 +3,7 @@
 package lib
 
 import (
+	"github.com/go-surreal/sdbc"
 	"net/url"
 	"strings"
 	"time"
@@ -119,34 +120,22 @@ func NewID[R any](key Key[R], node string) *ID[R] {
 	return &ID[R]{key: key, node: node}
 }
 
-func (b *ID[R]) Equal(val string) Filter[R] {
-	val = b.node + ":" + val
+func (b *ID[R]) Equal(val *sdbc.ID) Filter[R] {
+	// val = b.node + ":" + val
 	return Filter[R](b.key.Op(OpEqual, val))
 }
 
-func (b *ID[R]) NotEqual(val string) Filter[R] {
-	val = b.node + ":" + val
+func (b *ID[R]) NotEqual(val *sdbc.ID) Filter[R] {
+	// val = b.node + ":" + val
 	return Filter[R](b.key.Op(OpNotEqual, val))
 }
 
-func (b *ID[R]) In(vals []string) Filter[R] {
-	var mapped []string
-
-	for _, val := range vals {
-		mapped = append(mapped, b.node+":"+val)
-	}
-
-	return Filter[R](b.key.Op(OpInside, mapped))
+func (b *ID[R]) In(vals []*sdbc.ID) Filter[R] {
+	return Filter[R](b.key.Op(OpInside, vals))
 }
 
-func (b *ID[R]) NotIn(vals []string) Filter[R] {
-	var mapped []string
-
-	for _, val := range vals {
-		mapped = append(mapped, b.node+":"+val)
-	}
-
-	return Filter[R](b.key.Op(OpNotInside, mapped))
+func (b *ID[R]) NotIn(vals []*sdbc.ID) Filter[R] {
+	return Filter[R](b.key.Op(OpNotInside, vals))
 }
 
 //

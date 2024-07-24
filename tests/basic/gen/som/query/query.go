@@ -4,14 +4,15 @@ package query
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/fxamacker/cbor/v2"
 	"strings"
 )
 
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
+	Unmarshal(buf []byte, val any) error
 }
 
 type idNode struct {
@@ -30,7 +31,7 @@ type queryResult[M any] struct {
 
 type liveResponse struct {
 	Action string          `json:"action"`
-	Result json.RawMessage `json:"result"`
+	Result cbor.RawMessage `json:"result"`
 }
 
 //

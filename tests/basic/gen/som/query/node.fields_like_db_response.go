@@ -7,12 +7,11 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewFieldsLikeDBResponse(db Database, unmarshal func(buf []byte, val any) error) Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
+func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
 	return Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
-		convFrom:  conv.FromFieldsLikeDBResponse,
-		convTo:    conv.ToFieldsLikeDBResponse,
-		db:        db,
-		query:     lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
-		unmarshal: unmarshal,
+		convFrom: conv.FromFieldsLikeDBResponse,
+		convTo:   conv.ToFieldsLikeDBResponse,
+		db:       db,
+		query:    lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
 	}}
 }

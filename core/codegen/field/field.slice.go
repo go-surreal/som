@@ -27,7 +27,7 @@ func (f *Slice) TypeDatabase() string {
 	}
 
 	if _, ok := f.element.(*Byte); ok {
-		return "option<string | null>" // TODO: there is a type "bytes", but not fully supported yet
+		return "option<bytes | null>"
 	}
 
 	// Go treats empty slices as nil, so the database needs

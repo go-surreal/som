@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -16,7 +17,7 @@ func (f *ID) typeGo() jen.Code {
 }
 
 func (f *ID) typeConv() jen.Code {
-	return f.typeGo()
+	return jen.Op("*").Qual(def.PkgSDBC, "ID") // f.typeGo()
 }
 
 func (f *ID) TypeDatabase() string {

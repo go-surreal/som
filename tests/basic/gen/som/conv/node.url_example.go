@@ -2,16 +2,16 @@
 package conv
 
 import (
-	"encoding/json"
+	v2 "github.com/fxamacker/cbor/v2"
+	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"strings"
 )
 
 type URLExample struct {
-	ID           string  `json:"id,omitempty"`
-	SomeURL      *string `json:"some_url"`
-	SomeOtherURL string  `json:"some_other_url"`
+	ID           *sdbc.ID `json:"id,omitempty"`
+	SomeURL      *string  `json:"some_url"`
+	SomeOtherURL string   `json:"some_other_url"`
 }
 
 func FromURLExample(data *model.URLExample) *URLExample {
@@ -29,7 +29,7 @@ func ToURLExample(data *URLExample) *model.URLExample {
 		return nil
 	}
 	return &model.URLExample{
-		Node:         som.NewNode(parseDatabaseID("url_example", data.ID)),
+		Node:         som.NewNode(data.ID),
 		SomeOtherURL: parseURL(data.SomeOtherURL),
 		SomeURL:      ptrFunc(parseURL)(data.SomeURL),
 	}
@@ -37,26 +37,23 @@ func ToURLExample(data *URLExample) *model.URLExample {
 
 type urlexampleLink struct {
 	URLExample
-	ID string
+	ID *sdbc.ID
 }
 
-func (f *urlexampleLink) MarshalJSON() ([]byte, error) {
+func (f *urlexampleLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return json.Marshal(f.ID)
+	return v2.Marshal(f.ID)
 }
 
-func (f *urlexampleLink) UnmarshalJSON(data []byte) error {
-	raw := string(data)
-	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
-		raw = raw[1 : len(raw)-1]
-		f.ID = parseDatabaseID("url_example", raw)
+func (f *urlexampleLink) UnmarshalCBOR(data []byte) error {
+	if err := v2.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias urlexampleLink
 	var link alias
-	err := json.Unmarshal(data, &link)
+	err := v2.Unmarshal(data, &link)
 	if err == nil {
 		*f = urlexampleLink(link)
 	}
@@ -81,17 +78,17 @@ func fromURLExampleLinkPtr(link *urlexampleLink) *model.URLExample {
 }
 
 func toURLExampleLink(node model.URLExample) *urlexampleLink {
-	if node.ID() == "" {
+	if node.ID() == nil {
 		return nil
 	}
-	link := urlexampleLink{URLExample: *FromURLExample(&node), ID: buildDatabaseID("url_example", node.ID())}
+	link := urlexampleLink{URLExample: *FromURLExample(&node), ID: node.ID()}
 	return &link
 }
 
 func toURLExampleLinkPtr(node *model.URLExample) *urlexampleLink {
-	if node == nil || node.ID() == "" {
+	if node == nil || node.ID() == nil {
 		return nil
 	}
-	link := urlexampleLink{URLExample: *FromURLExample(node), ID: buildDatabaseID("url_example", node.ID())}
+	link := urlexampleLink{URLExample: *FromURLExample(node), ID: node.ID()}
 	return &link
 }

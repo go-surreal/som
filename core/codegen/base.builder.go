@@ -15,7 +15,7 @@ import (
 
 const (
 	filenameInterfaces = "som.interfaces.go"
-	filenameSchema     = "som.schema.go"
+	filenameSchema     = "tables.surql"
 )
 
 type build struct {
@@ -237,32 +237,13 @@ func (b *build) buildSchemaFile() error {
 
 	content := strings.Join(statements, "\n")
 
-	tmpl := `%s
-
-package %s
-
-import(
-	"context"
-	"fmt"
-)
-	
-func (c *ClientImpl) ApplySchema(ctx context.Context) error {
-	_, err := c.db.Query(ctx, tmpl, nil)
-	if err != nil {
-		return fmt.Errorf("could not apply schema: %%v", err)
+	if err := os.MkdirAll(path.Join(b.basePath(), "schema"), os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create schema directory: %w", err)
 	}
 
-	return nil
-}
-
-var tmpl = %s
-`
-
-	data := []byte(fmt.Sprintf(tmpl, codegenComment, b.basePkgName(), "`"+content+"`"))
-
-	err := os.WriteFile(path.Join(b.basePath(), filenameSchema), data, os.ModePerm)
+	err := os.WriteFile(path.Join(b.basePath(), "schema", filenameSchema), []byte(content), os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
+		return fmt.Errorf("failed to write base file: %w", err)
 	}
 
 	return nil
@@ -296,7 +277,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").String(),
+			jen.Id("id").Op("*").Qual(def.PkgSDBC, "ID"),
 		).Parens(jen.List(
 			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Bool(),
@@ -342,14 +323,6 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("marshal").Op(":").Id("c").Dot("marshal"),
-							),
-							jen.Add(
-								jen.Line(),
-								jen.Id("unmarshal").Op(":").Id("c").Dot("unmarshal"),
-							),
-							jen.Add(
-								jen.Line(),
 								jen.Id("name").Op(":").Lit(node.NameDatabase()),
 							),
 							jen.Add(
@@ -387,7 +360,6 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
 				jen.Id("r").Dot("db"),
-				jen.Id("r").Dot("unmarshal"),
 			)),
 		)
 
@@ -409,7 +381,7 @@ The ID will be generated automatically as a ULID.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
 				),
@@ -440,7 +412,7 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
 				),
@@ -463,7 +435,7 @@ The returned bool indicates whether the record was found or not.
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").String(),
+			jen.Id("id").Op("*").Qual(def.PkgSDBC, "ID"),
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
@@ -492,7 +464,7 @@ Update updates the record for the given model.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
 				),
@@ -549,7 +521,7 @@ Refresh refreshes the given model with the remote data.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot refresh "+node.NameGo()+" without existing record ID"))),
 				),
@@ -574,7 +546,6 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			jen.Return(
 				jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(
 					jen.Id("r").Dot("db"),
-					jen.Id("r").Dot("unmarshal"),
 				),
 			),
 		)

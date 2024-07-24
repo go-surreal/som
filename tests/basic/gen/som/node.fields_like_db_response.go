@@ -4,6 +4,7 @@ package som
 import (
 	"context"
 	"errors"
+	sdbc "github.com/go-surreal/sdbc"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -14,7 +15,7 @@ type FieldsLikeDBResponseRepo interface {
 	Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 	Create(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	CreateWithID(ctx context.Context, id string, user *model.FieldsLikeDBResponse) error
-	Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error)
+	Read(ctx context.Context, id *sdbc.ID) (*model.FieldsLikeDBResponse, bool, error)
 	Update(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	Delete(ctx context.Context, user *model.FieldsLikeDBResponse) error
 	Refresh(ctx context.Context, user *model.FieldsLikeDBResponse) error
@@ -24,12 +25,10 @@ type FieldsLikeDBResponseRepo interface {
 // FieldsLikeDBResponseRepo returns a new repository instance for the FieldsLikeDBResponse model.
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
 	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
-		db:        c.db,
-		marshal:   c.marshal,
-		unmarshal: c.unmarshal,
-		name:      "fields_like_db_response",
-		convTo:    conv.ToFieldsLikeDBResponse,
-		convFrom:  conv.FromFieldsLikeDBResponse}}
+		db:       c.db,
+		name:     "fields_like_db_response",
+		convTo:   conv.ToFieldsLikeDBResponse,
+		convFrom: conv.FromFieldsLikeDBResponse}}
 }
 
 type fieldsLikeDbresponse struct {
@@ -38,7 +37,7 @@ type fieldsLikeDbresponse struct {
 
 // Query returns a new query builder for the FieldsLikeDBResponse model.
 func (r *fieldsLikeDbresponse) Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
-	return query.NewFieldsLikeDBResponse(r.db, r.unmarshal)
+	return query.NewFieldsLikeDBResponse(r.db)
 }
 
 // Create creates a new record for the FieldsLikeDBResponse model.
@@ -47,7 +46,7 @@ func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDbresponse.ID() != "" {
+	if fieldsLikeDbresponse.ID() != nil {
 		return errors.New("given node already has an id")
 	}
 	return r.create(ctx, fieldsLikeDbresponse)
@@ -58,7 +57,7 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDbresponse.ID() != "" {
+	if fieldsLikeDbresponse.ID() != nil {
 		return errors.New("given node already has an id")
 	}
 	return r.createWithID(ctx, id, fieldsLikeDbresponse)
@@ -66,7 +65,7 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
-func (r *fieldsLikeDbresponse) Read(ctx context.Context, id string) (*model.FieldsLikeDBResponse, bool, error) {
+func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *sdbc.ID) (*model.FieldsLikeDBResponse, bool, error) {
 	return r.read(ctx, id)
 }
 
@@ -75,7 +74,7 @@ func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDbresponse.ID() == "" {
+	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot update FieldsLikeDBResponse without existing record ID")
 	}
 	return r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
@@ -94,7 +93,7 @@ func (r *fieldsLikeDbresponse) Refresh(ctx context.Context, fieldsLikeDbresponse
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if fieldsLikeDbresponse.ID() == "" {
+	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot refresh FieldsLikeDBResponse without existing record ID")
 	}
 	return r.refresh(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
@@ -102,5 +101,5 @@ func (r *fieldsLikeDbresponse) Refresh(ctx context.Context, fieldsLikeDbresponse
 
 // Relate returns a new relate instance for the FieldsLikeDBResponse model.
 func (r *fieldsLikeDbresponse) Relate() *relate.FieldsLikeDBResponse {
-	return relate.NewFieldsLikeDBResponse(r.db, r.unmarshal)
+	return relate.NewFieldsLikeDBResponse(r.db)
 }

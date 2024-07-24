@@ -7,12 +7,11 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewAllFieldTypes(db Database, unmarshal func(buf []byte, val any) error) Builder[model.AllFieldTypes, conv.AllFieldTypes] {
+func NewAllFieldTypes(db Database) Builder[model.AllFieldTypes, conv.AllFieldTypes] {
 	return Builder[model.AllFieldTypes, conv.AllFieldTypes]{builder[model.AllFieldTypes, conv.AllFieldTypes]{
-		convFrom:  conv.FromAllFieldTypes,
-		convTo:    conv.ToAllFieldTypes,
-		db:        db,
-		query:     lib.NewQuery[model.AllFieldTypes]("all_field_types"),
-		unmarshal: unmarshal,
+		convFrom: conv.FromAllFieldTypes,
+		convTo:   conv.ToAllFieldTypes,
+		db:       db,
+		query:    lib.NewQuery[model.AllFieldTypes]("all_field_types"),
 	}}
 }

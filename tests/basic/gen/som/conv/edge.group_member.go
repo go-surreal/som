@@ -2,15 +2,15 @@
 package conv
 
 import (
+	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"time"
 )
 
 type GroupMember struct {
-	ID        string          `json:"id,omitempty"`
-	CreatedAt *time.Time      `json:"created_at,omitempty"`
-	UpdatedAt *time.Time      `json:"updated_at,omitempty"`
+	ID        *sdbc.ID        `json:"id,omitempty"`
+	CreatedAt *sdbc.DateTime  `json:"created_at,omitempty"`
+	UpdatedAt *sdbc.DateTime  `json:"updated_at,omitempty"`
 	Meta      groupMemberMeta `json:"meta"`
 }
 
@@ -26,7 +26,7 @@ func ToGroupMember(data *GroupMember) *model.GroupMember {
 		return nil
 	}
 	return &model.GroupMember{
-		Edge:       som.NewEdge(parseDatabaseID("group_member", data.ID)),
+		Edge:       som.NewEdge(data.ID),
 		Meta:       noPtrFunc(toGroupMemberMeta)(data.Meta),
 		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}

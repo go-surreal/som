@@ -4,6 +4,7 @@ package som
 import (
 	"context"
 	"errors"
+	sdbc "github.com/go-surreal/sdbc"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -14,7 +15,7 @@ type URLExampleRepo interface {
 	Query() query.Builder[model.URLExample, conv.URLExample]
 	Create(ctx context.Context, user *model.URLExample) error
 	CreateWithID(ctx context.Context, id string, user *model.URLExample) error
-	Read(ctx context.Context, id string) (*model.URLExample, bool, error)
+	Read(ctx context.Context, id *sdbc.ID) (*model.URLExample, bool, error)
 	Update(ctx context.Context, user *model.URLExample) error
 	Delete(ctx context.Context, user *model.URLExample) error
 	Refresh(ctx context.Context, user *model.URLExample) error
@@ -24,12 +25,10 @@ type URLExampleRepo interface {
 // URLExampleRepo returns a new repository instance for the URLExample model.
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
 	return &urlexample{repo: &repo[model.URLExample, conv.URLExample]{
-		db:        c.db,
-		marshal:   c.marshal,
-		unmarshal: c.unmarshal,
-		name:      "url_example",
-		convTo:    conv.ToURLExample,
-		convFrom:  conv.FromURLExample}}
+		db:       c.db,
+		name:     "url_example",
+		convTo:   conv.ToURLExample,
+		convFrom: conv.FromURLExample}}
 }
 
 type urlexample struct {
@@ -38,7 +37,7 @@ type urlexample struct {
 
 // Query returns a new query builder for the URLExample model.
 func (r *urlexample) Query() query.Builder[model.URLExample, conv.URLExample] {
-	return query.NewURLExample(r.db, r.unmarshal)
+	return query.NewURLExample(r.db)
 }
 
 // Create creates a new record for the URLExample model.
@@ -47,7 +46,7 @@ func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if urlexample.ID() != "" {
+	if urlexample.ID() != nil {
 		return errors.New("given node already has an id")
 	}
 	return r.create(ctx, urlexample)
@@ -58,7 +57,7 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if urlexample.ID() != "" {
+	if urlexample.ID() != nil {
 		return errors.New("given node already has an id")
 	}
 	return r.createWithID(ctx, id, urlexample)
@@ -66,7 +65,7 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
-func (r *urlexample) Read(ctx context.Context, id string) (*model.URLExample, bool, error) {
+func (r *urlexample) Read(ctx context.Context, id *sdbc.ID) (*model.URLExample, bool, error) {
 	return r.read(ctx, id)
 }
 
@@ -75,7 +74,7 @@ func (r *urlexample) Update(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if urlexample.ID() == "" {
+	if urlexample.ID() == nil {
 		return errors.New("cannot update URLExample without existing record ID")
 	}
 	return r.update(ctx, urlexample.ID(), urlexample)
@@ -94,7 +93,7 @@ func (r *urlexample) Refresh(ctx context.Context, urlexample *model.URLExample) 
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if urlexample.ID() == "" {
+	if urlexample.ID() == nil {
 		return errors.New("cannot refresh URLExample without existing record ID")
 	}
 	return r.refresh(ctx, urlexample.ID(), urlexample)
@@ -102,5 +101,5 @@ func (r *urlexample) Refresh(ctx context.Context, urlexample *model.URLExample) 
 
 // Relate returns a new relate instance for the URLExample model.
 func (r *urlexample) Relate() *relate.URLExample {
-	return relate.NewURLExample(r.db, r.unmarshal)
+	return relate.NewURLExample(r.db)
 }

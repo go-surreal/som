@@ -8,11 +8,3 @@ var AllFieldTypes = allFieldTypes[model.AllFieldTypes]("")
 type allFieldTypes[T any] string
 
 func (n allFieldTypes[T]) fetch(T) {}
-
-func (n allFieldTypes[T]) MainGroup() group[T] {
-	return group[T](keyed(n, "main_group"))
-}
-
-func (n allFieldTypes[T]) MainGroupPtr() group[T] {
-	return group[T](keyed(n, "main_group_ptr"))
-}

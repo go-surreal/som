@@ -79,7 +79,6 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 	file.Line()
 	file.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),
-		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 	)
 
 	for _, fld := range node.GetFields() {
@@ -117,10 +116,12 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 	file.Line()
 	file.Type().Id(edge.NameGoLower()).Struct(
 		jen.Id("db").Id("Database"),
-		jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 	)
 
 	file.Line()
+	file.Add(
+		comment("Create creates a new edge between the given nodes.\nNote: The ID type if both nodes must be a string or number for now."),
+	)
 	file.Func().Params(jen.Id("e").Id(edge.NameGoLower())).Id("Create").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -133,25 +134,25 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the given edge must not be nil"))),
 				),
 
-			jen.If(jen.Id("edge").Dot("ID").Call().Op("!=").Lit("")).
+			jen.If(jen.Id("edge").Dot("ID").Call().Op("!=").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for an edge to be created"))),
 				),
 
-			jen.If(jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Op("==").Lit("")).
+			jen.If(jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Op("==").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the incoming node '"+edge.In.NameGo()+"' must not be empty"))),
 				),
 
-			jen.If(jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("==").Lit("")).
+			jen.If(jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("==").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the outgoing node '"+edge.Out.NameGo()+"' must not be empty"))),
 				),
 
 			jen.Id("query").Op(":=").Lit("RELATE ").Op("+").
-				Lit(edge.In.NameDatabase()+":").Op("+").Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Op("+").
+				Lit(edge.In.NameDatabase()+":").Op("+").Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
 				Lit("->"+edge.NameDatabase()+"->").Op("+").
-				Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("+").
+				Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
 				Lit(" CONTENT $data"),
 
 			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Id("edge")),
@@ -166,7 +167,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			),
 
 			jen.Var().Id("convEdge").Op("*").Qual(b.subPkg(def.PkgConv), edge.NameGo()),
-			jen.Err().Op("=").Id("e").Dot("unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convEdge")),
+			jen.Err().Op("=").Id("e").Dot("db").Dot("Unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convEdge")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal relation: %w"), jen.Err())),
 			),
@@ -201,17 +202,15 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 }
 
 func (b *relateBuilder) byNew(node field.Element) jen.Code {
-	return jen.Func().Id("New"+node.NameGo()).
+	return jen.Func().Id("New" + node.NameGo()).
 		Params(
 			jen.Id("db").Id("Database"),
-			jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 		).
 		Id("*").Id(node.NameGo()).
 		Block(
 			jen.Return(
 				jen.Id("&").Id(node.NameGo()).Values(
 					jen.Id("db").Op(":").Id("db"),
-					jen.Id("unmarshal").Op(":").Id("unmarshal"),
 				),
 			),
 		)
