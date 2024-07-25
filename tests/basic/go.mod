@@ -6,12 +6,10 @@ toolchain go1.22.4
 
 replace github.com/go-surreal/som => ../../
 
-replace github.com/go-surreal/sdbc => ../../../sdbc
-
 require (
 	github.com/brianvoe/gofakeit/v7 v7.0.3
 	github.com/docker/docker v26.1.4+incompatible
-	github.com/go-surreal/sdbc v0.4.0
+	github.com/go-surreal/sdbc v0.6.0
 	github.com/go-surreal/som v0.4.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
