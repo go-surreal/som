@@ -2,7 +2,7 @@ module github.com/go-surreal/som
 
 go 1.22
 
-toolchain go1.22.4
+toolchain go1.22.5
 
 require (
 	github.com/dave/jennifer v1.7.0
