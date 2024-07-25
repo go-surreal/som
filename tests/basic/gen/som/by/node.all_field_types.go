@@ -26,6 +26,7 @@ func newAllFieldTypes[T any](key string) allFieldTypes[T] {
 		IntPtr:    lib.NewBaseSort[T](keyed(key, "int_ptr")),
 		Rune:      lib.NewBaseSort[T](keyed(key, "rune")),
 		String:    lib.NewStringSort[T](keyed(key, "string")),
+		StringPtr: lib.NewStringSort[T](keyed(key, "string_ptr")),
 		Time:      lib.NewBaseSort[T](keyed(key, "time")),
 		TimeNil:   lib.NewBaseSort[T](keyed(key, "time_nil")),
 		TimePtr:   lib.NewBaseSort[T](keyed(key, "time_ptr")),
@@ -46,6 +47,7 @@ type allFieldTypes[T any] struct {
 	CreatedAt *lib.BaseSort[T]
 	UpdatedAt *lib.BaseSort[T]
 	String    *lib.StringSort[T]
+	StringPtr *lib.StringSort[T]
 	Int       *lib.BaseSort[T]
 	IntPtr    *lib.BaseSort[T]
 	Int8      *lib.BaseSort[T]
@@ -68,4 +70,12 @@ type allFieldTypes[T any] struct {
 	Time      *lib.BaseSort[T]
 	TimePtr   *lib.BaseSort[T]
 	TimeNil   *lib.BaseSort[T]
+}
+
+func (n allFieldTypes[T]) MainGroup() group[T] {
+	return newGroup[T](keyed(n.key, "main_group"))
+}
+
+func (n allFieldTypes[T]) MainGroupPtr() group[T] {
+	return newGroup[T](keyed(n.key, "main_group_ptr"))
 }

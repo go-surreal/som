@@ -199,7 +199,7 @@ type UUID uuid.UUID
 
 func (u *UUID) MarshalCBOR() ([]byte, error) {
 	if u == nil {
-		return nil, nil
+		return cbor.Marshal(nil)
 	}
 
 	raw, err := cbor.Marshal(uuid.UUID(*u))

@@ -210,6 +210,7 @@ As soon as this is fixed, Som will support these types as well.
 - [x] `string`
 - [x] `int`, `int8`, `int16`, `int32`, `int64`
 - [x] `uint`, `uint8`, `uint16`, `uint32`, `uint64`
+- [ ] `uintptr`
 - [x] `float32`, `float64`
 - [ ] `complex64`, `complex128`
 - [x] `bool`
@@ -279,6 +280,7 @@ tbd.
 [//]: # (## Roadmap)
 
 - Patch Modals API
+- Select in QUery with Fragment to prevent accidential update overrides
 
 [//]: # ()
 [//]: # (You can find the official roadmap [here]&#40;ROADMAP.md&#41;. As this might not always be the full)

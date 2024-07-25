@@ -13,11 +13,11 @@ type AllFieldTypes struct {
 
 	// basic types
 
-	String string
-	//StringPtr      *string
-	//Other          []string
-	//StringPtrSlice []*string
-	//StringSlicePtr *[]string // TODO: cannot be filtered for nil!
+	String         string
+	StringPtr      *string
+	Other          []string
+	StringPtrSlice []*string
+	StringSlicePtr *[]string // TODO: cannot be filtered for nil!
 
 	Int      int
 	IntPtr   *int
@@ -41,30 +41,30 @@ type AllFieldTypes struct {
 	//Uint64    uint64 // 0 to 2^64-1 (0 to 18446744073709551615)
 	//Uint64Ptr *uint64
 
-	////Uintptr    uintptr
-	////UintptrPtr *uintptr
-	//
+	//Uintptr    uintptr
+	//UintptrPtr *uintptr
+
 	Float32 float32 // -3.4e+38 to 3.4e+38.
-	//More    []float32
+	More    []float32
 
 	Float64 float64 // -1.7e+308 to +1.7e+308.
-	//
-	//// Complex64  complex64
-	//// Complex128 complex128
+
+	// Complex64  complex64
+	// Complex128 complex128
 
 	Rune rune
 
-	//Bool    bool
-	//BoolPtr *bool
-	//
-	//// TODO: should we support the any type? (surrealdb seems to support it)
-	//
-	//// TODO: support math types?
-	//// BigInt   big.Int
-	//// BigRat   big.Rat
-	//// BigFloat big.Float
-	//
-	//// special types
+	Bool    bool
+	BoolPtr *bool
+
+	// TODO: should we support the any type? (surrealdb seems to support it)
+
+	// TODO: support math types?
+	// BigInt   big.Int
+	// BigRat   big.Rat
+	// BigFloat big.Float
+
+	// special types
 
 	Time    time.Time
 	TimePtr *time.Time
@@ -78,58 +78,58 @@ type AllFieldTypes struct {
 	URLPtr *url.URL
 	URLNil *url.URL
 
-	//// enums
-	//
-	//Role            Role
-	//EnumPtr         *Role
-	//Roles           []Role
-	//EnumPtrSlice    []*Role
-	//EnumPtrSlicePtr *[]*Role
-	//
-	//// structs
-	//
-	//Login             Login
-	//StructPtr         *SomeStruct
-	//StructSlice       []SomeStruct
-	//StructPtrSlice    []*SomeStruct
-	//StructPtrSlicePtr *[]*SomeStruct
-	//
-	//// nodes
-	//
-	//MainGroup       Group   // node
-	//MainGroupPtr    *Group  // node pointer
-	//Groups          []Group // slice of Nodes
-	//NodePtrSlice    []*Group
-	//NodePtrSlicePtr *[]*Group
-	//
-	//// edges
-	//
+	// enums
+
+	Role            Role
+	EnumPtr         *Role
+	Roles           []Role
+	EnumPtrSlice    []*Role
+	EnumPtrSlicePtr *[]*Role
+
+	// structs
+
+	Login             Login
+	StructPtr         *SomeStruct
+	StructSlice       []SomeStruct
+	StructPtrSlice    []*SomeStruct
+	StructPtrSlicePtr *[]*SomeStruct
+
+	// nodes
+
+	MainGroup       Group   // node
+	MainGroupPtr    *Group  // node pointer
+	Groups          []Group // slice of Nodes
+	NodePtrSlice    []*Group
+	NodePtrSlicePtr *[]*Group
+
+	// edges
+
 	MemberOf []GroupMember // slice of edges
-	//
-	//// other
-	//
-	//SliceSlice [][]string
-	//
-	//// maps (not (yet?) supported)
-	//
-	Byte byte
-	//BytePtr      *byte
-	ByteSlice []byte
-	//ByteSlicePtr *[]byte // TODO: cannot be filtered for nil!
-	//
+
+	// other
+
+	SliceSlice [][]string
+
+	// maps (not (yet?) supported)
+
+	Byte         byte
+	BytePtr      *byte
+	ByteSlice    []byte
+	ByteSlicePtr *[]byte // TODO: cannot be filtered for nil!
+
 	//// MappedLogin  map[string]Login // map of string and struct
 	//// MappedRoles  map[string]Role  // map of string and enum
 	//// MappedGroups map[string]Group // map of string and node
 	//// OtherMap     map[Role]string  // map of enum and string
 }
 
-//func (u *AllFieldTypes) GetGroups() []Group {
-//	var nodes []Group
-//	for _, edge := range u.MemberOf {
-//		nodes = append(nodes, edge.Group)
-//	}
-//	return nodes
-//}
+func (u *AllFieldTypes) GetGroups() []Group {
+	var nodes []Group
+	for _, edge := range u.MemberOf {
+		nodes = append(nodes, edge.Group)
+	}
+	return nodes
+}
 
 type Login struct {
 	Username string
