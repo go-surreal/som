@@ -73,7 +73,6 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	f.Func().Id("New"+node.Name).
 		Params(
 			jen.Id("db").Id("Database"),
-			jen.Id("unmarshal").Func().Params(jen.Id("buf").Index().Byte(), jen.Id("val").Any()).Error(),
 		).
 		Id("Builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
 		Block(
@@ -82,11 +81,10 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 					Values(
 						jen.Id("builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
 							Values(jen.Dict{
-								jen.Id("db"):        jen.Id("db"),
-								jen.Id("query"):     jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
-								jen.Id("unmarshal"): jen.Id("unmarshal"),
-								jen.Id("convFrom"):  jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()),
-								jen.Id("convTo"):    jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()),
+								jen.Id("db"):       jen.Id("db"),
+								jen.Id("query"):    jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
+								jen.Id("convFrom"): jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()),
+								jen.Id("convTo"):   jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()),
 							}),
 					),
 			),

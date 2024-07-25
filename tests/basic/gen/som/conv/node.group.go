@@ -2,19 +2,18 @@
 package conv
 
 import (
-	"encoding/json"
+	v2 "github.com/fxamacker/cbor/v2"
+	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"strings"
-	"time"
 )
 
 type Group struct {
-	ID        string        `json:"id,omitempty"`
-	CreatedAt *time.Time    `json:"created_at,omitempty"`
-	UpdatedAt *time.Time    `json:"updated_at,omitempty"`
-	Name      string        `json:"name"`
-	Members   []GroupMember `json:"members,omitempty"`
+	ID        *sdbc.ID       `json:"id,omitempty"`
+	CreatedAt *sdbc.DateTime `json:"created_at,omitempty"`
+	UpdatedAt *sdbc.DateTime `json:"updated_at,omitempty"`
+	Name      string         `json:"name"`
+	Members   []GroupMember  `json:"members,omitempty"`
 }
 
 func FromGroup(data *model.Group) *Group {
@@ -31,33 +30,30 @@ func ToGroup(data *Group) *model.Group {
 	return &model.Group{
 		Members:    mapSlice(data.Members, noPtrFunc(ToGroupMember)),
 		Name:       data.Name,
-		Node:       som.NewNode(parseDatabaseID("group", data.ID)),
+		Node:       som.NewNode(data.ID),
 		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }
 
 type groupLink struct {
 	Group
-	ID string
+	ID *sdbc.ID
 }
 
-func (f *groupLink) MarshalJSON() ([]byte, error) {
+func (f *groupLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return json.Marshal(f.ID)
+	return v2.Marshal(f.ID)
 }
 
-func (f *groupLink) UnmarshalJSON(data []byte) error {
-	raw := string(data)
-	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
-		raw = raw[1 : len(raw)-1]
-		f.ID = parseDatabaseID("group", raw)
+func (f *groupLink) UnmarshalCBOR(data []byte) error {
+	if err := v2.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias groupLink
 	var link alias
-	err := json.Unmarshal(data, &link)
+	err := v2.Unmarshal(data, &link)
 	if err == nil {
 		*f = groupLink(link)
 	}
@@ -82,17 +78,17 @@ func fromGroupLinkPtr(link *groupLink) *model.Group {
 }
 
 func toGroupLink(node model.Group) *groupLink {
-	if node.ID() == "" {
+	if node.ID() == nil {
 		return nil
 	}
-	link := groupLink{Group: *FromGroup(&node), ID: buildDatabaseID("group", node.ID())}
+	link := groupLink{Group: *FromGroup(&node), ID: node.ID()}
 	return &link
 }
 
 func toGroupLinkPtr(node *model.Group) *groupLink {
-	if node == nil || node.ID() == "" {
+	if node == nil || node.ID() == nil {
 		return nil
 	}
-	link := groupLink{Group: *FromGroup(node), ID: buildDatabaseID("group", node.ID())}
+	link := groupLink{Group: *FromGroup(node), ID: node.ID()}
 	return &link
 }

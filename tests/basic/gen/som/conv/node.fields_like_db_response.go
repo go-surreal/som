@@ -2,14 +2,14 @@
 package conv
 
 import (
-	"encoding/json"
+	v2 "github.com/fxamacker/cbor/v2"
+	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"strings"
 )
 
 type FieldsLikeDBResponse struct {
-	ID     string   `json:"id,omitempty"`
+	ID     *sdbc.ID `json:"id,omitempty"`
 	Time   string   `json:"time"`
 	Status string   `json:"status"`
 	Detail string   `json:"detail"`
@@ -34,7 +34,7 @@ func ToFieldsLikeDBResponse(data *FieldsLikeDBResponse) *model.FieldsLikeDBRespo
 	}
 	return &model.FieldsLikeDBResponse{
 		Detail: data.Detail,
-		Node:   som.NewNode(parseDatabaseID("fields_like_db_response", data.ID)),
+		Node:   som.NewNode(data.ID),
 		Result: data.Result,
 		Status: data.Status,
 		Time:   data.Time,
@@ -43,26 +43,23 @@ func ToFieldsLikeDBResponse(data *FieldsLikeDBResponse) *model.FieldsLikeDBRespo
 
 type fieldsLikeDbresponseLink struct {
 	FieldsLikeDBResponse
-	ID string
+	ID *sdbc.ID
 }
 
-func (f *fieldsLikeDbresponseLink) MarshalJSON() ([]byte, error) {
+func (f *fieldsLikeDbresponseLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return json.Marshal(f.ID)
+	return v2.Marshal(f.ID)
 }
 
-func (f *fieldsLikeDbresponseLink) UnmarshalJSON(data []byte) error {
-	raw := string(data)
-	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
-		raw = raw[1 : len(raw)-1]
-		f.ID = parseDatabaseID("fields_like_db_response", raw)
+func (f *fieldsLikeDbresponseLink) UnmarshalCBOR(data []byte) error {
+	if err := v2.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias fieldsLikeDbresponseLink
 	var link alias
-	err := json.Unmarshal(data, &link)
+	err := v2.Unmarshal(data, &link)
 	if err == nil {
 		*f = fieldsLikeDbresponseLink(link)
 	}
@@ -87,17 +84,17 @@ func fromFieldsLikeDBResponseLinkPtr(link *fieldsLikeDbresponseLink) *model.Fiel
 }
 
 func toFieldsLikeDBResponseLink(node model.FieldsLikeDBResponse) *fieldsLikeDbresponseLink {
-	if node.ID() == "" {
+	if node.ID() == nil {
 		return nil
 	}
-	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(&node), ID: buildDatabaseID("fields_like_db_response", node.ID())}
+	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(&node), ID: node.ID()}
 	return &link
 }
 
 func toFieldsLikeDBResponseLinkPtr(node *model.FieldsLikeDBResponse) *fieldsLikeDbresponseLink {
-	if node == nil || node.ID() == "" {
+	if node == nil || node.ID() == nil {
 		return nil
 	}
-	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(node), ID: buildDatabaseID("fields_like_db_response", node.ID())}
+	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(node), ID: node.ID()}
 	return &link
 }

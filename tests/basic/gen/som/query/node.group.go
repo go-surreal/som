@@ -7,12 +7,11 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewGroup(db Database, unmarshal func(buf []byte, val any) error) Builder[model.Group, conv.Group] {
+func NewGroup(db Database) Builder[model.Group, conv.Group] {
 	return Builder[model.Group, conv.Group]{builder[model.Group, conv.Group]{
-		convFrom:  conv.FromGroup,
-		convTo:    conv.ToGroup,
-		db:        db,
-		query:     lib.NewQuery[model.Group]("group"),
-		unmarshal: unmarshal,
+		convFrom: conv.FromGroup,
+		convTo:   conv.ToGroup,
+		db:       db,
+		query:    lib.NewQuery[model.Group]("group"),
 	}}
 }

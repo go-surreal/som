@@ -2,16 +2,16 @@
 package conv
 
 import (
+	sdbc "github.com/go-surreal/sdbc"
 	model "github.com/go-surreal/som/tests/basic/model"
 	uuid "github.com/google/uuid"
-	"time"
 )
 
 type someStruct struct {
-	StringPtr *string    `json:"string_ptr"`
-	IntPtr    *int       `json:"int_ptr"`
-	TimePtr   *time.Time `json:"time_ptr"`
-	UuidPtr   *uuid.UUID `json:"uuid_ptr"`
+	StringPtr *string        `json:"string_ptr"`
+	IntPtr    *int           `json:"int_ptr"`
+	TimePtr   *sdbc.DateTime `json:"time_ptr"`
+	UuidPtr   *UUID          `json:"uuid_ptr"`
 }
 
 func fromSomeStruct(data *model.SomeStruct) *someStruct {
@@ -21,8 +21,8 @@ func fromSomeStruct(data *model.SomeStruct) *someStruct {
 	return &someStruct{
 		IntPtr:    data.IntPtr,
 		StringPtr: data.StringPtr,
-		TimePtr:   data.TimePtr,
-		UuidPtr:   data.UuidPtr,
+		TimePtr:   fromTimePtr(data.TimePtr),
+		UuidPtr:   (*UUID)(data.UuidPtr),
 	}
 }
 
@@ -33,7 +33,7 @@ func toSomeStruct(data *someStruct) *model.SomeStruct {
 	return &model.SomeStruct{
 		IntPtr:    data.IntPtr,
 		StringPtr: data.StringPtr,
-		TimePtr:   data.TimePtr,
-		UuidPtr:   data.UuidPtr,
+		TimePtr:   toTimePtr(data.TimePtr),
+		UuidPtr:   (*uuid.UUID)(data.UuidPtr),
 	}
 }

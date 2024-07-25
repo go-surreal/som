@@ -4,6 +4,9 @@ package conv
 
 import (
 	"encoding/json"
+	"github.com/fxamacker/cbor/v2"
+	"github.com/go-surreal/sdbc"
+	"github.com/google/uuid"
 	"net/url"
 	"strconv"
 	"strings"
@@ -101,12 +104,20 @@ func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
 	}
 }
 
-func mapTimestamp(val time.Time) *time.Time {
-	if val.IsZero() {
+func fromTimePtr(val *time.Time) *sdbc.DateTime {
+	if val == nil {
 		return nil
 	}
 
-	return &val
+	return &sdbc.DateTime{*val}
+}
+
+func toTimePtr(val *sdbc.DateTime) *time.Time {
+	if val == nil {
+		return nil
+	}
+
+	return &val.Time
 }
 
 //
@@ -178,4 +189,26 @@ func parseURL(val string) url.URL {
 		return url.URL{}
 	}
 	return *res
+}
+
+//
+// -- UUID
+//
+
+type UUID uuid.UUID
+
+func (u *UUID) MarshalCBOR() ([]byte, error) {
+	if u == nil {
+		return nil, nil
+	}
+
+	raw, err := cbor.Marshal(uuid.UUID(*u))
+	if err != nil {
+		return nil, err
+	}
+
+	return cbor.Marshal(cbor.RawTag{
+		Number:  sdbc.CBORTagUUID,
+		Content: raw,
+	})
 }

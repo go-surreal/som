@@ -2,6 +2,7 @@ package basic
 
 import (
 	"context"
+	"github.com/go-surreal/sdbc"
 	sombase "github.com/go-surreal/som"
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
@@ -32,7 +33,7 @@ func TestQuery(t *testing.T) {
 					where.GroupMember.CreatedAt.Before(time.Now()),
 				).
 				Group(
-					where.Group.ID.Equal("some_id"),
+					where.Group.ID.Equal(sdbc.MakeID("all_field_types", "some_id")),
 				),
 
 			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
@@ -311,7 +312,7 @@ func FuzzWithDatabase(f *testing.F) {
 			t.Fatal(err)
 		}
 
-		if userIn.ID() == "" {
+		if userIn.ID() == nil {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
@@ -358,7 +359,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatal(err)
 		}
 
-		if userIn.ID() == "" {
+		if userIn.ID() == nil {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
@@ -372,7 +373,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatalf("user with ID '%s' not found", userIn.ID())
 		}
 
-		assert.Equal(t, userIn.ID(), userOut.ID())
+		assert.Equal(t, userIn.ID().String(), userOut.ID().String())
 		assert.Equal(t, "1", userOut.String)
 
 		userOut.String = "2"
@@ -409,7 +410,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		if userIn.ID() == "" {
+		if userIn.ID() == nil {
 			b.Fatal("user ID must not be empty after create call")
 		}
 

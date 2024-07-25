@@ -2,18 +2,17 @@
 package conv
 
 import (
-	"encoding/json"
+	v2 "github.com/fxamacker/cbor/v2"
+	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/tests/basic/model"
 	uuid "github.com/google/uuid"
-	"strings"
-	"time"
 )
 
 type AllFieldTypes struct {
-	ID                string         `json:"id,omitempty"`
-	CreatedAt         *time.Time     `json:"created_at,omitempty"`
-	UpdatedAt         *time.Time     `json:"updated_at,omitempty"`
+	ID                *sdbc.ID       `json:"id,omitempty"`
+	CreatedAt         *sdbc.DateTime `json:"created_at,omitempty"`
+	UpdatedAt         *sdbc.DateTime `json:"updated_at,omitempty"`
 	String            string         `json:"string"`
 	StringPtr         *string        `json:"string_ptr"`
 	Other             []string       `json:"other"`
@@ -41,12 +40,15 @@ type AllFieldTypes struct {
 	Rune              rune           `json:"rune"`
 	Bool              bool           `json:"bool"`
 	BoolPtr           *bool          `json:"bool_ptr"`
-	Time              time.Time      `json:"time"`
-	TimePtr           *time.Time     `json:"time_ptr"`
-	UUID              uuid.UUID      `json:"uuid"`
-	UUIDPtr           *uuid.UUID     `json:"uuid_ptr"`
+	Time              sdbc.DateTime  `json:"time"`
+	TimePtr           *sdbc.DateTime `json:"time_ptr"`
+	TimeNil           *sdbc.DateTime `json:"time_nil"`
+	UUID              UUID           `json:"uuid"`
+	UUIDPtr           *UUID          `json:"uuid_ptr"`
+	UUIDNil           *UUID          `json:"uuid_nil"`
 	URL               string         `json:"url"`
 	URLPtr            *string        `json:"url_ptr"`
+	URLNil            *string        `json:"url_nil"`
 	Role              model.Role     `json:"role"`
 	EnumPtr           *model.Role    `json:"enum_ptr"`
 	Roles             []model.Role   `json:"roles"`
@@ -116,12 +118,15 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		StructPtrSlice:    mapSlice(data.StructPtrSlice, fromSomeStruct),
 		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
 		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(fromSomeStruct)),
-		Time:              data.Time,
-		TimePtr:           data.TimePtr,
+		Time:              sdbc.DateTime{data.Time},
+		TimeNil:           fromTimePtr(data.TimeNil),
+		TimePtr:           fromTimePtr(data.TimePtr),
 		URL:               data.URL.String(),
+		URLNil:            urlPtr(data.URLNil),
 		URLPtr:            urlPtr(data.URLPtr),
-		UUID:              data.UUID,
-		UUIDPtr:           data.UUIDPtr,
+		UUID:              UUID(data.UUID),
+		UUIDNil:           (*UUID)(data.UUIDNil),
+		UUIDPtr:           (*UUID)(data.UUIDPtr),
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
 		Uint32:            data.Uint32,
@@ -163,7 +168,7 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		MainGroupPtr:      fromGroupLinkPtr(data.MainGroupPtr),
 		MemberOf:          mapSlice(data.MemberOf, noPtrFunc(ToGroupMember)),
 		More:              data.More,
-		Node:              som.NewNode(parseDatabaseID("all_field_types", data.ID)),
+		Node:              som.NewNode(data.ID),
 		NodePtrSlice:      mapSlice(data.NodePtrSlice, fromGroupLinkPtr),
 		NodePtrSlicePtr:   mapSlicePtr(data.NodePtrSlicePtr, fromGroupLinkPtr),
 		Other:             data.Other,
@@ -179,13 +184,16 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		StructPtrSlice:    mapSlice(data.StructPtrSlice, toSomeStruct),
 		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
 		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(toSomeStruct)),
-		Time:              data.Time,
-		TimePtr:           data.TimePtr,
+		Time:              data.Time.Time,
+		TimeNil:           toTimePtr(data.TimeNil),
+		TimePtr:           toTimePtr(data.TimePtr),
 		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		URL:               parseURL(data.URL),
+		URLNil:            ptrFunc(parseURL)(data.URLNil),
 		URLPtr:            ptrFunc(parseURL)(data.URLPtr),
-		UUID:              data.UUID,
-		UUIDPtr:           data.UUIDPtr,
+		UUID:              uuid.UUID(data.UUID),
+		UUIDNil:           (*uuid.UUID)(data.UUIDNil),
+		UUIDPtr:           (*uuid.UUID)(data.UUIDPtr),
 		Uint16:            data.Uint16,
 		Uint16Ptr:         data.Uint16Ptr,
 		Uint32:            data.Uint32,
@@ -197,26 +205,23 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 
 type allFieldTypesLink struct {
 	AllFieldTypes
-	ID string
+	ID *sdbc.ID
 }
 
-func (f *allFieldTypesLink) MarshalJSON() ([]byte, error) {
+func (f *allFieldTypesLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return json.Marshal(f.ID)
+	return v2.Marshal(f.ID)
 }
 
-func (f *allFieldTypesLink) UnmarshalJSON(data []byte) error {
-	raw := string(data)
-	if strings.HasPrefix(raw, "\"") && strings.HasSuffix(raw, "\"") {
-		raw = raw[1 : len(raw)-1]
-		f.ID = parseDatabaseID("all_field_types", raw)
+func (f *allFieldTypesLink) UnmarshalCBOR(data []byte) error {
+	if err := v2.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias allFieldTypesLink
 	var link alias
-	err := json.Unmarshal(data, &link)
+	err := v2.Unmarshal(data, &link)
 	if err == nil {
 		*f = allFieldTypesLink(link)
 	}
@@ -241,17 +246,17 @@ func fromAllFieldTypesLinkPtr(link *allFieldTypesLink) *model.AllFieldTypes {
 }
 
 func toAllFieldTypesLink(node model.AllFieldTypes) *allFieldTypesLink {
-	if node.ID() == "" {
+	if node.ID() == nil {
 		return nil
 	}
-	link := allFieldTypesLink{AllFieldTypes: *FromAllFieldTypes(&node), ID: buildDatabaseID("all_field_types", node.ID())}
+	link := allFieldTypesLink{AllFieldTypes: *FromAllFieldTypes(&node), ID: node.ID()}
 	return &link
 }
 
 func toAllFieldTypesLinkPtr(node *model.AllFieldTypes) *allFieldTypesLink {
-	if node == nil || node.ID() == "" {
+	if node == nil || node.ID() == nil {
 		return nil
 	}
-	link := allFieldTypesLink{AllFieldTypes: *FromAllFieldTypes(node), ID: buildDatabaseID("all_field_types", node.ID())}
+	link := allFieldTypesLink{AllFieldTypes: *FromAllFieldTypes(node), ID: node.ID()}
 	return &link
 }

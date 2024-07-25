@@ -17,7 +17,7 @@ func (f *Time) typeGo() jen.Code {
 }
 
 func (f *Time) typeConv() jen.Code {
-	return f.typeGo()
+	return jen.Add(f.ptr()).Qual(def.PkgSDBC, "DateTime")
 }
 
 func (f *Time) TypeDatabase() string {
@@ -86,7 +86,11 @@ func (f *Time) convFrom(_ Context) jen.Code {
 		return nil // never sent a timestamp to the database, as it will be set automatically
 	}
 
-	return jen.Id("data").Dot(f.NameGo())
+	if f.source.Pointer() {
+		return jen.Id("fromTimePtr").Call(jen.Id("data").Dot(f.NameGo()))
+	}
+
+	return jen.Qual(def.PkgSDBC, "DateTime").Values(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Time) convTo(_ Context) jen.Code {
@@ -101,7 +105,11 @@ func (f *Time) convTo(_ Context) jen.Code {
 		return nil
 	}
 
-	return jen.Id("data").Dot(f.NameGo())
+	if f.source.Pointer() {
+		return jen.Id("toTimePtr").Call(jen.Id("data").Dot(f.NameGo()))
+	}
+
+	return jen.Id("data").Dot(f.NameGo()).Dot("Time")
 }
 
 func (f *Time) convToField(_ Context) jen.Code {

@@ -35,10 +35,13 @@ func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
 		String:    lib.NewString[T](lib.Field(key, "string")),
 		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
 		Time:      lib.NewTime[T](lib.Field(key, "time")),
+		TimeNil:   lib.NewTimePtr[T](lib.Field(key, "time_nil")),
 		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
 		URL:       lib.NewURL[T](lib.Field(key, "url")),
+		URLNil:    lib.NewURLPtr[T](lib.Field(key, "url_nil")),
 		URLPtr:    lib.NewURLPtr[T](lib.Field(key, "url_ptr")),
 		UUID:      lib.NewBase[uuid.UUID, T](lib.Field(key, "uuid")),
+		UUIDNil:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_nil")),
 		UUIDPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
 		Uint16:    lib.NewNumeric[uint16, T](lib.Field(key, "uint_16")),
 		Uint16Ptr: lib.NewNumericPtr[*uint16, T](lib.Field(key, "uint_16_ptr")),
@@ -81,10 +84,13 @@ type allFieldTypes[T any] struct {
 	BoolPtr   *lib.BoolPtr[T]
 	Time      *lib.Time[T]
 	TimePtr   *lib.TimePtr[T]
+	TimeNil   *lib.TimePtr[T]
 	UUID      *lib.Base[uuid.UUID, T]
 	UUIDPtr   *lib.BasePtr[uuid.UUID, T]
+	UUIDNil   *lib.BasePtr[uuid.UUID, T]
 	URL       *lib.URL[T]
 	URLPtr    *lib.URLPtr[T]
+	URLNil    *lib.URLPtr[T]
 	Role      *lib.Base[model.Role, T]
 	EnumPtr   *lib.BasePtr[model.Role, T]
 	Byte      *lib.Base[byte, T]

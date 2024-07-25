@@ -7,12 +7,11 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewURLExample(db Database, unmarshal func(buf []byte, val any) error) Builder[model.URLExample, conv.URLExample] {
+func NewURLExample(db Database) Builder[model.URLExample, conv.URLExample] {
 	return Builder[model.URLExample, conv.URLExample]{builder[model.URLExample, conv.URLExample]{
-		convFrom:  conv.FromURLExample,
-		convTo:    conv.ToURLExample,
-		db:        db,
-		query:     lib.NewQuery[model.URLExample]("url_example"),
-		unmarshal: unmarshal,
+		convFrom: conv.FromURLExample,
+		convTo:   conv.ToURLExample,
+		db:       db,
+		query:    lib.NewQuery[model.URLExample]("url_example"),
 	}}
 }

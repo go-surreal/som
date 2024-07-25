@@ -3,16 +3,13 @@
 package som
 
 import (
-	"encoding/json"
 	"github.com/go-surreal/sdbc"
 	"log/slog"
 	"time"
 )
 
 type options struct {
-	jsonMarshal   JsonMarshal
-	jsonUnmarshal JsonUnmarshal
-	sdbc          []sdbc.Option
+	sdbc []sdbc.Option
 }
 
 type Option func(*options)
@@ -41,14 +38,8 @@ func WithReadLimit(limit int64) Option {
 	}
 }
 
-type JsonMarshal func(val any) ([]byte, error)
-type JsonUnmarshal func(buf []byte, val any) error
-
 func applyOptions(opts []Option) *options {
-	out := &options{
-		jsonMarshal:   json.Marshal,
-		jsonUnmarshal: json.Unmarshal,
-	}
+	out := &options{}
 
 	for _, opt := range opts {
 		opt(out)

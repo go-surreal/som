@@ -68,12 +68,15 @@ type AllFieldTypes struct {
 
 	Time    time.Time
 	TimePtr *time.Time
+	TimeNil *time.Time
 
 	UUID    uuid.UUID
 	UUIDPtr *uuid.UUID
+	UUIDNil *uuid.UUID
 
 	URL    url.URL
 	URLPtr *url.URL
+	URLNil *url.URL
 
 	// enums
 
@@ -114,10 +117,10 @@ type AllFieldTypes struct {
 	ByteSlice    []byte
 	ByteSlicePtr *[]byte // TODO: cannot be filtered for nil!
 
-	// MappedLogin  map[string]Login // map of string and struct
-	// MappedRoles  map[string]Role  // map of string and enum
-	// MappedGroups map[string]Group // map of string and node
-	// OtherMap     map[Role]string  // map of enum and string
+	//// MappedLogin  map[string]Login // map of string and struct
+	//// MappedRoles  map[string]Role  // map of string and enum
+	//// MappedGroups map[string]Group // map of string and node
+	//// OtherMap     map[Role]string  // map of enum and string
 }
 
 func (u *AllFieldTypes) GetGroups() []Group {
