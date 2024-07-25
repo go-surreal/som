@@ -9,7 +9,10 @@
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.21rc3-informational" alt="Go 1.21rc3">
+    <img src="https://img.shields.io/badge/go-1.21.4-informational" alt="Go 1.21.4">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/go-surreal/som">
+    <img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card">
   </a>
   <a href="https://github.com/go-surreal/som/actions/workflows/pull_request.yml">
     <img src="https://github.com/go-surreal/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
@@ -25,33 +28,33 @@ mapping and type-safe query operation generator. It provides an easy and sophist
 
 ## What is SurrealDB?
 
-SurrealDB is a relatively new database approach.
-It provides a SQL-style query language with real-time queries and highly-efficient related data retrieval.
-Both schemafull and schemaless handling of the data is possible.
+SurrealDB is a cutting-edge database system that offers a SQL-style query language with real-time queries  
+and efficient related data retrieval. It supports both schema-full and schema-less data handling.
+With its full graph database functionality, SurrealDB enables advanced querying and analysis by allowing
+records (or vertices) to be connected with edges, each with its own properties and metadata.
+This facilitates multi-table, multi-depth document retrieval without complex JOINs, all within the database.
 
-With full graph database functionality, SurrealDB enables more advanced querying and analysis.
-Records (or vertices) can be connected to one another with edges, each with its own record properties and metadata.
-Simple extensions to traditional SQL queries allow for multi-table, multi-depth document retrieval, efficiently 
-in the database, without the use of complicated JOINs and without bringing the data down to the client.
-
-*(Information extracted from the [official homepage]((https://surrealdb.com)))*
+*(Information extracted from the [official homepage](https://surrealdb.com))*.
 
 ## Table of contents
 
 * [Getting started](#getting-started)
+  * [Disclaimer](#disclaimer)
   * [Basic usage](#basic-usage)
+  * [Known limitations](#known-limitations)
+* [Development](#development)
   * [Versioning](#versioning)
   * [Compatibility](#compatibility)
   * [Features](#features)
-* [Roadmap](#roadmap)
 * [How to contribute](#how-to-contribute)
+* [FAQ](#faq)
 * [Maintainers & Contributors](#maintainers--contributors)
 * [References](#references)
 
 ## Getting started
 
 *Please note: This package is currently tested against version 
-[1.0.0-beta.11](https://surrealdb.com/releases#v1-0-0-beta-11)
+[1.4.2](https://surrealdb.com/releases#v1-4-2)
 of SurrealDB.*
 
 ### Disclaimer
@@ -82,16 +85,173 @@ Generate the client code:
 go run github.com/go-surreal/som/cmd/somgen@latest <input_dir> <output_dir>
 ```
 
-<!--
-The package `github.com/go-surreal/som` can be considered an invisible dependency for your project. All it does is to
-generate code that lives within your project, but the package itself does not need to be added to the `go.mod` file.
--->
-
 Currently, the generated code does not make use of the official SurrealDB go client.
-Instead, it is using a custom implementation found in the `sdbc` package of this repo.
+Instead, it is using a custom implementation called [sdbc](https://github.com/go-surreal/sdbc).
 Until the official client is considered stable, this will likely not change.
-In the future, the `sdbc` package might be moved to a separate repository.
 Final goal would be to make it possible to use both the official client and the custom implementation.
+As of now, this might change at any time.
+
+#### Example
+
+Let's say we have the following model at `<root>/model/user.go`:
+
+```go
+package model
+
+type User struct {
+    ID       string `som:"id"`
+    Username string `som:"username"`
+    Password string `som:"password"`
+    Email    string `som:"email"`
+}
+```
+
+In order for it to be considered by the generator, it must embed `som.Node`:
+
+```go
+package model
+
+import "github.com/go-surreal/som"
+
+type User struct {
+    som.Node
+    
+    // ID string `som:"id"` --> provided by som!
+    
+    Username string `som:"username"`
+    Password string `som:"password"`
+    Email    string `som:"email"`
+}
+```
+
+Now, we can generate the client code:
+
+```
+go run github.com/go-surreal/som/cmd/som@latest gen <in_model_path> <out_gen_path>
+
+// e.g.
+
+go run github.com/go-surreal/som/cmd/som@latest gen <root>/model <root>/gen/som
+```
+
+With the generated client, we can now perform operations on the database:
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    
+    "<root>/gen/som"
+    "<root>/gen/som/where"
+    "<root>/model"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // create a new client
+    client, err := som.NewClient(ctx, som.Config{
+        Address:   "ws://localhost:8000",
+        Username:  "root",
+        Password:  "root",
+        Namespace: "test",
+        Database:  "test",
+    })
+    
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // initialize the model
+    user := &model.User{
+        Username: "test",
+        Password: "test",
+        Email:    "test@example.com",
+    }
+    
+    // insert the user into the database
+    err = client.UserRepo().Create(ctx, user)
+    if err != nil {
+        log.Fatal(err)
+    }
+		
+    // query the user by email
+    read, err := client.UserRepo().Query().
+        Filter(
+            where.User.Email.Equal("test@example.com"),
+        ).
+        First(ctx)
+
+    if err != nil {
+        log.Fatal(err)
+    }
+		
+    fmt.Println(read)
+}
+```
+
+### Known limitations
+
+### Unsupported native go types
+
+Currently, the native go types `uint`, `uint64` and `uintptr` are not supported.
+Reason for this is that working with very big integers is not yet fully working with the 
+current version of SurrealDB (as of writing: 1.4.2). This should be fixed in a future release of SurrealDB.
+As soon as this is fixed, Som will support these types as well.
+
+## Overview
+
+### Supported data types
+
+#### Primitive types
+
+- [x] `string`
+- [x] `int`, `int8`, `int16`, `int32`, `int64`
+- [x] `uint`, `uint8`, `uint16`, `uint32`, `uint64`
+- [ ] `uintptr`
+- [x] `float32`, `float64`
+- [ ] `complex64`, `complex128`
+- [x] `bool`
+- [x] `rune`
+- [x] `byte`, `[]byte`
+- [x] `time.Time`
+- [ ] `time.Duration`
+- [ ] `time.Location`
+- [ ] `big.Int`
+- [ ] `big.Float`
+- [x] `url.URL`
+- [ ] `net.IP`
+- [ ] `regexp.Regexp`
+- [x] Slice types of the above
+- [ ] `map[string]x` (where `x` is one of the types listed here or `any` with a mix of the listed types)
+
+
+For all types above, the pointer version is supported as well.
+
+#### Special types
+
+- [x] `github.com/google/uuid.UUID`
+- [ ] `github.com/oklog/ulid.ULID`?
+
+#### Custom types
+
+- [x] `som.Enum`
+- [ ] `som.GeometryPoint`
+- [ ] `som.GeometryLine`
+- [ ] `som.GeometryPolygon`
+- [ ] `som.GeometryMultiPoint`
+- [ ] `som.GeometryMultiLine`
+- [ ] `som.GeometryMultiPolygon`
+- [ ] `som.GeometryCollection`
+- [ ] `som.JSON`?
+
+### Features
+
+tbd.
+
+## Development
 
 ### Versioning
 
@@ -117,10 +277,15 @@ language itself. For further information, please refer to the
 
 tbd.
 
-## Roadmap
+[//]: # (## Roadmap)
 
-You can find the official roadmap [here](ROADMAP.md). As this might not always be the full
-list of all planned changes, please take a look at the issue section on GitHub as well.
+- Patch Modals API
+- Select in QUery with Fragment to prevent accidential update overrides
+
+[//]: # ()
+[//]: # (You can find the official roadmap [here]&#40;ROADMAP.md&#41;. As this might not always be the full)
+
+[//]: # (list of all planned changes, please take a look at the issue section on GitHub as well.)
 
 ## How to contribute
 
@@ -150,15 +315,15 @@ You can find a separate document for the FAQs [here](FAQ.md).
 
 ## Maintainers & Contributors
 
-- Marc Binz (Author/Owner)
+Please take a look at the [MAINTAINERS.md](MAINTAINERS.md) file.
 
 ## References
 
-- https://surrealdb.com/docs
-- https://entgo.io
-- https://github.com/d-tsuji/awesome-go-orms
-- https://github.com/doug-martin/goqu
-- https://github.com/sharovik/orm
-- https://github.com/StarlaneStudios/cirql
-- https://github.com/uptrace/bun
-- https://atlasgo.io/
+- [Official SurrealDB documentation](https://surrealdb.com/docs)
+
+https://www.npmjs.com/package/suorm
+https://www.prisma.io/docs/concepts/components/prisma-migrate
+https://github.com/Odonno/surrealdb-migrations/tree/main/templates
+
+// som hooks:
+// Note: When using the hooks in a multi-node application setup, it will only trigger on the node that triggers the change.

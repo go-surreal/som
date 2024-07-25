@@ -117,6 +117,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldByte:
+		{
+			return &Byte{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldTime:
 		{
 			return &Time{
@@ -136,6 +144,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 	case *parser.FieldUUID:
 		{
 			return &UUID{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldURL:
+		{
+			return &URL{
 				baseField: base,
 				source:    f,
 			}, true
@@ -166,6 +182,10 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 					object = elem
 					break
 				}
+			}
+
+			if object == nil {
+				return nil, false // TODO: anonymous struct type not supported // return error msg!
 			}
 
 			var fields []Field

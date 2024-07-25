@@ -3,6 +3,8 @@
 package lib
 
 import (
+	"github.com/go-surreal/sdbc"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -118,34 +120,22 @@ func NewID[R any](key Key[R], node string) *ID[R] {
 	return &ID[R]{key: key, node: node}
 }
 
-func (b *ID[R]) Equal(val string) Filter[R] {
-	val = b.node + ":" + val
+func (b *ID[R]) Equal(val *sdbc.ID) Filter[R] {
+	// val = b.node + ":" + val
 	return Filter[R](b.key.Op(OpEqual, val))
 }
 
-func (b *ID[R]) NotEqual(val string) Filter[R] {
-	val = b.node + ":" + val
+func (b *ID[R]) NotEqual(val *sdbc.ID) Filter[R] {
+	// val = b.node + ":" + val
 	return Filter[R](b.key.Op(OpNotEqual, val))
 }
 
-func (b *ID[R]) In(vals []string) Filter[R] {
-	var mapped []string
-
-	for _, val := range vals {
-		mapped = append(mapped, b.node+":"+val)
-	}
-
-	return Filter[R](b.key.Op(OpInside, mapped))
+func (b *ID[R]) In(vals []*sdbc.ID) Filter[R] {
+	return Filter[R](b.key.Op(OpInside, vals))
 }
 
-func (b *ID[R]) NotIn(vals []string) Filter[R] {
-	var mapped []string
-
-	for _, val := range vals {
-		mapped = append(mapped, b.node+":"+val)
-	}
-
-	return Filter[R](b.key.Op(OpNotInside, mapped))
+func (b *ID[R]) NotIn(vals []*sdbc.ID) Filter[R] {
+	return Filter[R](b.key.Op(OpNotInside, vals))
 }
 
 //
@@ -328,6 +318,57 @@ func NewDurationPtr[R any](key Key[R]) *DurationPtr[R] {
 	}
 }
 
+// -- URL
+//
+
+type URL[T any] struct {
+	key Key[T]
+}
+
+func NewURL[T any](key Key[T]) *URL[T] {
+	return &URL[T]{key: key}
+}
+
+func (b *URL[T]) Equal(val url.URL) Filter[T] {
+	return Filter[T](b.key.Op(OpEqual, val.String()))
+}
+
+func (b *URL[T]) NotEqual(val url.URL) Filter[T] {
+	return Filter[T](b.key.Op(OpNotEqual, val.String()))
+}
+
+func (b *URL[T]) In(vals []url.URL) Filter[T] {
+	var mapped []string
+
+	for _, val := range vals {
+		mapped = append(mapped, val.String())
+	}
+
+	return Filter[T](b.key.Op(OpInside, mapped))
+}
+
+func (b *URL[T]) NotIn(vals []url.URL) Filter[T] {
+	var mapped []string
+
+	for _, val := range vals {
+		mapped = append(mapped, val.String())
+	}
+
+	return Filter[T](b.key.Op(OpNotInside, mapped))
+}
+
+type URLPtr[T any] struct {
+	*URL[T]
+	*Nillable[T]
+}
+
+func NewURLPtr[T any](key Key[T]) *URLPtr[T] {
+	return &URLPtr[T]{
+		URL:      &URL[T]{key: key},
+		Nillable: &Nillable[T]{key: key},
+	}
+}
+
 //
 // -- SLICE
 //
@@ -378,6 +419,37 @@ type SlicePtr[T, E any] struct {
 func NewSlicePtr[T, E, F any](key Key[T]) *SlicePtr[T, E] {
 	return &SlicePtr[T, E]{
 		Slice:    &Slice[T, E]{key: key},
+		Nillable: &Nillable[T]{key: key},
+	}
+}
+
+//
+// -- BYTE SLICE
+//
+
+// ByteSlice is a filter that can be used for byte slice fields.
+// T is the type of the outgoing table for the filter statement.
+type ByteSlice[T any] struct {
+	*Base[[]byte, T]
+}
+
+// NewSlice creates a new slice filter.
+func NewByteSlice[T any](key Key[T]) *ByteSlice[T] {
+	return &ByteSlice[T]{
+		Base: &Base[[]byte, T]{key: key},
+	}
+}
+
+type ByteSlicePtr[T any] struct {
+	*ByteSlice[T]
+	*Nillable[T]
+}
+
+func NewByteSlicePtr[T any](key Key[T]) *ByteSlicePtr[T] {
+	return &ByteSlicePtr[T]{
+		ByteSlice: &ByteSlice[T]{
+			Base: &Base[[]byte, T]{key: key},
+		},
 		Nillable: &Nillable[T]{key: key},
 	}
 }

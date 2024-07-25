@@ -3,6 +3,11 @@
 package conv
 
 import (
+	"encoding/json"
+	"github.com/fxamacker/cbor/v2"
+	"github.com/go-surreal/sdbc"
+	"github.com/google/uuid"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -99,6 +104,89 @@ func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
 	}
 }
 
+//
+// -- TIME
+//
+
+func fromTimePtr(val *time.Time) *sdbc.DateTime {
+	if val == nil {
+		return nil
+	}
+
+	return &sdbc.DateTime{*val}
+}
+
+func toTimePtr(val *sdbc.DateTime) *time.Time {
+	if val == nil {
+		return nil
+	}
+
+	return &val.Time
+}
+
+//
+// -- NUMBER
+//
+
+type unsignedNumber[T uint | uint64 | uintptr] struct {
+	val *T
+}
+
+func (n *unsignedNumber[T]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strconv.FormatUint(uint64(*n.val), 10) + "dec")
+}
+
+func (n *unsignedNumber[T]) UnmarshalJSON(data []byte) error {
+	if n == nil {
+		return nil
+	}
+
+	var raw string
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return err
+	}
+
+	if raw == "" {
+		return nil
+	}
+
+	res, err := strconv.ParseUint(raw, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	val := T(res)
+	n.val = &val
+
+	return nil
+}
+
+//
+// -- URL
+//
+
+func urlPtr(val *url.URL) *string {
+	if val == nil {
+		return nil
+	}
+	str := val.String()
+	return &str
+}
+
+func parseURL(val string) url.URL {
+	res, err := url.Parse(val)
+	if err != nil {
+		// TODO: add logging!
+		return url.URL{}
+	}
+	return *res
+}
+
+//
+// -- DURATION
+//
+
 func durationPtr(val *time.Duration) *string {
 	if val == nil {
 		return nil
@@ -114,4 +202,26 @@ func parseDuration(val string) time.Duration {
 		return 0
 	}
 	return res
+}
+
+//
+// -- UUID
+//
+
+type UUID uuid.UUID
+
+func (u *UUID) MarshalCBOR() ([]byte, error) {
+	if u == nil {
+		return cbor.Marshal(nil)
+	}
+
+	raw, err := cbor.Marshal(uuid.UUID(*u))
+	if err != nil {
+		return nil, err
+	}
+
+	return cbor.Marshal(cbor.RawTag{
+		Number:  sdbc.CBORTagUUID,
+		Content: raw,
+	})
 }

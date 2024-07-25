@@ -23,7 +23,7 @@ func Generate(inPath, outPath string) error {
 
 	absDir, err := filepath.Abs(outPath)
 	if err != nil {
-		return fmt.Errorf("could not find absolute path: %v", err)
+		return fmt.Errorf("could not find absolute path: %w", err)
 	}
 
 	pkgPath, modPath, err := util.ParseMod(absDir)

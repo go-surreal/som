@@ -4,14 +4,15 @@ package query
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/fxamacker/cbor/v2"
 	"strings"
 )
 
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
+	Unmarshal(buf []byte, val any) error
 }
 
 type idNode struct {
@@ -30,7 +31,7 @@ type queryResult[M any] struct {
 
 type liveResponse struct {
 	Action string          `json:"action"`
-	Result json.RawMessage `json:"result"`
+	Result cbor.RawMessage `json:"result"`
 }
 
 //
@@ -141,7 +142,7 @@ func toLiveResult[C, M any](
 		var result C
 
 		if err := unmarshal(response.Result, &result); err != nil {
-			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
+			out.err = fmt.Errorf("could not unmarshal live update result: %w", err)
 		}
 
 		if out.err == nil {
@@ -153,13 +154,19 @@ func toLiveResult[C, M any](
 		}
 
 	case "delete":
-		var out liveResult[string]
+		var out liveResult[M]
 
-		if err := unmarshal(response.Result, &out.res); err != nil {
-			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
+		var result C
+
+		if err := unmarshal(response.Result, &result); err != nil {
+			out.err = fmt.Errorf("could not unmarshal live delete result: %w", err)
 		}
 
-		return &liveDelete{
+		if out.err == nil {
+			out.res = convert(result)
+		}
+
+		return &liveDelete[M]{
 			liveResult: out,
 		}
 
@@ -184,8 +191,8 @@ type LiveUpdate[M any] interface {
 	update()
 }
 
-type LiveDelete interface {
-	Get() (string, error)
+type LiveDelete[M any] interface {
+	Get() (M, error)
 	delete()
 }
 
@@ -201,11 +208,11 @@ type liveUpdate[M any] struct {
 
 func (*liveUpdate[M]) update() {}
 
-type liveDelete struct {
-	liveResult[string]
+type liveDelete[M any] struct {
+	liveResult[M]
 }
 
-func (*liveDelete) delete() {}
+func (*liveDelete[M]) delete() {}
 
 type liveResult[M any] struct {
 	res M

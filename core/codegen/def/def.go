@@ -12,10 +12,10 @@ const (
 )
 
 const (
-	PkgSom = "github.com/go-surreal/som"
+	PkgSom  = "github.com/go-surreal/som"
+	PkgSDBC = "github.com/go-surreal/sdbc"
+	PkgCBOR = "github.com/fxamacker/cbor/v2"
 
-	PkgUUID             = "github.com/google/uuid"
-	PkgSurrealDB        = "github.com/surrealdb/surrealdb.go"
-	PkgSurrealMarshal   = "github.com/surrealdb/surrealdb.go/pkg/marshal"
-	PkgSurrealConstants = "github.com/surrealdb/surrealdb.go/pkg/constants"
+	PkgURL  = "net/url"
+	PkgUUID = "github.com/google/uuid"
 )
