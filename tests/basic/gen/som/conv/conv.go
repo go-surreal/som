@@ -187,21 +187,20 @@ func parseURL(val string) url.URL {
 // -- DURATION
 //
 
-func durationPtr(val *time.Duration) *string {
+func fromDurationPtr(val *time.Duration) *sdbc.Duration {
 	if val == nil {
 		return nil
 	}
-	str := val.String()
-	return &str
+
+	return &sdbc.Duration{*val}
 }
 
-func parseDuration(val string) time.Duration {
-	res, err := time.ParseDuration(val)
-	if err != nil {
-		// TODO: add logging!
-		return 0
+func toDurationPtr(val *sdbc.Duration) *time.Duration {
+	if val == nil {
+		return nil
 	}
-	return res
+
+	return &val.Duration
 }
 
 //

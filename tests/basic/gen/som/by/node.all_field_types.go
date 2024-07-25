@@ -10,66 +10,72 @@ var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes]("")
 
 func newAllFieldTypes[T any](key string) allFieldTypes[T] {
 	return allFieldTypes[T]{
-		CreatedAt: lib.NewBaseSort[T](keyed(key, "created_at")),
-		Float32:   lib.NewBaseSort[T](keyed(key, "float_32")),
-		Float64:   lib.NewBaseSort[T](keyed(key, "float_64")),
-		ID:        lib.NewBaseSort[T](keyed(key, "id")),
-		Int:       lib.NewBaseSort[T](keyed(key, "int")),
-		Int16:     lib.NewBaseSort[T](keyed(key, "int_16")),
-		Int16Ptr:  lib.NewBaseSort[T](keyed(key, "int_16_ptr")),
-		Int32:     lib.NewBaseSort[T](keyed(key, "int_32")),
-		Int32Ptr:  lib.NewBaseSort[T](keyed(key, "int_32_ptr")),
-		Int64:     lib.NewBaseSort[T](keyed(key, "int_64")),
-		Int64Ptr:  lib.NewBaseSort[T](keyed(key, "int_64_ptr")),
-		Int8:      lib.NewBaseSort[T](keyed(key, "int_8")),
-		Int8Ptr:   lib.NewBaseSort[T](keyed(key, "int_8_ptr")),
-		IntPtr:    lib.NewBaseSort[T](keyed(key, "int_ptr")),
-		Rune:      lib.NewBaseSort[T](keyed(key, "rune")),
-		String:    lib.NewStringSort[T](keyed(key, "string")),
-		StringPtr: lib.NewStringSort[T](keyed(key, "string_ptr")),
-		Time:      lib.NewBaseSort[T](keyed(key, "time")),
-		TimeNil:   lib.NewBaseSort[T](keyed(key, "time_nil")),
-		TimePtr:   lib.NewBaseSort[T](keyed(key, "time_ptr")),
-		Uint16:    lib.NewBaseSort[T](keyed(key, "uint_16")),
-		Uint16Ptr: lib.NewBaseSort[T](keyed(key, "uint_16_ptr")),
-		Uint32:    lib.NewBaseSort[T](keyed(key, "uint_32")),
-		Uint32Ptr: lib.NewBaseSort[T](keyed(key, "uint_32_ptr")),
-		Uint8:     lib.NewBaseSort[T](keyed(key, "uint_8")),
-		Uint8Ptr:  lib.NewBaseSort[T](keyed(key, "uint_8_ptr")),
-		UpdatedAt: lib.NewBaseSort[T](keyed(key, "updated_at")),
-		key:       key,
+		CreatedAt:   lib.NewBaseSort[T](keyed(key, "created_at")),
+		Duration:    lib.NewBaseSort[T](keyed(key, "duration")),
+		DurationNil: lib.NewBaseSort[T](keyed(key, "duration_nil")),
+		DurationPtr: lib.NewBaseSort[T](keyed(key, "duration_ptr")),
+		Float32:     lib.NewBaseSort[T](keyed(key, "float_32")),
+		Float64:     lib.NewBaseSort[T](keyed(key, "float_64")),
+		ID:          lib.NewBaseSort[T](keyed(key, "id")),
+		Int:         lib.NewBaseSort[T](keyed(key, "int")),
+		Int16:       lib.NewBaseSort[T](keyed(key, "int_16")),
+		Int16Ptr:    lib.NewBaseSort[T](keyed(key, "int_16_ptr")),
+		Int32:       lib.NewBaseSort[T](keyed(key, "int_32")),
+		Int32Ptr:    lib.NewBaseSort[T](keyed(key, "int_32_ptr")),
+		Int64:       lib.NewBaseSort[T](keyed(key, "int_64")),
+		Int64Ptr:    lib.NewBaseSort[T](keyed(key, "int_64_ptr")),
+		Int8:        lib.NewBaseSort[T](keyed(key, "int_8")),
+		Int8Ptr:     lib.NewBaseSort[T](keyed(key, "int_8_ptr")),
+		IntPtr:      lib.NewBaseSort[T](keyed(key, "int_ptr")),
+		Rune:        lib.NewBaseSort[T](keyed(key, "rune")),
+		String:      lib.NewStringSort[T](keyed(key, "string")),
+		StringPtr:   lib.NewStringSort[T](keyed(key, "string_ptr")),
+		Time:        lib.NewBaseSort[T](keyed(key, "time")),
+		TimeNil:     lib.NewBaseSort[T](keyed(key, "time_nil")),
+		TimePtr:     lib.NewBaseSort[T](keyed(key, "time_ptr")),
+		Uint16:      lib.NewBaseSort[T](keyed(key, "uint_16")),
+		Uint16Ptr:   lib.NewBaseSort[T](keyed(key, "uint_16_ptr")),
+		Uint32:      lib.NewBaseSort[T](keyed(key, "uint_32")),
+		Uint32Ptr:   lib.NewBaseSort[T](keyed(key, "uint_32_ptr")),
+		Uint8:       lib.NewBaseSort[T](keyed(key, "uint_8")),
+		Uint8Ptr:    lib.NewBaseSort[T](keyed(key, "uint_8_ptr")),
+		UpdatedAt:   lib.NewBaseSort[T](keyed(key, "updated_at")),
+		key:         key,
 	}
 }
 
 type allFieldTypes[T any] struct {
-	key       string
-	ID        *lib.BaseSort[T]
-	CreatedAt *lib.BaseSort[T]
-	UpdatedAt *lib.BaseSort[T]
-	String    *lib.StringSort[T]
-	StringPtr *lib.StringSort[T]
-	Int       *lib.BaseSort[T]
-	IntPtr    *lib.BaseSort[T]
-	Int8      *lib.BaseSort[T]
-	Int8Ptr   *lib.BaseSort[T]
-	Int16     *lib.BaseSort[T]
-	Int16Ptr  *lib.BaseSort[T]
-	Int32     *lib.BaseSort[T]
-	Int32Ptr  *lib.BaseSort[T]
-	Int64     *lib.BaseSort[T]
-	Int64Ptr  *lib.BaseSort[T]
-	Uint8     *lib.BaseSort[T]
-	Uint8Ptr  *lib.BaseSort[T]
-	Uint16    *lib.BaseSort[T]
-	Uint16Ptr *lib.BaseSort[T]
-	Uint32    *lib.BaseSort[T]
-	Uint32Ptr *lib.BaseSort[T]
-	Float32   *lib.BaseSort[T]
-	Float64   *lib.BaseSort[T]
-	Rune      *lib.BaseSort[T]
-	Time      *lib.BaseSort[T]
-	TimePtr   *lib.BaseSort[T]
-	TimeNil   *lib.BaseSort[T]
+	key         string
+	ID          *lib.BaseSort[T]
+	CreatedAt   *lib.BaseSort[T]
+	UpdatedAt   *lib.BaseSort[T]
+	String      *lib.StringSort[T]
+	StringPtr   *lib.StringSort[T]
+	Int         *lib.BaseSort[T]
+	IntPtr      *lib.BaseSort[T]
+	Int8        *lib.BaseSort[T]
+	Int8Ptr     *lib.BaseSort[T]
+	Int16       *lib.BaseSort[T]
+	Int16Ptr    *lib.BaseSort[T]
+	Int32       *lib.BaseSort[T]
+	Int32Ptr    *lib.BaseSort[T]
+	Int64       *lib.BaseSort[T]
+	Int64Ptr    *lib.BaseSort[T]
+	Uint8       *lib.BaseSort[T]
+	Uint8Ptr    *lib.BaseSort[T]
+	Uint16      *lib.BaseSort[T]
+	Uint16Ptr   *lib.BaseSort[T]
+	Uint32      *lib.BaseSort[T]
+	Uint32Ptr   *lib.BaseSort[T]
+	Float32     *lib.BaseSort[T]
+	Float64     *lib.BaseSort[T]
+	Rune        *lib.BaseSort[T]
+	Time        *lib.BaseSort[T]
+	TimePtr     *lib.BaseSort[T]
+	TimeNil     *lib.BaseSort[T]
+	Duration    *lib.BaseSort[T]
+	DurationPtr *lib.BaseSort[T]
+	DurationNil *lib.BaseSort[T]
 }
 
 func (n allFieldTypes[T]) MainGroup() group[T] {

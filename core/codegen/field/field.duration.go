@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -16,7 +17,7 @@ func (f *Duration) typeGo() jen.Code {
 }
 
 func (f *Duration) typeConv() jen.Code {
-	return jen.Add(f.ptr()).String()
+	return jen.Add(f.ptr()).Qual(def.PkgSDBC, "Duration")
 }
 
 func (f *Duration) TypeDatabase() string {
@@ -67,23 +68,23 @@ func (f *Duration) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Duration) convFrom(ctx Context) jen.Code {
+func (f *Duration) convFrom(_ Context) jen.Code {
 	if f.source.Pointer() {
-		return jen.Id("durationPtr").Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Id("fromDurationPtr").Call(jen.Id("data").Dot(f.NameGo()))
 	}
 
-	return jen.Id("data").Dot(f.NameGo()).Dot("String").Call()
+	return jen.Qual(def.PkgSDBC, "Duration").Values(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Duration) convTo(ctx Context) jen.Code {
+func (f *Duration) convTo(_ Context) jen.Code {
 	if f.source.Pointer() {
-		return jen.Id("ptrFunc").Call(jen.Id("parseDuration")).Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Id("toDurationPtr").Call(jen.Id("data").Dot(f.NameGo()))
 	}
 
-	return jen.Id("parseDuration").Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id("data").Dot(f.NameGo()).Dot("Duration")
 }
 
-func (f *Duration) fieldDef(ctx Context) jen.Code {
+func (f *Duration) fieldDef(_ Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

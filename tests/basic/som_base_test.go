@@ -294,6 +294,41 @@ func TestURLTypes(t *testing.T) {
 	}
 }
 
+func TestDuration(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ptr := time.Hour
+
+	userNew := &model.AllFieldTypes{
+		Duration:    time.Minute,
+		DurationPtr: &ptr,
+		DurationNil: nil,
+	}
+
+	modelIn := userNew
+
+	err := client.AllFieldTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	modelOut, exists, err := client.AllFieldTypesRepo().Read(ctx, modelIn.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+	)
+}
+
 func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 

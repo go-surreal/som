@@ -121,7 +121,6 @@ func (f *Time) convToField(_ Context) jen.Code {
 }
 
 func (f *Time) fieldDef(_ Context) jen.Code {
-
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv()).
 			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
