@@ -59,8 +59,13 @@ func (f *UUID) filterInit(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
+	filter += "Conv"
+
 	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(
+			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+			jen.Id("convUUID"),
+		)
 }
 
 func (f *UUID) convFrom(_ Context) jen.Code {

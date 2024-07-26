@@ -104,6 +104,10 @@ func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
 	}
 }
 
+//
+// -- TIME
+//
+
 func fromTimePtr(val *time.Time) *sdbc.DateTime {
 	if val == nil {
 		return nil
@@ -123,18 +127,6 @@ func toTimePtr(val *sdbc.DateTime) *time.Time {
 //
 // -- NUMBER
 //
-
-// func uintToString[T uint | uint64 | uintptr](val T) string {
-// 	return strconv.FormatUint(uint64(val), 10)
-// }
-//
-// func stringToUint[T uint | uint64 | uintptr](val string) T {
-// 	res, err := strconv.ParseUint(val, 10, 64)
-// 	if err != nil {
-// 		return 0
-// 	}
-// 	return T(res)
-// }
 
 type unsignedNumber[T uint | uint64 | uintptr] struct {
 	val *T
@@ -189,6 +181,26 @@ func parseURL(val string) url.URL {
 		return url.URL{}
 	}
 	return *res
+}
+
+//
+// -- DURATION
+//
+
+func fromDurationPtr(val *time.Duration) *sdbc.Duration {
+	if val == nil {
+		return nil
+	}
+
+	return &sdbc.Duration{*val}
+}
+
+func toDurationPtr(val *sdbc.Duration) *time.Duration {
+	if val == nil {
+		return nil
+	}
+
+	return &val.Duration
 }
 
 //

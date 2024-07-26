@@ -70,6 +70,10 @@ type AllFieldTypes struct {
 	TimePtr *time.Time
 	TimeNil *time.Time
 
+	Duration    time.Duration
+	DurationPtr *time.Duration
+	DurationNil *time.Duration
+
 	UUID    uuid.UUID
 	UUIDPtr *uuid.UUID
 	UUIDNil *uuid.UUID

@@ -2,7 +2,12 @@
 
 package where
 
-import "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+import (
+	"github.com/google/uuid"
+	
+	"github.com/go-surreal/som/tests/basic/gen/som/conv"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+)
 
 func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 	return lib.All[T](filters)
@@ -10,4 +15,8 @@ func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 
 func Any[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 	return lib.Any[T](filters)
+}
+
+func convUUID(u uuid.UUID) any {
+	return conv.UUID(u)
 }

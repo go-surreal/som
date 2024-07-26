@@ -43,6 +43,9 @@ type AllFieldTypes struct {
 	Time              sdbc.DateTime  `json:"time"`
 	TimePtr           *sdbc.DateTime `json:"time_ptr"`
 	TimeNil           *sdbc.DateTime `json:"time_nil"`
+	Duration          sdbc.Duration  `json:"duration"`
+	DurationPtr       *sdbc.Duration `json:"duration_ptr"`
+	DurationNil       *sdbc.Duration `json:"duration_nil"`
 	UUID              UUID           `json:"uuid"`
 	UUIDPtr           *UUID          `json:"uuid_ptr"`
 	UUIDNil           *UUID          `json:"uuid_nil"`
@@ -83,6 +86,9 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		BytePtr:           data.BytePtr,
 		ByteSlice:         data.ByteSlice,
 		ByteSlicePtr:      data.ByteSlicePtr,
+		Duration:          sdbc.Duration{data.Duration},
+		DurationNil:       fromDurationPtr(data.DurationNil),
+		DurationPtr:       fromDurationPtr(data.DurationPtr),
 		EnumPtr:           data.EnumPtr,
 		EnumPtrSlice:      data.EnumPtrSlice,
 		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
@@ -147,6 +153,9 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		BytePtr:           data.BytePtr,
 		ByteSlice:         data.ByteSlice,
 		ByteSlicePtr:      data.ByteSlicePtr,
+		Duration:          data.Duration.Duration,
+		DurationNil:       toDurationPtr(data.DurationNil),
+		DurationPtr:       toDurationPtr(data.DurationPtr),
 		EnumPtr:           data.EnumPtr,
 		EnumPtrSlice:      data.EnumPtrSlice,
 		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
