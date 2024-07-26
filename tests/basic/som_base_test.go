@@ -327,6 +327,73 @@ func TestDuration(t *testing.T) {
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
 	)
+
+	modelOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.Duration.Equal(time.Minute),
+			where.AllFieldTypes.DurationPtr.GreaterThan(time.Minute),
+			where.AllFieldTypes.DurationNil.Nil(),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+	)
+}
+
+func TestUUID(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ptr := uuid.New()
+
+	userNew := &model.AllFieldTypes{
+		UUID:    uuid.New(),
+		UUIDPtr: &ptr,
+		UUIDNil: nil,
+	}
+
+	modelIn := userNew
+
+	err := client.AllFieldTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	modelOut, exists, err := client.AllFieldTypesRepo().Read(ctx, modelIn.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+	)
+
+	modelOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.UUID.Equal(modelIn.UUID),
+			where.AllFieldTypes.UUIDPtr.Equal(*modelIn.UUIDPtr),
+			where.AllFieldTypes.UUIDNil.Nil(),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+	)
 }
 
 func FuzzWithDatabase(f *testing.F) {

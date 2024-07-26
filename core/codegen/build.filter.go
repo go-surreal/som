@@ -56,7 +56,12 @@ func (b *filterBuilder) buildBaseFile() error {
 
 package where
 
-import "{{libPkg}}"
+import (
+	"github.com/google/uuid"
+	
+	"{{pkgConv}}"
+	"{{pkgLib}}"
+)
 
 func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 	return lib.All[T](filters)
@@ -65,9 +70,14 @@ func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 func Any[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 	return lib.Any[T](filters)
 }
+
+func convUUID(u uuid.UUID) any {
+	return conv.UUID(u)
+}
 `
 
-	content = strings.Replace(content, "{{libPkg}}", b.subPkg(def.PkgLib), 1)
+	content = strings.Replace(content, "{{pkgLib}}", b.subPkg(def.PkgLib), 1)
+	content = strings.Replace(content, "{{pkgConv}}", b.subPkg(def.PkgConv), 1)
 	data := []byte(codegenComment + content)
 
 	err := os.WriteFile(path.Join(b.path(), "where.go"), data, os.ModePerm)

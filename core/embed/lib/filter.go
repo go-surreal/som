@@ -32,26 +32,59 @@ func KeyFilter[T any](key Key[T]) Filter[T] {
 
 // TODO: switch T and R
 type Base[T any, R any] struct {
-	key Key[R]
+	key  Key[R]
+	conv func(T) any
 }
 
 func NewBase[T, R any](key Key[R]) *Base[T, R] {
 	return &Base[T, R]{key: key}
 }
 
+func NewBaseConv[T, R any](key Key[R], conv func(T) any) *Base[T, R] {
+	return &Base[T, R]{key: key, conv: conv}
+}
+
 func (b *Base[T, R]) Equal(val T) Filter[R] {
+	if b.conv != nil {
+		return Filter[R](b.key.Op(OpEqual, b.conv(val)))
+	}
+
 	return Filter[R](b.key.Op(OpEqual, val))
 }
 
 func (b *Base[T, R]) NotEqual(val T) Filter[R] {
+	if b.conv != nil {
+		return Filter[R](b.key.Op(OpNotEqual, b.conv(val)))
+	}
+
 	return Filter[R](b.key.Op(OpNotEqual, val))
 }
 
 func (b *Base[T, R]) In(vals []T) Filter[R] {
+	if b.conv != nil {
+		var mapped []any
+
+		for _, val := range vals {
+			mapped = append(mapped, b.conv(val))
+		}
+
+		return Filter[R](b.key.Op(OpInside, mapped))
+	}
+
 	return Filter[R](b.key.Op(OpInside, vals))
 }
 
 func (b *Base[T, R]) NotIn(vals []T) Filter[R] {
+	if b.conv != nil {
+		var mapped []any
+
+		for _, val := range vals {
+			mapped = append(mapped, b.conv(val))
+		}
+
+		return Filter[R](b.key.Op(OpNotInside, mapped))
+	}
+
 	return Filter[R](b.key.Op(OpNotInside, vals))
 }
 
@@ -67,27 +100,59 @@ func NewBasePtr[T, R any](key Key[R]) *BasePtr[T, R] {
 	}
 }
 
+func NewBasePtrConv[T, R any](key Key[R], conv func(T) any) *BasePtr[T, R] {
+	return &BasePtr[T, R]{
+		Base:     NewBaseConv[T, R](key, conv),
+		Nillable: &Nillable[R]{key: key},
+	}
+}
+
 //
 // -- COMPARABLE
 //
 
 type Comparable[T any, R any] struct {
-	key Key[R]
+	key  Key[R]
+	conv func(T) any
+}
+
+func NewComparable[T, R any](key Key[R]) *Comparable[T, R] {
+	return &Comparable[T, R]{key: key}
+}
+
+func NewComparableConv[T, R any](key Key[R], conv func(T) any) *Comparable[T, R] {
+	return &Comparable[T, R]{key: key, conv: conv}
 }
 
 func (c *Comparable[T, R]) LessThan(val T) Filter[R] {
+	if c.conv != nil {
+		return Filter[R](c.key.Op(OpLessThan, c.conv(val)))
+	}
+
 	return Filter[R](c.key.Op(OpLessThan, val))
 }
 
 func (c *Comparable[T, R]) LessThanEqual(val T) Filter[R] {
+	if c.conv != nil {
+		return Filter[R](c.key.Op(OpLessThanEqual, c.conv(val)))
+	}
+
 	return Filter[R](c.key.Op(OpLessThanEqual, val))
 }
 
 func (c *Comparable[T, R]) GreaterThan(val T) Filter[R] {
+	if c.conv != nil {
+		return Filter[R](c.key.Op(OpGreaterThan, c.conv(val)))
+	}
+
 	return Filter[R](c.key.Op(OpGreaterThan, val))
 }
 
 func (c *Comparable[T, R]) GreaterThanEqual(val T) Filter[R] {
+	if c.conv != nil {
+		return Filter[R](c.key.Op(OpGreaterThanEqual, c.conv(val)))
+	}
+
 	return Filter[R](c.key.Op(OpGreaterThanEqual, val))
 }
 
@@ -240,9 +305,13 @@ type Time[R any] struct {
 }
 
 func NewTime[R any](key Key[R]) *Time[R] {
+	conv := func(val time.Time) any {
+		return sdbc.DateTime{val}
+	}
+
 	return &Time[R]{
-		Base: &Base[time.Time, R]{key: key},
-		comp: &Comparable[time.Time, R]{key: key},
+		Base: NewBaseConv[time.Time, R](key, conv),
+		comp: NewComparableConv[time.Time, R](key, conv),
 	}
 }
 
@@ -280,30 +349,18 @@ func NewTimePtr[R any](key Key[R]) *TimePtr[R] {
 
 type Duration[R any] struct {
 	*Base[time.Duration, R]
-	comp *Comparable[time.Time, R]
+	*Comparable[time.Duration, R]
 }
 
 func NewDuration[R any](key Key[R]) *Duration[R] {
-	return &Duration[R]{
-		Base: &Base[time.Duration, R]{key: key},
-		comp: &Comparable[time.Time, R]{key: key},
+	conv := func(val time.Duration) any {
+		return sdbc.Duration{val}
 	}
-}
 
-func (t *Duration[R]) Before(val time.Time) Filter[R] {
-	return t.comp.LessThan(val)
-}
-
-func (t *Duration[R]) BeforeOrEqual(val time.Time) Filter[R] {
-	return t.comp.LessThanEqual(val)
-}
-
-func (t *Duration[R]) After(val time.Time) Filter[R] {
-	return t.comp.GreaterThan(val)
-}
-
-func (t *Duration[R]) AfterOrEqual(val time.Time) Filter[R] {
-	return t.comp.GreaterThanEqual(val)
+	return &Duration[R]{
+		Base:       NewBaseConv[time.Duration, R](key, conv),
+		Comparable: NewComparableConv[time.Duration, R](key, conv),
+	}
 }
 
 type DurationPtr[R any] struct {

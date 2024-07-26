@@ -12,7 +12,7 @@ func newSomeStruct[T any](key lib.Key[T]) someStruct[T] {
 		IntPtr:    lib.NewNumericPtr[*int, T](lib.Field(key, "int_ptr")),
 		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
 		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
-		UuidPtr:   lib.NewBasePtr[uuid.UUID, T](lib.Field(key, "uuid_ptr")),
+		UuidPtr:   lib.NewBasePtrConv[uuid.UUID, T](lib.Field(key, "uuid_ptr"), convUUID),
 		key:       key,
 	}
 }
