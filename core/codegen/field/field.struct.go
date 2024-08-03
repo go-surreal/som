@@ -30,8 +30,8 @@ func (f *Struct) Table() Table {
 
 func (f *Struct) CodeGen() *CodeGen {
 	return &CodeGen{
-		filterDefine: nil,
-		filterInit:   nil,
+		filterDefine: f.filterDefine,
+		filterInit:   f.filterInit,
 		filterFunc:   f.filterFunc,
 
 		sortDefine: nil,
@@ -44,13 +44,21 @@ func (f *Struct) CodeGen() *CodeGen {
 	}
 }
 
+func (f *Struct) filterDefine(_ Context) jen.Code {
+	return jen.Id(f.table.NameGoLower()).Types(jen.Id("T"))
+}
+
+func (f *Struct) filterInit(_ Context) (jen.Code, jen.Code) {
+	return jen.Id("new" + f.source.Struct).Types(jen.Id("T")), nil
+}
+
 func (f *Struct) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 		Id(f.NameGo()).Params().
-		Id(f.table.NameGoLower()).Types(jen.Id("T")).
+		Add(f.filterDefine(ctx)).
 		Block(
-			jen.Return(jen.Id("new" + f.source.Struct).Types(jen.Id("T")).
+			jen.Return(jen.Add(f.filterInit(ctx)).
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 

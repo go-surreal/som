@@ -27,5 +27,5 @@ type loginEdges[T any] struct {
 
 type loginSlice[T any] struct {
 	lib.Filter[T]
-	*lib.Slice[T, model.Login]
+	*lib.Slice[T, model.Login, login[T]]
 }

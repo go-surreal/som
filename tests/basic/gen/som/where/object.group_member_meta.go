@@ -27,5 +27,5 @@ type groupMemberMetaEdges[T any] struct {
 
 type groupMemberMetaSlice[T any] struct {
 	lib.Filter[T]
-	*lib.Slice[T, model.GroupMemberMeta]
+	*lib.Slice[T, model.GroupMemberMeta, groupMemberMeta[T]]
 }

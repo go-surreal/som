@@ -41,5 +41,5 @@ func (n groupEdges[T]) Members(filters ...lib.Filter[model.GroupMember]) groupMe
 
 type groupSlice[T any] struct {
 	lib.Filter[T]
-	*lib.Slice[T, model.Group]
+	*lib.Slice[T, model.Group, group[T]]
 }

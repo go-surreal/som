@@ -50,10 +50,10 @@ func (f *UUID) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"), jen.Qual(def.PkgUUID, "UUID"))
 }
 
-func (f *UUID) filterInit(ctx Context) jen.Code {
+func (f *UUID) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewBase"
 	if f.source.Pointer() {
 		filter += "Ptr"
@@ -61,8 +61,8 @@ func (f *UUID) filterInit(ctx Context) jen.Code {
 
 	filter += "Conv"
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
-		Params(
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T"), jen.Qual(def.PkgUUID, "UUID")),
+		jen.Params(
 			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 			jen.Id("convUUID"),
 		)

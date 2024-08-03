@@ -1,6 +1,7 @@
 package field
 
 import (
+	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/parser"
 )
@@ -41,8 +42,8 @@ func (f *Slice) Element() Field {
 
 func (f *Slice) CodeGen() *CodeGen {
 	return &CodeGen{
-		filterDefine: nil,
-		filterInit:   nil,
+		filterDefine: f.filterDefine,
+		filterInit:   f.filterInit,
 		filterFunc:   f.filterFunc,
 
 		sortDefine: nil,
@@ -55,7 +56,98 @@ func (f *Slice) CodeGen() *CodeGen {
 	}
 }
 
+func (f *Slice) filterDefine(ctx Context) jen.Code {
+	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx)
+
+	switch element := f.element.(type) {
+
+	case *Node, *Edge, *Struct:
+		return nil // handled by filterFunc
+
+	case *Byte:
+		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(jen.Id("T"))
+
+	case *Enum:
+		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
+			jen.Id("T"),
+			jen.Qual(ctx.SourcePkg, element.model.NameGo()),
+			elemFilter,
+		)
+
+	default:
+		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
+			jen.Id("T"),
+			element.typeGo(),
+			elemFilter,
+		)
+	}
+}
+
+func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
+	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx)
+
+	var makeElemFilter jen.Code
+	if f.element.CodeGen().filterInit != nil {
+		makeElemFilter, _ = f.element.CodeGen().filterInit(ctx)
+	} else {
+		fmt.Printf("no filter init for %T\n", f.element)
+	}
+
+	switch element := f.element.(type) {
+
+	case *Node, *Edge, *Struct:
+		return nil, nil // handled by filterFunc
+
+	case *Byte:
+		return jen.Qual(ctx.pkgLib(), "NewByteSlice").Types(jen.Id("T")),
+			jen.Call(
+				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+			)
+
+	case *Enum:
+		return jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), jen.Qual(ctx.SourcePkg, element.model.NameGo())),
+			jen.Call(
+				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+				makeElemFilter,
+			)
+
+	case *Slice:
+		elemElemFilter := element.element.CodeGen().filterDefine.Exec(ctx)
+
+		var makeElemElemFilter jen.Code
+		if element.element.CodeGen().filterInit != nil {
+			makeElemElemFilter, _ = element.element.CodeGen().filterInit(ctx)
+		} else {
+			fmt.Printf("no filter init for %T\n", f.element)
+		}
+
+		return jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), element.typeGo(), elemFilter),
+			jen.Call(
+				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+				// lib.NewSliceMaker[T, string, *lib.String[T]](lib.NewString[T])
+				jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.element.typeGo(), elemElemFilter).
+					Call(makeElemElemFilter),
+			)
+
+	default:
+		return jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), element.typeGo(), elemFilter),
+			jen.Call(
+				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+				makeElemFilter,
+			)
+	}
+}
+
 func (f *Slice) filterFunc(ctx Context) jen.Code {
+	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx)
+
+	var makeElemFilter jen.Code
+	if f.element.CodeGen().filterInit != nil {
+		makeElemFilter, _ = f.element.CodeGen().filterInit(ctx)
+	} else {
+		fmt.Printf("no filter init for %T\n", f.element)
+	}
+
 	switch element := f.element.(type) {
 
 	case *Node:
@@ -79,8 +171,16 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 							Values(
 								jen.Qual(ctx.pkgLib(), "KeyFilter").Types(jen.Id("T")).
 									Call(jen.Id("key")),
-								jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), jen.Qual(ctx.SourcePkg, element.table.NameGo())).
-									Call(jen.Id("key")),
+								jen.Qual(ctx.pkgLib(), "NewSlice").
+									Types(
+										jen.Id("T"),
+										jen.Qual(ctx.SourcePkg, element.table.NameGo()),
+										elemFilter,
+									).
+									Call(
+										jen.Id("key"),
+										makeElemFilter,
+									),
 							),
 					),
 				)
@@ -140,54 +240,26 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 			return nil
 		}
 
-	case *Enum:
+	case *Struct:
 		{
 			return jen.Func().
 				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
 				Id(f.NameGo()).Params().
-				Op("*").Qual(ctx.pkgLib(), "Slice").Types(jen.Id("T"), jen.Qual(ctx.SourcePkg, element.model.NameGo())).
+				Op("*").Qual(ctx.pkgLib(), "Slice").
+				Types(jen.Id("T"), element.typeGo(), elemFilter).
 				Block(
 					jen.Return(
-						jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), jen.Qual(ctx.SourcePkg, element.model.NameGo())).
+						jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), element.typeGo(), elemFilter).
 							Call(
 								jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())),
+								makeElemFilter,
 							),
 					),
-				)
-		}
-
-	case *Byte:
-		{
-			return jen.Func().
-				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
-				Id(f.NameGo()).Params().
-				Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(jen.Id("T")).
-				Block(
-					jen.Return(
-						jen.Qual(ctx.pkgLib(), "NewByteSlice").Types(jen.Id("T"))).
-						Call(
-							jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())),
-						),
 				)
 		}
 
 	default:
-		{
-			// TODO: does not need to be a filterFunc, use filterDefine/filterInit instead ?!
-
-			return jen.Func().
-				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
-				Id(f.NameGo()).Params().
-				Op("*").Qual(ctx.pkgLib(), "Slice").Types(jen.Id("T"), element.typeGo()).
-				Block(
-					jen.Return(
-						jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), element.typeGo()).
-							Call(
-								jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())),
-							),
-					),
-				)
-		}
+		return nil
 	}
 }
 

@@ -126,17 +126,17 @@ func (f *Numeric) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(f.typeGo(), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"), f.typeGo())
 }
 
-func (f *Numeric) filterInit(ctx Context) jen.Code {
+func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewNumeric"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(f.typeGo(), jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T"), f.typeGo()),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Numeric) sortDefine(ctx Context) jen.Code {

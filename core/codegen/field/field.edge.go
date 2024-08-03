@@ -30,8 +30,8 @@ func (f *Edge) Table() *EdgeTable {
 
 func (f *Edge) CodeGen() *CodeGen {
 	return &CodeGen{
-		filterDefine: nil,
-		filterInit:   nil,
+		filterDefine: f.filterDefine,
+		filterInit:   f.filterInit,
 		filterFunc:   f.filterFunc,
 
 		sortDefine: nil,
@@ -44,6 +44,14 @@ func (f *Edge) CodeGen() *CodeGen {
 	}
 }
 
+func (f *Edge) filterDefine(_ Context) jen.Code {
+	return jen.Id(f.table.NameGoLower()).Types(jen.Id("T"))
+}
+
+func (f *Edge) filterInit(_ Context) (jen.Code, jen.Code) {
+	return jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")), nil
+}
+
 func (f *Edge) filterFunc(ctx Context) jen.Code {
 	receiver := jen.Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))
 	if ctx.Receiver != nil {
@@ -53,9 +61,9 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Add(receiver)).
 		Id(f.NameGo()).Params().
-		Id(f.table.NameGoLower()).Types(jen.Id("T")).
+		Add(f.filterDefine(ctx)).
 		Block(
-			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
+			jen.Return(jen.Add(f.filterInit(ctx)).
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 

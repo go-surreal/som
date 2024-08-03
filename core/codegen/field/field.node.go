@@ -32,8 +32,8 @@ func (f *Node) Table() *NodeTable {
 
 func (f *Node) CodeGen() *CodeGen {
 	return &CodeGen{
-		filterDefine: nil,
-		filterInit:   nil,
+		filterDefine: f.filterDefine,
+		filterInit:   f.filterInit,
 		filterFunc:   f.filterFunc,
 
 		sortDefine: nil,
@@ -46,6 +46,14 @@ func (f *Node) CodeGen() *CodeGen {
 	}
 }
 
+func (f *Node) filterDefine(_ Context) jen.Code {
+	return jen.Id(f.table.NameGoLower()).Types(jen.Id("T"))
+}
+
+func (f *Node) filterInit(_ Context) (jen.Code, jen.Code) {
+	return jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")), nil
+}
+
 func (f *Node) filterFunc(ctx Context) jen.Code {
 	receiver := jen.Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))
 	if ctx.Receiver != nil {
@@ -55,9 +63,9 @@ func (f *Node) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Add(receiver)).
 		Id(f.NameGo()).Params().
-		Id(f.table.NameGoLower()).Types(jen.Id("T")).
+		Add(f.filterDefine(ctx)).
 		Block(
-			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
+			jen.Return(jen.Add(f.filterInit(ctx)).
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 

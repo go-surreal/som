@@ -112,7 +112,8 @@ type AllFieldTypes struct {
 
 	// other
 
-	SliceSlice [][]string
+	SliceSlice      [][]string
+	SliceSliceSlice [][][]string
 
 	// maps (not (yet?) supported)
 

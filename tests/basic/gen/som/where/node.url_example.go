@@ -31,5 +31,5 @@ type urlexampleEdges[T any] struct {
 
 type urlexampleSlice[T any] struct {
 	lib.Filter[T]
-	*lib.Slice[T, model.URLExample]
+	*lib.Slice[T, model.URLExample, urlexample[T]]
 }

@@ -9,10 +9,10 @@ import (
 
 func newSomeStruct[T any](key lib.Key[T]) someStruct[T] {
 	return someStruct[T]{
-		IntPtr:    lib.NewNumericPtr[*int, T](lib.Field(key, "int_ptr")),
+		IntPtr:    lib.NewNumericPtr[T, *int](lib.Field(key, "int_ptr")),
 		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
 		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
-		UuidPtr:   lib.NewBasePtrConv[uuid.UUID, T](lib.Field(key, "uuid_ptr"), convUUID),
+		UuidPtr:   lib.NewBasePtrConv[T, uuid.UUID](lib.Field(key, "uuid_ptr"), convUUID),
 		key:       key,
 	}
 }
@@ -20,9 +20,9 @@ func newSomeStruct[T any](key lib.Key[T]) someStruct[T] {
 type someStruct[T any] struct {
 	key       lib.Key[T]
 	StringPtr *lib.StringPtr[T]
-	IntPtr    *lib.NumericPtr[*int, T]
+	IntPtr    *lib.NumericPtr[T, *int]
 	TimePtr   *lib.TimePtr[T]
-	UuidPtr   *lib.BasePtr[uuid.UUID, T]
+	UuidPtr   *lib.BasePtr[T, uuid.UUID]
 }
 
 type someStructEdges[T any] struct {
@@ -32,5 +32,5 @@ type someStructEdges[T any] struct {
 
 type someStructSlice[T any] struct {
 	lib.Filter[T]
-	*lib.Slice[T, model.SomeStruct]
+	*lib.Slice[T, model.SomeStruct, someStruct[T]]
 }

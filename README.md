@@ -217,8 +217,10 @@ As soon as this is fixed, Som will support these types as well.
 - [x] `rune`
 - [x] `byte`, `[]byte`
 - [x] `time.Time`
-- [ ] `time.Duration`
+- [x] `time.Duration`
 - [ ] `time.Location`
+- [ ] `time.Weekday`?
+- [ ] `time.Month` etc.?
 - [ ] `big.Int`
 - [ ] `big.Float`
 - [x] `url.URL`
@@ -238,6 +240,10 @@ For all types above, the pointer version is supported as well.
 #### Custom types
 
 - [x] `som.Enum`
+- [ ] `som.Password`
+- [x] `som.Email`
+- [x] `som.SemVer`
+- [ ] `som.HTML` (encode, sanitize)
 - [ ] `som.GeometryPoint`
 - [ ] `som.GeometryLine`
 - [ ] `som.GeometryPolygon`

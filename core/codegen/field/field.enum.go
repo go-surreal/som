@@ -68,17 +68,17 @@ func (f *Enum) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"), jen.Qual(ctx.SourcePkg, f.source.Typ))
 }
 
-func (f *Enum) filterInit(ctx Context) jen.Code {
+func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewBase"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T"), jen.Qual(ctx.SourcePkg, f.source.Typ)),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Enum) convFrom(ctx Context) jen.Code {

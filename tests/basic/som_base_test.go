@@ -36,12 +36,17 @@ func TestQuery(t *testing.T) {
 					where.Group.ID.Equal(sdbc.MakeID("all_field_types", "some_id")),
 				),
 
+			where.AllFieldTypes.Duration.Days().LessThan(4),
+
+			//where.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().Base64Decode().Base64Encode().Equal(""),
+
 			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
 			// where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)])",
+		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)] "+
+			"AND duration::days(duration) < $2)",
 		// "SELECT * FROM user WHERE (count(groups[WHERE (name = $0 AND created_at INSIDE $1)]) > $2 "+
 		// 	"AND groups[WHERE (created_at > $3)]) ",
 		query.Describe(),
@@ -332,7 +337,7 @@ func TestDuration(t *testing.T) {
 		Filter(
 			where.AllFieldTypes.Duration.Equal(time.Minute),
 			where.AllFieldTypes.DurationPtr.GreaterThan(time.Minute),
-			where.AllFieldTypes.DurationNil.Nil(),
+			where.AllFieldTypes.DurationNil.Nil(true),
 		).
 		First(ctx)
 
@@ -383,7 +388,7 @@ func TestUUID(t *testing.T) {
 		Filter(
 			where.AllFieldTypes.UUID.Equal(modelIn.UUID),
 			where.AllFieldTypes.UUIDPtr.Equal(*modelIn.UUIDPtr),
-			where.AllFieldTypes.UUIDNil.Nil(),
+			where.AllFieldTypes.UUIDNil.Nil(true),
 		).
 		First(ctx)
 

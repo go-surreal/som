@@ -181,7 +181,11 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 		Types(jen.Id("T").Any()).
 		Struct(
 			jen.Qual(pkgLib, "Filter").Types(jen.Id("T")),
-			jen.Op("*").Qual(pkgLib, "Slice").Types(jen.Id("T"), b.SourceQual(elem.NameGo())),
+			jen.Op("*").Qual(pkgLib, "Slice").Types(
+				jen.Id("T"),
+				b.SourceQual(elem.NameGo()),
+				jen.Id(elem.NameGoLower()).Types(jen.Id("T")),
+			),
 		)
 }
 
