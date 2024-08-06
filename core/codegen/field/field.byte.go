@@ -70,15 +70,15 @@ func (f *Byte) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Byte) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Byte) convFrom(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Byte) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Byte) convTo(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Byte) fieldDef(ctx Context) jen.Code {
+func (f *Byte) fieldDef(_ Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

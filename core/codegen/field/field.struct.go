@@ -62,23 +62,29 @@ func (f *Struct) filterFunc(ctx Context) jen.Code {
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
-func (f *Struct) convFrom(ctx Context) jen.Code {
+func (f *Struct) convFrom(_ Context) (jen.Code, jen.Code) {
 	code := jen.Id("from" + f.table.NameGo())
+
 	if !f.source.Pointer() {
 		code = jen.Id("noPtrFunc").Call(jen.Id("from" + f.table.NameGo()))
 	}
-	return code.Call(jen.Id("data").Dot(f.NameGo()))
+
+	return code,
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Struct) convTo(ctx Context) jen.Code {
+func (f *Struct) convTo(_ Context) (jen.Code, jen.Code) {
 	code := jen.Id("to" + f.table.NameGo())
+
 	if !f.source.Pointer() {
 		code = jen.Id("noPtrFunc").Call(jen.Id("to" + f.table.NameGo()))
 	}
-	return code.Call(jen.Id("data").Dot(f.NameGo()))
+	
+	return code,
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Struct) fieldDef(ctx Context) jen.Code {
+func (f *Struct) fieldDef(_ Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

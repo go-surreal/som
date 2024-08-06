@@ -40,6 +40,10 @@ func TestQuery(t *testing.T) {
 
 			//where.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().Base64Decode().Base64Encode().Equal(""),
 
+			//where.AllFieldTypes.GroupsSlice.At(0).At(0).CreatedAt.Before(time.Now()),
+
+			//where.AllFieldTypes.SliceSliceSlice.At(0).At(0).At(0).Equal(""),
+
 			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
 			// where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
 		)

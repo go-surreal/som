@@ -78,12 +78,14 @@ func (f *Edge) sortFunc(ctx Context) jen.Code {
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
-func (f *Edge) convFrom(_ Context) jen.Code {
-	return jen.Id("From" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
+func (f *Edge) convFrom(_ Context) (jen.Code, jen.Code) {
+	return jen.Id("From" + f.table.NameGo()),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Edge) convTo(_ Context) jen.Code {
-	return jen.Id("To" + f.table.NameGo()).Call(jen.Id("data").Dot(f.NameGo()))
+func (f *Edge) convTo(_ Context) (jen.Code, jen.Code) {
+	return jen.Id("To" + f.table.NameGo()),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Edge) fieldDef(_ Context) jen.Code {

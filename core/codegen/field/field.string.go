@@ -67,15 +67,15 @@ func (f *String) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *String) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo()) // TODO: vulnerability -> record link could be injected
+func (f *String) convFrom(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo()) // TODO: record link inject vulnerability? solved by cbor?
 }
 
-func (f *String) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *String) convTo(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *String) fieldDef(ctx Context) jen.Code {
+func (f *String) fieldDef(_ Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

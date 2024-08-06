@@ -68,20 +68,23 @@ func (f *Duration) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Duration) convFrom(_ Context) jen.Code {
+func (f *Duration) convFrom(_ Context) (jen.Code, jen.Code) {
 	if f.source.Pointer() {
-		return jen.Id("fromDurationPtr").Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Id("fromDurationPtr"),
+			jen.Call(jen.Id("data").Dot(f.NameGo()))
 	}
 
-	return jen.Qual(def.PkgSDBC, "Duration").Values(jen.Id("data").Dot(f.NameGo()))
+	return jen.Qual(def.PkgSDBC, "Duration"), // TODO: will not work for slice mapping
+		jen.Values(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Duration) convTo(_ Context) jen.Code {
+func (f *Duration) convTo(_ Context) (jen.Code, jen.Code) {
 	if f.source.Pointer() {
-		return jen.Id("toDurationPtr").Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Id("toDurationPtr"),
+			jen.Call(jen.Id("data").Dot(f.NameGo()))
 	}
 
-	return jen.Id("data").Dot(f.NameGo()).Dot("Duration")
+	return nil, jen.Id("data").Dot(f.NameGo()).Dot("Duration") // TODO: will not work for slice mapping
 }
 
 func (f *Duration) fieldDef(_ Context) jen.Code {

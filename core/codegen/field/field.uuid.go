@@ -68,20 +68,24 @@ func (f *UUID) filterInit(ctx Context) (jen.Code, jen.Code) {
 		)
 }
 
-func (f *UUID) convFrom(_ Context) jen.Code {
+func (f *UUID) convFrom(_ Context) (jen.Code, jen.Code) {
 	if f.source.Pointer() {
-		return jen.Parens(jen.Op("*").Id("UUID")).Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Parens(jen.Op("*").Id("UUID")), // TODO: will not work for slice mapping
+			jen.Call(jen.Id("data").Dot(f.NameGo()))
 	}
 
-	return jen.Id("UUID").Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id("UUID"), // TODO: will not work for slice mapping
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *UUID) convTo(_ Context) jen.Code {
+func (f *UUID) convTo(_ Context) (jen.Code, jen.Code) {
 	if f.source.Pointer() {
-		return jen.Parens(jen.Op("*").Qual(def.PkgUUID, "UUID")).Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Parens(jen.Op("*").Qual(def.PkgUUID, "UUID")), // TODO: will not work for slice mapping
+			jen.Call(jen.Id("data").Dot(f.NameGo()))
 	}
 
-	return jen.Qual(def.PkgUUID, "UUID").Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Qual(def.PkgUUID, "UUID"), // TODO: will not work for slice mapping
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *UUID) fieldDef(_ Context) jen.Code {

@@ -81,15 +81,15 @@ func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Enum) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Enum) convFrom(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Enum) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Enum) convTo(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Enum) fieldDef(ctx Context) jen.Code {
+func (f *Enum) fieldDef(_ Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

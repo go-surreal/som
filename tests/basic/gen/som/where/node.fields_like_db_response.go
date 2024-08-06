@@ -12,7 +12,7 @@ func newFieldsLikeDBResponse[T any](key lib.Key[T]) fieldsLikeDbresponse[T] {
 	return fieldsLikeDbresponse[T]{
 		Detail: lib.NewString[T](lib.Field(key, "detail")),
 		ID:     lib.NewID[T](lib.Field(key, "id"), "fields_like_db_response"),
-		Result: lib.NewSlice[T, string, *lib.String[T]](lib.Field(key, "result"), lib.NewString[T]),
+		Result: lib.NewSliceMaker[T, string, *lib.String[T]](lib.NewString[T])(lib.Field(key, "result")),
 		Status: lib.NewString[T](lib.Field(key, "status")),
 		Time:   lib.NewString[T](lib.Field(key, "time")),
 		key:    key,

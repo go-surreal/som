@@ -148,7 +148,7 @@ func (f *Numeric) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Numeric) convFrom(ctx Context) jen.Code {
+func (f *Numeric) convFrom(_ Context) (jen.Code, jen.Code) {
 	switch f.source.Type {
 
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
@@ -173,11 +173,11 @@ func (f *Numeric) convFrom(ctx Context) jen.Code {
 	//	}
 
 	default:
-		return jen.Id("data").Dot(f.NameGo())
+		return jen.Null(), jen.Id("data").Dot(f.NameGo())
 	}
 }
 
-func (f *Numeric) convTo(_ Context) jen.Code {
+func (f *Numeric) convTo(_ Context) (jen.Code, jen.Code) {
 	switch f.source.Type {
 
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
@@ -190,7 +190,7 @@ func (f *Numeric) convTo(_ Context) jen.Code {
 	//	}
 
 	default:
-		return jen.Id("data").Dot(f.NameGo())
+		return jen.Null(), jen.Id("data").Dot(f.NameGo())
 	}
 }
 

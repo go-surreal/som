@@ -58,12 +58,12 @@ func (f *Bool) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Bool) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Bool) convFrom(ctx Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Bool) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Bool) convTo(ctx Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Bool) fieldDef(ctx Context) jen.Code {

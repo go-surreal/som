@@ -19,8 +19,13 @@ type AllFieldTypes struct {
 	StringPtrSlice []*string
 	StringSlicePtr *[]string // TODO: cannot be filtered for nil!
 
-	Int      int
-	IntPtr   *int
+	Int            int
+	IntPtr         *int
+	IntSlice       []int
+	IntPtrSlice    []*int
+	IntSlicePtr    *[]int
+	IntPtrSlicePtr *[]*int
+
 	Int8     int8 // -128 to 127
 	Int8Ptr  *int8
 	Int16    int16 // -2^15 to 2^15-1 (-32768 to 32767)
@@ -44,18 +49,23 @@ type AllFieldTypes struct {
 	//Uintptr    uintptr
 	//UintptrPtr *uintptr
 
-	Float32 float32 // -3.4e+38 to 3.4e+38.
-	More    []float32
+	Float32            float32 // -3.4e+38 to 3.4e+38.
+	Float32Slice       []float32
+	Float32SlicePtr    *[]float32
+	Float32PtrSlice    []*float32
+	Float32PtrSlicePtr *[]*float32
 
 	Float64 float64 // -1.7e+308 to +1.7e+308.
 
 	// Complex64  complex64
 	// Complex128 complex128
 
-	Rune rune
+	Rune      rune
+	RuneSlice []rune
 
-	Bool    bool
-	BoolPtr *bool
+	Bool      bool
+	BoolPtr   *bool
+	BoolSlice []bool
 
 	// TODO: should we support the any type? (surrealdb seems to support it)
 
@@ -66,21 +76,25 @@ type AllFieldTypes struct {
 
 	// special types
 
-	Time    time.Time
-	TimePtr *time.Time
-	TimeNil *time.Time
+	Time      time.Time
+	TimePtr   *time.Time
+	TimeNil   *time.Time
+	TimeSlice []time.Time
 
-	Duration    time.Duration
-	DurationPtr *time.Duration
-	DurationNil *time.Duration
+	Duration      time.Duration
+	DurationPtr   *time.Duration
+	DurationNil   *time.Duration
+	DurationSlice []time.Duration
 
-	UUID    uuid.UUID
-	UUIDPtr *uuid.UUID
-	UUIDNil *uuid.UUID
+	UUID      uuid.UUID
+	UUIDPtr   *uuid.UUID
+	UUIDNil   *uuid.UUID
+	UUIDSlice []uuid.UUID
 
-	URL    url.URL
-	URLPtr *url.URL
-	URLNil *url.URL
+	URL      url.URL
+	URLPtr   *url.URL
+	URLNil   *url.URL
+	URLSlice []url.URL
 
 	// enums
 
@@ -103,6 +117,7 @@ type AllFieldTypes struct {
 	MainGroup       Group   // node
 	MainGroupPtr    *Group  // node pointer
 	Groups          []Group // slice of Nodes
+	GroupsSlice     [][]Group
 	NodePtrSlice    []*Group
 	NodePtrSlicePtr *[]*Group
 
@@ -112,8 +127,9 @@ type AllFieldTypes struct {
 
 	// other
 
-	SliceSlice      [][]string
-	SliceSliceSlice [][][]string
+	SliceSlice       [][]string
+	SliceSliceSlice  [][][]string
+	SliceSliceSlice2 [][][]SomeStruct
 
 	// maps (not (yet?) supported)
 

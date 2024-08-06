@@ -79,25 +79,29 @@ func (f *Node) sortFunc(ctx Context) jen.Code {
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
-func (f *Node) convFrom(ctx Context) jen.Code {
+func (f *Node) convFrom(_ Context) (jen.Code, jen.Code) {
 	funcName := "to" + f.table.NameGo() + "Link"
+
 	if f.source.Pointer() {
 		funcName += "Ptr"
 	}
 
-	return jen.Id(funcName).Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id(funcName),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Node) convTo(ctx Context) jen.Code {
+func (f *Node) convTo(_ Context) (jen.Code, jen.Code) {
 	funcName := "from" + f.table.NameGo() + "Link"
+
 	if f.source.Pointer() {
 		funcName += "Ptr"
 	}
 
-	return jen.Id(funcName).Call(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id(funcName),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Node) fieldDef(ctx Context) jen.Code {
+func (f *Node) fieldDef(_ Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv()).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

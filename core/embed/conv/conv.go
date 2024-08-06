@@ -83,6 +83,42 @@ func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
 	return &out
 }
 
+func mapSliceFn[I, O any](fn func(I) O) func([]I) []O {
+	return func(in []I) []O {
+		if in == nil {
+			return nil
+		}
+
+		out := make([]O, len(in))
+
+		for _, i := range in {
+			out = append(out, fn(i))
+		}
+
+		return out
+	}
+}
+
+func mapSliceFnPtr[I, O any](fn func(I) O) func(*[]I) *[]O {
+	return func(in *[]I) *[]O {
+		if in == nil {
+			return nil
+		}
+
+		out := make([]O, len(*in))
+
+		for _, i := range *in {
+			out = append(out, fn(i))
+		}
+
+		return &out
+	}
+}
+
+func noOp[I any](in I) I {
+	return in
+}
+
 func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
 	return func(in *I) *O {
 		if in == nil {

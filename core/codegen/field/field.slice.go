@@ -61,7 +61,10 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 
 	switch element := f.element.(type) {
 
-	case *Node, *Edge, *Struct:
+	case *Node:
+		return jen.Id(element.table.NameGoLower() + "Slice").Types(jen.Id("T"))
+
+	case *Edge, *Struct:
 		return nil // handled by filterFunc
 
 	case *Byte:
@@ -89,7 +92,9 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 	var makeElemFilter jen.Code
 	if f.element.CodeGen().filterInit != nil {
 		makeElemFilter, _ = f.element.CodeGen().filterInit(ctx)
-	} else {
+	}
+
+	if makeElemFilter == nil {
 		fmt.Printf("no filter init for %T\n", f.element)
 	}
 
@@ -112,28 +117,19 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 			)
 
 	case *Slice:
-		elemElemFilter := element.element.CodeGen().filterDefine.Exec(ctx)
-
-		var makeElemElemFilter jen.Code
-		if element.element.CodeGen().filterInit != nil {
-			makeElemElemFilter, _ = element.element.CodeGen().filterInit(ctx)
-		} else {
-			fmt.Printf("no filter init for %T\n", f.element)
-		}
-
-		return jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), element.typeGo(), elemFilter),
+		return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.typeGo(), elemFilter).
+				Call(makeElemFilter),
 			jen.Call(
 				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
-				// lib.NewSliceMaker[T, string, *lib.String[T]](lib.NewString[T])
-				jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.element.typeGo(), elemElemFilter).
-					Call(makeElemElemFilter),
+				//jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.element.typeGo(), elemElemFilter).
+				//	Call(makeElemElemFilter),
 			)
 
 	default:
-		return jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), element.typeGo(), elemFilter),
+		return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.typeGo(), elemFilter).
+				Call(makeElemFilter),
 			jen.Call(
 				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
-				makeElemFilter,
 			)
 	}
 }
@@ -263,120 +259,169 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 	}
 }
 
-func (f *Slice) convFrom(ctx Context) jen.Code {
+func (f *Slice) convFrom(ctx Context) (jen.Code, jen.Code) {
 	switch element := f.element.(type) {
+
+	case *Slice:
+		{
+			mapperFunc := "mapSliceFn"
+			fromFunc, _ := element.CodeGen().convFrom(ctx.fromSlice())
+
+			if f.source.Pointer() {
+				mapperFunc += "Ptr"
+			}
+
+			return jen.Id(mapperFunc).Call(fromFunc),
+				jen.Call(jen.Id("data").Dot(f.NameGo()))
+		}
 
 	case *Node:
 		{
-			mapperFunc := "mapSlice"
-			mapFunc := "to" + element.table.NameGo() + "Link"
+			mapperFunc := "mapSliceFn"
+			fromFunc := "to" + element.table.NameGo() + "Link"
 
 			if f.source.Pointer() {
 				mapperFunc += "Ptr"
 			}
 
 			if element.source.Pointer() {
-				mapFunc += "Ptr"
+				fromFunc += "Ptr"
 			}
 
-			return jen.Id(mapperFunc).Call(
-				jen.Id("data").Dot(f.NameGo()),
-				jen.Id(mapFunc),
-			)
+			return jen.Id(mapperFunc).Call(jen.Id(fromFunc)),
+				jen.Call(jen.Id("data").Dot(f.NameGo()))
 		}
 
 	case *Struct:
 		{
-			mapFn := "mapSlice"
-			fromFn := jen.Id("from" + element.table.NameGo())
+			mapperFunc := "mapSliceFn"
+			fromFunc := jen.Id("from" + element.table.NameGo())
 
 			if f.source.Pointer() {
-				mapFn = "mapSlicePtr"
+				mapperFunc += "Ptr"
 			}
 
 			if !element.source.Pointer() {
-				fromFn = jen.Id("noPtrFunc").Call(fromFn)
+				fromFunc = jen.Id("noPtrFunc").Call(fromFunc)
 			}
 
-			return jen.Id(mapFn).Call(
-				jen.Id("data").Dot(f.NameGo()),
-				fromFn,
-			)
+			return jen.Id(mapperFunc).Call(fromFunc),
+				jen.Call(jen.Id("data").Dot(f.NameGo()))
 		}
 
 	case *Edge:
 		{
-			return nil // TODO: should an edge really not be addable like that?
+			return nil, nil // TODO: should an edge really not be addable like that?
 		}
 
 	case *Enum:
 		{
-			return jen.Id("data").Dot(f.NameGo())
+			return nil, jen.Id("data").Dot(f.NameGo()) // TODO: correct?
 		}
 
 	default:
 		{
-			return jen.Id("data").Dot(f.NameGo())
+			element.CodeGen().convFrom(ctx.fromSlice())
+
+			if !ctx.isFromSlice {
+				return jen.Null(), jen.Id("data").Dot(f.NameGo())
+			}
+
+			typ := jen.Index().Add(element.typeGo())
+
+			if f.source.Pointer() {
+				typ = jen.Op("*").Add(typ)
+			}
+
+			return jen.Id("noOp").Types(typ), nil // TODO: correct?
 		}
 
 	}
 }
 
-func (f *Slice) convTo(ctx Context) jen.Code {
+func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 	switch element := f.element.(type) {
+
+	case *Slice:
+		{
+			mapperFunc := "mapSliceFn"
+			toFunc, _ := element.CodeGen().convTo(ctx.fromSlice())
+
+			if f.source.Pointer() {
+				mapperFunc += "Ptr"
+			}
+
+			return jen.Id(mapperFunc).Call(toFunc),
+				jen.Call(jen.Id("data").Dot(f.NameGo()))
+		}
 
 	case *Node:
 		{
-			mapperFunc := "mapSlice"
-			mapFunc := "from" + element.table.NameGo() + "Link"
+			mapperFunc := "mapSliceFn"
+			toFunc := "from" + element.table.NameGo() + "Link"
 
 			if f.source.Pointer() {
 				mapperFunc += "Ptr"
 			}
 
 			if element.source.Pointer() {
-				mapFunc += "Ptr"
+				toFunc += "Ptr"
 			}
 
-			return jen.Id(mapperFunc).Call(
-				jen.Id("data").Dot(f.NameGo()),
-				jen.Id(mapFunc),
-			)
+			return jen.Id(mapperFunc).Call(jen.Id(toFunc)),
+				jen.Call(jen.Id("data").Dot(f.NameGo()))
 		}
 
 	case *Struct:
 		{
-			mapFn := "mapSlice"
-			toFn := jen.Id("to" + element.table.NameGo())
+			mapperFunc := "mapSliceFn"
+			toFunc := jen.Id("to" + element.table.NameGo())
 
 			if f.source.Pointer() {
-				mapFn = "mapSlicePtr"
+				mapperFunc += "Ptr"
 			}
 
 			if !element.source.Pointer() {
-				toFn = jen.Id("noPtrFunc").Call(toFn)
+				toFunc = jen.Id("noPtrFunc").Call(toFunc)
 			}
 
-			return jen.Id(mapFn).Call(
-				jen.Id("data").Dot(f.NameGo()),
-				toFn,
-			)
+			return jen.Id(mapperFunc).Call(toFunc),
+				jen.Call(jen.Id("data").Dot(f.NameGo()))
 		}
 
 	case *Edge:
-		return jen.Id("mapSlice").Call(
-			jen.Id("data").Dot(f.NameGo()),
-			jen.Id("noPtrFunc").Call(jen.Id("To"+element.table.NameGo())),
-		)
+		{
+			mapperFunc := "mapSliceFn"
+			toFunc := jen.Id("noPtrFunc").Call(jen.Id("To" + element.table.NameGo()))
+
+			if f.source.Pointer() {
+				mapperFunc += "Ptr"
+			}
+
+			// TODO: Edge can be not a pointer, no?
+
+			return jen.Id(mapperFunc).Call(toFunc),
+				jen.Call(jen.Id("data").Dot(f.NameGo()))
+		}
 
 	case *Enum:
 		{
-			return jen.Id("data").Dot(f.NameGo())
+			return nil, jen.Id("data").Dot(f.NameGo()) // TODO: correct?
 		}
 
 	default:
 		{
-			return jen.Id("data").Dot(f.NameGo())
+			if !ctx.isFromSlice {
+				return jen.Null(), jen.Id("data").Dot(f.NameGo())
+			}
+
+			typ := jen.Index().Add(element.typeGo())
+
+			if f.source.Pointer() {
+				typ = jen.Op("*").Add(typ)
+			}
+
+			return jen.Id("noOp").Types(typ), nil // TODO: correct?
 		}
 
 	}

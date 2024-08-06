@@ -28,7 +28,7 @@ func ToGroup(data *Group) *model.Group {
 		return nil
 	}
 	return &model.Group{
-		Members:    mapSlice(data.Members, noPtrFunc(ToGroupMember)),
+		Members:    mapSliceFn(noPtrFunc(ToGroupMember))(data.Members),
 		Name:       data.Name,
 		Node:       som.NewNode(data.ID),
 		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),

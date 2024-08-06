@@ -39,8 +39,8 @@ type CodeGen struct {
 	sortInit   CodeGenFunc
 	sortFunc   CodeGenFunc
 
-	convFrom    CodeGenFunc
-	convTo      CodeGenFunc
+	convFrom    CodeGenTuple
+	convTo      CodeGenTuple
 	convToField CodeGenFunc
 
 	fieldDef CodeGenFunc

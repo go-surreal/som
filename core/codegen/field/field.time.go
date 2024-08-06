@@ -81,35 +81,39 @@ func (f *Time) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Time) convFrom(_ Context) jen.Code {
+func (f *Time) convFrom(_ Context) (jen.Code, jen.Code) {
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return nil // never sent a timestamp to the database, as it will be set automatically
+		return nil, nil // never sent a timestamp to the database, as it will be set automatically
 	}
 
 	if f.source.Pointer() {
-		return jen.Id("fromTimePtr").Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Id("fromTimePtr"),
+			jen.Call(jen.Id("data").Dot(f.NameGo()))
 	}
 
-	return jen.Qual(def.PkgSDBC, "DateTime").Values(jen.Id("data").Dot(f.NameGo()))
+	return jen.Qual(def.PkgSDBC, "DateTime"), // TODO: will not work for slice mapping
+		jen.Values(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Time) convTo(_ Context) jen.Code {
+func (f *Time) convTo(_ Context) (jen.Code, jen.Code) {
 	if f.source.IsCreatedAt {
-		return jen.Qual(def.PkgSom, "NewTimestamps").Call(
-			jen.Id("data").Dot("CreatedAt"),
-			jen.Id("data").Dot("UpdatedAt"),
-		)
+		return jen.Qual(def.PkgSom, "NewTimestamps"),
+			jen.Call(
+				jen.Id("data").Dot("CreatedAt"),
+				jen.Id("data").Dot("UpdatedAt"),
+			)
 	}
 
 	if f.source.IsUpdatedAt {
-		return nil
+		return nil, nil
 	}
 
 	if f.source.Pointer() {
-		return jen.Id("toTimePtr").Call(jen.Id("data").Dot(f.NameGo()))
+		return jen.Id("toTimePtr"),
+			jen.Call(jen.Id("data").Dot(f.NameGo()))
 	}
 
-	return jen.Id("data").Dot(f.NameGo()).Dot("Time")
+	return jen.Null(), jen.Id("data").Dot(f.NameGo()).Dot("Time") // TODO
 }
 
 func (f *Time) convToField(_ Context) jen.Code {

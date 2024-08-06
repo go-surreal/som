@@ -18,10 +18,7 @@ func FromURLExample(data *model.URLExample) *URLExample {
 	if data == nil {
 		return nil
 	}
-	return &URLExample{
-		SomeOtherURL: data.SomeOtherURL.String(),
-		SomeURL:      urlPtr(data.SomeURL),
-	}
+	return &URLExample{SomeURL: urlPtr(data.SomeURL)}
 }
 
 func ToURLExample(data *URLExample) *model.URLExample {
