@@ -42,28 +42,28 @@ func (f *String) CodeGen() *CodeGen {
 func (f *String) filterDefine(ctx Context) jen.Code {
 	filter := "String"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(typeModel)
 }
 
 func (f *String) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewString"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+	return jen.Qual(ctx.pkgLib(), filter).Types(typeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *String) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "StringSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "StringSort").Types(typeModel)
 }
 
 func (f *String) sortInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewStringSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewStringSort").Types(typeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
@@ -77,5 +77,5 @@ func (f *String) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *String) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{"json": f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }

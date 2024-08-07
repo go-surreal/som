@@ -8,10 +8,10 @@ import (
 )
 
 type someStruct struct {
-	StringPtr *string        `json:"string_ptr"`
-	IntPtr    *int           `json:"int_ptr"`
-	TimePtr   *sdbc.DateTime `json:"time_ptr"`
-	UuidPtr   *types.UUID    `json:"uuid_ptr"`
+	StringPtr *string        `cbor:"string_ptr"`
+	IntPtr    *int           `cbor:"int_ptr"`
+	TimePtr   *sdbc.DateTime `cbor:"time_ptr"`
+	UuidPtr   *types.UUID    `cbor:"uuid_ptr"`
 }
 
 func fromSomeStruct(data *model.SomeStruct) *someStruct {

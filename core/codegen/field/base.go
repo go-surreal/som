@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+const (
+	convTag     = "cbor"
+	fnSuffixPtr = "Ptr"
+)
+
 var (
 	typeModel = jen.Id("T") // TODO: rename to M
 )

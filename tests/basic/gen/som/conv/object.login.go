@@ -4,8 +4,8 @@ package conv
 import model "github.com/go-surreal/som/tests/basic/model"
 
 type login struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `cbor:"username"`
+	Password string `cbor:"password"`
 }
 
 func fromLogin(data *model.Login) *login {

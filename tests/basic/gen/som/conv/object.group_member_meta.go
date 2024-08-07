@@ -4,8 +4,8 @@ package conv
 import model "github.com/go-surreal/som/tests/basic/model"
 
 type groupMemberMeta struct {
-	IsAdmin  bool `json:"is_admin"`
-	IsActive bool `json:"is_active"`
+	IsAdmin  bool `cbor:"is_admin"`
+	IsActive bool `cbor:"is_active"`
 }
 
 func fromGroupMemberMeta(data *model.GroupMemberMeta) *groupMemberMeta {

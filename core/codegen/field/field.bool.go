@@ -42,19 +42,19 @@ func (f *Bool) CodeGen() *CodeGen {
 func (f *Bool) filterDefine(ctx Context) jen.Code {
 	filter := "Bool"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(typeModel)
 }
 
 func (f *Bool) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewBool"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+	return jen.Qual(ctx.pkgLib(), filter).Types(typeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
@@ -68,5 +68,5 @@ func (f *Bool) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *Bool) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{"json": f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }

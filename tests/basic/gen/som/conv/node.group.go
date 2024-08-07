@@ -9,11 +9,11 @@ import (
 )
 
 type Group struct {
-	ID        *sdbc.ID       `json:"id,omitempty"`
-	CreatedAt *sdbc.DateTime `json:"created_at,omitempty"`
-	UpdatedAt *sdbc.DateTime `json:"updated_at,omitempty"`
-	Name      string         `json:"name"`
-	Members   []GroupMember  `json:"members,omitempty"`
+	ID        *sdbc.ID       `cbor:"id,omitempty"`
+	CreatedAt *sdbc.DateTime `cbor:"created_at,omitempty"`
+	UpdatedAt *sdbc.DateTime `cbor:"updated_at,omitempty"`
+	Name      string         `cbor:"name"`
+	Members   []GroupMember  `cbor:"members,omitempty"`
 }
 
 func FromGroup(data *model.Group) *Group {

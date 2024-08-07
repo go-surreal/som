@@ -43,28 +43,28 @@ func (f *Duration) CodeGen() *CodeGen {
 func (f *Duration) filterDefine(ctx Context) jen.Code {
 	filter := "Duration"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(typeModel)
 }
 
 func (f *Duration) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewDuration"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+	return jen.Qual(ctx.pkgLib(), filter).Types(typeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Duration) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(typeModel)
 }
 
 func (f *Duration) sortInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(typeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
@@ -72,7 +72,7 @@ func (f *Duration) convFrom(_ Context) (jen.Code, jen.Code) {
 	fromFunc := "fromDuration"
 
 	if f.source.Pointer() {
-		fromFunc += "Ptr"
+		fromFunc += fnSuffixPtr
 	}
 
 	return jen.Id(fromFunc),
@@ -83,7 +83,7 @@ func (f *Duration) convTo(_ Context) (jen.Code, jen.Code) {
 	toFunc := "toDuration"
 
 	if f.source.Pointer() {
-		toFunc += "Ptr"
+		toFunc += fnSuffixPtr
 	}
 
 	return jen.Id(toFunc),
@@ -92,5 +92,5 @@ func (f *Duration) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *Duration) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{"json": f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }
