@@ -26,8 +26,11 @@ var relateContent embed.FS
 //go:embed sort/*
 var sortContent embed.FS
 
-//go:embed lib/*
+//go:embed internal/lib/*
 var libContent embed.FS
+
+//go:embed internal/types/*
+var typesContent embed.FS
 
 type Template struct {
 	GenerateOutPath string
@@ -63,7 +66,11 @@ func Sort(tmpl *Template) ([]*File, error) {
 }
 
 func Lib(tmpl *Template) ([]*File, error) {
-	return readEmbed(libContent, "lib", tmpl)
+	return readEmbed(libContent, "internal/lib", tmpl)
+}
+
+func Types(tmpl *Template) ([]*File, error) {
+	return readEmbed(typesContent, "internal/types", tmpl)
 }
 
 func readEmbed(fs embed.FS, name string, tmpl *Template) ([]*File, error) {

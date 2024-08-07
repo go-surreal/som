@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 import "github.com/go-surreal/sdbc"

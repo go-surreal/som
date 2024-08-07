@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 // Bool is a filter builder for boolean fields.

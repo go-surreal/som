@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 // Nillable is a filter builder for values that can be nil.

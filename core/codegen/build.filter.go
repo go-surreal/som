@@ -51,15 +51,13 @@ func (b *filterBuilder) build() error {
 	return nil
 }
 
+// TODO: move to embed!
 func (b *filterBuilder) buildBaseFile() error {
 	content := `
 
 package where
 
 import (
-	"github.com/google/uuid"
-	
-	"{{pkgConv}}"
 	"{{pkgLib}}"
 )
 
@@ -69,10 +67,6 @@ func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 
 func Any[T any](filters ...lib.Filter[T]) lib.Filter[T] {
 	return lib.Any[T](filters)
-}
-
-func convUUID(u uuid.UUID) any {
-	return conv.UUID(u)
 }
 `
 
@@ -175,18 +169,6 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 			file.Add(code)
 		}
 	}
-
-	file.Line()
-	file.Type().Id(elem.NameGoLower()+"Slice").
-		Types(jen.Id("T").Any()).
-		Struct(
-			jen.Qual(pkgLib, "Filter").Types(jen.Id("T")),
-			jen.Op("*").Qual(pkgLib, "Slice").Types(
-				jen.Id("T"),
-				b.SourceQual(elem.NameGo()),
-				jen.Id(elem.NameGoLower()).Types(jen.Id("T")),
-			),
-		)
 }
 
 func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {

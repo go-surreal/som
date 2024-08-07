@@ -48,7 +48,7 @@ func (f *Numeric) typeGo() jen.Code {
 	}
 }
 
-func (f *Numeric) typeConv() jen.Code {
+func (f *Numeric) typeConv(_ Context) jen.Code {
 	switch f.source.Type {
 
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
@@ -195,6 +195,6 @@ func (f *Numeric) convTo(_ Context) (jen.Code, jen.Code) {
 }
 
 func (f *Numeric) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

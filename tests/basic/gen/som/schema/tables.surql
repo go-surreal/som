@@ -77,6 +77,8 @@ DEFINE FIELD time_ptr ON TABLE all_field_types TYPE option<datetime | null>;
 DEFINE FIELD time_nil ON TABLE all_field_types TYPE option<datetime | null>;
 DEFINE FIELD time_slice ON TABLE all_field_types TYPE option<array | null>;
 DEFINE FIELD time_slice.* ON TABLE all_field_types TYPE datetime;
+DEFINE FIELD time_slice_slice ON TABLE all_field_types TYPE option<array | null>;
+DEFINE FIELD time_slice_slice.* ON TABLE all_field_types TYPE option<array | null>;
 DEFINE FIELD duration ON TABLE all_field_types TYPE duration;
 DEFINE FIELD duration_ptr ON TABLE all_field_types TYPE option<duration | null>;
 DEFINE FIELD duration_nil ON TABLE all_field_types TYPE option<duration | null>;

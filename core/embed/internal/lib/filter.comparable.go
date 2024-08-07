@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 // Comparable is a filter with comparison operations.

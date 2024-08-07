@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 // ByteSlice is a filter that can be used for byte slice fields.

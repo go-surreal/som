@@ -17,7 +17,7 @@ func (f *Byte) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Byte()
 }
 
-func (f *Byte) typeConv() jen.Code {
+func (f *Byte) typeConv(_ Context) jen.Code {
 	return f.typeGo()
 }
 
@@ -78,7 +78,7 @@ func (f *Byte) convTo(_ Context) (jen.Code, jen.Code) {
 	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Byte) fieldDef(_ Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+func (f *Byte) fieldDef(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

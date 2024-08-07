@@ -89,12 +89,38 @@ func (b *build) copyInternalPackage() error {
 		GenerateOutPath: b.subPkg(""),
 	}
 
+	// LIB // TODO: split into filter, sort etc.?
+
 	files, err := embed.Lib(tmpl)
 	if err != nil {
 		return err
 	}
 
 	dir := filepath.Join(b.outDir, "internal", "lib")
+
+	err = os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		content := string(file.Content)
+		content = strings.Replace(content, embedComment, codegenComment, 1)
+
+		err := os.WriteFile(filepath.Join(dir, file.Path), []byte(content), os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	// TYPES
+
+	files, err = embed.Types(tmpl)
+	if err != nil {
+		return err
+	}
+
+	dir = filepath.Join(b.outDir, "internal", "types")
 
 	err = os.MkdirAll(dir, os.ModePerm)
 	if err != nil {

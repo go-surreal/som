@@ -32,8 +32,3 @@ type fieldsLikeDbresponseEdges[T any] struct {
 	lib.Filter[T]
 	key lib.Key[T]
 }
-
-type fieldsLikeDbresponseSlice[T any] struct {
-	lib.Filter[T]
-	*lib.Slice[T, model.FieldsLikeDBResponse, fieldsLikeDbresponse[T]]
-}

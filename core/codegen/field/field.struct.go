@@ -16,7 +16,7 @@ func (f *Struct) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }
 
-func (f *Struct) typeConv() jen.Code {
+func (f *Struct) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Id(f.table.NameGoLower())
 }
 
@@ -79,12 +79,12 @@ func (f *Struct) convTo(_ Context) (jen.Code, jen.Code) {
 	if !f.source.Pointer() {
 		code = jen.Id("noPtrFunc").Call(jen.Id("to" + f.table.NameGo()))
 	}
-	
+
 	return code,
 		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Struct) fieldDef(_ Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+func (f *Struct) fieldDef(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

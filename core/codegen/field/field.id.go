@@ -16,7 +16,7 @@ func (f *ID) typeGo() jen.Code {
 	return jen.String()
 }
 
-func (f *ID) typeConv() jen.Code {
+func (f *ID) typeConv(_ Context) jen.Code {
 	return jen.Op("*").Qual(def.PkgSDBC, "ID") // f.typeGo()
 }
 
@@ -59,6 +59,6 @@ func (f *ID) sortInit(ctx Context) jen.Code {
 }
 
 func (f *ID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

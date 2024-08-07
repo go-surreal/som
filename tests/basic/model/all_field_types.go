@@ -76,10 +76,11 @@ type AllFieldTypes struct {
 
 	// special types
 
-	Time      time.Time
-	TimePtr   *time.Time
-	TimeNil   *time.Time
-	TimeSlice []time.Time
+	Time           time.Time
+	TimePtr        *time.Time
+	TimeNil        *time.Time
+	TimeSlice      []time.Time
+	TimeSliceSlice [][]time.Time
 
 	Duration      time.Duration
 	DurationPtr   *time.Duration

@@ -16,7 +16,7 @@ func (f *Edge) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }
 
-func (f *Edge) typeConv() jen.Code {
+func (f *Edge) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Id(f.table.NameGo())
 }
 
@@ -88,7 +88,7 @@ func (f *Edge) convTo(_ Context) (jen.Code, jen.Code) {
 		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Edge) fieldDef(_ Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+func (f *Edge) fieldDef(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

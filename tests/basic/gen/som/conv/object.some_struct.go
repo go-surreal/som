@@ -3,15 +3,15 @@ package conv
 
 import (
 	sdbc "github.com/go-surreal/sdbc"
+	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
-	uuid "github.com/google/uuid"
 )
 
 type someStruct struct {
 	StringPtr *string        `json:"string_ptr"`
 	IntPtr    *int           `json:"int_ptr"`
 	TimePtr   *sdbc.DateTime `json:"time_ptr"`
-	UuidPtr   *UUID          `json:"uuid_ptr"`
+	UuidPtr   *types.UUID    `json:"uuid_ptr"`
 }
 
 func fromSomeStruct(data *model.SomeStruct) *someStruct {
@@ -22,7 +22,7 @@ func fromSomeStruct(data *model.SomeStruct) *someStruct {
 		IntPtr:    data.IntPtr,
 		StringPtr: data.StringPtr,
 		TimePtr:   fromTimePtr(data.TimePtr),
-		UuidPtr:   (*UUID)(data.UuidPtr),
+		UuidPtr:   fromUUIDPtr(data.UuidPtr),
 	}
 }
 
@@ -34,6 +34,6 @@ func toSomeStruct(data *someStruct) *model.SomeStruct {
 		IntPtr:    data.IntPtr,
 		StringPtr: data.StringPtr,
 		TimePtr:   toTimePtr(data.TimePtr),
-		UuidPtr:   (*uuid.UUID)(data.UuidPtr),
+		UuidPtr:   toUUIDPtr(data.UuidPtr),
 	}
 }

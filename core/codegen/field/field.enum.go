@@ -21,7 +21,7 @@ func (f *Enum) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo())
 }
 
-func (f *Enum) typeConv() jen.Code {
+func (f *Enum) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo()) // TODO: support other enum base types (atomic)
 }
 
@@ -89,7 +89,7 @@ func (f *Enum) convTo(_ Context) (jen.Code, jen.Code) {
 	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Enum) fieldDef(_ Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+func (f *Enum) fieldDef(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

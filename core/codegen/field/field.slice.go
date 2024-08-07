@@ -17,9 +17,8 @@ func (f *Slice) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Index().Add(f.element.typeGo())
 }
 
-func (f *Slice) typeConv() jen.Code {
-	return jen.Add(f.ptr()).Index().Add(f.element.typeConv())
-	// return jen.Add(f.ptr()).Id("jsonArray").Types(f.element.typeCo
+func (f *Slice) typeConv(ctx Context) jen.Code {
+	return jen.Add(f.ptr()).Index().Add(f.element.typeConv(ctx))
 }
 
 func (f *Slice) TypeDatabase() string {
@@ -57,15 +56,22 @@ func (f *Slice) CodeGen() *CodeGen {
 }
 
 func (f *Slice) filterDefine(ctx Context) jen.Code {
-	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx)
+	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx.fromSlice())
 
 	switch element := f.element.(type) {
 
-	case *Node:
-		return jen.Id(element.table.NameGoLower() + "Slice").Types(jen.Id("T"))
+	case *Node, *Edge:
+		{
+			if !ctx.isFromSlice {
+				return nil // handled by filterFunc
+			}
 
-	case *Edge, *Struct:
-		return nil // handled by filterFunc
+			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
+				jen.Id("T"),
+				element.typeGo(), // TODO: no pointers!
+				elemFilter,
+			)
+		}
 
 	case *Byte:
 		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(jen.Id("T"))
@@ -80,18 +86,18 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 	default:
 		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
 			jen.Id("T"),
-			element.typeGo(),
+			element.typeGo(), // TODO: no pointers!
 			elemFilter,
 		)
 	}
 }
 
 func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
-	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx)
+	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx.fromSlice())
 
 	var makeElemFilter jen.Code
 	if f.element.CodeGen().filterInit != nil {
-		makeElemFilter, _ = f.element.CodeGen().filterInit(ctx)
+		makeElemFilter, _ = f.element.CodeGen().filterInit(ctx.fromSlice())
 	}
 
 	if makeElemFilter == nil {
@@ -100,8 +106,31 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	switch element := f.element.(type) {
 
-	case *Node, *Edge, *Struct:
-		return nil, nil // handled by filterFunc
+	case *Node, *Edge:
+		{
+			if !ctx.isFromSlice {
+				return nil, nil // handled by filterFunc
+			}
+
+			return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.typeGo(), elemFilter).
+					Call(makeElemFilter),
+				jen.Call(
+					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+				)
+		}
+
+	case *Struct:
+		{
+			//if !ctx.isFromSlice {
+			//	return nil, nil // handled by filterFunc
+			//}
+
+			return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.typeGo(), elemFilter).
+					Call(makeElemFilter),
+				jen.Call(
+					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+				)
+		}
 
 	case *Byte:
 		return jen.Qual(ctx.pkgLib(), "NewByteSlice").Types(jen.Id("T")),
@@ -114,15 +143,6 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 			jen.Call(
 				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 				makeElemFilter,
-			)
-
-	case *Slice:
-		return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.typeGo(), elemFilter).
-				Call(makeElemFilter),
-			jen.Call(
-				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
-				//jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(jen.Id("T"), element.element.typeGo(), elemElemFilter).
-				//	Call(makeElemElemFilter),
 			)
 
 	default:
@@ -154,7 +174,10 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 					jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
 						Types(jen.Qual(f.SourcePkg, element.table.NameGo())),
 				).
-				Id(element.table.NameGoLower()+"Slice").Types(jen.Id("T")).
+				Op("*").Qual(ctx.pkgLib(), "Slice").
+				Types(
+					typeModel, jen.Qual(f.SourcePkg, element.table.NameGo()), jen.Id(element.table.NameGoLower()).Types(typeModel),
+				).
 				Block(
 					jen.Id("key").Op(":=").Qual(ctx.pkgLib(), "Node").
 						Call(
@@ -163,20 +186,15 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 							jen.Id("filters"),
 						),
 					jen.Return(
-						jen.Id(element.table.NameGoLower()+"Slice").Types(jen.Id("T")).
-							Values(
-								jen.Qual(ctx.pkgLib(), "KeyFilter").Types(jen.Id("T")).
-									Call(jen.Id("key")),
-								jen.Qual(ctx.pkgLib(), "NewSlice").
-									Types(
-										jen.Id("T"),
-										jen.Qual(ctx.SourcePkg, element.table.NameGo()),
-										elemFilter,
-									).
-									Call(
-										jen.Id("key"),
-										makeElemFilter,
-									),
+						jen.Qual(ctx.pkgLib(), "NewSlice").
+							Types(
+								jen.Id("T"),
+								jen.Qual(ctx.SourcePkg, element.table.NameGo()),
+								elemFilter,
+							).
+							Call(
+								jen.Id("key"),
+								makeElemFilter,
 							),
 					),
 				)
@@ -236,23 +254,23 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 			return nil
 		}
 
-	case *Struct:
-		{
-			return jen.Func().
-				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
-				Id(f.NameGo()).Params().
-				Op("*").Qual(ctx.pkgLib(), "Slice").
-				Types(jen.Id("T"), element.typeGo(), elemFilter).
-				Block(
-					jen.Return(
-						jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), element.typeGo(), elemFilter).
-							Call(
-								jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())),
-								makeElemFilter,
-							),
-					),
-				)
-		}
+	//case *Struct:
+	//	{
+	//		return jen.Func().
+	//			Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+	//			Id(f.NameGo()).Params().
+	//			Op("*").Qual(ctx.pkgLib(), "Slice").
+	//			Types(jen.Id("T"), element.typeGo(), elemFilter).
+	//			Block(
+	//				jen.Return(
+	//					jen.Qual(ctx.pkgLib(), "NewSlice").Types(jen.Id("T"), element.typeGo(), elemFilter).
+	//						Call(
+	//							jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())),
+	//							makeElemFilter,
+	//						),
+	//				),
+	//			)
+	//	}
 
 	default:
 		return nil
@@ -264,8 +282,13 @@ func (f *Slice) convFrom(ctx Context) (jen.Code, jen.Code) {
 
 	case *Slice:
 		{
-			mapperFunc := "mapSliceFn"
 			fromFunc, _ := element.CodeGen().convFrom(ctx.fromSlice())
+
+			if fromFunc == nil || isCodeEqual(fromFunc, jen.Null()) {
+				return jen.Null(), jen.Id("data").Dot(f.NameGo())
+			}
+
+			mapperFunc := "mapSliceFn"
 
 			if f.source.Pointer() {
 				mapperFunc += "Ptr"
@@ -321,21 +344,24 @@ func (f *Slice) convFrom(ctx Context) (jen.Code, jen.Code) {
 
 	default:
 		{
-			element.CodeGen().convFrom(ctx.fromSlice())
+			fromFunc, _ := element.CodeGen().convFrom(ctx.fromSlice())
 
-			if !ctx.isFromSlice {
-				return jen.Null(), jen.Id("data").Dot(f.NameGo())
+			if ctx.isFromSlice && isCodeEqual(fromFunc, jen.Null()) {
+				return nil, nil // native types do not need conversion
 			}
 
-			typ := jen.Index().Add(element.typeGo())
+			if fromFunc != nil && !isCodeEqual(fromFunc, jen.Null()) {
+				mapperFunc := "mapSliceFn"
 
-			if f.source.Pointer() {
-				typ = jen.Op("*").Add(typ)
+				if f.source.Pointer() {
+					mapperFunc += "Ptr"
+				}
+
+				return jen.Id(mapperFunc).Call(fromFunc), jen.Call(jen.Id("data").Dot(f.NameGo()))
 			}
 
-			return jen.Id("noOp").Types(typ), nil // TODO: correct?
+			return jen.Null(), jen.Id("data").Dot(f.NameGo())
 		}
-
 	}
 }
 
@@ -344,8 +370,13 @@ func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 
 	case *Slice:
 		{
-			mapperFunc := "mapSliceFn"
 			toFunc, _ := element.CodeGen().convTo(ctx.fromSlice())
+
+			if toFunc == nil || isCodeEqual(toFunc, jen.Null()) {
+				return jen.Null(), jen.Id("data").Dot(f.NameGo())
+			}
+
+			mapperFunc := "mapSliceFn"
 
 			if f.source.Pointer() {
 				mapperFunc += "Ptr"
@@ -411,17 +442,23 @@ func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 
 	default:
 		{
-			if !ctx.isFromSlice {
-				return jen.Null(), jen.Id("data").Dot(f.NameGo())
+			toFunc, _ := element.CodeGen().convTo(ctx.fromSlice())
+
+			if ctx.isFromSlice && isCodeEqual(toFunc, jen.Null()) {
+				return nil, nil // native types do not need conversion
 			}
 
-			typ := jen.Index().Add(element.typeGo())
+			if toFunc != nil && !isCodeEqual(toFunc, jen.Null()) {
+				mapperFunc := "mapSliceFn"
 
-			if f.source.Pointer() {
-				typ = jen.Op("*").Add(typ)
+				if f.source.Pointer() {
+					mapperFunc += "Ptr"
+				}
+
+				return jen.Id(mapperFunc).Call(toFunc), jen.Call(jen.Id("data").Dot(f.NameGo()))
 			}
 
-			return jen.Id("noOp").Types(typ), nil // TODO: correct?
+			return jen.Null(), jen.Id("data").Dot(f.NameGo())
 		}
 
 	}
@@ -433,6 +470,6 @@ func (f *Slice) fieldDef(ctx Context) jen.Code {
 		jsonSuffix = ",omitempty"
 	}
 
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase() + jsonSuffix})
 }

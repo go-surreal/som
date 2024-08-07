@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 // String is a filter builder for string values.

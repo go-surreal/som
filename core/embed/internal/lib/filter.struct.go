@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 // Struct is a filter that can be used for struct fields.

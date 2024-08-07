@@ -17,7 +17,7 @@ func (f *Node) typeGo() jen.Code {
 	return jen.Qual(f.SourcePkg, f.table.NameGo())
 }
 
-func (f *Node) typeConv() jen.Code {
+func (f *Node) typeConv(_ Context) jen.Code {
 	return jen.Op("*").Id(f.table.NameGoLower() + "Link")
 }
 
@@ -101,7 +101,7 @@ func (f *Node) convTo(_ Context) (jen.Code, jen.Code) {
 		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Node) fieldDef(_ Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+func (f *Node) fieldDef(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

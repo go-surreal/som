@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+var (
+	typeModel = jen.Id("T") // TODO: rename to M
+)
+
 // type Edge struct {
 // 	Name   string
 // 	In     Field
@@ -22,7 +26,7 @@ type Field interface {
 	NameDatabase() string
 
 	typeGo() jen.Code
-	typeConv() jen.Code
+	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
 
 	CodeGen() *CodeGen

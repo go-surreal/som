@@ -1,3 +1,5 @@
+//go:build embed
+
 package lib
 
 type makeFilter[M, F any] func(key Key[M]) F

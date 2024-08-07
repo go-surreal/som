@@ -8,7 +8,8 @@ const (
 	PkgConv   = "conv"
 	PkgRelate = "relate"
 
-	PkgLib = "internal/lib"
+	PkgLib   = "internal/lib"
+	PkgTypes = "internal/types"
 )
 
 const (

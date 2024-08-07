@@ -16,7 +16,7 @@ func (f *Time) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Time")
 }
 
-func (f *Time) typeConv() jen.Code {
+func (f *Time) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgSDBC, "DateTime")
 }
 
@@ -86,13 +86,14 @@ func (f *Time) convFrom(_ Context) (jen.Code, jen.Code) {
 		return nil, nil // never sent a timestamp to the database, as it will be set automatically
 	}
 
+	fromFunc := "fromTime"
+
 	if f.source.Pointer() {
-		return jen.Id("fromTimePtr"),
-			jen.Call(jen.Id("data").Dot(f.NameGo()))
+		fromFunc += "Ptr"
 	}
 
-	return jen.Qual(def.PkgSDBC, "DateTime"), // TODO: will not work for slice mapping
-		jen.Values(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id(fromFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Time) convTo(_ Context) (jen.Code, jen.Code) {
@@ -108,12 +109,14 @@ func (f *Time) convTo(_ Context) (jen.Code, jen.Code) {
 		return nil, nil
 	}
 
+	toFunc := "toTime"
+
 	if f.source.Pointer() {
-		return jen.Id("toTimePtr"),
-			jen.Call(jen.Id("data").Dot(f.NameGo()))
+		toFunc += "Ptr"
 	}
 
-	return jen.Null(), jen.Id("data").Dot(f.NameGo()).Dot("Time") // TODO
+	return jen.Id(toFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Time) convToField(_ Context) jen.Code {
@@ -124,12 +127,12 @@ func (f *Time) convToField(_ Context) jen.Code {
 	return jen.Id("Timestamps")
 }
 
-func (f *Time) fieldDef(_ Context) jen.Code {
+func (f *Time) fieldDef(ctx Context) jen.Code {
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv()).
+		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv(ctx)).
 			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 	}
 
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

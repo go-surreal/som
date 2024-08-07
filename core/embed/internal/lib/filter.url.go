@@ -1,41 +1,23 @@
+//go:build embed
+
 package lib
 
-import "net/url"
+import (
+	"net/url"
+)
 
 type URL[M any] struct {
-	key Key[M]
+	*Base[M, url.URL]
 }
 
 func NewURL[M any](key Key[M]) *URL[M] {
-	return &URL[M]{key: key}
-}
-
-func (u *URL[M]) Equal(val url.URL) Filter[M] {
-	return u.key.op(OpEqual, val.String())
-}
-
-func (u *URL[M]) NotEqual(val url.URL) Filter[M] {
-	return u.key.op(OpNotEqual, val.String())
-}
-
-func (u *URL[M]) In(vals []url.URL) Filter[M] {
-	var mapped []string
-
-	for _, val := range vals {
-		mapped = append(mapped, val.String())
+	conv := func(val url.URL) any {
+		return val.String()
 	}
 
-	return u.key.op(OpInside, mapped)
-}
-
-func (u *URL[M]) NotIn(vals []url.URL) Filter[M] {
-	var mapped []string
-
-	for _, val := range vals {
-		mapped = append(mapped, val.String())
+	return &URL[M]{
+		Base: NewBaseConv[M, url.URL](key, conv),
 	}
-
-	return u.key.op(OpNotInside, mapped)
 }
 
 func (u *URL[M]) Domain() *String[M] {

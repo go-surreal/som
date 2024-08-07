@@ -16,7 +16,7 @@ func (f *URL) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgURL, "URL")
 }
 
-func (f *URL) typeConv() jen.Code {
+func (f *URL) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).String()
 }
 
@@ -65,25 +65,28 @@ func (f *URL) filterInit(ctx Context) (jen.Code, jen.Code) {
 }
 
 func (f *URL) convFrom(_ Context) (jen.Code, jen.Code) {
+	fromFunc := "fromURL"
+
 	if f.source.Pointer() {
-		return jen.Id("urlPtr"),
-			jen.Call(jen.Id("data").Dot(f.NameGo()))
+		fromFunc += "Ptr"
 	}
 
-	return nil, jen.Id("data").Dot(f.NameGo()).Dot("String").Call()
+	return jen.Id(fromFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *URL) convTo(_ Context) (jen.Code, jen.Code) {
+	toFunc := "toURL"
+
 	if f.source.Pointer() {
-		return jen.Id("ptrFunc").Call(jen.Id("parseURL")),
-			jen.Call(jen.Id("data").Dot(f.NameGo()))
+		toFunc += "Ptr"
 	}
 
-	return jen.Id("parseURL"),
+	return jen.Id(toFunc),
 		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *URL) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

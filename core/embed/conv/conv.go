@@ -4,13 +4,14 @@ package conv
 
 import (
 	"encoding/json"
-	"github.com/fxamacker/cbor/v2"
 	"github.com/go-surreal/sdbc"
 	"github.com/google/uuid"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"{{.GenerateOutPath}}/internal/types"
 )
 
 func parseDatabaseID(node string, id string) string {
@@ -144,6 +145,14 @@ func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
 // -- TIME
 //
 
+func fromTime(val time.Time) sdbc.DateTime {
+	return sdbc.DateTime{val}
+}
+
+func toTime(val sdbc.DateTime) time.Time {
+	return val.Time
+}
+
 func fromTimePtr(val *time.Time) *sdbc.DateTime {
 	if val == nil {
 		return nil
@@ -202,26 +211,50 @@ func (n *unsignedNumber[T]) UnmarshalJSON(data []byte) error {
 // -- URL
 //
 
-func urlPtr(val *url.URL) *string {
+func fromURL(val url.URL) string {
+	return val.String()
+}
+
+func fromURLPtr(val *url.URL) *string {
 	if val == nil {
 		return nil
 	}
+
 	str := val.String()
 	return &str
 }
 
-func parseURL(val string) url.URL {
+func toURL(val string) url.URL {
 	res, err := url.Parse(val)
 	if err != nil {
 		// TODO: add logging!
 		return url.URL{}
 	}
+
 	return *res
+}
+
+func toURLPtr(val *string) *url.URL {
+	if val == nil {
+		return nil
+	}
+
+	res, err := url.Parse(*val)
+	if err != nil {
+		// TODO: add logging!
+		return nil
+	}
+
+	return res
 }
 
 //
 // -- DURATION
 //
+
+func fromDuration(val time.Duration) sdbc.Duration {
+	return sdbc.Duration{val}
+}
 
 func fromDurationPtr(val *time.Duration) *sdbc.Duration {
 	if val == nil {
@@ -229,6 +262,10 @@ func fromDurationPtr(val *time.Duration) *sdbc.Duration {
 	}
 
 	return &sdbc.Duration{*val}
+}
+
+func toDuration(val sdbc.Duration) time.Duration {
+	return val.Duration
 }
 
 func toDurationPtr(val *sdbc.Duration) *time.Duration {
@@ -243,20 +280,28 @@ func toDurationPtr(val *sdbc.Duration) *time.Duration {
 // -- UUID
 //
 
-type UUID uuid.UUID
+func fromUUID(val uuid.UUID) types.UUID {
+	return types.UUID(val)
+}
 
-func (u *UUID) MarshalCBOR() ([]byte, error) {
-	if u == nil {
-		return cbor.Marshal(nil)
+func fromUUIDPtr(val *uuid.UUID) *types.UUID {
+	if val == nil {
+		return nil
 	}
 
-	raw, err := cbor.Marshal(uuid.UUID(*u))
-	if err != nil {
-		return nil, err
+	u := types.UUID(*val)
+	return &u
+}
+
+func toUUID(val types.UUID) uuid.UUID {
+	return uuid.UUID(val)
+}
+
+func toUUIDPtr(val *types.UUID) *uuid.UUID {
+	if val == nil {
+		return nil
 	}
 
-	return cbor.Marshal(cbor.RawTag{
-		Number:  sdbc.CBORTagUUID,
-		Content: raw,
-	})
+	u := uuid.UUID(*val)
+	return &u
 }

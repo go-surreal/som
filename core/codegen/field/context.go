@@ -18,6 +18,10 @@ func (c Context) pkgLib() string {
 	return filepath.Join(c.TargetPkg, def.PkgLib)
 }
 
+func (c Context) pkgTypes() string {
+	return filepath.Join(c.TargetPkg, def.PkgTypes)
+}
+
 func (c Context) fromSlice() Context {
 	c.isFromSlice = true
 	return c
