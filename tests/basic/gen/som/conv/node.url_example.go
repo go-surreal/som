@@ -19,8 +19,8 @@ func FromURLExample(data *model.URLExample) *URLExample {
 		return nil
 	}
 	return &URLExample{
-		SomeOtherURL: data.SomeOtherURL.String(),
-		SomeURL:      urlPtr(data.SomeURL),
+		SomeOtherURL: fromURL(data.SomeOtherURL),
+		SomeURL:      fromURLPtr(data.SomeURL),
 	}
 }
 
@@ -30,8 +30,8 @@ func ToURLExample(data *URLExample) *model.URLExample {
 	}
 	return &model.URLExample{
 		Node:         som.NewNode(data.ID),
-		SomeOtherURL: parseURL(data.SomeOtherURL),
-		SomeURL:      ptrFunc(parseURL)(data.SomeURL),
+		SomeOtherURL: toURL(data.SomeOtherURL),
+		SomeURL:      toURLPtr(data.SomeURL),
 	}
 }
 

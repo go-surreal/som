@@ -5,74 +5,91 @@ import (
 	v2 "github.com/fxamacker/cbor/v2"
 	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som"
+	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
-	uuid "github.com/google/uuid"
 )
 
 type AllFieldTypes struct {
-	ID                *sdbc.ID       `json:"id,omitempty"`
-	CreatedAt         *sdbc.DateTime `json:"created_at,omitempty"`
-	UpdatedAt         *sdbc.DateTime `json:"updated_at,omitempty"`
-	String            string         `json:"string"`
-	StringPtr         *string        `json:"string_ptr"`
-	Other             []string       `json:"other"`
-	StringPtrSlice    []*string      `json:"string_ptr_slice"`
-	StringSlicePtr    *[]string      `json:"string_slice_ptr"`
-	Int               int            `json:"int"`
-	IntPtr            *int           `json:"int_ptr"`
-	Int8              int8           `json:"int_8"`
-	Int8Ptr           *int8          `json:"int_8_ptr"`
-	Int16             int16          `json:"int_16"`
-	Int16Ptr          *int16         `json:"int_16_ptr"`
-	Int32             int32          `json:"int_32"`
-	Int32Ptr          *int32         `json:"int_32_ptr"`
-	Int64             int64          `json:"int_64"`
-	Int64Ptr          *int64         `json:"int_64_ptr"`
-	Uint8             uint8          `json:"uint_8"`
-	Uint8Ptr          *uint8         `json:"uint_8_ptr"`
-	Uint16            uint16         `json:"uint_16"`
-	Uint16Ptr         *uint16        `json:"uint_16_ptr"`
-	Uint32            uint32         `json:"uint_32"`
-	Uint32Ptr         *uint32        `json:"uint_32_ptr"`
-	Float32           float32        `json:"float_32"`
-	More              []float32      `json:"more"`
-	Float64           float64        `json:"float_64"`
-	Rune              rune           `json:"rune"`
-	Bool              bool           `json:"bool"`
-	BoolPtr           *bool          `json:"bool_ptr"`
-	Time              sdbc.DateTime  `json:"time"`
-	TimePtr           *sdbc.DateTime `json:"time_ptr"`
-	TimeNil           *sdbc.DateTime `json:"time_nil"`
-	Duration          sdbc.Duration  `json:"duration"`
-	DurationPtr       *sdbc.Duration `json:"duration_ptr"`
-	DurationNil       *sdbc.Duration `json:"duration_nil"`
-	UUID              UUID           `json:"uuid"`
-	UUIDPtr           *UUID          `json:"uuid_ptr"`
-	UUIDNil           *UUID          `json:"uuid_nil"`
-	URL               string         `json:"url"`
-	URLPtr            *string        `json:"url_ptr"`
-	URLNil            *string        `json:"url_nil"`
-	Role              model.Role     `json:"role"`
-	EnumPtr           *model.Role    `json:"enum_ptr"`
-	Roles             []model.Role   `json:"roles"`
-	EnumPtrSlice      []*model.Role  `json:"enum_ptr_slice"`
-	EnumPtrSlicePtr   *[]*model.Role `json:"enum_ptr_slice_ptr"`
-	Login             login          `json:"login"`
-	StructPtr         *someStruct    `json:"struct_ptr"`
-	StructSlice       []someStruct   `json:"struct_slice"`
-	StructPtrSlice    []*someStruct  `json:"struct_ptr_slice"`
-	StructPtrSlicePtr *[]*someStruct `json:"struct_ptr_slice_ptr"`
-	MainGroup         *groupLink     `json:"main_group"`
-	MainGroupPtr      *groupLink     `json:"main_group_ptr"`
-	Groups            []*groupLink   `json:"groups"`
-	NodePtrSlice      []*groupLink   `json:"node_ptr_slice"`
-	NodePtrSlicePtr   *[]*groupLink  `json:"node_ptr_slice_ptr"`
-	MemberOf          []GroupMember  `json:"member_of,omitempty"`
-	SliceSlice        [][]string     `json:"slice_slice"`
-	Byte              byte           `json:"byte"`
-	BytePtr           *byte          `json:"byte_ptr"`
-	ByteSlice         []byte         `json:"byte_slice"`
-	ByteSlicePtr      *[]byte        `json:"byte_slice_ptr"`
+	ID                 *sdbc.ID          `json:"id,omitempty"`
+	CreatedAt          *sdbc.DateTime    `json:"created_at,omitempty"`
+	UpdatedAt          *sdbc.DateTime    `json:"updated_at,omitempty"`
+	String             string            `json:"string"`
+	StringPtr          *string           `json:"string_ptr"`
+	Other              []string          `json:"other"`
+	StringPtrSlice     []*string         `json:"string_ptr_slice"`
+	StringSlicePtr     *[]string         `json:"string_slice_ptr"`
+	Int                int               `json:"int"`
+	IntPtr             *int              `json:"int_ptr"`
+	IntSlice           []int             `json:"int_slice"`
+	IntPtrSlice        []*int            `json:"int_ptr_slice"`
+	IntSlicePtr        *[]int            `json:"int_slice_ptr"`
+	IntPtrSlicePtr     *[]*int           `json:"int_ptr_slice_ptr"`
+	Int8               int8              `json:"int_8"`
+	Int8Ptr            *int8             `json:"int_8_ptr"`
+	Int16              int16             `json:"int_16"`
+	Int16Ptr           *int16            `json:"int_16_ptr"`
+	Int32              int32             `json:"int_32"`
+	Int32Ptr           *int32            `json:"int_32_ptr"`
+	Int64              int64             `json:"int_64"`
+	Int64Ptr           *int64            `json:"int_64_ptr"`
+	Uint8              uint8             `json:"uint_8"`
+	Uint8Ptr           *uint8            `json:"uint_8_ptr"`
+	Uint16             uint16            `json:"uint_16"`
+	Uint16Ptr          *uint16           `json:"uint_16_ptr"`
+	Uint32             uint32            `json:"uint_32"`
+	Uint32Ptr          *uint32           `json:"uint_32_ptr"`
+	Float32            float32           `json:"float_32"`
+	Float32Slice       []float32         `json:"float_32_slice"`
+	Float32SlicePtr    *[]float32        `json:"float_32_slice_ptr"`
+	Float32PtrSlice    []*float32        `json:"float_32_ptr_slice"`
+	Float32PtrSlicePtr *[]*float32       `json:"float_32_ptr_slice_ptr"`
+	Float64            float64           `json:"float_64"`
+	Rune               rune              `json:"rune"`
+	RuneSlice          []rune            `json:"rune_slice"`
+	Bool               bool              `json:"bool"`
+	BoolPtr            *bool             `json:"bool_ptr"`
+	BoolSlice          []bool            `json:"bool_slice"`
+	Time               sdbc.DateTime     `json:"time"`
+	TimePtr            *sdbc.DateTime    `json:"time_ptr"`
+	TimeNil            *sdbc.DateTime    `json:"time_nil"`
+	TimeSlice          []sdbc.DateTime   `json:"time_slice"`
+	TimeSliceSlice     [][]sdbc.DateTime `json:"time_slice_slice"`
+	Duration           sdbc.Duration     `json:"duration"`
+	DurationPtr        *sdbc.Duration    `json:"duration_ptr"`
+	DurationNil        *sdbc.Duration    `json:"duration_nil"`
+	DurationSlice      []sdbc.Duration   `json:"duration_slice"`
+	UUID               types.UUID        `json:"uuid"`
+	UUIDPtr            *types.UUID       `json:"uuid_ptr"`
+	UUIDNil            *types.UUID       `json:"uuid_nil"`
+	UUIDSlice          []types.UUID      `json:"uuid_slice"`
+	URL                string            `json:"url"`
+	URLPtr             *string           `json:"url_ptr"`
+	URLNil             *string           `json:"url_nil"`
+	URLSlice           []string          `json:"url_slice"`
+	Role               model.Role        `json:"role"`
+	EnumPtr            *model.Role       `json:"enum_ptr"`
+	Roles              []model.Role      `json:"roles"`
+	EnumPtrSlice       []*model.Role     `json:"enum_ptr_slice"`
+	EnumPtrSlicePtr    *[]*model.Role    `json:"enum_ptr_slice_ptr"`
+	Login              login             `json:"login"`
+	StructPtr          *someStruct       `json:"struct_ptr"`
+	StructSlice        []someStruct      `json:"struct_slice"`
+	StructPtrSlice     []*someStruct     `json:"struct_ptr_slice"`
+	StructPtrSlicePtr  *[]*someStruct    `json:"struct_ptr_slice_ptr"`
+	MainGroup          *groupLink        `json:"main_group"`
+	MainGroupPtr       *groupLink        `json:"main_group_ptr"`
+	Groups             []*groupLink      `json:"groups"`
+	GroupsSlice        [][]*groupLink    `json:"groups_slice"`
+	NodePtrSlice       []*groupLink      `json:"node_ptr_slice"`
+	NodePtrSlicePtr    *[]*groupLink     `json:"node_ptr_slice_ptr"`
+	MemberOf           []GroupMember     `json:"member_of,omitempty"`
+	SliceSlice         [][]string        `json:"slice_slice"`
+	SliceSliceSlice    [][][]string      `json:"slice_slice_slice"`
+	SliceSliceSlice2   [][][]someStruct  `json:"slice_slice_slice_2"`
+	Byte               byte              `json:"byte"`
+	BytePtr            *byte             `json:"byte_ptr"`
+	ByteSlice          []byte            `json:"byte_slice"`
+	ByteSlicePtr       *[]byte           `json:"byte_slice_ptr"`
 }
 
 func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
@@ -80,65 +97,79 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		return nil
 	}
 	return &AllFieldTypes{
-		Bool:              data.Bool,
-		BoolPtr:           data.BoolPtr,
-		Byte:              data.Byte,
-		BytePtr:           data.BytePtr,
-		ByteSlice:         data.ByteSlice,
-		ByteSlicePtr:      data.ByteSlicePtr,
-		Duration:          sdbc.Duration{data.Duration},
-		DurationNil:       fromDurationPtr(data.DurationNil),
-		DurationPtr:       fromDurationPtr(data.DurationPtr),
-		EnumPtr:           data.EnumPtr,
-		EnumPtrSlice:      data.EnumPtrSlice,
-		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
-		Float32:           data.Float32,
-		Float64:           data.Float64,
-		Groups:            mapSlice(data.Groups, toGroupLink),
-		Int:               data.Int,
-		Int16:             data.Int16,
-		Int16Ptr:          data.Int16Ptr,
-		Int32:             data.Int32,
-		Int32Ptr:          data.Int32Ptr,
-		Int64:             data.Int64,
-		Int64Ptr:          data.Int64Ptr,
-		Int8:              data.Int8,
-		Int8Ptr:           data.Int8Ptr,
-		IntPtr:            data.IntPtr,
-		Login:             noPtrFunc(fromLogin)(data.Login),
-		MainGroup:         toGroupLink(data.MainGroup),
-		MainGroupPtr:      toGroupLinkPtr(data.MainGroupPtr),
-		More:              data.More,
-		NodePtrSlice:      mapSlice(data.NodePtrSlice, toGroupLinkPtr),
-		NodePtrSlicePtr:   mapSlicePtr(data.NodePtrSlicePtr, toGroupLinkPtr),
-		Other:             data.Other,
-		Role:              data.Role,
-		Roles:             data.Roles,
-		Rune:              data.Rune,
-		SliceSlice:        data.SliceSlice,
-		String:            data.String,
-		StringPtr:         data.StringPtr,
-		StringPtrSlice:    data.StringPtrSlice,
-		StringSlicePtr:    data.StringSlicePtr,
-		StructPtr:         fromSomeStruct(data.StructPtr),
-		StructPtrSlice:    mapSlice(data.StructPtrSlice, fromSomeStruct),
-		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, fromSomeStruct),
-		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(fromSomeStruct)),
-		Time:              sdbc.DateTime{data.Time},
-		TimeNil:           fromTimePtr(data.TimeNil),
-		TimePtr:           fromTimePtr(data.TimePtr),
-		URL:               data.URL.String(),
-		URLNil:            urlPtr(data.URLNil),
-		URLPtr:            urlPtr(data.URLPtr),
-		UUID:              UUID(data.UUID),
-		UUIDNil:           (*UUID)(data.UUIDNil),
-		UUIDPtr:           (*UUID)(data.UUIDPtr),
-		Uint16:            data.Uint16,
-		Uint16Ptr:         data.Uint16Ptr,
-		Uint32:            data.Uint32,
-		Uint32Ptr:         data.Uint32Ptr,
-		Uint8:             data.Uint8,
-		Uint8Ptr:          data.Uint8Ptr,
+		Bool:               data.Bool,
+		BoolPtr:            data.BoolPtr,
+		BoolSlice:          data.BoolSlice,
+		Byte:               data.Byte,
+		BytePtr:            data.BytePtr,
+		ByteSlice:          data.ByteSlice,
+		ByteSlicePtr:       data.ByteSlicePtr,
+		Duration:           fromDuration(data.Duration),
+		DurationNil:        fromDurationPtr(data.DurationNil),
+		DurationPtr:        fromDurationPtr(data.DurationPtr),
+		DurationSlice:      mapSliceFn(fromDuration)(data.DurationSlice),
+		EnumPtr:            data.EnumPtr,
+		Float32:            data.Float32,
+		Float32PtrSlice:    data.Float32PtrSlice,
+		Float32PtrSlicePtr: data.Float32PtrSlicePtr,
+		Float32Slice:       data.Float32Slice,
+		Float32SlicePtr:    data.Float32SlicePtr,
+		Float64:            data.Float64,
+		Groups:             mapSliceFn(toGroupLink)(data.Groups),
+		GroupsSlice:        mapSliceFn(mapSliceFn(toGroupLink))(data.GroupsSlice),
+		Int:                data.Int,
+		Int16:              data.Int16,
+		Int16Ptr:           data.Int16Ptr,
+		Int32:              data.Int32,
+		Int32Ptr:           data.Int32Ptr,
+		Int64:              data.Int64,
+		Int64Ptr:           data.Int64Ptr,
+		Int8:               data.Int8,
+		Int8Ptr:            data.Int8Ptr,
+		IntPtr:             data.IntPtr,
+		IntPtrSlice:        data.IntPtrSlice,
+		IntPtrSlicePtr:     data.IntPtrSlicePtr,
+		IntSlice:           data.IntSlice,
+		IntSlicePtr:        data.IntSlicePtr,
+		Login:              noPtrFunc(fromLogin)(data.Login),
+		MainGroup:          toGroupLink(data.MainGroup),
+		MainGroupPtr:       toGroupLinkPtr(data.MainGroupPtr),
+		NodePtrSlice:       mapSliceFn(toGroupLinkPtr)(data.NodePtrSlice),
+		NodePtrSlicePtr:    mapSliceFnPtr(toGroupLinkPtr)(data.NodePtrSlicePtr),
+		Other:              data.Other,
+		Role:               data.Role,
+		Rune:               data.Rune,
+		RuneSlice:          data.RuneSlice,
+		SliceSlice:         data.SliceSlice,
+		SliceSliceSlice:    data.SliceSliceSlice,
+		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(noPtrFunc(fromSomeStruct))))(data.SliceSliceSlice2),
+		String:             data.String,
+		StringPtr:          data.StringPtr,
+		StringPtrSlice:     data.StringPtrSlice,
+		StringSlicePtr:     data.StringSlicePtr,
+		StructPtr:          fromSomeStruct(data.StructPtr),
+		StructPtrSlice:     mapSliceFn(fromSomeStruct)(data.StructPtrSlice),
+		StructPtrSlicePtr:  mapSliceFnPtr(fromSomeStruct)(data.StructPtrSlicePtr),
+		StructSlice:        mapSliceFn(noPtrFunc(fromSomeStruct))(data.StructSlice),
+		Time:               fromTime(data.Time),
+		TimeNil:            fromTimePtr(data.TimeNil),
+		TimePtr:            fromTimePtr(data.TimePtr),
+		TimeSlice:          mapSliceFn(fromTime)(data.TimeSlice),
+		TimeSliceSlice:     mapSliceFn(mapSliceFn(fromTime))(data.TimeSliceSlice),
+		URL:                fromURL(data.URL),
+		URLNil:             fromURLPtr(data.URLNil),
+		URLPtr:             fromURLPtr(data.URLPtr),
+		URLSlice:           mapSliceFn(fromURL)(data.URLSlice),
+		UUID:               fromUUID(data.UUID),
+		UUIDNil:            fromUUIDPtr(data.UUIDNil),
+		UUIDPtr:            fromUUIDPtr(data.UUIDPtr),
+		UUIDSlice:          mapSliceFn(fromUUID)(data.UUIDSlice),
+		Uint16:             data.Uint16,
+		Uint16Ptr:          data.Uint16Ptr,
+		Uint32:             data.Uint32,
+		Uint32Ptr:          data.Uint32Ptr,
+		Uint8:              data.Uint8,
+		Uint8Ptr:           data.Uint8Ptr,
 	}
 }
 
@@ -147,68 +178,82 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		return nil
 	}
 	return &model.AllFieldTypes{
-		Bool:              data.Bool,
-		BoolPtr:           data.BoolPtr,
-		Byte:              data.Byte,
-		BytePtr:           data.BytePtr,
-		ByteSlice:         data.ByteSlice,
-		ByteSlicePtr:      data.ByteSlicePtr,
-		Duration:          data.Duration.Duration,
-		DurationNil:       toDurationPtr(data.DurationNil),
-		DurationPtr:       toDurationPtr(data.DurationPtr),
-		EnumPtr:           data.EnumPtr,
-		EnumPtrSlice:      data.EnumPtrSlice,
-		EnumPtrSlicePtr:   data.EnumPtrSlicePtr,
-		Float32:           data.Float32,
-		Float64:           data.Float64,
-		Groups:            mapSlice(data.Groups, fromGroupLink),
-		Int:               data.Int,
-		Int16:             data.Int16,
-		Int16Ptr:          data.Int16Ptr,
-		Int32:             data.Int32,
-		Int32Ptr:          data.Int32Ptr,
-		Int64:             data.Int64,
-		Int64Ptr:          data.Int64Ptr,
-		Int8:              data.Int8,
-		Int8Ptr:           data.Int8Ptr,
-		IntPtr:            data.IntPtr,
-		Login:             noPtrFunc(toLogin)(data.Login),
-		MainGroup:         fromGroupLink(data.MainGroup),
-		MainGroupPtr:      fromGroupLinkPtr(data.MainGroupPtr),
-		MemberOf:          mapSlice(data.MemberOf, noPtrFunc(ToGroupMember)),
-		More:              data.More,
-		Node:              som.NewNode(data.ID),
-		NodePtrSlice:      mapSlice(data.NodePtrSlice, fromGroupLinkPtr),
-		NodePtrSlicePtr:   mapSlicePtr(data.NodePtrSlicePtr, fromGroupLinkPtr),
-		Other:             data.Other,
-		Role:              data.Role,
-		Roles:             data.Roles,
-		Rune:              data.Rune,
-		SliceSlice:        data.SliceSlice,
-		String:            data.String,
-		StringPtr:         data.StringPtr,
-		StringPtrSlice:    data.StringPtrSlice,
-		StringSlicePtr:    data.StringSlicePtr,
-		StructPtr:         toSomeStruct(data.StructPtr),
-		StructPtrSlice:    mapSlice(data.StructPtrSlice, toSomeStruct),
-		StructPtrSlicePtr: mapSlicePtr(data.StructPtrSlicePtr, toSomeStruct),
-		StructSlice:       mapSlice(data.StructSlice, noPtrFunc(toSomeStruct)),
-		Time:              data.Time.Time,
-		TimeNil:           toTimePtr(data.TimeNil),
-		TimePtr:           toTimePtr(data.TimePtr),
-		Timestamps:        som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-		URL:               parseURL(data.URL),
-		URLNil:            ptrFunc(parseURL)(data.URLNil),
-		URLPtr:            ptrFunc(parseURL)(data.URLPtr),
-		UUID:              uuid.UUID(data.UUID),
-		UUIDNil:           (*uuid.UUID)(data.UUIDNil),
-		UUIDPtr:           (*uuid.UUID)(data.UUIDPtr),
-		Uint16:            data.Uint16,
-		Uint16Ptr:         data.Uint16Ptr,
-		Uint32:            data.Uint32,
-		Uint32Ptr:         data.Uint32Ptr,
-		Uint8:             data.Uint8,
-		Uint8Ptr:          data.Uint8Ptr,
+		Bool:               data.Bool,
+		BoolPtr:            data.BoolPtr,
+		BoolSlice:          data.BoolSlice,
+		Byte:               data.Byte,
+		BytePtr:            data.BytePtr,
+		ByteSlice:          data.ByteSlice,
+		ByteSlicePtr:       data.ByteSlicePtr,
+		Duration:           toDuration(data.Duration),
+		DurationNil:        toDurationPtr(data.DurationNil),
+		DurationPtr:        toDurationPtr(data.DurationPtr),
+		DurationSlice:      mapSliceFn(toDuration)(data.DurationSlice),
+		EnumPtr:            data.EnumPtr,
+		Float32:            data.Float32,
+		Float32PtrSlice:    data.Float32PtrSlice,
+		Float32PtrSlicePtr: data.Float32PtrSlicePtr,
+		Float32Slice:       data.Float32Slice,
+		Float32SlicePtr:    data.Float32SlicePtr,
+		Float64:            data.Float64,
+		Groups:             mapSliceFn(fromGroupLink)(data.Groups),
+		GroupsSlice:        mapSliceFn(mapSliceFn(fromGroupLink))(data.GroupsSlice),
+		Int:                data.Int,
+		Int16:              data.Int16,
+		Int16Ptr:           data.Int16Ptr,
+		Int32:              data.Int32,
+		Int32Ptr:           data.Int32Ptr,
+		Int64:              data.Int64,
+		Int64Ptr:           data.Int64Ptr,
+		Int8:               data.Int8,
+		Int8Ptr:            data.Int8Ptr,
+		IntPtr:             data.IntPtr,
+		IntPtrSlice:        data.IntPtrSlice,
+		IntPtrSlicePtr:     data.IntPtrSlicePtr,
+		IntSlice:           data.IntSlice,
+		IntSlicePtr:        data.IntSlicePtr,
+		Login:              noPtrFunc(toLogin)(data.Login),
+		MainGroup:          fromGroupLink(data.MainGroup),
+		MainGroupPtr:       fromGroupLinkPtr(data.MainGroupPtr),
+		MemberOf:           mapSliceFn(noPtrFunc(ToGroupMember))(data.MemberOf),
+		Node:               som.NewNode(data.ID),
+		NodePtrSlice:       mapSliceFn(fromGroupLinkPtr)(data.NodePtrSlice),
+		NodePtrSlicePtr:    mapSliceFnPtr(fromGroupLinkPtr)(data.NodePtrSlicePtr),
+		Other:              data.Other,
+		Role:               data.Role,
+		Rune:               data.Rune,
+		RuneSlice:          data.RuneSlice,
+		SliceSlice:         data.SliceSlice,
+		SliceSliceSlice:    data.SliceSliceSlice,
+		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(noPtrFunc(toSomeStruct))))(data.SliceSliceSlice2),
+		String:             data.String,
+		StringPtr:          data.StringPtr,
+		StringPtrSlice:     data.StringPtrSlice,
+		StringSlicePtr:     data.StringSlicePtr,
+		StructPtr:          toSomeStruct(data.StructPtr),
+		StructPtrSlice:     mapSliceFn(toSomeStruct)(data.StructPtrSlice),
+		StructPtrSlicePtr:  mapSliceFnPtr(toSomeStruct)(data.StructPtrSlicePtr),
+		StructSlice:        mapSliceFn(noPtrFunc(toSomeStruct))(data.StructSlice),
+		Time:               toTime(data.Time),
+		TimeNil:            toTimePtr(data.TimeNil),
+		TimePtr:            toTimePtr(data.TimePtr),
+		TimeSlice:          mapSliceFn(toTime)(data.TimeSlice),
+		TimeSliceSlice:     mapSliceFn(mapSliceFn(toTime))(data.TimeSliceSlice),
+		Timestamps:         som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		URL:                toURL(data.URL),
+		URLNil:             toURLPtr(data.URLNil),
+		URLPtr:             toURLPtr(data.URLPtr),
+		URLSlice:           mapSliceFn(toURL)(data.URLSlice),
+		UUID:               toUUID(data.UUID),
+		UUIDNil:            toUUIDPtr(data.UUIDNil),
+		UUIDPtr:            toUUIDPtr(data.UUIDPtr),
+		UUIDSlice:          mapSliceFn(toUUID)(data.UUIDSlice),
+		Uint16:             data.Uint16,
+		Uint16Ptr:          data.Uint16Ptr,
+		Uint32:             data.Uint32,
+		Uint32Ptr:          data.Uint32Ptr,
+		Uint8:              data.Uint8,
+		Uint8Ptr:           data.Uint8Ptr,
 	}
 }
 

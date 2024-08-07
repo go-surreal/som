@@ -12,6 +12,7 @@ func newFieldsLikeDBResponse[T any](key lib.Key[T]) fieldsLikeDbresponse[T] {
 	return fieldsLikeDbresponse[T]{
 		Detail: lib.NewString[T](lib.Field(key, "detail")),
 		ID:     lib.NewID[T](lib.Field(key, "id"), "fields_like_db_response"),
+		Result: lib.NewSliceMaker[T, string, *lib.String[T]](lib.NewString[T])(lib.Field(key, "result")),
 		Status: lib.NewString[T](lib.Field(key, "status")),
 		Time:   lib.NewString[T](lib.Field(key, "time")),
 		key:    key,
@@ -24,18 +25,10 @@ type fieldsLikeDbresponse[T any] struct {
 	Time   *lib.String[T]
 	Status *lib.String[T]
 	Detail *lib.String[T]
-}
-
-func (n fieldsLikeDbresponse[T]) Result() *lib.Slice[T, string] {
-	return lib.NewSlice[T, string](lib.Field(n.key, "result"))
+	Result *lib.Slice[T, string, *lib.String[T]]
 }
 
 type fieldsLikeDbresponseEdges[T any] struct {
 	lib.Filter[T]
 	key lib.Key[T]
-}
-
-type fieldsLikeDbresponseSlice[T any] struct {
-	lib.Filter[T]
-	*lib.Slice[T, model.FieldsLikeDBResponse]
 }

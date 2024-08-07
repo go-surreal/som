@@ -82,6 +82,15 @@ func (t Timestamps) UpdatedAt() time.Time {
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
 
+// Email describes a string field that should contain an email address.
+type Email string
+
+// Password describes a string field that should contain a password.
+type Password string
+
+// SemVer describes a string field that should contain a semantic version.
+type SemVer string
+
 // Password describes a special string field.
 // Regarding the generated database query operations, it can only be matched, but never read.
 // In a query result, the Password field will always be empty.

@@ -16,7 +16,7 @@ func (f *ID) typeGo() jen.Code {
 	return jen.String()
 }
 
-func (f *ID) typeConv() jen.Code {
+func (f *ID) typeConv(_ Context) jen.Code {
 	return jen.Op("*").Qual(def.PkgSDBC, "ID") // f.typeGo()
 }
 
@@ -44,9 +44,9 @@ func (f *ID) filterDefine(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ID").Types(jen.Id("T"))
 }
 
-func (f *ID) filterInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewID").Types(jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())), jen.Lit(ctx.Table.NameDatabase()))
+func (f *ID) filterInit(ctx Context) (jen.Code, jen.Code) {
+	return jen.Qual(ctx.pkgLib(), "NewID").Types(jen.Id("T")),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())), jen.Lit(ctx.Table.NameDatabase()))
 }
 
 func (f *ID) sortDefine(ctx Context) jen.Code {
@@ -59,6 +59,6 @@ func (f *ID) sortInit(ctx Context) jen.Code {
 }
 
 func (f *ID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

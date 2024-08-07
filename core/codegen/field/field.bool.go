@@ -15,7 +15,7 @@ func (f *Bool) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Bool()
 }
 
-func (f *Bool) typeConv() jen.Code {
+func (f *Bool) typeConv(_ Context) jen.Code {
 	return f.typeGo()
 }
 
@@ -48,25 +48,25 @@ func (f *Bool) filterDefine(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
 }
 
-func (f *Bool) filterInit(ctx Context) jen.Code {
+func (f *Bool) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewBool"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Bool) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Bool) convFrom(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Bool) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Bool) convTo(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Bool) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

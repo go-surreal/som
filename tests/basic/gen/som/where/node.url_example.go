@@ -28,8 +28,3 @@ type urlexampleEdges[T any] struct {
 	lib.Filter[T]
 	key lib.Key[T]
 }
-
-type urlexampleSlice[T any] struct {
-	lib.Filter[T]
-	*lib.Slice[T, model.URLExample]
-}

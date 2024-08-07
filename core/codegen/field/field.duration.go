@@ -16,7 +16,7 @@ func (f *Duration) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Duration")
 }
 
-func (f *Duration) typeConv() jen.Code {
+func (f *Duration) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgSDBC, "Duration")
 }
 
@@ -49,14 +49,14 @@ func (f *Duration) filterDefine(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
 }
 
-func (f *Duration) filterInit(ctx Context) jen.Code {
+func (f *Duration) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewDuration"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Duration) sortDefine(ctx Context) jen.Code {
@@ -68,23 +68,29 @@ func (f *Duration) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Duration) convFrom(_ Context) jen.Code {
+func (f *Duration) convFrom(_ Context) (jen.Code, jen.Code) {
+	fromFunc := "fromDuration"
+
 	if f.source.Pointer() {
-		return jen.Id("fromDurationPtr").Call(jen.Id("data").Dot(f.NameGo()))
+		fromFunc += "Ptr"
 	}
 
-	return jen.Qual(def.PkgSDBC, "Duration").Values(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id(fromFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Duration) convTo(_ Context) jen.Code {
+func (f *Duration) convTo(_ Context) (jen.Code, jen.Code) {
+	toFunc := "toDuration"
+
 	if f.source.Pointer() {
-		return jen.Id("toDurationPtr").Call(jen.Id("data").Dot(f.NameGo()))
+		toFunc += "Ptr"
 	}
 
-	return jen.Id("data").Dot(f.NameGo()).Dot("Duration")
+	return jen.Id(toFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Duration) fieldDef(_ Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+func (f *Duration) fieldDef(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

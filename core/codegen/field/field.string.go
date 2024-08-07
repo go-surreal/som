@@ -15,7 +15,7 @@ func (f *String) typeGo() jen.Code {
 	return jen.Add(f.ptr()).String()
 }
 
-func (f *String) typeConv() jen.Code {
+func (f *String) typeConv(_ Context) jen.Code {
 	return f.typeGo()
 }
 
@@ -48,14 +48,14 @@ func (f *String) filterDefine(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
 }
 
-func (f *String) filterInit(ctx Context) jen.Code {
+func (f *String) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewString"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *String) sortDefine(ctx Context) jen.Code {
@@ -67,15 +67,15 @@ func (f *String) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *String) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo()) // TODO: vulnerability -> record link could be injected
+func (f *String) convFrom(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo()) // TODO: record link inject vulnerability? solved by cbor?
 }
 
-func (f *String) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *String) convTo(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *String) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

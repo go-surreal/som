@@ -16,7 +16,7 @@ func (f *Time) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Time")
 }
 
-func (f *Time) typeConv() jen.Code {
+func (f *Time) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgSDBC, "DateTime")
 }
 
@@ -62,14 +62,14 @@ func (f *Time) filterDefine(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
 }
 
-func (f *Time) filterInit(ctx Context) jen.Code {
+func (f *Time) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewTime"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Time) sortDefine(ctx Context) jen.Code {
@@ -81,35 +81,42 @@ func (f *Time) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Time) convFrom(_ Context) jen.Code {
+func (f *Time) convFrom(_ Context) (jen.Code, jen.Code) {
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return nil // never sent a timestamp to the database, as it will be set automatically
+		return nil, nil // never sent a timestamp to the database, as it will be set automatically
 	}
+
+	fromFunc := "fromTime"
 
 	if f.source.Pointer() {
-		return jen.Id("fromTimePtr").Call(jen.Id("data").Dot(f.NameGo()))
+		fromFunc += "Ptr"
 	}
 
-	return jen.Qual(def.PkgSDBC, "DateTime").Values(jen.Id("data").Dot(f.NameGo()))
+	return jen.Id(fromFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Time) convTo(_ Context) jen.Code {
+func (f *Time) convTo(_ Context) (jen.Code, jen.Code) {
 	if f.source.IsCreatedAt {
-		return jen.Qual(def.PkgSom, "NewTimestamps").Call(
-			jen.Id("data").Dot("CreatedAt"),
-			jen.Id("data").Dot("UpdatedAt"),
-		)
+		return jen.Qual(def.PkgSom, "NewTimestamps"),
+			jen.Call(
+				jen.Id("data").Dot("CreatedAt"),
+				jen.Id("data").Dot("UpdatedAt"),
+			)
 	}
 
 	if f.source.IsUpdatedAt {
-		return nil
+		return nil, nil
 	}
+
+	toFunc := "toTime"
 
 	if f.source.Pointer() {
-		return jen.Id("toTimePtr").Call(jen.Id("data").Dot(f.NameGo()))
+		toFunc += "Ptr"
 	}
 
-	return jen.Id("data").Dot(f.NameGo()).Dot("Time")
+	return jen.Id(toFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Time) convToField(_ Context) jen.Code {
@@ -120,12 +127,12 @@ func (f *Time) convToField(_ Context) jen.Code {
 	return jen.Id("Timestamps")
 }
 
-func (f *Time) fieldDef(_ Context) jen.Code {
+func (f *Time) fieldDef(ctx Context) jen.Code {
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv()).
+		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv(ctx)).
 			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 	}
 
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }

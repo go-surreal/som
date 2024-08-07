@@ -38,8 +38,3 @@ type groupEdges[T any] struct {
 func (n groupEdges[T]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[T] {
 	return newGroupMemberOut[T](lib.EdgeOut(n.key, "group_member", filters))
 }
-
-type groupSlice[T any] struct {
-	lib.Filter[T]
-	*lib.Slice[T, model.Group]
-}

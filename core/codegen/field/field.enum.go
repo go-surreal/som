@@ -21,7 +21,7 @@ func (f *Enum) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo())
 }
 
-func (f *Enum) typeConv() jen.Code {
+func (f *Enum) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo()) // TODO: support other enum base types (atomic)
 }
 
@@ -68,28 +68,28 @@ func (f *Enum) filterDefine(ctx Context) jen.Code {
 		filter += "Ptr"
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"), jen.Qual(ctx.SourcePkg, f.source.Typ))
 }
 
-func (f *Enum) filterInit(ctx Context) jen.Code {
+func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewBase"
 	if f.source.Pointer() {
 		filter += "Ptr"
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Qual(ctx.SourcePkg, f.source.Typ), jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T"), jen.Qual(ctx.SourcePkg, f.source.Typ)),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Enum) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Enum) convFrom(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
-func (f *Enum) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Enum) convTo(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Enum) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{"json": f.NameDatabase()})
 }
