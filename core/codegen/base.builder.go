@@ -185,7 +185,7 @@ func (b *build) buildInterfaceFile() error {
 }
 
 func (b *build) buildSchemaFile() error {
-	statements := []string{"", ""}
+	statements := []string{codegenComment, ""}
 
 	var fieldFn func(table string, f field.Field, prefix string)
 	fieldFn = func(table string, f field.Field, prefix string) {
