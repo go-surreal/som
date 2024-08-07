@@ -241,8 +241,8 @@ For all types above, the pointer version is supported as well.
 
 - [x] `som.Enum`
 - [ ] `som.Password`
-- [x] `som.Email`
-- [x] `som.SemVer`
+- [ ] `som.Email`
+- [ ] `som.SemVer`
 - [ ] `som.HTML` (encode, sanitize)
 - [ ] `som.GeometryPoint`
 - [ ] `som.GeometryLine`
