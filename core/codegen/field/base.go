@@ -12,10 +12,6 @@ const (
 	fnSuffixPtr = "Ptr"
 )
 
-var (
-	typeModel = jen.Id("T") // TODO: rename to M
-)
-
 // type Edge struct {
 // 	Name   string
 // 	In     Field

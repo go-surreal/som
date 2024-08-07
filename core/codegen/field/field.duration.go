@@ -46,7 +46,7 @@ func (f *Duration) filterDefine(ctx Context) jen.Code {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(typeModel)
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
 func (f *Duration) filterInit(ctx Context) (jen.Code, jen.Code) {
@@ -55,16 +55,16 @@ func (f *Duration) filterInit(ctx Context) (jen.Code, jen.Code) {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(typeModel),
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Duration) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(typeModel)
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
 func (f *Duration) sortInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(typeModel).
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -45,16 +46,16 @@ func (f *Struct) CodeGen() *CodeGen {
 }
 
 func (f *Struct) filterDefine(_ Context) jen.Code {
-	return jen.Id(f.table.NameGoLower()).Types(typeModel)
+	return jen.Id(f.table.NameGoLower()).Types(def.TypeModel)
 }
 
 func (f *Struct) filterInit(_ Context) (jen.Code, jen.Code) {
-	return jen.Id("new" + f.source.Struct).Types(typeModel), nil
+	return jen.Id("new" + f.source.Struct).Types(def.TypeModel), nil
 }
 
 func (f *Struct) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(typeModel)).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
 		Id(f.NameGo()).Params().
 		Add(f.filterDefine(ctx)).
 		Block(

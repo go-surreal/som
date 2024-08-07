@@ -3,6 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 	"slices"
 	"sort"
@@ -68,7 +69,7 @@ func (f *Enum) filterDefine(ctx Context) jen.Code {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(typeModel, jen.Qual(ctx.SourcePkg, f.source.Typ))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ))
 }
 
 func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
@@ -77,7 +78,7 @@ func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(typeModel, jen.Qual(ctx.SourcePkg, f.source.Typ)),
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ)),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

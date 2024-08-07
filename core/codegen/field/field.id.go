@@ -41,20 +41,20 @@ func (f *ID) CodeGen() *CodeGen {
 }
 
 func (f *ID) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ID").Types(typeModel)
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ID").Types(def.TypeModel)
 }
 
 func (f *ID) filterInit(ctx Context) (jen.Code, jen.Code) {
-	return jen.Qual(ctx.pkgLib(), "NewID").Types(typeModel),
+	return jen.Qual(ctx.pkgLib(), "NewID").Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())), jen.Lit(ctx.Table.NameDatabase()))
 }
 
 func (f *ID) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(typeModel)
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
 func (f *ID) sortInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(typeModel).
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

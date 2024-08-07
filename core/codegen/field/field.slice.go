@@ -3,6 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -67,25 +68,25 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 			}
 
 			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
-				typeModel,
+				def.TypeModel,
 				element.typeGo(), // TODO: no pointers!
 				elemFilter,
 			)
 		}
 
 	case *Byte:
-		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(typeModel)
+		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(def.TypeModel)
 
 	case *Enum:
 		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
-			typeModel,
+			def.TypeModel,
 			jen.Qual(ctx.SourcePkg, element.model.NameGo()),
 			elemFilter,
 		)
 
 	default:
 		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
-			typeModel,
+			def.TypeModel,
 			element.typeGo(), // TODO: no pointers!
 			elemFilter,
 		)
@@ -112,7 +113,7 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 				return nil, nil // handled by filterFunc
 			}
 
-			return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(typeModel, element.typeGo(), elemFilter).
+			return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(def.TypeModel, element.typeGo(), elemFilter).
 					Call(makeElemFilter),
 				jen.Call(
 					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
@@ -125,7 +126,7 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 			//	return nil, nil // handled by filterFunc
 			//}
 
-			return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(typeModel, element.typeGo(), elemFilter).
+			return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(def.TypeModel, element.typeGo(), elemFilter).
 					Call(makeElemFilter),
 				jen.Call(
 					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
@@ -133,20 +134,20 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 		}
 
 	case *Byte:
-		return jen.Qual(ctx.pkgLib(), "NewByteSlice").Types(typeModel),
+		return jen.Qual(ctx.pkgLib(), "NewByteSlice").Types(def.TypeModel),
 			jen.Call(
 				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 			)
 
 	case *Enum:
-		return jen.Qual(ctx.pkgLib(), "NewSlice").Types(typeModel, jen.Qual(ctx.SourcePkg, element.model.NameGo())),
+		return jen.Qual(ctx.pkgLib(), "NewSlice").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, element.model.NameGo())),
 			jen.Call(
 				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 				makeElemFilter,
 			)
 
 	default:
-		return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(typeModel, element.typeGo(), elemFilter).
+		return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(def.TypeModel, element.typeGo(), elemFilter).
 				Call(makeElemFilter),
 			jen.Call(
 				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
@@ -169,14 +170,14 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 	case *Node:
 		{
 			return jen.Func().
-				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(typeModel)).Id(f.NameGo()).
+				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).Id(f.NameGo()).
 				Params(
 					jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
 						Types(jen.Qual(f.SourcePkg, element.table.NameGo())),
 				).
 				Op("*").Qual(ctx.pkgLib(), "Slice").
 				Types(
-					typeModel, jen.Qual(f.SourcePkg, element.table.NameGo()), jen.Id(element.table.NameGoLower()).Types(typeModel),
+					def.TypeModel, jen.Qual(f.SourcePkg, element.table.NameGo()), jen.Id(element.table.NameGoLower()).Types(def.TypeModel),
 				).
 				Block(
 					jen.Id("key").Op(":=").Qual(ctx.pkgLib(), "Node").
@@ -188,7 +189,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 					jen.Return(
 						jen.Qual(ctx.pkgLib(), "NewSlice").
 							Types(
-								typeModel,
+								def.TypeModel,
 								jen.Qual(ctx.SourcePkg, element.table.NameGo()),
 								elemFilter,
 							).
@@ -202,7 +203,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 
 	case *Edge:
 		{
-			receiver := jen.Id(ctx.Table.NameGoLower()).Types(typeModel)
+			receiver := jen.Id(ctx.Table.NameGoLower()).Types(def.TypeModel)
 			if ctx.Receiver != nil {
 				receiver = ctx.Receiver
 			}
@@ -214,10 +215,10 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 						jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
 							Types(jen.Qual(f.SourcePkg, element.table.NameGo())),
 					).
-					Params(jen.Id(element.table.NameGoLower() + "In").Index(typeModel)).
+					Params(jen.Id(element.table.NameGoLower() + "In").Index(def.TypeModel)).
 					Block(
 						jen.Return(
-							jen.Id("new" + element.table.NameGo() + "In").Index(typeModel).
+							jen.Id("new" + element.table.NameGo() + "In").Index(def.TypeModel).
 								Call(
 									jen.Qual(ctx.pkgLib(), "EdgeIn").Call(
 										jen.Id("n").Dot("key"),
@@ -236,10 +237,10 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 						jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
 							Types(jen.Qual(f.SourcePkg, element.table.NameGo())),
 					).
-					Params(jen.Id(element.table.NameGoLower() + "Out").Index(typeModel)).
+					Params(jen.Id(element.table.NameGoLower() + "Out").Index(def.TypeModel)).
 					Block(
 						jen.Return(
-							jen.Id("new" + element.table.NameGo() + "Out").Index(typeModel).
+							jen.Id("new" + element.table.NameGo() + "Out").Index(def.TypeModel).
 								Call(
 									jen.Qual(ctx.pkgLib(), "EdgeOut").Call(
 										jen.Id("n").Dot("key"),
@@ -257,13 +258,13 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 	//case *Struct:
 	//	{
 	//		return jen.Func().
-	//			Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(typeModel)).
+	//			Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
 	//			Id(f.NameGo()).Params().
 	//			Op("*").Qual(ctx.pkgLib(), "Slice").
-	//			Types(typeModel, element.typeGo(), elemFilter).
+	//			Types(def.TypeModel, element.typeGo(), elemFilter).
 	//			Block(
 	//				jen.Return(
-	//					jen.Qual(ctx.pkgLib(), "NewSlice").Types(typeModel, element.typeGo(), elemFilter).
+	//					jen.Qual(ctx.pkgLib(), "NewSlice").Types(def.TypeModel, element.typeGo(), elemFilter).
 	//						Call(
 	//							jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())),
 	//							makeElemFilter,

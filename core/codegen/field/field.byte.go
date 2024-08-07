@@ -3,6 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 	"math"
 )
@@ -57,7 +58,7 @@ func (f *Byte) filterDefine(ctx Context) jen.Code {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(typeModel, jen.Byte())
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel, jen.Byte())
 }
 
 func (f *Byte) filterInit(ctx Context) (jen.Code, jen.Code) {
@@ -66,7 +67,7 @@ func (f *Byte) filterInit(ctx Context) (jen.Code, jen.Code) {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(typeModel, jen.Byte()),
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, jen.Byte()),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
