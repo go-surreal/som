@@ -8,10 +8,10 @@ import (
 )
 
 type GroupMember struct {
-	ID        *sdbc.ID        `json:"id,omitempty"`
-	CreatedAt *sdbc.DateTime  `json:"created_at,omitempty"`
-	UpdatedAt *sdbc.DateTime  `json:"updated_at,omitempty"`
-	Meta      groupMemberMeta `json:"meta"`
+	ID        *sdbc.ID        `cbor:"id,omitempty"`
+	CreatedAt *sdbc.DateTime  `cbor:"created_at,omitempty"`
+	UpdatedAt *sdbc.DateTime  `cbor:"updated_at,omitempty"`
+	Meta      groupMemberMeta `cbor:"meta"`
 }
 
 func FromGroupMember(data *model.GroupMember) *GroupMember {

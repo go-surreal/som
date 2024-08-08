@@ -5,6 +5,6 @@ import model "github.com/go-surreal/som/tests/basic/model"
 
 var URLExample = urlexample[model.URLExample]("")
 
-type urlexample[T any] string
+type urlexample[M any] string
 
-func (n urlexample[T]) fetch(T) {}
+func (n urlexample[M]) fetch(M) {}

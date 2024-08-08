@@ -1,5 +1,7 @@
 package def
 
+import "github.com/dave/jennifer/jen"
+
 const (
 	PkgQuery  = "query"
 	PkgFilter = "where"
@@ -19,4 +21,8 @@ const (
 
 	PkgURL  = "net/url"
 	PkgUUID = "github.com/google/uuid"
+)
+
+var (
+	TypeModel = jen.Id("M")
 )

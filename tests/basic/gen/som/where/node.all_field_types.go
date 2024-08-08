@@ -11,200 +11,200 @@ import (
 
 var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes](lib.NewKey[model.AllFieldTypes]())
 
-func newAllFieldTypes[T any](key lib.Key[T]) allFieldTypes[T] {
-	return allFieldTypes[T]{
-		Bool:               lib.NewBool[T](lib.Field(key, "bool")),
-		BoolPtr:            lib.NewBoolPtr[T](lib.Field(key, "bool_ptr")),
-		BoolSlice:          lib.NewSliceMaker[T, bool, *lib.Bool[T]](lib.NewBool[T])(lib.Field(key, "bool_slice")),
-		Byte:               lib.NewBase[T, byte](lib.Field(key, "byte")),
-		BytePtr:            lib.NewBasePtr[T, byte](lib.Field(key, "byte_ptr")),
-		ByteSlice:          lib.NewByteSlice[T](lib.Field(key, "byte_slice")),
-		ByteSlicePtr:       lib.NewByteSlice[T](lib.Field(key, "byte_slice_ptr")),
-		CreatedAt:          lib.NewTime[T](lib.Field(key, "created_at")),
-		Duration:           lib.NewDuration[T](lib.Field(key, "duration")),
-		DurationNil:        lib.NewDurationPtr[T](lib.Field(key, "duration_nil")),
-		DurationPtr:        lib.NewDurationPtr[T](lib.Field(key, "duration_ptr")),
-		DurationSlice:      lib.NewSliceMaker[T, time.Duration, *lib.Duration[T]](lib.NewDuration[T])(lib.Field(key, "duration_slice")),
-		EnumPtr:            lib.NewBasePtr[T, model.Role](lib.Field(key, "enum_ptr")),
-		EnumPtrSlice:       lib.NewSlice[T, model.Role](lib.Field(key, "enum_ptr_slice"), lib.NewBasePtr[T, model.Role]),
-		EnumPtrSlicePtr:    lib.NewSlice[T, model.Role](lib.Field(key, "enum_ptr_slice_ptr"), lib.NewBasePtr[T, model.Role]),
-		Float32:            lib.NewNumeric[T, float32](lib.Field(key, "float_32")),
-		Float32PtrSlice:    lib.NewSliceMaker[T, *float32, *lib.NumericPtr[T, *float32]](lib.NewNumericPtr[T, *float32])(lib.Field(key, "float_32_ptr_slice")),
-		Float32PtrSlicePtr: lib.NewSliceMaker[T, *float32, *lib.NumericPtr[T, *float32]](lib.NewNumericPtr[T, *float32])(lib.Field(key, "float_32_ptr_slice_ptr")),
-		Float32Slice:       lib.NewSliceMaker[T, float32, *lib.Numeric[T, float32]](lib.NewNumeric[T, float32])(lib.Field(key, "float_32_slice")),
-		Float32SlicePtr:    lib.NewSliceMaker[T, float32, *lib.Numeric[T, float32]](lib.NewNumeric[T, float32])(lib.Field(key, "float_32_slice_ptr")),
-		Float64:            lib.NewNumeric[T, float64](lib.Field(key, "float_64")),
-		GroupsSlice:        lib.NewSliceMaker[T, []model.Group, *lib.Slice[T, model.Group, group[T]]](lib.NewSliceMaker[T, model.Group, group[T]](newGroup[T]))(lib.Field(key, "groups_slice")),
-		ID:                 lib.NewID[T](lib.Field(key, "id"), "all_field_types"),
-		Int:                lib.NewNumeric[T, int](lib.Field(key, "int")),
-		Int16:              lib.NewNumeric[T, int16](lib.Field(key, "int_16")),
-		Int16Ptr:           lib.NewNumericPtr[T, *int16](lib.Field(key, "int_16_ptr")),
-		Int32:              lib.NewNumeric[T, int32](lib.Field(key, "int_32")),
-		Int32Ptr:           lib.NewNumericPtr[T, *int32](lib.Field(key, "int_32_ptr")),
-		Int64:              lib.NewNumeric[T, int64](lib.Field(key, "int_64")),
-		Int64Ptr:           lib.NewNumericPtr[T, *int64](lib.Field(key, "int_64_ptr")),
-		Int8:               lib.NewNumeric[T, int8](lib.Field(key, "int_8")),
-		Int8Ptr:            lib.NewNumericPtr[T, *int8](lib.Field(key, "int_8_ptr")),
-		IntPtr:             lib.NewNumericPtr[T, *int](lib.Field(key, "int_ptr")),
-		IntPtrSlice:        lib.NewSliceMaker[T, *int, *lib.NumericPtr[T, *int]](lib.NewNumericPtr[T, *int])(lib.Field(key, "int_ptr_slice")),
-		IntPtrSlicePtr:     lib.NewSliceMaker[T, *int, *lib.NumericPtr[T, *int]](lib.NewNumericPtr[T, *int])(lib.Field(key, "int_ptr_slice_ptr")),
-		IntSlice:           lib.NewSliceMaker[T, int, *lib.Numeric[T, int]](lib.NewNumeric[T, int])(lib.Field(key, "int_slice")),
-		IntSlicePtr:        lib.NewSliceMaker[T, int, *lib.Numeric[T, int]](lib.NewNumeric[T, int])(lib.Field(key, "int_slice_ptr")),
-		Other:              lib.NewSliceMaker[T, string, *lib.String[T]](lib.NewString[T])(lib.Field(key, "other")),
-		Role:               lib.NewBase[T, model.Role](lib.Field(key, "role")),
-		Roles:              lib.NewSlice[T, model.Role](lib.Field(key, "roles"), lib.NewBase[T, model.Role]),
-		Rune:               lib.NewNumeric[T, rune](lib.Field(key, "rune")),
-		RuneSlice:          lib.NewSliceMaker[T, rune, *lib.Numeric[T, rune]](lib.NewNumeric[T, rune])(lib.Field(key, "rune_slice")),
-		SliceSlice:         lib.NewSliceMaker[T, []string, *lib.Slice[T, string, *lib.String[T]]](lib.NewSliceMaker[T, string, *lib.String[T]](lib.NewString[T]))(lib.Field(key, "slice_slice")),
-		SliceSliceSlice:    lib.NewSliceMaker[T, [][]string, *lib.Slice[T, []string, *lib.Slice[T, string, *lib.String[T]]]](lib.NewSliceMaker[T, []string, *lib.Slice[T, string, *lib.String[T]]](lib.NewSliceMaker[T, string, *lib.String[T]](lib.NewString[T])))(lib.Field(key, "slice_slice_slice")),
-		SliceSliceSlice2:   lib.NewSliceMaker[T, [][]model.SomeStruct, *lib.Slice[T, []model.SomeStruct, *lib.Slice[T, model.SomeStruct, someStruct[T]]]](lib.NewSliceMaker[T, []model.SomeStruct, *lib.Slice[T, model.SomeStruct, someStruct[T]]](lib.NewSliceMaker[T, model.SomeStruct, someStruct[T]](newSomeStruct[T])))(lib.Field(key, "slice_slice_slice_2")),
-		String:             lib.NewString[T](lib.Field(key, "string")),
-		StringPtr:          lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
-		StringPtrSlice:     lib.NewSliceMaker[T, *string, *lib.StringPtr[T]](lib.NewStringPtr[T])(lib.Field(key, "string_ptr_slice")),
-		StringSlicePtr:     lib.NewSliceMaker[T, string, *lib.String[T]](lib.NewString[T])(lib.Field(key, "string_slice_ptr")),
-		StructPtrSlice:     lib.NewSliceMaker[T, *model.SomeStruct, someStruct[T]](newSomeStruct[T])(lib.Field(key, "struct_ptr_slice")),
-		StructPtrSlicePtr:  lib.NewSliceMaker[T, *model.SomeStruct, someStruct[T]](newSomeStruct[T])(lib.Field(key, "struct_ptr_slice_ptr")),
-		StructSlice:        lib.NewSliceMaker[T, model.SomeStruct, someStruct[T]](newSomeStruct[T])(lib.Field(key, "struct_slice")),
-		Time:               lib.NewTime[T](lib.Field(key, "time")),
-		TimeNil:            lib.NewTimePtr[T](lib.Field(key, "time_nil")),
-		TimePtr:            lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
-		TimeSlice:          lib.NewSliceMaker[T, time.Time, *lib.Time[T]](lib.NewTime[T])(lib.Field(key, "time_slice")),
-		TimeSliceSlice:     lib.NewSliceMaker[T, []time.Time, *lib.Slice[T, time.Time, *lib.Time[T]]](lib.NewSliceMaker[T, time.Time, *lib.Time[T]](lib.NewTime[T]))(lib.Field(key, "time_slice_slice")),
-		URL:                lib.NewURL[T](lib.Field(key, "url")),
-		URLNil:             lib.NewURLPtr[T](lib.Field(key, "url_nil")),
-		URLPtr:             lib.NewURLPtr[T](lib.Field(key, "url_ptr")),
-		URLSlice:           lib.NewSliceMaker[T, url.URL, *lib.URL[T]](lib.NewURL[T])(lib.Field(key, "url_slice")),
-		UUID:               lib.NewUUID[T](lib.Field(key, "uuid")),
-		UUIDNil:            lib.NewUUIDPtr[T](lib.Field(key, "uuid_nil")),
-		UUIDPtr:            lib.NewUUIDPtr[T](lib.Field(key, "uuid_ptr")),
-		UUIDSlice:          lib.NewSliceMaker[T, uuid.UUID, *lib.UUID[T]](lib.NewUUID[T])(lib.Field(key, "uuid_slice")),
-		Uint16:             lib.NewNumeric[T, uint16](lib.Field(key, "uint_16")),
-		Uint16Ptr:          lib.NewNumericPtr[T, *uint16](lib.Field(key, "uint_16_ptr")),
-		Uint32:             lib.NewNumeric[T, uint32](lib.Field(key, "uint_32")),
-		Uint32Ptr:          lib.NewNumericPtr[T, *uint32](lib.Field(key, "uint_32_ptr")),
-		Uint8:              lib.NewNumeric[T, uint8](lib.Field(key, "uint_8")),
-		Uint8Ptr:           lib.NewNumericPtr[T, *uint8](lib.Field(key, "uint_8_ptr")),
-		UpdatedAt:          lib.NewTime[T](lib.Field(key, "updated_at")),
+func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
+	return allFieldTypes[M]{
+		Bool:               lib.NewBool[M](lib.Field(key, "bool")),
+		BoolPtr:            lib.NewBoolPtr[M](lib.Field(key, "bool_ptr")),
+		BoolSlice:          lib.NewSliceMaker[M, bool, *lib.Bool[M]](lib.NewBool[M])(lib.Field(key, "bool_slice")),
+		Byte:               lib.NewBase[M, byte](lib.Field(key, "byte")),
+		BytePtr:            lib.NewBasePtr[M, byte](lib.Field(key, "byte_ptr")),
+		ByteSlice:          lib.NewByteSlice[M](lib.Field(key, "byte_slice")),
+		ByteSlicePtr:       lib.NewByteSlice[M](lib.Field(key, "byte_slice_ptr")),
+		CreatedAt:          lib.NewTime[M](lib.Field(key, "created_at")),
+		Duration:           lib.NewDuration[M](lib.Field(key, "duration")),
+		DurationNil:        lib.NewDurationPtr[M](lib.Field(key, "duration_nil")),
+		DurationPtr:        lib.NewDurationPtr[M](lib.Field(key, "duration_ptr")),
+		DurationSlice:      lib.NewSliceMaker[M, time.Duration, *lib.Duration[M]](lib.NewDuration[M])(lib.Field(key, "duration_slice")),
+		EnumPtr:            lib.NewBasePtr[M, model.Role](lib.Field(key, "enum_ptr")),
+		EnumPtrSlice:       lib.NewSlice[M, model.Role](lib.Field(key, "enum_ptr_slice"), lib.NewBasePtr[M, model.Role]),
+		EnumPtrSlicePtr:    lib.NewSlice[M, model.Role](lib.Field(key, "enum_ptr_slice_ptr"), lib.NewBasePtr[M, model.Role]),
+		Float32:            lib.NewNumeric[M, float32](lib.Field(key, "float_32")),
+		Float32PtrSlice:    lib.NewSliceMaker[M, *float32, *lib.NumericPtr[M, *float32]](lib.NewNumericPtr[M, *float32])(lib.Field(key, "float_32_ptr_slice")),
+		Float32PtrSlicePtr: lib.NewSliceMaker[M, *float32, *lib.NumericPtr[M, *float32]](lib.NewNumericPtr[M, *float32])(lib.Field(key, "float_32_ptr_slice_ptr")),
+		Float32Slice:       lib.NewSliceMaker[M, float32, *lib.Numeric[M, float32]](lib.NewNumeric[M, float32])(lib.Field(key, "float_32_slice")),
+		Float32SlicePtr:    lib.NewSliceMaker[M, float32, *lib.Numeric[M, float32]](lib.NewNumeric[M, float32])(lib.Field(key, "float_32_slice_ptr")),
+		Float64:            lib.NewNumeric[M, float64](lib.Field(key, "float_64")),
+		GroupsSlice:        lib.NewSliceMaker[M, []model.Group, *lib.Slice[M, model.Group, group[M]]](lib.NewSliceMaker[M, model.Group, group[M]](newGroup[M]))(lib.Field(key, "groups_slice")),
+		ID:                 lib.NewID[M](lib.Field(key, "id"), "all_field_types"),
+		Int:                lib.NewNumeric[M, int](lib.Field(key, "int")),
+		Int16:              lib.NewNumeric[M, int16](lib.Field(key, "int_16")),
+		Int16Ptr:           lib.NewNumericPtr[M, *int16](lib.Field(key, "int_16_ptr")),
+		Int32:              lib.NewNumeric[M, int32](lib.Field(key, "int_32")),
+		Int32Ptr:           lib.NewNumericPtr[M, *int32](lib.Field(key, "int_32_ptr")),
+		Int64:              lib.NewNumeric[M, int64](lib.Field(key, "int_64")),
+		Int64Ptr:           lib.NewNumericPtr[M, *int64](lib.Field(key, "int_64_ptr")),
+		Int8:               lib.NewNumeric[M, int8](lib.Field(key, "int_8")),
+		Int8Ptr:            lib.NewNumericPtr[M, *int8](lib.Field(key, "int_8_ptr")),
+		IntPtr:             lib.NewNumericPtr[M, *int](lib.Field(key, "int_ptr")),
+		IntPtrSlice:        lib.NewSliceMaker[M, *int, *lib.NumericPtr[M, *int]](lib.NewNumericPtr[M, *int])(lib.Field(key, "int_ptr_slice")),
+		IntPtrSlicePtr:     lib.NewSliceMaker[M, *int, *lib.NumericPtr[M, *int]](lib.NewNumericPtr[M, *int])(lib.Field(key, "int_ptr_slice_ptr")),
+		IntSlice:           lib.NewSliceMaker[M, int, *lib.Numeric[M, int]](lib.NewNumeric[M, int])(lib.Field(key, "int_slice")),
+		IntSlicePtr:        lib.NewSliceMaker[M, int, *lib.Numeric[M, int]](lib.NewNumeric[M, int])(lib.Field(key, "int_slice_ptr")),
+		Other:              lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M])(lib.Field(key, "other")),
+		Role:               lib.NewBase[M, model.Role](lib.Field(key, "role")),
+		Roles:              lib.NewSlice[M, model.Role](lib.Field(key, "roles"), lib.NewBase[M, model.Role]),
+		Rune:               lib.NewNumeric[M, rune](lib.Field(key, "rune")),
+		RuneSlice:          lib.NewSliceMaker[M, rune, *lib.Numeric[M, rune]](lib.NewNumeric[M, rune])(lib.Field(key, "rune_slice")),
+		SliceSlice:         lib.NewSliceMaker[M, []string, *lib.Slice[M, string, *lib.String[M]]](lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M]))(lib.Field(key, "slice_slice")),
+		SliceSliceSlice:    lib.NewSliceMaker[M, [][]string, *lib.Slice[M, []string, *lib.Slice[M, string, *lib.String[M]]]](lib.NewSliceMaker[M, []string, *lib.Slice[M, string, *lib.String[M]]](lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M])))(lib.Field(key, "slice_slice_slice")),
+		SliceSliceSlice2:   lib.NewSliceMaker[M, [][]model.SomeStruct, *lib.Slice[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]]](lib.NewSliceMaker[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]](lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])))(lib.Field(key, "slice_slice_slice_2")),
+		String:             lib.NewString[M](lib.Field(key, "string")),
+		StringPtr:          lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
+		StringPtrSlice:     lib.NewSliceMaker[M, *string, *lib.StringPtr[M]](lib.NewStringPtr[M])(lib.Field(key, "string_ptr_slice")),
+		StringSlicePtr:     lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M])(lib.Field(key, "string_slice_ptr")),
+		StructPtrSlice:     lib.NewSliceMaker[M, *model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_ptr_slice")),
+		StructPtrSlicePtr:  lib.NewSliceMaker[M, *model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_ptr_slice_ptr")),
+		StructSlice:        lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_slice")),
+		Time:               lib.NewTime[M](lib.Field(key, "time")),
+		TimeNil:            lib.NewTimePtr[M](lib.Field(key, "time_nil")),
+		TimePtr:            lib.NewTimePtr[M](lib.Field(key, "time_ptr")),
+		TimeSlice:          lib.NewSliceMaker[M, time.Time, *lib.Time[M]](lib.NewTime[M])(lib.Field(key, "time_slice")),
+		TimeSliceSlice:     lib.NewSliceMaker[M, []time.Time, *lib.Slice[M, time.Time, *lib.Time[M]]](lib.NewSliceMaker[M, time.Time, *lib.Time[M]](lib.NewTime[M]))(lib.Field(key, "time_slice_slice")),
+		URL:                lib.NewURL[M](lib.Field(key, "url")),
+		URLNil:             lib.NewURLPtr[M](lib.Field(key, "url_nil")),
+		URLPtr:             lib.NewURLPtr[M](lib.Field(key, "url_ptr")),
+		URLSlice:           lib.NewSliceMaker[M, url.URL, *lib.URL[M]](lib.NewURL[M])(lib.Field(key, "url_slice")),
+		UUID:               lib.NewUUID[M](lib.Field(key, "uuid")),
+		UUIDNil:            lib.NewUUIDPtr[M](lib.Field(key, "uuid_nil")),
+		UUIDPtr:            lib.NewUUIDPtr[M](lib.Field(key, "uuid_ptr")),
+		UUIDSlice:          lib.NewSliceMaker[M, uuid.UUID, *lib.UUID[M]](lib.NewUUID[M])(lib.Field(key, "uuid_slice")),
+		Uint16:             lib.NewNumeric[M, uint16](lib.Field(key, "uint_16")),
+		Uint16Ptr:          lib.NewNumericPtr[M, *uint16](lib.Field(key, "uint_16_ptr")),
+		Uint32:             lib.NewNumeric[M, uint32](lib.Field(key, "uint_32")),
+		Uint32Ptr:          lib.NewNumericPtr[M, *uint32](lib.Field(key, "uint_32_ptr")),
+		Uint8:              lib.NewNumeric[M, uint8](lib.Field(key, "uint_8")),
+		Uint8Ptr:           lib.NewNumericPtr[M, *uint8](lib.Field(key, "uint_8_ptr")),
+		UpdatedAt:          lib.NewTime[M](lib.Field(key, "updated_at")),
 		key:                key,
 	}
 }
 
-type allFieldTypes[T any] struct {
-	key                lib.Key[T]
-	ID                 *lib.ID[T]
-	CreatedAt          *lib.Time[T]
-	UpdatedAt          *lib.Time[T]
-	String             *lib.String[T]
-	StringPtr          *lib.StringPtr[T]
-	Other              *lib.Slice[T, string, *lib.String[T]]
-	StringPtrSlice     *lib.Slice[T, *string, *lib.StringPtr[T]]
-	StringSlicePtr     *lib.Slice[T, string, *lib.String[T]]
-	Int                *lib.Numeric[T, int]
-	IntPtr             *lib.NumericPtr[T, *int]
-	IntSlice           *lib.Slice[T, int, *lib.Numeric[T, int]]
-	IntPtrSlice        *lib.Slice[T, *int, *lib.NumericPtr[T, *int]]
-	IntSlicePtr        *lib.Slice[T, int, *lib.Numeric[T, int]]
-	IntPtrSlicePtr     *lib.Slice[T, *int, *lib.NumericPtr[T, *int]]
-	Int8               *lib.Numeric[T, int8]
-	Int8Ptr            *lib.NumericPtr[T, *int8]
-	Int16              *lib.Numeric[T, int16]
-	Int16Ptr           *lib.NumericPtr[T, *int16]
-	Int32              *lib.Numeric[T, int32]
-	Int32Ptr           *lib.NumericPtr[T, *int32]
-	Int64              *lib.Numeric[T, int64]
-	Int64Ptr           *lib.NumericPtr[T, *int64]
-	Uint8              *lib.Numeric[T, uint8]
-	Uint8Ptr           *lib.NumericPtr[T, *uint8]
-	Uint16             *lib.Numeric[T, uint16]
-	Uint16Ptr          *lib.NumericPtr[T, *uint16]
-	Uint32             *lib.Numeric[T, uint32]
-	Uint32Ptr          *lib.NumericPtr[T, *uint32]
-	Float32            *lib.Numeric[T, float32]
-	Float32Slice       *lib.Slice[T, float32, *lib.Numeric[T, float32]]
-	Float32SlicePtr    *lib.Slice[T, float32, *lib.Numeric[T, float32]]
-	Float32PtrSlice    *lib.Slice[T, *float32, *lib.NumericPtr[T, *float32]]
-	Float32PtrSlicePtr *lib.Slice[T, *float32, *lib.NumericPtr[T, *float32]]
-	Float64            *lib.Numeric[T, float64]
-	Rune               *lib.Numeric[T, rune]
-	RuneSlice          *lib.Slice[T, rune, *lib.Numeric[T, rune]]
-	Bool               *lib.Bool[T]
-	BoolPtr            *lib.BoolPtr[T]
-	BoolSlice          *lib.Slice[T, bool, *lib.Bool[T]]
-	Time               *lib.Time[T]
-	TimePtr            *lib.TimePtr[T]
-	TimeNil            *lib.TimePtr[T]
-	TimeSlice          *lib.Slice[T, time.Time, *lib.Time[T]]
-	TimeSliceSlice     *lib.Slice[T, []time.Time, *lib.Slice[T, time.Time, *lib.Time[T]]]
-	Duration           *lib.Duration[T]
-	DurationPtr        *lib.DurationPtr[T]
-	DurationNil        *lib.DurationPtr[T]
-	DurationSlice      *lib.Slice[T, time.Duration, *lib.Duration[T]]
-	UUID               *lib.UUID[T]
-	UUIDPtr            *lib.UUIDPtr[T]
-	UUIDNil            *lib.UUIDPtr[T]
-	UUIDSlice          *lib.Slice[T, uuid.UUID, *lib.UUID[T]]
-	URL                *lib.URL[T]
-	URLPtr             *lib.URLPtr[T]
-	URLNil             *lib.URLPtr[T]
-	URLSlice           *lib.Slice[T, url.URL, *lib.URL[T]]
-	Role               *lib.Base[T, model.Role]
-	EnumPtr            *lib.BasePtr[T, model.Role]
-	Roles              *lib.Slice[T, model.Role, *lib.Base[T, model.Role]]
-	EnumPtrSlice       *lib.Slice[T, model.Role, *lib.BasePtr[T, model.Role]]
-	EnumPtrSlicePtr    *lib.Slice[T, model.Role, *lib.BasePtr[T, model.Role]]
-	StructSlice        *lib.Slice[T, model.SomeStruct, someStruct[T]]
-	StructPtrSlice     *lib.Slice[T, *model.SomeStruct, someStruct[T]]
-	StructPtrSlicePtr  *lib.Slice[T, *model.SomeStruct, someStruct[T]]
-	GroupsSlice        *lib.Slice[T, []model.Group, *lib.Slice[T, model.Group, group[T]]]
-	SliceSlice         *lib.Slice[T, []string, *lib.Slice[T, string, *lib.String[T]]]
-	SliceSliceSlice    *lib.Slice[T, [][]string, *lib.Slice[T, []string, *lib.Slice[T, string, *lib.String[T]]]]
-	SliceSliceSlice2   *lib.Slice[T, [][]model.SomeStruct, *lib.Slice[T, []model.SomeStruct, *lib.Slice[T, model.SomeStruct, someStruct[T]]]]
-	Byte               *lib.Base[T, byte]
-	BytePtr            *lib.BasePtr[T, byte]
-	ByteSlice          *lib.ByteSlice[T]
-	ByteSlicePtr       *lib.ByteSlice[T]
+type allFieldTypes[M any] struct {
+	key                lib.Key[M]
+	ID                 *lib.ID[M]
+	CreatedAt          *lib.Time[M]
+	UpdatedAt          *lib.Time[M]
+	String             *lib.String[M]
+	StringPtr          *lib.StringPtr[M]
+	Other              *lib.Slice[M, string, *lib.String[M]]
+	StringPtrSlice     *lib.Slice[M, *string, *lib.StringPtr[M]]
+	StringSlicePtr     *lib.Slice[M, string, *lib.String[M]]
+	Int                *lib.Numeric[M, int]
+	IntPtr             *lib.NumericPtr[M, *int]
+	IntSlice           *lib.Slice[M, int, *lib.Numeric[M, int]]
+	IntPtrSlice        *lib.Slice[M, *int, *lib.NumericPtr[M, *int]]
+	IntSlicePtr        *lib.Slice[M, int, *lib.Numeric[M, int]]
+	IntPtrSlicePtr     *lib.Slice[M, *int, *lib.NumericPtr[M, *int]]
+	Int8               *lib.Numeric[M, int8]
+	Int8Ptr            *lib.NumericPtr[M, *int8]
+	Int16              *lib.Numeric[M, int16]
+	Int16Ptr           *lib.NumericPtr[M, *int16]
+	Int32              *lib.Numeric[M, int32]
+	Int32Ptr           *lib.NumericPtr[M, *int32]
+	Int64              *lib.Numeric[M, int64]
+	Int64Ptr           *lib.NumericPtr[M, *int64]
+	Uint8              *lib.Numeric[M, uint8]
+	Uint8Ptr           *lib.NumericPtr[M, *uint8]
+	Uint16             *lib.Numeric[M, uint16]
+	Uint16Ptr          *lib.NumericPtr[M, *uint16]
+	Uint32             *lib.Numeric[M, uint32]
+	Uint32Ptr          *lib.NumericPtr[M, *uint32]
+	Float32            *lib.Numeric[M, float32]
+	Float32Slice       *lib.Slice[M, float32, *lib.Numeric[M, float32]]
+	Float32SlicePtr    *lib.Slice[M, float32, *lib.Numeric[M, float32]]
+	Float32PtrSlice    *lib.Slice[M, *float32, *lib.NumericPtr[M, *float32]]
+	Float32PtrSlicePtr *lib.Slice[M, *float32, *lib.NumericPtr[M, *float32]]
+	Float64            *lib.Numeric[M, float64]
+	Rune               *lib.Numeric[M, rune]
+	RuneSlice          *lib.Slice[M, rune, *lib.Numeric[M, rune]]
+	Bool               *lib.Bool[M]
+	BoolPtr            *lib.BoolPtr[M]
+	BoolSlice          *lib.Slice[M, bool, *lib.Bool[M]]
+	Time               *lib.Time[M]
+	TimePtr            *lib.TimePtr[M]
+	TimeNil            *lib.TimePtr[M]
+	TimeSlice          *lib.Slice[M, time.Time, *lib.Time[M]]
+	TimeSliceSlice     *lib.Slice[M, []time.Time, *lib.Slice[M, time.Time, *lib.Time[M]]]
+	Duration           *lib.Duration[M]
+	DurationPtr        *lib.DurationPtr[M]
+	DurationNil        *lib.DurationPtr[M]
+	DurationSlice      *lib.Slice[M, time.Duration, *lib.Duration[M]]
+	UUID               *lib.UUID[M]
+	UUIDPtr            *lib.UUIDPtr[M]
+	UUIDNil            *lib.UUIDPtr[M]
+	UUIDSlice          *lib.Slice[M, uuid.UUID, *lib.UUID[M]]
+	URL                *lib.URL[M]
+	URLPtr             *lib.URLPtr[M]
+	URLNil             *lib.URLPtr[M]
+	URLSlice           *lib.Slice[M, url.URL, *lib.URL[M]]
+	Role               *lib.Base[M, model.Role]
+	EnumPtr            *lib.BasePtr[M, model.Role]
+	Roles              *lib.Slice[M, model.Role, *lib.Base[M, model.Role]]
+	EnumPtrSlice       *lib.Slice[M, model.Role, *lib.BasePtr[M, model.Role]]
+	EnumPtrSlicePtr    *lib.Slice[M, model.Role, *lib.BasePtr[M, model.Role]]
+	StructSlice        *lib.Slice[M, model.SomeStruct, someStruct[M]]
+	StructPtrSlice     *lib.Slice[M, *model.SomeStruct, someStruct[M]]
+	StructPtrSlicePtr  *lib.Slice[M, *model.SomeStruct, someStruct[M]]
+	GroupsSlice        *lib.Slice[M, []model.Group, *lib.Slice[M, model.Group, group[M]]]
+	SliceSlice         *lib.Slice[M, []string, *lib.Slice[M, string, *lib.String[M]]]
+	SliceSliceSlice    *lib.Slice[M, [][]string, *lib.Slice[M, []string, *lib.Slice[M, string, *lib.String[M]]]]
+	SliceSliceSlice2   *lib.Slice[M, [][]model.SomeStruct, *lib.Slice[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]]]
+	Byte               *lib.Base[M, byte]
+	BytePtr            *lib.BasePtr[M, byte]
+	ByteSlice          *lib.ByteSlice[M]
+	ByteSlicePtr       *lib.ByteSlice[M]
 }
 
-func (n allFieldTypes[T]) Login() login[T] {
-	return newLogin[T](lib.Field(n.key, "login"))
+func (n allFieldTypes[M]) Login() login[M] {
+	return newLogin[M](lib.Field(n.key, "login"))
 }
 
-func (n allFieldTypes[T]) StructPtr() someStruct[T] {
-	return newSomeStruct[T](lib.Field(n.key, "struct_ptr"))
+func (n allFieldTypes[M]) StructPtr() someStruct[M] {
+	return newSomeStruct[M](lib.Field(n.key, "struct_ptr"))
 }
 
-func (n allFieldTypes[T]) MainGroup() group[T] {
-	return newGroup[T](lib.Field(n.key, "main_group"))
+func (n allFieldTypes[M]) MainGroup() group[M] {
+	return newGroup[M](lib.Field(n.key, "main_group"))
 }
 
-func (n allFieldTypes[T]) MainGroupPtr() group[T] {
-	return newGroup[T](lib.Field(n.key, "main_group_ptr"))
+func (n allFieldTypes[M]) MainGroupPtr() group[M] {
+	return newGroup[M](lib.Field(n.key, "main_group_ptr"))
 }
 
-func (n allFieldTypes[T]) Groups(filters ...lib.Filter[model.Group]) *lib.Slice[T, model.Group, group[T]] {
+func (n allFieldTypes[M]) Groups(filters ...lib.Filter[model.Group]) *lib.Slice[M, model.Group, group[M]] {
 	key := lib.Node(n.key, "groups", filters)
-	return lib.NewSlice[T, model.Group, group[T]](key, newGroup[T])
+	return lib.NewSlice[M, model.Group, group[M]](key, newGroup[M])
 }
 
-func (n allFieldTypes[T]) NodePtrSlice(filters ...lib.Filter[model.Group]) *lib.Slice[T, model.Group, group[T]] {
+func (n allFieldTypes[M]) NodePtrSlice(filters ...lib.Filter[model.Group]) *lib.Slice[M, model.Group, group[M]] {
 	key := lib.Node(n.key, "node_ptr_slice", filters)
-	return lib.NewSlice[T, model.Group, group[T]](key, newGroup[T])
+	return lib.NewSlice[M, model.Group, group[M]](key, newGroup[M])
 }
 
-func (n allFieldTypes[T]) NodePtrSlicePtr(filters ...lib.Filter[model.Group]) *lib.Slice[T, model.Group, group[T]] {
+func (n allFieldTypes[M]) NodePtrSlicePtr(filters ...lib.Filter[model.Group]) *lib.Slice[M, model.Group, group[M]] {
 	key := lib.Node(n.key, "node_ptr_slice_ptr", filters)
-	return lib.NewSlice[T, model.Group, group[T]](key, newGroup[T])
+	return lib.NewSlice[M, model.Group, group[M]](key, newGroup[M])
 }
 
-func (n allFieldTypes[T]) MemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[T] {
-	return newGroupMemberIn[T](lib.EdgeIn(n.key, "group_member", filters))
+func (n allFieldTypes[M]) MemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[M] {
+	return newGroupMemberIn[M](lib.EdgeIn(n.key, "group_member", filters))
 }
 
-type allFieldTypesEdges[T any] struct {
-	lib.Filter[T]
-	key lib.Key[T]
+type allFieldTypesEdges[M any] struct {
+	lib.Filter[M]
+	key lib.Key[M]
 }
 
-func (n allFieldTypesEdges[T]) MemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[T] {
-	return newGroupMemberIn[T](lib.EdgeIn(n.key, "group_member", filters))
+func (n allFieldTypesEdges[M]) MemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[M] {
+	return newGroupMemberIn[M](lib.EdgeIn(n.key, "group_member", filters))
 }

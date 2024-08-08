@@ -8,50 +8,50 @@ import (
 
 var GroupMember = newGroupMember[model.GroupMember](lib.NewKey[model.GroupMember]())
 
-func newGroupMember[T any](key lib.Key[T]) groupMember[T] {
-	return groupMember[T]{
-		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
-		ID:        lib.NewID[T](lib.Field(key, "id"), "group_member"),
-		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
+func newGroupMember[M any](key lib.Key[M]) groupMember[M] {
+	return groupMember[M]{
+		CreatedAt: lib.NewTime[M](lib.Field(key, "created_at")),
+		ID:        lib.NewID[M](lib.Field(key, "id"), "group_member"),
+		UpdatedAt: lib.NewTime[M](lib.Field(key, "updated_at")),
 		key:       key,
 	}
 }
 
-type groupMember[T any] struct {
-	key       lib.Key[T]
-	ID        *lib.ID[T]
-	CreatedAt *lib.Time[T]
-	UpdatedAt *lib.Time[T]
+type groupMember[M any] struct {
+	key       lib.Key[M]
+	ID        *lib.ID[M]
+	CreatedAt *lib.Time[M]
+	UpdatedAt *lib.Time[M]
 }
 
-func (n groupMember[T]) Meta() groupMemberMeta[T] {
-	return newGroupMemberMeta[T](lib.Field(n.key, "meta"))
+func (n groupMember[M]) Meta() groupMemberMeta[M] {
+	return newGroupMemberMeta[M](lib.Field(n.key, "meta"))
 }
 
-type groupMemberIn[T any] struct {
-	lib.Filter[T]
-	key lib.Key[T]
+type groupMemberIn[M any] struct {
+	lib.Filter[M]
+	key lib.Key[M]
 }
 
-func newGroupMemberIn[T any](key lib.Key[T]) groupMemberIn[T] {
-	return groupMemberIn[T]{lib.KeyFilter(key), key}
+func newGroupMemberIn[M any](key lib.Key[M]) groupMemberIn[M] {
+	return groupMemberIn[M]{lib.KeyFilter(key), key}
 }
 
-func (i groupMemberIn[T]) Group(filters ...lib.Filter[model.Group]) groupEdges[T] {
+func (i groupMemberIn[M]) Group(filters ...lib.Filter[model.Group]) groupEdges[M] {
 	key := lib.EdgeIn(i.key, "group", filters)
-	return groupEdges[T]{lib.KeyFilter(key), key}
+	return groupEdges[M]{lib.KeyFilter(key), key}
 }
 
-type groupMemberOut[T any] struct {
-	lib.Filter[T]
-	key lib.Key[T]
+type groupMemberOut[M any] struct {
+	lib.Filter[M]
+	key lib.Key[M]
 }
 
-func newGroupMemberOut[T any](key lib.Key[T]) groupMemberOut[T] {
-	return groupMemberOut[T]{lib.KeyFilter(key), key}
+func newGroupMemberOut[M any](key lib.Key[M]) groupMemberOut[M] {
+	return groupMemberOut[M]{lib.KeyFilter(key), key}
 }
 
-func (o groupMemberOut[T]) User(filters ...lib.Filter[model.AllFieldTypes]) allFieldTypesEdges[T] {
+func (o groupMemberOut[M]) User(filters ...lib.Filter[model.AllFieldTypes]) allFieldTypesEdges[M] {
 	key := lib.EdgeOut(o.key, "user", filters)
-	return allFieldTypesEdges[T]{lib.KeyFilter(key), key}
+	return allFieldTypesEdges[M]{lib.KeyFilter(key), key}
 }

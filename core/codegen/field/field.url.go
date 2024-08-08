@@ -48,19 +48,19 @@ func (f *URL) CodeGen() *CodeGen {
 func (f *URL) filterDefine(ctx Context) jen.Code {
 	filter := "URL"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
 func (f *URL) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewURL"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
@@ -68,7 +68,7 @@ func (f *URL) convFrom(_ Context) (jen.Code, jen.Code) {
 	fromFunc := "fromURL"
 
 	if f.source.Pointer() {
-		fromFunc += "Ptr"
+		fromFunc += fnSuffixPtr
 	}
 
 	return jen.Id(fromFunc),
@@ -79,7 +79,7 @@ func (f *URL) convTo(_ Context) (jen.Code, jen.Code) {
 	toFunc := "toURL"
 
 	if f.source.Pointer() {
-		toFunc += "Ptr"
+		toFunc += fnSuffixPtr
 	}
 
 	return jen.Id(toFunc),
@@ -88,5 +88,5 @@ func (f *URL) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *URL) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{"json": f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }

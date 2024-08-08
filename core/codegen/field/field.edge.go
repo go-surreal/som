@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -45,15 +46,15 @@ func (f *Edge) CodeGen() *CodeGen {
 }
 
 func (f *Edge) filterDefine(_ Context) jen.Code {
-	return jen.Id(f.table.NameGoLower()).Types(jen.Id("T"))
+	return jen.Id(f.table.NameGoLower()).Types(def.TypeModel)
 }
 
 func (f *Edge) filterInit(_ Context) (jen.Code, jen.Code) {
-	return jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")), nil
+	return jen.Id("new" + f.table.NameGo()).Types(def.TypeModel), nil
 }
 
 func (f *Edge) filterFunc(ctx Context) jen.Code {
-	receiver := jen.Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))
+	receiver := jen.Id(ctx.Table.NameGoLower()).Types(def.TypeModel)
 	if ctx.Receiver != nil {
 		receiver = ctx.Receiver
 	}
@@ -70,11 +71,11 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 //nolint:unused // currently not fully implemented
 func (f *Edge) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
 		Id(f.NameGo()).Params().
-		Id(f.NameGoLower()).Types(jen.Id("T")).
+		Id(f.NameGoLower()).Types(def.TypeModel).
 		Block(
-			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
+			jen.Return(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel).
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
@@ -90,5 +91,5 @@ func (f *Edge) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *Edge) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
 }

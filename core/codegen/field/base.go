@@ -7,8 +7,9 @@ import (
 	"strings"
 )
 
-var (
-	typeModel = jen.Id("T") // TODO: rename to M
+const (
+	convTag     = "cbor"
+	fnSuffixPtr = "Ptr"
 )
 
 // type Edge struct {

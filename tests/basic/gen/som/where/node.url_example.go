@@ -8,23 +8,23 @@ import (
 
 var URLExample = newURLExample[model.URLExample](lib.NewKey[model.URLExample]())
 
-func newURLExample[T any](key lib.Key[T]) urlexample[T] {
-	return urlexample[T]{
-		ID:           lib.NewID[T](lib.Field(key, "id"), "url_example"),
-		SomeOtherURL: lib.NewURL[T](lib.Field(key, "some_other_url")),
-		SomeURL:      lib.NewURLPtr[T](lib.Field(key, "some_url")),
+func newURLExample[M any](key lib.Key[M]) urlexample[M] {
+	return urlexample[M]{
+		ID:           lib.NewID[M](lib.Field(key, "id"), "url_example"),
+		SomeOtherURL: lib.NewURL[M](lib.Field(key, "some_other_url")),
+		SomeURL:      lib.NewURLPtr[M](lib.Field(key, "some_url")),
 		key:          key,
 	}
 }
 
-type urlexample[T any] struct {
-	key          lib.Key[T]
-	ID           *lib.ID[T]
-	SomeURL      *lib.URLPtr[T]
-	SomeOtherURL *lib.URL[T]
+type urlexample[M any] struct {
+	key          lib.Key[M]
+	ID           *lib.ID[M]
+	SomeURL      *lib.URLPtr[M]
+	SomeOtherURL *lib.URL[M]
 }
 
-type urlexampleEdges[T any] struct {
-	lib.Filter[T]
-	key lib.Key[T]
+type urlexampleEdges[M any] struct {
+	lib.Filter[M]
+	key lib.Key[M]
 }
