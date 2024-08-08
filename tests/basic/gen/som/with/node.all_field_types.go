@@ -5,14 +5,14 @@ import model "github.com/go-surreal/som/tests/basic/model"
 
 var AllFieldTypes = allFieldTypes[model.AllFieldTypes]("")
 
-type allFieldTypes[T any] string
+type allFieldTypes[M any] string
 
-func (n allFieldTypes[T]) fetch(T) {}
+func (n allFieldTypes[M]) fetch(M) {}
 
-func (n allFieldTypes[T]) MainGroup() group[T] {
-	return group[T](keyed(n, "main_group"))
+func (n allFieldTypes[M]) MainGroup() group[M] {
+	return group[M](keyed(n, "main_group"))
 }
 
-func (n allFieldTypes[T]) MainGroupPtr() group[T] {
-	return group[T](keyed(n, "main_group_ptr"))
+func (n allFieldTypes[M]) MainGroupPtr() group[M] {
+	return group[M](keyed(n, "main_group_ptr"))
 }
