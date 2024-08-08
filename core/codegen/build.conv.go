@@ -5,7 +5,7 @@ import (
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
 	"path/filepath"
 	"strings"
@@ -15,17 +15,13 @@ type convBuilder struct {
 	*baseBuilder
 }
 
-func newConvBuilder(input *input, basePath, basePkg, pkgName string) *convBuilder {
+func newConvBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *convBuilder {
 	return &convBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *convBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
 	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
@@ -65,10 +61,7 @@ func (b *convBuilder) embedStaticFiles() error {
 		content := string(file.Content)
 		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
+		b.fs.Write(filepath.Join(b.path(), file.Path), []byte(content))
 	}
 
 	return nil
@@ -162,7 +155,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		f.Add(b.buildToLinkPtr(node))
 	}
 
-	if err := f.Save(path.Join(b.path(), elem.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), elem.FileName()))); err != nil {
 		return err
 	}
 

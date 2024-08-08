@@ -5,13 +5,14 @@ import (
 	"github.com/go-surreal/som/core/codegen"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util"
+	"github.com/go-surreal/som/core/util/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 )
 
-func Generate(inPath, outPath string) error {
+func Generate(inPath, outPath string, dry bool) error {
 	source, err := parser.Parse(inPath)
 	if err != nil {
 		return err
@@ -34,10 +35,16 @@ func Generate(inPath, outPath string) error {
 	diff := strings.TrimPrefix(absDir, modPath)
 	outPkg := path.Join(pkgPath, diff)
 
-	err = codegen.Build(source, outPath, outPkg)
+	out := fs.New()
+
+	err = codegen.Build(source, out, outPkg)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if dry {
+		return out.Dry(outPath)
+	}
+
+	return out.Flush(outPath)
 }

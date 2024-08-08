@@ -5,7 +5,7 @@ import (
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
 	"path/filepath"
 	"strings"
@@ -15,17 +15,13 @@ type relateBuilder struct {
 	*baseBuilder
 }
 
-func newRelateBuilder(input *input, basePath, basePkg, pkgName string) *relateBuilder {
+func newRelateBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *relateBuilder {
 	return &relateBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *relateBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
 	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
@@ -59,25 +55,22 @@ func (b *relateBuilder) embedStaticFiles() error {
 		content := string(file.Content)
 		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
+		b.fs.Write(filepath.Join(b.path(), file.Path), []byte(content))
 	}
 
 	return nil
 }
 
 func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
-	file := jen.NewFile(b.pkgName)
+	f := jen.NewFile(b.pkgName)
 
-	file.PackageComment(codegenComment)
+	f.PackageComment(codegenComment)
 
-	file.Line()
-	file.Add(b.byNew(node))
+	f.Line()
+	f.Add(b.byNew(node))
 
-	file.Line()
-	file.Type().Id(node.Name).Struct(
+	f.Line()
+	f.Type().Id(node.Name).Struct(
 		jen.Id("db").Id("Database"),
 	)
 
@@ -92,8 +85,8 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 			continue
 		}
 
-		file.Line()
-		file.Func().Params(jen.Id("n").Id(node.NameGo())).
+		f.Line()
+		f.Func().Params(jen.Id("n").Id(node.NameGo())).
 			Id(fld.NameGo()).Params().
 			Id(edgeElement.Table().NameGoLower()).
 			Block(
@@ -101,7 +94,7 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 			)
 	}
 
-	if err := file.Save(path.Join(b.path(), node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
 
@@ -109,20 +102,20 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 }
 
 func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
-	file := jen.NewFile(b.pkgName)
+	f := jen.NewFile(b.pkgName)
 
-	file.PackageComment(codegenComment)
+	f.PackageComment(codegenComment)
 
-	file.Line()
-	file.Type().Id(edge.NameGoLower()).Struct(
+	f.Line()
+	f.Type().Id(edge.NameGoLower()).Struct(
 		jen.Id("db").Id("Database"),
 	)
 
-	file.Line()
-	file.Add(
+	f.Line()
+	f.Add(
 		comment("Create creates a new edge between the given nodes.\nNote: The ID type if both nodes must be a string or number for now."),
 	)
-	file.Func().Params(jen.Id("e").Id(edge.NameGoLower())).Id("Create").
+	f.Func().Params(jen.Id("e").Id(edge.NameGoLower())).Id("Create").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name)),
@@ -178,23 +171,23 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			jen.Return(jen.Nil()),
 		)
 
-	file.Line()
-	file.Func().Params(jen.Id(edge.NameGoLower())).
+	f.Line()
+	f.Func().Params(jen.Id(edge.NameGoLower())).
 		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
 			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not yet implemented"))),
 		)
 
-	file.Line()
-	file.Func().Params(jen.Id(edge.NameGoLower())).
+	f.Line()
+	f.Func().Params(jen.Id(edge.NameGoLower())).
 		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
 			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not yet implemented"))),
 		)
 
-	if err := file.Save(path.Join(b.path(), edge.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), edge.FileName()))); err != nil {
 		return err
 	}
 
