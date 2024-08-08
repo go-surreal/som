@@ -8,8 +8,8 @@ import (
 
 var FieldsLikeDBResponse = newFieldsLikeDBResponse[model.FieldsLikeDBResponse]("")
 
-func newFieldsLikeDBResponse[T any](key string) fieldsLikeDbresponse[T] {
-	return fieldsLikeDbresponse[T]{
+func newFieldsLikeDBResponse[M any](key string) fieldsLikeDbresponse[M] {
+	return fieldsLikeDbresponse[M]{
 		Detail: lib.NewStringSort[M](keyed(key, "detail")),
 		ID:     lib.NewBaseSort[M](keyed(key, "id")),
 		Status: lib.NewStringSort[M](keyed(key, "status")),
@@ -18,7 +18,7 @@ func newFieldsLikeDBResponse[T any](key string) fieldsLikeDbresponse[T] {
 	}
 }
 
-type fieldsLikeDbresponse[T any] struct {
+type fieldsLikeDbresponse[M any] struct {
 	key    string
 	ID     *lib.BaseSort[M]
 	Time   *lib.StringSort[M]

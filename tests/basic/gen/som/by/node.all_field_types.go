@@ -8,8 +8,8 @@ import (
 
 var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes]("")
 
-func newAllFieldTypes[T any](key string) allFieldTypes[T] {
-	return allFieldTypes[T]{
+func newAllFieldTypes[M any](key string) allFieldTypes[M] {
+	return allFieldTypes[M]{
 		CreatedAt:   lib.NewBaseSort[M](keyed(key, "created_at")),
 		Duration:    lib.NewBaseSort[M](keyed(key, "duration")),
 		DurationNil: lib.NewBaseSort[M](keyed(key, "duration_nil")),
@@ -44,7 +44,7 @@ func newAllFieldTypes[T any](key string) allFieldTypes[T] {
 	}
 }
 
-type allFieldTypes[T any] struct {
+type allFieldTypes[M any] struct {
 	key         string
 	ID          *lib.BaseSort[M]
 	CreatedAt   *lib.BaseSort[M]

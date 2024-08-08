@@ -8,8 +8,8 @@ import (
 
 var Group = newGroup[model.Group]("")
 
-func newGroup[T any](key string) group[T] {
-	return group[T]{
+func newGroup[M any](key string) group[M] {
+	return group[M]{
 		CreatedAt: lib.NewBaseSort[M](keyed(key, "created_at")),
 		ID:        lib.NewBaseSort[M](keyed(key, "id")),
 		Name:      lib.NewStringSort[M](keyed(key, "name")),
@@ -18,7 +18,7 @@ func newGroup[T any](key string) group[T] {
 	}
 }
 
-type group[T any] struct {
+type group[M any] struct {
 	key       string
 	ID        *lib.BaseSort[M]
 	CreatedAt *lib.BaseSort[M]

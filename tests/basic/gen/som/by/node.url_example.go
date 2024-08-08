@@ -8,14 +8,14 @@ import (
 
 var URLExample = newURLExample[model.URLExample]("")
 
-func newURLExample[T any](key string) urlexample[T] {
-	return urlexample[T]{
+func newURLExample[M any](key string) urlexample[M] {
+	return urlexample[M]{
 		ID:  lib.NewBaseSort[M](keyed(key, "id")),
 		key: key,
 	}
 }
 
-type urlexample[T any] struct {
+type urlexample[M any] struct {
 	key string
 	ID  *lib.BaseSort[M]
 }
