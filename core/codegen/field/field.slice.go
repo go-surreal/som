@@ -255,24 +255,6 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 			return nil
 		}
 
-	//case *Struct:
-	//	{
-	//		return jen.Func().
-	//			Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
-	//			Id(f.NameGo()).Params().
-	//			Op("*").Qual(ctx.pkgLib(), "Slice").
-	//			Types(def.TypeModel, element.typeGo(), elemFilter).
-	//			Block(
-	//				jen.Return(
-	//					jen.Qual(ctx.pkgLib(), "NewSlice").Types(def.TypeModel, element.typeGo(), elemFilter).
-	//						Call(
-	//							jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())),
-	//							makeElemFilter,
-	//						),
-	//				),
-	//			)
-	//	}
-
 	default:
 		return nil
 	}
