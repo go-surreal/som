@@ -5,6 +5,6 @@ import model "github.com/go-surreal/som/tests/basic/model"
 
 var FieldsLikeDBResponse = fieldsLikeDbresponse[model.FieldsLikeDBResponse]("")
 
-type fieldsLikeDbresponse[T any] string
+type fieldsLikeDbresponse[M any] string
 
-func (n fieldsLikeDbresponse[T]) fetch(T) {}
+func (n fieldsLikeDbresponse[M]) fetch(M) {}

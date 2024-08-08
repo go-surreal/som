@@ -5,6 +5,6 @@ import model "github.com/go-surreal/som/tests/basic/model"
 
 var Group = group[model.Group]("")
 
-type group[T any] string
+type group[M any] string
 
-func (n group[T]) fetch(T) {}
+func (n group[M]) fetch(M) {}

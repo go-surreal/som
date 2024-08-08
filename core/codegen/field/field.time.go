@@ -56,28 +56,28 @@ func (f *Time) CodeGen() *CodeGen {
 func (f *Time) filterDefine(ctx Context) jen.Code {
 	filter := "Time"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
 func (f *Time) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewTime"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")),
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Time) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
 func (f *Time) sortInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
@@ -89,7 +89,7 @@ func (f *Time) convFrom(_ Context) (jen.Code, jen.Code) {
 	fromFunc := "fromTime"
 
 	if f.source.Pointer() {
-		fromFunc += "Ptr"
+		fromFunc += fnSuffixPtr
 	}
 
 	return jen.Id(fromFunc),
@@ -112,7 +112,7 @@ func (f *Time) convTo(_ Context) (jen.Code, jen.Code) {
 	toFunc := "toTime"
 
 	if f.source.Pointer() {
-		toFunc += "Ptr"
+		toFunc += fnSuffixPtr
 	}
 
 	return jen.Id(toFunc),
@@ -130,9 +130,9 @@ func (f *Time) convToField(_ Context) jen.Code {
 func (f *Time) fieldDef(ctx Context) jen.Code {
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv(ctx)).
-			Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
+			Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
 	}
 
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{"json": f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }

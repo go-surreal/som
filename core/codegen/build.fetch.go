@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"os"
@@ -71,23 +72,23 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	f.Line()
 	f.Type().Id(node.NameGoLower()).
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		String()
 
 	f.Line()
 	f.Func().
-		Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
-		Id("fetch").Params(jen.Id("T")).Block()
+		Params(jen.Id("n").Id(node.NameGoLower()).Types(def.TypeModel)).
+		Id("fetch").Params(def.TypeModel).Block()
 
 	for _, fld := range node.GetFields() {
 		if nodeField, ok := fld.(*field.Node); ok {
 			f.Line()
 			f.Func().
-				Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
+				Params(jen.Id("n").Id(node.NameGoLower()).Types(def.TypeModel)).
 				Id(nodeField.NameGo()).Params().
-				Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
+				Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
 				Block(
-					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
+					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
 						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
 		}
 	}

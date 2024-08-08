@@ -3,21 +3,21 @@ package where
 
 import lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 
-func newLogin[T any](key lib.Key[T]) login[T] {
-	return login[T]{
-		Password: lib.NewString[T](lib.Field(key, "password")),
-		Username: lib.NewString[T](lib.Field(key, "username")),
+func newLogin[M any](key lib.Key[M]) login[M] {
+	return login[M]{
+		Password: lib.NewString[M](lib.Field(key, "password")),
+		Username: lib.NewString[M](lib.Field(key, "username")),
 		key:      key,
 	}
 }
 
-type login[T any] struct {
-	key      lib.Key[T]
-	Username *lib.String[T]
-	Password *lib.String[T]
+type login[M any] struct {
+	key      lib.Key[M]
+	Username *lib.String[M]
+	Password *lib.String[M]
 }
 
-type loginEdges[T any] struct {
-	lib.Filter[T]
-	key lib.Key[T]
+type loginEdges[M any] struct {
+	lib.Filter[M]
+	key lib.Key[M]
 }

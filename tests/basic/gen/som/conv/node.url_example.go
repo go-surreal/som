@@ -9,9 +9,9 @@ import (
 )
 
 type URLExample struct {
-	ID           *sdbc.ID `json:"id,omitempty"`
-	SomeURL      *string  `json:"some_url"`
-	SomeOtherURL string   `json:"some_other_url"`
+	ID           *sdbc.ID `cbor:"id,omitempty"`
+	SomeURL      *string  `cbor:"some_url"`
+	SomeOtherURL string   `cbor:"some_other_url"`
 }
 
 func FromURLExample(data *model.URLExample) *URLExample {

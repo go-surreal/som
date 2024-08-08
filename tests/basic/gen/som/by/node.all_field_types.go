@@ -8,80 +8,80 @@ import (
 
 var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes]("")
 
-func newAllFieldTypes[T any](key string) allFieldTypes[T] {
-	return allFieldTypes[T]{
-		CreatedAt:   lib.NewBaseSort[T](keyed(key, "created_at")),
-		Duration:    lib.NewBaseSort[T](keyed(key, "duration")),
-		DurationNil: lib.NewBaseSort[T](keyed(key, "duration_nil")),
-		DurationPtr: lib.NewBaseSort[T](keyed(key, "duration_ptr")),
-		Float32:     lib.NewBaseSort[T](keyed(key, "float_32")),
-		Float64:     lib.NewBaseSort[T](keyed(key, "float_64")),
-		ID:          lib.NewBaseSort[T](keyed(key, "id")),
-		Int:         lib.NewBaseSort[T](keyed(key, "int")),
-		Int16:       lib.NewBaseSort[T](keyed(key, "int_16")),
-		Int16Ptr:    lib.NewBaseSort[T](keyed(key, "int_16_ptr")),
-		Int32:       lib.NewBaseSort[T](keyed(key, "int_32")),
-		Int32Ptr:    lib.NewBaseSort[T](keyed(key, "int_32_ptr")),
-		Int64:       lib.NewBaseSort[T](keyed(key, "int_64")),
-		Int64Ptr:    lib.NewBaseSort[T](keyed(key, "int_64_ptr")),
-		Int8:        lib.NewBaseSort[T](keyed(key, "int_8")),
-		Int8Ptr:     lib.NewBaseSort[T](keyed(key, "int_8_ptr")),
-		IntPtr:      lib.NewBaseSort[T](keyed(key, "int_ptr")),
-		Rune:        lib.NewBaseSort[T](keyed(key, "rune")),
-		String:      lib.NewStringSort[T](keyed(key, "string")),
-		StringPtr:   lib.NewStringSort[T](keyed(key, "string_ptr")),
-		Time:        lib.NewBaseSort[T](keyed(key, "time")),
-		TimeNil:     lib.NewBaseSort[T](keyed(key, "time_nil")),
-		TimePtr:     lib.NewBaseSort[T](keyed(key, "time_ptr")),
-		Uint16:      lib.NewBaseSort[T](keyed(key, "uint_16")),
-		Uint16Ptr:   lib.NewBaseSort[T](keyed(key, "uint_16_ptr")),
-		Uint32:      lib.NewBaseSort[T](keyed(key, "uint_32")),
-		Uint32Ptr:   lib.NewBaseSort[T](keyed(key, "uint_32_ptr")),
-		Uint8:       lib.NewBaseSort[T](keyed(key, "uint_8")),
-		Uint8Ptr:    lib.NewBaseSort[T](keyed(key, "uint_8_ptr")),
-		UpdatedAt:   lib.NewBaseSort[T](keyed(key, "updated_at")),
+func newAllFieldTypes[M any](key string) allFieldTypes[M] {
+	return allFieldTypes[M]{
+		CreatedAt:   lib.NewBaseSort[M](keyed(key, "created_at")),
+		Duration:    lib.NewBaseSort[M](keyed(key, "duration")),
+		DurationNil: lib.NewBaseSort[M](keyed(key, "duration_nil")),
+		DurationPtr: lib.NewBaseSort[M](keyed(key, "duration_ptr")),
+		Float32:     lib.NewBaseSort[M](keyed(key, "float_32")),
+		Float64:     lib.NewBaseSort[M](keyed(key, "float_64")),
+		ID:          lib.NewBaseSort[M](keyed(key, "id")),
+		Int:         lib.NewBaseSort[M](keyed(key, "int")),
+		Int16:       lib.NewBaseSort[M](keyed(key, "int_16")),
+		Int16Ptr:    lib.NewBaseSort[M](keyed(key, "int_16_ptr")),
+		Int32:       lib.NewBaseSort[M](keyed(key, "int_32")),
+		Int32Ptr:    lib.NewBaseSort[M](keyed(key, "int_32_ptr")),
+		Int64:       lib.NewBaseSort[M](keyed(key, "int_64")),
+		Int64Ptr:    lib.NewBaseSort[M](keyed(key, "int_64_ptr")),
+		Int8:        lib.NewBaseSort[M](keyed(key, "int_8")),
+		Int8Ptr:     lib.NewBaseSort[M](keyed(key, "int_8_ptr")),
+		IntPtr:      lib.NewBaseSort[M](keyed(key, "int_ptr")),
+		Rune:        lib.NewBaseSort[M](keyed(key, "rune")),
+		String:      lib.NewStringSort[M](keyed(key, "string")),
+		StringPtr:   lib.NewStringSort[M](keyed(key, "string_ptr")),
+		Time:        lib.NewBaseSort[M](keyed(key, "time")),
+		TimeNil:     lib.NewBaseSort[M](keyed(key, "time_nil")),
+		TimePtr:     lib.NewBaseSort[M](keyed(key, "time_ptr")),
+		Uint16:      lib.NewBaseSort[M](keyed(key, "uint_16")),
+		Uint16Ptr:   lib.NewBaseSort[M](keyed(key, "uint_16_ptr")),
+		Uint32:      lib.NewBaseSort[M](keyed(key, "uint_32")),
+		Uint32Ptr:   lib.NewBaseSort[M](keyed(key, "uint_32_ptr")),
+		Uint8:       lib.NewBaseSort[M](keyed(key, "uint_8")),
+		Uint8Ptr:    lib.NewBaseSort[M](keyed(key, "uint_8_ptr")),
+		UpdatedAt:   lib.NewBaseSort[M](keyed(key, "updated_at")),
 		key:         key,
 	}
 }
 
-type allFieldTypes[T any] struct {
+type allFieldTypes[M any] struct {
 	key         string
-	ID          *lib.BaseSort[T]
-	CreatedAt   *lib.BaseSort[T]
-	UpdatedAt   *lib.BaseSort[T]
-	String      *lib.StringSort[T]
-	StringPtr   *lib.StringSort[T]
-	Int         *lib.BaseSort[T]
-	IntPtr      *lib.BaseSort[T]
-	Int8        *lib.BaseSort[T]
-	Int8Ptr     *lib.BaseSort[T]
-	Int16       *lib.BaseSort[T]
-	Int16Ptr    *lib.BaseSort[T]
-	Int32       *lib.BaseSort[T]
-	Int32Ptr    *lib.BaseSort[T]
-	Int64       *lib.BaseSort[T]
-	Int64Ptr    *lib.BaseSort[T]
-	Uint8       *lib.BaseSort[T]
-	Uint8Ptr    *lib.BaseSort[T]
-	Uint16      *lib.BaseSort[T]
-	Uint16Ptr   *lib.BaseSort[T]
-	Uint32      *lib.BaseSort[T]
-	Uint32Ptr   *lib.BaseSort[T]
-	Float32     *lib.BaseSort[T]
-	Float64     *lib.BaseSort[T]
-	Rune        *lib.BaseSort[T]
-	Time        *lib.BaseSort[T]
-	TimePtr     *lib.BaseSort[T]
-	TimeNil     *lib.BaseSort[T]
-	Duration    *lib.BaseSort[T]
-	DurationPtr *lib.BaseSort[T]
-	DurationNil *lib.BaseSort[T]
+	ID          *lib.BaseSort[M]
+	CreatedAt   *lib.BaseSort[M]
+	UpdatedAt   *lib.BaseSort[M]
+	String      *lib.StringSort[M]
+	StringPtr   *lib.StringSort[M]
+	Int         *lib.BaseSort[M]
+	IntPtr      *lib.BaseSort[M]
+	Int8        *lib.BaseSort[M]
+	Int8Ptr     *lib.BaseSort[M]
+	Int16       *lib.BaseSort[M]
+	Int16Ptr    *lib.BaseSort[M]
+	Int32       *lib.BaseSort[M]
+	Int32Ptr    *lib.BaseSort[M]
+	Int64       *lib.BaseSort[M]
+	Int64Ptr    *lib.BaseSort[M]
+	Uint8       *lib.BaseSort[M]
+	Uint8Ptr    *lib.BaseSort[M]
+	Uint16      *lib.BaseSort[M]
+	Uint16Ptr   *lib.BaseSort[M]
+	Uint32      *lib.BaseSort[M]
+	Uint32Ptr   *lib.BaseSort[M]
+	Float32     *lib.BaseSort[M]
+	Float64     *lib.BaseSort[M]
+	Rune        *lib.BaseSort[M]
+	Time        *lib.BaseSort[M]
+	TimePtr     *lib.BaseSort[M]
+	TimeNil     *lib.BaseSort[M]
+	Duration    *lib.BaseSort[M]
+	DurationPtr *lib.BaseSort[M]
+	DurationNil *lib.BaseSort[M]
 }
 
-func (n allFieldTypes[T]) MainGroup() group[T] {
-	return newGroup[T](keyed(n.key, "main_group"))
+func (n allFieldTypes[M]) MainGroup() group[M] {
+	return newGroup[M](keyed(n.key, "main_group"))
 }
 
-func (n allFieldTypes[T]) MainGroupPtr() group[T] {
-	return newGroup[T](keyed(n.key, "main_group_ptr"))
+func (n allFieldTypes[M]) MainGroupPtr() group[M] {
+	return newGroup[M](keyed(n.key, "main_group_ptr"))
 }

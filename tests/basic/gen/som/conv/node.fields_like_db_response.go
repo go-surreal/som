@@ -9,11 +9,11 @@ import (
 )
 
 type FieldsLikeDBResponse struct {
-	ID     *sdbc.ID `json:"id,omitempty"`
-	Time   string   `json:"time"`
-	Status string   `json:"status"`
-	Detail string   `json:"detail"`
-	Result []string `json:"result"`
+	ID     *sdbc.ID `cbor:"id,omitempty"`
+	Time   string   `cbor:"time"`
+	Status string   `cbor:"status"`
+	Detail string   `cbor:"detail"`
+	Result []string `cbor:"result"`
 }
 
 func FromFieldsLikeDBResponse(data *model.FieldsLikeDBResponse) *FieldsLikeDBResponse {

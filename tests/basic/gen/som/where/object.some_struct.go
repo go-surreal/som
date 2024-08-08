@@ -3,25 +3,25 @@ package where
 
 import lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 
-func newSomeStruct[T any](key lib.Key[T]) someStruct[T] {
-	return someStruct[T]{
-		IntPtr:    lib.NewNumericPtr[T, *int](lib.Field(key, "int_ptr")),
-		StringPtr: lib.NewStringPtr[T](lib.Field(key, "string_ptr")),
-		TimePtr:   lib.NewTimePtr[T](lib.Field(key, "time_ptr")),
-		UuidPtr:   lib.NewUUIDPtr[T](lib.Field(key, "uuid_ptr")),
+func newSomeStruct[M any](key lib.Key[M]) someStruct[M] {
+	return someStruct[M]{
+		IntPtr:    lib.NewNumericPtr[M, *int](lib.Field(key, "int_ptr")),
+		StringPtr: lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
+		TimePtr:   lib.NewTimePtr[M](lib.Field(key, "time_ptr")),
+		UuidPtr:   lib.NewUUIDPtr[M](lib.Field(key, "uuid_ptr")),
 		key:       key,
 	}
 }
 
-type someStruct[T any] struct {
-	key       lib.Key[T]
-	StringPtr *lib.StringPtr[T]
-	IntPtr    *lib.NumericPtr[T, *int]
-	TimePtr   *lib.TimePtr[T]
-	UuidPtr   *lib.UUIDPtr[T]
+type someStruct[M any] struct {
+	key       lib.Key[M]
+	StringPtr *lib.StringPtr[M]
+	IntPtr    *lib.NumericPtr[M, *int]
+	TimePtr   *lib.TimePtr[M]
+	UuidPtr   *lib.UUIDPtr[M]
 }
 
-type someStructEdges[T any] struct {
-	lib.Filter[T]
-	key lib.Key[T]
+type someStructEdges[M any] struct {
+	lib.Filter[M]
+	key lib.Key[M]
 }

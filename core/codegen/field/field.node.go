@@ -3,6 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -47,15 +48,15 @@ func (f *Node) CodeGen() *CodeGen {
 }
 
 func (f *Node) filterDefine(_ Context) jen.Code {
-	return jen.Id(f.table.NameGoLower()).Types(jen.Id("T"))
+	return jen.Id(f.table.NameGoLower()).Types(def.TypeModel)
 }
 
 func (f *Node) filterInit(_ Context) (jen.Code, jen.Code) {
-	return jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")), nil
+	return jen.Id("new" + f.table.NameGo()).Types(def.TypeModel), nil
 }
 
 func (f *Node) filterFunc(ctx Context) jen.Code {
-	receiver := jen.Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))
+	receiver := jen.Id(ctx.Table.NameGoLower()).Types(def.TypeModel)
 	if ctx.Receiver != nil {
 		receiver = ctx.Receiver
 	}
@@ -71,11 +72,11 @@ func (f *Node) filterFunc(ctx Context) jen.Code {
 
 func (f *Node) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
 		Id(f.NameGo()).Params().
-		Id(f.table.NameGoLower()).Types(jen.Id("T")).
+		Id(f.table.NameGoLower()).Types(def.TypeModel).
 		Block(
-			jen.Return(jen.Id("new" + f.table.NameGo()).Types(jen.Id("T")).
+			jen.Return(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel).
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
@@ -83,7 +84,7 @@ func (f *Node) convFrom(_ Context) (jen.Code, jen.Code) {
 	funcName := "to" + f.table.NameGo() + "Link"
 
 	if f.source.Pointer() {
-		funcName += "Ptr"
+		funcName += fnSuffixPtr
 	}
 
 	return jen.Id(funcName),
@@ -94,7 +95,7 @@ func (f *Node) convTo(_ Context) (jen.Code, jen.Code) {
 	funcName := "from" + f.table.NameGo() + "Link"
 
 	if f.source.Pointer() {
-		funcName += "Ptr"
+		funcName += fnSuffixPtr
 	}
 
 	return jen.Id(funcName),
@@ -103,5 +104,5 @@ func (f *Node) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *Node) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{"json": f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }

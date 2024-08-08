@@ -8,33 +8,33 @@ import (
 
 var Group = newGroup[model.Group](lib.NewKey[model.Group]())
 
-func newGroup[T any](key lib.Key[T]) group[T] {
-	return group[T]{
-		CreatedAt: lib.NewTime[T](lib.Field(key, "created_at")),
-		ID:        lib.NewID[T](lib.Field(key, "id"), "group"),
-		Name:      lib.NewString[T](lib.Field(key, "name")),
-		UpdatedAt: lib.NewTime[T](lib.Field(key, "updated_at")),
+func newGroup[M any](key lib.Key[M]) group[M] {
+	return group[M]{
+		CreatedAt: lib.NewTime[M](lib.Field(key, "created_at")),
+		ID:        lib.NewID[M](lib.Field(key, "id"), "group"),
+		Name:      lib.NewString[M](lib.Field(key, "name")),
+		UpdatedAt: lib.NewTime[M](lib.Field(key, "updated_at")),
 		key:       key,
 	}
 }
 
-type group[T any] struct {
-	key       lib.Key[T]
-	ID        *lib.ID[T]
-	CreatedAt *lib.Time[T]
-	UpdatedAt *lib.Time[T]
-	Name      *lib.String[T]
+type group[M any] struct {
+	key       lib.Key[M]
+	ID        *lib.ID[M]
+	CreatedAt *lib.Time[M]
+	UpdatedAt *lib.Time[M]
+	Name      *lib.String[M]
 }
 
-func (n group[T]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[T] {
-	return newGroupMemberOut[T](lib.EdgeOut(n.key, "group_member", filters))
+func (n group[M]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[M] {
+	return newGroupMemberOut[M](lib.EdgeOut(n.key, "group_member", filters))
 }
 
-type groupEdges[T any] struct {
-	lib.Filter[T]
-	key lib.Key[T]
+type groupEdges[M any] struct {
+	lib.Filter[M]
+	key lib.Key[M]
 }
 
-func (n groupEdges[T]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[T] {
-	return newGroupMemberOut[T](lib.EdgeOut(n.key, "group_member", filters))
+func (n groupEdges[M]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[M] {
+	return newGroupMemberOut[M](lib.EdgeOut(n.key, "group_member", filters))
 }
