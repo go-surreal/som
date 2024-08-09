@@ -1,11 +1,10 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
 	"strings"
 )
@@ -14,18 +13,13 @@ type filterBuilder struct {
 	*baseBuilder
 }
 
-func newFilterBuilder(input *input, basePath, basePkg, pkgName string) *filterBuilder {
+func newFilterBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *filterBuilder {
 	return &filterBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *filterBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
-	// Generate the base file.
 	if err := b.buildBaseFile(); err != nil {
 		return err
 	}
@@ -74,10 +68,7 @@ func Any[M any](filters ...lib.Filter[M]) lib.Filter[M] {
 	content = strings.Replace(content, "{{pkgConv}}", b.subPkg(def.PkgConv), 1)
 	data := []byte(codegenComment + content)
 
-	err := os.WriteFile(path.Join(b.path(), "where.go"), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
+	b.fs.Write(path.Join(b.path(), "where.go"), data)
 
 	return nil
 }
@@ -93,7 +84,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 		b.buildOther(file, elem)
 	}
 
-	if err := file.Save(path.Join(b.path(), elem.FileName())); err != nil {
+	if err := file.Render(b.fs.Writer(path.Join(b.path(), elem.FileName()))); err != nil {
 		return err
 	}
 

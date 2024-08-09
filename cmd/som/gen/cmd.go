@@ -5,6 +5,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const (
+	flagVerbose = "verbose"
+	flagDry     = "dry"
+)
+
 func Cmd() *cli.Command {
 	return &cli.Command{
 		Name:        "gen",
@@ -12,7 +17,18 @@ func Cmd() *cli.Command {
 		Usage:       "Generate code for the database access based on input models",
 		Description: "Takes the models from <input_path> and generates a typesafe access layer at <output_path>.",
 		ArgsUsage:   "<input_path> <output_path>",
-		Action:      generate,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    flagVerbose,
+				Aliases: []string{"v"},
+				Value:   false,
+			},
+			&cli.BoolFlag{
+				Name:  flagDry,
+				Value: false,
+			},
+		},
+		Action: generate,
 	}
 }
 
@@ -24,7 +40,7 @@ func generate(ctx *cli.Context) error {
 	inPath := ctx.Args().Get(0)
 	outPath := ctx.Args().Get(1)
 
-	if err := core.Generate(inPath, outPath); err != nil {
+	if err := core.Generate(inPath, outPath, ctx.Bool(flagVerbose), ctx.Bool(flagDry)); err != nil {
 		return cli.Exit(err.Error(), 1)
 	}
 

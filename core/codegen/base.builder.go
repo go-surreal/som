@@ -7,7 +7,7 @@ import (
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/parser"
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
 	"path/filepath"
 	"strings"
@@ -20,11 +20,11 @@ const (
 
 type build struct {
 	input  *input
-	outDir string
+	fs     *fs.FS
 	outPkg string
 }
 
-func Build(source *parser.Output, outDir string, outPkg string) error {
+func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
 	in, err := newInput(source)
 	if err != nil {
 		return fmt.Errorf("error creating input: %v", err)
@@ -32,7 +32,7 @@ func Build(source *parser.Output, outDir string, outPkg string) error {
 
 	builder := &build{
 		input:  in,
-		outDir: outDir,
+		fs:     fs,
 		outPkg: outPkg,
 	}
 
@@ -40,10 +40,6 @@ func Build(source *parser.Output, outDir string, outPkg string) error {
 }
 
 func (b *build) build() error {
-	if err := os.MkdirAll(b.basePath(), os.ModePerm); err != nil {
-		return err
-	}
-
 	if err := b.copyInternalPackage(); err != nil {
 		return err
 	}
@@ -96,21 +92,13 @@ func (b *build) copyInternalPackage() error {
 		return err
 	}
 
-	dir := filepath.Join(b.outDir, "internal", "lib")
-
-	err = os.MkdirAll(dir, os.ModePerm)
-	if err != nil {
-		return err
-	}
+	dir := filepath.Join("internal", "lib")
 
 	for _, file := range files {
 		content := string(file.Content)
 		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-		err := os.WriteFile(filepath.Join(dir, file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
+		b.fs.Write(filepath.Join(dir, file.Path), []byte(content))
 	}
 
 	// TYPES
@@ -120,21 +108,13 @@ func (b *build) copyInternalPackage() error {
 		return err
 	}
 
-	dir = filepath.Join(b.outDir, "internal", "types")
-
-	err = os.MkdirAll(dir, os.ModePerm)
-	if err != nil {
-		return err
-	}
+	dir = filepath.Join("internal", "types")
 
 	for _, file := range files {
 		content := string(file.Content)
 		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-		err := os.WriteFile(filepath.Join(dir, file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
+		b.fs.Write(filepath.Join(dir, file.Path), []byte(content))
 	}
 
 	return nil
@@ -154,10 +134,7 @@ func (b *build) embedStaticFiles() error {
 		content := string(file.Content)
 		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-		err := os.WriteFile(filepath.Join(b.basePath(), file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
+		b.fs.Write(file.Path, []byte(content))
 	}
 
 	return nil
@@ -177,7 +154,7 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("Close").Call()
 	})
 
-	if err := f.Save(path.Join(b.basePath(), filenameInterfaces)); err != nil {
+	if err := f.Render(b.fs.Writer(filenameInterfaces)); err != nil {
 		return err
 	}
 
@@ -263,14 +240,7 @@ func (b *build) buildSchemaFile() error {
 
 	content := strings.Join(statements, "\n")
 
-	if err := os.MkdirAll(path.Join(b.basePath(), "schema"), os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create schema directory: %w", err)
-	}
-
-	err := os.WriteFile(path.Join(b.basePath(), "schema", filenameSchema), []byte(content), os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %w", err)
-	}
+	b.fs.Write(path.Join("schema", filenameSchema), []byte(content))
 
 	return nil
 }
@@ -576,7 +546,7 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			),
 		)
 
-	if err := f.Save(path.Join(b.basePath(), node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(node.FileName())); err != nil {
 		return err
 	}
 
@@ -584,31 +554,27 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 }
 
 func (b *build) newQueryBuilder() builder {
-	return newQueryBuilder(b.input, b.basePath(), b.basePkg(), def.PkgQuery)
+	return newQueryBuilder(b.input, b.fs, b.basePkg(), def.PkgQuery)
 }
 
 func (b *build) newFilterBuilder() builder {
-	return newFilterBuilder(b.input, b.basePath(), b.basePkg(), def.PkgFilter)
+	return newFilterBuilder(b.input, b.fs, b.basePkg(), def.PkgFilter)
 }
 
 func (b *build) newSortBuilder() builder {
-	return newSortBuilder(b.input, b.basePath(), b.basePkg(), def.PkgSort)
+	return newSortBuilder(b.input, b.fs, b.basePkg(), def.PkgSort)
 }
 
 func (b *build) newFetchBuilder() builder {
-	return newFetchBuilder(b.input, b.basePath(), b.basePkg(), def.PkgFetch)
+	return newFetchBuilder(b.input, b.fs, b.basePkg(), def.PkgFetch)
 }
 
 func (b *build) newConvBuilder() builder {
-	return newConvBuilder(b.input, b.basePath(), b.basePkg(), def.PkgConv)
+	return newConvBuilder(b.input, b.fs, b.basePkg(), def.PkgConv)
 }
 
 func (b *build) newRelateBuilder() builder {
-	return newRelateBuilder(b.input, b.basePath(), b.basePkg(), def.PkgRelate)
-}
-
-func (b *build) basePath() string {
-	return b.outDir
+	return newRelateBuilder(b.input, b.fs, b.basePkg(), def.PkgRelate)
 }
 
 func (b *build) basePkg() string {

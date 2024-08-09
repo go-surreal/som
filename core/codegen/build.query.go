@@ -5,7 +5,7 @@ import (
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
 	"path/filepath"
 	"strings"
@@ -15,17 +15,13 @@ type queryBuilder struct {
 	*baseBuilder
 }
 
-func newQueryBuilder(input *input, basePath, basePkg, pkgName string) *queryBuilder {
+func newQueryBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *queryBuilder {
 	return &queryBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *queryBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
 	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
@@ -53,10 +49,7 @@ func (b *queryBuilder) embedStaticFiles() error {
 		content := string(file.Content)
 		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
+		b.fs.Write(filepath.Join(b.path(), file.Path), []byte(content))
 	}
 
 	return nil
@@ -90,7 +83,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			),
 		)
 
-	if err := f.Save(path.Join(b.path(), node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
 
