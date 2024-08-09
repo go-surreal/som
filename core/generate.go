@@ -6,19 +6,14 @@ import (
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util"
 	"github.com/go-surreal/som/core/util/fs"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
 )
 
-func Generate(inPath, outPath string, dry bool) error {
+func Generate(inPath, outPath string, verbose bool, dry bool) error {
 	source, err := parser.Parse(inPath)
 	if err != nil {
-		return err
-	}
-
-	if err := os.RemoveAll(outPath); err != nil {
 		return err
 	}
 
@@ -42,8 +37,14 @@ func Generate(inPath, outPath string, dry bool) error {
 		return err
 	}
 
+	if verbose {
+		if err := out.Dry(outPath); err != nil {
+			return err
+		}
+	}
+
 	if dry {
-		return out.Dry(outPath)
+		return nil
 	}
 
 	return out.Flush(outPath)

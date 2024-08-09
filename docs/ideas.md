@@ -67,21 +67,6 @@ parse::email::domain() - Parses and returns an email domain from an email addres
 parse::email::user() - Parses and returns an email username from an email address
 ```
 
-### Support URL type
-
-```
-url.Url // go standard type
-```
-
-```
-parse::url::domain() - Parses and returns the domain from a URL
-parse::url::fragment() - Parses and returns the fragment from a URL
-parse::url::host() - Parses and returns the hostname from a URL
-parse::url::path() - Parses and returns the path from a URL
-parse::url::port() - Parses and returns the port number from a URL
-parse::url::query() - Parses and returns the query string from a URL
-```
-
 ### More query functions
 
 - https://surrealdb.com/docs/surrealql/functions/string
@@ -147,6 +132,7 @@ repo.db.user.Update(&userModel,
 )
 
 ```
+(or use patch instead)
 
 ### Better edges with generics
 
@@ -284,6 +270,15 @@ DEFINE EVENT example_uid_setting ON TABLE example WHEN $before = null AND $befor
     UPDATE counter:example SET val = $next;
 };
 ```
+
+### Caching
+
+add caching to the generation process
+
+### Watch
+
+add a watch command to the generation process
+should watch the input dir as well as all other imported dirs
 
 ## Optimisations
 

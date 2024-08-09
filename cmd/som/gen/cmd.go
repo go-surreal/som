@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	flagDry = "dry"
+	flagVerbose = "verbose"
+	flagDry     = "dry"
 )
 
 func Cmd() *cli.Command {
@@ -17,6 +18,11 @@ func Cmd() *cli.Command {
 		Description: "Takes the models from <input_path> and generates a typesafe access layer at <output_path>.",
 		ArgsUsage:   "<input_path> <output_path>",
 		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    flagVerbose,
+				Aliases: []string{"v"},
+				Value:   false,
+			},
 			&cli.BoolFlag{
 				Name:  flagDry,
 				Value: false,
@@ -34,7 +40,7 @@ func generate(ctx *cli.Context) error {
 	inPath := ctx.Args().Get(0)
 	outPath := ctx.Args().Get(1)
 
-	if err := core.Generate(inPath, outPath, ctx.Bool(flagDry)); err != nil {
+	if err := core.Generate(inPath, outPath, ctx.Bool(flagVerbose), ctx.Bool(flagDry)); err != nil {
 		return cli.Exit(err.Error(), 1)
 	}
 
