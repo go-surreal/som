@@ -36,29 +36,6 @@ func (fs *FS) Writer(path string) io.Writer {
 }
 
 func (fs *FS) Flush(dir string) error {
-	//if err := os.RemoveAll(dir); err != nil && !os.IsNotExist(err) {
-	//	return fmt.Errorf("failed to remove %s: %w", dir, err)
-	//}
-	//
-	//path := dir
-	//
-	//for {
-	//	path = filepath.Dir(path)
-	//
-	//	entries, err := os.ReadDir(path)
-	//	if err != nil && !os.IsNotExist(err) {
-	//		return fmt.Errorf("failed to read dir %s: %w", path, err)
-	//	}
-	//
-	//	if len(entries) > 0 {
-	//		break
-	//	}
-	//
-	//	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-	//		return fmt.Errorf("failed to remove dir %s: %w", path, err)
-	//	}
-	//}
-
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create dir %s: %w", dir, err)
 	}
@@ -160,6 +137,33 @@ func (fs *FS) Dry(dir string) error {
 			fmt.Println("+ " + filepath.Join(dir, file))
 		case &valFalse:
 			fmt.Println("- " + filepath.Join(dir, file))
+		}
+	}
+
+	return nil
+}
+
+func (fs *FS) Clear(dir string) error {
+	if err := os.RemoveAll(dir); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove %s: %w", dir, err)
+	}
+
+	path := dir
+
+	for {
+		path = filepath.Dir(path)
+
+		entries, err := os.ReadDir(path)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to read dir %s: %w", path, err)
+		}
+
+		if len(entries) > 0 {
+			break
+		}
+
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove dir %s: %w", path, err)
 		}
 	}
 
