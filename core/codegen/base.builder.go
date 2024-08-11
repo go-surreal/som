@@ -141,6 +141,11 @@ func (b *build) embedStaticFiles() error {
 }
 
 func (b *build) buildInterfaceFile() error {
+	writer, err := b.fs.Writer(filenameInterfaces)
+	if err != nil {
+		return err
+	}
+
 	f := jen.NewFile(b.basePkgName())
 
 	f.PackageComment(codegenComment)
@@ -154,7 +159,7 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("Close").Call()
 	})
 
-	if err := f.Render(b.fs.Writer(filenameInterfaces)); err != nil {
+	if err := f.Render(writer); err != nil {
 		return err
 	}
 
@@ -246,6 +251,11 @@ func (b *build) buildSchemaFile() error {
 }
 
 func (b *build) buildBaseFile(node *field.NodeTable) error {
+	writer, err := b.fs.Writer(node.FileName())
+	if err != nil {
+		return err
+	}
+
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
 
@@ -546,7 +556,7 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			),
 		)
 
-	if err := f.Render(b.fs.Writer(node.FileName())); err != nil {
+	if err := f.Render(writer); err != nil {
 		return err
 	}
 

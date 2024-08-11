@@ -1,8 +1,8 @@
 module github.com/go-surreal/som
 
-go 1.22
+go 1.23
 
-toolchain go1.22.6
+toolchain go1.23rc2
 
 require (
 	github.com/dave/jennifer v1.7.0
@@ -20,9 +20,11 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/spf13/afero v1.11.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )

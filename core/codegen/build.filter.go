@@ -74,6 +74,11 @@ func Any[M any](filters ...lib.Filter[M]) lib.Filter[M] {
 }
 
 func (b *filterBuilder) buildFile(elem field.Element) error {
+	writer, err := b.fs.Writer(path.Join(b.path(), elem.FileName()))
+	if err != nil {
+		return err
+	}
+
 	file := jen.NewFile(b.pkgName)
 
 	file.PackageComment(codegenComment)
@@ -84,7 +89,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 		b.buildOther(file, elem)
 	}
 
-	if err := file.Render(b.fs.Writer(path.Join(b.path(), elem.FileName()))); err != nil {
+	if err := file.Render(writer); err != nil {
 		return err
 	}
 

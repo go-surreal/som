@@ -77,6 +77,7 @@ func (b builder[M, C]) Limit(limit int) BuilderNoLive[M, C] {
 // This works for both record links and edges.
 //
 // TODO: Allow fetch for live queries as soon as SurrealDB supports it.
+// see: https://github.com/surrealdb/surrealdb/issues/2766
 func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) BuilderNoLive[M, C] {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {

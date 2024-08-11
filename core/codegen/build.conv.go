@@ -68,6 +68,11 @@ func (b *convBuilder) embedStaticFiles() error {
 }
 
 func (b *convBuilder) buildFile(elem field.Element) error {
+	writer, err := b.fs.Writer(path.Join(b.path(), elem.FileName()))
+	if err != nil {
+		return err
+	}
+
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
 		TargetPkg: b.basePkg,
@@ -155,7 +160,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		f.Add(b.buildToLinkPtr(node))
 	}
 
-	if err := f.Render(b.fs.Writer(path.Join(b.path(), elem.FileName()))); err != nil {
+	if err := f.Render(writer); err != nil {
 		return err
 	}
 
