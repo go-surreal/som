@@ -2,9 +2,10 @@ package codegen
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
 	"path/filepath"
 	"strings"
@@ -14,17 +15,13 @@ type fetchBuilder struct {
 	*baseBuilder
 }
 
-func newFetchBuilder(input *input, basePath, basePkg, pkgName string) *fetchBuilder {
+func newFetchBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *fetchBuilder {
 	return &fetchBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *fetchBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
 	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
@@ -52,10 +49,7 @@ func (b *fetchBuilder) embedStaticFiles() error {
 		content := string(file.Content)
 		content = strings.Replace(content, embedComment, codegenComment, 1)
 
-		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
+		b.fs.Write(filepath.Join(b.path(), file.Path), []byte(content))
 	}
 
 	return nil
@@ -71,28 +65,28 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	f.Line()
 	f.Type().Id(node.NameGoLower()).
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		String()
 
 	f.Line()
 	f.Func().
-		Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
-		Id("fetch").Params(jen.Id("T")).Block()
+		Params(jen.Id("n").Id(node.NameGoLower()).Types(def.TypeModel)).
+		Id("fetch").Params(def.TypeModel).Block()
 
 	for _, fld := range node.GetFields() {
 		if nodeField, ok := fld.(*field.Node); ok {
 			f.Line()
 			f.Func().
-				Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
+				Params(jen.Id("n").Id(node.NameGoLower()).Types(def.TypeModel)).
 				Id(nodeField.NameGo()).Params().
-				Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
+				Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
 				Block(
-					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
+					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
 						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
 		}
 	}
 
-	if err := f.Save(path.Join(b.path(), node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
 

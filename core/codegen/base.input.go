@@ -27,7 +27,7 @@ func newInput(source *parser.Output) (*input, error) {
 
 	def, err := field.NewDef(source, buildConf)
 	if err != nil {
-		return nil, fmt.Errorf("could not build def: %v", err)
+		return nil, fmt.Errorf("could not build def: %w", err)
 	}
 
 	in.nodes = def.Nodes

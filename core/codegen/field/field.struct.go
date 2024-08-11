@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -16,7 +17,7 @@ func (f *Struct) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }
 
-func (f *Struct) typeConv() jen.Code {
+func (f *Struct) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Id(f.table.NameGoLower())
 }
 
@@ -30,8 +31,8 @@ func (f *Struct) Table() Table {
 
 func (f *Struct) CodeGen() *CodeGen {
 	return &CodeGen{
-		filterDefine: nil,
-		filterInit:   nil,
+		filterDefine: f.filterDefine,
+		filterInit:   f.filterInit,
 		filterFunc:   f.filterFunc,
 
 		sortDefine: nil,
@@ -44,33 +45,47 @@ func (f *Struct) CodeGen() *CodeGen {
 	}
 }
 
+func (f *Struct) filterDefine(_ Context) jen.Code {
+	return jen.Id(f.table.NameGoLower()).Types(def.TypeModel)
+}
+
+func (f *Struct) filterInit(_ Context) (jen.Code, jen.Code) {
+	return jen.Id("new" + f.source.Struct).Types(def.TypeModel), nil
+}
+
 func (f *Struct) filterFunc(ctx Context) jen.Code {
 	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(jen.Id("T"))).
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
 		Id(f.NameGo()).Params().
-		Id(f.table.NameGoLower()).Types(jen.Id("T")).
+		Add(f.filterDefine(ctx)).
 		Block(
-			jen.Return(jen.Id("new" + f.source.Struct).Types(jen.Id("T")).
+			jen.Return(jen.Add(f.filterInit(ctx)).
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
-func (f *Struct) convFrom(ctx Context) jen.Code {
+func (f *Struct) convFrom(_ Context) (jen.Code, jen.Code) {
 	code := jen.Id("from" + f.table.NameGo())
+
 	if !f.source.Pointer() {
 		code = jen.Id("noPtrFunc").Call(jen.Id("from" + f.table.NameGo()))
 	}
-	return code.Call(jen.Id("data").Dot(f.NameGo()))
+
+	return code,
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Struct) convTo(ctx Context) jen.Code {
+func (f *Struct) convTo(_ Context) (jen.Code, jen.Code) {
 	code := jen.Id("to" + f.table.NameGo())
+
 	if !f.source.Pointer() {
 		code = jen.Id("noPtrFunc").Call(jen.Id("to" + f.table.NameGo()))
 	}
-	return code.Call(jen.Id("data").Dot(f.NameGo()))
+
+	return code,
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Struct) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase()})
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }

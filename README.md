@@ -201,6 +201,62 @@ Reason for this is that working with very big integers is not yet fully working 
 current version of SurrealDB (as of writing: 1.4.2). This should be fixed in a future release of SurrealDB.
 As soon as this is fixed, Som will support these types as well.
 
+## Overview
+
+### Supported data types
+
+#### Primitive types
+
+- [x] `string`
+- [x] `int`, `int8`, `int16`, `int32`, `int64`
+- [x] `uint`, `uint8`, `uint16`, `uint32`, `uint64`
+- [ ] `uintptr`
+- [x] `float32`, `float64`
+- [ ] `complex64`, `complex128`
+- [x] `bool`
+- [x] `rune`
+- [x] `byte`, `[]byte`
+- [x] `time.Time`
+- [x] `time.Duration`
+- [ ] `time.Location`
+- [ ] `time.Weekday`?
+- [ ] `time.Month` etc.?
+- [ ] `big.Int`
+- [ ] `big.Float`
+- [x] `url.URL`
+- [ ] `net.IP`
+- [ ] `regexp.Regexp`
+- [x] Slice types of the above
+- [ ] `map[string]x` (where `x` is one of the types listed here or `any` with a mix of the listed types)
+
+
+For all types above, the pointer version is supported as well.
+
+#### Special types
+
+- [x] `github.com/google/uuid.UUID`
+- [ ] `github.com/oklog/ulid.ULID`?
+
+#### Custom types
+
+- [x] `som.Enum`
+- [ ] `som.Password`
+- [ ] `som.Email`
+- [ ] `som.SemVer`
+- [ ] `som.HTML` (encode, sanitize)
+- [ ] `som.GeometryPoint`
+- [ ] `som.GeometryLine`
+- [ ] `som.GeometryPolygon`
+- [ ] `som.GeometryMultiPoint`
+- [ ] `som.GeometryMultiLine`
+- [ ] `som.GeometryMultiPolygon`
+- [ ] `som.GeometryCollection`
+- [ ] `som.JSON`?
+
+### Features
+
+tbd.
+
 ## Development
 
 ### Versioning
@@ -228,6 +284,9 @@ language itself. For further information, please refer to the
 tbd.
 
 [//]: # (## Roadmap)
+
+- Patch Modals API
+- Select in QUery with Fragment to prevent accidential update overrides
 
 [//]: # ()
 [//]: # (You can find the official roadmap [here]&#40;ROADMAP.md&#41;. As this might not always be the full)

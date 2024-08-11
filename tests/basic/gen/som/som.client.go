@@ -9,14 +9,19 @@ import (
 )
 
 type Database interface {
-	Close() error
-	Create(ctx context.Context, thing string, data any) ([]byte, error)
-	Select(ctx context.Context, what string) ([]byte, error)
+	Create(ctx context.Context, id sdbc.RecordID, data any) ([]byte, error)
+	Select(ctx context.Context, id *sdbc.ID) ([]byte, error)
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	Update(ctx context.Context, thing string, data any) ([]byte, error)
-	Delete(ctx context.Context, what string) ([]byte, error)
+	Update(ctx context.Context, id *sdbc.ID, data any) ([]byte, error)
+	Delete(ctx context.Context, id *sdbc.ID) ([]byte, error)
+
+	Marshal(val any) ([]byte, error)
+	Unmarshal(buf []byte, val any) error
+	Close() error
 }
+
+type ID *sdbc.ID
 
 type Config struct {
 	Host      string
@@ -29,9 +34,6 @@ type Config struct {
 
 type ClientImpl struct {
 	db Database
-
-	marshal   func(val any) ([]byte, error)
-	unmarshal func(buf []byte, val any) error
 }
 
 func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, error) {
@@ -42,14 +44,11 @@ func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, e
 		opt.sdbc...,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not create sdbc client: %v", err)
+		return nil, fmt.Errorf("failed to create sdbc client: %v", err)
 	}
 
 	return &ClientImpl{
-		db: &database{Client: surreal},
-
-		marshal:   opt.jsonMarshal,
-		unmarshal: opt.jsonUnmarshal,
+		db: surreal,
 	}, nil
 }
 

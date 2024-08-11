@@ -2,6 +2,7 @@ package basic
 
 import (
 	"context"
+	"github.com/go-surreal/sdbc"
 	sombase "github.com/go-surreal/som"
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
@@ -14,12 +15,6 @@ import (
 	"testing"
 	"time"
 	"unicode/utf8"
-)
-
-const (
-	surrealDBContainerVersion = "v1.4.2"
-	containerName             = "som_test_surrealdb"
-	containerStartedMsg       = "Started web server on 0.0.0.0:8000"
 )
 
 func TestQuery(t *testing.T) {
@@ -38,15 +33,24 @@ func TestQuery(t *testing.T) {
 					where.GroupMember.CreatedAt.Before(time.Now()),
 				).
 				Group(
-					where.Group.ID.Equal("some_id"),
+					where.Group.ID.Equal(sdbc.MakeID("all_field_types", "some_id")),
 				),
+
+			where.AllFieldTypes.Duration.Days().LessThan(4),
+
+			//where.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().Base64Decode().Base64Encode().Equal(""),
+
+			//where.AllFieldTypes.GroupsSlice.At(0).At(0).CreatedAt.Before(time.Now()),
+
+			//where.AllFieldTypes.SliceSliceSlice.At(0).At(0).At(0).Equal(""),
 
 			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
 			// where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)])",
+		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)] "+
+			"AND duration::days(duration) < $2)",
 		// "SELECT * FROM user WHERE (count(groups[WHERE (name = $0 AND created_at INSIDE $1)]) > $2 "+
 		// 	"AND groups[WHERE (created_at > $3)]) ",
 		query.Describe(),
@@ -299,6 +303,108 @@ func TestURLTypes(t *testing.T) {
 	}
 }
 
+func TestDuration(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ptr := time.Hour
+
+	userNew := &model.AllFieldTypes{
+		Duration:    time.Minute,
+		DurationPtr: &ptr,
+		DurationNil: nil,
+	}
+
+	modelIn := userNew
+
+	err := client.AllFieldTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	modelOut, exists, err := client.AllFieldTypesRepo().Read(ctx, modelIn.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+	)
+
+	modelOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.Duration.Equal(time.Minute),
+			where.AllFieldTypes.DurationPtr.GreaterThan(time.Minute),
+			where.AllFieldTypes.DurationNil.Nil(true),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+	)
+}
+
+func TestUUID(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ptr := uuid.New()
+
+	userNew := &model.AllFieldTypes{
+		UUID:    uuid.New(),
+		UUIDPtr: &ptr,
+		UUIDNil: nil,
+	}
+
+	modelIn := userNew
+
+	err := client.AllFieldTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	modelOut, exists, err := client.AllFieldTypesRepo().Read(ctx, modelIn.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+	)
+
+	modelOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.UUID.Equal(modelIn.UUID),
+			where.AllFieldTypes.UUIDPtr.Equal(*modelIn.UUIDPtr),
+			where.AllFieldTypes.UUIDNil.Nil(true),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+	)
+}
+
 func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 
@@ -317,7 +423,7 @@ func FuzzWithDatabase(f *testing.F) {
 			t.Fatal(err)
 		}
 
-		if userIn.ID() == "" {
+		if userIn.ID() == nil {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
@@ -364,7 +470,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatal(err)
 		}
 
-		if userIn.ID() == "" {
+		if userIn.ID() == nil {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
@@ -378,7 +484,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatalf("user with ID '%s' not found", userIn.ID())
 		}
 
-		assert.Equal(t, userIn.ID(), userOut.ID())
+		assert.Equal(t, userIn.ID().String(), userOut.ID().String())
 		assert.Equal(t, "1", userOut.String)
 
 		userOut.String = "2"
@@ -415,7 +521,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		if userIn.ID() == "" {
+		if userIn.ID() == nil {
 			b.Fatal("user ID must not be empty after create call")
 		}
 

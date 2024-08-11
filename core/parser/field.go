@@ -80,6 +80,10 @@ type FieldByte struct {
 	*fieldAtomic
 }
 
+type FieldDuration struct {
+	*fieldAtomic
+}
+
 type FieldTime struct {
 	*fieldAtomic
 	IsCreatedAt bool

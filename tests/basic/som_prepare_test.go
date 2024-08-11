@@ -2,22 +2,44 @@ package basic
 
 import (
 	"context"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/docker/docker/api/types/container"
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"log/slog"
 	"os"
+	"regexp"
+	"strings"
 	"testing"
 )
 
+const (
+	surrealDBVersion    = "1.5.4"
+	containerStartedMsg = "Started web server on "
+)
+
 func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
-	tb.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+	tb.Helper()
+
+	username := gofakeit.Username()
+	password := gofakeit.Password(true, true, true, true, true, 32)
+	namespace := gofakeit.FirstName()
+	database := gofakeit.LastName()
 
 	req := testcontainers.ContainerRequest{
-		Name:         containerName,
-		Image:        "surrealdb/surrealdb:" + surrealDBContainerVersion,
-		Cmd:          []string{"start", "--strict", "--allow-funcs", "--user", "root", "--pass", "root", "--log", "debug", "memory"},
+		Name:  "sdbc_" + toSlug(tb.Name()),
+		Image: "surrealdb/surrealdb:v" + surrealDBVersion,
+		Env: map[string]string{
+			"SURREAL_PATH":   "memory",
+			"SURREAL_STRICT": "true",
+			"SURREAL_AUTH":   "true",
+			"SURREAL_USER":   username,
+			"SURREAL_PASS":   password,
+		},
+		Cmd: []string{
+			"start", "--allow-funcs", "--log", "trace",
+		},
 		ExposedPorts: []string{"8000/tcp"},
 		WaitingFor:   wait.ForLog(containerStartedMsg),
 		HostConfigModifier: func(conf *container.HostConfig) {
@@ -45,10 +67,10 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 
 	config := som.Config{
 		Host:      endpoint,
-		Username:  "root",
-		Password:  "root",
-		Namespace: "som_test",
-		Database:  "example_basic",
+		Username:  username,
+		Password:  password,
+		Namespace: namespace,
+		Database:  database,
 	}
 
 	opts := []som.Option{
@@ -77,4 +99,24 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	}
 
 	return client, cleanup
+}
+
+func toSlug(input string) string {
+	// Remove special characters
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		panic(err)
+	}
+	processedString := reg.ReplaceAllString(input, " ")
+
+	// Remove leading and trailing spaces
+	processedString = strings.TrimSpace(processedString)
+
+	// Replace spaces with dashes
+	slug := strings.ReplaceAll(processedString, " ", "-")
+
+	// Convert to lowercase
+	slug = strings.ToLower(slug)
+
+	return slug
 }

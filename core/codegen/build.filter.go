@@ -1,11 +1,10 @@
 package codegen
 
 import (
-	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
 	"strings"
 )
@@ -14,18 +13,13 @@ type filterBuilder struct {
 	*baseBuilder
 }
 
-func newFilterBuilder(input *input, basePath, basePkg, pkgName string) *filterBuilder {
+func newFilterBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *filterBuilder {
 	return &filterBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *filterBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
-	// Generate the base file.
 	if err := b.buildBaseFile(); err != nil {
 		return err
 	}
@@ -51,29 +45,30 @@ func (b *filterBuilder) build() error {
 	return nil
 }
 
+// TODO: move to embed!
 func (b *filterBuilder) buildBaseFile() error {
 	content := `
 
 package where
 
-import "{{libPkg}}"
+import (
+	"{{pkgLib}}"
+)
 
-func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
-	return lib.All[T](filters)
+func All[M any](filters ...lib.Filter[M]) lib.Filter[M] {
+	return lib.All[M](filters)
 }
 
-func Any[T any](filters ...lib.Filter[T]) lib.Filter[T] {
-	return lib.Any[T](filters)
+func Any[M any](filters ...lib.Filter[M]) lib.Filter[M] {
+	return lib.Any[M](filters)
 }
 `
 
-	content = strings.Replace(content, "{{libPkg}}", b.subPkg(def.PkgLib), 1)
+	content = strings.Replace(content, "{{pkgLib}}", b.subPkg(def.PkgLib), 1)
+	content = strings.Replace(content, "{{pkgConv}}", b.subPkg(def.PkgConv), 1)
 	data := []byte(codegenComment + content)
 
-	err := os.WriteFile(path.Join(b.path(), "where.go"), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
+	b.fs.Write(path.Join(b.path(), "where.go"), data)
 
 	return nil
 }
@@ -89,7 +84,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 		b.buildOther(file, elem)
 	}
 
-	if err := file.Save(path.Join(b.path(), elem.FileName())); err != nil {
+	if err := file.Render(b.fs.Writer(path.Join(b.path(), elem.FileName()))); err != nil {
 		return err
 	}
 
@@ -116,9 +111,9 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	file.Add(b.whereNew(elem))
 
 	file.Type().Id(elem.NameGoLower()).
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").Qual(pkgLib, "Key").Types(jen.Id("T")))
+			g.Add(jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel))
 			for _, f := range elem.GetFields() {
 				if code := f.CodeGen().FilterDefine(fieldCtx); code != nil {
 					g.Add(code)
@@ -135,13 +130,13 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 
 	file.Line()
 	file.Type().Id(elem.NameGoLower()+"Edges").
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		Struct(
-			jen.Qual(pkgLib, "Filter").Types(jen.Id("T")),
-			jen.Id("key").Qual(pkgLib, "Key").Types(jen.Id("T")),
+			jen.Qual(pkgLib, "Filter").Types(def.TypeModel),
+			jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel),
 		)
 
-	fieldCtx.Receiver = jen.Id(elem.NameGoLower() + "Edges").Types(jen.Id("T"))
+	fieldCtx.Receiver = jen.Id(elem.NameGoLower() + "Edges").Types(def.TypeModel)
 
 	for _, fld := range elem.GetFields() {
 		isEdge := false
@@ -165,14 +160,6 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 			file.Add(code)
 		}
 	}
-
-	file.Line()
-	file.Type().Id(elem.NameGoLower()+"Slice").
-		Types(jen.Id("T").Any()).
-		Struct(
-			jen.Qual(pkgLib, "Filter").Types(jen.Id("T")),
-			jen.Op("*").Qual(pkgLib, "Slice").Types(jen.Id("T"), b.SourceQual(elem.NameGo())),
-		)
 }
 
 func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
@@ -194,9 +181,9 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 
 	file.Line()
 	file.Type().Id(edge.NameGoLower()).
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").Qual(pkgLib, "Key").Types(jen.Id("T")))
+			g.Add(jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel))
 			for _, f := range edge.GetFields() {
 				if code := f.CodeGen().FilterDefine(fieldCtx); code != nil {
 					g.Add(code)
@@ -213,20 +200,20 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 
 	file.Line()
 	file.Type().Id(edge.NameGoLower()+"In").
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		Struct(
-			jen.Qual(pkgLib, "Filter").Types(jen.Id("T")),
-			jen.Id("key").Qual(pkgLib, "Key").Types(jen.Id("T")),
+			jen.Qual(pkgLib, "Filter").Types(def.TypeModel),
+			jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel),
 		)
 
 	file.Line()
 	file.Func().Id("new" + edge.NameGo() + "In").
-		Types(jen.Id("T").Any()).
-		Params(jen.Id("key").Qual(pkgLib, "Key").Types(jen.Id("T"))).
-		Id(edge.NameGoLower() + "In").Types(jen.Id("T")).
+		Types(jen.Add(def.TypeModel).Any()).
+		Params(jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel)).
+		Id(edge.NameGoLower() + "In").Types(def.TypeModel).
 		Block(
 			jen.Return(
-				jen.Id(edge.NameGoLower()+"In").Types(jen.Id("T")).Values(
+				jen.Id(edge.NameGoLower()+"In").Types(def.TypeModel).Values(
 					jen.Qual(pkgLib, "KeyFilter").Call(jen.Id("key")),
 					jen.Id("key"),
 				),
@@ -235,18 +222,18 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 
 	file.Line()
 	file.Func().
-		Params(jen.Id("i").Id(edge.NameGoLower()+"In").Types(jen.Id("T"))).Id(edge.Out.NameGo()).
+		Params(jen.Id("i").Id(edge.NameGoLower()+"In").Types(def.TypeModel)).Id(edge.Out.NameGo()).
 		Params(
 			jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(b.SourceQual(edge.Out.Table().NameGo())),
 		).
-		Id(edge.Out.Table().NameGoLower()+"Edges").Types(jen.Id("T")).
+		Id(edge.Out.Table().NameGoLower()+"Edges").Types(def.TypeModel).
 		Block(
 			jen.Id("key").Op(":=").Qual(pkgLib, "EdgeIn").Call(
 				jen.Id("i").Dot("key"),
 				jen.Lit(edge.Out.NameDatabase()),
 				jen.Id("filters"),
 			),
-			jen.Return(jen.Id(edge.Out.Table().NameGoLower()+"Edges").Types(jen.Id("T")).
+			jen.Return(jen.Id(edge.Out.Table().NameGoLower()+"Edges").Types(def.TypeModel).
 				Values(
 					jen.Qual(pkgLib, "KeyFilter").Call(jen.Id("key")),
 					jen.Id("key"),
@@ -255,20 +242,20 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 
 	file.Line()
 	file.Type().Id(edge.NameGoLower()+"Out").
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		Struct(
-			jen.Qual(pkgLib, "Filter").Types(jen.Id("T")),
-			jen.Id("key").Qual(pkgLib, "Key").Types(jen.Id("T")),
+			jen.Qual(pkgLib, "Filter").Types(def.TypeModel),
+			jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel),
 		)
 
 	file.Line()
 	file.Func().Id("new" + edge.NameGo() + "Out").
-		Types(jen.Id("T").Any()).
-		Params(jen.Id("key").Qual(pkgLib, "Key").Types(jen.Id("T"))).
-		Id(edge.NameGoLower() + "Out").Types(jen.Id("T")).
+		Types(jen.Add(def.TypeModel).Any()).
+		Params(jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel)).
+		Id(edge.NameGoLower() + "Out").Types(def.TypeModel).
 		Block(
 			jen.Return(
-				jen.Id(edge.NameGoLower()+"Out").Types(jen.Id("T")).Values(
+				jen.Id(edge.NameGoLower()+"Out").Types(def.TypeModel).Values(
 					jen.Qual(pkgLib, "KeyFilter").Call(jen.Id("key")),
 					jen.Id("key"),
 				),
@@ -277,18 +264,18 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 
 	file.Line()
 	file.Func().
-		Params(jen.Id("o").Id(edge.NameGoLower()+"Out").Types(jen.Id("T"))).Id(edge.In.NameGo()).
+		Params(jen.Id("o").Id(edge.NameGoLower()+"Out").Types(def.TypeModel)).Id(edge.In.NameGo()).
 		Params(
 			jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(b.SourceQual(edge.In.Table().NameGo())),
 		).
-		Id(edge.In.Table().NameGoLower()+"Edges").Types(jen.Id("T")).
+		Id(edge.In.Table().NameGoLower()+"Edges").Types(def.TypeModel).
 		Block(
 			jen.Id("key").Op(":=").Qual(pkgLib, "EdgeOut").Call(
 				jen.Id("o").Dot("key"),
 				jen.Lit(edge.In.NameDatabase()),
 				jen.Id("filters"),
 			),
-			jen.Return(jen.Id(edge.In.Table().NameGoLower()+"Edges").Types(jen.Id("T")).
+			jen.Return(jen.Id(edge.In.Table().NameGoLower()+"Edges").Types(def.TypeModel).
 				Values(
 					jen.Qual(pkgLib, "KeyFilter").Call(jen.Id("key")),
 					jen.Id("key"),
@@ -306,12 +293,12 @@ func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 	}
 
 	return jen.Func().Id("new" + elem.NameGo()).
-		Types(jen.Id("T").Any()).
-		Params(jen.Id("key").Qual(pkgLib, "Key").Types(jen.Id("T"))).
-		Id(elem.NameGoLower()).Types(jen.Id("T")).
+		Types(jen.Add(def.TypeModel).Any()).
+		Params(jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel)).
+		Id(elem.NameGoLower()).Types(def.TypeModel).
 		Block(
 			jen.Return(
-				jen.Id(elem.NameGoLower()).Types(jen.Id("T")).
+				jen.Id(elem.NameGoLower()).Types(def.TypeModel).
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("key")] = jen.Id("key")
 						for _, f := range elem.GetFields() {

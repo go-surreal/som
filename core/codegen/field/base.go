@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+const (
+	convTag     = "cbor"
+	fnSuffixPtr = "Ptr"
+)
+
 // type Edge struct {
 // 	Name   string
 // 	In     Field
@@ -22,7 +27,7 @@ type Field interface {
 	NameDatabase() string
 
 	typeGo() jen.Code
-	typeConv() jen.Code
+	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
 
 	CodeGen() *CodeGen
