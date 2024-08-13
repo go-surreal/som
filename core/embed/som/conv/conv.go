@@ -5,6 +5,7 @@ package conv
 import (
 	"encoding/json"
 	"github.com/go-surreal/sdbc"
+	"github.com/go-surreal/som/core/embed/internal/types"
 	"github.com/google/uuid"
 	"net/url"
 	"strconv"

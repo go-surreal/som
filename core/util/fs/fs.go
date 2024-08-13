@@ -1,10 +1,10 @@
 package fs
 
 import (
-	"bytes"
 	"fmt"
-	"golang.org/x/exp/maps"
+	"github.com/spf13/afero"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -12,27 +12,44 @@ import (
 )
 
 type FS struct {
-	writes map[string][]byte
-	writer map[string]*bytes.Buffer
+	mem afero.Fs
 }
 
 func New() *FS {
 	return &FS{
-		writes: make(map[string][]byte),
-		writer: make(map[string]*bytes.Buffer),
+		mem: afero.NewMemMapFs(),
 	}
 }
 
-func (fs *FS) Write(path string, content []byte) {
-	fs.writes[path] = content
-}
-
-func (fs *FS) Writer(path string) io.Writer {
-	if _, ok := fs.writer[path]; !ok {
-		fs.writer[path] = bytes.NewBuffer(nil)
+func (fs *FS) Open(name string) (fs.File, error) {
+	file, err := fs.mem.Open(name)
+	if err != nil {
+		return nil, err
 	}
 
-	return fs.writer[path]
+	return file, nil
+}
+
+func (fs *FS) Write(path string, content []byte) error {
+	file, err := fs.Writer(path)
+	if err != nil {
+		return err
+	}
+
+	if _, err := file.Write(content); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (fs *FS) Writer(path string) (io.Writer, error) {
+	file, err := fs.mem.Create(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
 }
 
 func (fs *FS) Flush(dir string) error {
@@ -40,35 +57,14 @@ func (fs *FS) Flush(dir string) error {
 		return fmt.Errorf("failed to create dir %s: %w", dir, err)
 	}
 
-	dirs := make(map[string]struct{})
-
-	for path := range fs.writes {
-		dirs[filepath.Dir(filepath.Join(dir, path))] = struct{}{}
+	if err := os.CopyFS(dir, fs); err != nil {
+		return fmt.Errorf("failed to write dir %s: %w", dir, err)
 	}
 
-	for path := range fs.writer {
-		dirs[filepath.Dir(filepath.Join(dir, path))] = struct{}{}
+	allFiles, err := fs.allFiles()
+	if err != nil {
+		return err
 	}
-
-	for _, dir := range maps.Keys(dirs) {
-		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			return fmt.Errorf("failed to create dir %s: %w", dir, err)
-		}
-	}
-
-	for path, content := range fs.writes {
-		if err := os.WriteFile(filepath.Join(dir, path), content, 0644); err != nil {
-			return fmt.Errorf("failed to write file %s: %w", path, err)
-		}
-	}
-
-	for path, writer := range fs.writer {
-		if err := os.WriteFile(filepath.Join(dir, path), writer.Bytes(), 0644); err != nil {
-			return fmt.Errorf("failed to write file %s: %w", path, err)
-		}
-	}
-
-	allFiles := fs.allFiles()
 
 	return filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -90,7 +86,10 @@ func (fs *FS) Flush(dir string) error {
 func (fs *FS) Dry(dir string) error {
 	dir = filepath.Clean(dir)
 
-	allFiles := fs.allFiles()
+	allFiles, err := fs.allFiles()
+	if err != nil {
+		return err
+	}
 
 	changes := make(map[string]*bool)
 
@@ -101,7 +100,7 @@ func (fs *FS) Dry(dir string) error {
 		changes[file] = &valTrue
 	}
 
-	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+	err = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -170,9 +169,21 @@ func (fs *FS) Clear(dir string) error {
 	return nil
 }
 
-func (fs *FS) allFiles() []string {
-	return append(
-		maps.Keys(fs.writes),
-		maps.Keys(fs.writer)...,
-	)
+func (fs *FS) allFiles() ([]string, error) {
+	fileInfos, err := afero.ReadDir(fs.mem, ".")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read files: %w", err)
+	}
+
+	var allFiles []string
+
+	for _, fileInfo := range fileInfos {
+		if fileInfo.IsDir() {
+			continue
+		}
+
+		allFiles = append(allFiles, fileInfo.Name())
+	}
+
+	return allFiles, nil
 }

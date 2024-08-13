@@ -30,6 +30,11 @@ func (b *sortBuilder) build() error {
 }
 
 func (b *sortBuilder) buildFile(node *field.NodeTable) error {
+	writer, err := b.fs.Writer(path.Join(b.path(), node.FileName()))
+	if err != nil {
+		return err
+	}
+
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
 		TargetPkg: b.basePkg,
@@ -65,7 +70,7 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 		}
 	}
 
-	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
+	if err := f.Render(writer); err != nil {
 		return err
 	}
 
