@@ -8,6 +8,7 @@ import (
 const (
 	flagVerbose = "verbose"
 	flagDry     = "dry"
+	flagNoCheck = "no-check"
 )
 
 func Cmd() *cli.Command {
@@ -28,7 +29,7 @@ func Cmd() *cli.Command {
 				Value: false,
 			},
 			&cli.BoolFlag{
-				Name:  "nocheck",
+				Name:  flagNoCheck,
 				Usage: "Disable version checks for go, som and sdbc",
 			},
 		},
@@ -44,7 +45,7 @@ func generate(ctx *cli.Context) error {
 	inPath := ctx.Args().Get(0)
 	outPath := ctx.Args().Get(1)
 
-	if err := core.Generate(inPath, outPath, ctx.Bool(flagVerbose), ctx.Bool(flagDry)); err != nil {
+	if err := core.Generate(inPath, outPath, ctx.Bool(flagVerbose), ctx.Bool(flagDry), !ctx.Bool(flagNoCheck)); err != nil {
 		return cli.Exit(err.Error(), 1)
 	}
 

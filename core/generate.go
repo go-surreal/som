@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func Generate(inPath, outPath string, verbose, dry bool) error {
+func Generate(inPath, outPath string, verbose, dry, check bool) error {
 	absDir, err := filepath.Abs(outPath)
 	if err != nil {
 		return fmt.Errorf("could not find absolute path: %v", err)
@@ -22,44 +22,32 @@ func Generate(inPath, outPath string, verbose, dry bool) error {
 		return fmt.Errorf("could not find go.mod: %v", err)
 	}
 
-	if info, err := mod.CheckGoVersion(); err != nil {
-		return err
-	} else if info != "" {
-		fmt.Println("ⓘ ", info)
+	if check {
+		if info, err := mod.CheckGoVersion(); err != nil {
+			return err
+		} else if info != "" {
+			fmt.Println("ⓘ ", info)
+		}
+
+		if info, err := mod.CheckSOMVersion(); err != nil {
+			return err
+		} else if info != "" {
+			fmt.Println("ⓘ ", info)
+		}
+
+		if info, err := mod.CheckSDBCVersion(); err != nil {
+			return err
+		} else if info != "" {
+			fmt.Println("ⓘ ", info)
+		}
 	}
 
-	if info, err := mod.CheckSOMVersion(); err != nil {
-		return err
-	} else if info != "" {
-		fmt.Println("ⓘ ", info)
-	}
-
-	if info, err := mod.CheckSDBCVersion(); err != nil {
-		return err
-	} else if info != "" {
-		fmt.Println("ⓘ ", info)
-	}
-
-	diff := strings.TrimPrefix(absDir, mod.Dir())
-	outPkg := path.Join(mod.Module(), diff)
+	outPkg := path.Join(mod.Module(), strings.TrimPrefix(absDir, mod.Dir()))
 
 	source, err := parser.Parse(inPath)
 	if err != nil {
 		return fmt.Errorf("could not parse source: %v", err)
 	}
-
-	//absDir, err := filepath.Abs(outPath)
-	//if err != nil {
-	//	return fmt.Errorf("could not find absolute path: %w", err)
-	//}
-
-	//pkgPath, modPath, err := util.ParseMod(absDir)
-	//if err != nil {
-	//	return err
-	//}
-
-	//diff := strings.TrimPrefix(absDir, modPath)
-	//outPkg := path.Join(pkgPath, diff)
 
 	out := fs.New()
 
