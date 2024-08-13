@@ -59,6 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions: "write-all"
     timeout-minutes: 5
+    if: false # golangci-lint does not yet support go 1.23
+
     steps:
 
       - name: Checkout
