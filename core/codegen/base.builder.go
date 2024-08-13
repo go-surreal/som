@@ -40,10 +40,6 @@ func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
 }
 
 func (b *build) build() error {
-	if err := b.copyInternalPackage(); err != nil {
-		return err
-	}
-
 	if err := b.embedStaticFiles(); err != nil {
 		return err
 	}
@@ -80,61 +76,18 @@ func (b *build) build() error {
 	return nil
 }
 
-func (b *build) copyInternalPackage() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	// LIB // TODO: split into filter, sort etc.?
-
-	files, err := embed.Lib(tmpl)
-	if err != nil {
-		return err
-	}
-
-	dir := filepath.Join("internal", "lib")
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		b.fs.Write(filepath.Join(dir, file.Path), []byte(content))
-	}
-
-	// TYPES
-
-	files, err = embed.Types(tmpl)
-	if err != nil {
-		return err
-	}
-
-	dir = filepath.Join("internal", "types")
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		b.fs.Write(filepath.Join(dir, file.Path), []byte(content))
-	}
-
-	return nil
-}
-
 func (b *build) embedStaticFiles() error {
 	tmpl := &embed.Template{
 		GenerateOutPath: b.subPkg(""),
 	}
 
-	files, err := embed.Som(tmpl)
+	files, err := embed.Read(tmpl)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		b.fs.Write(file.Path, []byte(content))
+		b.fs.Write(file.Path, file.Content)
 	}
 
 	return nil
@@ -143,7 +96,7 @@ func (b *build) embedStaticFiles() error {
 func (b *build) buildInterfaceFile() error {
 	f := jen.NewFile(b.basePkgName())
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	f.Type().Id("Client").InterfaceFunc(func(g *jen.Group) {
 		for _, node := range b.input.nodes {
@@ -162,7 +115,7 @@ func (b *build) buildInterfaceFile() error {
 }
 
 func (b *build) buildSchemaFile() error {
-	statements := []string{codegenComment, ""}
+	statements := []string{string(embed.CodegenComment), ""}
 
 	var fieldFn func(table string, f field.Field, prefix string)
 	fieldFn = func(table string, f field.Field, prefix string) {
@@ -251,7 +204,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 	f := jen.NewFile(b.basePkgName())
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	//
 	// type {NodeName}Repo interface {...}

@@ -7,8 +7,6 @@ import (
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
 	"path"
-	"path/filepath"
-	"strings"
 )
 
 type convBuilder struct {
@@ -22,10 +20,6 @@ func newConvBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *convBuild
 }
 
 func (b *convBuilder) build() error {
-	if err := b.embedStaticFiles(); err != nil {
-		return err
-	}
-
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
 			return err
@@ -47,26 +41,6 @@ func (b *convBuilder) build() error {
 	return nil
 }
 
-func (b *convBuilder) embedStaticFiles() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Conv(tmpl)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		b.fs.Write(filepath.Join(b.path(), file.Path), []byte(content))
-	}
-
-	return nil
-}
-
 func (b *convBuilder) buildFile(elem field.Element) error {
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
@@ -76,7 +50,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 
 	f := jen.NewFile(b.pkgName)
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)

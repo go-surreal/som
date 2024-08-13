@@ -7,8 +7,6 @@ import (
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
 	"path"
-	"path/filepath"
-	"strings"
 )
 
 type relateBuilder struct {
@@ -22,10 +20,6 @@ func newRelateBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *relateB
 }
 
 func (b *relateBuilder) build() error {
-	if err := b.embedStaticFiles(); err != nil {
-		return err
-	}
-
 	for _, node := range b.nodes {
 		if err := b.buildNodeFile(node); err != nil {
 			return err
@@ -41,30 +35,10 @@ func (b *relateBuilder) build() error {
 	return nil
 }
 
-func (b *relateBuilder) embedStaticFiles() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Relate(tmpl)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		b.fs.Write(filepath.Join(b.path(), file.Path), []byte(content))
-	}
-
-	return nil
-}
-
 func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 	f := jen.NewFile(b.pkgName)
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	f.Line()
 	f.Add(b.byNew(node))
@@ -104,7 +78,7 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 	f := jen.NewFile(b.pkgName)
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	f.Line()
 	f.Type().Id(edge.NameGoLower()).Struct(
