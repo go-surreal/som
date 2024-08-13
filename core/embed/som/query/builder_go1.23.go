@@ -1,4 +1,4 @@
-//go:build go1.23
+//go:build embed
 
 package query
 
