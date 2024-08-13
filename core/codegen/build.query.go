@@ -30,11 +30,6 @@ func (b *queryBuilder) build() error {
 }
 
 func (b *queryBuilder) buildFile(node *field.NodeTable) error {
-	writer, err := b.fs.Writer(path.Join(b.path(), node.FileName()))
-	if err != nil {
-		return err
-	}
-
 	pkgLib := b.subPkg(def.PkgLib)
 
 	f := jen.NewFile(b.pkgName)
@@ -62,7 +57,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			),
 		)
 
-	if err := f.Render(writer); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
 

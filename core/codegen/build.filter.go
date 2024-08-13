@@ -42,11 +42,6 @@ func (b *filterBuilder) build() error {
 }
 
 func (b *filterBuilder) buildFile(elem field.Element) error {
-	writer, err := b.fs.Writer(path.Join(b.path(), elem.FileName()))
-	if err != nil {
-		return err
-	}
-
 	file := jen.NewFile(b.pkgName)
 
 	file.PackageComment(string(embed.CodegenComment))
@@ -57,7 +52,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 		b.buildOther(file, elem)
 	}
 
-	if err := file.Render(writer); err != nil {
+	if err := file.Render(b.fs.Writer(path.Join(b.path(), elem.FileName()))); err != nil {
 		return err
 	}
 

@@ -30,11 +30,6 @@ func (b *fetchBuilder) build() error {
 }
 
 func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
-	writer, err := b.fs.Writer(path.Join(b.path(), node.FileName()))
-	if err != nil {
-		return err
-	}
-
 	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
@@ -65,7 +60,7 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 		}
 	}
 
-	if err := f.Render(writer); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
 
