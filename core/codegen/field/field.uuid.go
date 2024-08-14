@@ -16,16 +16,16 @@ func (f *UUID) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
 }
 
-func (f *UUID) typeConv() jen.Code {
-	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
+func (f *UUID) typeConv(ctx Context) jen.Code {
+	return jen.Add(f.ptr()).Qual(ctx.pkgTypes(), "UUID")
 }
 
 func (f *UUID) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::uuid($value)"
+		return "option<uuid | null>"
 	}
 
-	return "string ASSERT string::is::uuid($value)"
+	return "uuid"
 }
 
 func (f *UUID) CodeGen() *CodeGen {
@@ -45,33 +45,49 @@ func (f *UUID) CodeGen() *CodeGen {
 }
 
 func (f *UUID) filterDefine(ctx Context) jen.Code {
-	filter := "Base"
+	filter := "UUID"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
-func (f *UUID) filterInit(ctx Context) jen.Code {
-	filter := "NewBase"
+func (f *UUID) filterInit(ctx Context) (jen.Code, jen.Code) {
+	filter := "NewUUID"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Qual(def.PkgUUID, "UUID"), jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+		jen.Params(
+			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+		)
 }
 
-func (f *UUID) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *UUID) convFrom(_ Context) (jen.Code, jen.Code) {
+	fromFunc := "fromUUID"
+
+	if f.source.Pointer() {
+		fromFunc += fnSuffixPtr
+	}
+
+	return jen.Id(fromFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *UUID) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *UUID) convTo(_ Context) (jen.Code, jen.Code) {
+	toFunc := "toUUID"
+
+	if f.source.Pointer() {
+		toFunc += fnSuffixPtr
+	}
+
+	return jen.Id(toFunc),
+		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *UUID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase()})
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }

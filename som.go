@@ -1,6 +1,7 @@
 package som
 
 import (
+	"github.com/go-surreal/sdbc"
 	"time"
 )
 
@@ -27,32 +28,32 @@ import (
 // }
 
 type Node struct {
-	id string
+	id *sdbc.ID
 }
 
-func NewNode(id string) Node {
+func NewNode(id *sdbc.ID) Node {
 	return Node{
 		id: id,
 	}
 }
 
-func (n Node) ID() string {
+func (n Node) ID() *sdbc.ID {
 	return n.id
 }
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge[I, O any] struct {
-	id string
+	id *sdbc.ID
 }
 
-func NewEdge[I, O any](id string) Edge[I, O] {
+func NewEdge[I, O any](id *sdbc.ID) Edge[I, O] {
 	return Edge[I, O]{
 		id: id,
 	}
 }
 
-func (e Edge[I, O]) ID() string {
+func (e Edge[I, O]) ID() *sdbc.ID {
 	return e.id
 }
 
@@ -61,15 +62,15 @@ type Timestamps struct {
 	updatedAt time.Time
 }
 
-func NewTimestamps(createdAt *time.Time, updatedAt *time.Time) Timestamps {
+func NewTimestamps(createdAt *sdbc.DateTime, updatedAt *sdbc.DateTime) Timestamps {
 	var ts Timestamps
 
 	if createdAt != nil {
-		ts.createdAt = *createdAt
+		ts.createdAt = createdAt.Time
 	}
 
 	if updatedAt != nil {
-		ts.updatedAt = *updatedAt
+		ts.updatedAt = updatedAt.Time
 	}
 
 	return ts
@@ -100,6 +101,15 @@ func (t Timestamps) UpdatedAt() time.Time {
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
+
+// Email describes a string field that should contain an email address.
+type Email string
+
+// Password describes a string field that should contain a password.
+type Password string
+
+// SemVer describes a string field that should contain a semantic version.
+type SemVer string
 
 // Password describes a special string field.
 // Regarding the generated database query operations, it can only be matched, but never read.

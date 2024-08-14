@@ -16,9 +16,8 @@ import (
 // M is a placeholder for the model type.
 // C is a placeholder for the conversion type.
 type builder[M, C any] struct {
-	db        Database
-	query     lib.Query[M]
-	unmarshal func(buf []byte, val any) error
+	db    Database
+	query lib.Query[M]
 
 	convFrom func(*M) *C
 	convTo   func(*C) *M
@@ -111,7 +110,7 @@ func (b builder[M, C]) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	var rawCount []queryResult[countResult]
-	err = b.unmarshal(raw, &rawCount)
+	err = b.db.Unmarshal(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
@@ -150,7 +149,7 @@ func (b builder[M, C]) All(ctx context.Context) ([]*M, error) {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
 	var rawNodes []queryResult[*C]
-	err = b.unmarshal(res, &rawNodes)
+	err = b.db.Unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
@@ -178,7 +177,7 @@ func (b builder[M, C]) AllIDs(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
 	var rawNodes []idNode
-	err = b.unmarshal(res, &rawNodes)
+	err = b.db.Unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
@@ -249,7 +248,7 @@ func (b Builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*M], error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
-	return live(ctx, resChan, b.unmarshal, b.convTo), nil
+	return live(ctx, resChan, b.db.Unmarshal, b.convTo), nil
 }
 
 // LiveCount is the live version of Count.

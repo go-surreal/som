@@ -4,6 +4,7 @@ package som
 import (
 	"context"
 	"errors"
+	sdbc "github.com/go-surreal/sdbc"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -14,7 +15,7 @@ type AllFieldTypesRepo interface {
 	Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes]
 	Create(ctx context.Context, user *model.AllFieldTypes) error
 	CreateWithID(ctx context.Context, id string, user *model.AllFieldTypes) error
-	Read(ctx context.Context, id string) (*model.AllFieldTypes, bool, error)
+	Read(ctx context.Context, id *sdbc.ID) (*model.AllFieldTypes, bool, error)
 	Update(ctx context.Context, user *model.AllFieldTypes) error
 	Delete(ctx context.Context, user *model.AllFieldTypes) error
 	Refresh(ctx context.Context, user *model.AllFieldTypes) error
@@ -24,12 +25,10 @@ type AllFieldTypesRepo interface {
 // AllFieldTypesRepo returns a new repository instance for the AllFieldTypes model.
 func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
 	return &allFieldTypes{repo: &repo[model.AllFieldTypes, conv.AllFieldTypes]{
-		db:        c.db,
-		marshal:   c.marshal,
-		unmarshal: c.unmarshal,
-		name:      "all_field_types",
-		convTo:    conv.ToAllFieldTypes,
-		convFrom:  conv.FromAllFieldTypes}}
+		db:       c.db,
+		name:     "all_field_types",
+		convTo:   conv.ToAllFieldTypes,
+		convFrom: conv.FromAllFieldTypes}}
 }
 
 type allFieldTypes struct {
@@ -38,7 +37,7 @@ type allFieldTypes struct {
 
 // Query returns a new query builder for the AllFieldTypes model.
 func (r *allFieldTypes) Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes] {
-	return query.NewAllFieldTypes(r.db, r.unmarshal)
+	return query.NewAllFieldTypes(r.db)
 }
 
 // Create creates a new record for the AllFieldTypes model.
@@ -47,7 +46,7 @@ func (r *allFieldTypes) Create(ctx context.Context, allFieldTypes *model.AllFiel
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allFieldTypes.ID() != "" {
+	if allFieldTypes.ID() != nil {
 		return errors.New("given node already has an id")
 	}
 	return r.create(ctx, allFieldTypes)
@@ -58,7 +57,7 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allFieldTypes.ID() != "" {
+	if allFieldTypes.ID() != nil {
 		return errors.New("given node already has an id")
 	}
 	return r.createWithID(ctx, id, allFieldTypes)
@@ -66,7 +65,7 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
-func (r *allFieldTypes) Read(ctx context.Context, id string) (*model.AllFieldTypes, bool, error) {
+func (r *allFieldTypes) Read(ctx context.Context, id *sdbc.ID) (*model.AllFieldTypes, bool, error) {
 	return r.read(ctx, id)
 }
 
@@ -75,7 +74,7 @@ func (r *allFieldTypes) Update(ctx context.Context, allFieldTypes *model.AllFiel
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allFieldTypes.ID() == "" {
+	if allFieldTypes.ID() == nil {
 		return errors.New("cannot update AllFieldTypes without existing record ID")
 	}
 	return r.update(ctx, allFieldTypes.ID(), allFieldTypes)
@@ -94,7 +93,7 @@ func (r *allFieldTypes) Refresh(ctx context.Context, allFieldTypes *model.AllFie
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allFieldTypes.ID() == "" {
+	if allFieldTypes.ID() == nil {
 		return errors.New("cannot refresh AllFieldTypes without existing record ID")
 	}
 	return r.refresh(ctx, allFieldTypes.ID(), allFieldTypes)
@@ -102,5 +101,5 @@ func (r *allFieldTypes) Refresh(ctx context.Context, allFieldTypes *model.AllFie
 
 // Relate returns a new relate instance for the AllFieldTypes model.
 func (r *allFieldTypes) Relate() *relate.AllFieldTypes {
-	return relate.NewAllFieldTypes(r.db, r.unmarshal)
+	return relate.NewAllFieldTypes(r.db)
 }

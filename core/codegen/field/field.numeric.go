@@ -3,6 +3,7 @@ package field
 import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 	"math"
 )
@@ -48,7 +49,7 @@ func (f *Numeric) typeGo() jen.Code {
 	}
 }
 
-func (f *Numeric) typeConv() jen.Code {
+func (f *Numeric) typeConv(_ Context) jen.Code {
 	switch f.source.Type {
 
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
@@ -123,32 +124,32 @@ func (f *Numeric) CodeGen() *CodeGen {
 func (f *Numeric) filterDefine(ctx Context) jen.Code {
 	filter := "Numeric"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(f.typeGo(), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo())
 }
 
-func (f *Numeric) filterInit(ctx Context) jen.Code {
+func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewNumeric"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(f.typeGo(), jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo()),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Numeric) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
 func (f *Numeric) sortInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Numeric) convFrom(ctx Context) jen.Code {
+func (f *Numeric) convFrom(_ Context) (jen.Code, jen.Code) {
 	switch f.source.Type {
 
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
@@ -173,11 +174,11 @@ func (f *Numeric) convFrom(ctx Context) jen.Code {
 	//	}
 
 	default:
-		return jen.Id("data").Dot(f.NameGo())
+		return jen.Null(), jen.Id("data").Dot(f.NameGo())
 	}
 }
 
-func (f *Numeric) convTo(_ Context) jen.Code {
+func (f *Numeric) convTo(_ Context) (jen.Code, jen.Code) {
 	switch f.source.Type {
 
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
@@ -190,11 +191,11 @@ func (f *Numeric) convTo(_ Context) jen.Code {
 	//	}
 
 	default:
-		return jen.Id("data").Dot(f.NameGo())
+		return jen.Null(), jen.Id("data").Dot(f.NameGo())
 	}
 }
 
 func (f *Numeric) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase()})
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }

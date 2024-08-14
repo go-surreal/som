@@ -101,7 +101,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, is.Equal(newModel.ID(), created.ID()))
+	assert.Check(t, is.Equal(newModel.ID().String(), created.ID().String()))
 
 	// LIVE UPDATE
 
@@ -120,7 +120,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, is.Equal(newModel.ID(), updated.ID()))
+	assert.Check(t, is.Equal(newModel.ID().String(), updated.ID().String()))
 
 	// LIVE DELETE
 
@@ -139,7 +139,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, is.Equal(newModel.ID(), deleted.ID()))
+	assert.Check(t, is.Equal(newModel.ID().String(), deleted.ID().String()))
 
 	// Test the automatic closing of the live channel when the context is canceled:
 

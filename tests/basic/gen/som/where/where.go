@@ -2,12 +2,14 @@
 
 package where
 
-import "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+import (
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+)
 
-func All[T any](filters ...lib.Filter[T]) lib.Filter[T] {
-	return lib.All[T](filters)
+func All[M any](filters ...lib.Filter[M]) lib.Filter[M] {
+	return lib.All[M](filters)
 }
 
-func Any[T any](filters ...lib.Filter[T]) lib.Filter[T] {
-	return lib.Any[T](filters)
+func Any[M any](filters ...lib.Filter[M]) lib.Filter[M] {
+	return lib.Any[M](filters)
 }
