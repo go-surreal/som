@@ -7,8 +7,6 @@ import (
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
 	"path"
-	"path/filepath"
-	"strings"
 )
 
 type sortBuilder struct {
@@ -22,34 +20,10 @@ func newSortBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *sortBuild
 }
 
 func (b *sortBuilder) build() error {
-	if err := b.embedStaticFiles(); err != nil {
-		return err
-	}
-
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (b *sortBuilder) embedStaticFiles() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Sort(tmpl)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		b.fs.Write(filepath.Join(b.path(), file.Path), []byte(content))
 	}
 
 	return nil
@@ -64,7 +38,7 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 
 	f := jen.NewFile(b.pkgName)
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	f.Line()
 	f.Var().Id(node.Name).Op("=").Id("new" + node.Name).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))

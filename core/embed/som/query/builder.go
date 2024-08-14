@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	"github.com/go-surreal/som/tests/basic/gen/som/with"
+	"{{.GenerateOutPath}}/internal/lib"
+	"{{.GenerateOutPath}}/with"
 )
 
 // M is a placeholder for the model type.

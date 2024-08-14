@@ -4,9 +4,9 @@ import (
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
 	"path"
-	"strings"
 )
 
 type filterBuilder struct {
@@ -20,10 +20,6 @@ func newFilterBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *filterB
 }
 
 func (b *filterBuilder) build() error {
-	if err := b.buildBaseFile(); err != nil {
-		return err
-	}
-
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
 			return err
@@ -45,38 +41,10 @@ func (b *filterBuilder) build() error {
 	return nil
 }
 
-// TODO: move to embed!
-func (b *filterBuilder) buildBaseFile() error {
-	content := `
-
-package where
-
-import (
-	"{{pkgLib}}"
-)
-
-func All[M any](filters ...lib.Filter[M]) lib.Filter[M] {
-	return lib.All[M](filters)
-}
-
-func Any[M any](filters ...lib.Filter[M]) lib.Filter[M] {
-	return lib.Any[M](filters)
-}
-`
-
-	content = strings.Replace(content, "{{pkgLib}}", b.subPkg(def.PkgLib), 1)
-	content = strings.Replace(content, "{{pkgConv}}", b.subPkg(def.PkgConv), 1)
-	data := []byte(codegenComment + content)
-
-	b.fs.Write(path.Join(b.path(), "where.go"), data)
-
-	return nil
-}
-
 func (b *filterBuilder) buildFile(elem field.Element) error {
 	file := jen.NewFile(b.pkgName)
 
-	file.PackageComment(codegenComment)
+	file.PackageComment(string(embed.CodegenComment))
 
 	if edge, ok := elem.(*field.EdgeTable); ok {
 		b.buildEdge(file, edge)
