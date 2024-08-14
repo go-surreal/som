@@ -143,6 +143,12 @@ type AllFieldTypes struct {
 	//// MappedRoles  map[string]Role  // map of string and enum
 	//// MappedGroups map[string]Group // map of string and node
 	//// OtherMap     map[Role]string  // map of enum and string
+
+	// special types
+
+	Password    som.Password
+	PasswordPtr *som.Password
+	// PasswordSlice []som.Password
 }
 
 func (u *AllFieldTypes) GetGroups() []Group {

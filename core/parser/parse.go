@@ -53,6 +53,7 @@ func Parse(dir string) (*Output, error) {
 
 		case !ast.IsExported(v.Name()):
 			{
+				// TODO: imagine an unexported enum that is set with exported method.. possible, no?
 				continue
 			}
 
@@ -88,7 +89,7 @@ func Parse(dir string) (*Output, error) {
 				continue
 			}
 
-		case v.Kind() == gotype.String && v.PkgPath() == packagePath:
+		case isEnum(v):
 			{
 				res.Enums = append(res.Enums, &Enum{
 					Name: v.Name(),
@@ -96,7 +97,7 @@ func Parse(dir string) (*Output, error) {
 				continue
 			}
 
-		case v.Kind() == gotype.Declaration:
+		case v.Kind() == gotype.Declaration: // TODO: what about other decls? :/ -> new parser
 			{
 				res.EnumValues = append(res.EnumValues, &EnumValue{
 					Enum:     v.Declaration().Name(),
@@ -155,11 +156,15 @@ func isEdge(t gotype.Type) bool {
 }
 
 func isEnum(t gotype.Type) bool {
-	if t.Kind() != gotype.String {
-		return false
+	val := t.Kind() == gotype.String &&
+		t.String() != "string" &&
+		t.PkgPath() == packagePath
+
+	if val {
+		fmt.Printf("%+v", t.ChanDir())
 	}
 
-	return t.String() != "string" && t.PkgPath() == packagePath // TODO: might not be an enum..?!
+	return val
 }
 
 func parseNode(v gotype.Type) (*Node, error) {
