@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"github.com/go-surreal/som/core/util"
+	"github.com/go-surreal/som/core/util/gomod"
 	"github.com/wzshiming/gotype"
 	"go/ast"
 	"os"
@@ -37,7 +37,7 @@ func Parse(dir string) (*Output, error) {
 		return nil, fmt.Errorf("could not find absolute path: %v", err)
 	}
 
-	mod, err := util.FindGoMod(absDir)
+	mod, err := gomod.FindGoMod(absDir)
 	if err != nil {
 		return nil, err
 	}

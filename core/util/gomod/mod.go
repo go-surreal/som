@@ -1,4 +1,4 @@
-package util
+package gomod
 
 import (
 	"errors"
@@ -75,25 +75,25 @@ func (m *GoMod) Module() string {
 func (m *GoMod) CheckGoVersion() (string, error) {
 	goVersion, err := versionOrdinal(m.file.Go.Version)
 	if err != nil {
-		return "", fmt.Errorf("could not parse go version: %v", err)
+		return "", fmt.Errorf("could not parse go version: %w", err)
 	}
 
 	minSupportedVersion, err := versionOrdinal(minSupportedGoVersion)
 	if err != nil {
-		return "", fmt.Errorf("could not parse min go version: %v", err)
+		return "", fmt.Errorf("could not parse min go version: %w", err)
 	}
 
 	maxSupportedVersion, err := versionOrdinal(maxSupportedGoVersion)
 	if err != nil {
-		return "", fmt.Errorf("could not parse max go version: %v", err)
+		return "", fmt.Errorf("could not parse max go version: %w", err)
 	}
 
 	if goVersion < minSupportedVersion {
-		return "", fmt.Errorf("go version %s is not supported", goVersion)
+		return "", fmt.Errorf("go version %s is not supported", m.file.Go.Version)
 	}
 
 	if goVersion > maxSupportedVersion {
-		return fmt.Sprintf("generated code might not work as expected for go version %s", goVersion), nil
+		return fmt.Sprintf("generated code might not work as expected for go version %s (max supported: %s)", m.file.Go.Version, maxSupportedGoVersion), nil
 	}
 
 	return "", nil
@@ -137,7 +137,13 @@ func (m *GoMod) CheckSOMVersion(checkLatest bool) (string, error) {
 		return "", nil
 	}
 
-	return "", errors.New("could not find som package in go.mod")
+	fmt.Printf("go.mod: adding som version %s\n", requiredSOMVersion)
+
+	if err := m.file.AddRequire(pkgSOM, requiredSOMVersion); err != nil {
+		return "", err
+	}
+
+	return "", nil
 }
 
 func (m *GoMod) CheckSDBCVersion() (string, error) {
@@ -169,7 +175,13 @@ func (m *GoMod) CheckSDBCVersion() (string, error) {
 		return "", nil
 	}
 
-	return "", errors.New("could not find sdbc package in go.mod")
+	fmt.Printf("go.mod: adding sdbc version %s\n", requiredSDBCVersion)
+
+	if err := m.file.AddRequire(pkgSDBC, requiredSDBCVersion); err != nil {
+		return "", err
+	}
+
+	return "", nil
 }
 
 func (m *GoMod) Save() error {

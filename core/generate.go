@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/go-surreal/som/core/codegen"
 	"github.com/go-surreal/som/core/parser"
-	"github.com/go-surreal/som/core/util"
 	"github.com/go-surreal/som/core/util/fs"
+	"github.com/go-surreal/som/core/util/gomod"
 	"path"
 	"path/filepath"
 	"strings"
@@ -17,30 +17,39 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 		return fmt.Errorf("could not find absolute path: %v", err)
 	}
 
-	mod, err := util.FindGoMod(absDir)
+	mod, err := gomod.FindGoMod(absDir)
 	if err != nil {
 		return fmt.Errorf("could not find go.mod: %v", err)
 	}
 
 	if check {
-		if info, err := mod.CheckGoVersion(); err != nil {
+		info, err := mod.CheckGoVersion()
+		if err != nil {
 			return err
-		} else if info != "" {
+		}
+
+		if verbose && info != "" {
 			fmt.Println("ⓘ ", info)
 		}
 	}
 
 	if check {
-		if info, err := mod.CheckSOMVersion(verbose); err != nil {
+		info, err := mod.CheckSOMVersion(verbose)
+		if err != nil {
 			return err
-		} else if info != "" {
+		}
+
+		if verbose && info != "" {
 			fmt.Println("ⓘ ", info)
 		}
 	}
 
-	if info, err := mod.CheckSDBCVersion(); err != nil {
+	info, err := mod.CheckSDBCVersion()
+	if err != nil {
 		return err
-	} else if info != "" {
+	}
+
+	if verbose && info != "" {
 		fmt.Println("ⓘ ", info)
 	}
 
