@@ -28,18 +28,24 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 		} else if info != "" {
 			fmt.Println("ⓘ ", info)
 		}
+	}
 
-		if info, err := mod.CheckSOMVersion(); err != nil {
+	if check {
+		if info, err := mod.CheckSOMVersion(verbose); err != nil {
 			return err
 		} else if info != "" {
 			fmt.Println("ⓘ ", info)
 		}
+	}
 
-		if info, err := mod.CheckSDBCVersion(); err != nil {
-			return err
-		} else if info != "" {
-			fmt.Println("ⓘ ", info)
-		}
+	if info, err := mod.CheckSDBCVersion(); err != nil {
+		return err
+	} else if info != "" {
+		fmt.Println("ⓘ ", info)
+	}
+
+	if err := mod.Save(); err != nil {
+		return err
 	}
 
 	outPkg := path.Join(mod.Module(), strings.TrimPrefix(absDir, mod.Dir()))

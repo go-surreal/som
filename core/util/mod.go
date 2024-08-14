@@ -11,18 +11,15 @@ import (
 const fileGoMod = "go.mod"
 
 const (
-	minUnsupportedGoVersion = "1.20.0"
-	minSupportedGoVersion   = "1.21.9"
-	maxSupportedGoVersion   = "1.22.99" // allow for future patch versions
+	minSupportedGoVersion = "1.22"    // suffix '.0' omitted on purpose!
+	maxSupportedGoVersion = "1.22.99" // allow for future patch versions
 
 	pkgSOM  = "github.com/go-surreal/som"
 	pkgSDBC = "github.com/go-surreal/sdbc"
 
-	minSupportedSOMVersion = "v0.4.0"
-	maxSupportedSOMVersion = "v0.4.0"
+	requiredSOMVersion = "v0.4.0"
 
-	minSupportedSDBCVersion = "v0.3.0"
-	maxSupportedSDBCVersion = "v0.3.0"
+	requiredSDBCVersion = "v0.6.1" // v.0.7.0 already uses go 1.23
 )
 
 type GoMod struct {
@@ -81,11 +78,6 @@ func (m *GoMod) CheckGoVersion() (string, error) {
 		return "", fmt.Errorf("could not parse go version: %v", err)
 	}
 
-	minUnsupportedVersion, err := versionOrdinal(minUnsupportedGoVersion)
-	if err != nil {
-		return "", fmt.Errorf("could not parse min go version: %v", err)
-	}
-
 	minSupportedVersion, err := versionOrdinal(minSupportedGoVersion)
 	if err != nil {
 		return "", fmt.Errorf("could not parse min go version: %v", err)
@@ -96,18 +88,18 @@ func (m *GoMod) CheckGoVersion() (string, error) {
 		return "", fmt.Errorf("could not parse max go version: %v", err)
 	}
 
-	if goVersion < minUnsupportedVersion {
+	if goVersion < minSupportedVersion {
 		return "", fmt.Errorf("go version %s is not supported", goVersion)
 	}
 
-	if goVersion < minSupportedVersion || goVersion > maxSupportedVersion {
+	if goVersion > maxSupportedVersion {
 		return fmt.Sprintf("generated code might not work as expected for go version %s", goVersion), nil
 	}
 
 	return "", nil
 }
 
-func (m *GoMod) CheckSOMVersion() (string, error) {
+func (m *GoMod) CheckSOMVersion(checkLatest bool) (string, error) {
 	for _, require := range m.file.Require {
 		if require.Mod.Path != pkgSOM {
 			continue
@@ -118,32 +110,28 @@ func (m *GoMod) CheckSOMVersion() (string, error) {
 			return "", fmt.Errorf("could not parse som version: %w", err)
 		}
 
-		minVersion, err := versionOrdinal(minSupportedSOMVersion)
+		reqVersion, err := versionOrdinal(requiredSOMVersion)
 		if err != nil {
-			return "", fmt.Errorf("could not parse min som version: %w", err)
+			return "", fmt.Errorf("could not parse required som version: %w", err)
 		}
 
-		maxVersion, err := versionOrdinal(maxSupportedSOMVersion)
-		if err != nil {
-			return "", fmt.Errorf("could not parse max som version: %w", err)
+		if somVersion != reqVersion {
+			fmt.Printf("go.mod: setting som version to %s\n", requiredSOMVersion)
+
+			if err := m.file.AddRequire(pkgSOM, requiredSOMVersion); err != nil {
+				return "", err
+			}
 		}
 
-		if somVersion < minVersion {
-			return "", fmt.Errorf("som version %s is not supported", require.Mod.Version)
-		}
+		if checkLatest {
+			latestVersion, err := SOMVersion()
+			if err != nil {
+				return "", fmt.Errorf("could not check latest som version: %w", err)
+			}
 
-		if somVersion > maxVersion {
-			return fmt.Sprintf("generated code might not work as expected for som version %s", require.Mod.Version), nil
-		}
-
-		latestVersion, err := SOMVersion()
-		if err != nil {
-			return "", fmt.Errorf("could not check latest som version: %w", err)
-		}
-
-		if somVersion < latestVersion {
-			fmt.Println(somVersion, latestVersion)
-			return fmt.Sprintf("newer version of som available: %s", latestVersion), nil
+			if somVersion < latestVersion {
+				return fmt.Sprintf("newer version of som available: %s (currently: %s)", latestVersion, somVersion), nil
+			}
 		}
 
 		return "", nil
@@ -163,37 +151,38 @@ func (m *GoMod) CheckSDBCVersion() (string, error) {
 			return "", fmt.Errorf("could not parse sdbc version: %v", err)
 		}
 
-		minVersion, err := versionOrdinal(minSupportedSDBCVersion)
+		reqVersion, err := versionOrdinal(requiredSDBCVersion)
 		if err != nil {
-			return "", fmt.Errorf("could not parse min sdbc version: %v", err)
+			return "", fmt.Errorf("could not parse required sdbc version: %v", err)
 		}
 
-		maxVersion, err := versionOrdinal(maxSupportedSDBCVersion)
-		if err != nil {
-			return "", fmt.Errorf("could not parse max sdbc version: %v", err)
-		}
+		if sdbcVersion != reqVersion {
+			fmt.Printf("go.mod: setting sdbc version to %s\n", requiredSDBCVersion)
 
-		if sdbcVersion < minVersion {
-			return "", fmt.Errorf("sdbc version %s is not supported", require.Mod.Version)
-		}
+			if err := m.file.AddRequire(pkgSDBC, requiredSDBCVersion); err != nil {
+				return "", err
+			}
 
-		if sdbcVersion > maxVersion {
-			return fmt.Sprintf("generated code might not work as expected for sdbc version %s", require.Mod.Version), nil
-		}
-
-		latestVersion, err := SDBCVersion()
-		if err != nil {
-			return "", fmt.Errorf("could not check latest sdbc version: %w", err)
-		}
-
-		if sdbcVersion < latestVersion {
-			return fmt.Sprintf("newer version of sdbc available: %s", latestVersion), nil
+			return "", nil
 		}
 
 		return "", nil
 	}
 
 	return "", errors.New("could not find sdbc package in go.mod")
+}
+
+func (m *GoMod) Save() error {
+	content, err := m.file.Format()
+	if err != nil {
+		return fmt.Errorf("could not format go.mod: %w", err)
+	}
+
+	if err := os.WriteFile(m.path, content, 0644); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //

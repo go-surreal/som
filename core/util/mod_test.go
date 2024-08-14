@@ -1,13 +1,15 @@
 package util
 
 import (
-	"fmt"
+	"gotest.tools/v3/assert"
 	"os"
 	"testing"
 )
 
-func TestNewGoMod(t *testing.T) {
-	data, err := os.ReadFile("testdata/go.mod")
+func TestGoModValid(t *testing.T) {
+	t.Parallel()
+
+	data, err := os.ReadFile("testdata/go.valid.mod")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -17,5 +19,24 @@ func TestNewGoMod(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Println(mod)
+	msg, err := mod.CheckGoVersion()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "", msg)
+
+	msg, err = mod.CheckSOMVersion()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "", msg)
+
+	msg, err = mod.CheckSDBCVersion()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "", msg)
 }

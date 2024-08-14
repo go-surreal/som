@@ -10,10 +10,6 @@ func SOMVersion() (string, error) {
 	return checkVersion(pkgSOM)
 }
 
-func SDBCVersion() (string, error) {
-	return checkVersion(pkgSDBC)
-}
-
 func checkVersion(pkg string) (string, error) {
 	cmd := exec.Command("go", "list", "-m", "-u", pkg+"@latest")
 
