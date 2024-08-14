@@ -13,6 +13,20 @@ can be created at any point and linked back to this document.
 
 ## Features
 
+### On Delete Cascade
+
+not yet a native feature but might be at some time
+
+```
+DEFINE EVENT event_name ON TABLE table_name WHEN ($after == NONE) THEN {
+    delete contact where id == $before.contact;
+    delete adress where id inside $before.adresses;
+};
+```
+
+https://github.com/surrealdb/surrealdb/issues/1782
+https://github.com/surrealdb/surrealdb/issues/1783
+
 ### Soft Delete
 
 - https://www.jmix.io/blog/to-delete-or-to-soft-delete-that-is-the-question/

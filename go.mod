@@ -18,12 +18,12 @@ require (
 require (
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/docker/docker v27.1.2+incompatible // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
+	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/sys v0.22.0 // indirect
-	nhooyr.io/websocket v1.8.11 // indirect
+	golang.org/x/sys v0.23.0 // indirect
 )
