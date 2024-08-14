@@ -5,8 +5,9 @@ type Field interface {
 }
 
 type BaseField struct {
-	Name    string
-	Pointer bool
+	Name     string
+	Pointer  bool
+	Exported bool
 }
 
 func (f *BaseField) Embedded() bool {

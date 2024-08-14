@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/marcbinz/som/exp/parser"
+	"github.com/go-surreal/som/exp/parser"
 	"log"
 )
 

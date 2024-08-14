@@ -1,6 +1,6 @@
 package model
 
-import "github.com/marcbinz/som"
+import "github.com/go-surreal/som"
 
 type User struct {
 	som.Node
@@ -24,6 +24,15 @@ type User struct {
 	//More         []float32
 	//Roles        []Role // slice of enum
 }
+
+func X() {
+	// this is a function declaration
+	// it should not be parsed
+}
+
+// this is a bad declaration
+// it should not be parsed
+//type P int
 
 //type Login struct {
 //	Username string
