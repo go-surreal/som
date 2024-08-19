@@ -28,15 +28,15 @@ func TestQuery(t *testing.T) {
 			// ).Count().GreaterThan(3),
 			// where.User.Groups(where.Group.CreatedAt.After(time.Now())),
 
-			where.AllFieldTypes.
-				MemberOf(
-					where.GroupMember.CreatedAt.Before(time.Now()),
-				).
-				Group(
-					where.Group.ID.Equal(sdbc.MakeID("all_field_types", "some_id")),
-				),
-
-			where.AllFieldTypes.Duration.Days().LessThan(4),
+			//where.AllFieldTypes.
+			//	MemberOf(
+			//		where.GroupMember.CreatedAt.Before(time.Now()),
+			//	).
+			//	Group(
+			//		where.Group.ID.Equal(sdbc.MakeID("all_field_types", "some_id")),
+			//	),
+			//
+			//where.AllFieldTypes.Duration.Days().LessThan(4),
 
 			//where.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().Base64Decode().Base64Encode().Equal(""),
 
@@ -46,6 +46,19 @@ func TestQuery(t *testing.T) {
 
 			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
 			// where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
+
+			//where.AllFieldTypes.StringPtr.Equal(""),
+
+			where.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().
+				Equal_(where.AllFieldTypes.String.Base64Decode().Base64Encode()),
+
+			//where.AllFieldTypes.String.Base64Decode().Equal_(where.AllFieldTypes.String.Base64Decode()),
+			//
+			//where.AllFieldTypes.Time.Floor_(where.AllFieldTypes.Duration),
+			//
+			//where.All(
+			//	fields.AllFieldTypes.String.Equal(""),
+			//),
 		)
 
 	assert.Equal(t,

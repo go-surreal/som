@@ -16,6 +16,10 @@ func NewString[M any](key Key[M]) *String[M] {
 	}
 }
 
+func (s *String[M]) Equal_(val *String[M]) Filter[M] {
+	return s.Base.key.op_(OpEqual, val.Base.key)
+}
+
 func (s *String[M]) FuzzyMatch(val string) Filter[M] {
 	return s.Base.key.op(OpFuzzyMatch, val)
 }

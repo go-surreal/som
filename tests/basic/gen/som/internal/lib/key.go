@@ -69,8 +69,23 @@ func (k Key[M]) fn(fn string, params ...any) Key[M] {
 func (k Key[M]) op(op Operator, val any) Filter[M] {
 	return filter[M](
 		func(ctx *context, _ M) string {
-			statement := k.render(ctx) + " " + string(op) + " " + ctx.asVar(val)
-			return strings.TrimPrefix(statement, ".")
+			return strings.TrimPrefix(k.render(ctx), ".") +
+				" " +
+				string(op) +
+				" " +
+				ctx.asVar(val)
+		},
+	)
+}
+
+func (k Key[M]) op_(op Operator, k2 Key[M]) Filter[M] {
+	return filter[M](
+		func(ctx *context, _ M) string {
+			return strings.TrimPrefix(k.render(ctx), ".") +
+				" " +
+				string(op) +
+				" " +
+				strings.TrimPrefix(k2.render(ctx), ".")
 		},
 	)
 }
