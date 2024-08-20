@@ -90,6 +90,8 @@ type AllFieldTypes struct {
 	BytePtr            *byte             `cbor:"byte_ptr"`
 	ByteSlice          []byte            `cbor:"byte_slice"`
 	ByteSlicePtr       *[]byte           `cbor:"byte_slice_ptr"`
+	Password           model.Password    `cbor:"password"`
+	PasswordPtr        *model.Password   `cbor:"password_ptr"`
 }
 
 func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
@@ -137,6 +139,8 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		NodePtrSlice:       mapSliceFn(toGroupLinkPtr)(data.NodePtrSlice),
 		NodePtrSlicePtr:    mapSliceFnPtr(toGroupLinkPtr)(data.NodePtrSlicePtr),
 		Other:              data.Other,
+		Password:           data.Password,
+		PasswordPtr:        data.PasswordPtr,
 		Role:               data.Role,
 		Rune:               data.Rune,
 		RuneSlice:          data.RuneSlice,
@@ -220,6 +224,8 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		NodePtrSlice:       mapSliceFn(fromGroupLinkPtr)(data.NodePtrSlice),
 		NodePtrSlicePtr:    mapSliceFnPtr(fromGroupLinkPtr)(data.NodePtrSlicePtr),
 		Other:              data.Other,
+		Password:           data.Password,
+		PasswordPtr:        data.PasswordPtr,
 		Role:               data.Role,
 		Rune:               data.Rune,
 		RuneSlice:          data.RuneSlice,

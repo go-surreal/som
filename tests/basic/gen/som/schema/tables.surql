@@ -148,6 +148,8 @@ DEFINE FIELD byte ON TABLE all_field_types TYPE int ASSERT $value >= 0 AND $valu
 DEFINE FIELD byte_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
 DEFINE FIELD byte_slice ON TABLE all_field_types TYPE option<bytes | null>;
 DEFINE FIELD byte_slice_ptr ON TABLE all_field_types TYPE option<bytes | null>;
+DEFINE FIELD password ON TABLE all_field_types TYPE string ASSERT $value INSIDE [""];
+DEFINE FIELD password_ptr ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NULL OR $value INSIDE [""];
 
 DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group PERMISSIONS FULL;
 DEFINE FIELD created_at ON TABLE group_member TYPE option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE;
