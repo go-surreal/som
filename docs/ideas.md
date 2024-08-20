@@ -13,6 +13,50 @@ can be created at any point and linked back to this document.
 
 ## Features
 
+### Custom functions
+
+https://surrealdb.com/docs/surrealdb/surrealql/datamodel/closures
+
+Note: SOM might define its own functions in the future.
+
+### Computed Fields
+
+```
+    schema.User.AddComputedField("full_name", 
+        field.User.FirstName.Concat(" ").Concat_(field.User.LastName)
+    )
+```
+
+```
+    DEFINE FIELD full_name ON user READONLY VALUE $after.first_name + " " + $after.last_name
+```
+
+### Futures
+
+https://surrealdb.com/docs/surrealdb/surrealql/datamodel/futures
+
+```
+    schema.User.AddFuture("full_name", 
+        field.User.FirstName.Concat(" ").Concat_(field.User.LastName)
+    )
+```
+
+```
+    DEFINE FIELD full_name ON user READONLY VALUE $before OR <future> { $after.first_name + " " + $after.last_name }
+```
+
+```
+<future> { friends[WHERE age > 18].name }
+```
+
+### Zero/Nil as NULL
+
+```
+    schema.User.X(
+        field.User.FirstName.ZeroAsNull(),
+    )
+```
+
 ### On Delete Cascade
 
 not yet a native feature but might be at some time
@@ -186,6 +230,14 @@ type MemberOfProps struct {
 ### Partial updates
 
 - https://incident.io/blog/code-generation
+
+```
+    client.User.Patch(&userModel, 
+        field.User.FirstName.Set("John"),
+        field.User.LastName.Clear(),
+        field.User.FullName.Set_(field.User.FirstName.Concat(" ").Concat_(field.User.LastName)),
+    )
+```
 
 ### ?
 

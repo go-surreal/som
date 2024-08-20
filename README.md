@@ -9,7 +9,10 @@
 
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.21.4-informational" alt="Go 1.21.4">
+    <img src="https://img.shields.io/badge/go-1.21.4-informational" alt="Go 1.22.5">
+  </a>
+  <a href="https://surrealdb.com/releases#v1-5-4">
+    <img src="https://img.shields.io/badge/surrealdb-v1.5.4-blue" alt="SurrealDB">
   </a>
   <a href="https://goreportcard.com/report/github.com/go-surreal/som">
     <img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card">
