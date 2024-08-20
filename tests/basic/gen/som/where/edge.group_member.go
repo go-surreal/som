@@ -12,20 +12,20 @@ func newGroupMember[M any](key lib.Key[M]) groupMember[M] {
 	return groupMember[M]{
 		CreatedAt: lib.NewTime[M](lib.Field(key, "created_at")),
 		ID:        lib.NewID[M](lib.Field(key, "id"), "group_member"),
+		Key:       key,
 		UpdatedAt: lib.NewTime[M](lib.Field(key, "updated_at")),
-		key:       key,
 	}
 }
 
 type groupMember[M any] struct {
-	key       lib.Key[M]
+	lib.Key[M]
 	ID        *lib.ID[M]
 	CreatedAt *lib.Time[M]
 	UpdatedAt *lib.Time[M]
 }
 
 func (n groupMember[M]) Meta() groupMemberMeta[M] {
-	return newGroupMemberMeta[M](lib.Field(n.key, "meta"))
+	return newGroupMemberMeta[M](lib.Field(n.Key, "meta"))
 }
 
 type groupMemberIn[M any] struct {

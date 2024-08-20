@@ -12,15 +12,15 @@ func newFieldsLikeDBResponse[M any](key lib.Key[M]) fieldsLikeDbresponse[M] {
 	return fieldsLikeDbresponse[M]{
 		Detail: lib.NewString[M](lib.Field(key, "detail")),
 		ID:     lib.NewID[M](lib.Field(key, "id"), "fields_like_db_response"),
+		Key:    key,
 		Result: lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M])(lib.Field(key, "result")),
 		Status: lib.NewString[M](lib.Field(key, "status")),
 		Time:   lib.NewString[M](lib.Field(key, "time")),
-		key:    key,
 	}
 }
 
 type fieldsLikeDbresponse[M any] struct {
-	key    lib.Key[M]
+	lib.Key[M]
 	ID     *lib.ID[M]
 	Time   *lib.String[M]
 	Status *lib.String[M]
@@ -30,5 +30,5 @@ type fieldsLikeDbresponse[M any] struct {
 
 type fieldsLikeDbresponseEdges[M any] struct {
 	lib.Filter[M]
-	key lib.Key[M]
+	lib.Key[M]
 }

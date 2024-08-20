@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
 	"testing"
+	"time"
 )
 
 func TestFilterCompareFields(t *testing.T) {
@@ -19,10 +20,16 @@ func TestFilterCompareFields(t *testing.T) {
 	defer cleanup()
 
 	str := "Some Value"
+	date := time.Now()
 
 	modelNew := model.AllFieldTypes{
 		String:    str,
 		StringPtr: &str,
+
+		Time:    date.Add(-time.Hour),
+		TimePtr: &date,
+
+		Duration: time.Hour,
 	}
 
 	modelIn := modelNew
@@ -35,6 +42,8 @@ func TestFilterCompareFields(t *testing.T) {
 	modelOut, err := client.AllFieldTypesRepo().Query().
 		Filter(
 			where.AllFieldTypes.StringPtr.Equal_(where.AllFieldTypes.String),
+			where.AllFieldTypes.TimePtr.After_(where.AllFieldTypes.Time),
+			where.AllFieldTypes.TimePtr.Equal_(where.AllFieldTypes.Time.Add_(where.AllFieldTypes.Duration)),
 		).
 		First(ctx)
 

@@ -182,7 +182,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 				Block(
 					jen.Id("key").Op(":=").Qual(ctx.pkgLib(), "Node").
 						Call(
-							jen.Id("n").Dot("key"),
+							jen.Id("n").Dot("Key"),
 							jen.Lit(f.NameDatabase()),
 							jen.Id("filters"),
 						),
@@ -221,7 +221,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 							jen.Id("new" + element.table.NameGo() + "In").Index(def.TypeModel).
 								Call(
 									jen.Qual(ctx.pkgLib(), "EdgeIn").Call(
-										jen.Id("n").Dot("key"),
+										jen.Id("n").Dot("Key"),
 										jen.Lit(element.table.NameDatabase()),
 										jen.Id("filters"),
 									),
@@ -243,7 +243,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 							jen.Id("new" + element.table.NameGo() + "Out").Index(def.TypeModel).
 								Call(
 									jen.Qual(ctx.pkgLib(), "EdgeOut").Call(
-										jen.Id("n").Dot("key"),
+										jen.Id("n").Dot("Key"),
 										jen.Lit(element.table.NameDatabase()),
 										jen.Id("filters"),
 									),

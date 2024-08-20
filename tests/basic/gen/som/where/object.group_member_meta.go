@@ -7,17 +7,17 @@ func newGroupMemberMeta[M any](key lib.Key[M]) groupMemberMeta[M] {
 	return groupMemberMeta[M]{
 		IsActive: lib.NewBool[M](lib.Field(key, "is_active")),
 		IsAdmin:  lib.NewBool[M](lib.Field(key, "is_admin")),
-		key:      key,
+		Key:      key,
 	}
 }
 
 type groupMemberMeta[M any] struct {
-	key      lib.Key[M]
+	lib.Key[M]
 	IsAdmin  *lib.Bool[M]
 	IsActive *lib.Bool[M]
 }
 
 type groupMemberMetaEdges[M any] struct {
 	lib.Filter[M]
-	key lib.Key[M]
+	lib.Key[M]
 }

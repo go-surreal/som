@@ -67,7 +67,7 @@ func (f *Node) filterFunc(ctx Context) jen.Code {
 		Add(f.filterDefine(ctx)).
 		Block(
 			jen.Return(jen.Add(f.filterInit(ctx)).
-				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
+				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Node) sortFunc(ctx Context) jen.Code {
