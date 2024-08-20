@@ -14,10 +14,10 @@ func NewTimeSlice[M any](key Key[M]) *TimeSlice[M] {
 	}
 }
 
-func (t *TimeSlice[M]) Min() *Time[M] {
-	return NewTime[M](t.fn("time::min"))
-}
-
 func (t *TimeSlice[M]) Max() *Time[M] {
 	return NewTime[M](t.fn("time::max"))
+}
+
+func (t *TimeSlice[M]) Min() *Time[M] {
+	return NewTime[M](t.fn("time::min"))
 }

@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+type RawKeyPart func(ctx *context) string
+
+func (p RawKeyPart) render(ctx *context) string {
+	return p(ctx)
+}
+
 type KeyPart interface {
 	render(ctx *context) string
 }
@@ -99,6 +105,28 @@ func (k Key[M]) fn_(fn string, params ...Key[M]) Key[M] {
 			fn:     fn,
 			params: params,
 		},
+	}
+}
+
+func (k Key[M]) calc(op Operator, val any) Key[M] {
+	return Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return "(" +
+				strings.TrimPrefix(k.render(ctx), ".") +
+				" " +
+				string(op) +
+				" " +
+				ctx.asVar(val) +
+				")"
+		}),
+	}
+}
+
+func (k Key[M]) prefix(op Operator) Key[M] {
+	return Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return string(op) + strings.TrimPrefix(k.render(ctx), ".")
+		}),
 	}
 }
 

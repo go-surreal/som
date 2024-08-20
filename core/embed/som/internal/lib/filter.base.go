@@ -61,30 +61,34 @@ func (b *Base[M, T, F, S]) NotEqual(val T) Filter[M] {
 
 func (b *Base[M, T, F, S]) In(vals []T) Filter[M] {
 	if b.conv != nil {
-		var mapped []any
+		mapped := make([]any, len(vals))
 
-		for _, val := range vals {
-			mapped = append(mapped, b.conv(val))
+		for i, val := range vals {
+			mapped[i] = b.conv(val)
 		}
 
-		return b.Key.op(OpInside, mapped)
+		return b.Key.op(OpIn, mapped)
 	}
 
-	return b.Key.op(OpInside, vals)
+	return b.Key.op(OpIn, vals)
 }
 
 func (b *Base[M, T, F, S]) NotIn(vals []T) Filter[M] {
 	if b.conv != nil {
-		var mapped []any
+		mapped := make([]any, len(vals))
 
-		for _, val := range vals {
-			mapped = append(mapped, b.conv(val))
+		for i, val := range vals {
+			mapped[i] = b.conv(val)
 		}
 
-		return b.Key.op(OpNotInside, mapped)
+		return b.Key.op(OpNotIn, mapped)
 	}
 
-	return b.Key.op(OpNotInside, vals)
+	return b.Key.op(OpNotIn, vals)
+}
+
+func (b *Base[M, T, F, S]) Truth() *Bool[M] {
+	return NewBool(b.Key.prefix(OpTruth))
 }
 
 func (b *Base[M, T, F, S]) Zero(is bool) Filter[M] {

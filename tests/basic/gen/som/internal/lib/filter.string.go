@@ -24,8 +24,18 @@ func (s *String[M]) FuzzyMatch(val string) Filter[M] {
 	return s.Base.op(OpFuzzyMatch, val)
 }
 
-func (s *String[M]) NotFuzzyMatch(val string) Filter[M] {
+func (s *String[M]) FuzzyNotMatch(val string) Filter[M] {
 	return s.Base.op(OpFuzzyNotMatch, val)
+}
+
+func (s *String[M]) Concat(vals ...string) *Bool[M] {
+	anys := make([]any, len(vals))
+
+	for i, val := range vals {
+		anys[i] = val
+	}
+
+	return NewBool(s.Base.fn("string::concat", anys...))
 }
 
 func (s *String[M]) Contains(val string) *Bool[M] {
@@ -36,12 +46,31 @@ func (s *String[M]) EndsWith(val string) *Bool[M] {
 	return NewBool(s.Base.fn("string::endsWith", val))
 }
 
+// Join joins the given strings with the base string as separator.
+func (s *String[M]) Join(vals ...string) *String[M] {
+	anys := make([]any, len(vals))
+
+	for i, val := range vals {
+		anys[i] = val
+	}
+
+	return NewString(s.Base.fn("string::join", anys...))
+}
+
 func (s *String[M]) Len() *Numeric[M, int] {
 	return NewNumeric[M, int](s.Base.fn("string::len"))
 }
 
 func (s *String[M]) Lowercase() *String[M] {
 	return NewString(s.Base.fn("string::lowercase"))
+}
+
+func (s *String[M]) Repeat(times int) *String[M] {
+	return NewString(s.Base.fn("string::repeat", times))
+}
+
+func (s *String[M]) Replace(old, new string) *String[M] {
+	return NewString(s.Base.fn("string::replace", old, new))
 }
 
 func (s *String[M]) Reverse() *String[M] {
@@ -76,6 +105,9 @@ func (s *String[M]) Words() *Slice[M, string, *String[M]] {
 	return NewSlice[M, string, *String[M]](s.Base.fn("string::words"), NewString[M])
 }
 
+// TODO: string::html::encode (v2.0.0)
+// TODO: string::html::sanitize (v2.0.0)
+
 func (s *String[M]) IsAlphaNum() *Bool[M] {
 	return NewBool(s.Base.fn("string::is::alphanum"))
 }
@@ -88,8 +120,11 @@ func (s *String[M]) IsAscii() *Bool[M] {
 	return NewBool(s.Base.fn("string::is::ascii"))
 }
 
-func (s *String[M]) IsDateTime() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::datetime"))
+// IsDateTime returns a boolean field that is true if the string is a valid date and time.
+//
+// See [Time.Format] for the format string.
+func (s *String[M]) IsDateTime(format string) *Bool[M] {
+	return NewBool(s.Base.fn("string::is::datetime", format))
 }
 
 func (s *String[M]) IsDomain() *Bool[M] {
@@ -139,6 +174,8 @@ func (s *String[M]) IsURL() *Bool[M] {
 func (s *String[M]) IsUUID() *Bool[M] {
 	return NewBool(s.Base.fn("string::is::uuid"))
 }
+
+// TODO: string::is::record (needed?)
 
 func (s *String[M]) Base64Decode() *ByteSlice[M] {
 	return NewByteSlice(s.Base.fn("encoding::base64::decode"))

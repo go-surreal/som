@@ -15,9 +15,9 @@ func (b *Base[M, T, F, S]) NotEqual_(field F) Filter[M] {
 }
 
 func (b *Base[M, T, F, S]) In_(field S) Filter[M] {
-	return b.op_(OpInside, field.key())
+	return b.op_(OpIn, field.key())
 }
 
 func (b *Base[M, T, F, S]) NotIn_(field S) Filter[M] {
-	return b.op_(OpNotInside, field.key())
+	return b.op_(OpNotIn, field.key())
 }

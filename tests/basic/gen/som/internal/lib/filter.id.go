@@ -24,9 +24,9 @@ func (b *ID[M]) NotEqual(val *sdbc.ID) Filter[M] {
 }
 
 func (b *ID[M]) In(vals []*sdbc.ID) Filter[M] {
-	return b.key.op(OpInside, vals)
+	return b.key.op(OpIn, vals)
 }
 
 func (b *ID[M]) NotIn(vals []*sdbc.ID) Filter[M] {
-	return b.key.op(OpNotInside, vals)
+	return b.key.op(OpNotIn, vals)
 }
