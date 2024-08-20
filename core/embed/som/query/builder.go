@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -312,4 +313,27 @@ func (b Builder[M, C]) LiveCount(ctx context.Context) (<-chan int, error) {
 func (b builder[M, C]) Describe() string {
 	req := b.query.BuildAsAll()
 	return strings.TrimSpace(req.Statement)
+}
+
+// DescribeWithVars returns a string representation of the query.
+// It inlines the variables into the query string.
+// While this might be a valid SurrealDB query, it
+// should only be used for debugging purposes.
+func (b builder[M, C]) DescribeWithVars() string {
+	describe := b.Describe()
+
+	for key, value := range b.query.Vars() {
+		describe = strings.ReplaceAll(describe, fmt.Sprintf("$%s", key), fmt.Sprintf("$%s{%v}", key, value))
+	}
+
+	return describe
+}
+
+// Debug logs the query to the default debug logger.
+func (b builder[M, C]) Debug(prefix ...string) Builder[M, C] {
+	slog.Debug(strings.Join(prefix, " ")+b.Describe(),
+		"vars", b.query.Vars(),
+	)
+
+	return Builder[M, C]{b}
 }
