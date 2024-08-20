@@ -2,15 +2,18 @@
 
 package lib
 
-import (
-	"golang.org/x/exp/constraints"
-)
+type int_ interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+		~*int | ~*int8 | ~*int16 | ~*int32 | ~*int64 |
+		~*uint | ~*uint8 | ~*uint16 | ~*uint32 | ~*uint64 | ~*uintptr
+}
 
-type Int[M any, T constraints.Integer] struct {
+type Int[M any, T int_] struct {
 	*Numeric[M, T]
 }
 
-func NewInt[M any, T constraints.Integer](key Key[M]) *Int[M, T] {
+func NewInt[M any, T int_](key Key[M]) *Int[M, T] {
 	return &Int[M, T]{
 		Numeric: NewNumeric[M, T](key),
 	}

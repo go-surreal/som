@@ -2,15 +2,15 @@
 
 package lib
 
-import (
-	"golang.org/x/exp/constraints"
-)
+type float_ interface {
+	~float32 | ~float64 | ~*float32 | ~*float64
+}
 
-type Float[M any, T constraints.Float] struct {
+type Float[M any, T float_] struct {
 	*Numeric[M, T]
 }
 
-func NewFloat[M any, T constraints.Float](key Key[M]) *Float[M, T] {
+func NewFloat[M any, T float_](key Key[M]) *Float[M, T] {
 	return &Float[M, T]{
 		Numeric: NewNumeric[M, T](key),
 	}

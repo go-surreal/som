@@ -2,15 +2,11 @@
 
 package lib
 
-import (
-	"golang.org/x/exp/constraints"
-)
-
-type FloatSlice[M any, T constraints.Float] struct {
+type FloatSlice[M any, T float_] struct {
 	*NumericSlice[M, T, *Float[M, T]]
 }
 
-func NewFloatSlice[M any, T constraints.Float](key Key[M]) *FloatSlice[M, T] {
+func NewFloatSlice[M any, T float_](key Key[M]) *FloatSlice[M, T] {
 	return &FloatSlice[M, T]{
 		NumericSlice: NewNumericSlice[M, T](key, NewFloat[M, T]),
 	}
@@ -46,4 +42,18 @@ func (s *FloatSlice[M, T]) Sum() *Float[M, float64] {
 
 func (s *FloatSlice[M, T]) Top(count int) *FloatSlice[M, T] {
 	return NewFloatSlice[M, T](s.fn("math::top", count))
+}
+
+//
+// -- POINTER
+//
+
+type FloatSlicePtr[M any, T float_] struct {
+	*NumericSlicePtr[M, T, *Float[M, T]]
+}
+
+func NewFloatSlicePtr[M any, T float_](key Key[M]) *FloatSlicePtr[M, T] {
+	return &FloatSlicePtr[M, T]{
+		NumericSlicePtr: NewNumericSlicePtr[M, T](key, NewFloat[M, T]),
+	}
 }

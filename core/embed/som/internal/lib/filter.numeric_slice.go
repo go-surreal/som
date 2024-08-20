@@ -12,12 +12,6 @@ func NewNumericSlice[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter
 	}
 }
 
-func NewNumericSliceMaker[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFilter[M, *NumericSlice[M, E, F]] {
-	return func(key Key[M]) *NumericSlice[M, E, F] {
-		return NewNumericSlice[M, E, F](key, makeElemFilter)
-	}
-}
-
 func (s *NumericSlice[M, E, F]) Interquartile() *Float[M, float64] { // TODO: float or int?
 	return NewFloat[M, float64](s.fn("math::interquartile"))
 }
@@ -52,4 +46,18 @@ func (s *NumericSlice[M, E, F]) TriMean() *Float[M, float64] {
 
 func (s *NumericSlice[M, E, F]) Variance() *Float[M, float64] {
 	return NewFloat[M, float64](s.fn("math::variance"))
+}
+
+//
+// -- POINTER
+//
+
+type NumericSlicePtr[M, E any, F field[M]] struct {
+	*SlicePtr[M, E, F]
+}
+
+func NewNumericSlicePtr[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F]) *NumericSlicePtr[M, E, F] {
+	return &NumericSlicePtr[M, E, F]{
+		SlicePtr: NewSlicePtr[M, E, F](key, makeElemFilter),
+	}
 }

@@ -74,6 +74,40 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 			)
 		}
 
+	case *Numeric:
+		{
+			switch element.source.Type {
+
+			case parser.NumberInt, parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberInt64,
+				parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
+				{
+					filter := "IntSlice"
+
+					if f.source.Pointer() {
+						filter += fnSuffixPtr
+					}
+
+					return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).
+						Types(def.TypeModel, element.typeGo())
+				}
+
+			case parser.NumberFloat32, parser.NumberFloat64:
+				{
+					filter := "FloatSlice"
+
+					if f.source.Pointer() {
+						filter += fnSuffixPtr
+					}
+
+					return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).
+						Types(def.TypeModel, element.typeGo())
+				}
+
+			default:
+				return jen.Nil() // error or panic?
+			}
+		}
+
 	case *Byte:
 		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(def.TypeModel)
 
@@ -118,6 +152,44 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 				jen.Call(
 					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 				)
+		}
+
+	case *Numeric:
+		{
+			switch element.source.Type {
+
+			case parser.NumberInt, parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberInt64,
+				parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
+				{
+					filter := "NewIntSlice"
+
+					if f.source.Pointer() {
+						filter += fnSuffixPtr
+					}
+
+					return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, element.typeGo()),
+						jen.Call(
+							jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+						)
+				}
+
+			case parser.NumberFloat32, parser.NumberFloat64:
+				{
+					filter := "NewFloatSlice"
+
+					if f.source.Pointer() {
+						filter += fnSuffixPtr
+					}
+
+					return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, element.typeGo()),
+						jen.Call(
+							jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+						)
+				}
+
+			default:
+				return jen.Nil(), jen.Nil() // TODO: error or panic?
+			}
 		}
 
 	case *Struct:
