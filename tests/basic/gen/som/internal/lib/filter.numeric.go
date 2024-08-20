@@ -3,15 +3,19 @@
 package lib
 
 type Numeric[M, T any] struct {
-	*Base[M, T]
-	*Comparable[M, T]
+	*Base[M, T, *Numeric[M, T], *Slice[M, T, *Numeric[M, T]]]
+	*Comparable[M, T, *Numeric[M, T]]
 }
 
 func NewNumeric[M, T any](key Key[M]) *Numeric[M, T] {
 	return &Numeric[M, T]{
-		Base:       NewBase[M, T](key),
-		Comparable: NewComparable[M, T](key),
+		Base:       NewBase[M, T, *Numeric[M, T], *Slice[M, T, *Numeric[M, T]]](key),
+		Comparable: NewComparable[M, T, *Numeric[M, T]](key),
 	}
+}
+
+func (d *Numeric[M, T]) key() Key[M] {
+	return d.Base.key()
 }
 
 //func (n *Numeric[M, M]) METHODS(min, max M) Filter[M] {

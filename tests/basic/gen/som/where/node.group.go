@@ -12,14 +12,14 @@ func newGroup[M any](key lib.Key[M]) group[M] {
 	return group[M]{
 		CreatedAt: lib.NewTime[M](lib.Field(key, "created_at")),
 		ID:        lib.NewID[M](lib.Field(key, "id"), "group"),
+		Key:       key,
 		Name:      lib.NewString[M](lib.Field(key, "name")),
 		UpdatedAt: lib.NewTime[M](lib.Field(key, "updated_at")),
-		key:       key,
 	}
 }
 
 type group[M any] struct {
-	key       lib.Key[M]
+	lib.Key[M]
 	ID        *lib.ID[M]
 	CreatedAt *lib.Time[M]
 	UpdatedAt *lib.Time[M]
@@ -27,14 +27,14 @@ type group[M any] struct {
 }
 
 func (n group[M]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[M] {
-	return newGroupMemberOut[M](lib.EdgeOut(n.key, "group_member", filters))
+	return newGroupMemberOut[M](lib.EdgeOut(n.Key, "group_member", filters))
 }
 
 type groupEdges[M any] struct {
 	lib.Filter[M]
-	key lib.Key[M]
+	lib.Key[M]
 }
 
 func (n groupEdges[M]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[M] {
-	return newGroupMemberOut[M](lib.EdgeOut(n.key, "group_member", filters))
+	return newGroupMemberOut[M](lib.EdgeOut(n.Key, "group_member", filters))
 }

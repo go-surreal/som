@@ -22,12 +22,6 @@ func TestQuery(t *testing.T) {
 
 	query := client.AllFieldTypesRepo().Query().
 		Filter(
-			// where.User.Groups(
-			// 	where.Group.Name.Equal(""),
-			// 	where.Group.CreatedAt.In(nil),
-			// ).Count().GreaterThan(3),
-			// where.User.Groups(where.Group.CreatedAt.After(time.Now())),
-
 			where.AllFieldTypes.
 				MemberOf(
 					where.GroupMember.CreatedAt.Before(time.Now()),
@@ -37,38 +31,26 @@ func TestQuery(t *testing.T) {
 				),
 
 			where.AllFieldTypes.Duration.Days().LessThan(4),
-
-			//where.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().Base64Decode().Base64Encode().Equal(""),
-
-			//where.AllFieldTypes.GroupsSlice.At(0).At(0).CreatedAt.Before(time.Now()),
-
-			//where.AllFieldTypes.SliceSliceSlice.At(0).At(0).At(0).Equal(""),
-
-			// select * from user where ->(member_of where createdAt before time::now)->(group where ->(member_of)->(user where id = ""))
-			// where.User.MyGroups(where.MemberOf.CreatedAt.Before(time.Now)).Group().Members().User().ID.Equal(""),
 		)
 
 	assert.Equal(t,
 		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)] "+
 			"AND duration::days(duration) < $2)",
-		// "SELECT * FROM user WHERE (count(groups[WHERE (name = $0 AND created_at INSIDE $1)]) > $2 "+
-		// 	"AND groups[WHERE (created_at > $3)]) ",
 		query.Describe(),
 	)
 
-	//  ("SELECT * FROM user WHERE count(groups[WHERE name = $0]) > $1 " + "AND groups[WHERE created_at > $2].created_at < $3" string)
+	query = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().
+				Equal_(where.AllFieldTypes.String.Base64Decode().Base64Encode()),
+		)
 
-	// query = query.Filter(
-	// 	where.Any(
-	// 		where.User.TimePtr.Nil(),
-	// 		where.User.UUID.Equal(uuid.New()),
-	// 	),
-	// )
-	//
-	// assert.Equal(t,
-	// 	"SELECT * FROM user WHERE (string INSIDE $0 AND bool == $1 AND (time_ptr == $2 OR uuid = $3)) ",
-	// 	query.Describe(),
-	// )
+	assert.Equal(t,
+		"SELECT * FROM all_field_types WHERE "+
+			"(encoding::base64::encode(encoding::base64::decode(string_ptr)) "+
+			"= encoding::base64::encode(encoding::base64::decode(string)))",
+		query.Describe(),
+	)
 }
 
 func TestWithDatabase(t *testing.T) {

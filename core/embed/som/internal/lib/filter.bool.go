@@ -5,15 +5,15 @@ package lib
 // Bool is a filter builder for boolean fields.
 // M is the type of the field the filter is for.
 type Bool[M any] struct {
-	key Key[M]
+	Key[M]
 }
 
 func NewBool[M any](key Key[M]) *Bool[M] {
-	return &Bool[M]{key: key}
+	return &Bool[M]{Key: key}
 }
 
 func (b *Bool[M]) Is(val bool) Filter[M] {
-	return b.key.op(OpExactlyEqual, val)
+	return b.op(OpExactlyEqual, val)
 }
 
 type BoolPtr[M any] struct {

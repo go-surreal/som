@@ -13,5 +13,5 @@ func NewStringSlice[M any](key Key[M]) *StringSlice[M] {
 }
 
 func (s *StringSlice[M]) Join(sep string) *String[M] {
-	return NewString(s.key.fn("string::join", sep))
+	return NewString(s.fn("string::join", sep))
 }
