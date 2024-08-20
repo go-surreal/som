@@ -13,12 +13,12 @@ import (
 
 type FieldsLikeDBResponseRepo interface {
 	Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
-	Create(ctx context.Context, user *model.FieldsLikeDBResponse) error
-	CreateWithID(ctx context.Context, id string, user *model.FieldsLikeDBResponse) error
+	Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Read(ctx context.Context, id *sdbc.ID) (*model.FieldsLikeDBResponse, bool, error)
-	Update(ctx context.Context, user *model.FieldsLikeDBResponse) error
-	Delete(ctx context.Context, user *model.FieldsLikeDBResponse) error
-	Refresh(ctx context.Context, user *model.FieldsLikeDBResponse) error
+	Update(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	Delete(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	Refresh(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Relate() *relate.FieldsLikeDBResponse
 }
 

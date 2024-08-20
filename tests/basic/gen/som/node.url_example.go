@@ -13,12 +13,12 @@ import (
 
 type URLExampleRepo interface {
 	Query() query.Builder[model.URLExample, conv.URLExample]
-	Create(ctx context.Context, user *model.URLExample) error
-	CreateWithID(ctx context.Context, id string, user *model.URLExample) error
+	Create(ctx context.Context, urlexample *model.URLExample) error
+	CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error
 	Read(ctx context.Context, id *sdbc.ID) (*model.URLExample, bool, error)
-	Update(ctx context.Context, user *model.URLExample) error
-	Delete(ctx context.Context, user *model.URLExample) error
-	Refresh(ctx context.Context, user *model.URLExample) error
+	Update(ctx context.Context, urlexample *model.URLExample) error
+	Delete(ctx context.Context, urlexample *model.URLExample) error
+	Refresh(ctx context.Context, urlexample *model.URLExample) error
 	Relate() *relate.URLExample
 }
 

@@ -13,12 +13,12 @@ import (
 
 type AllFieldTypesRepo interface {
 	Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes]
-	Create(ctx context.Context, user *model.AllFieldTypes) error
-	CreateWithID(ctx context.Context, id string, user *model.AllFieldTypes) error
+	Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
+	CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error
 	Read(ctx context.Context, id *sdbc.ID) (*model.AllFieldTypes, bool, error)
-	Update(ctx context.Context, user *model.AllFieldTypes) error
-	Delete(ctx context.Context, user *model.AllFieldTypes) error
-	Refresh(ctx context.Context, user *model.AllFieldTypes) error
+	Update(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
+	Delete(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
+	Refresh(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	Relate() *relate.AllFieldTypes
 }
 
