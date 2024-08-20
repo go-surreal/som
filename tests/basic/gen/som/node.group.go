@@ -13,12 +13,12 @@ import (
 
 type GroupRepo interface {
 	Query() query.Builder[model.Group, conv.Group]
-	Create(ctx context.Context, user *model.Group) error
-	CreateWithID(ctx context.Context, id string, user *model.Group) error
+	Create(ctx context.Context, group *model.Group) error
+	CreateWithID(ctx context.Context, id string, group *model.Group) error
 	Read(ctx context.Context, id *sdbc.ID) (*model.Group, bool, error)
-	Update(ctx context.Context, user *model.Group) error
-	Delete(ctx context.Context, user *model.Group) error
-	Refresh(ctx context.Context, user *model.Group) error
+	Update(ctx context.Context, group *model.Group) error
+	Delete(ctx context.Context, group *model.Group) error
+	Refresh(ctx context.Context, group *model.Group) error
 	Relate() *relate.Group
 }
 

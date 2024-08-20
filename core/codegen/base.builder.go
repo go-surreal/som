@@ -215,13 +215,13 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("CreateWithID").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("id").String(),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Read").Call(
@@ -235,17 +235,17 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Update").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Delete").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Refresh").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
