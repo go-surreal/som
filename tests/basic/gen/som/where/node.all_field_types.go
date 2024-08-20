@@ -51,18 +51,18 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		IntSlice:           lib.NewIntSlice[M, int](lib.Field(key, "int_slice")),
 		IntSlicePtr:        lib.NewIntSlicePtr[M, int](lib.Field(key, "int_slice_ptr")),
 		Key:                key,
-		Other:              lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M])(lib.Field(key, "other")),
+		Other:              lib.NewStringSlice[M](lib.Field(key, "other")),
 		Role:               lib.NewEnum[M, model.Role](lib.Field(key, "role")),
 		Roles:              lib.NewSlice[M, model.Role](lib.Field(key, "roles"), lib.NewEnum[M, model.Role]),
 		Rune:               lib.NewNumeric[M, rune](lib.Field(key, "rune")),
 		RuneSlice:          lib.NewIntSlice[M, rune](lib.Field(key, "rune_slice")),
-		SliceSlice:         lib.NewSliceMaker[M, []string, *lib.Slice[M, string, *lib.String[M]]](lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M]))(lib.Field(key, "slice_slice")),
-		SliceSliceSlice:    lib.NewSliceMaker[M, [][]string, *lib.Slice[M, []string, *lib.Slice[M, string, *lib.String[M]]]](lib.NewSliceMaker[M, []string, *lib.Slice[M, string, *lib.String[M]]](lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M])))(lib.Field(key, "slice_slice_slice")),
+		SliceSlice:         lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M])(lib.Field(key, "slice_slice")),
+		SliceSliceSlice:    lib.NewSliceMaker[M, [][]string, *lib.Slice[M, []string, *lib.StringSlice[M]]](lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M]))(lib.Field(key, "slice_slice_slice")),
 		SliceSliceSlice2:   lib.NewSliceMaker[M, [][]model.SomeStruct, *lib.Slice[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]]](lib.NewSliceMaker[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]](lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])))(lib.Field(key, "slice_slice_slice_2")),
 		String:             lib.NewString[M](lib.Field(key, "string")),
 		StringPtr:          lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
-		StringPtrSlice:     lib.NewSliceMaker[M, *string, *lib.StringPtr[M]](lib.NewStringPtr[M])(lib.Field(key, "string_ptr_slice")),
-		StringSlicePtr:     lib.NewSliceMaker[M, string, *lib.String[M]](lib.NewString[M])(lib.Field(key, "string_slice_ptr")),
+		StringPtrSlice:     lib.NewStringSlice[M](lib.Field(key, "string_ptr_slice")),
+		StringSlicePtr:     lib.NewStringSlicePtr[M](lib.Field(key, "string_slice_ptr")),
 		StructPtrSlice:     lib.NewSliceMaker[M, *model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_ptr_slice")),
 		StructPtrSlicePtr:  lib.NewSliceMaker[M, *model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_ptr_slice_ptr")),
 		StructSlice:        lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_slice")),
@@ -96,9 +96,9 @@ type allFieldTypes[M any] struct {
 	UpdatedAt          *lib.Time[M]
 	String             *lib.String[M]
 	StringPtr          *lib.StringPtr[M]
-	Other              *lib.Slice[M, string, *lib.String[M]]
-	StringPtrSlice     *lib.Slice[M, *string, *lib.StringPtr[M]]
-	StringSlicePtr     *lib.Slice[M, string, *lib.String[M]]
+	Other              *lib.StringSlice[M]
+	StringPtrSlice     *lib.StringSlice[M]
+	StringSlicePtr     *lib.StringSlicePtr[M]
 	Int                *lib.Numeric[M, int]
 	IntPtr             *lib.NumericPtr[M, *int]
 	IntSlice           *lib.IntSlice[M, int]
@@ -156,8 +156,8 @@ type allFieldTypes[M any] struct {
 	StructPtrSlice     *lib.Slice[M, *model.SomeStruct, someStruct[M]]
 	StructPtrSlicePtr  *lib.Slice[M, *model.SomeStruct, someStruct[M]]
 	GroupsSlice        *lib.Slice[M, []model.Group, *lib.Slice[M, model.Group, group[M]]]
-	SliceSlice         *lib.Slice[M, []string, *lib.Slice[M, string, *lib.String[M]]]
-	SliceSliceSlice    *lib.Slice[M, [][]string, *lib.Slice[M, []string, *lib.Slice[M, string, *lib.String[M]]]]
+	SliceSlice         *lib.Slice[M, []string, *lib.StringSlice[M]]
+	SliceSliceSlice    *lib.Slice[M, [][]string, *lib.Slice[M, []string, *lib.StringSlice[M]]]
 	SliceSliceSlice2   *lib.Slice[M, [][]model.SomeStruct, *lib.Slice[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]]]
 	Byte               *lib.Byte[M]
 	BytePtr            *lib.BytePtr[M]

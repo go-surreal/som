@@ -74,6 +74,20 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 			)
 		}
 
+	case *String:
+		{
+			// TODO: StringPtrSlice & StringPtrSlicePtr
+
+			filter := "StringSlice"
+
+			if f.source.Pointer() {
+				filter += fnSuffixPtr
+			}
+
+			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).
+				Types(def.TypeModel)
+		}
+
 	case *Numeric:
 		{
 			switch element.source.Type {
@@ -149,6 +163,20 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 			return jen.Qual(ctx.pkgLib(), "NewSliceMaker").Types(def.TypeModel, element.typeGo(), elemFilter).
 					Call(makeElemFilter),
+				jen.Call(
+					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+				)
+		}
+
+	case *String:
+		{
+			filter := "NewStringSlice"
+
+			if f.source.Pointer() {
+				filter += fnSuffixPtr
+			}
+
+			return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 				jen.Call(
 					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 				)
