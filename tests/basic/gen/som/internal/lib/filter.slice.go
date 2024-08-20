@@ -4,12 +4,6 @@ package lib
 
 type makeFilter[M, F any] func(key Key[M]) F
 
-func NewSliceMaker[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFilter[M, *Slice[M, E, F]] {
-	return func(key Key[M]) *Slice[M, E, F] {
-		return NewSlice[M, E, F](key, makeElemFilter)
-	}
-}
-
 // Slice is a filter that can be used for slice fields.
 // M is the type of the outgoing model for the filter statement.
 // E is the type of the slice elements.
@@ -26,6 +20,16 @@ func NewSlice[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F])
 		makeElemFilter: makeElemFilter,
 	}
 }
+
+func NewSliceMaker[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFilter[M, *Slice[M, E, F]] {
+	return func(key Key[M]) *Slice[M, E, F] {
+		return NewSlice[M, E, F](key, makeElemFilter)
+	}
+}
+
+//
+// -- COMPARISONS
+//
 
 func (s *Slice[M, E, F]) AnyEqual(val E) Filter[M] {
 	return s.op(OpAnyEqual, val)

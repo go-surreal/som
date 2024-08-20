@@ -13,10 +13,6 @@ type context struct {
 	vars     map[string]any
 }
 
-func (c *context) Vars() map[string]any {
-	return c.vars
-}
-
 func (c *context) asVar(val any) string {
 	index := strconv.Itoa(c.varIndex)
 	c.vars[index] = val
@@ -218,5 +214,6 @@ const (
 
 	OpX = "<|4|> or <|3,HAMMING|>" // KNN - TODO!
 
-	CastInt Operator = "<int>"
+	CastInt   Operator = "<int>"
+	CastFloat Operator = "<float>"
 )

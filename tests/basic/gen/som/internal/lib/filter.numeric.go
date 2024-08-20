@@ -14,13 +14,13 @@ func NewNumeric[M, T any](key Key[M]) *Numeric[M, T] {
 	}
 }
 
-func (d *Numeric[M, T]) key() Key[M] {
-	return d.Base.key()
+func (n *Numeric[M, T]) key() Key[M] {
+	return n.Base.key()
 }
 
-//func (n *Numeric[M, M]) METHODS(min, max M) Filter[M] {
-//	// https://surrealdb.com/docs/surrealdb/surrealql/functions/database/math
-//}
+//
+// -- ARITHMETIC
+//
 
 func (n *Numeric[M, T]) Add(val T) *Numeric[M, T] {
 	return NewNumeric[M, T](n.Base.calc(OpAdd, val))
@@ -42,9 +42,59 @@ func (n *Numeric[M, T]) Raise(val float64) *Numeric[M, T] {
 	return NewNumeric[M, T](n.Base.calc(OpRaise, val))
 }
 
-func (n *Numeric[M, T]) ToInt() *Numeric[M, int] {
-	return NewNumeric[M, int](n.Base.prefix(CastInt))
+//
+// -- MATH
+//
+
+//func (n *Numeric[M, M]) METHODS(min, max M) Filter[M] {
+//	// https://surrealdb.com/docs/surrealdb/surrealql/functions/database/math
+//}
+
+func (n *Numeric[M, T]) Abs() *Numeric[M, T] {
+	return NewNumeric[M, T](n.Base.fn("math::abs"))
 }
+
+// TODO: math::acos (v2.0.0)
+
+// TODO: math::acot (v2.0.0)
+
+// TODO: math::asin (v2.0.0)
+
+// TODO: math::atan (v2.0.0)
+
+// TODO: math::clamp (v2.0.0)
+
+// TODO: math::cos (v2.0.0)
+
+// TODO: math::cot (v2.0.0)
+
+// TODO: math::deg2rad (v2.0.0)
+
+// TODO: math::e (??)
+
+// TODO: math::inf (??)
+
+// math::lerp
+// math::lerpangle
+// math::ln
+// math::log
+// math::log10
+// math::log2
+// math::neg_inf (??)
+// math::pi (??)
+// math::rad2deg
+// math::sign
+// math::sin
+// math::tan
+// math::tau (??)
+
+func (n *Numeric[M, T]) Sqrt() *Float[M, float64] { // TODO: number must not be negative!
+	return NewFloat[M, float64](n.Base.fn("math::sqrt"))
+}
+
+//
+// -- CONVERT DURATION
+//
 
 func (n *Numeric[M, T]) AsDurationDays() *Duration[M] {
 	return NewDuration[M](n.Base.fn("duration::from::days"))
@@ -78,6 +128,10 @@ func (n *Numeric[M, T]) AsDurationWeeks() *Duration[M] {
 	return NewDuration[M](n.Base.fn("duration::from::weeks"))
 }
 
+//
+// -- CONVERT TIME
+//
+
 func (n *Numeric[M, T]) AsTimeMicros() *Time[M] {
 	return NewTime[M](n.Base.fn("time::from::micros"))
 }
@@ -99,6 +153,10 @@ func (n *Numeric[M, T]) AsTimeUnix() *Time[M] {
 }
 
 // TODO: https://surrealdb.com/docs/surrealdb/surrealql/datamodel/numbers#mathematical-constants
+
+//
+// -- POINTER
+//
 
 type NumericPtr[M, T any] struct {
 	*Numeric[M, T]
