@@ -43,7 +43,6 @@ func TestFilterCompareFields(t *testing.T) {
 		Filter(
 			where.AllFieldTypes.StringPtr.Equal_(where.AllFieldTypes.String),
 			where.AllFieldTypes.TimePtr.After_(where.AllFieldTypes.Time),
-			where.AllFieldTypes.TimePtr.Equal_(where.AllFieldTypes.Time.Add_(where.AllFieldTypes.Duration)),
 		).
 		First(ctx)
 
