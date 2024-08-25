@@ -1,12 +1,11 @@
+# How to contribute
 
-## How to contribute
-
-### Forking
+## Forking
 
 - to contribute please create a fork within your own namespace
 - after making your changes, create a pull request that will merge your state into upstream
 
-### Commits & pull requests
+## Commits & pull requests
 
 - Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org) specification.
 - During development (within a feature branch) commits may have any naming whatsoever.
@@ -14,7 +13,7 @@
 - The final commit message must adhere to the specification mentioned above.
 - A GitHub Workflow will make sure that the PR title and description matches this specification.
 
-### Labels
+## Labels
 
 - there are some different labels for issues and pull requests (e.g. bug and fix)
 - the labels on pull requests resemble the conventional commits specification
