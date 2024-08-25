@@ -16,6 +16,22 @@ func NewFloat[M any, T float_](key Key[M]) *Float[M, T] {
 	}
 }
 
+type FloatPtr[M any, T float_] struct {
+	*Float[M, T]
+	*Nillable[M]
+}
+
+func NewFloatPtr[M any, T float_](key Key[M]) *FloatPtr[M, T] {
+	return &FloatPtr[M, T]{
+		Float:    NewFloat[M, T](key),
+		Nillable: NewNillable(key),
+	}
+}
+
+func (f *Float[M, T]) key() Key[M] {
+	return f.Numeric.key()
+}
+
 func (f *Float[M, T]) Ceil() *Int[M, int] {
 	return NewInt[M, int](f.Base.fn("math::ceil"))
 }

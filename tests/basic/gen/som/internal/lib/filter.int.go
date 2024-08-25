@@ -9,6 +9,11 @@ type int_ interface {
 		~*uint | ~*uint8 | ~*uint16 | ~*uint32 | ~*uint64 | ~*uintptr
 }
 
+type AnyInt[M any] interface {
+	field[M]
+	anyInt()
+}
+
 type Int[M any, T int_] struct {
 	*Numeric[M, T]
 }
@@ -18,6 +23,20 @@ func NewInt[M any, T int_](key Key[M]) *Int[M, T] {
 		Numeric: NewNumeric[M, T](key),
 	}
 }
+
+type IntPtr[M any, T int_] struct {
+	*Int[M, T]
+	*Nillable[M]
+}
+
+func NewIntPtr[M any, T int_](key Key[M]) *IntPtr[M, T] {
+	return &IntPtr[M, T]{
+		Int:      NewInt[M, T](key),
+		Nillable: NewNillable(key),
+	}
+}
+
+func (n *Int[M, T]) anyInt() {}
 
 func (n *Int[M, T]) Int() *Int[M, int] {
 	return NewInt[M, int](n.key())

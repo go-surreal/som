@@ -190,7 +190,7 @@ const (
 	OpDiv   Operator = "÷"  // ("/") Divide a value by another value.
 	OpRaise Operator = "**" // Raises a base value by another value.
 
-	OpNot                  Operator = "!"  // Reverses the truthiness of a value.
+	OpInvert               Operator = "!"  // Reverses the truthiness of a value.
 	OpTruth                Operator = "!!" // Determines the truthiness of a value.
 	OpEitherTrueAndNotNull Operator = "??" // Check whether either of two values are truthy and not NULL.
 	OpEitherTrue           Operator = "?:" // Check whether either of two values are truthy.

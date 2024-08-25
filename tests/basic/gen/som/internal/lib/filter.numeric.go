@@ -2,15 +2,32 @@
 
 package lib
 
+type AnyNumeric[M any] interface {
+	field[M]
+	anyNumeric()
+}
+
 type Numeric[M, T any] struct {
-	*Base[M, T, *Numeric[M, T], *Slice[M, T, *Numeric[M, T]]]
-	*Comparable[M, T, *Numeric[M, T]]
+	*Base[M, T, AnyNumeric[M], *Slice[M, T, *Numeric[M, T]]]
+	*Comparable[M, T, AnyNumeric[M]]
 }
 
 func NewNumeric[M, T any](key Key[M]) *Numeric[M, T] {
 	return &Numeric[M, T]{
-		Base:       NewBase[M, T, *Numeric[M, T], *Slice[M, T, *Numeric[M, T]]](key),
-		Comparable: NewComparable[M, T, *Numeric[M, T]](key),
+		Base:       NewBase[M, T, AnyNumeric[M], *Slice[M, T, *Numeric[M, T]]](key),
+		Comparable: NewComparable[M, T, AnyNumeric[M]](key),
+	}
+}
+
+type NumericPtr[M, T any] struct {
+	*Numeric[M, T]
+	*Nillable[M]
+}
+
+func NewNumericPtr[M, T any](key Key[M]) *NumericPtr[M, T] {
+	return &NumericPtr[M, T]{
+		Numeric:  NewNumeric[M, T](key),
+		Nillable: NewNillable[M](key),
 	}
 }
 
@@ -18,28 +35,30 @@ func (n *Numeric[M, T]) key() Key[M] {
 	return n.Base.key()
 }
 
+func (n *Numeric[M, T]) anyNumeric() {}
+
 //
 // -- ARITHMETIC
 //
 
-func (n *Numeric[M, T]) Add(val T) *Numeric[M, T] {
-	return NewNumeric[M, T](n.Base.calc(OpAdd, val))
+func (n *Numeric[M, T]) Add(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpAdd, val))
 }
 
-func (n *Numeric[M, T]) Sub(val T) *Numeric[M, T] {
-	return NewNumeric[M, T](n.Base.calc(OpSub, val))
+func (n *Numeric[M, T]) Sub(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpSub, val))
 }
 
-func (n *Numeric[M, T]) Mul(val T) *Numeric[M, T] {
-	return NewNumeric[M, T](n.Base.calc(OpMul, val))
+func (n *Numeric[M, T]) Mul(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpMul, val))
 }
 
-func (n *Numeric[M, T]) Div(val T) *Numeric[M, T] {
-	return NewNumeric[M, T](n.Base.calc(OpDiv, val))
+func (n *Numeric[M, T]) Div(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpDiv, val))
 }
 
-func (n *Numeric[M, T]) Raise(val float64) *Numeric[M, T] {
-	return NewNumeric[M, T](n.Base.calc(OpRaise, val))
+func (n *Numeric[M, T]) Raise(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpRaise, val))
 }
 
 //
@@ -54,39 +73,41 @@ func (n *Numeric[M, T]) Abs() *Numeric[M, T] {
 	return NewNumeric[M, T](n.Base.fn("math::abs"))
 }
 
-// TODO: math::acos (v2.0.0)
+// TODO: math::acos (surrealdb v2)
 
-// TODO: math::acot (v2.0.0)
+// TODO: math::acot (surrealdb v2)
 
-// TODO: math::asin (v2.0.0)
+// TODO: math::asin (surrealdb v2)
 
-// TODO: math::atan (v2.0.0)
+// TODO: math::atan (surrealdb v2)
 
-// TODO: math::clamp (v2.0.0)
+// TODO: math::clamp (surrealdb v2)
 
-// TODO: math::cos (v2.0.0)
+// TODO: math::cos (surrealdb v2)
 
-// TODO: math::cot (v2.0.0)
+// TODO: math::cot (surrealdb v2)
 
-// TODO: math::deg2rad (v2.0.0)
+// TODO: math::deg2rad (surrealdb v2)
 
-// TODO: math::e (??)
+// TODO: math::lerp (surrealdb v2)
 
-// TODO: math::inf (??)
+// TODO: math::lerpangle (surrealdb v2)
 
-// math::lerp
-// math::lerpangle
-// math::ln
-// math::log
-// math::log10
-// math::log2
-// math::neg_inf (??)
-// math::pi (??)
-// math::rad2deg
-// math::sign
-// math::sin
-// math::tan
-// math::tau (??)
+// TODO: math::ln (surrealdb v2)
+
+// TODO: math::log (surrealdb v2)
+
+// TODO: math::log10 (surrealdb v2)
+
+// TODO: math::log2 (surrealdb v2)
+
+// TODO: math::rad2deg (surrealdb v2)
+
+// TODO: math::sign (surrealdb v2)
+
+// TODO: math::sin (surrealdb v2)
+
+// TODO: math::tan (surrealdb v2)
 
 func (n *Numeric[M, T]) Sqrt() *Float[M, float64] { // TODO: number must not be negative!
 	return NewFloat[M, float64](n.Base.fn("math::sqrt"))
@@ -150,22 +171,4 @@ func (n *Numeric[M, T]) AsTimeSecs() *Time[M] {
 
 func (n *Numeric[M, T]) AsTimeUnix() *Time[M] {
 	return NewTime[M](n.Base.fn("time::from::unix"))
-}
-
-// TODO: https://surrealdb.com/docs/surrealdb/surrealql/datamodel/numbers#mathematical-constants
-
-//
-// -- POINTER
-//
-
-type NumericPtr[M, T any] struct {
-	*Numeric[M, T]
-	*Nillable[M]
-}
-
-func NewNumericPtr[M, T any](key Key[M]) *NumericPtr[M, T] {
-	return &NumericPtr[M, T]{
-		Numeric:  NewNumeric[M, T](key),
-		Nillable: NewNillable[M](key),
-	}
 }

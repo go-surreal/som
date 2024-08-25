@@ -18,8 +18,8 @@ func NewSemVer[M any](key Key[M]) *SemVer[M] {
 	}
 }
 
-func (b *SemVer[M]) Compare(val som.SemVer) *Numeric[M, int] {
-	return NewNumeric[M, int](b.fn("string::semver::compare", val))
+func (b *SemVer[M]) Compare(other som.SemVer) *Numeric[M, int] {
+	return NewNumeric[M, int](b.fn("string::semver::compare", other))
 }
 
 func (b *SemVer[M]) Major() *Numeric[M, int] {

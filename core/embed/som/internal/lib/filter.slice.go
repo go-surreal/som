@@ -21,6 +21,18 @@ func NewSlice[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F])
 	}
 }
 
+type SlicePtr[M, E any, F field[M]] struct {
+	*Slice[M, E, F]
+	*Nillable[M]
+}
+
+func NewSlicePtr[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F]) *SlicePtr[M, E, F] {
+	return &SlicePtr[M, E, F]{
+		Slice:    NewSlice[M, E, F](key, makeElemFilter),
+		Nillable: NewNillable[M](key),
+	}
+}
+
 func NewSliceMaker[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFilter[M, *Slice[M, E, F]] {
 	return func(key Key[M]) *Slice[M, E, F] {
 		return NewSlice[M, E, F](key, makeElemFilter)
@@ -240,15 +252,3 @@ func (s *Slice[M, E, F]) Union(val []E) *Slice[M, E, F] {
 // TODO: Windows (v2.0.0)
 
 // TODO: https://surrealdb.com/docs/surrealdb/surrealql/functions/database/vector
-
-type SlicePtr[M, E any, F field[M]] struct {
-	*Slice[M, E, F]
-	*Nillable[M]
-}
-
-func NewSlicePtr[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F]) *SlicePtr[M, E, F] {
-	return &SlicePtr[M, E, F]{
-		Slice:    NewSlice[M, E, F](key, makeElemFilter),
-		Nillable: NewNillable[M](key),
-	}
-}

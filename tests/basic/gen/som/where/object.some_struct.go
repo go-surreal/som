@@ -5,7 +5,7 @@ import lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 
 func newSomeStruct[M any](key lib.Key[M]) someStruct[M] {
 	return someStruct[M]{
-		IntPtr:    lib.NewNumericPtr[M, *int](lib.Field(key, "int_ptr")),
+		IntPtr:    lib.NewIntPtr[M, *int](lib.Field(key, "int_ptr")),
 		Key:       key,
 		StringPtr: lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
 		TimePtr:   lib.NewTimePtr[M](lib.Field(key, "time_ptr")),
@@ -16,7 +16,7 @@ func newSomeStruct[M any](key lib.Key[M]) someStruct[M] {
 type someStruct[M any] struct {
 	lib.Key[M]
 	StringPtr *lib.StringPtr[M]
-	IntPtr    *lib.NumericPtr[M, *int]
+	IntPtr    *lib.IntPtr[M, *int]
 	TimePtr   *lib.TimePtr[M]
 	UuidPtr   *lib.UUIDPtr[M]
 }

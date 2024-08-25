@@ -12,6 +12,16 @@ func NewIntSlice[M any, T int_](key Key[M]) *IntSlice[M, T] {
 	}
 }
 
+type IntSlicePtr[M any, T int_] struct {
+	*NumericSlicePtr[M, T, *Int[M, T]]
+}
+
+func NewIntSlicePtr[M any, T int_](key Key[M]) *IntSlicePtr[M, T] {
+	return &IntSlicePtr[M, T]{
+		NumericSlicePtr: NewNumericSlicePtr[M, T](key, NewInt[M, T]),
+	}
+}
+
 func (s *IntSlice[M, T]) Bottom(count int) *IntSlice[M, T] {
 	return NewIntSlice[M, T](s.fn("math::bottom", count))
 }
@@ -42,22 +52,4 @@ func (s *IntSlice[M, T]) Sum() *Int[M, T] {
 
 func (s *IntSlice[M, T]) Top(count int) *IntSlice[M, T] {
 	return NewIntSlice[M, T](s.fn("math::top", count))
-}
-
-//
-// -- POINTER
-//
-
-//
-// -- POINTER
-//
-
-type IntSlicePtr[M any, T int_] struct {
-	*NumericSlicePtr[M, T, *Int[M, T]]
-}
-
-func NewIntSlicePtr[M any, T int_](key Key[M]) *IntSlicePtr[M, T] {
-	return &IntSlicePtr[M, T]{
-		NumericSlicePtr: NewNumericSlicePtr[M, T](key, NewInt[M, T]),
-	}
 }

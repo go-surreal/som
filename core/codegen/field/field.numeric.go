@@ -123,6 +123,21 @@ func (f *Numeric) CodeGen() *CodeGen {
 
 func (f *Numeric) filterDefine(ctx Context) jen.Code {
 	filter := "Numeric"
+
+	switch f.source.Type {
+
+	case parser.NumberInt, parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberInt64,
+		parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
+		{
+			filter = "Int"
+		}
+
+	case parser.NumberFloat32, parser.NumberFloat64:
+		{
+			filter = "Float"
+		}
+	}
+
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
@@ -132,6 +147,21 @@ func (f *Numeric) filterDefine(ctx Context) jen.Code {
 
 func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewNumeric"
+
+	switch f.source.Type {
+
+	case parser.NumberInt, parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberInt64,
+		parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
+		{
+			filter = "NewInt"
+		}
+
+	case parser.NumberFloat32, parser.NumberFloat64:
+		{
+			filter = "NewFloat"
+		}
+	}
+
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
