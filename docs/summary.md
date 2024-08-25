@@ -1,15 +1,27 @@
 # Summary
 
-## Use headings to create page groups like this one
+* [Overview](01_overview/overview.md)
 
-* [First page’s title](page1/README.md)
-    * [Some child page](page1/page1-1.md)
-    * [Some other child page](part1/page1-2.md)
+* [Getting started]
+  * [Introduction](02_getting_started/index.md)
+  * [Installation](02_getting-started/installation.md)
+  * [Concepts](02_getting-started/concepts.md)
+  * [Features](02_getting-started/features.md)
 
-* [Second page’s title](page2/README.md)
-    * [Some child page](page2/page2-1.md)
-    * [Some other child page](part2/page2-2.md)
+* [Usage]
+  * [Overview](03_usage/index.md)
+  * [Generation](03_usage/generation.md)
+  * [Models](03_usage/models.md)
+  * [Data types](03_usage/data-types.md)
+  * [CRUD](03_usage/crud.md)
+  * [Queries](03_usage/queries.md)
+  * [Relations](03_usage/relations.md)
 
-## A second-page group
+* [Development]
+  * [Index](04_development/index.md)
+  * [Contribute](04_development/contribute.md)
+  * [Roadmap](04_development/roadmap.md)
 
-* [Yet another page](another-page.md)
+* [Other]
+  * [FAQ](05_other/faq.md)
+  * [About](05_other/about.md)
