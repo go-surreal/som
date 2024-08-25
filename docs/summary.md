@@ -3,9 +3,9 @@
 * [Overview](01_overview/overview.md)
 
 * [Getting started](02_getting_started/index.md)
-  * [Installation](02_getting-started/installation.md)
-  * [Concepts](02_getting-started/concepts.md)
-  * [Features](02_getting-started/features.md)
+  * [Installation](02_getting_started/installation.md)
+  * [Concepts](02_getting_started/concepts.md)
+  * [Features](02_getting_started/features.md)
 
 * [Usage](03_usage/index.md)
   * [Generation](03_usage/generation.md)
