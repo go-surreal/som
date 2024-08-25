@@ -27,10 +27,10 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		DurationSlice:      lib.NewSliceMaker[M, time.Duration, *lib.Duration[M]](lib.NewDuration[M])(lib.Field(key, "duration_slice")),
 		EnumPtr:            lib.NewEnumPtr[M, model.Role](lib.Field(key, "enum_ptr")),
 		EnumPtrSlice:       lib.NewSlice[M, model.Role](lib.Field(key, "enum_ptr_slice"), lib.NewEnumPtr[M, model.Role]),
-		EnumPtrSlicePtr:    lib.NewSlice[M, model.Role](lib.Field(key, "enum_ptr_slice_ptr"), lib.NewEnumPtr[M, model.Role]),
+		EnumPtrSlicePtr:    lib.NewSlicePtr[M, model.Role](lib.Field(key, "enum_ptr_slice_ptr"), lib.NewEnumPtr[M, model.Role]),
 		Float32:            lib.NewFloat[M, float32](lib.Field(key, "float_32")),
-		Float32PtrSlice:    lib.NewFloatSlice[M, *float32](lib.Field(key, "float_32_ptr_slice")),
-		Float32PtrSlicePtr: lib.NewFloatSlicePtr[M, *float32](lib.Field(key, "float_32_ptr_slice_ptr")),
+		Float32PtrSlice:    lib.NewFloatPtrSlice[M, *float32](lib.Field(key, "float_32_ptr_slice")),
+		Float32PtrSlicePtr: lib.NewFloatPtrSlicePtr[M, *float32](lib.Field(key, "float_32_ptr_slice_ptr")),
 		Float32Slice:       lib.NewFloatSlice[M, float32](lib.Field(key, "float_32_slice")),
 		Float32SlicePtr:    lib.NewFloatSlicePtr[M, float32](lib.Field(key, "float_32_slice_ptr")),
 		Float64:            lib.NewFloat[M, float64](lib.Field(key, "float_64")),
@@ -46,8 +46,8 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		Int8:               lib.NewInt[M, int8](lib.Field(key, "int_8")),
 		Int8Ptr:            lib.NewIntPtr[M, *int8](lib.Field(key, "int_8_ptr")),
 		IntPtr:             lib.NewIntPtr[M, *int](lib.Field(key, "int_ptr")),
-		IntPtrSlice:        lib.NewIntSlice[M, *int](lib.Field(key, "int_ptr_slice")),
-		IntPtrSlicePtr:     lib.NewIntSlicePtr[M, *int](lib.Field(key, "int_ptr_slice_ptr")),
+		IntPtrSlice:        lib.NewIntPtrSlice[M, *int](lib.Field(key, "int_ptr_slice")),
+		IntPtrSlicePtr:     lib.NewIntPtrSlicePtr[M, *int](lib.Field(key, "int_ptr_slice_ptr")),
 		IntSlice:           lib.NewIntSlice[M, int](lib.Field(key, "int_slice")),
 		IntSlicePtr:        lib.NewIntSlicePtr[M, int](lib.Field(key, "int_slice_ptr")),
 		Key:                key,
@@ -61,7 +61,7 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		SliceSliceSlice2:   lib.NewSliceMaker[M, [][]model.SomeStruct, *lib.Slice[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]]](lib.NewSliceMaker[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]](lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])))(lib.Field(key, "slice_slice_slice_2")),
 		String:             lib.NewString[M](lib.Field(key, "string")),
 		StringPtr:          lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
-		StringPtrSlice:     lib.NewStringSlice[M](lib.Field(key, "string_ptr_slice")),
+		StringPtrSlice:     lib.NewStringPtrSlice[M](lib.Field(key, "string_ptr_slice")),
 		StringSlicePtr:     lib.NewStringSlicePtr[M](lib.Field(key, "string_slice_ptr")),
 		StructPtrSlice:     lib.NewSliceMaker[M, *model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_ptr_slice")),
 		StructPtrSlicePtr:  lib.NewSliceMakerPtr[M, *model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_ptr_slice_ptr")),
@@ -97,14 +97,14 @@ type allFieldTypes[M any] struct {
 	String             *lib.String[M]
 	StringPtr          *lib.StringPtr[M]
 	Other              *lib.StringSlice[M]
-	StringPtrSlice     *lib.StringSlice[M]
+	StringPtrSlice     *lib.StringPtrSlice[M]
 	StringSlicePtr     *lib.StringSlicePtr[M]
 	Int                *lib.Int[M, int]
 	IntPtr             *lib.IntPtr[M, *int]
 	IntSlice           *lib.IntSlice[M, int]
-	IntPtrSlice        *lib.IntSlice[M, *int]
+	IntPtrSlice        *lib.IntPtrSlice[M, *int]
 	IntSlicePtr        *lib.IntSlicePtr[M, int]
-	IntPtrSlicePtr     *lib.IntSlicePtr[M, *int]
+	IntPtrSlicePtr     *lib.IntPtrSlicePtr[M, *int]
 	Int8               *lib.Int[M, int8]
 	Int8Ptr            *lib.IntPtr[M, *int8]
 	Int16              *lib.Int[M, int16]
@@ -122,8 +122,8 @@ type allFieldTypes[M any] struct {
 	Float32            *lib.Float[M, float32]
 	Float32Slice       *lib.FloatSlice[M, float32]
 	Float32SlicePtr    *lib.FloatSlicePtr[M, float32]
-	Float32PtrSlice    *lib.FloatSlice[M, *float32]
-	Float32PtrSlicePtr *lib.FloatSlicePtr[M, *float32]
+	Float32PtrSlice    *lib.FloatPtrSlice[M, *float32]
+	Float32PtrSlicePtr *lib.FloatPtrSlicePtr[M, *float32]
 	Float64            *lib.Float[M, float64]
 	Rune               *lib.Int[M, rune]
 	RuneSlice          *lib.IntSlice[M, rune]
@@ -151,10 +151,10 @@ type allFieldTypes[M any] struct {
 	EnumPtr            *lib.EnumPtr[M, model.Role]
 	Roles              *lib.Slice[M, model.Role, *lib.Enum[M, model.Role]]
 	EnumPtrSlice       *lib.Slice[M, model.Role, *lib.EnumPtr[M, model.Role]]
-	EnumPtrSlicePtr    *lib.Slice[M, model.Role, *lib.EnumPtr[M, model.Role]]
+	EnumPtrSlicePtr    *lib.SlicePtr[M, model.Role, *lib.EnumPtr[M, model.Role]]
 	StructSlice        *lib.Slice[M, model.SomeStruct, someStruct[M]]
 	StructPtrSlice     *lib.Slice[M, *model.SomeStruct, someStruct[M]]
-	StructPtrSlicePtr  *lib.Slice[M, *model.SomeStruct, someStruct[M]]
+	StructPtrSlicePtr  *lib.SlicePtr[M, *model.SomeStruct, someStruct[M]]
 	GroupsSlice        *lib.Slice[M, []model.Group, *lib.Slice[M, model.Group, group[M]]]
 	SliceSlice         *lib.Slice[M, []string, *lib.StringSlice[M]]
 	SliceSliceSlice    *lib.Slice[M, [][]string, *lib.Slice[M, []string, *lib.StringSlice[M]]]

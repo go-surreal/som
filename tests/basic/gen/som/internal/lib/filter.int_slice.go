@@ -22,6 +22,30 @@ func NewIntSlicePtr[M any, T int_](key Key[M]) *IntSlicePtr[M, T] {
 	}
 }
 
+type IntPtrSlice[M any, T int_] struct {
+	*NumericSlice[M, T, *IntPtr[M, T]]
+}
+
+func NewIntPtrSlice[M any, T int_](key Key[M]) *IntPtrSlice[M, T] {
+	return &IntPtrSlice[M, T]{
+		NumericSlice: NewNumericSlice[M, T](key, NewIntPtr[M, T]),
+	}
+}
+
+type IntPtrSlicePtr[M any, T int_] struct {
+	*NumericSlicePtr[M, T, *IntPtr[M, T]]
+}
+
+func NewIntPtrSlicePtr[M any, T int_](key Key[M]) *IntPtrSlicePtr[M, T] {
+	return &IntPtrSlicePtr[M, T]{
+		NumericSlicePtr: NewNumericSlicePtr[M, T](key, NewIntPtr[M, T]),
+	}
+}
+
+//
+//
+//
+
 func (s *IntSlice[M, T]) Bottom(count int) *IntSlice[M, T] {
 	return NewIntSlice[M, T](s.fn("math::bottom", count))
 }

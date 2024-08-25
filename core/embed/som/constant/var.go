@@ -1,3 +1,5 @@
+//go:build embed
+
 package constant
 
 import "{{.GenerateOutPath}}/internal/lib"

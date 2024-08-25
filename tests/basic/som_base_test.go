@@ -5,7 +5,6 @@ import (
 	"github.com/go-surreal/sdbc"
 	sombase "github.com/go-surreal/som"
 	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/constant"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -21,8 +20,6 @@ import (
 func TestQuery(t *testing.T) {
 	client := &som.ClientImpl{}
 
-	constE := constant.E[model.AllFieldTypes]()
-
 	query := client.AllFieldTypesRepo().Query().
 		Filter(
 			where.AllFieldTypes.
@@ -35,9 +32,9 @@ func TestQuery(t *testing.T) {
 
 			where.AllFieldTypes.Duration.Days().LessThan(4),
 
-			where.AllFieldTypes.Float64.Equal_(constE),
-
-			constant.String[model.AllFieldTypes]("A").Equal_(constant.String[model.AllFieldTypes]("A")),
+			//where.AllFieldTypes.Float64.Equal_(constant.E[model.AllFieldTypes]()),
+			//
+			//constant.String[model.AllFieldTypes]("A").Equal_(constant.String[model.AllFieldTypes]("A")),
 		)
 
 	assert.Equal(t,

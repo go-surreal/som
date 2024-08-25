@@ -57,6 +57,12 @@ func (f *Slice) CodeGen() *CodeGen {
 }
 
 func (f *Slice) filterDefine(ctx Context) jen.Code {
+	filter := "Slice"
+
+	if f.source.Pointer() {
+		filter += fnSuffixPtr
+	}
+
 	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx.fromSlice())
 
 	switch element := f.element.(type) {
@@ -66,19 +72,17 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 			if !ctx.isFromSlice {
 				return nil // handled by filterFunc
 			}
-
-			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
-				def.TypeModel,
-				element.typeGo(), // TODO: no pointers!
-				elemFilter,
-			)
 		}
 
 	case *String:
 		{
-			// TODO: StringPtrSlice & StringPtrSlicePtr
+			filter := "String"
 
-			filter := "StringSlice"
+			if element.source.Pointer() {
+				filter += fnSuffixPtr
+			}
+
+			filter += "Slice"
 
 			if f.source.Pointer() {
 				filter += fnSuffixPtr
@@ -90,21 +94,27 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 
 	case *Numeric:
 		{
-			filter := "NumericSlice"
+			filter := "Numeric"
 
 			switch element.source.Type {
 
 			case parser.NumberInt, parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberInt64,
 				parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
 				{
-					filter = "IntSlice"
+					filter = "Int"
 				}
 
 			case parser.NumberFloat32, parser.NumberFloat64:
 				{
-					filter = "FloatSlice"
+					filter = "Float"
 				}
 			}
+
+			if element.source.Pointer() {
+				filter += fnSuffixPtr
+			}
+
+			filter += "Slice"
 
 			if f.source.Pointer() {
 				filter += fnSuffixPtr
@@ -115,25 +125,33 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 		}
 
 	case *Byte:
-		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(def.TypeModel)
+		{
+			// TODO: pointers
+			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ByteSlice").Types(def.TypeModel)
+		}
 
 	case *Enum:
-		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
+		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(
 			def.TypeModel,
 			jen.Qual(ctx.SourcePkg, element.model.NameGo()),
 			elemFilter,
 		)
-
-	default:
-		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Slice").Types(
-			def.TypeModel,
-			element.typeGo(), // TODO: no pointers!
-			elemFilter,
-		)
 	}
+
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(
+		def.TypeModel,
+		f.element.typeGo(),
+		elemFilter,
+	)
 }
 
 func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
+	filter := "NewSlice"
+
+	if f.source.Pointer() {
+		filter += fnSuffixPtr
+	}
+
 	elemFilter := f.element.CodeGen().filterDefine.Exec(ctx.fromSlice())
 
 	var makeElemFilter jen.Code
@@ -156,7 +174,13 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	case *String:
 		{
-			filter := "NewStringSlice"
+			filter := "NewString"
+
+			if element.source.Pointer() {
+				filter += fnSuffixPtr
+			}
+
+			filter += "Slice"
 
 			if f.source.Pointer() {
 				filter += fnSuffixPtr
@@ -177,14 +201,20 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 			case parser.NumberInt, parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberInt64,
 				parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
 				{
-					filter = "NewIntSlice"
+					filter = "NewInt"
 				}
 
 			case parser.NumberFloat32, parser.NumberFloat64:
 				{
-					filter = "NewFloatSlice"
+					filter = "NewFloat"
 				}
 			}
+
+			if element.source.Pointer() {
+				filter += fnSuffixPtr
+			}
+
+			filter += "Slice"
 
 			if f.source.Pointer() {
 				filter += fnSuffixPtr
@@ -210,14 +240,14 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 			)
 
 	case *Enum:
-		return jen.Qual(ctx.pkgLib(), "NewSlice").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, element.model.NameGo())),
+		return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, jen.Qual(ctx.SourcePkg, element.model.NameGo())),
 			jen.Call(
 				jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 				makeElemFilter,
 			)
 	}
 
-	filter := "NewSliceMaker"
+	filter = "NewSliceMaker"
 
 	if f.source.Pointer() {
 		filter += fnSuffixPtr

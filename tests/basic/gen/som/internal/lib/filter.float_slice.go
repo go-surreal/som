@@ -12,6 +12,40 @@ func NewFloatSlice[M any, T float_](key Key[M]) *FloatSlice[M, T] {
 	}
 }
 
+type FloatSlicePtr[M any, T float_] struct {
+	*NumericSlicePtr[M, T, *Float[M, T]]
+}
+
+func NewFloatSlicePtr[M any, T float_](key Key[M]) *FloatSlicePtr[M, T] {
+	return &FloatSlicePtr[M, T]{
+		NumericSlicePtr: NewNumericSlicePtr[M, T](key, NewFloat[M, T]),
+	}
+}
+
+type FloatPtrSlice[M any, T float_] struct {
+	*NumericSlice[M, T, *FloatPtr[M, T]]
+}
+
+func NewFloatPtrSlice[M any, T float_](key Key[M]) *FloatPtrSlice[M, T] {
+	return &FloatPtrSlice[M, T]{
+		NumericSlice: NewNumericSlice[M, T](key, NewFloatPtr[M, T]),
+	}
+}
+
+type FloatPtrSlicePtr[M any, T float_] struct {
+	*NumericSlicePtr[M, T, *FloatPtr[M, T]]
+}
+
+func NewFloatPtrSlicePtr[M any, T float_](key Key[M]) *FloatPtrSlicePtr[M, T] {
+	return &FloatPtrSlicePtr[M, T]{
+		NumericSlicePtr: NewNumericSlicePtr[M, T](key, NewFloatPtr[M, T]),
+	}
+}
+
+//
+//
+//
+
 func (s *FloatSlice[M, T]) Bottom(count int) *FloatSlice[M, T] {
 	return NewFloatSlice[M, T](s.fn("math::bottom", count))
 }
@@ -42,18 +76,4 @@ func (s *FloatSlice[M, T]) Sum() *Float[M, float64] {
 
 func (s *FloatSlice[M, T]) Top(count int) *FloatSlice[M, T] {
 	return NewFloatSlice[M, T](s.fn("math::top", count))
-}
-
-//
-// -- POINTER
-//
-
-type FloatSlicePtr[M any, T float_] struct {
-	*NumericSlicePtr[M, T, *Float[M, T]]
-}
-
-func NewFloatSlicePtr[M any, T float_](key Key[M]) *FloatSlicePtr[M, T] {
-	return &FloatSlicePtr[M, T]{
-		NumericSlicePtr: NewNumericSlicePtr[M, T](key, NewFloat[M, T]),
-	}
 }

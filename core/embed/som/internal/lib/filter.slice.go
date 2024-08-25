@@ -39,6 +39,12 @@ func NewSliceMaker[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFi
 	}
 }
 
+func NewSliceMakerPtr[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFilter[M, *SlicePtr[M, E, F]] {
+	return func(key Key[M]) *SlicePtr[M, E, F] {
+		return NewSlicePtr[M, E, F](key, makeElemFilter)
+	}
+}
+
 //
 // -- COMPARISONS
 //
