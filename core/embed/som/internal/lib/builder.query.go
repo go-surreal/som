@@ -13,6 +13,7 @@ type context struct {
 	vars     map[string]any
 }
 
+// TODO: deduplicate same values in the same query
 func (c *context) asVar(val any) string {
 	index := strconv.Itoa(c.varIndex)
 	c.vars[index] = val
