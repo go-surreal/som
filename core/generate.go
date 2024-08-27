@@ -72,7 +72,7 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 	}
 
 	if verbose {
-		if err := out.Dry(outPath); err != nil {
+		if err := out.Dry(absDir); err != nil {
 			return err
 		}
 	}
@@ -81,5 +81,5 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 		return nil
 	}
 
-	return out.Flush(outPath)
+	return out.Flush(absDir)
 }
