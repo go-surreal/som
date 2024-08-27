@@ -17,7 +17,7 @@ const (
 	pkgSOM  = "github.com/go-surreal/som"
 	pkgSDBC = "github.com/go-surreal/sdbc"
 
-	requiredSOMVersion = "v0.4.0"
+	requiredSOMVersion = "v0.6.0"
 
 	requiredSDBCVersion = "v0.6.1" // v.0.7.0 already uses go 1.23
 )
