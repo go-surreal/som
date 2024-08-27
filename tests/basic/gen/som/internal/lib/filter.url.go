@@ -44,6 +44,8 @@ func (u *URL[M]) Query() *String[M] {
 	return NewString(u.fn("parse::url::query"))
 }
 
+// TODO: https://surrealdb.com/docs/surrealdb/surrealql/functions/database/http
+
 type URLPtr[M any] struct {
 	*URL[M]
 	*Nillable[M]

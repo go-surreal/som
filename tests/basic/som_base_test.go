@@ -31,6 +31,10 @@ func TestQuery(t *testing.T) {
 				),
 
 			where.AllFieldTypes.Duration.Days().LessThan(4),
+
+			//where.AllFieldTypes.Float64.Equal_(constant.E[model.AllFieldTypes]()),
+			//
+			//constant.String[model.AllFieldTypes]("A").Equal_(constant.String[model.AllFieldTypes]("A")),
 		)
 
 	assert.Equal(t,

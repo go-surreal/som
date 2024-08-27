@@ -7,6 +7,38 @@ import (
 	"strings"
 )
 
+type RawKeyPart func(ctx *context) string
+
+func (p RawKeyPart) render(ctx *context) string {
+	return p(ctx)
+}
+
+type FixedKeyPart string
+
+func (p FixedKeyPart) render(_ *context) string {
+	return string(p)
+}
+
+func NewFixedKey[M any](val string) Key[M] {
+	return Key[M]{
+		FixedKeyPart(val),
+	}
+}
+
+type VarKeyPart struct {
+	val any
+}
+
+func (p VarKeyPart) render(ctx *context) string {
+	return ctx.asVar(p.val)
+}
+
+func NewVarKey[M any](val any) Key[M] {
+	return Key[M]{
+		VarKeyPart{val},
+	}
+}
+
 type KeyPart interface {
 	render(ctx *context) string
 }
@@ -99,6 +131,42 @@ func (k Key[M]) fn_(fn string, params ...Key[M]) Key[M] {
 			fn:     fn,
 			params: params,
 		},
+	}
+}
+
+func (k Key[M]) calc(op Operator, val any) Key[M] {
+	return Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return "(" +
+				strings.TrimPrefix(k.render(ctx), ".") +
+				" " +
+				string(op) +
+				" " +
+				ctx.asVar(val) +
+				")"
+		}),
+	}
+}
+
+func (k Key[M]) calc_(op Operator, key Key[M]) Key[M] {
+	return Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return "(" +
+				strings.TrimPrefix(k.render(ctx), ".") +
+				" " +
+				string(op) +
+				" " +
+				strings.TrimPrefix(key.render(ctx), ".") +
+				")"
+		}),
+	}
+}
+
+func (k Key[M]) prefix(op Operator) Key[M] {
+	return Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return string(op) + strings.TrimPrefix(k.render(ctx), ".")
+		}),
 	}
 }
 

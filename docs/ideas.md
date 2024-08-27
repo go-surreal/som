@@ -13,6 +13,67 @@ can be created at any point and linked back to this document.
 
 ## Features
 
+### LiveRead model
+
+```
+func (r *allFieldTypes) LiveRead(ctx context.Context, id *sdbc.ID) (*model.AllFieldTypes, bool, error) {
+	allFieldTypes, exists, err := r.Read(ctx, id) // TODO: mark model as live (similar to fragment) to prevent it from being updated
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !exists {
+		return nil, false, nil
+	}
+
+	liveRes, err := r.Query().
+		Filter(where.AllFieldTypes.ID.Equal(id)).
+		Live(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+
+	go func() {
+		for {
+			select {
+
+			case live := <-liveRes:
+				{
+				switch res := live.(type) {
+
+				case query.LiveUpdate[model.AllFieldTypes]:
+					updatedModel,err := res.Get()
+					if err != nil {
+						return
+					}
+					*allFieldTypes = updatedModel
+
+				case query.LiveCreate[model.AllFieldTypes]:
+				case query.LiveDelete[model.AllFieldTypes]:
+				}
+				}
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return allFieldTypes, true, nil
+}
+```
+
+### Cache
+
+```
+// TTL sets the time-to-live for the result set of the query.
+// After the given duration, the result set will be invalidated.
+// This means that the next query will re-fetch the data from the database.
+func (b builder[M, C]) TTL(dur time.Duration) string {
+	panic("not implemented")
+}
+```
+
 ### On Delete Cascade
 
 not yet a native feature but might be at some time

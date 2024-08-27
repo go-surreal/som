@@ -39,6 +39,14 @@ func (t *Time[M]) AfterOrEqual(val time.Time) Filter[M] {
 	return t.comp.GreaterThanEqual(val)
 }
 
+func (t *Time[M]) Add(dur time.Duration) *Time[M] {
+	return NewTime[M](t.calc(OpAdd, sdbc.Duration{dur}))
+}
+
+func (t *Time[M]) Sub(dur time.Duration) *Time[M] {
+	return NewTime[M](t.calc(OpSub, sdbc.Duration{dur}))
+}
+
 func (t *Time[M]) Day() *Numeric[M, int] {
 	return NewNumeric[M, int](t.fn("time::day"))
 }
@@ -47,6 +55,29 @@ func (t *Time[M]) Floor(dur time.Duration) *Time[M] {
 	return NewTime[M](t.fn("time::floor", sdbc.Duration{dur}))
 }
 
+const (
+	FormatRFC3339 = "%+" // "%Y-%m-%dT%H:%M:%S%:z"
+	FormatUnix    = "%s"
+	// TODO: https://surrealdb.com/docs/surrealdb/surrealql/datamodel/formatters
+)
+
+// Format formats the time using the given format string.
+//
+// Date formatters:
+// - %Y: Year with century as a decimal number.
+// - %m: Month as a decimal number [01,12].
+// - %d: Day of the month as a decimal number [01,31].
+//
+// Time formatters:
+// - %H: Hour (24-hour clock) as a decimal number [00,23].
+// - %M: Minute as a decimal number [00,59].
+// - %S: Second as a decimal number [00,60].
+//
+// Timezone formatters:
+// - %z: Time zone offset from UTC in the form +HHMM or -HHMM.
+// - %Z: Time zone name or abbreviation.
+//
+// See: https://surrealdb.com/docs/surrealdb/surrealql/datamodel/formatters
 func (t *Time[M]) Format(format string) *String[M] {
 	return NewString[M](t.fn("time::format", format))
 }

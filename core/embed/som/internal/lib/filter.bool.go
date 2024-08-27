@@ -8,17 +8,13 @@ type Bool[M any] struct {
 	Key[M]
 }
 
-func NewBool[M any](key Key[M]) *Bool[M] {
-	return &Bool[M]{Key: key}
-}
-
-func (b *Bool[M]) Is(val bool) Filter[M] {
-	return b.op(OpExactlyEqual, val)
-}
-
 type BoolPtr[M any] struct {
 	*Bool[M]
 	*Nillable[M]
+}
+
+func NewBool[M any](key Key[M]) *Bool[M] {
+	return &Bool[M]{Key: key}
 }
 
 func NewBoolPtr[M any](key Key[M]) *BoolPtr[M] {
@@ -26,4 +22,20 @@ func NewBoolPtr[M any](key Key[M]) *BoolPtr[M] {
 		Bool:     NewBool[M](key),
 		Nillable: NewNillable[M](key),
 	}
+}
+
+//
+// -- FILTERS
+//
+
+func (b *Bool[M]) Is(val bool) Filter[M] {
+	return b.op(OpExactlyEqual, val)
+}
+
+//
+// -- FUNCTIONS
+//
+
+func (b *Bool[M]) Invert() *Bool[M] {
+	return NewBool(b.prefix(OpInvert))
 }
