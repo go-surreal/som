@@ -5,7 +5,7 @@ The main usage of this document is brainstorming on whether the listed ideas are
 For more in-depth talk about single points, a [GitHub discussion](https://github.com/go-surreal/som/discussions)
 can be created at any point and linked back to this document.
 
-## References 
+## References
 
 - https://pg.uptrace.dev/sql-null-go-zero-values/
 - https://ente.io/blog/tech/go-nulls-and-sql/
