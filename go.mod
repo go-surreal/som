@@ -4,7 +4,7 @@ go 1.22
 
 toolchain go1.22.6
 
-retract [v0.1.0, v0.5.0] // only the latest version is supported for now
+retract [v0.1.0, v0.6.0] // only the latest version is supported for now
 
 require (
 	github.com/dave/jennifer v1.7.0
