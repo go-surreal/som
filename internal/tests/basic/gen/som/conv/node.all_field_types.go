@@ -10,7 +10,7 @@ import (
 )
 
 type AllFieldTypes struct {
-	ID                 *sdbc.ID          `cbor:"id,omitempty"`
+	ID                 *som.ID           `cbor:"id,omitempty"`
 	CreatedAt          *sdbc.DateTime    `cbor:"created_at,omitempty"`
 	UpdatedAt          *sdbc.DateTime    `cbor:"updated_at,omitempty"`
 	String             string            `cbor:"string"`
@@ -259,7 +259,7 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 
 type allFieldTypesLink struct {
 	AllFieldTypes
-	ID *sdbc.ID
+	ID *som.ID
 }
 
 func (f *allFieldTypesLink) MarshalCBOR() ([]byte, error) {

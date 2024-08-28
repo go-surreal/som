@@ -79,7 +79,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		f.Line()
 		f.Type().Id(node.NameGoLower()+"Link").Struct(
 			jen.Id(node.NameGo()),
-			jen.Id("ID").Op("*").Qual(def.PkgSDBC, "ID"),
+			jen.Id("ID").Op("*").Qual(def.PkgSom, "ID"),
 		)
 
 		f.Line()

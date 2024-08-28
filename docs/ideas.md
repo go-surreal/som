@@ -16,7 +16,7 @@ can be created at any point and linked back to this document.
 ### LiveRead model
 
 ```
-func (r *allFieldTypes) LiveRead(ctx context.Context, id *sdbc.ID) (*model.AllFieldTypes, bool, error) {
+func (r *allFieldTypes) LiveRead(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error) {
 	allFieldTypes, exists, err := r.Read(ctx, id) // TODO: mark model as live (similar to fragment) to prevent it from being updated
 	if err != nil {
 		return nil, false, err

@@ -5,35 +5,37 @@ import (
 	"time"
 )
 
+type ID = sdbc.ID
+
 // type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
 type Node struct {
-	id *sdbc.ID
+	id *ID
 }
 
-func NewNode(id *sdbc.ID) Node {
+func NewNode(id *ID) Node {
 	return Node{
 		id: id,
 	}
 }
 
-func (n Node) ID() *sdbc.ID {
+func (n Node) ID() *ID {
 	return n.id
 }
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
-	id *sdbc.ID
+	id *ID
 }
 
-func NewEdge(id *sdbc.ID) Edge {
+func NewEdge(id *ID) Edge {
 	return Edge{
 		id: id,
 	}
 }
 
-func (e Edge) ID() *sdbc.ID {
+func (e Edge) ID() *ID {
 	return e.id
 }
 

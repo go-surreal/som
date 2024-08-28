@@ -4,7 +4,7 @@ package som
 import (
 	"context"
 	"errors"
-	sdbc "github.com/go-surreal/sdbc"
+	som "github.com/go-surreal/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -15,7 +15,7 @@ type FieldsLikeDBResponseRepo interface {
 	Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 	Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
-	Read(ctx context.Context, id *sdbc.ID) (*model.FieldsLikeDBResponse, bool, error)
+	Read(ctx context.Context, id *som.ID) (*model.FieldsLikeDBResponse, bool, error)
 	Update(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Delete(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Refresh(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
@@ -65,7 +65,7 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
-func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *sdbc.ID) (*model.FieldsLikeDBResponse, bool, error) {
+func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *som.ID) (*model.FieldsLikeDBResponse, bool, error) {
 	return r.read(ctx, id)
 }
 
