@@ -3,13 +3,12 @@ package conv
 
 import (
 	v2 "github.com/fxamacker/cbor/v2"
-	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type FieldsLikeDBResponse struct {
-	ID     *sdbc.ID `cbor:"id,omitempty"`
+	ID     *som.ID  `cbor:"id,omitempty"`
 	Time   string   `cbor:"time"`
 	Status string   `cbor:"status"`
 	Detail string   `cbor:"detail"`
@@ -43,7 +42,7 @@ func ToFieldsLikeDBResponse(data *FieldsLikeDBResponse) *model.FieldsLikeDBRespo
 
 type fieldsLikeDbresponseLink struct {
 	FieldsLikeDBResponse
-	ID *sdbc.ID
+	ID *som.ID
 }
 
 func (f *fieldsLikeDbresponseLink) MarshalCBOR() ([]byte, error) {

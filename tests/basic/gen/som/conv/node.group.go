@@ -9,7 +9,7 @@ import (
 )
 
 type Group struct {
-	ID        *sdbc.ID       `cbor:"id,omitempty"`
+	ID        *som.ID        `cbor:"id,omitempty"`
 	CreatedAt *sdbc.DateTime `cbor:"created_at,omitempty"`
 	UpdatedAt *sdbc.DateTime `cbor:"updated_at,omitempty"`
 	Name      string         `cbor:"name"`
@@ -37,7 +37,7 @@ func ToGroup(data *Group) *model.Group {
 
 type groupLink struct {
 	Group
-	ID *sdbc.ID
+	ID *som.ID
 }
 
 func (f *groupLink) MarshalCBOR() ([]byte, error) {

@@ -8,7 +8,7 @@ import (
 )
 
 type GroupMember struct {
-	ID        *sdbc.ID        `cbor:"id,omitempty"`
+	ID        *som.ID         `cbor:"id,omitempty"`
 	CreatedAt *sdbc.DateTime  `cbor:"created_at,omitempty"`
 	UpdatedAt *sdbc.DateTime  `cbor:"updated_at,omitempty"`
 	Meta      groupMemberMeta `cbor:"meta"`

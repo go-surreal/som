@@ -3,15 +3,14 @@ package conv
 
 import (
 	v2 "github.com/fxamacker/cbor/v2"
-	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type URLExample struct {
-	ID           *sdbc.ID `cbor:"id,omitempty"`
-	SomeURL      *string  `cbor:"some_url"`
-	SomeOtherURL string   `cbor:"some_other_url"`
+	ID           *som.ID `cbor:"id,omitempty"`
+	SomeURL      *string `cbor:"some_url"`
+	SomeOtherURL string  `cbor:"some_other_url"`
 }
 
 func FromURLExample(data *model.URLExample) *URLExample {
@@ -37,7 +36,7 @@ func ToURLExample(data *URLExample) *model.URLExample {
 
 type urlexampleLink struct {
 	URLExample
-	ID *sdbc.ID
+	ID *som.ID
 }
 
 func (f *urlexampleLink) MarshalCBOR() ([]byte, error) {
