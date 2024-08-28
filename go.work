@@ -4,5 +4,5 @@ toolchain go1.22.6
 
 use (
 	.
-	tests/basic
+	internal/tests/basic
 )
