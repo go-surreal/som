@@ -4,7 +4,7 @@ go 1.22
 
 toolchain go1.22.6
 
-replace github.com/go-surreal/som => ../../
+replace github.com/go-surreal/som => ../../../
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.0.4
