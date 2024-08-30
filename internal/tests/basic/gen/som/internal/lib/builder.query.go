@@ -9,7 +9,7 @@ import (
 )
 
 type context struct {
-	varIndex int
+	varIndex int32
 	vars     map[string]any
 }
 
@@ -19,10 +19,22 @@ func (c *context) Vars() map[string]any {
 
 // TODO: deduplicate same values in the same query
 func (c *context) asVar(val any) string {
-	index := strconv.Itoa(c.varIndex)
+	index := intToLetters(c.varIndex + 1)
 	c.vars[index] = val
 	c.varIndex++
 	return "$" + index
+}
+
+func intToLetters(number int32) (letters string) {
+	number--
+	if firstLetter := number / 26; firstLetter > 0 {
+		letters += intToLetters(firstLetter)
+		letters += string('A' + number%26)
+	} else {
+		letters += string('A' + number)
+	}
+
+	return
 }
 
 type Query[T any] struct {

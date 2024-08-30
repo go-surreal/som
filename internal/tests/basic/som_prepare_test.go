@@ -2,8 +2,10 @@ package basic
 
 import (
 	"context"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/docker/docker/api/types/container"
 	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"log/slog"
 	"os"
@@ -87,13 +89,13 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	err = client.Execute(ctx,
-		"DEFINE INDEX OVERWRITE test ON "+client.TableAllFieldTypes()+" FIELDS string, string_ptr CONCURRENTLY;", // or: IF NOT EXISTS
-		map[string]any{}, // INFO FOR TABLE all_field_types; shows the status of the index
-	) // REBUILD
-	if err != nil {
-		tb.Fatal(err)
-	}
+	//err = client.Execute(ctx,
+	//	"DEFINE INDEX OVERWRITE test ON "+client.TableAllFieldTypes()+" FIELDS string, string_ptr CONCURRENTLY;", // or: IF NOT EXISTS
+	//	map[string]any{}, // INFO FOR TABLE all_field_types; shows the status of the index
+	//) // REBUILD
+	//if err != nil {
+	//	tb.Fatal(err)
+	//}
 
 	cleanup := func() {
 		client.Close()
