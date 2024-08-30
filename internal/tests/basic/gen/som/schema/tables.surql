@@ -149,7 +149,7 @@ DEFINE FIELD byte_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $v
 DEFINE FIELD byte_slice ON TABLE all_field_types TYPE option<bytes | null>;
 DEFINE FIELD byte_slice_ptr ON TABLE all_field_types TYPE option<bytes | null>;
 
-DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group PERMISSIONS FULL;
+DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group ENFORCED PERMISSIONS FULL;
 DEFINE FIELD created_at ON TABLE group_member TYPE option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE;
 DEFINE FIELD updated_at ON TABLE group_member TYPE option<datetime> VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE;
 DEFINE FIELD meta ON TABLE group_member TYPE object;

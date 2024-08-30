@@ -13,6 +13,18 @@ can be created at any point and linked back to this document.
 
 ## Features
 
+### Views
+
+```
+package model
+
+import "github.com/go-surreal/som"
+
+type TestView struct {
+	som.View
+}
+```
+
 <<<<<<< Updated upstream
 ### LiveRead model
 =======
