@@ -14,27 +14,51 @@ func (fn CodeGenFunc) Exec(ctx Context) jen.Code {
 	return fn(ctx)
 }
 
+type CodeGenTuple func(ctx Context) (jen.Code, jen.Code)
+
+func (fn CodeGenTuple) Exec(ctx Context) jen.Code {
+	if fn == nil {
+		return nil
+	}
+
+	a, b := fn(ctx)
+
+	if a == nil || b == nil {
+		return nil
+	}
+
+	return jen.Add(a).Add(b)
+}
+
 type CodeGen struct {
 	filterDefine CodeGenFunc
-	filterInit   CodeGenFunc
+	filterInit   CodeGenTuple
 	filterFunc   CodeGenFunc
 
 	sortDefine CodeGenFunc
 	sortInit   CodeGenFunc
 	sortFunc   CodeGenFunc
 
-	convFrom    CodeGenFunc
-	convTo      CodeGenFunc
+	convFrom    CodeGenTuple
+	convTo      CodeGenTuple
 	convToField CodeGenFunc
 
 	fieldDef CodeGenFunc
 }
 
 func (g *CodeGen) FilterDefine(ctx Context) jen.Code {
+	if g.filterFunc.Exec(ctx) != nil {
+		return nil
+	}
+
 	return g.filterDefine.Exec(ctx)
 }
 
 func (g *CodeGen) FilterInit(ctx Context) jen.Code {
+	if g.filterFunc.Exec(ctx) != nil {
+		return nil
+	}
+
 	return g.filterInit.Exec(ctx)
 }
 

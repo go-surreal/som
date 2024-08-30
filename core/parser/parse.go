@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"github.com/go-surreal/som/core/util"
+	"github.com/go-surreal/som/core/util/gomod"
 	"github.com/wzshiming/gotype"
 	"go/ast"
 	"os"
@@ -37,13 +37,13 @@ func Parse(dir string) (*Output, error) {
 		return nil, fmt.Errorf("could not find absolute path: %v", err)
 	}
 
-	pkgPath, modPath, err := util.ParseMod(absDir)
+	mod, err := gomod.FindGoMod(absDir)
 	if err != nil {
 		return nil, err
 	}
 
-	diff := strings.TrimPrefix(absDir, modPath)
-	res.PkgPath = path.Join(pkgPath, diff)
+	diff := strings.TrimPrefix(absDir, mod.Dir())
+	res.PkgPath = path.Join(mod.Module(), diff)
 
 	nc := n.NumChild()
 	for i := 0; i < nc; i++ {
@@ -355,7 +355,17 @@ func parseField(t gotype.Type) (Field, error) {
 
 	case gotype.Int64:
 		{
-			return &FieldNumeric{atomic, NumberInt64}, nil
+			switch {
+			case t.Elem().PkgPath() == "time" && t.Elem().Name() == "Duration":
+				{
+					return &FieldDuration{atomic}, nil
+				}
+			default:
+				{
+					return &FieldNumeric{atomic, NumberInt64}, nil
+				}
+			}
+
 		}
 
 	//case gotype.Uint:

@@ -1,38 +1,41 @@
 package som
 
 import (
+	"github.com/go-surreal/sdbc"
 	"time"
 )
+
+type ID = sdbc.ID
 
 // type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
 type Node struct {
-	id string
+	id *ID
 }
 
-func NewNode(id string) Node {
+func NewNode(id *ID) Node {
 	return Node{
 		id: id,
 	}
 }
 
-func (n Node) ID() string {
+func (n Node) ID() *ID {
 	return n.id
 }
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
-	id string
+	id *ID
 }
 
-func NewEdge(id string) Edge {
+func NewEdge(id *ID) Edge {
 	return Edge{
 		id: id,
 	}
 }
 
-func (e Edge) ID() string {
+func (e Edge) ID() *ID {
 	return e.id
 }
 
@@ -41,15 +44,15 @@ type Timestamps struct {
 	updatedAt time.Time
 }
 
-func NewTimestamps(createdAt *time.Time, updatedAt *time.Time) Timestamps {
+func NewTimestamps(createdAt *sdbc.DateTime, updatedAt *sdbc.DateTime) Timestamps {
 	var ts Timestamps
 
 	if createdAt != nil {
-		ts.createdAt = *createdAt
+		ts.createdAt = createdAt.Time
 	}
 
 	if updatedAt != nil {
-		ts.updatedAt = *updatedAt
+		ts.updatedAt = updatedAt.Time
 	}
 
 	return ts
@@ -80,6 +83,15 @@ func (t Timestamps) UpdatedAt() time.Time {
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
+
+// Email describes a string field that should contain an email address.
+type Email string
+
+// Password describes a string field that should contain a password.
+type Password string
+
+// SemVer describes a string field that should contain a semantic version.
+type SemVer string
 
 // Password describes a special string field.
 // Regarding the generated database query operations, it can only be matched, but never read.

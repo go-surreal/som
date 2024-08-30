@@ -2,58 +2,26 @@ package codegen
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
-	"path/filepath"
-	"strings"
 )
 
 type sortBuilder struct {
 	*baseBuilder
 }
 
-func newSortBuilder(input *input, basePath, basePkg, pkgName string) *sortBuilder {
+func newSortBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *sortBuilder {
 	return &sortBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *sortBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
-	if err := b.embedStaticFiles(); err != nil {
-		return err
-	}
-
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (b *sortBuilder) embedStaticFiles() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Sort(tmpl)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
-		if err != nil {
 			return err
 		}
 	}
@@ -70,7 +38,7 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 
 	f := jen.NewFile(b.pkgName)
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	f.Line()
 	f.Var().Id(node.Name).Op("=").Id("new" + node.Name).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
@@ -80,7 +48,7 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 
 	f.Line()
 	f.Type().Id(node.NameGoLower()).
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		StructFunc(func(g *jen.Group) {
 			g.Add(jen.Id("key").String())
 			for _, f := range node.Fields {
@@ -97,7 +65,7 @@ func (b *sortBuilder) buildFile(node *field.NodeTable) error {
 		}
 	}
 
-	if err := f.Save(path.Join(b.path(), node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
 
@@ -112,12 +80,12 @@ func (b *sortBuilder) byNew(node *field.NodeTable) jen.Code {
 	}
 
 	return jen.Func().Id("new" + node.Name).
-		Types(jen.Id("T").Any()).
+		Types(jen.Add(def.TypeModel).Any()).
 		Params(jen.Id("key").String()).
-		Id(node.NameGoLower()).Types(jen.Id("T")).
+		Id(node.NameGoLower()).Types(def.TypeModel).
 		Block(
 			jen.Return(
-				jen.Id(node.NameGoLower()).Types(jen.Id("T")).
+				jen.Id(node.NameGoLower()).Types(def.TypeModel).
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("key")] = jen.Id("key")
 						for _, f := range node.Fields {

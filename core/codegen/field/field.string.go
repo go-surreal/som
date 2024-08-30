@@ -2,6 +2,7 @@ package field
 
 import (
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -15,7 +16,7 @@ func (f *String) typeGo() jen.Code {
 	return jen.Add(f.ptr()).String()
 }
 
-func (f *String) typeConv() jen.Code {
+func (f *String) typeConv(_ Context) jen.Code {
 	return f.typeGo()
 }
 
@@ -42,40 +43,40 @@ func (f *String) CodeGen() *CodeGen {
 func (f *String) filterDefine(ctx Context) jen.Code {
 	filter := "String"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
-func (f *String) filterInit(ctx Context) jen.Code {
+func (f *String) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewString"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *String) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "StringSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "StringSort").Types(def.TypeModel)
 }
 
 func (f *String) sortInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewStringSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewStringSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *String) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo()) // TODO: vulnerability -> record link could be injected
+func (f *String) convFrom(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo()) // TODO: record link inject vulnerability? solved by cbor?
 }
 
-func (f *String) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *String) convTo(_ Context) (jen.Code, jen.Code) {
+	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *String) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase()})
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
+		Tag(map[string]string{convTag: f.NameDatabase()})
 }
