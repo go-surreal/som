@@ -117,6 +117,9 @@ func (b *build) buildInterfaceFile() error {
 func (b *build) buildSchemaFile() error {
 	statements := []string{string(embed.CodegenComment), ""}
 
+	// TODO: literal types
+	// https://github.com/surrealdb/surrealdb/pull/4557
+
 	var fieldFn func(table string, f field.Field, prefix string)
 	fieldFn = func(table string, f field.Field, prefix string) {
 		fieldType := f.TypeDatabase()
@@ -177,7 +180,7 @@ func (b *build) buildSchemaFile() error {
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s PERMISSIONS FULL;",
+			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
 			edge.Out.NameDatabase(), // can be OR'ed with "|"

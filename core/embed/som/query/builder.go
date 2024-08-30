@@ -102,6 +102,9 @@ func (b builder[M, C]) Parallel(parallel bool) BuilderNoLive[M, C] {
 	return BuilderNoLive[M, C]{b}
 }
 
+// TODO: TempFiles(use bool)
+// https://surrealdb.com/docs/surrealdb/surrealql/statements/select#the-tempfiles-clause
+
 // Count returns the size of the result set, in other words, the
 // number of records matching the conditions of the query.
 func (b builder[M, C]) Count(ctx context.Context) (int, error) {

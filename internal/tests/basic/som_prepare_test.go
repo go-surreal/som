@@ -87,6 +87,14 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
+	err = client.Execute(ctx,
+		"DEFINE INDEX OVERWRITE test ON "+client.TableAllFieldTypes()+" FIELDS string, string_ptr CONCURRENTLY;", // or: IF NOT EXISTS
+		map[string]any{}, // INFO FOR TABLE all_field_types; shows the status of the index
+	) // REBUILD
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	cleanup := func() {
 		client.Close()
 

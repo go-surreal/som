@@ -13,7 +13,34 @@ can be created at any point and linked back to this document.
 
 ## Features
 
+<<<<<<< Updated upstream
 ### LiveRead model
+=======
+### Migrations
+
+Rename:
+
+```
+DEFINE FIELD new ON x VALUE $before OR $after.old; // works with value? otherwise:
+UPDATE x SET new = old;
+DROP FIELD old ON x;
+```
+
+Ignore:
+
+```
+change.Field.X.Ignore(reason: "must add comment here")
+change.Field.X.TODO()
+```
+
+### Custom functions
+
+https://surrealdb.com/docs/surrealdb/surrealql/datamodel/closures
+
+Note: SOM might define its own functions in the future.
+
+### Computed Fields
+>>>>>>> Stashed changes
 
 ```
 func (r *allFieldTypes) LiveRead(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error) {

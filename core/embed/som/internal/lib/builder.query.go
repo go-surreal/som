@@ -221,4 +221,6 @@ const (
 
 	CastInt   Operator = "<int>"
 	CastFloat Operator = "<float>"
+
+	OpModulo Operator = "%" // https://github.com/surrealdb/surrealdb/pull/4182
 )

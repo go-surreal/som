@@ -63,6 +63,8 @@ func (r *repo[N, C]) read(ctx context.Context, id *som.ID) (*N, bool, error) {
 	return r.convTo(conv), true, nil
 }
 
+// TODO: func (r *repo[N, C]) readWithVersion(ctx context.Context, id *sdbc.ID) (*N, bool, error) {}
+
 func (r *repo[N, C]) update(ctx context.Context, id *som.ID, node *N) error {
 	data := r.convFrom(node)
 	res, err := r.db.Update(ctx, id, data)
