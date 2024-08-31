@@ -53,21 +53,21 @@ func (f *Byte) CodeGen() *CodeGen {
 // IMP: https://github.com/orgs/surrealdb/discussions/1451
 
 func (f *Byte) filterDefine(ctx Context) jen.Code {
-	filter := "Base"
+	filter := "Byte"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel, jen.Byte())
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
 func (f *Byte) filterInit(ctx Context) (jen.Code, jen.Code) {
-	filter := "NewBase"
+	filter := "NewByte"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, jen.Byte()),
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

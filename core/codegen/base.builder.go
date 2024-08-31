@@ -215,18 +215,18 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("CreateWithID").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("id").String(),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(def.PkgSDBC, "ID"),
+			jen.Id("id").Op("*").Qual(def.PkgSom, "ID"),
 		).Parens(jen.List(
 			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Bool(),
@@ -235,17 +235,17 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Update").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Delete").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Refresh").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
@@ -384,7 +384,7 @@ The returned bool indicates whether the record was found or not.
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(def.PkgSDBC, "ID"),
+			jen.Id("id").Op("*").Qual(def.PkgSom, "ID"),
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(

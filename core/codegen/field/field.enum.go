@@ -64,7 +64,7 @@ func (f *Enum) CodeGen() *CodeGen {
 }
 
 func (f *Enum) filterDefine(ctx Context) jen.Code {
-	filter := "Base"
+	filter := "Enum"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
@@ -73,7 +73,7 @@ func (f *Enum) filterDefine(ctx Context) jen.Code {
 }
 
 func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
-	filter := "NewBase"
+	filter := "NewEnum"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}

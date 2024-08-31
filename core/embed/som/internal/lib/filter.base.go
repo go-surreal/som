@@ -29,65 +29,69 @@ func KeyFilter[M any](key Key[M]) Filter[M] {
 
 // Base is a filter with basic comparison operations.
 // M is the type of the model this filter is for.
-// M is the type of the field this filter is for.
-type Base[M any, T any] struct {
-	key  Key[M]
+// E is the type of the field this filter is for.
+type Base[M, T any, F, S field[M]] struct {
+	Key[M]
 	conv func(T) any
 }
 
-func NewBase[M, T any](key Key[M]) *Base[M, T] {
-	return &Base[M, T]{key: key}
+func NewBase[M, T any, F, S field[M]](key Key[M]) *Base[M, T, F, S] {
+	return &Base[M, T, F, S]{Key: key}
 }
 
-func NewBaseConv[M, T any](key Key[M], conv func(T) any) *Base[M, T] {
-	return &Base[M, T]{key: key, conv: conv}
+func NewBaseConv[M, T any, F, S field[M]](key Key[M], conv func(T) any) *Base[M, T, F, S] {
+	return &Base[M, T, F, S]{Key: key, conv: conv}
 }
 
-func (b *Base[M, T]) Equal(val T) Filter[M] {
+func (b *Base[M, T, F, S]) Equal(val T) Filter[M] {
 	if b.conv != nil {
-		return b.key.op(OpEqual, b.conv(val))
+		return b.Key.op(OpEqual, b.conv(val))
 	}
 
-	return b.key.op(OpEqual, val)
+	return b.Key.op(OpEqual, val)
 }
 
-func (b *Base[M, T]) NotEqual(val T) Filter[M] {
+func (b *Base[M, T, F, S]) NotEqual(val T) Filter[M] {
 	if b.conv != nil {
-		return b.key.op(OpNotEqual, b.conv(val))
+		return b.Key.op(OpNotEqual, b.conv(val))
 	}
 
-	return b.key.op(OpNotEqual, val)
+	return b.Key.op(OpNotEqual, val)
 }
 
-func (b *Base[M, T]) In(vals []T) Filter[M] {
+func (b *Base[M, T, F, S]) In(vals []T) Filter[M] {
 	if b.conv != nil {
-		var mapped []any
+		mapped := make([]any, len(vals))
 
-		for _, val := range vals {
-			mapped = append(mapped, b.conv(val))
+		for i, val := range vals {
+			mapped[i] = b.conv(val)
 		}
 
-		return b.key.op(OpInside, mapped)
+		return b.Key.op(OpIn, mapped)
 	}
 
-	return b.key.op(OpInside, vals)
+	return b.Key.op(OpIn, vals)
 }
 
-func (b *Base[M, T]) NotIn(vals []T) Filter[M] {
+func (b *Base[M, T, F, S]) NotIn(vals []T) Filter[M] {
 	if b.conv != nil {
-		var mapped []any
+		mapped := make([]any, len(vals))
 
-		for _, val := range vals {
-			mapped = append(mapped, b.conv(val))
+		for i, val := range vals {
+			mapped[i] = b.conv(val)
 		}
 
-		return b.key.op(OpNotInside, mapped)
+		return b.Key.op(OpNotIn, mapped)
 	}
 
-	return b.key.op(OpNotInside, vals)
+	return b.Key.op(OpNotIn, vals)
 }
 
-func (b *Base[M, T]) Zero(is bool) Filter[M] {
+func (b *Base[M, T, F, S]) Truth() *Bool[M] {
+	return NewBool(b.Key.prefix(OpTruth))
+}
+
+func (b *Base[M, T, F, S]) Zero(is bool) Filter[M] {
 	op := OpExactlyEqual
 
 	if !is {
@@ -97,27 +101,27 @@ func (b *Base[M, T]) Zero(is bool) Filter[M] {
 	var zero T
 
 	if b.conv != nil {
-		return b.key.op(op, b.conv(zero))
+		return b.Key.op(op, b.conv(zero))
 	}
 
-	return b.key.op(op, zero)
+	return b.Key.op(op, zero)
 }
 
-type BasePtr[M, T any] struct {
-	*Base[M, T]
+type BasePtr[M, T any, F, S field[M]] struct {
+	*Base[M, T, F, S]
 	*Nillable[M]
 }
 
-func NewBasePtr[M, T any](key Key[M]) *BasePtr[M, T] {
-	return &BasePtr[M, T]{
-		Base:     NewBase[M, T](key),
+func NewBasePtr[M, T any, F, S field[M]](key Key[M]) *BasePtr[M, T, F, S] {
+	return &BasePtr[M, T, F, S]{
+		Base:     NewBase[M, T, F, S](key),
 		Nillable: NewNillable[M](key),
 	}
 }
 
-func NewBasePtrConv[M, T any](key Key[M], conv func(T) any) *BasePtr[M, T] {
-	return &BasePtr[M, T]{
-		Base:     NewBaseConv[M, T](key, conv),
+func NewBasePtrConv[M, T any, F, S field[M]](key Key[M], conv func(T) any) *BasePtr[M, T, F, S] {
+	return &BasePtr[M, T, F, S]{
+		Base:     NewBaseConv[M, T, F, S](key, conv),
 		Nillable: NewNillable[M](key),
 	}
 }
