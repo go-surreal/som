@@ -1,4 +1,4 @@
-package basic
+package main
 
 import (
 	"context"
@@ -16,7 +16,7 @@ func TestFilterCompareFields(t *testing.T) {
 
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	str := "Some Value"

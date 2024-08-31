@@ -1,3 +1,3 @@
-package basic
+package main
 
-//go:generate go run ../../../cmd/som/main.go -- gen ../../internal/tests/basic/model ../../internal/tests/basic/gen/som
+//go:generate go run ../../../cmd/som/main.go -- gen ./model ./gen/som

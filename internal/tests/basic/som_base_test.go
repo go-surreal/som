@@ -1,4 +1,4 @@
-package basic
+package main
 
 import (
 	"context"
@@ -60,7 +60,7 @@ func TestQuery(t *testing.T) {
 func TestWithDatabase(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	str := "Some User"
@@ -105,7 +105,7 @@ func TestWithDatabase(t *testing.T) {
 func TestNumerics(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	str := "user"
@@ -196,7 +196,7 @@ func TestNumerics(t *testing.T) {
 func TestTimestamps(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	user := &model.AllFieldTypes{}
@@ -227,7 +227,7 @@ func TestTimestamps(t *testing.T) {
 func TestURLTypes(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	someURL, err := url.Parse("https://surrealdb.com")
@@ -292,7 +292,7 @@ func TestURLTypes(t *testing.T) {
 func TestDuration(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	ptr := time.Hour
@@ -343,7 +343,7 @@ func TestDuration(t *testing.T) {
 func TestUUID(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	ptr := uuid.New()
@@ -394,7 +394,7 @@ func TestUUID(t *testing.T) {
 func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, f)
+	client, cleanup := prepareTestDatabase(ctx, f)
 	defer cleanup()
 
 	f.Add("Some User")
@@ -430,7 +430,7 @@ func FuzzWithDatabase(f *testing.F) {
 func FuzzCustomModelIDs(f *testing.F) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, f)
+	client, cleanup := prepareTestDatabase(ctx, f)
 	defer cleanup()
 
 	f.Add("v9uitj942tv2403tnv")
@@ -492,7 +492,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 func BenchmarkWithDatabase(b *testing.B) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, b)
+	client, cleanup := prepareTestDatabase(ctx, b)
 	defer cleanup()
 
 	b.ResetTimer()
@@ -528,7 +528,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 func TestAsync(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{})
@@ -559,7 +559,7 @@ func TestAsync(t *testing.T) {
 func TestRefresh(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	allFieldTypes := &model.AllFieldTypes{
