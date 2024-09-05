@@ -403,22 +403,22 @@ func (f *Slice) convFrom(ctx Context) (jen.Code, jen.Code) {
 				jen.Call(jen.Id("data").Dot(f.NameGo()))
 		}
 
-	case *Struct:
-		{
-			mapperFunc := "mapSliceFn"
-			fromFunc := jen.Id("from" + element.table.NameGo())
-
-			if f.source.Pointer() {
-				mapperFunc += fnSuffixPtr
-			}
-
-			if !element.source.Pointer() {
-				fromFunc = jen.Id("noPtrFunc").Call(fromFunc)
-			}
-
-			return jen.Id(mapperFunc).Call(fromFunc),
-				jen.Call(jen.Id("data").Dot(f.NameGo()))
-		}
+	//case *Struct:
+	//	{
+	//		mapperFunc := "mapSliceFn"
+	//		fromFunc := jen.Id("from" + element.table.NameGo())
+	//
+	//		if f.source.Pointer() {
+	//			mapperFunc += fnSuffixPtr
+	//		}
+	//
+	//		if !element.source.Pointer() {
+	//			fromFunc = jen.Id("noPtrFunc").Call(fromFunc)
+	//		}
+	//
+	//		return jen.Id(mapperFunc).Call(fromFunc),
+	//			jen.Call(jen.Id("data").Dot(f.NameGo()))
+	//	}
 
 	case *Edge:
 		{
@@ -491,37 +491,37 @@ func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 				jen.Call(jen.Id("data").Dot(f.NameGo()))
 		}
 
-	case *Struct:
-		{
-			mapperFunc := "mapSliceFn"
-			toFunc := jen.Id("to" + element.table.NameGo())
+	//case *Struct:
+	//	{
+	//		mapperFunc := "mapSliceFn"
+	//		toFunc := jen.Id("to" + element.table.NameGo())
+	//
+	//		if f.source.Pointer() {
+	//			mapperFunc += fnSuffixPtr
+	//		}
+	//
+	//		if !element.source.Pointer() {
+	//			toFunc = jen.Id("noPtrFunc").Call(toFunc)
+	//		}
+	//
+	//		return jen.Id(mapperFunc).Call(toFunc),
+	//			jen.Call(jen.Id("data").Dot(f.NameGo()))
+	//	}
 
-			if f.source.Pointer() {
-				mapperFunc += fnSuffixPtr
-			}
-
-			if !element.source.Pointer() {
-				toFunc = jen.Id("noPtrFunc").Call(toFunc)
-			}
-
-			return jen.Id(mapperFunc).Call(toFunc),
-				jen.Call(jen.Id("data").Dot(f.NameGo()))
-		}
-
-	case *Edge:
-		{
-			mapperFunc := "mapSliceFn"
-			toFunc := jen.Id("To" + element.table.NameGo()) // jen.Id("noPtrFunc").Call(...)
-
-			if f.source.Pointer() {
-				mapperFunc += fnSuffixPtr
-			}
-
-			// TODO: Edge can be not a pointer, no?
-
-			return jen.Id(mapperFunc).Call(toFunc),
-				jen.Call(jen.Id("data").Dot(f.NameGo()))
-		}
+	//case *Edge:
+	//	{
+	//		mapperFunc := "mapSliceFn"
+	//		toFunc := jen.Id("To" + element.table.NameGo()) // jen.Id("noPtrFunc").Call(...)
+	//
+	//		if f.source.Pointer() {
+	//			mapperFunc += fnSuffixPtr
+	//		}
+	//
+	//		// TODO: Edge can be not a pointer, no?
+	//
+	//		return jen.Id(mapperFunc).Call(toFunc),
+	//			jen.Call(jen.Id("data").Dot(f.NameGo()))
+	//	}
 
 	case *Enum:
 		{

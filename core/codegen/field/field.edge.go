@@ -18,7 +18,7 @@ func (f *Edge) typeGo() jen.Code {
 }
 
 func (f *Edge) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).Id(f.table.NameGo())
+	return jen.Op("*").Id(f.table.NameGo())
 }
 
 func (f *Edge) TypeDatabase() string {
@@ -80,13 +80,17 @@ func (f *Edge) sortFunc(ctx Context) jen.Code {
 }
 
 func (f *Edge) convFrom(_ Context) (jen.Code, jen.Code) {
-	return jen.Id("From" + f.table.NameGo()),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
+	return nil, nil
 }
 
 func (f *Edge) convTo(_ Context) (jen.Code, jen.Code) {
-	return jen.Id("To" + f.table.NameGo()),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
+	fn := "To" + f.table.NameGo()
+
+	if f.source.Pointer() {
+		fn += fnSuffixPtr
+	}
+
+	return jen.Id(fn), jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Edge) fieldDef(ctx Context) jen.Code {

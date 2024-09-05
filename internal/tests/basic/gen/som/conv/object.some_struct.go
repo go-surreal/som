@@ -14,7 +14,15 @@ type someStruct struct {
 	UuidPtr   *types.UUID    `cbor:"uuid_ptr"`
 }
 
-func fromSomeStruct(data *model.SomeStruct) *someStruct {
+func fromSomeStruct(data model.SomeStruct) someStruct {
+	return someStruct{
+		IntPtr:    data.IntPtr,
+		StringPtr: data.StringPtr,
+		TimePtr:   fromTimePtr(data.TimePtr),
+		UuidPtr:   fromUUIDPtr(data.UuidPtr),
+	}
+}
+func fromSomeStructPtr(data *model.SomeStruct) *someStruct {
 	if data == nil {
 		return nil
 	}
@@ -26,7 +34,15 @@ func fromSomeStruct(data *model.SomeStruct) *someStruct {
 	}
 }
 
-func toSomeStruct(data *someStruct) *model.SomeStruct {
+func toSomeStruct(data someStruct) model.SomeStruct {
+	return model.SomeStruct{
+		IntPtr:    data.IntPtr,
+		StringPtr: data.StringPtr,
+		TimePtr:   toTimePtr(data.TimePtr),
+		UuidPtr:   toUUIDPtr(data.UuidPtr),
+	}
+}
+func toSomeStructPtr(data *someStruct) *model.SomeStruct {
 	if data == nil {
 		return nil
 	}

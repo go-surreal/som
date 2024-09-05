@@ -276,11 +276,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()),
+								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()+"Ptr"),
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()),
+								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()+"Ptr"),
 							),
 						),
 				),
