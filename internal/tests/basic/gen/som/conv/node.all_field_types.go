@@ -215,7 +215,7 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		Login:              noPtrFunc(toLogin)(data.Login),
 		MainGroup:          fromGroupLink(data.MainGroup),
 		MainGroupPtr:       fromGroupLinkPtr(data.MainGroupPtr),
-		MemberOf:           mapSliceFn(noPtrFunc(ToGroupMember))(data.MemberOf),
+		MemberOf:           mapSliceFn(ToGroupMember)(data.MemberOf),
 		Node:               som.NewNode(data.ID),
 		NodePtrSlice:       mapSliceFn(fromGroupLinkPtr)(data.NodePtrSlice),
 		NodePtrSlicePtr:    mapSliceFnPtr(fromGroupLinkPtr)(data.NodePtrSlicePtr),
