@@ -11,7 +11,7 @@ require (
 	github.com/docker/docker v27.1.2+incompatible
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/go-surreal/sdbc v0.6.1
-	github.com/go-surreal/som v0.6.2
+	github.com/go-surreal/som v0.6.3
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/testcontainers/testcontainers-go v0.32.0
