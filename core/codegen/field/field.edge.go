@@ -64,8 +64,8 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 		Id(f.NameGo()).Params().
 		Add(f.filterDefine(ctx)).
 		Block(
-			jen.Return(jen.Add(f.filterInit(ctx)).
-				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
+			jen.Return(jen.Add(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel)).
+				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
 }
 
 //nolint:unused // currently not fully implemented
@@ -76,7 +76,7 @@ func (f *Edge) sortFunc(ctx Context) jen.Code {
 		Id(f.NameGoLower()).Types(def.TypeModel).
 		Block(
 			jen.Return(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel).
-				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
+				Params(jen.Id("keyed").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Edge) convFrom(_ Context) (jen.Code, jen.Code) {

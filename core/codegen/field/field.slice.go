@@ -511,7 +511,7 @@ func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 	case *Edge:
 		{
 			mapperFunc := "mapSliceFn"
-			toFunc := jen.Id("noPtrFunc").Call(jen.Id("To" + element.table.NameGo()))
+			toFunc := jen.Id("To" + element.table.NameGo()) // jen.Id("noPtrFunc").Call(...)
 
 			if f.source.Pointer() {
 				mapperFunc += fnSuffixPtr
