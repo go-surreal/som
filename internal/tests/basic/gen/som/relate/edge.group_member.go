@@ -30,7 +30,7 @@ func (e groupMember) Create(ctx context.Context, edge *model.GroupMember) error 
 		return errors.New("ID of the outgoing node 'Group' must not be empty")
 	}
 	query := "RELATE " + "user:" + edge.User.ID().String() + "->group_member->" + "group:" + edge.Group.ID().String() + " CONTENT $data"
-	data := conv.FromGroupMember(edge)
+	data := conv.FromGroupMember(*edge)
 	res, err := e.db.Query(ctx, query, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
@@ -40,14 +40,17 @@ func (e groupMember) Create(ctx context.Context, edge *model.GroupMember) error 
 	if err != nil {
 		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}
-	*edge = *conv.ToGroupMember(convEdge)
+	*edge = conv.ToGroupMember(convEdge)
 	return nil
 }
 
 func (groupMember) Update(edge *model.GroupMember) error {
+	// TODO: implement!
 	return errors.New("not yet implemented")
 }
 
 func (groupMember) Delete(edge *model.GroupMember) error {
+	// TODO: implement!
+	// https://surrealdb.com/docs/surrealdb/surrealql/statements/delete#deleting-graph-edges
 	return errors.New("not yet implemented")
 }

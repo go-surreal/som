@@ -27,8 +27,8 @@ func (c *ClientImpl) GroupRepo() GroupRepo {
 	return &group{repo: &repo[model.Group, conv.Group]{
 		db:       c.db,
 		name:     "group",
-		convTo:   conv.ToGroup,
-		convFrom: conv.FromGroup}}
+		convTo:   conv.ToGroupPtr,
+		convFrom: conv.FromGroupPtr}}
 }
 
 type group struct {

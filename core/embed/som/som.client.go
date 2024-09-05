@@ -22,7 +22,7 @@ type Database interface {
 	Close() error
 }
 
-type ID *som.ID
+type ID = som.ID
 
 type Config struct {
 	Host      string

@@ -8,7 +8,13 @@ type login struct {
 	Password string `cbor:"password"`
 }
 
-func fromLogin(data *model.Login) *login {
+func fromLogin(data model.Login) login {
+	return login{
+		Password: data.Password,
+		Username: data.Username,
+	}
+}
+func fromLoginPtr(data *model.Login) *login {
 	if data == nil {
 		return nil
 	}
@@ -18,7 +24,13 @@ func fromLogin(data *model.Login) *login {
 	}
 }
 
-func toLogin(data *login) *model.Login {
+func toLogin(data login) model.Login {
+	return model.Login{
+		Password: data.Password,
+		Username: data.Username,
+	}
+}
+func toLoginPtr(data *login) *model.Login {
 	if data == nil {
 		return nil
 	}

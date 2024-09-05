@@ -14,20 +14,30 @@ type GroupMember struct {
 	Meta      groupMemberMeta `cbor:"meta"`
 }
 
-func FromGroupMember(data *model.GroupMember) *GroupMember {
+func FromGroupMember(data model.GroupMember) GroupMember {
+	return GroupMember{Meta: fromGroupMemberMeta(data.Meta)}
+}
+func FromGroupMemberPtr(data *model.GroupMember) *GroupMember {
 	if data == nil {
 		return nil
 	}
-	return &GroupMember{Meta: noPtrFunc(fromGroupMemberMeta)(data.Meta)}
+	return &GroupMember{Meta: fromGroupMemberMeta(data.Meta)}
 }
 
-func ToGroupMember(data *GroupMember) *model.GroupMember {
+func ToGroupMember(data *GroupMember) model.GroupMember {
+	return model.GroupMember{
+		Edge:       som.NewEdge(data.ID),
+		Meta:       toGroupMemberMeta(data.Meta),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+	}
+}
+func ToGroupMemberPtr(data *GroupMember) *model.GroupMember {
 	if data == nil {
 		return nil
 	}
 	return &model.GroupMember{
 		Edge:       som.NewEdge(data.ID),
-		Meta:       noPtrFunc(toGroupMemberMeta)(data.Meta),
+		Meta:       toGroupMemberMeta(data.Meta),
 		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }
