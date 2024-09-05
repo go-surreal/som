@@ -21,12 +21,12 @@ func (p *Package) parseDecl(decl ast.Decl) error {
 
 	case *ast.FuncDecl: // function declaration
 		{
-			return nil
+			return nil // we do not need those
 		}
 
 	case *ast.BadDecl: // invalid declaration
 		{
-			return nil
+			return nil // TODO: provide useful error messages
 		}
 
 	default:

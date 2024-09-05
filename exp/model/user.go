@@ -1,6 +1,9 @@
 package model
 
-import "github.com/go-surreal/som"
+import (
+	"github.com/go-surreal/som"
+	"github.com/go-surreal/som/exp/model/subdir"
+)
 
 type User struct {
 	som.Node
@@ -23,6 +26,8 @@ type User struct {
 	Other []string // slice of strings
 	//More         []float32
 	//Roles        []Role // slice of enum
+
+	X subdir.X
 }
 
 func X() {

@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	err := parser.Parse("./model")
+	err := parser.NewParser().Parse("./model")
 	if err != nil {
 		log.Fatal(err)
 	}

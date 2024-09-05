@@ -39,7 +39,7 @@ func (s *String[M]) Concat(vals ...string) *Bool[M] {
 }
 
 func (s *String[M]) Contains(val string) *Bool[M] {
-	return NewBool(s.Base.fn("string::contains", val))
+	return NewBool(s.Base.fn("string::contains", val)) // or: WHERE val IN key
 }
 
 func (s *String[M]) EndsWith(val string) *Bool[M] {

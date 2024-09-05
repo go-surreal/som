@@ -51,4 +51,6 @@ func (p *Package) parseExpr(expr ast.Expr) error {
 	default:
 		return fmt.Errorf("unsupported expression: %T", matchedExpr)
 	}
+
+	return nil
 }
