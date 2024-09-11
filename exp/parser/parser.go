@@ -3,9 +3,13 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"github.com/go-surreal/som/exp/def"
+	"go/ast"
 	"go/parser"
 	"go/token"
-	"golang.org/x/exp/maps"
+	"maps"
+	"os"
+	"strings"
 )
 
 //type Parser struct {
@@ -28,21 +32,25 @@ import (
 //}
 
 type Parser struct {
-	pkgs map[string]*Package
+	imports []*def.Import
+	nodes   []*def.Node
+	edges   []*def.Edge
+	structs []*def.Struct
 }
 
 func NewParser() *Parser {
-	return &Parser{
-		pkgs: make(map[string]*Package),
-	}
+	return &Parser{}
 }
 
-type x[T any] = string
-
 func (p *Parser) Parse(path string) error {
-	fset := token.NewFileSet()
+	fileSet := token.NewFileSet()
 
-	pkgs, err := parser.ParseDir(fset, path, nil, 0)
+	pkgs, err := parser.ParseDir(fileSet, path,
+		func(info os.FileInfo) bool {
+			return strings.HasSuffix(info.Name(), ".go")
+		},
+		parser.AllErrors,
+	)
 	if err != nil {
 		return fmt.Errorf("could not parse code in source path: %w", err)
 	}
@@ -55,18 +63,60 @@ func (p *Parser) Parse(path string) error {
 		return errors.New("more than one package found in source path")
 	}
 
-	rawPkg := maps.Values(pkgs)[0]
-
-	pkg := NewPackage(rawPkg.Name)
-
-	p.pkgs[pkg.Name] = pkg
-
-	if err := pkg.parse(rawPkg.Files); err != nil {
-		return fmt.Errorf("could not parse package files: %w", err)
+	for pkg := range maps.Values(pkgs) {
+		if err := p.parse(pkg); err != nil {
+			return fmt.Errorf("could not parse package: %w", err)
+		}
 	}
 
-	//aJSON, _ := json.MarshalIndent(p, "", "  ")
-	//fmt.Println(string(aJSON))
+	return nil
+}
+
+func (p *Parser) parse(pkg ast.Node) error {
+	// TODO: use ast.Walk() instead?
+
+	for node := range ast.Preorder(pkg) {
+		switch mappedNode := node.(type) {
+
+		case *ast.TypeSpec:
+			if err := p.parseTypeSpec(mappedNode); err != nil {
+				return fmt.Errorf("could not parse type spec: %w", err)
+			}
+
+		case *ast.ImportSpec:
+			p.parseImportSpec(mappedNode)
+		}
+	}
 
 	return nil
+}
+
+func (p *Parser) String() string {
+	out := "\n"
+
+	out += "---- Imports ----\n\n"
+
+	for _, imp := range p.imports {
+		out += fmt.Sprintf("%s\n", imp)
+	}
+
+	out += "\n---- Structs ----\n\n"
+
+	for _, str := range p.structs {
+		out += fmt.Sprintf("%s\n", str)
+	}
+
+	out += "\n---- Nodes ----\n\n"
+
+	for _, node := range p.nodes {
+		out += fmt.Sprintf("%s\n", node)
+	}
+
+	out += "\n---- Edges ----\n\n"
+
+	for _, edge := range p.edges {
+		out += fmt.Sprintf("%s\n", edge)
+	}
+
+	return out
 }

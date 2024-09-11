@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/go-surreal/som"
-	"github.com/go-surreal/som/exp/model/subdir"
+	sdir "github.com/go-surreal/som/exp/model/subdir"
 )
 
 type User struct {
@@ -27,8 +27,16 @@ type User struct {
 	//More         []float32
 	//Roles        []Role // slice of enum
 
-	X subdir.X
+	X sdir.X
 }
+
+type Some int
+type _ string
+type D[T any] bool
+
+type a int
+type B a
+type V sdir.X
 
 func X() {
 	// this is a function declaration
