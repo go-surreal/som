@@ -11,6 +11,8 @@ type User struct {
 
 	x, y func()
 
+	dafuq struct{ bla string }
+
 	//Name string
 	//Age  int
 	//

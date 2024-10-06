@@ -1,16 +1,24 @@
 package parser
 
 import (
+	"fmt"
 	"github.com/go-surreal/som/exp/def"
 	"go/ast"
+	"go/types"
 )
 
-func (p *Parser) parseStructType(spec *ast.TypeSpec, structType *ast.StructType) error {
+func (p *Parser) parseStructType(spec *ast.TypeSpec, structType *ast.StructType, info *types.Info) error {
 	if !spec.Name.IsExported() {
 		return nil // ignore unexported structs
 	}
 
+	infoDef, ok := info.Defs[spec.Name]
+	if !ok {
+		return fmt.Errorf("could not find def for struct %s", spec.Name.Name)
+	}
+
 	structDef := &def.Struct{
+		Pkg:  infoDef.Pkg().Path(),
 		Name: spec.Name.Name,
 	}
 
@@ -25,7 +33,7 @@ func (p *Parser) parseStructType(spec *ast.TypeSpec, structType *ast.StructType)
 			continue // TODO: support embedded fields!
 		}
 
-		fields, err := parseField(field)
+		fields, err := parseField(field, info)
 		if err != nil {
 			return err
 		}

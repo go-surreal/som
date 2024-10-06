@@ -3,9 +3,10 @@ package parser
 import (
 	"fmt"
 	"go/ast"
+	"go/types"
 )
 
-func (p *Parser) parseTypeSpec(spec *ast.TypeSpec) error {
+func (p *Parser) parseType(spec *ast.TypeSpec, info *types.Info) error {
 	switch matchedSpec := spec.Type.(type) {
 
 	// *Ident, *ParenExpr, *SelectorExpr, *StarExpr, or any of the *XxxTypes
@@ -33,7 +34,7 @@ func (p *Parser) parseTypeSpec(spec *ast.TypeSpec) error {
 		fmt.Println("MAP TYPE:", spec.Name.Name, matchedSpec)
 
 	case *ast.StructType:
-		if err := p.parseStructType(spec, matchedSpec); err != nil {
+		if err := p.parseStructType(spec, matchedSpec, info); err != nil {
 			return fmt.Errorf("could not parse struct type: %w", err)
 		}
 

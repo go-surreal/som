@@ -1,4 +1,4 @@
-package def
+package field
 
 import "fmt"
 
@@ -18,14 +18,4 @@ func (f *BaseField) String() string {
 
 func (f *BaseField) Embedded() bool {
 	return f.Name == "" // TODO: would be true for types of pointer fields
-}
-
-type String struct {
-	*BaseField
-}
-
-type Pointer struct {
-	*BaseField
-
-	Field Field
 }
