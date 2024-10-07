@@ -28,4 +28,5 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/sys v0.23.0 // indirect
+	github.com/go-surreal/som v0.6.2
 )
