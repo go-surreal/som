@@ -1,19 +1,19 @@
 module github.com/go-surreal/som
 
-go 1.22
+go 1.23
 
-toolchain go1.22.6
+toolchain go1.23.2
 
 retract [v0.1.0, v0.6.2] // only the latest version is supported for now
 
 require (
-	github.com/dave/jennifer v1.7.0
-	github.com/go-surreal/sdbc v0.6.1
+	github.com/dave/jennifer v1.7.1
+	github.com/go-surreal/sdbc v0.7.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/urfave/cli/v2 v2.27.4
-	github.com/wzshiming/gotype v0.7.3
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
-	golang.org/x/mod v0.20.0
+	github.com/wzshiming/gotype v0.7.4
+	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
+	golang.org/x/mod v0.21.0
 	gotest.tools/v3 v3.5.1
 )
 
