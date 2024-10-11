@@ -2,24 +2,20 @@
 
 <div align="center">
     <img width="400px" src=".github/branding/logo.png" alt="logo">
-    <h3>SOM - A SurrealDB object mapper & query builder for Go</h3>
+    <h3>A SurrealDB object mapper & query builder for Go</h3>
 </div>
 
 <hr />
 
 <p align="center">
-  <a href="https://go.dev/doc/devel/release">
-    <img src="https://img.shields.io/badge/go-1.21.4-informational" alt="Go 1.21.4">
-  </a>
-  <a href="https://goreportcard.com/report/github.com/go-surreal/som">
-    <img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card">
-  </a>
-  <a href="https://github.com/go-surreal/som/actions/workflows/pull_request.yml">
-    <img src="https://github.com/go-surreal/som/actions/workflows/pull_request.yml/badge.svg" alt="PR">
-  </a>
-  <a href="https://discord.gg/surrealdb">
-    <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord">
-  </a>
+  <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/github/go-mod/go-version/go-surreal/som?label=go" alt="go version"></a>
+  &nbsp;
+  <a href="https://goreportcard.com/report/github.com/go-surreal/som"><img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card"></a>
+  &nbsp;
+  <a href="https://github.com/go-surreal/som/actions/workflows/pull_request.yml"><img src="https://github.com/go-surreal/som/actions/workflows/pull_request.yml/badge.svg" alt="PR"></a>
+  &nbsp;
+  <a href="https://discord.gg/surrealdb"><img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord"></a>
+  &nbsp;
   <img src="https://img.shields.io/github/contributors/marcbinz/som" alt="Contributors">
 </p>
 
@@ -54,7 +50,7 @@ This facilitates multi-table, multi-depth document retrieval without complex JOI
 ## Getting started
 
 *Please note: This package is currently tested against version 
-[1.4.2](https://surrealdb.com/releases#v1-4-2)
+[2.0.4](https://surrealdb.com/releases#v2-0-4)
 of SurrealDB.*
 
 ### Disclaimer
@@ -82,7 +78,7 @@ But still, please try it out and give us some feedback. We would highly apprecia
 Generate the client code:
 
 ```
-go run github.com/go-surreal/som/cmd/somgen@latest <input_dir> <output_dir>
+go run github.com/go-surreal/som/cmd/som@latest gen <input_dir> <output_dir>
 ```
 
 Currently, the generated code does not make use of the official SurrealDB go client.
@@ -330,6 +326,3 @@ Please take a look at the [MAINTAINERS.md](MAINTAINERS.md) file.
 https://www.npmjs.com/package/suorm
 https://www.prisma.io/docs/concepts/components/prisma-migrate
 https://github.com/Odonno/surrealdb-migrations/tree/main/templates
-
-// som hooks:
-// Note: When using the hooks in a multi-node application setup, it will only trigger on the node that triggers the change.
