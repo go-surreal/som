@@ -19,9 +19,13 @@ const (
 	containerStartedMsg = "Started web server on "
 )
 
-// errAlreadyInProgress is a regular expression that matches the error for a container
-// removal that is already in progress.
+// errAlreadyInProgress is a regular expression that matches the
+// error for a container removal that is already in progress.
 var errAlreadyInProgress = regexp.MustCompile(`removal of container .* is already in progress`)
+
+// errNoSuchContainer is a regular expression that matches the
+// error for a container that does not exist.
+var errNoSuchContainer = regexp.MustCompile(`No such container`)
 
 func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	tb.Helper()
@@ -98,7 +102,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		client.Close()
 
 		if err := surreal.Terminate(ctx); err != nil {
-			if errAlreadyInProgress.MatchString(err.Error()) {
+			if errAlreadyInProgress.MatchString(err.Error()) || errNoSuchContainer.MatchString(err.Error()) {
 				return // this "error" is not caught by the Terminate method even though it is safe to ignore
 			}
 
