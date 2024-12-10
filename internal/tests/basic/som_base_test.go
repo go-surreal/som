@@ -38,8 +38,8 @@ func TestQuery(t *testing.T) {
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $0)]->group[WHERE (id = $1)] "+
-			"AND duration::days(duration) < $2)",
+		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $A)]->group[WHERE (id = $B)] "+
+			"AND duration::days(duration) < $C)",
 		query.Describe(),
 	)
 

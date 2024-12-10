@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	surrealDBVersion    = "2.1.2"
+	surrealDBVersion    = "2.1.3"
 	containerStartedMsg = "Started web server on "
 )
 
@@ -33,7 +33,6 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		Env: map[string]string{
 			"SURREAL_PATH":   "memory",
 			"SURREAL_STRICT": "true",
-			"SURREAL_AUTH":   "true",
 			"SURREAL_USER":   username,
 			"SURREAL_PASS":   password,
 		},

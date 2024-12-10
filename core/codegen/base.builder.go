@@ -162,12 +162,6 @@ func (b *build) buildSchemaFile() error {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
 		statements = append(statements, statement)
 
-		statement = fmt.Sprintf(
-			`DEFINE FIELD id ON TABLE %s TYPE record<%s> ASSERT $value != NONE AND $value != NULL AND $value != "";`,
-			node.NameDatabase(), node.NameDatabase(),
-		)
-		statements = append(statements, statement)
-
 		for _, f := range node.GetFields() {
 			fieldFn(node.NameDatabase(), f, "")
 		}
