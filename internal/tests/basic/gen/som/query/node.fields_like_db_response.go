@@ -9,8 +9,8 @@ import (
 
 func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
 	return Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
-		convFrom: conv.FromFieldsLikeDBResponse,
-		convTo:   conv.ToFieldsLikeDBResponse,
+		convFrom: conv.FromFieldsLikeDBResponsePtr,
+		convTo:   conv.ToFieldsLikeDBResponsePtr,
 		db:       db,
 		query:    lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
 	}}

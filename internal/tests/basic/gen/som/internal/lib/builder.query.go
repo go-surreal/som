@@ -19,22 +19,10 @@ func (c *context) Vars() map[string]any {
 
 // TODO: deduplicate same values in the same query
 func (c *context) asVar(val any) string {
-	index := intToLetters(c.varIndex + 1)
-	c.vars[index] = val
+	index := intToLetters(c.varIndex)
 	c.varIndex++
+	c.vars[index] = val
 	return "$" + index
-}
-
-func intToLetters(number int32) (letters string) {
-	number--
-	if firstLetter := number / 26; firstLetter > 0 {
-		letters += intToLetters(firstLetter)
-		letters += string('A' + number%26)
-	} else {
-		letters += string('A' + number)
-	}
-
-	return
 }
 
 type Query[T any] struct {
@@ -236,3 +224,23 @@ const (
 
 	OpModulo Operator = "%" // https://github.com/surrealdb/surrealdb/pull/4182
 )
+
+//
+// -- HELPER
+//
+
+var letterDef = [...]string{
+	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+}
+
+func intToLetters(number int32) (letters string) {
+	if firstLetter := number / 26; firstLetter > 0 {
+		letters += intToLetters(firstLetter)
+		letters += letterDef[number%26]
+		return
+	}
+
+	letters += letterDef[number]
+	return
+}

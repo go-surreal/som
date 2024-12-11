@@ -15,9 +15,17 @@ import (
 )
 
 const (
-	surrealDBVersion    = "2.0.0-beta.1"
+	surrealDBVersion    = "2.1.3"
 	containerStartedMsg = "Started web server on "
 )
+
+// errAlreadyInProgress is a regular expression that matches the
+// error for a container removal that is already in progress.
+var errAlreadyInProgress = regexp.MustCompile(`removal of container .* is already in progress`)
+
+// errNoSuchContainer is a regular expression that matches the
+// error for a container that does not exist.
+var errNoSuchContainer = regexp.MustCompile(`No such container`)
 
 func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 	tb.Helper()
@@ -89,18 +97,14 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	//err = client.Execute(ctx,
-	//	"DEFINE INDEX OVERWRITE test ON "+client.TableAllFieldTypes()+" FIELDS string, string_ptr CONCURRENTLY;", // or: IF NOT EXISTS
-	//	map[string]any{}, // INFO FOR TABLE all_field_types; shows the status of the index
-	//) // REBUILD
-	//if err != nil {
-	//	tb.Fatal(err)
-	//}
-
 	cleanup := func() {
 		client.Close()
 
 		if err := surreal.Terminate(ctx); err != nil {
+			if errAlreadyInProgress.MatchString(err.Error()) || errNoSuchContainer.MatchString(err.Error()) {
+				return // this "error" is not caught by the Terminate method even though it is safe to ignore
+			}
+
 			tb.Fatalf("failed to terminate container: %s", err.Error())
 		}
 	}

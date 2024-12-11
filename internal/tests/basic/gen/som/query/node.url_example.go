@@ -9,8 +9,8 @@ import (
 
 func NewURLExample(db Database) Builder[model.URLExample, conv.URLExample] {
 	return Builder[model.URLExample, conv.URLExample]{builder[model.URLExample, conv.URLExample]{
-		convFrom: conv.FromURLExample,
-		convTo:   conv.ToURLExample,
+		convFrom: conv.FromURLExamplePtr,
+		convTo:   conv.ToURLExamplePtr,
 		db:       db,
 		query:    lib.NewQuery[model.URLExample]("url_example"),
 	}}
