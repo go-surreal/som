@@ -140,15 +140,15 @@ func (s *String[M]) IsHexadecimal() *Bool[M] {
 }
 
 func (s *String[M]) IsIP() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::ip"))
+	return NewBool(s.Base.fn("string::is::ip")) // since v2.0.0
 }
 
 func (s *String[M]) IsIPv4() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::ipv4"))
+	return NewBool(s.Base.fn("string::is::ipv4")) // since v2.0.0
 }
 
 func (s *String[M]) IsIPv6() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::ipv6"))
+	return NewBool(s.Base.fn("string::is::ipv6")) // since v2.0.0
 }
 
 func (s *String[M]) IsLatitude() *Bool[M] {
@@ -176,6 +176,8 @@ func (s *String[M]) IsUUID() *Bool[M] {
 }
 
 // TODO: string::is::record (needed?)
+
+// TODO: string::html::encode & string::html::sanitize
 
 func (s *String[M]) Base64Decode() *ByteSlice[M] {
 	return NewByteSlice(s.Base.fn("encoding::base64::decode"))

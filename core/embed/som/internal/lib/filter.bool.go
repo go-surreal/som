@@ -32,6 +32,14 @@ func (b *Bool[M]) Is(val bool) Filter[M] {
 	return b.op(OpExactlyEqual, val)
 }
 
+func (b *Bool[M]) True() Filter[M] {
+	return b.Is(true)
+}
+
+func (b *Bool[M]) False() Filter[M] {
+	return b.Is(false)
+}
+
 //
 // -- FUNCTIONS
 //

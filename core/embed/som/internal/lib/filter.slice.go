@@ -258,3 +258,8 @@ func (s *Slice[M, E, F]) Union(val []E) *Slice[M, E, F] {
 // TODO: Windows (v2.0.0)
 
 // TODO: https://surrealdb.com/docs/surrealdb/surrealql/functions/database/vector
+
+// TODO: new functions
+// Array function changes and additions: array::all(), array::any(), array::filter_index(), array::find_index()
+// functions can now take a value or a closure. Also added array::filter() and array::find() functions.
+// https://github.com/surrealdb/surrealdb/pull/4612

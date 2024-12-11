@@ -91,6 +91,9 @@ func (b *Base[M, T, F, S]) Truth() *Bool[M] {
 	return NewBool(b.Key.prefix(OpTruth))
 }
 
+// TODO: value::diff($value, $value) and value::patch($value, $diff)
+// https://github.com/surrealdb/surrealdb/pull/4608
+
 func (b *Base[M, T, F, S]) Zero(is bool) Filter[M] {
 	op := OpExactlyEqual
 
