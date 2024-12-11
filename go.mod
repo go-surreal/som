@@ -2,7 +2,7 @@ module github.com/go-surreal/som
 
 go 1.22.7
 
-retract [v0.1.0, v0.6.2] // only the latest version is supported for now
+retract [v0.1.0, v0.6.4] // only the latest version is supported for now
 
 require (
 	github.com/dave/jennifer v1.7.1
