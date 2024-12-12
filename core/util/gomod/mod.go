@@ -17,9 +17,9 @@ const (
 	pkgSOM  = "github.com/go-surreal/som"
 	pkgSDBC = "github.com/go-surreal/sdbc"
 
-	requiredSOMVersion = "v0.6.2"
+	requiredSOMVersion = "v0.7.0"
 
-	requiredSDBCVersion = "v0.6.1" // v.0.7.0 already uses go 1.23
+	requiredSDBCVersion = "v0.9.0"
 )
 
 type GoMod struct {

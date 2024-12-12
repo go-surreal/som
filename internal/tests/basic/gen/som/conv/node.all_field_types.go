@@ -82,7 +82,7 @@ type AllFieldTypes struct {
 	GroupsSlice        [][]*groupLink    `cbor:"groups_slice"`
 	NodePtrSlice       []*groupLink      `cbor:"node_ptr_slice"`
 	NodePtrSlicePtr    *[]*groupLink     `cbor:"node_ptr_slice_ptr"`
-	MemberOf           []GroupMember     `cbor:"member_of,omitempty"`
+	MemberOf           []*GroupMember    `cbor:"member_of,omitempty"`
 	SliceSlice         [][]string        `cbor:"slice_slice"`
 	SliceSliceSlice    [][][]string      `cbor:"slice_slice_slice"`
 	SliceSliceSlice2   [][][]someStruct  `cbor:"slice_slice_slice_2"`
@@ -92,7 +92,84 @@ type AllFieldTypes struct {
 	ByteSlicePtr       *[]byte           `cbor:"byte_slice_ptr"`
 }
 
-func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
+func FromAllFieldTypes(data model.AllFieldTypes) AllFieldTypes {
+	return AllFieldTypes{
+		Bool:               data.Bool,
+		BoolPtr:            data.BoolPtr,
+		BoolSlice:          data.BoolSlice,
+		Byte:               data.Byte,
+		BytePtr:            data.BytePtr,
+		ByteSlice:          data.ByteSlice,
+		ByteSlicePtr:       data.ByteSlicePtr,
+		Duration:           fromDuration(data.Duration),
+		DurationNil:        fromDurationPtr(data.DurationNil),
+		DurationPtr:        fromDurationPtr(data.DurationPtr),
+		DurationSlice:      mapSliceFn(fromDuration)(data.DurationSlice),
+		EnumPtr:            data.EnumPtr,
+		Float32:            data.Float32,
+		Float32PtrSlice:    data.Float32PtrSlice,
+		Float32PtrSlicePtr: data.Float32PtrSlicePtr,
+		Float32Slice:       data.Float32Slice,
+		Float32SlicePtr:    data.Float32SlicePtr,
+		Float64:            data.Float64,
+		Groups:             mapSliceFn(toGroupLink)(data.Groups),
+		GroupsSlice:        mapSliceFn(mapSliceFn(toGroupLink))(data.GroupsSlice),
+		Int:                data.Int,
+		Int16:              data.Int16,
+		Int16Ptr:           data.Int16Ptr,
+		Int32:              data.Int32,
+		Int32Ptr:           data.Int32Ptr,
+		Int64:              data.Int64,
+		Int64Ptr:           data.Int64Ptr,
+		Int8:               data.Int8,
+		Int8Ptr:            data.Int8Ptr,
+		IntPtr:             data.IntPtr,
+		IntPtrSlice:        data.IntPtrSlice,
+		IntPtrSlicePtr:     data.IntPtrSlicePtr,
+		IntSlice:           data.IntSlice,
+		IntSlicePtr:        data.IntSlicePtr,
+		Login:              fromLogin(data.Login),
+		MainGroup:          toGroupLink(data.MainGroup),
+		MainGroupPtr:       toGroupLinkPtr(data.MainGroupPtr),
+		NodePtrSlice:       mapSliceFn(toGroupLinkPtr)(data.NodePtrSlice),
+		NodePtrSlicePtr:    mapSliceFnPtr(toGroupLinkPtr)(data.NodePtrSlicePtr),
+		Other:              data.Other,
+		Role:               data.Role,
+		Rune:               data.Rune,
+		RuneSlice:          data.RuneSlice,
+		SliceSlice:         data.SliceSlice,
+		SliceSliceSlice:    data.SliceSliceSlice,
+		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(fromSomeStruct)))(data.SliceSliceSlice2),
+		String:             data.String,
+		StringPtr:          data.StringPtr,
+		StringPtrSlice:     data.StringPtrSlice,
+		StringSlicePtr:     data.StringSlicePtr,
+		StructPtr:          fromSomeStructPtr(data.StructPtr),
+		StructPtrSlice:     mapSliceFn(fromSomeStructPtr)(data.StructPtrSlice),
+		StructPtrSlicePtr:  mapSliceFnPtr(fromSomeStructPtr)(data.StructPtrSlicePtr),
+		StructSlice:        mapSliceFn(fromSomeStruct)(data.StructSlice),
+		Time:               fromTime(data.Time),
+		TimeNil:            fromTimePtr(data.TimeNil),
+		TimePtr:            fromTimePtr(data.TimePtr),
+		TimeSlice:          mapSliceFn(fromTime)(data.TimeSlice),
+		TimeSliceSlice:     mapSliceFn(mapSliceFn(fromTime))(data.TimeSliceSlice),
+		URL:                fromURL(data.URL),
+		URLNil:             fromURLPtr(data.URLNil),
+		URLPtr:             fromURLPtr(data.URLPtr),
+		URLSlice:           mapSliceFn(fromURL)(data.URLSlice),
+		UUID:               fromUUID(data.UUID),
+		UUIDNil:            fromUUIDPtr(data.UUIDNil),
+		UUIDPtr:            fromUUIDPtr(data.UUIDPtr),
+		UUIDSlice:          mapSliceFn(fromUUID)(data.UUIDSlice),
+		Uint16:             data.Uint16,
+		Uint16Ptr:          data.Uint16Ptr,
+		Uint32:             data.Uint32,
+		Uint32Ptr:          data.Uint32Ptr,
+		Uint8:              data.Uint8,
+		Uint8Ptr:           data.Uint8Ptr,
+	}
+}
+func FromAllFieldTypesPtr(data *model.AllFieldTypes) *AllFieldTypes {
 	if data == nil {
 		return nil
 	}
@@ -131,7 +208,7 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		IntPtrSlicePtr:     data.IntPtrSlicePtr,
 		IntSlice:           data.IntSlice,
 		IntSlicePtr:        data.IntSlicePtr,
-		Login:              noPtrFunc(fromLogin)(data.Login),
+		Login:              fromLogin(data.Login),
 		MainGroup:          toGroupLink(data.MainGroup),
 		MainGroupPtr:       toGroupLinkPtr(data.MainGroupPtr),
 		NodePtrSlice:       mapSliceFn(toGroupLinkPtr)(data.NodePtrSlice),
@@ -142,15 +219,15 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 		RuneSlice:          data.RuneSlice,
 		SliceSlice:         data.SliceSlice,
 		SliceSliceSlice:    data.SliceSliceSlice,
-		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(noPtrFunc(fromSomeStruct))))(data.SliceSliceSlice2),
+		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(fromSomeStruct)))(data.SliceSliceSlice2),
 		String:             data.String,
 		StringPtr:          data.StringPtr,
 		StringPtrSlice:     data.StringPtrSlice,
 		StringSlicePtr:     data.StringSlicePtr,
-		StructPtr:          fromSomeStruct(data.StructPtr),
-		StructPtrSlice:     mapSliceFn(fromSomeStruct)(data.StructPtrSlice),
-		StructPtrSlicePtr:  mapSliceFnPtr(fromSomeStruct)(data.StructPtrSlicePtr),
-		StructSlice:        mapSliceFn(noPtrFunc(fromSomeStruct))(data.StructSlice),
+		StructPtr:          fromSomeStructPtr(data.StructPtr),
+		StructPtrSlice:     mapSliceFn(fromSomeStructPtr)(data.StructPtrSlice),
+		StructPtrSlicePtr:  mapSliceFnPtr(fromSomeStructPtr)(data.StructPtrSlicePtr),
+		StructSlice:        mapSliceFn(fromSomeStruct)(data.StructSlice),
 		Time:               fromTime(data.Time),
 		TimeNil:            fromTimePtr(data.TimeNil),
 		TimePtr:            fromTimePtr(data.TimePtr),
@@ -173,7 +250,87 @@ func FromAllFieldTypes(data *model.AllFieldTypes) *AllFieldTypes {
 	}
 }
 
-func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
+func ToAllFieldTypes(data AllFieldTypes) model.AllFieldTypes {
+	return model.AllFieldTypes{
+		Bool:               data.Bool,
+		BoolPtr:            data.BoolPtr,
+		BoolSlice:          data.BoolSlice,
+		Byte:               data.Byte,
+		BytePtr:            data.BytePtr,
+		ByteSlice:          data.ByteSlice,
+		ByteSlicePtr:       data.ByteSlicePtr,
+		Duration:           toDuration(data.Duration),
+		DurationNil:        toDurationPtr(data.DurationNil),
+		DurationPtr:        toDurationPtr(data.DurationPtr),
+		DurationSlice:      mapSliceFn(toDuration)(data.DurationSlice),
+		EnumPtr:            data.EnumPtr,
+		Float32:            data.Float32,
+		Float32PtrSlice:    data.Float32PtrSlice,
+		Float32PtrSlicePtr: data.Float32PtrSlicePtr,
+		Float32Slice:       data.Float32Slice,
+		Float32SlicePtr:    data.Float32SlicePtr,
+		Float64:            data.Float64,
+		Groups:             mapSliceFn(fromGroupLink)(data.Groups),
+		GroupsSlice:        mapSliceFn(mapSliceFn(fromGroupLink))(data.GroupsSlice),
+		Int:                data.Int,
+		Int16:              data.Int16,
+		Int16Ptr:           data.Int16Ptr,
+		Int32:              data.Int32,
+		Int32Ptr:           data.Int32Ptr,
+		Int64:              data.Int64,
+		Int64Ptr:           data.Int64Ptr,
+		Int8:               data.Int8,
+		Int8Ptr:            data.Int8Ptr,
+		IntPtr:             data.IntPtr,
+		IntPtrSlice:        data.IntPtrSlice,
+		IntPtrSlicePtr:     data.IntPtrSlicePtr,
+		IntSlice:           data.IntSlice,
+		IntSlicePtr:        data.IntSlicePtr,
+		Login:              toLogin(data.Login),
+		MainGroup:          fromGroupLink(data.MainGroup),
+		MainGroupPtr:       fromGroupLinkPtr(data.MainGroupPtr),
+		MemberOf:           mapSliceFn(ToGroupMember)(data.MemberOf),
+		Node:               som.NewNode(data.ID),
+		NodePtrSlice:       mapSliceFn(fromGroupLinkPtr)(data.NodePtrSlice),
+		NodePtrSlicePtr:    mapSliceFnPtr(fromGroupLinkPtr)(data.NodePtrSlicePtr),
+		Other:              data.Other,
+		Role:               data.Role,
+		Rune:               data.Rune,
+		RuneSlice:          data.RuneSlice,
+		SliceSlice:         data.SliceSlice,
+		SliceSliceSlice:    data.SliceSliceSlice,
+		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(toSomeStruct)))(data.SliceSliceSlice2),
+		String:             data.String,
+		StringPtr:          data.StringPtr,
+		StringPtrSlice:     data.StringPtrSlice,
+		StringSlicePtr:     data.StringSlicePtr,
+		StructPtr:          toSomeStructPtr(data.StructPtr),
+		StructPtrSlice:     mapSliceFn(toSomeStructPtr)(data.StructPtrSlice),
+		StructPtrSlicePtr:  mapSliceFnPtr(toSomeStructPtr)(data.StructPtrSlicePtr),
+		StructSlice:        mapSliceFn(toSomeStruct)(data.StructSlice),
+		Time:               toTime(data.Time),
+		TimeNil:            toTimePtr(data.TimeNil),
+		TimePtr:            toTimePtr(data.TimePtr),
+		TimeSlice:          mapSliceFn(toTime)(data.TimeSlice),
+		TimeSliceSlice:     mapSliceFn(mapSliceFn(toTime))(data.TimeSliceSlice),
+		Timestamps:         som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		URL:                toURL(data.URL),
+		URLNil:             toURLPtr(data.URLNil),
+		URLPtr:             toURLPtr(data.URLPtr),
+		URLSlice:           mapSliceFn(toURL)(data.URLSlice),
+		UUID:               toUUID(data.UUID),
+		UUIDNil:            toUUIDPtr(data.UUIDNil),
+		UUIDPtr:            toUUIDPtr(data.UUIDPtr),
+		UUIDSlice:          mapSliceFn(toUUID)(data.UUIDSlice),
+		Uint16:             data.Uint16,
+		Uint16Ptr:          data.Uint16Ptr,
+		Uint32:             data.Uint32,
+		Uint32Ptr:          data.Uint32Ptr,
+		Uint8:              data.Uint8,
+		Uint8Ptr:           data.Uint8Ptr,
+	}
+}
+func ToAllFieldTypesPtr(data *AllFieldTypes) *model.AllFieldTypes {
 	if data == nil {
 		return nil
 	}
@@ -212,10 +369,10 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		IntPtrSlicePtr:     data.IntPtrSlicePtr,
 		IntSlice:           data.IntSlice,
 		IntSlicePtr:        data.IntSlicePtr,
-		Login:              noPtrFunc(toLogin)(data.Login),
+		Login:              toLogin(data.Login),
 		MainGroup:          fromGroupLink(data.MainGroup),
 		MainGroupPtr:       fromGroupLinkPtr(data.MainGroupPtr),
-		MemberOf:           mapSliceFn(noPtrFunc(ToGroupMember))(data.MemberOf),
+		MemberOf:           mapSliceFn(ToGroupMember)(data.MemberOf),
 		Node:               som.NewNode(data.ID),
 		NodePtrSlice:       mapSliceFn(fromGroupLinkPtr)(data.NodePtrSlice),
 		NodePtrSlicePtr:    mapSliceFnPtr(fromGroupLinkPtr)(data.NodePtrSlicePtr),
@@ -225,15 +382,15 @@ func ToAllFieldTypes(data *AllFieldTypes) *model.AllFieldTypes {
 		RuneSlice:          data.RuneSlice,
 		SliceSlice:         data.SliceSlice,
 		SliceSliceSlice:    data.SliceSliceSlice,
-		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(noPtrFunc(toSomeStruct))))(data.SliceSliceSlice2),
+		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(toSomeStruct)))(data.SliceSliceSlice2),
 		String:             data.String,
 		StringPtr:          data.StringPtr,
 		StringPtrSlice:     data.StringPtrSlice,
 		StringSlicePtr:     data.StringSlicePtr,
-		StructPtr:          toSomeStruct(data.StructPtr),
-		StructPtrSlice:     mapSliceFn(toSomeStruct)(data.StructPtrSlice),
-		StructPtrSlicePtr:  mapSliceFnPtr(toSomeStruct)(data.StructPtrSlicePtr),
-		StructSlice:        mapSliceFn(noPtrFunc(toSomeStruct))(data.StructSlice),
+		StructPtr:          toSomeStructPtr(data.StructPtr),
+		StructPtrSlice:     mapSliceFn(toSomeStructPtr)(data.StructPtrSlice),
+		StructPtrSlicePtr:  mapSliceFnPtr(toSomeStructPtr)(data.StructPtrSlicePtr),
+		StructSlice:        mapSliceFn(toSomeStruct)(data.StructSlice),
 		Time:               toTime(data.Time),
 		TimeNil:            toTimePtr(data.TimeNil),
 		TimePtr:            toTimePtr(data.TimePtr),
@@ -287,8 +444,7 @@ func fromAllFieldTypesLink(link *allFieldTypesLink) model.AllFieldTypes {
 		return model.AllFieldTypes{}
 	}
 	res := AllFieldTypes(link.AllFieldTypes)
-	out := ToAllFieldTypes(&res)
-	return *out
+	return ToAllFieldTypes(res)
 }
 
 func fromAllFieldTypesLinkPtr(link *allFieldTypesLink) *model.AllFieldTypes {
@@ -296,14 +452,15 @@ func fromAllFieldTypesLinkPtr(link *allFieldTypesLink) *model.AllFieldTypes {
 		return nil
 	}
 	res := AllFieldTypes(link.AllFieldTypes)
-	return ToAllFieldTypes(&res)
+	out := ToAllFieldTypes(res)
+	return &out
 }
 
 func toAllFieldTypesLink(node model.AllFieldTypes) *allFieldTypesLink {
 	if node.ID() == nil {
 		return nil
 	}
-	link := allFieldTypesLink{AllFieldTypes: *FromAllFieldTypes(&node), ID: node.ID()}
+	link := allFieldTypesLink{AllFieldTypes: FromAllFieldTypes(node), ID: node.ID()}
 	return &link
 }
 
@@ -311,6 +468,6 @@ func toAllFieldTypesLinkPtr(node *model.AllFieldTypes) *allFieldTypesLink {
 	if node == nil || node.ID() == nil {
 		return nil
 	}
-	link := allFieldTypesLink{AllFieldTypes: *FromAllFieldTypes(node), ID: node.ID()}
+	link := allFieldTypesLink{AllFieldTypes: FromAllFieldTypes(*node), ID: node.ID()}
 	return &link
 }

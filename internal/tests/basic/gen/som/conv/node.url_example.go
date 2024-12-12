@@ -13,7 +13,13 @@ type URLExample struct {
 	SomeOtherURL string  `cbor:"some_other_url"`
 }
 
-func FromURLExample(data *model.URLExample) *URLExample {
+func FromURLExample(data model.URLExample) URLExample {
+	return URLExample{
+		SomeOtherURL: fromURL(data.SomeOtherURL),
+		SomeURL:      fromURLPtr(data.SomeURL),
+	}
+}
+func FromURLExamplePtr(data *model.URLExample) *URLExample {
 	if data == nil {
 		return nil
 	}
@@ -23,7 +29,14 @@ func FromURLExample(data *model.URLExample) *URLExample {
 	}
 }
 
-func ToURLExample(data *URLExample) *model.URLExample {
+func ToURLExample(data URLExample) model.URLExample {
+	return model.URLExample{
+		Node:         som.NewNode(data.ID),
+		SomeOtherURL: toURL(data.SomeOtherURL),
+		SomeURL:      toURLPtr(data.SomeURL),
+	}
+}
+func ToURLExamplePtr(data *URLExample) *model.URLExample {
 	if data == nil {
 		return nil
 	}
@@ -64,8 +77,7 @@ func fromURLExampleLink(link *urlexampleLink) model.URLExample {
 		return model.URLExample{}
 	}
 	res := URLExample(link.URLExample)
-	out := ToURLExample(&res)
-	return *out
+	return ToURLExample(res)
 }
 
 func fromURLExampleLinkPtr(link *urlexampleLink) *model.URLExample {
@@ -73,14 +85,15 @@ func fromURLExampleLinkPtr(link *urlexampleLink) *model.URLExample {
 		return nil
 	}
 	res := URLExample(link.URLExample)
-	return ToURLExample(&res)
+	out := ToURLExample(res)
+	return &out
 }
 
 func toURLExampleLink(node model.URLExample) *urlexampleLink {
 	if node.ID() == nil {
 		return nil
 	}
-	link := urlexampleLink{URLExample: *FromURLExample(&node), ID: node.ID()}
+	link := urlexampleLink{URLExample: FromURLExample(node), ID: node.ID()}
 	return &link
 }
 
@@ -88,6 +101,6 @@ func toURLExampleLinkPtr(node *model.URLExample) *urlexampleLink {
 	if node == nil || node.ID() == nil {
 		return nil
 	}
-	link := urlexampleLink{URLExample: *FromURLExample(node), ID: node.ID()}
+	link := urlexampleLink{URLExample: FromURLExample(*node), ID: node.ID()}
 	return &link
 }

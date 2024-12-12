@@ -154,23 +154,43 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 		methodPrefix = "From"
 	}
 
-	return jen.Func().
-		Id(methodPrefix+elem.NameGo()).
-		Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
-		Op("*").Id(localName).
-		Block(
-			jen.If(jen.Id("data").Op("==").Nil()).Block(
-				jen.Return(jen.Nil()),
+	return jen.Add(
+		// NO PTR
+		jen.Func().
+			Id(methodPrefix+elem.NameGo()).
+			Params(jen.Id("data").Add(b.SourceQual(elem.NameGo()))).
+			Id(localName).
+			Block(
+				jen.Return(jen.Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
+					for _, f := range elem.GetFields() {
+						if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
+							d[jen.Id(f.NameGo())] = code
+						}
+					}
+				}))),
 			),
 
-			jen.Return(jen.Op("&").Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
-				for _, f := range elem.GetFields() {
-					if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
-						d[jen.Id(f.NameGo())] = code
+		jen.Line(),
+
+		// PTR
+		jen.Func().
+			Id(methodPrefix+elem.NameGo()+"Ptr").
+			Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
+			Op("*").Id(localName).
+			Block(
+				jen.If(jen.Id("data").Op("==").Nil()).Block(
+					jen.Return(jen.Nil()),
+				),
+
+				jen.Return(jen.Op("&").Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
+					for _, f := range elem.GetFields() {
+						if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
+							d[jen.Id(f.NameGo())] = code
+						}
 					}
-				}
-			}))),
-		)
+				}))),
+			),
+	)
 }
 
 func (b *convBuilder) buildTo(elem field.Element) jen.Code {
@@ -191,39 +211,83 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 		methodPrefix = "To"
 	}
 
-	return jen.Func().
-		Id(methodPrefix+elem.NameGo()).
-		Params(jen.Id("data").Op("*").Id(localName)).
-		Op("*").Add(b.SourceQual(elem.NameGo())).
-		Block(
-			jen.If(jen.Id("data").Op("==").Nil()).Block(
-				jen.Return(jen.Nil()),
+	ptr := jen.Empty()
+
+	if isEdge {
+		ptr = jen.Op("*")
+	}
+
+	return jen.Add(
+		// NO PTR
+		jen.Func().
+			Id(methodPrefix+elem.NameGo()).
+			Params(jen.Id("data").Add(ptr).Id(localName)).
+			Add(b.SourceQual(elem.NameGo())).
+			Block(
+				jen.Return(jen.Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
+					for _, f := range elem.GetFields() {
+						if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
+							if fieldCode := f.CodeGen().ConvToField(fieldCtx); fieldCode != nil {
+								d[fieldCode] = code
+								continue
+							}
+
+							d[jen.Id(f.NameGo())] = code
+						}
+					}
+
+					if _, ok := elem.(*field.NodeTable); ok {
+						d[jen.Id("Node")] = jen.Qual(def.PkgSom, "NewNode").Call(
+							jen.Id("data").Dot("ID"),
+						)
+					}
+
+					if _, ok := elem.(*field.EdgeTable); ok {
+						d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "NewEdge").Call(
+							jen.Id("data").Dot("ID"),
+						)
+					}
+				}))),
 			),
 
-			jen.Return(jen.Op("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
-				for _, f := range elem.GetFields() {
-					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
-						if fieldCode := f.CodeGen().ConvToField(fieldCtx); fieldCode != nil {
-							d[fieldCode] = code
-							continue
+		jen.Line(),
+
+		// PTR
+		jen.Func().
+			Id(methodPrefix+elem.NameGo()+"Ptr").
+			Params(jen.Id("data").Op("*").Id(localName)).
+			Op("*").Add(b.SourceQual(elem.NameGo())).
+			Block(
+				jen.If(jen.Id("data").Op("==").Nil()).Block(
+					jen.Return(jen.Nil()),
+				),
+
+				jen.Return(jen.Op("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
+					for _, f := range elem.GetFields() {
+						if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
+							if fieldCode := f.CodeGen().ConvToField(fieldCtx); fieldCode != nil {
+								d[fieldCode] = code
+								continue
+							}
+
+							d[jen.Id(f.NameGo())] = code
 						}
-
-						d[jen.Id(f.NameGo())] = code
 					}
-				}
 
-				if _, ok := elem.(*field.NodeTable); ok {
-					d[jen.Id("Node")] = jen.Qual(def.PkgSom, "NewNode").Call(
-						jen.Id("data").Dot("ID"),
-					)
-				}
+					if _, ok := elem.(*field.NodeTable); ok {
+						d[jen.Id("Node")] = jen.Qual(def.PkgSom, "NewNode").Call(
+							jen.Id("data").Dot("ID"),
+						)
+					}
 
-				if _, ok := elem.(*field.EdgeTable); ok {
-					d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "NewEdge").Call(
-						jen.Id("data").Dot("ID"),
-					)
-				}
-			}))))
+					if _, ok := elem.(*field.EdgeTable); ok {
+						d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "NewEdge").Call(
+							jen.Id("data").Dot("ID"),
+						)
+					}
+				}))),
+			),
+	)
 }
 
 func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
@@ -236,8 +300,7 @@ func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Add(b.SourceQual(node.NameGo())).Values()),
 			),
 			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
-			jen.Id("out").Op(":=").Id("To"+node.NameGo()).Call(jen.Op("&").Id("res")),
-			jen.Return(jen.Op("*").Id("out")),
+			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Id("res"))),
 		)
 }
 
@@ -251,7 +314,8 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Nil()),
 			),
 			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
-			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Op("&").Id("res"))),
+			jen.Id("out").Op(":=").Id("To"+node.NameGo()).Call(jen.Id("res")),
+			jen.Return(jen.Id("&").Id("out")),
 		)
 }
 
@@ -265,7 +329,7 @@ func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Nil()),
 			),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-				jen.Id(node.NameGo()).Op(":").Op("*").Id("From"+node.NameGo()).Call(jen.Op("&").Id("node")),
+				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Id("node")),
 				jen.Id("ID").Op(":").Id("node").Dot("ID").Call(),
 			),
 			jen.Return(jen.Op("&").Id("link")),
@@ -287,7 +351,7 @@ func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 					jen.Return(jen.Nil()),
 				),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-				jen.Id(node.NameGo()).Op(":").Op("*").Id("From"+node.NameGo()).Call(jen.Id("node")),
+				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Op("*").Id("node")),
 				jen.Id("ID").Op(":").Id("node").Dot("ID").Call(),
 			),
 			jen.Return(jen.Op("&").Id("link")),

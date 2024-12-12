@@ -15,7 +15,15 @@ type FieldsLikeDBResponse struct {
 	Result []string `cbor:"result"`
 }
 
-func FromFieldsLikeDBResponse(data *model.FieldsLikeDBResponse) *FieldsLikeDBResponse {
+func FromFieldsLikeDBResponse(data model.FieldsLikeDBResponse) FieldsLikeDBResponse {
+	return FieldsLikeDBResponse{
+		Detail: data.Detail,
+		Result: data.Result,
+		Status: data.Status,
+		Time:   data.Time,
+	}
+}
+func FromFieldsLikeDBResponsePtr(data *model.FieldsLikeDBResponse) *FieldsLikeDBResponse {
 	if data == nil {
 		return nil
 	}
@@ -27,7 +35,16 @@ func FromFieldsLikeDBResponse(data *model.FieldsLikeDBResponse) *FieldsLikeDBRes
 	}
 }
 
-func ToFieldsLikeDBResponse(data *FieldsLikeDBResponse) *model.FieldsLikeDBResponse {
+func ToFieldsLikeDBResponse(data FieldsLikeDBResponse) model.FieldsLikeDBResponse {
+	return model.FieldsLikeDBResponse{
+		Detail: data.Detail,
+		Node:   som.NewNode(data.ID),
+		Result: data.Result,
+		Status: data.Status,
+		Time:   data.Time,
+	}
+}
+func ToFieldsLikeDBResponsePtr(data *FieldsLikeDBResponse) *model.FieldsLikeDBResponse {
 	if data == nil {
 		return nil
 	}
@@ -70,8 +87,7 @@ func fromFieldsLikeDBResponseLink(link *fieldsLikeDbresponseLink) model.FieldsLi
 		return model.FieldsLikeDBResponse{}
 	}
 	res := FieldsLikeDBResponse(link.FieldsLikeDBResponse)
-	out := ToFieldsLikeDBResponse(&res)
-	return *out
+	return ToFieldsLikeDBResponse(res)
 }
 
 func fromFieldsLikeDBResponseLinkPtr(link *fieldsLikeDbresponseLink) *model.FieldsLikeDBResponse {
@@ -79,14 +95,15 @@ func fromFieldsLikeDBResponseLinkPtr(link *fieldsLikeDbresponseLink) *model.Fiel
 		return nil
 	}
 	res := FieldsLikeDBResponse(link.FieldsLikeDBResponse)
-	return ToFieldsLikeDBResponse(&res)
+	out := ToFieldsLikeDBResponse(res)
+	return &out
 }
 
 func toFieldsLikeDBResponseLink(node model.FieldsLikeDBResponse) *fieldsLikeDbresponseLink {
 	if node.ID() == nil {
 		return nil
 	}
-	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(&node), ID: node.ID()}
+	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: FromFieldsLikeDBResponse(node), ID: node.ID()}
 	return &link
 }
 
@@ -94,6 +111,6 @@ func toFieldsLikeDBResponseLinkPtr(node *model.FieldsLikeDBResponse) *fieldsLike
 	if node == nil || node.ID() == nil {
 		return nil
 	}
-	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: *FromFieldsLikeDBResponse(node), ID: node.ID()}
+	link := fieldsLikeDbresponseLink{FieldsLikeDBResponse: FromFieldsLikeDBResponse(*node), ID: node.ID()}
 	return &link
 }

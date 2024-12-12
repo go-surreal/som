@@ -13,7 +13,7 @@ import (
 type AllFieldTypesRepo interface {
 	som.AllFieldTypesRepo
 
-	FindByID(ctx context.Context, id som.ID) (*model.AllFieldTypes, error)
+	FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error)
 	List(ctx context.Context) ([]*model.AllFieldTypes, error)
 }
 
@@ -27,13 +27,13 @@ func User(db som.Client) AllFieldTypesRepo {
 	}
 }
 
-func (r *user) FindByID(ctx context.Context, id som.ID) (*model.AllFieldTypes, error) {
+func (r *user) FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error) {
 	return r.AllFieldTypesRepo.Query().Filter(where.AllFieldTypes.ID.Equal(id)).First(ctx)
 }
 
 func (r *user) FetchByID(
 	ctx context.Context,
-	id som.ID,
+	id *som.ID,
 	fetch ...with.Fetch_[model.AllFieldTypes],
 ) (
 	[]*model.AllFieldTypes,

@@ -9,7 +9,7 @@ import (
 )
 
 type context struct {
-	varIndex int
+	varIndex int32
 	vars     map[string]any
 }
 
@@ -19,9 +19,9 @@ func (c *context) Vars() map[string]any {
 
 // TODO: deduplicate same values in the same query
 func (c *context) asVar(val any) string {
-	index := strconv.Itoa(c.varIndex)
-	c.vars[index] = val
+	index := intToLetters(c.varIndex)
 	c.varIndex++
+	c.vars[index] = val
 	return "$" + index
 }
 
@@ -102,6 +102,8 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 
 func (q Query[T]) render() string {
 	var out strings.Builder
+
+	// TODO: possible optimization: preallocate buffer (e.g. out.Grow(<known bytes>))
 
 	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
 
@@ -221,4 +223,26 @@ const (
 
 	CastInt   Operator = "<int>"
 	CastFloat Operator = "<float>"
+
+	OpModulo Operator = "%" // https://github.com/surrealdb/surrealdb/pull/4182
 )
+
+//
+// -- HELPER
+//
+
+var letterDef = [...]string{
+	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+}
+
+func intToLetters(number int32) (letters string) {
+	if firstLetter := number / 26; firstLetter > 0 {
+		letters += intToLetters(firstLetter)
+		letters += letterDef[number%26]
+		return
+	}
+
+	letters += letterDef[number]
+	return
+}
