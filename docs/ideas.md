@@ -25,9 +25,6 @@ type TestView struct {
 }
 ```
 
-<<<<<<< Updated upstream
-### LiveRead model
-=======
 ### Migrations
 
 Rename:
@@ -52,7 +49,10 @@ https://surrealdb.com/docs/surrealdb/surrealql/datamodel/closures
 Note: SOM might define its own functions in the future.
 
 ### Computed Fields
->>>>>>> Stashed changes
+
+tbd.
+
+### LiveRead model
 
 ```
 func (r *allFieldTypes) LiveRead(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error) {

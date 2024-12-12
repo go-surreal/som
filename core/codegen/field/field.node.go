@@ -24,7 +24,7 @@ func (f *Node) typeConv(_ Context) jen.Code {
 
 func (f *Node) TypeDatabase() string {
 	// Linked records are always considered optional.
-	return fmt.Sprintf("option<record<%s> | null>", f.table.NameDatabase())
+	return fmt.Sprintf("option<record<%s>>", f.table.NameDatabase())
 }
 
 func (f *Node) Table() *NodeTable {

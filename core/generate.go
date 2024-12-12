@@ -6,7 +6,6 @@ import (
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
 	"github.com/go-surreal/som/core/util/gomod"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -62,7 +61,6 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 
 	source, err := parser.Parse(inPath)
 	if err != nil {
-		fmt.Println(os.Getwd())
 		return fmt.Errorf("could not parse source: %w", err)
 	}
 
