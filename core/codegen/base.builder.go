@@ -171,7 +171,7 @@ func (b *build) buildSchemaFile() error {
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s PERMISSIONS FULL;",
+			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
 			edge.Out.NameDatabase(), // can be OR'ed with "|"

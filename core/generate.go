@@ -61,14 +61,14 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 
 	source, err := parser.Parse(inPath)
 	if err != nil {
-		return fmt.Errorf("could not parse source: %v", err)
+		return fmt.Errorf("could not parse source: %w", err)
 	}
 
 	out := fs.New()
 
 	err = codegen.Build(source, out, outPkg)
 	if err != nil {
-		return fmt.Errorf("could not generate code: %v", err)
+		return fmt.Errorf("could not generate code: %w", err)
 	}
 
 	if verbose {

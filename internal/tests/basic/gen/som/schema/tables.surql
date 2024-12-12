@@ -90,14 +90,14 @@ DEFINE FIELD url_ptr ON TABLE all_field_types TYPE option<string | null> ASSERT 
 DEFINE FIELD url_nil ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
 DEFINE FIELD url_slice ON TABLE all_field_types TYPE option<array | null>;
 DEFINE FIELD url_slice.* ON TABLE all_field_types TYPE string ASSERT $value == "" OR string::is::url($value);
-DEFINE FIELD role ON TABLE all_field_types TYPE string ASSERT $value INSIDE ["", "admin", "user"];
-DEFINE FIELD enum_ptr ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NULL OR $value INSIDE ["", "admin", "user"];
+DEFINE FIELD role ON TABLE all_field_types TYPE "" | "admin" | "user";
+DEFINE FIELD enum_ptr ON TABLE all_field_types TYPE option<"" | "admin" | "user" | null>;
 DEFINE FIELD roles ON TABLE all_field_types TYPE option<array | null>;
-DEFINE FIELD roles.* ON TABLE all_field_types TYPE string ASSERT $value INSIDE ["", "admin", "user"];
+DEFINE FIELD roles.* ON TABLE all_field_types TYPE "" | "admin" | "user";
 DEFINE FIELD enum_ptr_slice ON TABLE all_field_types TYPE option<array | null>;
-DEFINE FIELD enum_ptr_slice.* ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NULL OR $value INSIDE ["", "admin", "user"];
+DEFINE FIELD enum_ptr_slice.* ON TABLE all_field_types TYPE option<"" | "admin" | "user" | null>;
 DEFINE FIELD enum_ptr_slice_ptr ON TABLE all_field_types TYPE option<array | null>;
-DEFINE FIELD enum_ptr_slice_ptr.* ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NULL OR $value INSIDE ["", "admin", "user"];
+DEFINE FIELD enum_ptr_slice_ptr.* ON TABLE all_field_types TYPE option<"" | "admin" | "user" | null>;
 DEFINE FIELD login ON TABLE all_field_types TYPE object;
 DEFINE FIELD login.username ON TABLE all_field_types TYPE string;
 DEFINE FIELD login.password ON TABLE all_field_types TYPE string;
@@ -145,7 +145,7 @@ DEFINE FIELD byte_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $v
 DEFINE FIELD byte_slice ON TABLE all_field_types TYPE option<bytes | null>;
 DEFINE FIELD byte_slice_ptr ON TABLE all_field_types TYPE option<bytes | null>;
 
-DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group PERMISSIONS FULL;
+DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group ENFORCED PERMISSIONS FULL;
 DEFINE FIELD created_at ON TABLE group_member TYPE option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE;
 DEFINE FIELD updated_at ON TABLE group_member TYPE option<datetime> VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE;
 DEFINE FIELD meta ON TABLE group_member TYPE object;
