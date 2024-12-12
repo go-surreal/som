@@ -1,4 +1,4 @@
-package basic
+package main
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	newModel := &model.FieldsLikeDBResponse{
@@ -53,7 +53,7 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 func TestLiveQueries(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -160,7 +160,7 @@ func TestLiveQueries(t *testing.T) {
 func TestLiveQueriesFilter(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	liveChan, err := client.FieldsLikeDBResponseRepo().Query().
@@ -236,7 +236,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 func TestLiveQueryCount(t *testing.T) {
 	ctx := context.Background()
 
-	client, cleanup := prepareDatabase(ctx, t)
+	client, cleanup := prepareTestDatabase(ctx, t)
 	defer cleanup()
 
 	ctx, cancel := context.WithCancel(ctx)
