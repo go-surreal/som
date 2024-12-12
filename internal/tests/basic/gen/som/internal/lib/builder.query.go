@@ -103,6 +103,8 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 func (q Query[T]) render() string {
 	var out strings.Builder
 
+	// TODO: possible optimization: preallocate buffer (e.g. out.Grow(<known bytes>))
+
 	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
 
 	var t T

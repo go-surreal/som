@@ -117,9 +117,6 @@ func (b *build) buildInterfaceFile() error {
 func (b *build) buildSchemaFile() error {
 	statements := []string{string(embed.CodegenComment), ""}
 
-	// TODO: literal types
-	// https://github.com/surrealdb/surrealdb/pull/4557
-
 	var fieldFn func(table string, f field.Field, prefix string)
 	fieldFn = func(table string, f field.Field, prefix string) {
 		fieldType := f.TypeDatabase()
