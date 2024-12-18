@@ -6,7 +6,7 @@ replace github.com/go-surreal/som => ../../../
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.1.2
-	github.com/docker/docker v27.3.1+incompatible
+	github.com/docker/docker v27.4.1+incompatible
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/go-surreal/sdbc v0.9.0
 	github.com/go-surreal/som v0.7.0
@@ -65,7 +65,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.19.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/exp v0.0.0-20241210194714-1829a127f884 // indirect
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67 // indirect
 	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
