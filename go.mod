@@ -10,7 +10,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/urfave/cli/v2 v2.27.5
 	github.com/wzshiming/gotype v0.7.4
-	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 	golang.org/x/mod v0.22.0
 	gotest.tools/v3 v3.5.1
 )
