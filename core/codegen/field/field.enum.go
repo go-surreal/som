@@ -33,18 +33,18 @@ func (f *Enum) TypeDatabase() string {
 
 	sort.Strings(f.values)
 
-	var values []string
+	var formattedValues []string
 	for _, value := range f.values {
-		values = append(values, fmt.Sprintf(`"%s"`, value))
+		formattedValues = append(formattedValues, fmt.Sprintf(`"%s"`, value))
 	}
 
-	in := strings.Join(values, ", ")
+	literals := strings.Join(formattedValues, " | ")
 
 	if f.source.Pointer() {
-		return "option<string | null> ASSERT $value == NULL OR $value INSIDE [" + in + "]"
+		return "option<" + literals + " | null>"
 	}
 
-	return "string ASSERT $value INSIDE [" + in + "]"
+	return literals
 }
 
 func (f *Enum) CodeGen() *CodeGen {

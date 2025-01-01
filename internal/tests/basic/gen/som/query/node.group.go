@@ -9,8 +9,8 @@ import (
 
 func NewGroup(db Database) Builder[model.Group, conv.Group] {
 	return Builder[model.Group, conv.Group]{builder[model.Group, conv.Group]{
-		convFrom: conv.FromGroup,
-		convTo:   conv.ToGroup,
+		convFrom: conv.FromGroupPtr,
+		convTo:   conv.ToGroupPtr,
 		db:       db,
 		query:    lib.NewQuery[model.Group]("group"),
 	}}

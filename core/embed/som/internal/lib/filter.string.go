@@ -177,6 +177,8 @@ func (s *String[M]) IsUUID() *Bool[M] {
 
 // TODO: string::is::record (needed?)
 
+// TODO: string::html::encode & string::html::sanitize
+
 func (s *String[M]) Base64Decode() *ByteSlice[M] {
 	return NewByteSlice(s.Base.fn("encoding::base64::decode"))
 }

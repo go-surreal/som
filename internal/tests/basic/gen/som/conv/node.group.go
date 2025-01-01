@@ -13,22 +13,33 @@ type Group struct {
 	CreatedAt *sdbc.DateTime `cbor:"created_at,omitempty"`
 	UpdatedAt *sdbc.DateTime `cbor:"updated_at,omitempty"`
 	Name      string         `cbor:"name"`
-	Members   []GroupMember  `cbor:"members,omitempty"`
+	Members   []*GroupMember `cbor:"members,omitempty"`
 }
 
-func FromGroup(data *model.Group) *Group {
+func FromGroup(data model.Group) Group {
+	return Group{Name: data.Name}
+}
+func FromGroupPtr(data *model.Group) *Group {
 	if data == nil {
 		return nil
 	}
 	return &Group{Name: data.Name}
 }
 
-func ToGroup(data *Group) *model.Group {
+func ToGroup(data Group) model.Group {
+	return model.Group{
+		Members:    mapSliceFn(ToGroupMember)(data.Members),
+		Name:       data.Name,
+		Node:       som.NewNode(data.ID),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+	}
+}
+func ToGroupPtr(data *Group) *model.Group {
 	if data == nil {
 		return nil
 	}
 	return &model.Group{
-		Members:    mapSliceFn(noPtrFunc(ToGroupMember))(data.Members),
+		Members:    mapSliceFn(ToGroupMember)(data.Members),
 		Name:       data.Name,
 		Node:       som.NewNode(data.ID),
 		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
@@ -65,8 +76,7 @@ func fromGroupLink(link *groupLink) model.Group {
 		return model.Group{}
 	}
 	res := Group(link.Group)
-	out := ToGroup(&res)
-	return *out
+	return ToGroup(res)
 }
 
 func fromGroupLinkPtr(link *groupLink) *model.Group {
@@ -74,14 +84,15 @@ func fromGroupLinkPtr(link *groupLink) *model.Group {
 		return nil
 	}
 	res := Group(link.Group)
-	return ToGroup(&res)
+	out := ToGroup(res)
+	return &out
 }
 
 func toGroupLink(node model.Group) *groupLink {
 	if node.ID() == nil {
 		return nil
 	}
-	link := groupLink{Group: *FromGroup(&node), ID: node.ID()}
+	link := groupLink{Group: FromGroup(node), ID: node.ID()}
 	return &link
 }
 
@@ -89,6 +100,6 @@ func toGroupLinkPtr(node *model.Group) *groupLink {
 	if node == nil || node.ID() == nil {
 		return nil
 	}
-	link := groupLink{Group: *FromGroup(node), ID: node.ID()}
+	link := groupLink{Group: FromGroup(*node), ID: node.ID()}
 	return &link
 }

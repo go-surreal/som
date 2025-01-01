@@ -153,6 +153,10 @@ func (t *Time[M]) Year() *Numeric[M, int] {
 	return NewNumeric[M, int](t.fn("time::year"))
 }
 
+func (t *Time[M]) IsLeapYear() *Bool[M] {
+	return NewBool[M](t.fn("time::is::leap_year"))
+}
+
 type TimePtr[R any] struct {
 	*Time[R]
 	*Nillable[R]

@@ -1,9 +1,7 @@
-go 1.23
-
-toolchain go1.23.1
+go 1.23.4
 
 use (
 	.
-	internal/tests/basic
 	exp
+	internal/tests/basic
 )

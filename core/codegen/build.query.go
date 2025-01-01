@@ -50,8 +50,8 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 							Values(jen.Dict{
 								jen.Id("db"):       jen.Id("db"),
 								jen.Id("query"):    jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
-								jen.Id("convFrom"): jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()),
-								jen.Id("convTo"):   jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()),
+								jen.Id("convFrom"): jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()+"Ptr"),
+								jen.Id("convTo"):   jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()+"Ptr"),
 							}),
 					),
 			),

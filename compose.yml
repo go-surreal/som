@@ -3,8 +3,13 @@
 services:
 
   surrealdb:
-    image: surrealdb/surrealdb:v1.5.4
-    command: start --auth --user root --pass root --strict --allow-funcs --log trace file:data/surreal
+    image: surrealdb/surrealdb:v2.1.4
+    command: start --allow-funcs --log trace
+    environment:
+      SURREAL_PATH: surrealkv:data/surreal,
+      SURREAL_STRICT: true,
+      SURREAL_USER": root,
+      SURREAL_PASS": root,
     ports:
       - "8020:8000"
     volumes:

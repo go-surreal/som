@@ -27,8 +27,8 @@ func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
 	return &allFieldTypes{repo: &repo[model.AllFieldTypes, conv.AllFieldTypes]{
 		db:       c.db,
 		name:     "all_field_types",
-		convTo:   conv.ToAllFieldTypes,
-		convFrom: conv.FromAllFieldTypes}}
+		convTo:   conv.ToAllFieldTypesPtr,
+		convFrom: conv.FromAllFieldTypesPtr}}
 }
 
 type allFieldTypes struct {

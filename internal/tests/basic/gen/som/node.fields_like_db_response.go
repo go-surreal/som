@@ -27,8 +27,8 @@ func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
 	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
 		db:       c.db,
 		name:     "fields_like_db_response",
-		convTo:   conv.ToFieldsLikeDBResponse,
-		convFrom: conv.FromFieldsLikeDBResponse}}
+		convTo:   conv.ToFieldsLikeDBResponsePtr,
+		convFrom: conv.FromFieldsLikeDBResponsePtr}}
 }
 
 type fieldsLikeDbresponse struct {

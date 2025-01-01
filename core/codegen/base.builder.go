@@ -162,12 +162,6 @@ func (b *build) buildSchemaFile() error {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
 		statements = append(statements, statement)
 
-		statement = fmt.Sprintf(
-			`DEFINE FIELD id ON TABLE %s TYPE record<%s> ASSERT $value != NONE AND $value != NULL AND $value != "";`,
-			node.NameDatabase(), node.NameDatabase(),
-		)
-		statements = append(statements, statement)
-
 		for _, f := range node.GetFields() {
 			fieldFn(node.NameDatabase(), f, "")
 		}
@@ -177,7 +171,7 @@ func (b *build) buildSchemaFile() error {
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s PERMISSIONS FULL;",
+			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
 			edge.Out.NameDatabase(), // can be OR'ed with "|"
@@ -276,11 +270,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()),
+								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()+"Ptr"),
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()),
+								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()+"Ptr"),
 							),
 						),
 				),
