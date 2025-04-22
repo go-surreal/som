@@ -80,7 +80,7 @@ jobs:
         run: go version
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           version: "v${{ steps.asdf.outputs.golangci-lint_version }}"
           working-directory: .
