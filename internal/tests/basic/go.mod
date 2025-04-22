@@ -1,7 +1,8 @@
 module github.com/go-surreal/som/tests/basic
 
-go 1.22.7
-toolchain go1.23.7
+go 1.23.0
+
+toolchain go1.24.2
 
 replace github.com/go-surreal/som => ../../../
 
@@ -66,7 +67,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.19.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67 // indirect
+	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
 	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
