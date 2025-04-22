@@ -313,7 +313,7 @@ tbd.
 - there are some different labels for issues and pull requests (e.g. bug and fix)
 - the labels on pull requests resemble the conventional commits specification
 - the "highest" label should then be used for the final commit message (e.g. feat above fix, or fix above refactor)
-  - TODO: create exhaustive list of label order
+- TODO: create exhaustive list of label order
 
 ## FAQ
 
@@ -323,6 +323,12 @@ You can find a separate document for the FAQs [here](FAQ.md).
 
 Please take a look at the [MAINTAINERS.md](MAINTAINERS.md) file.
 
+## Inspiration
+
+- https://github.com/bokwoon95/sq
+- https://github.com/go-jet/jet
+- https://github.com/Blitzapps/blitz-orm
+
 ## References
 
 - [Official SurrealDB documentation](https://surrealdb.com/docs)
@@ -330,6 +336,11 @@ Please take a look at the [MAINTAINERS.md](MAINTAINERS.md) file.
 https://www.npmjs.com/package/suorm
 https://www.prisma.io/docs/concepts/components/prisma-migrate
 https://github.com/Odonno/surrealdb-migrations/tree/main/templates
+https://go-rel.github.io/
 
 // som hooks:
 // Note: When using the hooks in a multi-node application setup, it will only trigger on the node that triggers the change.
+
+## TODOs
+
+- Record References ("Cascade") (https://github.com/surrealdb/surrealdb/pull/5300)

@@ -3,8 +3,8 @@ package def
 import "github.com/go-surreal/som/exp/def/field"
 
 type Struct struct {
-	Pkg        string
-	Name       string
+	*Base
+
 	TypeParams []TypeParam
 	Fields     []field.Field
 }
@@ -14,7 +14,7 @@ func (s *Struct) String() string {
 }
 
 func (s *Struct) describe(actualType string) string {
-	out := s.Pkg + "." + s.Name + ": " + actualType + "(\n"
+	out := s.Package + "." + s.Name + ": " + actualType + "(\n"
 
 	if len(s.TypeParams) > 0 {
 		out += "  TypeParams(\n"
@@ -39,13 +39,4 @@ func (s *Struct) describe(actualType string) string {
 	out += ")"
 
 	return out
-}
-
-type TypeParam struct {
-	Name  string
-	Field field.Field
-}
-
-func (tp *TypeParam) String() string {
-	return tp.Name + ": " + tp.Field.String()
 }

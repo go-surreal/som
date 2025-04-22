@@ -39,6 +39,7 @@ type D[T any] bool
 type a int
 type B a
 type V sdir.X
+type user2 User
 
 func X() {
 	// this is a function declaration

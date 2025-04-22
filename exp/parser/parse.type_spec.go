@@ -50,7 +50,7 @@ func parseIdent(spec *ast.TypeSpec, ident *ast.Ident) error {
 		return nil
 	}
 
-	fmt.Println("IDENT:", spec.Name.Obj.Decl, spec.Name, spec.Name.IsExported(), ident.Name)
+	fmt.Println("IDENT:", spec.Name.Obj.Decl, spec.Name, spec.Name.IsExported(), ident.Name, ident.)
 
 	return nil
 }

@@ -1,6 +1,6 @@
 module github.com/go-surreal/som/exp
 
-go 1.23
+go 1.24.1
 
 require (
 	github.com/go-surreal/som v0.6.3

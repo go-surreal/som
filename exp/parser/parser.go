@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/go-surreal/som/exp/def"
 	"go/ast"
@@ -17,21 +19,15 @@ const (
 )
 
 type Parser struct {
-	fileSet *token.FileSet
-
 	imports []*def.Import
 	nodes   []*def.Node
 	edges   []*def.Edge
 	structs []*def.Struct
 }
 
-func NewParser() *Parser {
-	return &Parser{
-		fileSet: token.NewFileSet(),
-	}
-}
+func Parse(ctx context.Context, path string) (*Parser, error) {
+	p := new(Parser)
 
-func (p *Parser) Parse(path string) error {
 	startTime := time.Now()
 	defer func() {
 		slog.Debug("Parsing completed.",
@@ -40,80 +36,23 @@ func (p *Parser) Parse(path string) error {
 	}()
 
 	config := &packages.Config{
-		Fset: p.fileSet,
-		Mode: mode,
+		Fset:    token.NewFileSet(),
+		Mode:    mode,
+		Context: ctx,
 	}
 
 	pkgs, err := packages.Load(config, path)
 	if err != nil {
-		return fmt.Errorf("could not load packages: %w", err)
+		return nil, fmt.Errorf("could not load packages: %w", err)
 	}
 
 	for _, pkg := range pkgs {
 		if err := p.parsePackage(pkg); err != nil {
-			return fmt.Errorf("could not parse package: %w", err)
+			return nil, fmt.Errorf("could not parse package: %w", err)
 		}
 	}
 
-	//fileSet := token.NewFileSet()
-	//
-	//pkgs, err := parser.ParseDir(fileSet, path,
-	//	func(info os.FileInfo) bool {
-	//		return strings.HasSuffix(info.Name(), ".go")
-	//	},
-	//	parser.AllErrors,
-	//)
-	//if err != nil {
-	//	return fmt.Errorf("could not parse code in source path: %w", err)
-	//}
-	//
-	//for _, pkg := range pkgs {
-	//	conf := types.Config{
-	//		Importer: &customImporter{def: importer.Default()},
-	//	}
-	//
-	//	// Create type-checking info
-	//	info := &types.Info{
-	//		Types:      make(map[ast.Expr]types.TypeAndValue),
-	//		Defs:       make(map[*ast.Ident]types.Object),
-	//		Uses:       make(map[*ast.Ident]types.Object),
-	//		Implicits:  make(map[ast.Node]types.Object),
-	//		Scopes:     make(map[ast.Node]*types.Scope),
-	//		Selections: make(map[*ast.SelectorExpr]*types.Selection),
-	//	}
-	//
-	//	// Create the package to type-check
-	//	var files []*ast.File
-	//	for _, file := range pkg.Files {
-	//		files = append(files, file)
-	//	}
-	//
-	//	// Type-check the package
-	//	_, err := conf.Check(pkg.Name, fileSet, files, info)
-	//	if err != nil {
-	//		return fmt.Errorf("could not type-check package: %w", err)
-	//	}
-	//
-	//	for a, b := range info.Types {
-	//		fmt.Println(a, b)
-	//	}
-	//}
-
-	//if len(pkgs) < 1 {
-	//	return errors.New("no packages found in source path")
-	//}
-	//
-	//if len(pkgs) > 1 {
-	//	return errors.New("more than one package found in source path")
-	//}
-	//
-	//for pkg := range maps.Values(pkgs) {
-	//	if err := p.parse(pkg); err != nil {
-	//		return fmt.Errorf("could not parse package: %w", err)
-	//	}
-	//}
-
-	return nil
+	return p, nil
 }
 
 func (p *Parser) parsePackage(pkg *packages.Package) error {
@@ -127,23 +66,35 @@ func (p *Parser) parsePackage(pkg *packages.Package) error {
 }
 
 func (p *Parser) parseFile(fileAst *ast.File, info *types.Info) error {
-	// TODO: use ast.Walk() instead?
+	v := &visitor{parser: p, info: info}
 
-	for expr, typ := range info.Types {
-		fmt.Println(expr, typ)
-	}
+	ast.Walk(v, fileAst)
 
-	for node := range ast.Preorder(fileAst) {
-		switch mappedNode := node.(type) {
+	return v.err
+}
 
-		case *ast.TypeSpec:
-			if err := p.parseType(mappedNode, info); err != nil {
-				return fmt.Errorf("could not parse type spec: %w", err)
-			}
+//
+// -- VISITOR
+//
+
+type visitor struct {
+	parser *Parser
+	info   *types.Info
+	err    error
+}
+
+func (v *visitor) Visit(node ast.Node) ast.Visitor {
+	switch mappedNode := node.(type) {
+	case *ast.TypeSpec:
+		// Process type specifications
+		fmt.Println("TypeSpec:", mappedNode.Name.Name)
+		// Additional processing as needed
+		// Handle other node types as required
+		if err := v.parser.parseType(mappedNode, v.info); err != nil {
+			v.err = errors.Join(v.err, fmt.Errorf("could not parse type spec: %w", err))
 		}
 	}
-
-	return nil
+	return v
 }
 
 func findInPackage(pkg *packages.Package, fset *token.FileSet) {

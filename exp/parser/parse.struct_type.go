@@ -18,8 +18,10 @@ func (p *Parser) parseStructType(spec *ast.TypeSpec, structType *ast.StructType,
 	}
 
 	structDef := &def.Struct{
-		Pkg:  infoDef.Pkg().Path(),
-		Name: spec.Name.Name,
+		Base: &def.Base{
+			Package: infoDef.Pkg().Path(),
+			Name:    spec.Name.Name,
+		},
 	}
 
 	if spec.TypeParams != nil {
