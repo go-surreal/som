@@ -6,15 +6,15 @@ toolchain go1.23.7
 replace github.com/go-surreal/som => ../../../
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.1.2
-	github.com/docker/docker v28.0.1+incompatible
-	github.com/fxamacker/cbor/v2 v2.7.0
-	github.com/go-surreal/sdbc v0.9.0
+	github.com/brianvoe/gofakeit/v7 v7.2.1
+	github.com/docker/docker v28.1.1+incompatible
+	github.com/fxamacker/cbor/v2 v2.8.0
+	github.com/go-surreal/sdbc v0.9.2
 	github.com/go-surreal/som v0.7.0
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/testcontainers/testcontainers-go v0.34.0
-	gotest.tools/v3 v3.5.1
+	github.com/testcontainers/testcontainers-go v0.37.0
+	gotest.tools/v3 v3.5.2
 )
 
 require (
