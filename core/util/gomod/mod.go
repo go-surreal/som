@@ -19,7 +19,7 @@ const (
 
 	requiredSOMVersion = "v0.7.0"
 
-	requiredSDBCVersion = "v0.9.0"
+	requiredSDBCVersion = "v0.9.2"
 )
 
 type GoMod struct {
