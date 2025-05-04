@@ -2,7 +2,7 @@ module github.com/go-surreal/som
 
 go 1.23.7
 
-retract [v0.1.0, v0.6.4] // only the latest version is supported for now
+retract [v0.1.0, v0.7.0] // only the latest version is supported for now
 
 require (
 	github.com/dave/jennifer v1.7.1
@@ -17,7 +17,7 @@ require (
 
 require (
 	github.com/coder/websocket v1.8.13 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/fxamacker/cbor/v2 v2.8.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
