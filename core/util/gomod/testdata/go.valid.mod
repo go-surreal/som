@@ -1,6 +1,6 @@
 module test
 
-go 1.22
+go 1.23
 
 require (
     github.com/go-surreal/som v0.4.0
