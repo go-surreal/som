@@ -62,6 +62,11 @@ func Read(tmpl *Template) ([]*File, error) {
 
 		path = strings.TrimPrefix(path, baseDir+string(filepath.Separator))
 
+		// Check if the file ends with ".tmpl" and replace it with ".go"
+		if strings.HasSuffix(path, ".tmpl") {
+			path = strings.TrimSuffix(path, ".tmpl") + ".go"
+		}
+
 		files = append(files, &File{
 			Path:    path,
 			Content: bytes.Replace(buf.Bytes(), embedComment, CodegenComment, 1),
