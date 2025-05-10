@@ -2,7 +2,9 @@
 
 package lib
 
-import "github.com/go-surreal/som"
+import (
+	"github.com/go-surreal/som/core/embed/som/som"
+)
 
 type ID[M any] struct {
 	key  Key[M]

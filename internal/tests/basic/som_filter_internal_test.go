@@ -2,7 +2,7 @@ package basic
 
 import (
 	"context"
-	sombase "github.com/go-surreal/som"
+	sombase "github.com/go-surreal/som/core/embed/som/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"

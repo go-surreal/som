@@ -3,7 +3,7 @@ package basic
 import (
 	"context"
 	"github.com/go-surreal/sdbc"
-	sombase "github.com/go-surreal/som"
+	sombase "github.com/go-surreal/som/core/embed/som/som"
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"

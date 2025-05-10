@@ -3,7 +3,7 @@
 package lib
 
 import (
-	"github.com/go-surreal/som"
+	"github.com/go-surreal/som/core/embed/som/som"
 )
 
 // SemVer is a filter builder for string values.
