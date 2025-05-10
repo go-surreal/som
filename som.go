@@ -23,6 +23,8 @@ func (n Node) ID() *ID {
 	return n.id
 }
 
+func (n Node) union() {}
+
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
@@ -37,6 +39,11 @@ func NewEdge(id *ID) Edge {
 
 func (e Edge) ID() *ID {
 	return e.id
+}
+
+type Union interface {
+	ID() string
+	union()
 }
 
 type Timestamps struct {
