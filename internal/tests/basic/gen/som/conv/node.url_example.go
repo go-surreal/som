@@ -3,14 +3,14 @@ package conv
 
 import (
 	v2 "github.com/fxamacker/cbor/v2"
-	som "github.com/go-surreal/som"
+	sombase "github.com/go-surreal/som/tests/basic/gen/som/sombase"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type URLExample struct {
-	ID           *som.ID `cbor:"id,omitempty"`
-	SomeURL      *string `cbor:"some_url"`
-	SomeOtherURL string  `cbor:"some_other_url"`
+	ID           *sombase.ID `cbor:"id,omitempty"`
+	SomeURL      *string     `cbor:"some_url"`
+	SomeOtherURL string      `cbor:"some_other_url"`
 }
 
 func FromURLExample(data model.URLExample) URLExample {
@@ -31,7 +31,7 @@ func FromURLExamplePtr(data *model.URLExample) *URLExample {
 
 func ToURLExample(data URLExample) model.URLExample {
 	return model.URLExample{
-		Node:         som.NewNode(data.ID),
+		Node:         sombase.NewNode(data.ID),
 		SomeOtherURL: toURL(data.SomeOtherURL),
 		SomeURL:      toURLPtr(data.SomeURL),
 	}
@@ -41,7 +41,7 @@ func ToURLExamplePtr(data *URLExample) *model.URLExample {
 		return nil
 	}
 	return &model.URLExample{
-		Node:         som.NewNode(data.ID),
+		Node:         sombase.NewNode(data.ID),
 		SomeOtherURL: toURL(data.SomeOtherURL),
 		SomeURL:      toURLPtr(data.SomeURL),
 	}
@@ -49,7 +49,7 @@ func ToURLExamplePtr(data *URLExample) *model.URLExample {
 
 type urlexampleLink struct {
 	URLExample
-	ID *som.ID
+	ID *sombase.ID
 }
 
 func (f *urlexampleLink) MarshalCBOR() ([]byte, error) {

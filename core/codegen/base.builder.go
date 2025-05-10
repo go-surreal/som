@@ -24,6 +24,23 @@ type build struct {
 	outPkg string
 }
 
+func BuildStatic(fs *fs.FS, outPkg string) error {
+	tmpl := &embed.Template{
+		GenerateOutPath: outPkg,
+	}
+
+	files, err := embed.Read(tmpl)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		fs.Write(file.Path, file.Content)
+	}
+
+	return nil
+}
+
 func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
 	in, err := newInput(source)
 	if err != nil {
@@ -40,10 +57,6 @@ func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
 }
 
 func (b *build) build() error {
-	if err := b.embedStaticFiles(); err != nil {
-		return err
-	}
-
 	if err := b.buildInterfaceFile(); err != nil {
 		return err
 	}
@@ -71,23 +84,6 @@ func (b *build) build() error {
 		if err := builder.build(); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (b *build) embedStaticFiles() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Read(tmpl)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		b.fs.Write(file.Path, file.Content)
 	}
 
 	return nil
@@ -220,7 +216,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(def.PkgSom, "ID"),
+			jen.Id("id").Op("*").Qual(b.subPkg("sombase"), "ID"),
 		).Parens(jen.List(
 			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Bool(),
@@ -378,7 +374,7 @@ The returned bool indicates whether the record was found or not.
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(def.PkgSom, "ID"),
+			jen.Id("id").Op("*").Qual(b.subPkg("sombase"), "ID"),
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(

@@ -4,13 +4,13 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	sdbc "github.com/go-surreal/sdbc"
-	som "github.com/go-surreal/som"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	sombase "github.com/go-surreal/som/tests/basic/gen/som/sombase"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type AllFieldTypes struct {
-	ID                 *som.ID           `cbor:"id,omitempty"`
+	ID                 *sombase.ID       `cbor:"id,omitempty"`
 	CreatedAt          *sdbc.DateTime    `cbor:"created_at,omitempty"`
 	UpdatedAt          *sdbc.DateTime    `cbor:"updated_at,omitempty"`
 	String             string            `cbor:"string"`
@@ -290,7 +290,7 @@ func ToAllFieldTypes(data AllFieldTypes) model.AllFieldTypes {
 		MainGroup:          fromGroupLink(data.MainGroup),
 		MainGroupPtr:       fromGroupLinkPtr(data.MainGroupPtr),
 		MemberOf:           mapSliceFn(ToGroupMember)(data.MemberOf),
-		Node:               som.NewNode(data.ID),
+		Node:               sombase.NewNode(data.ID),
 		NodePtrSlice:       mapSliceFn(fromGroupLinkPtr)(data.NodePtrSlice),
 		NodePtrSlicePtr:    mapSliceFnPtr(fromGroupLinkPtr)(data.NodePtrSlicePtr),
 		Other:              data.Other,
@@ -313,7 +313,7 @@ func ToAllFieldTypes(data AllFieldTypes) model.AllFieldTypes {
 		TimePtr:            toTimePtr(data.TimePtr),
 		TimeSlice:          mapSliceFn(toTime)(data.TimeSlice),
 		TimeSliceSlice:     mapSliceFn(mapSliceFn(toTime))(data.TimeSliceSlice),
-		Timestamps:         som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		Timestamps:         sombase.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		URL:                toURL(data.URL),
 		URLNil:             toURLPtr(data.URLNil),
 		URLPtr:             toURLPtr(data.URLPtr),
@@ -373,7 +373,7 @@ func ToAllFieldTypesPtr(data *AllFieldTypes) *model.AllFieldTypes {
 		MainGroup:          fromGroupLink(data.MainGroup),
 		MainGroupPtr:       fromGroupLinkPtr(data.MainGroupPtr),
 		MemberOf:           mapSliceFn(ToGroupMember)(data.MemberOf),
-		Node:               som.NewNode(data.ID),
+		Node:               sombase.NewNode(data.ID),
 		NodePtrSlice:       mapSliceFn(fromGroupLinkPtr)(data.NodePtrSlice),
 		NodePtrSlicePtr:    mapSliceFnPtr(fromGroupLinkPtr)(data.NodePtrSlicePtr),
 		Other:              data.Other,
@@ -396,7 +396,7 @@ func ToAllFieldTypesPtr(data *AllFieldTypes) *model.AllFieldTypes {
 		TimePtr:            toTimePtr(data.TimePtr),
 		TimeSlice:          mapSliceFn(toTime)(data.TimeSlice),
 		TimeSliceSlice:     mapSliceFn(mapSliceFn(toTime))(data.TimeSliceSlice),
-		Timestamps:         som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		Timestamps:         sombase.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 		URL:                toURL(data.URL),
 		URLNil:             toURLPtr(data.URLNil),
 		URLPtr:             toURLPtr(data.URLPtr),
@@ -416,7 +416,7 @@ func ToAllFieldTypesPtr(data *AllFieldTypes) *model.AllFieldTypes {
 
 type allFieldTypesLink struct {
 	AllFieldTypes
-	ID *som.ID
+	ID *sombase.ID
 }
 
 func (f *allFieldTypesLink) MarshalCBOR() ([]byte, error) {

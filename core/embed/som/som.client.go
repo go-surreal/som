@@ -6,23 +6,22 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-surreal/sdbc"
-	"github.com/go-surreal/som"
 )
+
+type ID = sdbc.ID
 
 type Database interface {
 	Create(ctx context.Context, id sdbc.RecordID, data any) ([]byte, error)
-	Select(ctx context.Context, id *som.ID) ([]byte, error)
+	Select(ctx context.Context, id *ID) ([]byte, error)
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	Update(ctx context.Context, id *som.ID, data any) ([]byte, error)
-	Delete(ctx context.Context, id *som.ID) ([]byte, error)
+	Update(ctx context.Context, id *ID, data any) ([]byte, error)
+	Delete(ctx context.Context, id *ID) ([]byte, error)
 
 	Marshal(val any) ([]byte, error)
 	Unmarshal(buf []byte, val any) error
 	Close() error
 }
-
-type ID = som.ID
 
 type Config = sdbc.Config
 

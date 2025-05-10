@@ -11,9 +11,9 @@ import (
 	"strings"
 )
 
-const packagePath = "github.com/go-surreal/som"
+func Parse(dir string, outPkg string) (*Output, error) {
+	packagePath := path.Join(outPkg, "sombase")
 
-func Parse(dir string) (*Output, error) {
 	res := &Output{}
 
 	imp := gotype.NewImporter()
@@ -56,9 +56,9 @@ func Parse(dir string) (*Output, error) {
 				continue
 			}
 
-		case isNode(v):
+		case isNode(v, outPkg):
 			{
-				node, err := parseNode(v)
+				node, err := parseNode(v, outPkg)
 				if err != nil {
 					return nil, err
 				}
@@ -66,9 +66,9 @@ func Parse(dir string) (*Output, error) {
 				continue
 			}
 
-		case isEdge(v):
+		case isEdge(v, outPkg):
 			{
-				edge, err := parseEdge(v)
+				edge, err := parseEdge(v, outPkg)
 				if err != nil {
 					return nil, err
 				}
@@ -80,7 +80,7 @@ func Parse(dir string) (*Output, error) {
 			{
 				// TODO: prevent external structs!
 
-				str, err := parseStruct(v)
+				str, err := parseStruct(v, outPkg)
 				if err != nil {
 					return nil, err
 				}
@@ -116,7 +116,9 @@ func Parse(dir string) (*Output, error) {
 	return res, nil
 }
 
-func isNode(t gotype.Type) bool {
+func isNode(t gotype.Type, outPkg string) bool {
+	packagePath := path.Join(outPkg, "sombase")
+
 	if t.Kind() != gotype.Struct {
 		return false
 	}
@@ -127,7 +129,7 @@ func isNode(t gotype.Type) bool {
 		f := t.Field(i)
 
 		if f.Name() == "Node" && f.Elem().Name() == "Node" &&
-			f.Elem().String() == "som.Node" && f.Elem().PkgPath() == packagePath {
+			f.Elem().PkgPath() == packagePath {
 			return true
 		}
 	}
@@ -135,7 +137,9 @@ func isNode(t gotype.Type) bool {
 	return false
 }
 
-func isEdge(t gotype.Type) bool {
+func isEdge(t gotype.Type, outPkg string) bool {
+	packagePath := path.Join(outPkg, "sombase")
+
 	if t.Kind() != gotype.Struct {
 		return false
 	}
@@ -146,7 +150,7 @@ func isEdge(t gotype.Type) bool {
 		f := t.Field(i)
 
 		if f.Name() == "Edge" && f.Elem().Name() == "Edge" &&
-			f.Elem().String() == "som.Edge" && f.Elem().PkgPath() == packagePath {
+			f.Elem().PkgPath() == packagePath {
 			return true
 		}
 	}
@@ -154,7 +158,9 @@ func isEdge(t gotype.Type) bool {
 	return false
 }
 
-func isEnum(t gotype.Type) bool {
+func isEnum(t gotype.Type, outPkg string) bool {
+	packagePath := path.Join(outPkg, "sombase")
+
 	if t.Kind() != gotype.String {
 		return false
 	}
@@ -162,7 +168,9 @@ func isEnum(t gotype.Type) bool {
 	return t.String() != "string" && t.PkgPath() == packagePath // TODO: might not be an enum..?!
 }
 
-func parseNode(v gotype.Type) (*Node, error) {
+func parseNode(v gotype.Type, outPkg string) (*Node, error) {
+	packagePath := path.Join(outPkg, "sombase")
+
 	node := &Node{Name: v.Name()}
 
 	nf := v.NumField()
@@ -211,7 +219,7 @@ func parseNode(v gotype.Type) (*Node, error) {
 			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Node", v.Name())
 		}
 
-		field, err := parseField(f)
+		field, err := parseField(f, outPkg)
 		if err != nil {
 			return nil, err
 		}
@@ -222,7 +230,9 @@ func parseNode(v gotype.Type) (*Node, error) {
 	return node, nil
 }
 
-func parseEdge(v gotype.Type) (*Edge, error) {
+func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
+	packagePath := path.Join(outPkg, "sombase")
+
 	edge := &Edge{Name: v.Name()}
 
 	nf := v.NumField()
@@ -271,7 +281,7 @@ func parseEdge(v gotype.Type) (*Edge, error) {
 			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Edge", v.Name())
 		}
 
-		field, err := parseField(f)
+		field, err := parseField(f, outPkg)
 		if err != nil {
 			return nil, err
 		}
@@ -292,7 +302,7 @@ func parseEdge(v gotype.Type) (*Edge, error) {
 	return edge, nil
 }
 
-func parseStruct(v gotype.Type) (*Struct, error) {
+func parseStruct(v gotype.Type, outPkg string) (*Struct, error) {
 	str := &Struct{Name: v.Name()}
 
 	nf := v.NumField()
@@ -300,7 +310,7 @@ func parseStruct(v gotype.Type) (*Struct, error) {
 	for i := 0; i < nf; i++ {
 		f := v.Field(i)
 
-		field, err := parseField(f)
+		field, err := parseField(f, outPkg)
 		if err != nil {
 			return nil, err
 		}
@@ -311,7 +321,7 @@ func parseStruct(v gotype.Type) (*Struct, error) {
 	return str, nil
 }
 
-func parseField(t gotype.Type) (Field, error) {
+func parseField(t gotype.Type, outPkg string) (Field, error) {
 	atomic := &fieldAtomic{
 		name:    t.Name(),
 		pointer: false,
@@ -322,7 +332,7 @@ func parseField(t gotype.Type) (Field, error) {
 	case gotype.String:
 		{
 			switch {
-			case isEnum(t.Elem()):
+			case isEnum(t.Elem(), outPkg):
 				{
 					return &FieldEnum{atomic, t.Elem().Name()}, nil
 				}
@@ -435,11 +445,11 @@ func parseField(t gotype.Type) (Field, error) {
 				{
 					return &FieldURL{atomic}, nil
 				}
-			case isNode(t.Elem()):
+			case isNode(t.Elem(), outPkg):
 				{
 					return &FieldNode{atomic, t.Elem().Name()}, nil
 				}
-			case isEdge(t.Elem()):
+			case isEdge(t.Elem(), outPkg):
 				{
 					return &FieldEdge{atomic, t.Elem().Name()}, nil
 				}
@@ -452,7 +462,7 @@ func parseField(t gotype.Type) (Field, error) {
 
 	case gotype.Slice:
 		{
-			field, err := parseField(t.Elem())
+			field, err := parseField(t.Elem(), outPkg)
 			if err != nil {
 				return nil, err
 			}
@@ -472,7 +482,7 @@ func parseField(t gotype.Type) (Field, error) {
 
 	case gotype.Ptr:
 		{
-			field, err := parseField(t.Elem())
+			field, err := parseField(t.Elem(), outPkg)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse elem for ptr field %s: %v", t.Name(), err)
 			}
