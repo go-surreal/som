@@ -11,15 +11,15 @@ import (
 const fileGoMod = "go.mod"
 
 const (
-	minSupportedGoVersion = "1.22"    // suffix '.0' omitted on purpose!
-	maxSupportedGoVersion = "1.22.99" // allow for future patch versions
+	minSupportedGoVersion = "1.23"    // suffix '.0' omitted on purpose!
+	maxSupportedGoVersion = "1.23.99" // allow for future patch versions
 
 	pkgSOM  = "github.com/go-surreal/som"
 	pkgSDBC = "github.com/go-surreal/sdbc"
 
-	requiredSOMVersion = "v0.7.0"
+	requiredSOMVersion = "v0.7.1"
 
-	requiredSDBCVersion = "v0.9.0"
+	requiredSDBCVersion = "v0.9.2"
 )
 
 type GoMod struct {
