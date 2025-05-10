@@ -13,6 +13,28 @@ can be created at any point and linked back to this document.
 
 ## Features
 
+### Optional Model History
+
+History for a record is only created if some other records link to it.
+So as long as there is no reference to a record it can be updated without creating a history record.
+As soon as a record is referenced, the history is created and the (old) record is immutable.
+
+How to handle further references?
+Imagine a setup order -> product -> stock.
+The product points to a stock record, which represents the current stock data.
+Now an order references a product and therefore creates a history record for the product.
+Now the product would also need to point to a history record of the stock.
+But by already pointing to a stock, said stock record would by definition already be a history record.
+Yet it would only need to become one when the product becomes a history record.
+It is basically a cascade situation here.
+
+Possible solution:
+RecordRefs can be marked either "default", "historical" or "dependent?".
+- default: the reference will point to the current record
+- historical: the reference will point to a history record created as soon as the record is referenced
+- dependent: the reference will point to the current record as long as the referencing record is not a history record.
+  As soon as the referencing record becomes a history record, the reference will point to a history record of the referenced record.
+
 ### Views
 
 ```
