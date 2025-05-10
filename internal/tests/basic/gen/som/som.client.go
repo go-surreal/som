@@ -24,14 +24,7 @@ type Database interface {
 
 type ID = som.ID
 
-type Config struct {
-	Host      string
-	Secure    bool
-	Username  string
-	Password  string
-	Namespace string
-	Database  string
-}
+type Config = sdbc.Config
 
 type ClientImpl struct {
 	db Database
