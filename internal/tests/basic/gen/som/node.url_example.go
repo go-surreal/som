@@ -4,10 +4,10 @@ package som
 import (
 	"context"
 	"errors"
-	som "github.com/go-surreal/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
+	sombase "github.com/go-surreal/som/tests/basic/gen/som/sombase"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -15,7 +15,7 @@ type URLExampleRepo interface {
 	Query() query.Builder[model.URLExample, conv.URLExample]
 	Create(ctx context.Context, urlexample *model.URLExample) error
 	CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error
-	Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error)
+	Read(ctx context.Context, id *sombase.ID) (*model.URLExample, bool, error)
 	Update(ctx context.Context, urlexample *model.URLExample) error
 	Delete(ctx context.Context, urlexample *model.URLExample) error
 	Refresh(ctx context.Context, urlexample *model.URLExample) error
@@ -65,7 +65,7 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
-func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error) {
+func (r *urlexample) Read(ctx context.Context, id *sombase.ID) (*model.URLExample, bool, error) {
 	return r.read(ctx, id)
 }
 

@@ -4,10 +4,10 @@ package som
 import (
 	"context"
 	"errors"
-	som "github.com/go-surreal/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
+	sombase "github.com/go-surreal/som/tests/basic/gen/som/sombase"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -15,7 +15,7 @@ type AllFieldTypesRepo interface {
 	Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes]
 	Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error
-	Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error)
+	Read(ctx context.Context, id *sombase.ID) (*model.AllFieldTypes, bool, error)
 	Update(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	Delete(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	Refresh(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
@@ -65,7 +65,7 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
-func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error) {
+func (r *allFieldTypes) Read(ctx context.Context, id *sombase.ID) (*model.AllFieldTypes, bool, error) {
 	return r.read(ctx, id)
 }
 

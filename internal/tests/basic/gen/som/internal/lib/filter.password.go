@@ -3,18 +3,18 @@
 package lib
 
 import (
-	"github.com/go-surreal/som/core/embed/som/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/sombase"
 )
 
 // Password is a filter builder for password values.
 // M is the model this filter is for.
 type Password[M any] struct {
-	*Base[M, som.Password, *Password[M], *Slice[M, som.Password, *Password[M]]]
+	*Base[M, sombase.Password, *Password[M], *Slice[M, sombase.Password, *Password[M]]]
 }
 
 func NewPassword[M any](key Key[M]) *Password[M] {
 	return &Password[M]{
-		Base: NewBase[M, som.Password, *Password[M], *Slice[M, som.Password, *Password[M]]](key),
+		Base: NewBase[M, sombase.Password, *Password[M], *Slice[M, sombase.Password, *Password[M]]](key),
 	}
 }
 

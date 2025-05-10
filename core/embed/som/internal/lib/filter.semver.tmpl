@@ -3,22 +3,22 @@
 package lib
 
 import (
-	"github.com/go-surreal/som/core/embed/som/som"
+	sombase "{{.GenerateOutPath}}/sombase"
 )
 
 // SemVer is a filter builder for string values.
 // M is the model this filter is for.
 type SemVer[M any] struct {
-	*Base[M, som.SemVer, *SemVer[M], *Slice[M, som.SemVer, *SemVer[M]]]
+	*Base[M, sombase.SemVer, *SemVer[M], *Slice[M, sombase.SemVer, *SemVer[M]]]
 }
 
 func NewSemVer[M any](key Key[M]) *SemVer[M] {
 	return &SemVer[M]{
-		Base: NewBase[M, som.SemVer, *SemVer[M], *Slice[M, som.SemVer, *SemVer[M]]](key),
+		Base: NewBase[M, sombase.SemVer, *SemVer[M], *Slice[M, sombase.SemVer, *SemVer[M]]](key),
 	}
 }
 
-func (b *SemVer[M]) Compare(other som.SemVer) *Numeric[M, int] {
+func (b *SemVer[M]) Compare(other sombase.SemVer) *Numeric[M, int] {
 	return NewNumeric[M, int](b.fn("string::semver::compare", other))
 }
 

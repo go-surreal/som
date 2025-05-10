@@ -4,6 +4,7 @@ import (
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
+	"path/filepath"
 )
 
 type Time struct {
@@ -96,9 +97,9 @@ func (f *Time) convFrom(_ Context) (jen.Code, jen.Code) {
 		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
-func (f *Time) convTo(_ Context) (jen.Code, jen.Code) {
+func (f *Time) convTo(ctx Context) (jen.Code, jen.Code) {
 	if f.source.IsCreatedAt {
-		return jen.Qual(def.PkgSom, "NewTimestamps"),
+		return jen.Qual(filepath.Join(ctx.TargetPkg, "sombase"), "NewTimestamps"),
 			jen.Call(
 				jen.Id("data").Dot("CreatedAt"),
 				jen.Id("data").Dot("UpdatedAt"),

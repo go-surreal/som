@@ -79,7 +79,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		f.Line()
 		f.Type().Id(node.NameGoLower()+"Link").Struct(
 			jen.Id(node.NameGo()),
-			jen.Id("ID").Op("*").Qual(def.PkgSom, "ID"),
+			jen.Id("ID").Op("*").Qual(b.subPkg("sombase"), "ID"),
 		)
 
 		f.Line()
@@ -237,13 +237,13 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 					}
 
 					if _, ok := elem.(*field.NodeTable); ok {
-						d[jen.Id("Node")] = jen.Qual(def.PkgSom, "NewNode").Call(
+						d[jen.Id("Node")] = jen.Qual(b.subPkg("sombase"), "NewNode").Call(
 							jen.Id("data").Dot("ID"),
 						)
 					}
 
 					if _, ok := elem.(*field.EdgeTable); ok {
-						d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "NewEdge").Call(
+						d[jen.Id("Edge")] = jen.Qual(b.subPkg("sombase"), "NewEdge").Call(
 							jen.Id("data").Dot("ID"),
 						)
 					}
@@ -275,13 +275,13 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 					}
 
 					if _, ok := elem.(*field.NodeTable); ok {
-						d[jen.Id("Node")] = jen.Qual(def.PkgSom, "NewNode").Call(
+						d[jen.Id("Node")] = jen.Qual(b.subPkg("sombase"), "NewNode").Call(
 							jen.Id("data").Dot("ID"),
 						)
 					}
 
 					if _, ok := elem.(*field.EdgeTable); ok {
-						d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "NewEdge").Call(
+						d[jen.Id("Edge")] = jen.Qual(b.subPkg("sombase"), "NewEdge").Call(
 							jen.Id("data").Dot("ID"),
 						)
 					}

@@ -3,16 +3,16 @@ package conv
 
 import (
 	v2 "github.com/fxamacker/cbor/v2"
-	som "github.com/go-surreal/som"
+	sombase "github.com/go-surreal/som/tests/basic/gen/som/sombase"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type FieldsLikeDBResponse struct {
-	ID     *som.ID  `cbor:"id,omitempty"`
-	Time   string   `cbor:"time"`
-	Status string   `cbor:"status"`
-	Detail string   `cbor:"detail"`
-	Result []string `cbor:"result"`
+	ID     *sombase.ID `cbor:"id,omitempty"`
+	Time   string      `cbor:"time"`
+	Status string      `cbor:"status"`
+	Detail string      `cbor:"detail"`
+	Result []string    `cbor:"result"`
 }
 
 func FromFieldsLikeDBResponse(data model.FieldsLikeDBResponse) FieldsLikeDBResponse {
@@ -38,7 +38,7 @@ func FromFieldsLikeDBResponsePtr(data *model.FieldsLikeDBResponse) *FieldsLikeDB
 func ToFieldsLikeDBResponse(data FieldsLikeDBResponse) model.FieldsLikeDBResponse {
 	return model.FieldsLikeDBResponse{
 		Detail: data.Detail,
-		Node:   som.NewNode(data.ID),
+		Node:   sombase.NewNode(data.ID),
 		Result: data.Result,
 		Status: data.Status,
 		Time:   data.Time,
@@ -50,7 +50,7 @@ func ToFieldsLikeDBResponsePtr(data *FieldsLikeDBResponse) *model.FieldsLikeDBRe
 	}
 	return &model.FieldsLikeDBResponse{
 		Detail: data.Detail,
-		Node:   som.NewNode(data.ID),
+		Node:   sombase.NewNode(data.ID),
 		Result: data.Result,
 		Status: data.Status,
 		Time:   data.Time,
@@ -59,7 +59,7 @@ func ToFieldsLikeDBResponsePtr(data *FieldsLikeDBResponse) *model.FieldsLikeDBRe
 
 type fieldsLikeDbresponseLink struct {
 	FieldsLikeDBResponse
-	ID *som.ID
+	ID *sombase.ID
 }
 
 func (f *fieldsLikeDbresponseLink) MarshalCBOR() ([]byte, error) {
