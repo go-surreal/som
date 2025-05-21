@@ -18,7 +18,7 @@ func (f *ID) typeGo() jen.Code {
 }
 
 func (f *ID) typeConv(ctx Context) jen.Code {
-	return jen.Op("*").Qual(filepath.Join(ctx.TargetPkg, "sombase"), "ID") // f.typeGo()
+	return jen.Op("*").Qual(filepath.Join(ctx.TargetPkg), "ID") // f.typeGo()
 }
 
 func (f *ID) TypeDatabase() string {

@@ -12,7 +12,7 @@ import (
 )
 
 func Parse(dir string, outPkg string) (*Output, error) {
-	packagePath := path.Join(outPkg, "sombase")
+	packagePath := path.Join(outPkg, "")
 
 	res := &Output{}
 
@@ -117,7 +117,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 }
 
 func isNode(t gotype.Type, outPkg string) bool {
-	packagePath := path.Join(outPkg, "sombase")
+	packagePath := path.Join(outPkg, "")
 
 	if t.Kind() != gotype.Struct {
 		return false
@@ -138,7 +138,7 @@ func isNode(t gotype.Type, outPkg string) bool {
 }
 
 func isEdge(t gotype.Type, outPkg string) bool {
-	packagePath := path.Join(outPkg, "sombase")
+	packagePath := path.Join(outPkg, "")
 
 	if t.Kind() != gotype.Struct {
 		return false
@@ -159,7 +159,7 @@ func isEdge(t gotype.Type, outPkg string) bool {
 }
 
 func isEnum(t gotype.Type, outPkg string) bool {
-	packagePath := path.Join(outPkg, "sombase")
+	packagePath := path.Join(outPkg, "")
 
 	if t.Kind() != gotype.String {
 		return false
@@ -169,7 +169,7 @@ func isEnum(t gotype.Type, outPkg string) bool {
 }
 
 func parseNode(v gotype.Type, outPkg string) (*Node, error) {
-	packagePath := path.Join(outPkg, "sombase")
+	packagePath := path.Join(outPkg, "")
 
 	node := &Node{Name: v.Name()}
 
@@ -231,7 +231,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 }
 
 func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
-	packagePath := path.Join(outPkg, "sombase")
+	packagePath := path.Join(outPkg, "")
 
 	edge := &Edge{Name: v.Name()}
 

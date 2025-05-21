@@ -4,12 +4,12 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	sdbc "github.com/go-surreal/sdbc"
-	sombase "github.com/go-surreal/som/tests/basic/gen/som/sombase"
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type Group struct {
-	ID        *sombase.ID    `cbor:"id,omitempty"`
+	ID        *som.ID        `cbor:"id,omitempty"`
 	CreatedAt *sdbc.DateTime `cbor:"created_at,omitempty"`
 	UpdatedAt *sdbc.DateTime `cbor:"updated_at,omitempty"`
 	Name      string         `cbor:"name"`
@@ -30,8 +30,8 @@ func ToGroup(data Group) model.Group {
 	return model.Group{
 		Members:    mapSliceFn(ToGroupMember)(data.Members),
 		Name:       data.Name,
-		Node:       sombase.NewNode(data.ID),
-		Timestamps: sombase.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		Node:       som.NewNode(data.ID),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }
 func ToGroupPtr(data *Group) *model.Group {
@@ -41,14 +41,14 @@ func ToGroupPtr(data *Group) *model.Group {
 	return &model.Group{
 		Members:    mapSliceFn(ToGroupMember)(data.Members),
 		Name:       data.Name,
-		Node:       sombase.NewNode(data.ID),
-		Timestamps: sombase.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		Node:       som.NewNode(data.ID),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }
 
 type groupLink struct {
 	Group
-	ID *sombase.ID
+	ID *som.ID
 }
 
 func (f *groupLink) MarshalCBOR() ([]byte, error) {

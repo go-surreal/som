@@ -99,7 +99,7 @@ func (f *Time) convFrom(_ Context) (jen.Code, jen.Code) {
 
 func (f *Time) convTo(ctx Context) (jen.Code, jen.Code) {
 	if f.source.IsCreatedAt {
-		return jen.Qual(filepath.Join(ctx.TargetPkg, "sombase"), "NewTimestamps"),
+		return jen.Qual(filepath.Join(ctx.TargetPkg, ""), "NewTimestamps"),
 			jen.Call(
 				jen.Id("data").Dot("CreatedAt"),
 				jen.Id("data").Dot("UpdatedAt"),

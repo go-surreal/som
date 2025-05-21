@@ -2,7 +2,7 @@ package basic
 
 import (
 	"context"
-	"github.com/go-surreal/som/tests/basic/gen/som/sombase"
+	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -55,6 +55,6 @@ func TestFilterCompareFields(t *testing.T) {
 
 	assert.DeepEqual(t,
 		modelNew, *modelOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
 	)
 }

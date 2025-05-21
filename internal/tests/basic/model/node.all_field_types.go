@@ -1,15 +1,15 @@
 package model
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som/sombase"
+	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/google/uuid"
 	"net/url"
 	"time"
 )
 
 type AllFieldTypes struct {
-	sombase.Node
-	sombase.Timestamps
+	som.Node
+	som.Timestamps
 
 	// basic types
 
@@ -165,7 +165,7 @@ type SomeStruct struct {
 	UuidPtr   *uuid.UUID
 }
 
-type Role sombase.Enum
+type Role som.Enum
 
 const (
 	RoleUser  Role = "user"
@@ -173,8 +173,8 @@ const (
 )
 
 type Group struct {
-	sombase.Node
-	sombase.Timestamps
+	som.Node
+	som.Timestamps
 
 	Name string
 
@@ -190,8 +190,8 @@ func (g *Group) GetMembers() []AllFieldTypes {
 }
 
 type GroupMember struct {
-	sombase.Edge
-	sombase.Timestamps
+	som.Edge
+	som.Timestamps
 
 	User  AllFieldTypes `som:"in"`
 	Group Group         `som:"out"`

@@ -1,9 +1,9 @@
 package model
 
-import "github.com/go-surreal/som/tests/basic/gen/som/sombase"
+import "github.com/go-surreal/som/tests/basic/gen/som"
 
 type FieldsLikeDBResponse struct {
-	sombase.Node
+	som.Node
 
 	Time   string
 	Status string

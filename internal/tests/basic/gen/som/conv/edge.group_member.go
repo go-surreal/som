@@ -3,12 +3,12 @@ package conv
 
 import (
 	sdbc "github.com/go-surreal/sdbc"
-	sombase "github.com/go-surreal/som/tests/basic/gen/som/sombase"
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type GroupMember struct {
-	ID        *sombase.ID     `cbor:"id,omitempty"`
+	ID        *som.ID         `cbor:"id,omitempty"`
 	CreatedAt *sdbc.DateTime  `cbor:"created_at,omitempty"`
 	UpdatedAt *sdbc.DateTime  `cbor:"updated_at,omitempty"`
 	Meta      groupMemberMeta `cbor:"meta"`
@@ -26,9 +26,9 @@ func FromGroupMemberPtr(data *model.GroupMember) *GroupMember {
 
 func ToGroupMember(data *GroupMember) model.GroupMember {
 	return model.GroupMember{
-		Edge:       sombase.NewEdge(data.ID),
+		Edge:       som.NewEdge(data.ID),
 		Meta:       toGroupMemberMeta(data.Meta),
-		Timestamps: sombase.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }
 func ToGroupMemberPtr(data *GroupMember) *model.GroupMember {
@@ -36,8 +36,8 @@ func ToGroupMemberPtr(data *GroupMember) *model.GroupMember {
 		return nil
 	}
 	return &model.GroupMember{
-		Edge:       sombase.NewEdge(data.ID),
+		Edge:       som.NewEdge(data.ID),
 		Meta:       toGroupMemberMeta(data.Meta),
-		Timestamps: sombase.NewTimestamps(data.CreatedAt, data.UpdatedAt),
+		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
 	}
 }

@@ -90,7 +90,7 @@ func (b *build) build() error {
 }
 
 func (b *build) buildInterfaceFile() error {
-	f := jen.NewFile(b.basePkgName())
+	f := jen.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -103,7 +103,7 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("Close").Call()
 	})
 
-	if err := f.Render(b.fs.Writer(filenameInterfaces)); err != nil {
+	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, filenameInterfaces))); err != nil {
 		return err
 	}
 
@@ -183,7 +183,7 @@ func (b *build) buildSchemaFile() error {
 
 	content := strings.Join(statements, "\n")
 
-	b.fs.Write(path.Join("schema", filenameSchema), []byte(content))
+	b.fs.Write(path.Join(def.PkgRepo, "schema", filenameSchema), []byte(content))
 
 	return nil
 }
@@ -192,7 +192,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
 
-	f := jen.NewFile(b.basePkgName())
+	f := jen.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -216,7 +216,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(b.subPkg("sombase"), "ID"),
+			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
 		).Parens(jen.List(
 			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Bool(),
@@ -374,7 +374,7 @@ The returned bool indicates whether the record was found or not.
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(b.subPkg("sombase"), "ID"),
+			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
@@ -489,7 +489,7 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			),
 		)
 
-	if err := f.Render(b.fs.Writer(node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName()))); err != nil {
 		return err
 	}
 
