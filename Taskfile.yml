@@ -16,7 +16,7 @@ tasks:
     aliases: [ r ]
     desc: "Run the somgen cli tool."
     cmds:
-      - cd ./cmd/somgen && go run main.go -- {{.CLI_ARGS}}
+      - go run main.go -- {{.CLI_ARGS}}
 
   gen:
     aliases: [ g ]
