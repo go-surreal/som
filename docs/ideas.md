@@ -13,6 +13,11 @@ can be created at any point and linked back to this document.
 
 ## Features
 
+### ?
+
+Can I get the total count when doing a paginate query?
+So a count where limit and offset are basically ignored, but the result set still takes them into account.
+
 ### Views
 
 ```

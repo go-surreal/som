@@ -9,13 +9,14 @@ const (
 	PkgFetch  = "with"
 	PkgConv   = "conv"
 	PkgRelate = "relate"
+	PkgRepo   = "repo"
 
 	PkgLib   = "internal/lib"
 	PkgTypes = "internal/types"
 )
 
 const (
-	PkgSom  = "github.com/go-surreal/som"
+	//PkgSom  = "github.com/go-surreal/som"
 	PkgSDBC = "github.com/go-surreal/sdbc"
 	PkgCBOR = "github.com/fxamacker/cbor/v2"
 
