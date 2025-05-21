@@ -12,8 +12,6 @@ import (
 )
 
 func Parse(dir string, outPkg string) (*Output, error) {
-	packagePath := path.Join(outPkg, "")
-
 	res := &Output{}
 
 	imp := gotype.NewImporter()
@@ -88,7 +86,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 				continue
 			}
 
-		case v.Kind() == gotype.String && v.PkgPath() == packagePath:
+		case v.Kind() == gotype.String && v.PkgPath() == outPkg:
 			{
 				res.Enums = append(res.Enums, &Enum{
 					Name: v.Name(),
@@ -117,8 +115,6 @@ func Parse(dir string, outPkg string) (*Output, error) {
 }
 
 func isNode(t gotype.Type, outPkg string) bool {
-	packagePath := path.Join(outPkg, "")
-
 	if t.Kind() != gotype.Struct {
 		return false
 	}
@@ -129,7 +125,7 @@ func isNode(t gotype.Type, outPkg string) bool {
 		f := t.Field(i)
 
 		if f.Name() == "Node" && f.Elem().Name() == "Node" &&
-			f.Elem().PkgPath() == packagePath {
+			f.Elem().PkgPath() == outPkg {
 			return true
 		}
 	}
@@ -138,8 +134,6 @@ func isNode(t gotype.Type, outPkg string) bool {
 }
 
 func isEdge(t gotype.Type, outPkg string) bool {
-	packagePath := path.Join(outPkg, "")
-
 	if t.Kind() != gotype.Struct {
 		return false
 	}
@@ -150,7 +144,7 @@ func isEdge(t gotype.Type, outPkg string) bool {
 		f := t.Field(i)
 
 		if f.Name() == "Edge" && f.Elem().Name() == "Edge" &&
-			f.Elem().PkgPath() == packagePath {
+			f.Elem().PkgPath() == outPkg {
 			return true
 		}
 	}
@@ -159,18 +153,14 @@ func isEdge(t gotype.Type, outPkg string) bool {
 }
 
 func isEnum(t gotype.Type, outPkg string) bool {
-	packagePath := path.Join(outPkg, "")
-
 	if t.Kind() != gotype.String {
 		return false
 	}
 
-	return t.String() != "string" && t.PkgPath() == packagePath // TODO: might not be an enum..?!
+	return t.String() != "string" && t.PkgPath() == outPkg // TODO: might not be an enum..?!
 }
 
 func parseNode(v gotype.Type, outPkg string) (*Node, error) {
-	packagePath := path.Join(outPkg, "")
-
 	node := &Node{Name: v.Name()}
 
 	nf := v.NumField()
@@ -183,7 +173,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 		}
 
 		if f.IsAnonymous() {
-			if f.Elem().PkgPath() != packagePath {
+			if f.Elem().PkgPath() != outPkg {
 				return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
 			}
 
@@ -231,8 +221,6 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 }
 
 func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
-	packagePath := path.Join(outPkg, "")
-
 	edge := &Edge{Name: v.Name()}
 
 	nf := v.NumField()
@@ -245,7 +233,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 		}
 
 		if f.IsAnonymous() {
-			if f.Elem().PkgPath() != packagePath {
+			if f.Elem().PkgPath() != outPkg {
 				return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
 			}
 
