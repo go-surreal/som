@@ -4,7 +4,6 @@ import (
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
-	"path/filepath"
 )
 
 type ID struct {
@@ -18,7 +17,7 @@ func (f *ID) typeGo() jen.Code {
 }
 
 func (f *ID) typeConv(ctx Context) jen.Code {
-	return jen.Op("*").Qual(filepath.Join(ctx.TargetPkg), "ID") // f.typeGo()
+	return jen.Op("*").Qual(ctx.TargetPkg, "ID") // f.typeGo()
 }
 
 func (f *ID) TypeDatabase() string {
