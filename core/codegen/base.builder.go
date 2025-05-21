@@ -524,11 +524,6 @@ func (b *build) basePkg() string {
 	return b.outPkg
 }
 
-func (b *build) basePkgName() string {
-	_, name := filepath.Split(b.outPkg)
-	return name
-}
-
 func (b *build) subPkg(pkg string) string {
 	return path.Join(b.basePkg(), pkg)
 }
