@@ -18,7 +18,7 @@ func main() {
 		),
 	)
 
-	theParser, err := parser.Parse(context.Background(), "./model")
+	theParser, err := parser.Parse(context.Background(), "../internal/tests/basic/model")
 	if err != nil {
 		log.Fatal(err)
 	}
