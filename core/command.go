@@ -1,8 +1,8 @@
-package gen
+package core
 
 import (
-	"github.com/go-surreal/som/core"
-	"github.com/urfave/cli/v2"
+	"context"
+	"github.com/urfave/cli/v3"
 )
 
 const (
@@ -11,7 +11,7 @@ const (
 	flagNoCheck = "no-check"
 )
 
-func Cmd() *cli.Command {
+func Gen() *cli.Command {
 	return &cli.Command{
 		Name:        "gen",
 		Aliases:     []string{"g"},
@@ -37,15 +37,15 @@ func Cmd() *cli.Command {
 	}
 }
 
-func generate(ctx *cli.Context) error {
-	if ctx.Args().Len() != 2 {
+func generate(_ context.Context, cmd *cli.Command) error {
+	if cmd.Args().Len() != 2 {
 		return cli.Exit("Incorrect number of arguments", 1)
 	}
 
-	inPath := ctx.Args().Get(0)
-	outPath := ctx.Args().Get(1)
+	inPath := cmd.Args().Get(0)
+	outPath := cmd.Args().Get(1)
 
-	if err := core.Generate(inPath, outPath, ctx.Bool(flagVerbose), ctx.Bool(flagDry), !ctx.Bool(flagNoCheck)); err != nil {
+	if err := Generate(inPath, outPath, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck)); err != nil {
 		return cli.Exit(err.Error(), 1)
 	}
 

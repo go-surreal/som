@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/docker/docker/api/types/container"
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"log/slog"
@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	surrealDBVersion    = "2.3.0"
+	surrealDBVersion    = "2.3.1"
 	containerStartedMsg = "Started web server on "
 )
 
@@ -27,7 +27,7 @@ var errAlreadyInProgress = regexp.MustCompile(`removal of container .* is alread
 // error for a container that does not exist.
 var errNoSuchContainer = regexp.MustCompile(`No such container`)
 
-func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
+func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 	tb.Helper()
 
 	username := gofakeit.Username()
@@ -72,7 +72,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
 
-	config := som.Config{
+	config := repo.Config{
 		Host:      endpoint,
 		Username:  username,
 		Password:  password,
@@ -80,15 +80,15 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (som.Client, func()) {
 		Database:  database,
 	}
 
-	opts := []som.Option{
-		som.WithLogger(slog.New(
+	opts := []repo.Option{
+		repo.WithLogger(slog.New(
 			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 				Level: slog.LevelDebug,
 			}),
 		)),
 	}
 
-	client, err := som.NewClient(ctx, config, opts...)
+	client, err := repo.NewClient(ctx, config, opts...)
 	if err != nil {
 		tb.Fatal(err)
 	}

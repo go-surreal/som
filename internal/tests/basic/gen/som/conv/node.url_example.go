@@ -3,7 +3,7 @@ package conv
 
 import (
 	v2 "github.com/fxamacker/cbor/v2"
-	som "github.com/go-surreal/som"
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 

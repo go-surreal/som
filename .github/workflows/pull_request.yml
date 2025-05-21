@@ -118,7 +118,7 @@ jobs:
         run: go version
 
       - name: Build
-        working-directory: cmd/som
+        working-directory: .
         run: go build -v ./...
 
   test:

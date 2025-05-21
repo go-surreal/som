@@ -8,8 +8,8 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/docker/docker v28.1.1+incompatible
 	github.com/fxamacker/cbor/v2 v2.8.0
-	github.com/go-surreal/sdbc v0.9.2
-	github.com/go-surreal/som v0.7.0
+	github.com/go-surreal/sdbc v0.9.3
+	github.com/go-surreal/som v0.7.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/testcontainers/testcontainers-go v0.37.0

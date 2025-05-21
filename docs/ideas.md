@@ -35,6 +35,11 @@ RecordRefs can be marked either "default", "historical" or "dependent?".
 - dependent: the reference will point to the current record as long as the referencing record is not a history record.
   As soon as the referencing record becomes a history record, the reference will point to a history record of the referenced record.
 
+### ?
+
+Can I get the total count when doing a paginate query?
+So a count where limit and offset are basically ignored, but the result set still takes them into account.
+
 ### Views
 
 ```

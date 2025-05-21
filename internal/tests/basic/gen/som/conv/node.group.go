@@ -4,7 +4,7 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	sdbc "github.com/go-surreal/sdbc"
-	som "github.com/go-surreal/som"
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 

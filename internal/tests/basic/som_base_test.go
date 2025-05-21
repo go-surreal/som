@@ -3,8 +3,8 @@ package basic
 import (
 	"context"
 	"github.com/go-surreal/sdbc"
-	sombase "github.com/go-surreal/som"
 	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -18,7 +18,7 @@ import (
 )
 
 func TestQuery(t *testing.T) {
-	client := &som.ClientImpl{}
+	client := &repo.ClientImpl{}
 
 	query := client.AllFieldTypesRepo().Query().
 		Filter(
@@ -98,7 +98,7 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
 	)
 }
 
@@ -148,7 +148,7 @@ func TestNumerics(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userMax, *userOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
 	)
 
 	// MIN
@@ -189,7 +189,7 @@ func TestNumerics(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userMin, *userOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
 	)
 }
 
@@ -320,7 +320,7 @@ func TestDuration(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, sdbc.ID{}),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -336,7 +336,7 @@ func TestDuration(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, sdbc.ID{}),
 	)
 }
 
@@ -371,7 +371,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, sdbc.ID{}),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -387,7 +387,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(sombase.Node{}, sombase.Timestamps{}, sdbc.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, sdbc.ID{}),
 	)
 }
 
