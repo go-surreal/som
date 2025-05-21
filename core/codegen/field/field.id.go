@@ -16,8 +16,8 @@ func (f *ID) typeGo() jen.Code {
 	return jen.String()
 }
 
-func (f *ID) typeConv(_ Context) jen.Code {
-	return jen.Op("*").Qual(def.PkgSom, "ID") // f.typeGo()
+func (f *ID) typeConv(ctx Context) jen.Code {
+	return jen.Op("*").Qual(ctx.TargetPkg, "ID") // f.typeGo()
 }
 
 func (f *ID) TypeDatabase() string {

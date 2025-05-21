@@ -2,7 +2,9 @@
 
 package lib
 
-import "github.com/go-surreal/som"
+import (
+	"github.com/go-surreal/som/tests/basic/gen/som"
+)
 
 type ID[M any] struct {
 	key  Key[M]

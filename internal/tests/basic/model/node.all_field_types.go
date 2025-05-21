@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/go-surreal/som"
+	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/google/uuid"
 	"net/url"
 	"time"

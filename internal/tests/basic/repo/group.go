@@ -1,18 +1,18 @@
 package repo
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 )
 
 type GroupRepo interface {
-	som.GroupRepo
+	repo.GroupRepo
 }
 
 type groupRepo struct {
-	som.GroupRepo
+	repo.GroupRepo
 }
 
-func Group(db som.Client) GroupRepo {
+func Group(db repo.Client) GroupRepo {
 	return &groupRepo{
 		GroupRepo: db.GroupRepo(),
 	}

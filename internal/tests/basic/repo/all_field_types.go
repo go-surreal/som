@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/by"
+	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/gen/som/with"
 	"github.com/go-surreal/som/tests/basic/model"
@@ -11,17 +12,17 @@ import (
 )
 
 type AllFieldTypesRepo interface {
-	som.AllFieldTypesRepo
+	repo.AllFieldTypesRepo
 
 	FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error)
 	List(ctx context.Context) ([]*model.AllFieldTypes, error)
 }
 
 type user struct {
-	som.AllFieldTypesRepo
+	repo.AllFieldTypesRepo
 }
 
-func User(db som.Client) AllFieldTypesRepo {
+func User(db repo.Client) AllFieldTypesRepo {
 	return &user{
 		AllFieldTypesRepo: db.AllFieldTypesRepo(),
 	}

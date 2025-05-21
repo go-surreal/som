@@ -1,6 +1,6 @@
 //go:build embed
 
-package som
+package repo
 
 import (
 	"encoding/json"

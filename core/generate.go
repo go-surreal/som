@@ -59,12 +59,21 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 
 	outPkg := path.Join(mod.Module(), strings.TrimPrefix(absDir, mod.Dir()))
 
-	source, err := parser.Parse(inPath)
+	out := fs.New()
+
+	err = codegen.BuildStatic(out, outPkg)
+	if err != nil {
+		return fmt.Errorf("could not generate code: %w", err)
+	}
+
+	if err := out.Flush(absDir); err != nil {
+		return fmt.Errorf("could not write static files: %w", err)
+	}
+
+	source, err := parser.Parse(inPath, outPkg)
 	if err != nil {
 		return fmt.Errorf("could not parse source: %w", err)
 	}
-
-	out := fs.New()
 
 	err = codegen.Build(source, out, outPkg)
 	if err != nil {

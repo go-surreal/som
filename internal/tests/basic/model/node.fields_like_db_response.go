@@ -1,8 +1,6 @@
 package model
 
-import (
-	"github.com/go-surreal/som"
-)
+import "github.com/go-surreal/som/tests/basic/gen/som"
 
 type FieldsLikeDBResponse struct {
 	som.Node

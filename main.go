@@ -1,30 +1,31 @@
 package main
 
 import (
-	"github.com/go-surreal/som/cmd/som/gen"
-	"github.com/urfave/cli/v2"
+	"context"
+	"github.com/go-surreal/som/core"
+	cli "github.com/urfave/cli/v3"
 	"log"
 	"os"
 	"runtime/debug"
 )
 
 func main() {
-	app := cli.App{
-		Name:  "somgen",
-		Usage: "Generate SOM code for typesafe SurrealDB access",
+	ctx := context.Background()
+
+	app := cli.Command{
+		Name:  "som",
+		Usage: "Generate code for typesafe SurrealDB access",
 		// ArgsUsage:      "<input_path> <output_path>",
 		Description: "Tool for generating typesafe SurrealDB access layer from input models.",
 
 		Commands: []*cli.Command{
-			gen.Cmd(),
+			core.Gen(),
 		},
 		DefaultCommand: "gen",
 		Suggest:        true,
 
-		Authors: []*cli.Author{
-			{
-				Name: "Marc Binz",
-			},
+		Authors: []any{
+			"Marc Binz",
 		},
 		Copyright: "github.com/go-surreal/som",
 
@@ -40,7 +41,7 @@ func main() {
 		},
 	}
 
-	if err := app.Run(os.Args); err != nil {
+	if err := app.Run(ctx, os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
