@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/go-surreal/som/cmd/som/gen"
+	"github.com/go-surreal/som/core"
 	cli "github.com/urfave/cli/v3"
 	"log"
 	"os"
@@ -13,13 +13,13 @@ func main() {
 	ctx := context.Background()
 
 	app := cli.Command{
-		Name:  "somgen",
-		Usage: "Generate SOM code for typesafe SurrealDB access",
+		Name:  "som",
+		Usage: "Generate code for typesafe SurrealDB access",
 		// ArgsUsage:      "<input_path> <output_path>",
 		Description: "Tool for generating typesafe SurrealDB access layer from input models.",
 
 		Commands: []*cli.Command{
-			gen.Cmd(),
+			core.Gen(),
 		},
 		DefaultCommand: "gen",
 		Suggest:        true,
