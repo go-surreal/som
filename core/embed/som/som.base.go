@@ -11,6 +11,26 @@ type ID = sdbc.ID
 
 // type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
+// type Record[T any] struct {
+// 	id T
+// }
+//
+// func NewRecord[T any](id T) Record[T] {
+// 	return Record[T]{
+// 		id: id,
+// 	}
+// }
+//
+// func (r Record[T]) ID() T {
+// 	return r.id
+// }
+//
+// type TimeSeries Record[TimeSeriesID]
+//
+// type TimeSeriesID struct {
+// 	timestamp time.Time
+// }
+
 type Node struct {
 	id *ID
 }
@@ -27,17 +47,17 @@ func (n Node) ID() *ID {
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
-type Edge struct {
+type Edge[I, O any] struct {
 	id *ID
 }
 
-func NewEdge(id *ID) Edge {
-	return Edge{
+func NewEdge[I, O any](id *ID) Edge[I, O] {
+	return Edge[I, O]{
 		id: id,
 	}
 }
 
-func (e Edge) ID() *ID {
+func (e Edge[I, O]) ID() *ID {
 	return e.id
 }
 

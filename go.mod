@@ -21,4 +21,7 @@ require (
 	github.com/coder/websocket v1.8.13 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
 )
