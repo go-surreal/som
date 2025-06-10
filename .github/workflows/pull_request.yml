@@ -49,7 +49,7 @@ jobs:
         run: go mod download
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v6
         with:
           commit_message: "Apply dependency sync"
           branch: ${{ github.head_ref }}
@@ -80,14 +80,14 @@ jobs:
         run: go version
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
         with:
           version: "v${{ steps.asdf.outputs.golangci-lint_version }}"
           working-directory: .
           args: --path-prefix=. --timeout 5m
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v6
         if: always()
         with:
           commit_message: "Apply golangci-lint auto-fix changes"
