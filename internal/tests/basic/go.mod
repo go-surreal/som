@@ -6,10 +6,10 @@ replace github.com/go-surreal/som => ../../../
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/docker/docker v28.1.1+incompatible
+	github.com/docker/docker v28.2.2+incompatible
 	github.com/fxamacker/cbor/v2 v2.8.0
 	github.com/go-surreal/sdbc v0.9.3
-	github.com/go-surreal/som v0.7.1
+	github.com/go-surreal/som v0.8.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/testcontainers/testcontainers-go v0.37.0
@@ -22,6 +22,8 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/coder/websocket v1.8.13 // indirect
+	github.com/containerd/errdefs v1.0.0 // indirect
+	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
