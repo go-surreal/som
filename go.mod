@@ -1,6 +1,8 @@
 module github.com/go-surreal/som
 
-go 1.23.7
+go 1.24.0
+
+toolchain go1.24.10
 
 retract [v0.1.0, v0.7.0] // only the latest version is supported for now
 
@@ -12,7 +14,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/urfave/cli/v3 v3.6.0
 	github.com/wzshiming/gotype v0.8.0
-	golang.org/x/exp a4bb9ffd2546
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	golang.org/x/mod v0.29.0
 	gotest.tools/v3 v3.5.2
 )
