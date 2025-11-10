@@ -27,7 +27,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: ASDF Environment
         id: asdf
@@ -36,7 +36,7 @@ jobs:
           path_to_tool_versions: "./.tool-versions"
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
@@ -49,7 +49,7 @@ jobs:
         run: go mod download
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "Apply dependency sync"
           branch: ${{ github.head_ref }}
@@ -62,7 +62,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: ASDF Environment
         id: asdf
@@ -71,7 +71,7 @@ jobs:
           path_to_tool_versions: "./.tool-versions"
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
@@ -80,14 +80,14 @@ jobs:
         run: go version
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v9
         with:
           version: "v${{ steps.asdf.outputs.golangci-lint_version }}"
           working-directory: .
           args: --path-prefix=. --timeout 5m
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         if: always()
         with:
           commit_message: "Apply golangci-lint auto-fix changes"
@@ -100,7 +100,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: ASDF Environment
         id: asdf
@@ -109,7 +109,7 @@ jobs:
           path_to_tool_versions: "./.tool-versions"
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
@@ -128,7 +128,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: ASDF Environment
         id: asdf
@@ -137,7 +137,7 @@ jobs:
           path_to_tool_versions: "./.tool-versions"
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ steps.asdf.outputs.golang_version }}
           check-latest: true
