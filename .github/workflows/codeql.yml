@@ -79,7 +79,7 @@ jobs:
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
     - name: Build
-      working-directory: cmd/som
+      working-directory: .
       run: go build -v ./...
 
     - name: Perform CodeQL Analysis
