@@ -5,14 +5,14 @@ go 1.23.7
 replace github.com/go-surreal/som => ../../../
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/docker/docker v28.1.1+incompatible
-	github.com/fxamacker/cbor/v2 v2.8.0
-	github.com/go-surreal/sdbc v0.9.3
-	github.com/go-surreal/som v0.7.1
+	github.com/brianvoe/gofakeit/v7 v7.9.0
+	github.com/docker/docker v28.5.2+incompatible
+	github.com/fxamacker/cbor/v2 v2.9.0
+	github.com/go-surreal/sdbc v0.9.4
+	github.com/go-surreal/som v0.8.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/testcontainers/testcontainers-go v0.37.0
+	github.com/testcontainers/testcontainers-go v0.40.0
 	gotest.tools/v3 v3.5.2
 )
 

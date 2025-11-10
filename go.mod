@@ -6,14 +6,14 @@ retract [v0.1.0, v0.7.0] // only the latest version is supported for now
 
 require (
 	github.com/dave/jennifer v1.7.1
-	github.com/fxamacker/cbor/v2 v2.8.0
-	github.com/go-surreal/sdbc v0.9.3
+	github.com/fxamacker/cbor/v2 v2.9.0
+	github.com/go-surreal/sdbc v0.9.4
 	github.com/google/uuid v1.6.0
 	github.com/iancoleman/strcase v0.3.0
-	github.com/urfave/cli/v3 v3.3.2
-	github.com/wzshiming/gotype v0.7.4
-	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
-	golang.org/x/mod v0.24.0
+	github.com/urfave/cli/v3 v3.6.0
+	github.com/wzshiming/gotype v0.8.0
+	golang.org/x/exp a4bb9ffd2546
+	golang.org/x/mod v0.29.0
 	gotest.tools/v3 v3.5.2
 )
 
