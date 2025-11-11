@@ -1,8 +1,6 @@
 module github.com/go-surreal/som
 
-go 1.24.0
-
-toolchain go1.24.10
+go 1.25.4
 
 retract [v0.1.0, v0.7.0] // only the latest version is supported for now
 
@@ -15,12 +13,12 @@ require (
 	github.com/urfave/cli/v3 v3.6.0
 	github.com/wzshiming/gotype v0.8.0
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
-	golang.org/x/mod v0.29.0
+	golang.org/x/mod v0.30.0
 	gotest.tools/v3 v3.5.2
 )
 
 require (
-	github.com/coder/websocket v1.8.13 // indirect
+	github.com/coder/websocket v1.8.14 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 )
