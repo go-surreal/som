@@ -29,10 +29,6 @@ func (f *Struct) Table() Table {
 	return f.table
 }
 
-func (f *Struct) IsPointer() bool {
-	return f.source.Pointer()
-}
-
 func (f *Struct) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

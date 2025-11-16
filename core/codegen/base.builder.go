@@ -132,16 +132,11 @@ func (b *build) buildSchemaFile() error {
 		)
 		statements = append(statements, statement)
 
-		// Only define nested fields for non-optional (non-pointer) structs
-		// SurrealDB 2.3.10+ doesn't allow defining nested fields on optional objects
-		if object, ok := f.(*field.Struct); ok && !object.IsPointer() {
+		if object, ok := f.(*field.Struct); ok {
 			for _, fld := range object.Table().GetFields() {
 				fieldFn(table, fld, prefix+f.NameDatabase()+".")
 			}
 		}
-
-		// Modern SurrealDB includes element types directly in array type definitions
-		// (e.g., "option<array<string> | null>"), so we don't need separate .* definitions
 	}
 
 	for _, node := range b.input.nodes {

@@ -157,7 +157,7 @@ func TestGoModMissingSurrealDBPackage(t *testing.T) {
 	exists := false
 
 	for _, req := range mod.file.Require {
-		if req.Mod.Path != pkgSurrealDB {
+		if req.Mod.Path != pkgDriver {
 			continue
 		}
 
@@ -194,7 +194,7 @@ func TestGoModWrongSurrealDBVersion(t *testing.T) {
 	exists := false
 
 	for _, req := range mod.file.Require {
-		if req.Mod.Path != pkgSurrealDB {
+		if req.Mod.Path != pkgDriver {
 			continue
 		}
 

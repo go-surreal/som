@@ -15,8 +15,8 @@ const (
 	minSupportedGoVersion = "1.23"    // suffix '.0' omitted on purpose!
 	maxSupportedGoVersion = "1.23.99" // allow for future patch versions
 
-	pkgSOM       = "github.com/go-surreal/som"
-	pkgSurrealDB = "github.com/surrealdb/surrealdb.go"
+	pkgSOM    = "github.com/go-surreal/som"
+	pkgDriver = "github.com/surrealdb/surrealdb.go"
 
 	requiredSOMVersion    = "v0.7.1"
 	requiredDriverVersion = "v1.0.0"
@@ -148,11 +148,11 @@ func (m *GoMod) CheckSOMVersion(checkLatest bool) (string, error) {
 
 func (m *GoMod) CheckDriverVersion() (string, error) {
 	for _, require := range m.file.Require {
-		if require.Mod.Path != pkgSurrealDB {
+		if require.Mod.Path != pkgDriver {
 			continue
 		}
 
-		surrealDBVersion, err := versionOrdinal(require.Mod.Version)
+		driverVersion, err := versionOrdinal(require.Mod.Version)
 		if err != nil {
 			return "", fmt.Errorf("could not parse surrealdb.go version: %v", err)
 		}
@@ -162,10 +162,10 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 			return "", fmt.Errorf("could not parse required surrealdb.go version: %v", err)
 		}
 
-		if surrealDBVersion != reqVersion {
+		if driverVersion != reqVersion {
 			fmt.Printf("go.mod: setting surrealdb.go version to %s\n", requiredDriverVersion)
 
-			if err := m.file.AddRequire(pkgSurrealDB, requiredDriverVersion); err != nil {
+			if err := m.file.AddRequire(pkgDriver, requiredDriverVersion); err != nil {
 				return "", err
 			}
 
@@ -177,7 +177,7 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 
 	fmt.Printf("go.mod: adding surrealdb.go version %s\n", requiredDriverVersion)
 
-	if err := m.file.AddRequire(pkgSurrealDB, requiredDriverVersion); err != nil {
+	if err := m.file.AddRequire(pkgDriver, requiredDriverVersion); err != nil {
 		return "", err
 	}
 

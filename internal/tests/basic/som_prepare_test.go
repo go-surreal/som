@@ -2,16 +2,17 @@ package basic
 
 import (
 	"context"
-	"github.com/brianvoe/gofakeit/v7"
-	"github.com/docker/docker/api/types/container"
-	"github.com/go-surreal/som/tests/basic/gen/som/repo"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"log/slog"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/docker/docker/api/types/container"
+	"github.com/go-surreal/som/tests/basic/gen/som/repo"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
@@ -70,13 +71,10 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		tb.Fatal(err)
 	}
 
-	// The official surrealdb.go client needs a proper URL with scheme
-	endpoint = "ws://" + endpoint
-
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
 
 	config := repo.Config{
-		Address:   endpoint,
+		Address:   "ws://" + endpoint,
 		Username:  username,
 		Password:  password,
 		Namespace: namespace,

@@ -39,32 +39,19 @@ func (f *Slice) TypeDatabase() string {
 }
 
 func (f *Slice) TypeDatabaseExtend() string {
-	// Byte slices ([]byte) map to "bytes" type and don't need element validation
 	if _, ok := f.element.(*Byte); ok {
+		// Byte slices ([]byte) map to "bytes" type and do not need element validation.
 		return ""
 	}
 
-	// Get the element's validation rules
 	elementAssert := f.element.TypeDatabaseExtend()
 	if elementAssert == "" {
-		return "" // Element type has no validation
+		return ""
 	}
 
-	// Extract the validation logic from the element's ASSERT clause
-	// Element ASSERT format: "ASSERT <conditions>"
-	// We need to extract <conditions> and replace $value with $item
-	assertPrefix := "ASSERT "
-	if !strings.HasPrefix(elementAssert, assertPrefix) {
-		return "" // Unexpected format, skip validation
-	}
-
-	elementCondition := strings.TrimPrefix(elementAssert, assertPrefix)
-
-	// Replace $value with $item for array element validation
+	elementCondition := strings.TrimPrefix(elementAssert, "ASSERT ")
 	itemCondition := strings.ReplaceAll(elementCondition, "$value", "$item")
 
-	// Build the array validation ASSERT clause
-	// Format: ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| <condition>)
 	return fmt.Sprintf("ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| %s)", itemCondition)
 }
 

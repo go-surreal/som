@@ -233,10 +233,7 @@ func (w *surrealDBWrapper) Close() error {
 	return w.db.Close(context.Background())
 }
 
-func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, error) {
-	// Note: opts are currently ignored as the official client has limited configuration options
-	_ = applyOptions(opts)
-
+func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	// Connect to SurrealDB
 	db, err := surrealdb.FromEndpointURLString(ctx, conf.Address)
 	if err != nil {
