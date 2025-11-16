@@ -3,9 +3,10 @@ package gomod
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/mod/modfile"
 	"os"
 	"path"
+
+	"golang.org/x/mod/modfile"
 )
 
 const fileGoMod = "go.mod"
@@ -17,8 +18,8 @@ const (
 	pkgSOM       = "github.com/go-surreal/som"
 	pkgSurrealDB = "github.com/surrealdb/surrealdb.go"
 
-	requiredSOMVersion       = "v0.7.1"
-	requiredSurrealDBVersion = "v1.0.0"
+	requiredSOMVersion    = "v0.7.1"
+	requiredDriverVersion = "v1.0.0"
 )
 
 type GoMod struct {
@@ -156,15 +157,15 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 			return "", fmt.Errorf("could not parse surrealdb.go version: %v", err)
 		}
 
-		reqVersion, err := versionOrdinal(requiredSurrealDBVersion)
+		reqVersion, err := versionOrdinal(requiredDriverVersion)
 		if err != nil {
 			return "", fmt.Errorf("could not parse required surrealdb.go version: %v", err)
 		}
 
 		if surrealDBVersion != reqVersion {
-			fmt.Printf("go.mod: setting surrealdb.go version to %s\n", requiredSurrealDBVersion)
+			fmt.Printf("go.mod: setting surrealdb.go version to %s\n", requiredDriverVersion)
 
-			if err := m.file.AddRequire(pkgSurrealDB, requiredSurrealDBVersion); err != nil {
+			if err := m.file.AddRequire(pkgSurrealDB, requiredDriverVersion); err != nil {
 				return "", err
 			}
 
@@ -174,9 +175,9 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 		return "", nil
 	}
 
-	fmt.Printf("go.mod: adding surrealdb.go version %s\n", requiredSurrealDBVersion)
+	fmt.Printf("go.mod: adding surrealdb.go version %s\n", requiredDriverVersion)
 
-	if err := m.file.AddRequire(pkgSurrealDB, requiredSurrealDBVersion); err != nil {
+	if err := m.file.AddRequire(pkgSurrealDB, requiredDriverVersion); err != nil {
 		return "", err
 	}
 

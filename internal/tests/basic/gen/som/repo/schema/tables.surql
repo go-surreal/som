@@ -25,10 +25,10 @@ DEFINE FIELD string_ptr_slice ON TABLE all_field_types TYPE option<array<option<
 DEFINE FIELD string_slice_ptr ON TABLE all_field_types TYPE option<array<string> | null>;
 DEFINE FIELD int ON TABLE all_field_types TYPE int ASSERT $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 DEFINE FIELD int_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD int_slice ON TABLE all_field_types TYPE option<array<int> | null>;
-DEFINE FIELD int_ptr_slice ON TABLE all_field_types TYPE option<array<option<int | null>> | null>;
-DEFINE FIELD int_slice_ptr ON TABLE all_field_types TYPE option<array<int> | null>;
-DEFINE FIELD int_ptr_slice_ptr ON TABLE all_field_types TYPE option<array<option<int | null>> | null>;
+DEFINE FIELD int_slice ON TABLE all_field_types TYPE option<array<int> | null> ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| $item >= -9223372036854775808 AND $item <= 9223372036854775807);
+DEFINE FIELD int_ptr_slice ON TABLE all_field_types TYPE option<array<option<int | null>> | null> ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| $item == NONE OR $item == NULL OR $item >= -9223372036854775808 AND $item <= 9223372036854775807);
+DEFINE FIELD int_slice_ptr ON TABLE all_field_types TYPE option<array<int> | null> ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| $item >= -9223372036854775808 AND $item <= 9223372036854775807);
+DEFINE FIELD int_ptr_slice_ptr ON TABLE all_field_types TYPE option<array<option<int | null>> | null> ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| $item == NONE OR $item == NULL OR $item >= -9223372036854775808 AND $item <= 9223372036854775807);
 DEFINE FIELD int_8 ON TABLE all_field_types TYPE int ASSERT $value >= -128 AND $value <= 127;
 DEFINE FIELD int_8_ptr ON TABLE all_field_types TYPE option<int | null> ASSERT $value == NONE OR $value == NULL OR $value >= -128 AND $value <= 127;
 DEFINE FIELD int_16 ON TABLE all_field_types TYPE int ASSERT $value >= -32768 AND $value <= 32767;
@@ -50,7 +50,7 @@ DEFINE FIELD float_32_ptr_slice ON TABLE all_field_types TYPE option<array<optio
 DEFINE FIELD float_32_ptr_slice_ptr ON TABLE all_field_types TYPE option<array<option<float | null>> | null>;
 DEFINE FIELD float_64 ON TABLE all_field_types TYPE float;
 DEFINE FIELD rune ON TABLE all_field_types TYPE int ASSERT $value >= -2147483648 AND $value <= 2147483647;
-DEFINE FIELD rune_slice ON TABLE all_field_types TYPE option<array<int> | null>;
+DEFINE FIELD rune_slice ON TABLE all_field_types TYPE option<array<int> | null> ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| $item >= -2147483648 AND $item <= 2147483647);
 DEFINE FIELD bool ON TABLE all_field_types TYPE bool;
 DEFINE FIELD bool_ptr ON TABLE all_field_types TYPE option<bool | null>;
 DEFINE FIELD bool_slice ON TABLE all_field_types TYPE option<array<bool> | null>;
@@ -70,7 +70,7 @@ DEFINE FIELD uuid_slice ON TABLE all_field_types TYPE option<array<uuid> | null>
 DEFINE FIELD url ON TABLE all_field_types TYPE string ASSERT $value == "" OR string::is::url($value);
 DEFINE FIELD url_ptr ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
 DEFINE FIELD url_nil ON TABLE all_field_types TYPE option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
-DEFINE FIELD url_slice ON TABLE all_field_types TYPE option<array<string> | null>;
+DEFINE FIELD url_slice ON TABLE all_field_types TYPE option<array<string> | null> ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| $item == "" OR string::is::url($item));
 DEFINE FIELD role ON TABLE all_field_types TYPE "" | "admin" | "user";
 DEFINE FIELD enum_ptr ON TABLE all_field_types TYPE option<"" | "admin" | "user" | null>;
 DEFINE FIELD roles ON TABLE all_field_types TYPE option<array<"" | "admin" | "user"> | null>;

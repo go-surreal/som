@@ -163,7 +163,7 @@ func TestGoModMissingSurrealDBPackage(t *testing.T) {
 
 		exists = true
 
-		if req.Mod.Version != requiredSurrealDBVersion {
+		if req.Mod.Version != requiredDriverVersion {
 			t.Fatal("surrealdb.go version not updated")
 		}
 	}
@@ -200,7 +200,7 @@ func TestGoModWrongSurrealDBVersion(t *testing.T) {
 
 		exists = true
 
-		if req.Mod.Version != requiredSurrealDBVersion {
+		if req.Mod.Version != requiredDriverVersion {
 			t.Fatal("surrealdb.go version not updated")
 		}
 	}

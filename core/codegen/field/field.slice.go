@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -34,13 +35,37 @@ func (f *Slice) TypeDatabase() string {
 
 	// Go treats empty slices as nil, so the database needs
 	// to accept the json NULL value for any array field.
-	// Modern SurrealDB requires the element type to be included in the array type
-
 	return fmt.Sprintf("option<array<%s> | null>", f.element.TypeDatabase())
 }
 
 func (f *Slice) TypeDatabaseExtend() string {
-	return ""
+	// Byte slices ([]byte) map to "bytes" type and don't need element validation
+	if _, ok := f.element.(*Byte); ok {
+		return ""
+	}
+
+	// Get the element's validation rules
+	elementAssert := f.element.TypeDatabaseExtend()
+	if elementAssert == "" {
+		return "" // Element type has no validation
+	}
+
+	// Extract the validation logic from the element's ASSERT clause
+	// Element ASSERT format: "ASSERT <conditions>"
+	// We need to extract <conditions> and replace $value with $item
+	assertPrefix := "ASSERT "
+	if !strings.HasPrefix(elementAssert, assertPrefix) {
+		return "" // Unexpected format, skip validation
+	}
+
+	elementCondition := strings.TrimPrefix(elementAssert, assertPrefix)
+
+	// Replace $value with $item for array element validation
+	itemCondition := strings.ReplaceAll(elementCondition, "$value", "$item")
+
+	// Build the array validation ASSERT clause
+	// Format: ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| <condition>)
+	return fmt.Sprintf("ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| %s)", itemCondition)
 }
 
 func (f *Slice) Element() Field {

@@ -29,7 +29,7 @@ func (f *Struct) Table() Table {
 	return f.table
 }
 
-func (f *Struct) Pointer() bool {
+func (f *Struct) IsPointer() bool {
 	return f.source.Pointer()
 }
 
