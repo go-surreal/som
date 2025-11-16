@@ -14,12 +14,11 @@ const (
 	minSupportedGoVersion = "1.23"    // suffix '.0' omitted on purpose!
 	maxSupportedGoVersion = "1.23.99" // allow for future patch versions
 
-	pkgSOM  = "github.com/go-surreal/som"
-	pkgSDBC = "github.com/go-surreal/sdbc"
+	pkgSOM       = "github.com/go-surreal/som"
+	pkgSurrealDB = "github.com/surrealdb/surrealdb.go"
 
-	requiredSOMVersion = "v0.7.1"
-
-	requiredSDBCVersion = "v0.9.3"
+	requiredSOMVersion       = "v0.7.1"
+	requiredSurrealDBVersion = "v1.0.0"
 )
 
 type GoMod struct {
@@ -146,26 +145,26 @@ func (m *GoMod) CheckSOMVersion(checkLatest bool) (string, error) {
 	return "", nil
 }
 
-func (m *GoMod) CheckSDBCVersion() (string, error) {
+func (m *GoMod) CheckDriverVersion() (string, error) {
 	for _, require := range m.file.Require {
-		if require.Mod.Path != pkgSDBC {
+		if require.Mod.Path != pkgSurrealDB {
 			continue
 		}
 
-		sdbcVersion, err := versionOrdinal(require.Mod.Version)
+		surrealDBVersion, err := versionOrdinal(require.Mod.Version)
 		if err != nil {
-			return "", fmt.Errorf("could not parse sdbc version: %v", err)
+			return "", fmt.Errorf("could not parse surrealdb.go version: %v", err)
 		}
 
-		reqVersion, err := versionOrdinal(requiredSDBCVersion)
+		reqVersion, err := versionOrdinal(requiredSurrealDBVersion)
 		if err != nil {
-			return "", fmt.Errorf("could not parse required sdbc version: %v", err)
+			return "", fmt.Errorf("could not parse required surrealdb.go version: %v", err)
 		}
 
-		if sdbcVersion != reqVersion {
-			fmt.Printf("go.mod: setting sdbc version to %s\n", requiredSDBCVersion)
+		if surrealDBVersion != reqVersion {
+			fmt.Printf("go.mod: setting surrealdb.go version to %s\n", requiredSurrealDBVersion)
 
-			if err := m.file.AddRequire(pkgSDBC, requiredSDBCVersion); err != nil {
+			if err := m.file.AddRequire(pkgSurrealDB, requiredSurrealDBVersion); err != nil {
 				return "", err
 			}
 
@@ -175,9 +174,9 @@ func (m *GoMod) CheckSDBCVersion() (string, error) {
 		return "", nil
 	}
 
-	fmt.Printf("go.mod: adding sdbc version %s\n", requiredSDBCVersion)
+	fmt.Printf("go.mod: adding surrealdb.go version %s\n", requiredSurrealDBVersion)
 
-	if err := m.file.AddRequire(pkgSDBC, requiredSDBCVersion); err != nil {
+	if err := m.file.AddRequire(pkgSurrealDB, requiredSurrealDBVersion); err != nil {
 		return "", err
 	}
 

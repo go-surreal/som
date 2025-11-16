@@ -3,11 +3,24 @@
 package som
 
 import (
-	"github.com/go-surreal/sdbc"
 	"time"
+
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
-type ID = sdbc.ID
+type ID = models.RecordID
+
+// NewRecordID creates a new RecordID with the given table and ID.
+// This is a convenience wrapper to avoid importing surrealdb.go directly.
+func NewRecordID(table string, id any) ID {
+	return models.NewRecordID(table, id)
+}
+
+// Table creates a RecordID representing a table (for server-generated IDs).
+// This is a convenience wrapper to avoid importing surrealdb.go directly.
+func Table(name string) models.Table {
+	return models.Table(name)
+}
 
 // type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
@@ -46,7 +59,7 @@ type Timestamps struct {
 	updatedAt time.Time
 }
 
-func NewTimestamps(createdAt *sdbc.DateTime, updatedAt *sdbc.DateTime) Timestamps {
+func NewTimestamps(createdAt *models.CustomDateTime, updatedAt *models.CustomDateTime) Timestamps {
 	var ts Timestamps
 
 	if createdAt != nil {

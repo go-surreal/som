@@ -3,7 +3,7 @@
 package lib
 
 import (
-	"github.com/go-surreal/sdbc"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"time"
 )
 
@@ -14,7 +14,7 @@ type Duration[M any] struct {
 
 func NewDuration[M any](key Key[M]) *Duration[M] {
 	conv := func(val time.Duration) any {
-		return sdbc.Duration{val}
+		return models.CustomDuration{val}
 	}
 
 	return &Duration[M]{

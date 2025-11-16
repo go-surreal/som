@@ -44,7 +44,7 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 		}
 	}
 
-	info, err := mod.CheckSDBCVersion()
+	info, err := mod.CheckDriverVersion()
 	if err != nil {
 		return err
 	}

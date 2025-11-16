@@ -2,16 +2,16 @@
 package conv
 
 import (
-	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type GroupMember struct {
-	ID        *som.ID         `cbor:"id,omitempty"`
-	CreatedAt *sdbc.DateTime  `cbor:"created_at,omitempty"`
-	UpdatedAt *sdbc.DateTime  `cbor:"updated_at,omitempty"`
-	Meta      groupMemberMeta `cbor:"meta"`
+	ID        *som.ID                `cbor:"id,omitempty"`
+	CreatedAt *models.CustomDateTime `cbor:"created_at,omitempty"`
+	UpdatedAt *models.CustomDateTime `cbor:"updated_at,omitempty"`
+	Meta      groupMemberMeta        `cbor:"meta"`
 }
 
 func FromGroupMember(data model.GroupMember) GroupMember {

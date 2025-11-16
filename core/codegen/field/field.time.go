@@ -17,7 +17,7 @@ func (f *Time) typeGo() jen.Code {
 }
 
 func (f *Time) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).Qual(def.PkgSDBC, "DateTime")
+	return jen.Add(f.ptr()).Qual(def.PkgModels, "CustomDateTime")
 }
 
 func (f *Time) TypeDatabase() string {

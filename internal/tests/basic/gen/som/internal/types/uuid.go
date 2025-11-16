@@ -4,8 +4,8 @@ package types
 
 import (
 	"github.com/fxamacker/cbor/v2"
-	"github.com/go-surreal/sdbc"
 	"github.com/google/uuid"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type UUID uuid.UUID
@@ -21,7 +21,7 @@ func (u *UUID) MarshalCBOR() ([]byte, error) {
 	}
 
 	return cbor.Marshal(cbor.RawTag{
-		Number:  sdbc.CBORTagUUID,
+		Number:  models.TagSpecBinaryUUID,
 		Content: raw,
 	})
 }

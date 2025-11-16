@@ -5,13 +5,16 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/go-surreal/sdbc"
+
+	"github.com/fxamacker/cbor/v2"
+	"github.com/surrealdb/surrealdb.go"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
-type ID = sdbc.ID
+type ID = models.RecordID
 
 type Database interface {
-	Create(ctx context.Context, id sdbc.RecordID, data any) ([]byte, error)
+	Create(ctx context.Context, id ID, data any) ([]byte, error)
 	Select(ctx context.Context, id *ID) ([]byte, error)
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
@@ -23,25 +26,199 @@ type Database interface {
 	Close() error
 }
 
-type Config = sdbc.Config
+// Config holds the configuration for connecting to SurrealDB
+type Config struct {
+	Address   string
+	Namespace string
+	Database  string
+	Username  string
+	Password  string
+}
 
 type ClientImpl struct {
 	db Database
 }
 
-func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, error) {
-	opt := applyOptions(opts)
+// surrealDBWrapper wraps the official surrealdb.go client to implement the Database interface
+type surrealDBWrapper struct {
+	db *surrealdb.DB
+}
 
-	surreal, err := sdbc.NewClient(ctx,
-		sdbc.Config(conf),
-		opt.sdbc...,
-	)
+func (w *surrealDBWrapper) Create(ctx context.Context, id ID, data any) ([]byte, error) {
+	result, err := surrealdb.Create[any](ctx, w.db, id, data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create sdbc client: %v", err)
+		return nil, err
+	}
+	return cbor.Marshal(result)
+}
+
+func (w *surrealDBWrapper) Select(ctx context.Context, id *ID) ([]byte, error) {
+	if id == nil {
+		return nil, fmt.Errorf("id cannot be nil")
 	}
 
+	result, err := surrealdb.Select[any](ctx, w.db, *id)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(result)
+}
+
+func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
+	result, err := surrealdb.Query[any](ctx, w.db, statement, vars)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(result)
+}
+
+func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
+	// Execute the LIVE statement via Query, which returns the live query ID
+	result, err := surrealdb.Query[any](ctx, w.db, statement, vars)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute live query: %w", err)
+	}
+
+	// Extract the live query ID from the result
+	if result == nil || len(*result) == 0 {
+		return nil, fmt.Errorf("empty response from live query")
+	}
+
+	// The last query result contains the live query ID
+	lastResult := (*result)[len(*result)-1]
+	if lastResult.Error != nil {
+		return nil, fmt.Errorf("live query error: %w", lastResult.Error)
+	}
+
+	// The result should be a UUID string
+	var liveID string
+	liveIDBytes, err := cbor.Marshal(lastResult.Result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal live query ID: %w", err)
+	}
+	if err := cbor.Unmarshal(liveIDBytes, &liveID); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal live query ID: %w", err)
+	}
+
+	// Get the notification channel for this live query
+	notifications, err := w.db.LiveNotifications(liveID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get live notifications: %w", err)
+	}
+
+	// Convert to []byte channel
+	out := make(chan []byte)
+	go func() {
+		defer close(out)
+		for notif := range notifications {
+			data, err := cbor.Marshal(notif)
+			if err != nil {
+				// Log error but continue
+				continue
+			}
+			out <- data
+		}
+	}()
+
+	return out, nil
+}
+
+func (w *surrealDBWrapper) Update(ctx context.Context, id *ID, data any) ([]byte, error) {
+	if id == nil {
+		return nil, fmt.Errorf("id cannot be nil")
+	}
+
+	result, err := surrealdb.Update[any](ctx, w.db, *id, data)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(result)
+}
+
+func (w *surrealDBWrapper) Delete(ctx context.Context, id *ID) ([]byte, error) {
+	if id == nil {
+		return nil, fmt.Errorf("id cannot be nil")
+	}
+
+	result, err := surrealdb.Delete[any](ctx, w.db, *id)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(result)
+}
+
+func (w *surrealDBWrapper) Marshal(val any) ([]byte, error) {
+	return cbor.Marshal(val)
+}
+
+func (w *surrealDBWrapper) Unmarshal(buf []byte, val any) error {
+	return cbor.Unmarshal(buf, val)
+}
+
+func (w *surrealDBWrapper) Close() error {
+	// Use background context for cleanup
+	return w.db.Close(context.Background())
+}
+
+func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, error) {
+	// Note: opts are currently ignored as the official client has limited configuration options
+	_ = applyOptions(opts)
+
+	// Connect to SurrealDB
+	db, err := surrealdb.FromEndpointURLString(ctx, conf.Address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to SurrealDB: %w", err)
+	}
+
+	// Authenticate BEFORE setting namespace/database
+	if conf.Username != "" && conf.Password != "" {
+		_, err := db.SignIn(ctx, surrealdb.Auth{
+			Username: conf.Username,
+			Password: conf.Password,
+		})
+		if err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to authenticate: %w", err)
+		}
+	}
+
+	// Create and set namespace and database if they don't exist
+	if conf.Namespace != "" && conf.Database != "" {
+		// First, define the namespace
+		_, err := surrealdb.Query[any](ctx, db,
+			fmt.Sprintf("DEFINE NAMESPACE IF NOT EXISTS %s;", conf.Namespace),
+			nil)
+		if err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to create namespace: %w", err)
+		}
+
+		// Use the namespace so we can define the database within it
+		if err := db.Use(ctx, conf.Namespace, ""); err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to set namespace: %w", err)
+		}
+
+		// Define the database within the namespace
+		_, err = surrealdb.Query[any](ctx, db,
+			fmt.Sprintf("DEFINE DATABASE IF NOT EXISTS %s;", conf.Database),
+			nil)
+		if err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to create database: %w", err)
+		}
+
+		// Finally, set both namespace and database for the session
+		if err := db.Use(ctx, conf.Namespace, conf.Database); err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to set namespace/database: %w", err)
+		}
+	}
+
+	wrapper := &surrealDBWrapper{db: db}
+
 	return &ClientImpl{
-		db: surreal,
+		db: wrapper,
 	}, nil
 }
 

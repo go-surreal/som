@@ -6,7 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-surreal/sdbc"
+
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // N is a placeholder for the node type.
@@ -21,7 +22,8 @@ type repo[N any, C any] struct {
 
 func (r *repo[N, C]) create(ctx context.Context, node *N) error {
 	data := r.convFrom(node)
-	raw, err := r.db.Create(ctx, sdbc.NewULID(r.name), data) // TODO: make ID type configurable
+	// Let SurrealDB generate the ID by passing a RecordID with nil ID
+	raw, err := r.db.Create(ctx, models.NewRecordID(r.name, nil), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -36,7 +38,7 @@ func (r *repo[N, C]) create(ctx context.Context, node *N) error {
 
 func (r *repo[N, C]) createWithID(ctx context.Context, id string, node *N) error {
 	data := r.convFrom(node)
-	res, err := r.db.Create(ctx, sdbc.MakeID(r.name, id), data)
+	res, err := r.db.Create(ctx, models.NewRecordID(r.name, id), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -85,7 +87,7 @@ func (r *repo[N, C]) delete(ctx context.Context, id *ID, node *N) error {
 	return nil
 }
 
-func (r *repo[N, C]) refresh(ctx context.Context, id *sdbc.ID, node *N) error {
+func (r *repo[N, C]) refresh(ctx context.Context, id *models.RecordID, node *N) error {
 	read, exists, err := r.read(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to read node: %w", err)

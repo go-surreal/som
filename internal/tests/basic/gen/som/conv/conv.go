@@ -4,8 +4,8 @@ package conv
 
 import (
 	"encoding/json"
-	"github.com/go-surreal/sdbc"
 	"github.com/google/uuid"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"net/url"
 	"strconv"
 	"strings"
@@ -145,23 +145,23 @@ func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
 // -- TIME
 //
 
-func fromTime(val time.Time) sdbc.DateTime {
-	return sdbc.DateTime{val}
+func fromTime(val time.Time) models.CustomDateTime {
+	return models.CustomDateTime{val}
 }
 
-func toTime(val sdbc.DateTime) time.Time {
+func toTime(val models.CustomDateTime) time.Time {
 	return val.Time
 }
 
-func fromTimePtr(val *time.Time) *sdbc.DateTime {
+func fromTimePtr(val *time.Time) *models.CustomDateTime {
 	if val == nil {
 		return nil
 	}
 
-	return &sdbc.DateTime{*val}
+	return &models.CustomDateTime{*val}
 }
 
-func toTimePtr(val *sdbc.DateTime) *time.Time {
+func toTimePtr(val *models.CustomDateTime) *time.Time {
 	if val == nil {
 		return nil
 	}
@@ -252,23 +252,23 @@ func toURLPtr(val *string) *url.URL {
 // -- DURATION
 //
 
-func fromDuration(val time.Duration) sdbc.Duration {
-	return sdbc.Duration{val}
+func fromDuration(val time.Duration) models.CustomDuration {
+	return models.CustomDuration{val}
 }
 
-func fromDurationPtr(val *time.Duration) *sdbc.Duration {
+func fromDurationPtr(val *time.Duration) *models.CustomDuration {
 	if val == nil {
 		return nil
 	}
 
-	return &sdbc.Duration{*val}
+	return &models.CustomDuration{*val}
 }
 
-func toDuration(val sdbc.Duration) time.Duration {
+func toDuration(val models.CustomDuration) time.Duration {
 	return val.Duration
 }
 
-func toDurationPtr(val *sdbc.Duration) *time.Duration {
+func toDurationPtr(val *models.CustomDuration) *time.Duration {
 	if val == nil {
 		return nil
 	}

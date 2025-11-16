@@ -70,10 +70,13 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		tb.Fatal(err)
 	}
 
+	// The official surrealdb.go client needs a proper URL with scheme
+	endpoint = "ws://" + endpoint
+
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
 
 	config := repo.Config{
-		Host:      endpoint,
+		Address:   endpoint,
 		Username:  username,
 		Password:  password,
 		Namespace: namespace,

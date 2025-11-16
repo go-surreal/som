@@ -33,7 +33,7 @@ func TestGoModValid(t *testing.T) {
 
 	assert.Equal(t, "", msg)
 
-	msg, err = mod.CheckSDBCVersion()
+	msg, err = mod.CheckDriverVersion()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestGoModWrongSOMVersion(t *testing.T) {
 	assert.Assert(t, exists)
 }
 
-func TestGoModMissingSDBCPackage(t *testing.T) {
+func TestGoModMissingSurrealDBPackage(t *testing.T) {
 	t.Parallel()
 
 	data, err := os.ReadFile("testdata/go.invalid.mod")
@@ -147,7 +147,7 @@ func TestGoModMissingSDBCPackage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	msg, err := mod.CheckSDBCVersion()
+	msg, err := mod.CheckDriverVersion()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,21 +157,21 @@ func TestGoModMissingSDBCPackage(t *testing.T) {
 	exists := false
 
 	for _, req := range mod.file.Require {
-		if req.Mod.Path != pkgSDBC {
+		if req.Mod.Path != pkgSurrealDB {
 			continue
 		}
 
 		exists = true
 
-		if req.Mod.Version != requiredSDBCVersion {
-			t.Fatal("som version not updated")
+		if req.Mod.Version != requiredSurrealDBVersion {
+			t.Fatal("surrealdb.go version not updated")
 		}
 	}
 
 	assert.Assert(t, exists)
 }
 
-func TestGoModWrongSDBCVersion(t *testing.T) {
+func TestGoModWrongSurrealDBVersion(t *testing.T) {
 	t.Parallel()
 
 	data, err := os.ReadFile("testdata/go.outdated.mod")
@@ -184,7 +184,7 @@ func TestGoModWrongSDBCVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	msg, err := mod.CheckSDBCVersion()
+	msg, err := mod.CheckDriverVersion()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,14 +194,14 @@ func TestGoModWrongSDBCVersion(t *testing.T) {
 	exists := false
 
 	for _, req := range mod.file.Require {
-		if req.Mod.Path != pkgSDBC {
+		if req.Mod.Path != pkgSurrealDB {
 			continue
 		}
 
 		exists = true
 
-		if req.Mod.Version != requiredSDBCVersion {
-			t.Fatal("som version not updated")
+		if req.Mod.Version != requiredSurrealDBVersion {
+			t.Fatal("surrealdb.go version not updated")
 		}
 	}
 
