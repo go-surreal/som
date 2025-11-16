@@ -105,6 +105,20 @@ func (f *Numeric) TypeDatabase() string {
 	}
 }
 
+func (f *Numeric) TypeDatabaseForArray() string {
+	// Returns base type without ASSERT clauses for use in array element types
+	switch f.source.Type {
+	case parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberRune,
+		parser.NumberInt64, parser.NumberInt,
+		parser.NumberUint8, parser.NumberUint16, parser.NumberUint32:
+		return f.optionWrap("int")
+	case parser.NumberFloat32, parser.NumberFloat64:
+		return f.optionWrap("float")
+	default:
+		panic(fmt.Sprintf("unmapped numeric type: %d", f.source.Type))
+	}
+}
+
 func (f *Numeric) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

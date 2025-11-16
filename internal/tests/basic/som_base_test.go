@@ -73,6 +73,8 @@ func TestWithDatabase(t *testing.T) {
 		UUID:      uid,
 		Byte:      []byte("x")[0],
 		ByteSlice: []byte("some value"),
+		Time:      time.Now(),
+		Duration:  time.Second,
 	}
 
 	userIn := userNew
@@ -115,16 +117,18 @@ func TestNumerics(t *testing.T) {
 	// MAX
 
 	userMax := model.AllFieldTypes{
-		String: str,
-		Int:    math.MaxInt,
-		Int8:   math.MaxInt8,
-		Int16:  math.MaxInt16,
-		Int32:  math.MaxInt32,
-		Int64:  math.MaxInt64,
+		String:   str,
+		Time:     time.Now(),
+		Duration: time.Second,
+		Int:      math.MaxInt,
+		Int8:     math.MaxInt8,
+		Int16:    math.MaxInt16,
+		Int32:    math.MaxInt32,
+		Int64:    math.MaxInt64,
 		//Uint:    1, //math.MaxUint,
-		Uint8:  math.MaxUint8,
-		Uint16: math.MaxUint16,
-		Uint32: math.MaxUint32,
+		Uint8:   math.MaxUint8,
+		Uint16:  math.MaxUint16,
+		Uint32:  math.MaxUint32,
 		//Uint64:  1, //math.MaxUint64,
 		//Uintptr: 1, //math.MaxUint64,
 		Float32: math.MaxFloat32,
@@ -156,16 +160,18 @@ func TestNumerics(t *testing.T) {
 	// MIN
 
 	userMin := model.AllFieldTypes{
-		String: str,
-		Int:    math.MinInt,
-		Int8:   math.MinInt8,
-		Int16:  math.MinInt16,
-		Int32:  math.MinInt32,
-		Int64:  math.MinInt64,
+		String:   str,
+		Time:     time.Now(),
+		Duration: time.Second,
+		Int:      math.MinInt,
+		Int8:     math.MinInt8,
+		Int16:    math.MinInt16,
+		Int32:    math.MinInt32,
+		Int64:    math.MinInt64,
 		//Uint:    math.MaxUint,
-		Uint8:  0,
-		Uint16: 0,
-		Uint32: 0,
+		Uint8:   0,
+		Uint16:  0,
+		Uint32:  0,
 		//Uint64:  0,
 		//Uintptr: 0,
 		Float32: -math.MaxFloat32,
@@ -201,7 +207,10 @@ func TestTimestamps(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	user := &model.AllFieldTypes{}
+	user := &model.AllFieldTypes{
+		Time:     time.Now(),
+		Duration: time.Second,
+	}
 
 	err := client.AllFieldTypesRepo().Create(ctx, user)
 	if err != nil {
@@ -300,6 +309,7 @@ func TestDuration(t *testing.T) {
 	ptr := time.Hour
 
 	userNew := &model.AllFieldTypes{
+		Time:        time.Now(),
 		Duration:    time.Minute,
 		DurationPtr: &ptr,
 		DurationNil: nil,
@@ -351,9 +361,11 @@ func TestUUID(t *testing.T) {
 	ptr := uuid.New()
 
 	userNew := &model.AllFieldTypes{
-		UUID:    uuid.New(),
-		UUIDPtr: &ptr,
-		UUIDNil: nil,
+		Time:     time.Now(),
+		Duration: time.Second,
+		UUID:     uuid.New(),
+		UUIDPtr:  &ptr,
+		UUIDNil:  nil,
 	}
 
 	modelIn := userNew
@@ -403,7 +415,9 @@ func FuzzWithDatabase(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, str string) {
 		userIn := &model.AllFieldTypes{
-			String: str,
+			String:   str,
+			Time:     time.Now(),
+			Duration: time.Second,
 		}
 
 		err := client.AllFieldTypesRepo().Create(ctx, userIn)
@@ -450,7 +464,9 @@ func FuzzCustomModelIDs(f *testing.F) {
 		}
 
 		userIn := &model.AllFieldTypes{
-			String: "1",
+			String:   "1",
+			Time:     time.Now(),
+			Duration: time.Second,
 		}
 
 		err := client.AllFieldTypesRepo().CreateWithID(ctx, id, userIn)
@@ -501,7 +517,9 @@ func BenchmarkWithDatabase(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		userIn := &model.AllFieldTypes{
-			String: "Some User",
+			String:   "Some User",
+			Time:     time.Now(),
+			Duration: time.Second,
 		}
 
 		err := client.AllFieldTypesRepo().Create(ctx, userIn)
@@ -533,7 +551,10 @@ func TestAsync(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{})
+	err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{
+		Time:     time.Now(),
+		Duration: time.Second,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,7 +566,10 @@ func TestAsync(t *testing.T) {
 	assert.NilError(t, <-resCh.Err())
 	assert.Equal(t, 1, <-resCh.Val())
 
-	err = client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{})
+	err = client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{
+		Time:     time.Now(),
+		Duration: time.Second,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -565,7 +589,9 @@ func TestRefresh(t *testing.T) {
 	defer cleanup()
 
 	allFieldTypes := &model.AllFieldTypes{
-		String: "some value",
+		String:   "some value",
+		Time:     time.Now(),
+		Duration: time.Second,
 	}
 
 	err := client.AllFieldTypesRepo().Create(ctx, allFieldTypes)

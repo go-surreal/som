@@ -14,7 +14,8 @@ import (
 type ID = models.RecordID
 
 type Database interface {
-	Create(ctx context.Context, id ID, data any) ([]byte, error)
+	// Create accepts either a table name (string) for server-generated IDs or a RecordID for specific IDs
+	Create(ctx context.Context, what any, data any) ([]byte, error)
 	Select(ctx context.Context, id *ID) ([]byte, error)
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
@@ -44,8 +45,26 @@ type surrealDBWrapper struct {
 	db *surrealdb.DB
 }
 
-func (w *surrealDBWrapper) Create(ctx context.Context, id ID, data any) ([]byte, error) {
-	result, err := surrealdb.Create[any](ctx, w.db, id, data)
+func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]byte, error) {
+	// Handle different types that satisfy TableOrRecord constraint
+	var result *any
+	var err error
+
+	switch v := what.(type) {
+	case string:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case models.RecordID:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case models.Table:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case []models.Table:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case []models.RecordID:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	default:
+		return nil, fmt.Errorf("invalid type for 'what' parameter: %T (expected string, RecordID, or Table)", what)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -69,12 +88,24 @@ func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map
 	if err != nil {
 		return nil, err
 	}
+
+	// Check for errors in individual query results
+	// The surrealdb.Query function returns *[]QueryResult[T], where each result can have its own error
+	if result != nil {
+		for i, qr := range *result {
+			if qr.Error != nil {
+				return nil, fmt.Errorf("query statement %d failed: %w", i, qr.Error)
+			}
+		}
+	}
+
 	return cbor.Marshal(result)
 }
 
 func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
-	// Execute the LIVE statement via Query, which returns the live query ID
-	result, err := surrealdb.Query[any](ctx, w.db, statement, vars)
+	// Execute the LIVE statement via Query
+	// LIVE SELECT returns the UUID directly, not in an array
+	result, err := surrealdb.Query[models.UUID](ctx, w.db, statement, vars)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute live query: %w", err)
 	}
@@ -84,21 +115,14 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 		return nil, fmt.Errorf("empty response from live query")
 	}
 
-	// The last query result contains the live query ID
-	lastResult := (*result)[len(*result)-1]
-	if lastResult.Error != nil {
-		return nil, fmt.Errorf("live query error: %w", lastResult.Error)
+	// The first query result contains the live query UUID
+	firstResult := (*result)[0]
+	if firstResult.Error != nil {
+		return nil, fmt.Errorf("live query error: %w", firstResult.Error)
 	}
 
-	// The result should be a UUID string
-	var liveID string
-	liveIDBytes, err := cbor.Marshal(lastResult.Result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal live query ID: %w", err)
-	}
-	if err := cbor.Unmarshal(liveIDBytes, &liveID); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal live query ID: %w", err)
-	}
+	// Extract UUID from the result (LIVE SELECT returns UUID directly)
+	liveID := firstResult.Result.String()
 
 	// Get the notification channel for this live query
 	notifications, err := w.db.LiveNotifications(liveID)

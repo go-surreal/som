@@ -2,10 +2,12 @@ package basic
 
 import (
 	"context"
-	"github.com/go-surreal/som/tests/basic/model"
-	"gotest.tools/v3/assert"
 	"math/rand"
 	"testing"
+	"time"
+
+	"github.com/go-surreal/som/tests/basic/model"
+	"gotest.tools/v3/assert"
 )
 
 const (
@@ -19,14 +21,13 @@ func TestQueryCount(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	if err := client.ApplySchema(ctx); err != nil {
-		t.Fatal(err)
-	}
-
 	count := rand.Intn(randMax-randMin) + randMin
 
 	for i := 0; i < count; i++ {
-		err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{})
+		err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{
+			Time:     time.Now(),
+			Duration: time.Second,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}

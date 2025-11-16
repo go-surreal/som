@@ -33,7 +33,25 @@ func (f *Slice) TypeDatabase() string {
 
 	// Go treats empty slices as nil, so the database needs
 	// to accept the json NULL value for any array field.
-	return "option<array | null>"
+	// Modern SurrealDB requires the element type to be included in the array type
+
+	// Use TypeDatabaseForArray if implemented, otherwise fall back to TypeDatabase
+	var elementType string
+	type arrayTyper interface {
+		TypeDatabaseForArray() string
+	}
+	if at, ok := f.element.(arrayTyper); ok && at.TypeDatabaseForArray() != "" {
+		elementType = at.TypeDatabaseForArray()
+	} else {
+		elementType = f.element.TypeDatabase()
+	}
+
+	return fmt.Sprintf("option<array<%s> | null>", elementType)
+}
+
+func (f *Slice) TypeDatabaseForArray() string {
+	// Slices can be nested, so return the array type for nested arrays
+	return f.TypeDatabase()
 }
 
 func (f *Slice) Element() Field {

@@ -29,6 +29,11 @@ func (f *URL) TypeDatabase() string {
 	return `string ASSERT $value == "" OR string::is::url($value)`
 }
 
+func (f *URL) TypeDatabaseForArray() string {
+	// Returns base type without ASSERT clauses for use in array element types
+	return f.optionWrap("string")
+}
+
 func (f *URL) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

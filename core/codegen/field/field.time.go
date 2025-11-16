@@ -36,6 +36,11 @@ func (f *Time) TypeDatabase() string {
 	return f.optionWrap("datetime")
 }
 
+func (f *Time) TypeDatabaseForArray() string {
+	// Returns base type without VALUE/PERMISSIONS clauses for use in array element types
+	return f.optionWrap("datetime")
+}
+
 func (f *Time) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
