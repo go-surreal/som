@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -35,23 +36,11 @@ func (f *Slice) TypeDatabase() string {
 	// to accept the json NULL value for any array field.
 	// Modern SurrealDB requires the element type to be included in the array type
 
-	// Use TypeDatabaseForArray if implemented, otherwise fall back to TypeDatabase
-	var elementType string
-	type arrayTyper interface {
-		TypeDatabaseForArray() string
-	}
-	if at, ok := f.element.(arrayTyper); ok && at.TypeDatabaseForArray() != "" {
-		elementType = at.TypeDatabaseForArray()
-	} else {
-		elementType = f.element.TypeDatabase()
-	}
-
-	return fmt.Sprintf("option<array<%s> | null>", elementType)
+	return fmt.Sprintf("option<array<%s> | null>", f.element.TypeDatabase())
 }
 
-func (f *Slice) TypeDatabaseForArray() string {
-	// Slices can be nested, so return the array type for nested arrays
-	return f.TypeDatabase()
+func (f *Slice) TypeDatabaseExtend() string {
+	return ""
 }
 
 func (f *Slice) Element() Field {

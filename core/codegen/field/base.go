@@ -1,10 +1,11 @@
 package field
 
 import (
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
-	"strings"
 )
 
 const (
@@ -29,6 +30,7 @@ type Field interface {
 	typeGo() jen.Code
 	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
+	TypeDatabaseExtend() string
 
 	CodeGen() *CodeGen
 }
@@ -112,11 +114,6 @@ func (f *baseField) NameDatabase() string {
 	return f.ToDatabaseName(f.source.Name())
 }
 
-// TypeDatabaseForArray returns the base type for use in array element type definitions.
-// By default, it returns the same as TypeDatabase(). Field types with ASSERT/VALUE/PERMISSIONS
-// clauses should override this to return just the base type.
-func (f *baseField) TypeDatabaseForArray() string {
-	// This will be overridden by Field types that implement TypeDatabase()
-	// Since baseField doesn't implement TypeDatabase(), this is just a placeholder
+func (f *baseField) TypeDatabaseExtend() string {
 	return ""
 }

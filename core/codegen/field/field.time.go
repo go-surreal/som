@@ -21,24 +21,27 @@ func (f *Time) typeConv(_ Context) jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
-	if f.source.IsCreatedAt {
-		// READONLY not working as expected, so using permissions as workaround for now.
-		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
-		return "option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE"
-	}
-
-	if f.source.IsUpdatedAt {
-		// READONLY not working as expected, so using permissions as workaround for now.
-		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
-		return "option<datetime> VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE"
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return "option<datetime>"
 	}
 
 	return f.optionWrap("datetime")
 }
 
-func (f *Time) TypeDatabaseForArray() string {
-	// Returns base type without VALUE/PERMISSIONS clauses for use in array element types
-	return f.optionWrap("datetime")
+func (f *Time) TypeDatabaseExtend() string {
+	if f.source.IsCreatedAt {
+		// READONLY not working as expected, so using permissions as workaround for now.
+		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
+		return "VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE"
+	}
+
+	if f.source.IsUpdatedAt {
+		// READONLY not working as expected, so using permissions as workaround for now.
+		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
+		return "VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE"
+	}
+
+	return ""
 }
 
 func (f *Time) CodeGen() *CodeGen {

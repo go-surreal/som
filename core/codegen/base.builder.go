@@ -2,15 +2,16 @@ package codegen
 
 import (
 	"fmt"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -118,6 +119,11 @@ func (b *build) buildSchemaFile() error {
 		fieldType := f.TypeDatabase()
 		if fieldType == "" {
 			return // TODO: is this actually valid?
+		}
+
+		fieldTypeExtend := f.TypeDatabaseExtend()
+		if fieldTypeExtend != "" {
+			fieldType = fieldType + " " + fieldTypeExtend
 		}
 
 		statement := fmt.Sprintf(
