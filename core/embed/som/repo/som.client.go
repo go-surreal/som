@@ -4,7 +4,10 @@ package repo
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
+	"math/big"
+	"strings"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/surrealdb/surrealdb.go"
@@ -103,26 +106,60 @@ func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map
 }
 
 func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
+	// NOTE: SurrealDB does not yet support proper variable handling for live queries.
+	// To circumvent this limitation, params are registered in the database before issuing
+	// the actual live query. Those params are given the values of the variables passed to
+	// this method. This way, the live query can be filtered by said params.
+	//
+	// References:
+	// Bug: Using variables in filters does not emit live messages (https://github.com/surrealdb/surrealdb/issues/2623)
+	// Bug: LQ params should be evaluated before registering (https://github.com/surrealdb/surrealdb/issues/2641)
+	// Bug: parameters do not work with live queries (https://github.com/surrealdb/surrealdb/issues/3602)
+	// Feature: Live Query WHERE clause should process Params (https://github.com/surrealdb/surrealdb/issues/4026)
+
+	// Generate a random prefix to prevent param name collisions
+	varPrefix, err := randString(32)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random string: %w", err)
+	}
+
+	// Create DEFINE PARAM statements for each variable
+	params := make(map[string]string, len(vars))
+	for key := range vars {
+		newKey := varPrefix + "_" + key
+		params[newKey] = "DEFINE PARAM $" + newKey + " VALUE $" + key
+		statement = strings.ReplaceAll(statement, "$"+key, "$"+newKey)
+	}
+
+	// Prepend DEFINE PARAM statements to the query
+	if len(params) > 0 {
+		var paramDefs strings.Builder
+		for _, value := range params {
+			paramDefs.WriteString(value + "; ")
+		}
+		statement = paramDefs.String() + statement
+	}
+
 	// Execute the LIVE statement via Query
-	// LIVE SELECT returns the UUID directly, not in an array
 	result, err := surrealdb.Query[models.UUID](ctx, w.db, statement, vars)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute live query: %w", err)
 	}
 
 	// Extract the live query ID from the result
-	if result == nil || len(*result) == 0 {
+	// The last result contains the live query UUID
+	queryIndex := len(params)
+	if result == nil || len(*result) <= queryIndex {
 		return nil, fmt.Errorf("empty response from live query")
 	}
 
-	// The first query result contains the live query UUID
-	firstResult := (*result)[0]
-	if firstResult.Error != nil {
-		return nil, fmt.Errorf("live query error: %w", firstResult.Error)
+	lastResult := (*result)[queryIndex]
+	if lastResult.Error != nil {
+		return nil, fmt.Errorf("live query error: %w", lastResult.Error)
 	}
 
 	// Extract UUID from the result (LIVE SELECT returns UUID directly)
-	liveID := firstResult.Result.String()
+	liveID := lastResult.Result.String()
 
 	// Get the notification channel for this live query
 	notifications, err := w.db.LiveNotifications(liveID)
@@ -130,17 +167,29 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 		return nil, fmt.Errorf("failed to get live notifications: %w", err)
 	}
 
-	// Convert to []byte channel
+	// Convert to []byte channel and handle cleanup
 	out := make(chan []byte)
 	go func() {
 		defer close(out)
+		defer func() {
+			// Clean up the defined params when the live query ends
+			cleanupCtx := context.Background()
+			for newKey := range params {
+				_, _ = surrealdb.Query[any](cleanupCtx, w.db, fmt.Sprintf("REMOVE PARAM $%s;", newKey), nil)
+			}
+		}()
+
 		for notif := range notifications {
 			data, err := cbor.Marshal(notif)
 			if err != nil {
 				// Log error but continue
 				continue
 			}
-			out <- data
+			select {
+			case <-ctx.Done():
+				return
+			case out <- data:
+			}
 		}
 	}()
 
@@ -248,4 +297,20 @@ func NewClient(ctx context.Context, conf Config, opts ...Option) (*ClientImpl, e
 
 func (c *ClientImpl) Close() {
 	c.db.Close()
+}
+
+// randString generates a random alphanumeric string of length n
+func randString(n int) (string, error) {
+	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	byteSlice := make([]byte, n)
+
+	for index := range byteSlice {
+		randInt, err := rand.Int(rand.Reader, big.NewInt(int64(len(letterBytes))))
+		if err != nil {
+			return "", fmt.Errorf("failed to generate random string: %w", err)
+		}
+		byteSlice[index] = letterBytes[randInt.Int64()]
+	}
+
+	return string(byteSlice), nil
 }
