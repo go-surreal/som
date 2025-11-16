@@ -108,6 +108,7 @@ func (q Query[T]) render() string {
 	if q.live {
 		out.WriteString("LIVE ")
 	}
+
 	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
 
 	var t T

@@ -30,7 +30,7 @@ type Database interface {
 	Close() error
 }
 
-// Config holds the configuration for connecting to SurrealDB
+// Config holds the configuration for connecting to the SurrealDB instance.
 type Config struct {
 	Address   string
 	Namespace string
@@ -43,7 +43,7 @@ type ClientImpl struct {
 	db Database
 }
 
-// surrealDBWrapper wraps the official surrealdb.go client to implement the Database interface
+// surrealDBWrapper wraps the official surrealdb.go client to implement the Database interface.
 type surrealDBWrapper struct {
 	db *surrealdb.DB
 }
@@ -69,8 +69,9 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create: %w", err)
 	}
+
 	return cbor.Marshal(result)
 }
 

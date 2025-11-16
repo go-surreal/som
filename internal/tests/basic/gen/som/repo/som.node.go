@@ -22,8 +22,7 @@ type repo[N any, C any] struct {
 
 func (r *repo[N, C]) create(ctx context.Context, node *N) error {
 	data := r.convFrom(node)
-	// Let SurrealDB generate the ID by passing the table name as a string
-	raw, err := r.db.Create(ctx, r.name, data)
+	raw, err := r.db.Create(ctx, models.NewRecordID(r.name, "ulid()"), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
