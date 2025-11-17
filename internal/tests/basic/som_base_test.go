@@ -2,6 +2,12 @@ package basic
 
 import (
 	"context"
+	"math"
+	"net/url"
+	"testing"
+	"time"
+	"unicode/utf8"
+
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
@@ -9,11 +15,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gotest.tools/v3/assert"
-	"math"
-	"net/url"
-	"testing"
-	"time"
-	"unicode/utf8"
 )
 
 func TestQuery(t *testing.T) {
@@ -126,9 +127,9 @@ func TestNumerics(t *testing.T) {
 		Int32:    math.MaxInt32,
 		Int64:    math.MaxInt64,
 		//Uint:    1, //math.MaxUint,
-		Uint8:   math.MaxUint8,
-		Uint16:  math.MaxUint16,
-		Uint32:  math.MaxUint32,
+		Uint8:  math.MaxUint8,
+		Uint16: math.MaxUint16,
+		Uint32: math.MaxUint32,
 		//Uint64:  1, //math.MaxUint64,
 		//Uintptr: 1, //math.MaxUint64,
 		Float32: math.MaxFloat32,
@@ -169,9 +170,9 @@ func TestNumerics(t *testing.T) {
 		Int32:    math.MinInt32,
 		Int64:    math.MinInt64,
 		//Uint:    math.MaxUint,
-		Uint8:   0,
-		Uint16:  0,
-		Uint32:  0,
+		Uint8:  0,
+		Uint16: 0,
+		Uint32: 0,
 		//Uint64:  0,
 		//Uintptr: 0,
 		Float32: -math.MaxFloat32,

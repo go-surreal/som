@@ -59,7 +59,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
-			Reuse:            true,
+			Reuse:            false,
 		},
 	)
 	if err != nil {
