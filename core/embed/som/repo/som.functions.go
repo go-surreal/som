@@ -4,7 +4,11 @@ package repo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+
+	"github.com/fxamacker/cbor/v2"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 const statusOK = "OK"
@@ -41,4 +45,69 @@ func Unmarshal[M any](respond interface{}) (model M, err error) {
 	}
 
 	return model, err
+}
+
+//
+// -- RECORD ID
+//
+
+const recordSeparator = ":"
+
+var ErrUnmarshalNotSupported = errors.New("unmarshal not supported")
+
+type RecordID interface {
+	recordID()
+}
+
+type newRecordID struct {
+	table       string
+	constructor string
+}
+
+func (id *newRecordID) recordID() {}
+
+func (id *newRecordID) String() string {
+	return id.table + recordSeparator + id.constructor
+}
+
+func (id *newRecordID) MarshalCBOR() ([]byte, error) {
+	content, err := cbor.Marshal(id.table + recordSeparator + id.constructor)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal recordID: %w", err)
+	}
+
+	data, err := cbor.Marshal(cbor.RawTag{
+		Number:  models.TagRecordID,
+		Content: content,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal raw tag: %w", err)
+	}
+
+	return data, nil
+}
+
+func (id *newRecordID) UnmarshalCBOR(_ []byte) error {
+	return ErrUnmarshalNotSupported
+}
+
+func newID(table string) RecordID {
+	return &newRecordID{
+		table:       table,
+		constructor: "rand()",
+	}
+}
+
+func newULID(table string) RecordID {
+	return &newRecordID{
+		table:       table,
+		constructor: "ulid()",
+	}
+}
+
+func newUUID(table string) RecordID {
+	return &newRecordID{
+		table:       table,
+		constructor: "uuid()", // TODO: schema type for ID field and cbor tag
+	}
 }

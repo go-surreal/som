@@ -81,15 +81,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		Database:  database,
 	}
 
-	opts := []repo.Option{
-		repo.WithLogger(slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-				Level: slog.LevelDebug,
-			}),
-		)),
-	}
-
-	client, err := repo.NewClient(ctx, config, opts...)
+	client, err := repo.NewClient(ctx, config)
 	if err != nil {
 		tb.Fatal(err)
 	}

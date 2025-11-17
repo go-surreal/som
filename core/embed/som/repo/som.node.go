@@ -22,7 +22,7 @@ type repo[N any, C any] struct {
 
 func (r *repo[N, C]) create(ctx context.Context, node *N) error {
 	data := r.convFrom(node)
-	raw, err := r.db.Create(ctx, models.NewRecordID(r.name, "ulid()"), data)
+	raw, err := r.db.Create(ctx, newULID(r.name), data) // TODO: make ID type configurable
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}

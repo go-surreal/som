@@ -2,10 +2,11 @@ package field
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
-	"math"
 )
 
 type Byte struct {
@@ -81,5 +82,5 @@ func (f *Byte) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *Byte) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }

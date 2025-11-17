@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -24,7 +25,7 @@ func (f *Node) typeConv(_ Context) jen.Code {
 
 func (f *Node) TypeDatabase() string {
 	// Linked records are always considered optional.
-	return fmt.Sprintf("option<record<%s> | null>", f.table.NameDatabase())
+	return fmt.Sprintf("option<record<%s>>", f.table.NameDatabase())
 }
 
 func (f *Node) Table() *NodeTable {
@@ -104,5 +105,5 @@ func (f *Node) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *Node) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
 }

@@ -22,7 +22,7 @@ func (f *UUID) typeConv(ctx Context) jen.Code {
 
 func (f *UUID) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "option<uuid | null>"
+		return "option<uuid>"
 	}
 
 	return "uuid"
@@ -89,5 +89,5 @@ func (f *UUID) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *UUID) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }

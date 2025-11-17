@@ -92,5 +92,5 @@ func (f *Duration) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *Duration) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }

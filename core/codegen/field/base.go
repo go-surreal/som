@@ -93,10 +93,18 @@ func (f *baseField) ptr() jen.Code {
 	return jen.Empty()
 }
 
+func (f *baseField) omitEmptyIfPtr() string {
+	if f.source.Pointer() {
+		return ",omitempty"
+	}
+
+	return ""
+}
+
 // optionWrap wraps the given value in an option type if the field is a pointer.
 func (f *baseField) optionWrap(val string) string {
 	if f.source.Pointer() {
-		return "option<" + val + " | null>"
+		return "option<" + val + ">"
 	}
 
 	return val

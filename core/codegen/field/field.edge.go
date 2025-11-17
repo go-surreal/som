@@ -95,5 +95,5 @@ func (f *Edge) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *Edge) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }

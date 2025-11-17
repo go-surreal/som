@@ -22,8 +22,7 @@ func (f *URL) typeConv(_ Context) jen.Code {
 
 func (f *URL) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "option<string | null>"
-		// TODO: should field be omitted (omitempty) if value is null (instead of being set to null)?
+		return "option<string>"
 	}
 
 	return "string"
@@ -96,5 +95,5 @@ func (f *URL) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *URL) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }

@@ -9,7 +9,7 @@ import (
 
 type URLExample struct {
 	ID           *som.ID `cbor:"id,omitempty"`
-	SomeURL      *string `cbor:"some_url"`
+	SomeURL      *string `cbor:"some_url,omitempty"`
 	SomeOtherURL string  `cbor:"some_other_url"`
 }
 
