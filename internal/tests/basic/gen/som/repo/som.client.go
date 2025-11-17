@@ -49,54 +49,48 @@ type surrealDBWrapper struct {
 }
 
 func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]byte, error) {
-	// Use raw CREATE query to support all ID types including ulid()
-	// The official surrealdb.go client's Create helper doesn't support custom ID types
-	// like newRecordID (which generates "table:ulid()" syntax), so we use raw queries.
-	// Format: CREATE <what> CONTENT $data
+	// Handle different types that satisfy TableOrRecord constraint
+	var result *any
+	var err error
 
-	// Convert what to string - this will call String() method if it exists
-	var whatStr string
-
-	// Try pointer receiver first
-	if stringer, ok := what.(fmt.Stringer); ok {
-		whatStr = stringer.String()
-	} else if recordID, ok := what.(models.RecordID); ok {
-		// Handle models.RecordID which has String() on pointer receiver
-		whatStr = recordID.String()
-	} else {
-		// Fallback to string conversion
-		whatStr = fmt.Sprint(what)
+	switch v := what.(type) {
+	case *newRecordID:
+		// For custom newRecordID (e.g., table:ulid()), use Query with SurrealQL
+		statement := fmt.Sprintf("CREATE %s CONTENT $data", v.String())
+		queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, map[string]any{"data": data})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create with custom ID: %w", err)
+		}
+		if queryResult == nil || len(*queryResult) == 0 {
+			return nil, fmt.Errorf("empty response from create")
+		}
+		if (*queryResult)[0].Error != nil {
+			return nil, fmt.Errorf("create failed: %w", (*queryResult)[0].Error)
+		}
+		resultArray := (*queryResult)[0].Result
+		if len(resultArray) == 0 {
+			return nil, fmt.Errorf("empty result array from create")
+		}
+		return cbor.Marshal(resultArray[0])
+	case string:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case models.RecordID:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case models.Table:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case []models.Table:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case []models.RecordID:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	default:
+		return nil, fmt.Errorf("invalid type for 'what' parameter: %T (expected string, RecordID, or Table)", what)
 	}
 
-	statement := fmt.Sprintf("CREATE %s CONTENT $data", whatStr)
-	vars := map[string]any{"data": data}
-
-	result, err := surrealdb.Query[cbor.RawMessage](ctx, w.db, statement, vars)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create: %w", err)
 	}
 
-	// Check for errors in query results
-	if result == nil || len(*result) == 0 {
-		return nil, fmt.Errorf("empty response from create")
-	}
-
-	if (*result)[0].Error != nil {
-		return nil, fmt.Errorf("create failed: %w", (*result)[0].Error)
-	}
-
-	// CREATE returns an array with a single result, extract the first element
-	var resultArray []cbor.RawMessage
-	if err := cbor.Unmarshal((*result)[0].Result, &resultArray); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal result array: %w", err)
-	}
-
-	if len(resultArray) == 0 {
-		return nil, fmt.Errorf("empty result array from create")
-	}
-
-	// Return the first (and only) result
-	return resultArray[0], nil
+	return cbor.Marshal(result)
 }
 
 func (w *surrealDBWrapper) Select(ctx context.Context, id *ID) ([]byte, error) {
@@ -127,24 +121,7 @@ func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map
 		}
 	}
 
-	// Build array of queryResult objects matching the generated code's expectations
-	// The generated code expects: Result []M, Status string, Time string with json tags
-	type queryResult struct {
-		Result any    `cbor:"result" json:"result"`
-		Status string `cbor:"status" json:"status"`
-		Time   string `cbor:"time" json:"time"`
-	}
-
-	results := make([]queryResult, len(*result))
-	for i, qr := range *result {
-		results[i] = queryResult{
-			Result: qr.Result,
-			Status: qr.Status,
-			Time:   qr.Time,
-		}
-	}
-
-	return cbor.Marshal(results)
+	return cbor.Marshal(result)
 }
 
 func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {

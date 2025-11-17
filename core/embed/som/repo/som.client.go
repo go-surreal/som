@@ -54,6 +54,24 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 	var err error
 
 	switch v := what.(type) {
+	case *newRecordID:
+		// For custom newRecordID (e.g., table:ulid()), use Query with SurrealQL
+		statement := fmt.Sprintf("CREATE %s CONTENT $data", v.String())
+		queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, map[string]any{"data": data})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create with custom ID: %w", err)
+		}
+		if queryResult == nil || len(*queryResult) == 0 {
+			return nil, fmt.Errorf("empty response from create")
+		}
+		if (*queryResult)[0].Error != nil {
+			return nil, fmt.Errorf("create failed: %w", (*queryResult)[0].Error)
+		}
+		resultArray := (*queryResult)[0].Result
+		if len(resultArray) == 0 {
+			return nil, fmt.Errorf("empty result array from create")
+		}
+		return cbor.Marshal(resultArray[0])
 	case string:
 		result, err = surrealdb.Create[any](ctx, w.db, v, data)
 	case models.RecordID:
