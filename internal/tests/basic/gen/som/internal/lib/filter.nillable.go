@@ -17,17 +17,17 @@ func NewNillable[M any](key Key[M]) *Nillable[M] {
 }
 
 // Nil returns a filter that checks if the value is nil.
-// This checks for both NONE (field absent) and NULL (field explicitly null).
+//
+// This checks for both NONE (field absent) and NULL (field explicitly null),
+// because in golang both cases are represented as nil.
 func (n *Nillable[M]) Nil(is bool) Filter[M] {
 	if is {
-		// Generate: (field == NONE OR field == NULL)
 		return filter[M](func(ctx *context, _ M) string {
 			fieldName := strings.TrimPrefix(n.render(ctx), ".")
 			return "(" + fieldName + " == NONE OR " + fieldName + " == NULL)"
 		})
 	}
 
-	// Generate: (field != NONE AND field != NULL)
 	return filter[M](func(ctx *context, _ M) string {
 		fieldName := strings.TrimPrefix(n.render(ctx), ".")
 		return "(" + fieldName + " != NONE AND " + fieldName + " != NULL)"

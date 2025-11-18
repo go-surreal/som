@@ -572,11 +572,6 @@ func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 }
 
 func (f *Slice) fieldDef(ctx Context) jen.Code {
-	//jsonSuffix := ""
-	//if _, isEdge := f.element.(*Edge); isEdge {
-	//	jsonSuffix = ",omitempty"
-	//}
-
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
 }

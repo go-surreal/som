@@ -1,6 +1,8 @@
 package field
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -16,8 +18,8 @@ func (f *Duration) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Duration")
 }
 
-func (f *Duration) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).Qual(def.PkgModels, "CustomDuration")
+func (f *Duration) typeConv(ctx Context) jen.Code {
+	return jen.Add(f.ptr()).Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration")
 }
 
 func (f *Duration) TypeDatabase() string {

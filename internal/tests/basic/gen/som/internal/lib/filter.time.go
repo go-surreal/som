@@ -3,8 +3,9 @@
 package lib
 
 import (
-	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"time"
+
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 )
 
 type Time[M any] struct {
@@ -14,7 +15,7 @@ type Time[M any] struct {
 
 func NewTime[M any](key Key[M]) *Time[M] {
 	conv := func(val time.Time) any {
-		return models.CustomDateTime{val}
+		return types.DateTime{Time: val}
 	}
 
 	return &Time[M]{
@@ -40,11 +41,11 @@ func (t *Time[M]) AfterOrEqual(val time.Time) Filter[M] {
 }
 
 func (t *Time[M]) Add(dur time.Duration) *Time[M] {
-	return NewTime[M](t.calc(OpAdd, models.CustomDuration{dur}))
+	return NewTime[M](t.calc(OpAdd, types.Duration{Duration: dur}))
 }
 
 func (t *Time[M]) Sub(dur time.Duration) *Time[M] {
-	return NewTime[M](t.calc(OpSub, models.CustomDuration{dur}))
+	return NewTime[M](t.calc(OpSub, types.Duration{Duration: dur}))
 }
 
 func (t *Time[M]) Day() *Numeric[M, int] {
@@ -52,7 +53,7 @@ func (t *Time[M]) Day() *Numeric[M, int] {
 }
 
 func (t *Time[M]) Floor(dur time.Duration) *Time[M] {
-	return NewTime[M](t.fn("time::floor", models.CustomDuration{dur}))
+	return NewTime[M](t.fn("time::floor", types.Duration{Duration: dur}))
 }
 
 const (
@@ -122,7 +123,7 @@ func (t *Time[M]) Nano() *Numeric[M, int] {
 }
 
 func (t *Time[M]) Round(dur time.Duration) *Time[M] {
-	return NewTime[M](t.fn("time::round", models.CustomDuration{dur}))
+	return NewTime[M](t.fn("time::round", types.Duration{Duration: dur}))
 }
 
 func (t *Time[M]) Second() *Numeric[M, int] {

@@ -5,6 +5,7 @@ package som
 import (
 	"time"
 
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -59,7 +60,7 @@ type Timestamps struct {
 	updatedAt time.Time
 }
 
-func NewTimestamps(createdAt *models.CustomDateTime, updatedAt *models.CustomDateTime) Timestamps {
+func NewTimestamps(createdAt *types.DateTime, updatedAt *types.DateTime) Timestamps {
 	var ts Timestamps
 
 	if createdAt != nil {

@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"strings"
 
@@ -49,13 +50,11 @@ type surrealDBWrapper struct {
 }
 
 func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]byte, error) {
-	// Handle different types that satisfy TableOrRecord constraint
 	var result *any
 	var err error
 
 	switch v := what.(type) {
 	case *newRecordID:
-		// For custom newRecordID (e.g., table:ulid()), use Query with SurrealQL
 		statement := fmt.Sprintf("CREATE %s CONTENT $data", v.String())
 		queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, map[string]any{"data": data})
 		if err != nil {
@@ -111,8 +110,8 @@ func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map
 		return nil, err
 	}
 
-	// Check for errors in individual query results
-	// The surrealdb.Query function returns *[]QueryResult[T], where each result can have its own error
+	// Check for errors in individual query results.
+	// The surrealdb.Query function returns *[]QueryResult[T], where each result can have its own error.
 	if result != nil {
 		for i, qr := range *result {
 			if qr.Error != nil {
@@ -136,13 +135,13 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 	// Bug: parameters do not work with live queries (https://github.com/surrealdb/surrealdb/issues/3602)
 	// Feature: Live Query WHERE clause should process Params (https://github.com/surrealdb/surrealdb/issues/4026)
 
-	// Generate a random prefix to prevent param name collisions
+	// Generate a random prefix to prevent param name collisions.
 	varPrefix, err := randString(32)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random string: %w", err)
 	}
 
-	// Create DEFINE PARAM statements for each variable
+	// Create DEFINE PARAM statements for each variable.
 	params := make(map[string]string, len(vars))
 	for key := range vars {
 		newKey := varPrefix + "_" + key
@@ -150,7 +149,7 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 		statement = strings.ReplaceAll(statement, "$"+key, "$"+newKey)
 	}
 
-	// Prepend DEFINE PARAM statements to the query
+	// Prepend DEFINE PARAM statements to the query.
 	if len(params) > 0 {
 		var paramDefs strings.Builder
 		for _, value := range params {
@@ -159,14 +158,14 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 		statement = paramDefs.String() + statement
 	}
 
-	// Execute the LIVE statement via Query
+	// Execute the LIVE statement via Query call.
 	result, err := surrealdb.Query[models.UUID](ctx, w.db, statement, vars)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute live query: %w", err)
 	}
 
-	// Extract the live query ID from the result
-	// The last result contains the live query UUID
+	// Extract the live query ID from the result.
+	// The last result contains the live query UUID.
 	queryIndex := len(params)
 	if result == nil || len(*result) <= queryIndex {
 		return nil, fmt.Errorf("empty response from live query")
@@ -177,21 +176,18 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 		return nil, fmt.Errorf("live query error: %w", lastResult.Error)
 	}
 
-	// Extract UUID from the result (LIVE SELECT returns UUID directly)
 	liveID := lastResult.Result.String()
 
-	// Get the notification channel for this live query
 	notifications, err := w.db.LiveNotifications(liveID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get live notifications: %w", err)
 	}
 
-	// Convert to []byte channel and handle cleanup
 	out := make(chan []byte)
 	go func() {
 		defer close(out)
 		defer func() {
-			// Clean up the defined params when the live query ends
+			// Clean up the defined params when the live query ends.
 			cleanupCtx := context.Background()
 			for newKey := range params {
 				_, _ = surrealdb.Query[any](cleanupCtx, w.db, fmt.Sprintf("REMOVE PARAM $%s;", newKey), nil)
@@ -201,7 +197,8 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 		for notif := range notifications {
 			data, err := cbor.Marshal(notif)
 			if err != nil {
-				// Log error but continue
+				// TODO: add logger to overall client config and use it here
+				slog.ErrorContext(ctx, "failed to marshal live notification", "error", err)
 				continue
 			}
 			select {
@@ -248,18 +245,15 @@ func (w *surrealDBWrapper) Unmarshal(buf []byte, val any) error {
 }
 
 func (w *surrealDBWrapper) Close() error {
-	// Use background context for cleanup
 	return w.db.Close(context.Background())
 }
 
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
-	// Connect to SurrealDB
 	db, err := surrealdb.FromEndpointURLString(ctx, conf.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SurrealDB: %w", err)
 	}
 
-	// Authenticate BEFORE setting namespace/database
 	if conf.Username != "" && conf.Password != "" {
 		_, err := db.SignIn(ctx, surrealdb.Auth{
 			Username: conf.Username,
@@ -271,9 +265,7 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		}
 	}
 
-	// Create and set namespace and database if they don't exist
 	if conf.Namespace != "" && conf.Database != "" {
-		// First, define the namespace
 		_, err := surrealdb.Query[any](ctx, db,
 			fmt.Sprintf("DEFINE NAMESPACE IF NOT EXISTS %s;", conf.Namespace),
 			nil)
@@ -282,13 +274,11 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 			return nil, fmt.Errorf("failed to create namespace: %w", err)
 		}
 
-		// Use the namespace so we can define the database within it
 		if err := db.Use(ctx, conf.Namespace, ""); err != nil {
 			_ = db.Close(ctx)
 			return nil, fmt.Errorf("failed to set namespace: %w", err)
 		}
 
-		// Define the database within the namespace
 		_, err = surrealdb.Query[any](ctx, db,
 			fmt.Sprintf("DEFINE DATABASE IF NOT EXISTS %s;", conf.Database),
 			nil)
@@ -297,7 +287,6 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 			return nil, fmt.Errorf("failed to create database: %w", err)
 		}
 
-		// Finally, set both namespace and database for the session
 		if err := db.Use(ctx, conf.Namespace, conf.Database); err != nil {
 			_ = db.Close(ctx)
 			return nil, fmt.Errorf("failed to set namespace/database: %w", err)
@@ -312,10 +301,10 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 }
 
 func (c *ClientImpl) Close() {
-	c.db.Close()
+	_ = c.db.Close()
 }
 
-// randString generates a random alphanumeric string of length n
+// randString generates a random alphanumeric string of length n.
 func randString(n int) (string, error) {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	byteSlice := make([]byte, n)
