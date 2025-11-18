@@ -59,6 +59,9 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		SliceSlice:         lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M])(lib.Field(key, "slice_slice")),
 		SliceSliceSlice:    lib.NewSliceMaker[M, [][]string, *lib.Slice[M, []string, *lib.StringSlice[M]]](lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M]))(lib.Field(key, "slice_slice_slice")),
 		SliceSliceSlice2:   lib.NewSliceMaker[M, [][]model.SomeStruct, *lib.Slice[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]]](lib.NewSliceMaker[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]](lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])))(lib.Field(key, "slice_slice_slice_2")),
+		Status:             lib.NewEnum[M, model.Status](lib.Field(key, "status")),
+		StatusPtr:          lib.NewEnumPtr[M, model.Status](lib.Field(key, "status_ptr")),
+		StatusSlice:        lib.NewSlice[M, model.Status](lib.Field(key, "status_slice"), lib.NewEnum[M, model.Status]),
 		String:             lib.NewString[M](lib.Field(key, "string")),
 		StringPtr:          lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
 		StringPtrSlice:     lib.NewStringPtrSlice[M](lib.Field(key, "string_ptr_slice")),
@@ -152,6 +155,9 @@ type allFieldTypes[M any] struct {
 	Roles              *lib.Slice[M, model.Role, *lib.Enum[M, model.Role]]
 	EnumPtrSlice       *lib.Slice[M, model.Role, *lib.EnumPtr[M, model.Role]]
 	EnumPtrSlicePtr    *lib.SlicePtr[M, model.Role, *lib.EnumPtr[M, model.Role]]
+	Status             *lib.Enum[M, model.Status]
+	StatusPtr          *lib.EnumPtr[M, model.Status]
+	StatusSlice        *lib.Slice[M, model.Status, *lib.Enum[M, model.Status]]
 	StructSlice        *lib.Slice[M, model.SomeStruct, someStruct[M]]
 	StructPtrSlice     *lib.Slice[M, *model.SomeStruct, someStruct[M]]
 	StructPtrSlicePtr  *lib.SlicePtr[M, *model.SomeStruct, someStruct[M]]

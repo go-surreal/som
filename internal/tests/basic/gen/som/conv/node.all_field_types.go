@@ -70,6 +70,9 @@ type AllFieldTypes struct {
 	Roles              []model.Role       `cbor:"roles,omitempty"`
 	EnumPtrSlice       []*model.Role      `cbor:"enum_ptr_slice,omitempty"`
 	EnumPtrSlicePtr    *[]*model.Role     `cbor:"enum_ptr_slice_ptr,omitempty"`
+	Status             model.Status       `cbor:"status"`
+	StatusPtr          *model.Status      `cbor:"status_ptr,omitempty"`
+	StatusSlice        []model.Status     `cbor:"status_slice,omitempty"`
 	Login              login              `cbor:"login"`
 	StructPtr          *someStruct        `cbor:"struct_ptr,omitempty"`
 	StructSlice        []someStruct       `cbor:"struct_slice,omitempty"`
@@ -139,6 +142,8 @@ func FromAllFieldTypes(data model.AllFieldTypes) AllFieldTypes {
 		SliceSlice:         data.SliceSlice,
 		SliceSliceSlice:    data.SliceSliceSlice,
 		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(fromSomeStruct)))(data.SliceSliceSlice2),
+		Status:             data.Status,
+		StatusPtr:          data.StatusPtr,
 		String:             data.String,
 		StringPtr:          data.StringPtr,
 		StringPtrSlice:     data.StringPtrSlice,
@@ -219,6 +224,8 @@ func FromAllFieldTypesPtr(data *model.AllFieldTypes) *AllFieldTypes {
 		SliceSlice:         data.SliceSlice,
 		SliceSliceSlice:    data.SliceSliceSlice,
 		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(fromSomeStruct)))(data.SliceSliceSlice2),
+		Status:             data.Status,
+		StatusPtr:          data.StatusPtr,
 		String:             data.String,
 		StringPtr:          data.StringPtr,
 		StringPtrSlice:     data.StringPtrSlice,
@@ -299,6 +306,8 @@ func ToAllFieldTypes(data AllFieldTypes) model.AllFieldTypes {
 		SliceSlice:         data.SliceSlice,
 		SliceSliceSlice:    data.SliceSliceSlice,
 		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(toSomeStruct)))(data.SliceSliceSlice2),
+		Status:             data.Status,
+		StatusPtr:          data.StatusPtr,
 		String:             data.String,
 		StringPtr:          data.StringPtr,
 		StringPtrSlice:     data.StringPtrSlice,
@@ -382,6 +391,8 @@ func ToAllFieldTypesPtr(data *AllFieldTypes) *model.AllFieldTypes {
 		SliceSlice:         data.SliceSlice,
 		SliceSliceSlice:    data.SliceSliceSlice,
 		SliceSliceSlice2:   mapSliceFn(mapSliceFn(mapSliceFn(toSomeStruct)))(data.SliceSliceSlice2),
+		Status:             data.Status,
+		StatusPtr:          data.StatusPtr,
 		String:             data.String,
 		StringPtr:          data.StringPtr,
 		StringPtrSlice:     data.StringPtrSlice,

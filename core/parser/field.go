@@ -110,7 +110,8 @@ type FieldEdge struct {
 
 type FieldEnum struct {
 	*fieldAtomic
-	Typ string
+	Typ      string
+	BaseType string
 }
 
 type FieldStruct struct {

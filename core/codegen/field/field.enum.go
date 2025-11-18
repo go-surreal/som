@@ -29,14 +29,24 @@ func (f *Enum) typeConv(_ Context) jen.Code {
 
 func (f *Enum) TypeDatabase() string {
 	if !slices.Contains(f.values, "") {
-		f.values = append(f.values, "") // TODO: add warning to output?!
+		f.values = append(f.values, "") // Allow zero value for non-pointer enums
 	}
 
 	sort.Strings(f.values)
 
 	var formattedValues []string
+	// BaseType is from Kind().String() which returns capitalized names like "String", "Int", etc.
+	isStringEnum := f.source.BaseType == "String"
 	for _, value := range f.values {
-		formattedValues = append(formattedValues, fmt.Sprintf(`"%s"`, value))
+		if isStringEnum {
+			formattedValues = append(formattedValues, fmt.Sprintf(`"%s"`, value))
+		} else {
+			// For numeric enums, skip empty values as they're not valid
+			if value == "" {
+				continue
+			}
+			formattedValues = append(formattedValues, value)
+		}
 	}
 
 	literals := strings.Join(formattedValues, " | ")

@@ -43,7 +43,27 @@ func Parse(dir string, outPkg string) (*Output, error) {
 	diff := strings.TrimPrefix(absDir, mod.Dir())
 	res.PkgPath = path.Join(mod.Module(), diff)
 
+	// First pass: collect enum names
+	enumNames := make(map[string]bool)
 	nc := n.NumChild()
+	for i := 0; i < nc; i++ {
+		v := n.Child(i)
+
+		if !ast.IsExported(v.Name()) {
+			continue
+		}
+
+		if isEnum(v, res.PkgPath) {
+			enumNames[v.Name()] = true
+			enumType := v.Kind().String()
+			res.Enums = append(res.Enums, &Enum{
+				Name: v.Name(),
+				Type: enumType,
+			})
+		}
+	}
+
+	// Second pass: parse types using enum names
 	for i := 0; i < nc; i++ {
 		v := n.Child(i)
 
@@ -56,7 +76,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 
 		case isNode(v, outPkg):
 			{
-				node, err := parseNode(v, outPkg)
+				node, err := parseNode(v, outPkg, res.PkgPath, enumNames)
 				if err != nil {
 					return nil, err
 				}
@@ -66,7 +86,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 
 		case isEdge(v, outPkg):
 			{
-				edge, err := parseEdge(v, outPkg)
+				edge, err := parseEdge(v, outPkg, res.PkgPath, enumNames)
 				if err != nil {
 					return nil, err
 				}
@@ -78,7 +98,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 			{
 				// TODO: prevent external structs!
 
-				str, err := parseStruct(v, outPkg)
+				str, err := parseStruct(v, outPkg, res.PkgPath, enumNames)
 				if err != nil {
 					return nil, err
 				}
@@ -86,11 +106,9 @@ func Parse(dir string, outPkg string) (*Output, error) {
 				continue
 			}
 
-		case v.Kind() == gotype.String && v.PkgPath() == outPkg:
+		case isEnum(v, res.PkgPath):
 			{
-				res.Enums = append(res.Enums, &Enum{
-					Name: v.Name(),
-				})
+				// Already processed in first pass
 				continue
 			}
 
@@ -152,15 +170,47 @@ func isEdge(t gotype.Type, outPkg string) bool {
 	return false
 }
 
-func isEnum(t gotype.Type, outPkg string) bool {
-	if t.Kind() != gotype.String {
+func isEnum(t gotype.Type, srcPkg string) bool {
+	// Check if it's a named type
+	if t.Name() == "" {
 		return false
 	}
 
-	return t.String() != "string" && t.PkgPath() == outPkg // TODO: might not be an enum..?!
+	// Type aliases like `type Role som.EnumString` resolve to the underlying type.
+	// So when gotype resolves the type, t.Name() will be "EnumString" for the alias "Role".
+	// We need to check the origin to see the actual type definition.
+
+	origin := t.Origin()
+	if origin == nil {
+		return false
+	}
+
+	// Handle *ast.Ident (when type is resolved through alias or field access)
+	if ident, ok := origin.(*ast.Ident); ok {
+		// Check if the identifier itself is an Enum* type
+		return strings.HasPrefix(ident.Name, "Enum")
+	}
+
+	// Handle *ast.TypeSpec (when accessed directly from package)
+	typeSpec, ok := origin.(*ast.TypeSpec)
+	if !ok {
+		return false
+	}
+
+	// Check if the type definition references an Enum* identifier
+	switch typeExpr := typeSpec.Type.(type) {
+	case *ast.Ident:
+		// Direct reference like: type Role EnumString
+		return strings.HasPrefix(typeExpr.Name, "Enum")
+	case *ast.SelectorExpr:
+		// Qualified reference like: type Role som.EnumString
+		return strings.HasPrefix(typeExpr.Sel.Name, "Enum")
+	}
+
+	return false
 }
 
-func parseNode(v gotype.Type, outPkg string) (*Node, error) {
+func parseNode(v gotype.Type, outPkg, srcPkg string, enumNames map[string]bool) (*Node, error) {
 	node := &Node{Name: v.Name()}
 
 	nf := v.NumField()
@@ -209,7 +259,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Node", v.Name())
 		}
 
-		field, err := parseField(f, outPkg)
+		field, err := parseField(f, outPkg, srcPkg, enumNames)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +270,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 	return node, nil
 }
 
-func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
+func parseEdge(v gotype.Type, outPkg, srcPkg string, enumNames map[string]bool) (*Edge, error) {
 	edge := &Edge{Name: v.Name()}
 
 	nf := v.NumField()
@@ -269,7 +319,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Edge", v.Name())
 		}
 
-		field, err := parseField(f, outPkg)
+		field, err := parseField(f, outPkg, srcPkg, enumNames)
 		if err != nil {
 			return nil, err
 		}
@@ -290,7 +340,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 	return edge, nil
 }
 
-func parseStruct(v gotype.Type, outPkg string) (*Struct, error) {
+func parseStruct(v gotype.Type, outPkg, srcPkg string, enumNames map[string]bool) (*Struct, error) {
 	str := &Struct{Name: v.Name()}
 
 	nf := v.NumField()
@@ -298,7 +348,7 @@ func parseStruct(v gotype.Type, outPkg string) (*Struct, error) {
 	for i := 0; i < nf; i++ {
 		f := v.Field(i)
 
-		field, err := parseField(f, outPkg)
+		field, err := parseField(f, outPkg, srcPkg, enumNames)
 		if err != nil {
 			return nil, err
 		}
@@ -309,26 +359,24 @@ func parseStruct(v gotype.Type, outPkg string) (*Struct, error) {
 	return str, nil
 }
 
-func parseField(t gotype.Type, outPkg string) (Field, error) {
+func parseField(t gotype.Type, outPkg, srcPkg string, enumNames map[string]bool) (Field, error) {
 	atomic := &fieldAtomic{
 		name:    t.Name(),
 		pointer: false,
+	}
+
+	// Check for enum types first (supports any comparable base type)
+	// Use the enumNames map to check if this field's type is a known enum
+	if enumNames[t.Elem().Name()] {
+		baseType := t.Elem().Kind().String()
+		return &FieldEnum{atomic, t.Elem().Name(), baseType}, nil
 	}
 
 	switch t.Elem().Kind() {
 
 	case gotype.String:
 		{
-			switch {
-			case isEnum(t.Elem(), outPkg):
-				{
-					return &FieldEnum{atomic, t.Elem().Name()}, nil
-				}
-			default:
-				{
-					return &FieldString{atomic}, nil
-				}
-			}
+			return &FieldString{atomic}, nil
 		}
 
 	case gotype.Int:
@@ -450,7 +498,7 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 
 	case gotype.Slice:
 		{
-			field, err := parseField(t.Elem(), outPkg)
+			field, err := parseField(t.Elem(), outPkg, srcPkg, enumNames)
 			if err != nil {
 				return nil, err
 			}
@@ -470,7 +518,7 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 
 	case gotype.Ptr:
 		{
-			field, err := parseField(t.Elem(), outPkg)
+			field, err := parseField(t.Elem(), outPkg, srcPkg, enumNames)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse elem for ptr field %s: %v", t.Name(), err)
 			}
