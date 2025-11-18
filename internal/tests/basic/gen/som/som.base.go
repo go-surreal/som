@@ -17,6 +17,12 @@ func NewRecordID(table string, id any) ID {
 	return models.NewRecordID(table, id)
 }
 
+// MakeID creates a pointer to a RecordID with the given table and ID.
+func MakeID(table string, id any) *ID {
+	recordID := NewRecordID(table, id)
+	return &recordID
+}
+
 // Table creates a RecordID representing a table (for server-generated IDs).
 // This is a convenience wrapper to avoid importing surrealdb.go directly.
 func Table(name string) models.Table {

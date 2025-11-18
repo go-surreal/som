@@ -27,10 +27,7 @@ func TestQuery(t *testing.T) {
 					where.GroupMember.CreatedAt.Before(time.Now()),
 				).
 				Group(
-					where.Group.ID.Equal(func() *som.ID {
-						id := som.NewRecordID("all_field_types", "some_id")
-						return &id
-					}()),
+					where.Group.ID.Equal(som.MakeID("all_field_types", "some_id")),
 				),
 
 			where.AllFieldTypes.Duration.Days().LessThan(4),
@@ -301,7 +298,6 @@ func TestDuration(t *testing.T) {
 	ptr := time.Hour
 
 	userNew := &model.AllFieldTypes{
-		Time:        time.Now(),
 		Duration:    time.Minute,
 		DurationPtr: &ptr,
 		DurationNil: nil,
