@@ -2,6 +2,8 @@ package field
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -28,12 +30,29 @@ func (f *Slice) TypeDatabase() string {
 	}
 
 	if _, ok := f.element.(*Byte); ok {
-		return "option<bytes | null>"
+		return "option<bytes>"
 	}
 
 	// Go treats empty slices as nil, so the database needs
 	// to accept the json NULL value for any array field.
-	return "option<array | null>"
+	return fmt.Sprintf("option<array<%s> | null>", f.element.TypeDatabase())
+}
+
+func (f *Slice) TypeDatabaseExtend() string {
+	if _, ok := f.element.(*Byte); ok {
+		// Byte slices ([]byte) map to "bytes" type and do not need element validation.
+		return ""
+	}
+
+	elementAssert := f.element.TypeDatabaseExtend()
+	if elementAssert == "" {
+		return ""
+	}
+
+	elementCondition := strings.TrimPrefix(elementAssert, "ASSERT ")
+	itemCondition := strings.ReplaceAll(elementCondition, "$value", "$item")
+
+	return fmt.Sprintf("ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| %s)", itemCondition)
 }
 
 func (f *Slice) Element() Field {
@@ -553,11 +572,6 @@ func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 }
 
 func (f *Slice) fieldDef(ctx Context) jen.Code {
-	jsonSuffix := ""
-	if _, isEdge := f.element.(*Edge); isEdge {
-		jsonSuffix = ",omitempty"
-	}
-
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + jsonSuffix})
+		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
 }

@@ -3,8 +3,9 @@
 package lib
 
 import (
-	"github.com/go-surreal/sdbc"
 	"time"
+
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 )
 
 type Duration[M any] struct {
@@ -14,7 +15,7 @@ type Duration[M any] struct {
 
 func NewDuration[M any](key Key[M]) *Duration[M] {
 	conv := func(val time.Duration) any {
-		return sdbc.Duration{val}
+		return types.Duration{Duration: val}
 	}
 
 	return &Duration[M]{

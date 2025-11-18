@@ -2,14 +2,15 @@ package basic
 
 import (
 	"context"
+	"math/rand"
+	"testing"
+	"time"
+
 	"github.com/go-surreal/som/tests/basic/gen/som/query"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
-	"math/rand"
-	"testing"
-	"time"
 )
 
 func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
@@ -242,10 +243,6 @@ func TestLiveQueryCount(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if err := client.ApplySchema(ctx); err != nil {
-		t.Fatal(err)
-	}
-
 	liveCount, err := client.AllFieldTypesRepo().Query().LiveCount(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -256,7 +253,10 @@ func TestLiveQueryCount(t *testing.T) {
 	var models []*model.AllFieldTypes
 
 	for i := 0; i < count; i++ {
-		newModel := &model.AllFieldTypes{}
+		newModel := &model.AllFieldTypes{
+			Time:     time.Now(),
+			Duration: time.Second,
+		}
 
 		if err := client.AllFieldTypesRepo().Create(ctx, newModel); err != nil {
 			t.Fatal(err)

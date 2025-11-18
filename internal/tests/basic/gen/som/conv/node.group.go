@@ -3,17 +3,17 @@ package conv
 
 import (
 	v2 "github.com/fxamacker/cbor/v2"
-	sdbc "github.com/go-surreal/sdbc"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type Group struct {
-	ID        *som.ID        `cbor:"id,omitempty"`
-	CreatedAt *sdbc.DateTime `cbor:"created_at,omitempty"`
-	UpdatedAt *sdbc.DateTime `cbor:"updated_at,omitempty"`
-	Name      string         `cbor:"name"`
-	Members   []*GroupMember `cbor:"members,omitempty"`
+	ID        *som.ID         `cbor:"id,omitempty"`
+	CreatedAt *types.DateTime `cbor:"created_at,omitempty"`
+	UpdatedAt *types.DateTime `cbor:"updated_at,omitempty"`
+	Name      string          `cbor:"name"`
+	Members   []*GroupMember  `cbor:"members,omitempty"`
 }
 
 func FromGroup(data model.Group) Group {

@@ -17,8 +17,9 @@ const (
 
 const (
 	//PkgSom  = "github.com/go-surreal/som"
-	PkgSDBC = "github.com/go-surreal/sdbc"
-	PkgCBOR = "github.com/fxamacker/cbor/v2"
+	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"
+	PkgModels    = "github.com/surrealdb/surrealdb.go/pkg/models"
+	PkgCBOR      = "github.com/fxamacker/cbor/v2"
 
 	PkgURL  = "net/url"
 	PkgUUID = "github.com/google/uuid"

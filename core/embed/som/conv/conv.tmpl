@@ -4,7 +4,6 @@ package conv
 
 import (
 	"encoding/json"
-	"github.com/go-surreal/sdbc"
 	"github.com/google/uuid"
 	"net/url"
 	"strconv"
@@ -145,23 +144,23 @@ func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
 // -- TIME
 //
 
-func fromTime(val time.Time) sdbc.DateTime {
-	return sdbc.DateTime{val}
+func fromTime(val time.Time) types.DateTime {
+	return types.DateTime{Time: val}
 }
 
-func toTime(val sdbc.DateTime) time.Time {
+func toTime(val types.DateTime) time.Time {
 	return val.Time
 }
 
-func fromTimePtr(val *time.Time) *sdbc.DateTime {
+func fromTimePtr(val *time.Time) *types.DateTime {
 	if val == nil {
 		return nil
 	}
 
-	return &sdbc.DateTime{*val}
+	return &types.DateTime{Time: *val}
 }
 
-func toTimePtr(val *sdbc.DateTime) *time.Time {
+func toTimePtr(val *types.DateTime) *time.Time {
 	if val == nil {
 		return nil
 	}
@@ -252,23 +251,23 @@ func toURLPtr(val *string) *url.URL {
 // -- DURATION
 //
 
-func fromDuration(val time.Duration) sdbc.Duration {
-	return sdbc.Duration{val}
+func fromDuration(val time.Duration) types.Duration {
+	return types.Duration{Duration: val}
 }
 
-func fromDurationPtr(val *time.Duration) *sdbc.Duration {
+func fromDurationPtr(val *time.Duration) *types.Duration {
 	if val == nil {
 		return nil
 	}
 
-	return &sdbc.Duration{*val}
+	return &types.Duration{Duration: *val}
 }
 
-func toDuration(val sdbc.Duration) time.Duration {
+func toDuration(val types.Duration) time.Duration {
 	return val.Duration
 }
 
-func toDurationPtr(val *sdbc.Duration) *time.Duration {
+func toDurationPtr(val *types.Duration) *time.Duration {
 	if val == nil {
 		return nil
 	}

@@ -2,15 +2,16 @@ package codegen
 
 import (
 	"fmt"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -120,6 +121,11 @@ func (b *build) buildSchemaFile() error {
 			return // TODO: is this actually valid?
 		}
 
+		fieldTypeExtend := f.TypeDatabaseExtend()
+		if fieldTypeExtend != "" {
+			fieldType = fieldType + " " + fieldTypeExtend
+		}
+
 		statement := fmt.Sprintf(
 			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
 			prefix+f.NameDatabase(), table, fieldType,
@@ -129,27 +135,6 @@ func (b *build) buildSchemaFile() error {
 		if object, ok := f.(*field.Struct); ok {
 			for _, fld := range object.Table().GetFields() {
 				fieldFn(table, fld, prefix+f.NameDatabase()+".")
-			}
-		}
-
-		if slice, ok := f.(*field.Slice); ok {
-
-			if _, ok := slice.Element().(*field.Byte); ok {
-				// byte slice has the type "string" in the database,
-				// so we do not need to specify its elements.
-				return
-			}
-
-			statement := fmt.Sprintf(
-				"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-				prefix+f.NameDatabase()+".*", table, slice.Element().TypeDatabase(),
-			)
-			statements = append(statements, statement)
-
-			if object, ok := slice.Element().(*field.Struct); ok {
-				for _, fld := range object.Table().GetFields() {
-					fieldFn(table, fld, prefix+f.NameDatabase()+".*.")
-				}
 			}
 		}
 	}

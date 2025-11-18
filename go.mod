@@ -7,9 +7,9 @@ retract [v0.1.0, v0.7.0] // only the latest version is supported for now
 require (
 	github.com/dave/jennifer v1.7.1
 	github.com/fxamacker/cbor/v2 v2.9.0
-	github.com/go-surreal/sdbc v0.9.4
 	github.com/google/uuid v1.6.0
 	github.com/iancoleman/strcase v0.3.0
+	github.com/surrealdb/surrealdb.go v1.0.0
 	github.com/urfave/cli/v3 v3.6.0
 	github.com/wzshiming/gotype v0.8.0
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
@@ -18,7 +18,8 @@ require (
 )
 
 require (
-	github.com/coder/websocket v1.8.14 // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 )

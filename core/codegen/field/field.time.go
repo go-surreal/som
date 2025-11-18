@@ -1,6 +1,8 @@
 package field
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -16,24 +18,32 @@ func (f *Time) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Time")
 }
 
-func (f *Time) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).Qual(def.PkgSDBC, "DateTime")
+func (f *Time) typeConv(ctx Context) jen.Code {
+	return jen.Add(f.ptr()).Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime")
 }
 
 func (f *Time) TypeDatabase() string {
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return "option<datetime>"
+	}
+
+	return f.optionWrap("datetime")
+}
+
+func (f *Time) TypeDatabaseExtend() string {
 	if f.source.IsCreatedAt {
 		// READONLY not working as expected, so using permissions as workaround for now.
 		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
-		return "option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE"
+		return "VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE"
 	}
 
 	if f.source.IsUpdatedAt {
 		// READONLY not working as expected, so using permissions as workaround for now.
 		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
-		return "option<datetime> VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE"
+		return "VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE"
 	}
 
-	return f.optionWrap("datetime")
+	return ""
 }
 
 func (f *Time) CodeGen() *CodeGen {
@@ -134,5 +144,5 @@ func (f *Time) fieldDef(ctx Context) jen.Code {
 	}
 
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }

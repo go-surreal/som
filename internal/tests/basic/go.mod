@@ -70,4 +70,5 @@ require (
 	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	github.com/surrealdb/surrealdb.go v1.0.0
 )

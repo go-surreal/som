@@ -105,6 +105,10 @@ func (q Query[T]) render() string {
 
 	// TODO: possible optimization: preallocate buffer (e.g. out.Grow(<known bytes>))
 
+	if q.live {
+		out.WriteString("LIVE ")
+	}
+
 	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
 
 	var t T

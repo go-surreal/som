@@ -2,7 +2,12 @@ package basic
 
 import (
 	"context"
-	"github.com/go-surreal/sdbc"
+	"math"
+	"net/url"
+	"testing"
+	"time"
+	"unicode/utf8"
+
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
@@ -10,11 +15,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gotest.tools/v3/assert"
-	"math"
-	"net/url"
-	"testing"
-	"time"
-	"unicode/utf8"
 )
 
 func TestQuery(t *testing.T) {
@@ -27,7 +27,7 @@ func TestQuery(t *testing.T) {
 					where.GroupMember.CreatedAt.Before(time.Now()),
 				).
 				Group(
-					where.Group.ID.Equal(sdbc.MakeID("all_field_types", "some_id")),
+					where.Group.ID.Equal(som.MakeID("all_field_types", "some_id")),
 				),
 
 			where.AllFieldTypes.Duration.Days().LessThan(4),
@@ -320,7 +320,7 @@ func TestDuration(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, sdbc.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -336,7 +336,7 @@ func TestDuration(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, sdbc.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
 	)
 }
 
@@ -371,7 +371,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, sdbc.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -387,7 +387,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, sdbc.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
 	)
 }
 

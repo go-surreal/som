@@ -2,16 +2,17 @@ package basic
 
 import (
 	"context"
-	"github.com/brianvoe/gofakeit/v7"
-	"github.com/docker/docker/api/types/container"
-	"github.com/go-surreal/som/tests/basic/gen/som/repo"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"log/slog"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/docker/docker/api/types/container"
+	"github.com/go-surreal/som/tests/basic/gen/som/repo"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
@@ -58,7 +59,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
 			Started:          true,
-			Reuse:            true,
+			Reuse:            false,
 		},
 	)
 	if err != nil {
@@ -73,22 +74,14 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
 
 	config := repo.Config{
-		Host:      endpoint,
+		Address:   "ws://" + endpoint,
 		Username:  username,
 		Password:  password,
 		Namespace: namespace,
 		Database:  database,
 	}
 
-	opts := []repo.Option{
-		repo.WithLogger(slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-				Level: slog.LevelDebug,
-			}),
-		)),
-	}
-
-	client, err := repo.NewClient(ctx, config, opts...)
+	client, err := repo.NewClient(ctx, config)
 	if err != nil {
 		tb.Fatal(err)
 	}

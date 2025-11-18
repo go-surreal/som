@@ -2,16 +2,15 @@
 package conv
 
 import (
-	sdbc "github.com/go-surreal/sdbc"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type someStruct struct {
-	StringPtr *string        `cbor:"string_ptr"`
-	IntPtr    *int           `cbor:"int_ptr"`
-	TimePtr   *sdbc.DateTime `cbor:"time_ptr"`
-	UuidPtr   *types.UUID    `cbor:"uuid_ptr"`
+	StringPtr *string         `cbor:"string_ptr,omitempty"`
+	IntPtr    *int            `cbor:"int_ptr,omitempty"`
+	TimePtr   *types.DateTime `cbor:"time_ptr,omitempty"`
+	UuidPtr   *types.UUID     `cbor:"uuid_ptr,omitempty"`
 }
 
 func fromSomeStruct(data model.SomeStruct) someStruct {

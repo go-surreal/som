@@ -22,11 +22,18 @@ func (f *URL) typeConv(_ Context) jen.Code {
 
 func (f *URL) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
-		// TODO: should field be omitted (omitempty) if value is null (instead of being set to null)?
+		return "option<string>"
 	}
 
-	return `string ASSERT $value == "" OR string::is::url($value)`
+	return "string"
+}
+
+func (f *URL) TypeDatabaseExtend() string {
+	if f.source.Pointer() {
+		return "ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
+	}
+
+	return `ASSERT $value == "" OR string::is::url($value)`
 }
 
 func (f *URL) CodeGen() *CodeGen {
@@ -88,5 +95,5 @@ func (f *URL) convTo(_ Context) (jen.Code, jen.Code) {
 
 func (f *URL) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }
