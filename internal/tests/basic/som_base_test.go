@@ -193,6 +193,79 @@ func TestNumerics(t *testing.T) {
 	)
 }
 
+func TestSlice(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	// initial nil slice
+
+	user := &model.AllFieldTypes{}
+
+	err := client.AllFieldTypesRepo().Create(ctx, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user.StructSlice == nil)
+
+	user, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.StructSlice.IsEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user.StructSlice == nil)
+
+	// empty slice
+
+	user.StructSlice = []model.SomeStruct{}
+
+	assert.Check(t, user.StructSlice != nil)
+
+	err = client.AllFieldTypesRepo().Update(ctx, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.StructSlice.Empty(true),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user.StructSlice != nil)
+
+	// non-empty slice
+
+	user.StructSlice = []model.SomeStruct{{}}
+
+	assert.Check(t, user.StructSlice != nil)
+
+	err = client.AllFieldTypesRepo().Update(ctx, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.StructSlice.NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user.StructSlice != nil)
+}
+
 func TestTimestamps(t *testing.T) {
 	ctx := context.Background()
 

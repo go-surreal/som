@@ -30,7 +30,7 @@ func (f *Slice) TypeDatabase() string {
 	}
 
 	if _, ok := f.element.(*Byte); ok {
-		return "option<bytes>"
+		return "option<bytes | null>"
 	}
 
 	// Go treats empty slices as nil, so the database needs
@@ -572,6 +572,11 @@ func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 }
 
 func (f *Slice) fieldDef(ctx Context) jen.Code {
+	omitEmpty := ""
+	if _, isEdge := f.element.(*Edge); isEdge {
+		omitEmpty = ",omitempty"
+	}
+
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
+		Tag(map[string]string{convTag: f.NameDatabase() + omitEmpty})
 }

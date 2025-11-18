@@ -12,7 +12,7 @@ type FieldsLikeDBResponse struct {
 	Time   string   `cbor:"time"`
 	Status string   `cbor:"status"`
 	Detail string   `cbor:"detail"`
-	Result []string `cbor:"result,omitempty"`
+	Result []string `cbor:"result"`
 }
 
 func FromFieldsLikeDBResponse(data model.FieldsLikeDBResponse) FieldsLikeDBResponse {

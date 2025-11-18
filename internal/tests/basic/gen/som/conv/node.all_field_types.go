@@ -14,15 +14,15 @@ type AllFieldTypes struct {
 	UpdatedAt          *types.DateTime    `cbor:"updated_at,omitempty"`
 	String             string             `cbor:"string"`
 	StringPtr          *string            `cbor:"string_ptr,omitempty"`
-	Other              []string           `cbor:"other,omitempty"`
-	StringPtrSlice     []*string          `cbor:"string_ptr_slice,omitempty"`
-	StringSlicePtr     *[]string          `cbor:"string_slice_ptr,omitempty"`
+	Other              []string           `cbor:"other"`
+	StringPtrSlice     []*string          `cbor:"string_ptr_slice"`
+	StringSlicePtr     *[]string          `cbor:"string_slice_ptr"`
 	Int                int                `cbor:"int"`
 	IntPtr             *int               `cbor:"int_ptr,omitempty"`
-	IntSlice           []int              `cbor:"int_slice,omitempty"`
-	IntPtrSlice        []*int             `cbor:"int_ptr_slice,omitempty"`
-	IntSlicePtr        *[]int             `cbor:"int_slice_ptr,omitempty"`
-	IntPtrSlicePtr     *[]*int            `cbor:"int_ptr_slice_ptr,omitempty"`
+	IntSlice           []int              `cbor:"int_slice"`
+	IntPtrSlice        []*int             `cbor:"int_ptr_slice"`
+	IntSlicePtr        *[]int             `cbor:"int_slice_ptr"`
+	IntPtrSlicePtr     *[]*int            `cbor:"int_ptr_slice_ptr"`
 	Int8               int8               `cbor:"int_8"`
 	Int8Ptr            *int8              `cbor:"int_8_ptr,omitempty"`
 	Int16              int16              `cbor:"int_16"`
@@ -38,57 +38,57 @@ type AllFieldTypes struct {
 	Uint32             uint32             `cbor:"uint_32"`
 	Uint32Ptr          *uint32            `cbor:"uint_32_ptr,omitempty"`
 	Float32            float32            `cbor:"float_32"`
-	Float32Slice       []float32          `cbor:"float_32_slice,omitempty"`
-	Float32SlicePtr    *[]float32         `cbor:"float_32_slice_ptr,omitempty"`
-	Float32PtrSlice    []*float32         `cbor:"float_32_ptr_slice,omitempty"`
-	Float32PtrSlicePtr *[]*float32        `cbor:"float_32_ptr_slice_ptr,omitempty"`
+	Float32Slice       []float32          `cbor:"float_32_slice"`
+	Float32SlicePtr    *[]float32         `cbor:"float_32_slice_ptr"`
+	Float32PtrSlice    []*float32         `cbor:"float_32_ptr_slice"`
+	Float32PtrSlicePtr *[]*float32        `cbor:"float_32_ptr_slice_ptr"`
 	Float64            float64            `cbor:"float_64"`
 	Rune               rune               `cbor:"rune"`
-	RuneSlice          []rune             `cbor:"rune_slice,omitempty"`
+	RuneSlice          []rune             `cbor:"rune_slice"`
 	Bool               bool               `cbor:"bool"`
 	BoolPtr            *bool              `cbor:"bool_ptr,omitempty"`
-	BoolSlice          []bool             `cbor:"bool_slice,omitempty"`
+	BoolSlice          []bool             `cbor:"bool_slice"`
 	Time               types.DateTime     `cbor:"time"`
 	TimePtr            *types.DateTime    `cbor:"time_ptr,omitempty"`
 	TimeNil            *types.DateTime    `cbor:"time_nil,omitempty"`
-	TimeSlice          []types.DateTime   `cbor:"time_slice,omitempty"`
-	TimeSliceSlice     [][]types.DateTime `cbor:"time_slice_slice,omitempty"`
+	TimeSlice          []types.DateTime   `cbor:"time_slice"`
+	TimeSliceSlice     [][]types.DateTime `cbor:"time_slice_slice"`
 	Duration           types.Duration     `cbor:"duration"`
 	DurationPtr        *types.Duration    `cbor:"duration_ptr,omitempty"`
 	DurationNil        *types.Duration    `cbor:"duration_nil,omitempty"`
-	DurationSlice      []types.Duration   `cbor:"duration_slice,omitempty"`
+	DurationSlice      []types.Duration   `cbor:"duration_slice"`
 	UUID               types.UUID         `cbor:"uuid"`
 	UUIDPtr            *types.UUID        `cbor:"uuid_ptr,omitempty"`
 	UUIDNil            *types.UUID        `cbor:"uuid_nil,omitempty"`
-	UUIDSlice          []types.UUID       `cbor:"uuid_slice,omitempty"`
+	UUIDSlice          []types.UUID       `cbor:"uuid_slice"`
 	URL                string             `cbor:"url"`
 	URLPtr             *string            `cbor:"url_ptr,omitempty"`
 	URLNil             *string            `cbor:"url_nil,omitempty"`
-	URLSlice           []string           `cbor:"url_slice,omitempty"`
+	URLSlice           []string           `cbor:"url_slice"`
 	Role               model.Role         `cbor:"role"`
 	EnumPtr            *model.Role        `cbor:"enum_ptr,omitempty"`
-	Roles              []model.Role       `cbor:"roles,omitempty"`
-	EnumPtrSlice       []*model.Role      `cbor:"enum_ptr_slice,omitempty"`
-	EnumPtrSlicePtr    *[]*model.Role     `cbor:"enum_ptr_slice_ptr,omitempty"`
+	Roles              []model.Role       `cbor:"roles"`
+	EnumPtrSlice       []*model.Role      `cbor:"enum_ptr_slice"`
+	EnumPtrSlicePtr    *[]*model.Role     `cbor:"enum_ptr_slice_ptr"`
 	Login              login              `cbor:"login"`
 	StructPtr          *someStruct        `cbor:"struct_ptr,omitempty"`
-	StructSlice        []someStruct       `cbor:"struct_slice,omitempty"`
-	StructPtrSlice     []*someStruct      `cbor:"struct_ptr_slice,omitempty"`
-	StructPtrSlicePtr  *[]*someStruct     `cbor:"struct_ptr_slice_ptr,omitempty"`
+	StructSlice        []someStruct       `cbor:"struct_slice"`
+	StructPtrSlice     []*someStruct      `cbor:"struct_ptr_slice"`
+	StructPtrSlicePtr  *[]*someStruct     `cbor:"struct_ptr_slice_ptr"`
 	MainGroup          *groupLink         `cbor:"main_group,omitempty"`
 	MainGroupPtr       *groupLink         `cbor:"main_group_ptr,omitempty"`
-	Groups             []*groupLink       `cbor:"groups,omitempty"`
-	GroupsSlice        [][]*groupLink     `cbor:"groups_slice,omitempty"`
-	NodePtrSlice       []*groupLink       `cbor:"node_ptr_slice,omitempty"`
-	NodePtrSlicePtr    *[]*groupLink      `cbor:"node_ptr_slice_ptr,omitempty"`
+	Groups             []*groupLink       `cbor:"groups"`
+	GroupsSlice        [][]*groupLink     `cbor:"groups_slice"`
+	NodePtrSlice       []*groupLink       `cbor:"node_ptr_slice"`
+	NodePtrSlicePtr    *[]*groupLink      `cbor:"node_ptr_slice_ptr"`
 	MemberOf           []*GroupMember     `cbor:"member_of,omitempty"`
-	SliceSlice         [][]string         `cbor:"slice_slice,omitempty"`
-	SliceSliceSlice    [][][]string       `cbor:"slice_slice_slice,omitempty"`
-	SliceSliceSlice2   [][][]someStruct   `cbor:"slice_slice_slice_2,omitempty"`
+	SliceSlice         [][]string         `cbor:"slice_slice"`
+	SliceSliceSlice    [][][]string       `cbor:"slice_slice_slice"`
+	SliceSliceSlice2   [][][]someStruct   `cbor:"slice_slice_slice_2"`
 	Byte               byte               `cbor:"byte"`
 	BytePtr            *byte              `cbor:"byte_ptr,omitempty"`
-	ByteSlice          []byte             `cbor:"byte_slice,omitempty"`
-	ByteSlicePtr       *[]byte            `cbor:"byte_slice_ptr,omitempty"`
+	ByteSlice          []byte             `cbor:"byte_slice"`
+	ByteSlicePtr       *[]byte            `cbor:"byte_slice_ptr"`
 }
 
 func FromAllFieldTypes(data model.AllFieldTypes) AllFieldTypes {
