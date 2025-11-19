@@ -4,46 +4,110 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"time"
 )
 
 type Group struct {
-	ID        *som.ID         `cbor:"id,omitempty"`
-	CreatedAt *types.DateTime `cbor:"created_at,omitempty"`
-	UpdatedAt *types.DateTime `cbor:"updated_at,omitempty"`
-	Name      string          `cbor:"name"`
-	Members   []*GroupMember  `cbor:"members,omitempty"`
+	model.Group
+}
+
+func (c *Group) MarshalCBOR() ([]byte, error) {
+	if c == nil {
+		return v2.Marshal(nil)
+	}
+	data := make(map[string]interface{})
+
+	// Embedded som.Node/Edge ID field
+	if c.ID() != nil {
+		data["id"] = c.ID()
+	}
+
+	// Embedded som.Timestamps field: CreatedAt
+	if !c.CreatedAt().IsZero() {
+		val, _ := cbor.MarshalDateTime(c.CreatedAt())
+		data["created_at"] = v2.RawMessage(val)
+	}
+
+	// Embedded som.Timestamps field: UpdatedAt
+	if !c.UpdatedAt().IsZero() {
+		val, _ := cbor.MarshalDateTime(c.UpdatedAt())
+		data["updated_at"] = v2.RawMessage(val)
+	}
+
+	// Regular fields
+	{
+		data["name"] = c.Name
+	}
+	if c.Members != nil {
+		data["members"] = c.Members
+	}
+
+	return v2.Marshal(data)
+}
+
+func (c *Group) UnmarshalCBOR(data []byte) error {
+	var rawMap map[string]v2.RawMessage
+	if err := v2.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Embedded som.Node/Edge ID field
+	if raw, ok := rawMap["id"]; ok {
+		var id *som.ID
+		v2.Unmarshal(raw, &id)
+		c.Node = som.NewNode(id)
+	}
+
+	// Embedded som.Timestamps field: CreatedAt
+	var createdAt time.Time
+	if raw, ok := rawMap["created_at"]; ok {
+		createdAt, _ = cbor.UnmarshalDateTime(raw)
+	}
+
+	// Embedded som.Timestamps field: UpdatedAt
+	var updatedAt time.Time
+	if raw, ok := rawMap["updated_at"]; ok {
+		updatedAt, _ = cbor.UnmarshalDateTime(raw)
+	}
+
+	// Initialize Timestamps embedding
+	createdAtDT := &types.DateTime{Time: createdAt}
+	updatedAtDT := &types.DateTime{Time: updatedAt}
+	c.Timestamps = som.NewTimestamps(createdAtDT, updatedAtDT)
+
+	// Regular fields
+	if raw, ok := rawMap["name"]; ok {
+		v2.Unmarshal(raw, &c.Name)
+	}
+	if raw, ok := rawMap["members"]; ok {
+		v2.Unmarshal(raw, &c.Members)
+	}
+
+	return nil
 }
 
 func FromGroup(data model.Group) Group {
-	return Group{Name: data.Name}
+	return Group{Group: data}
 }
 func FromGroupPtr(data *model.Group) *Group {
 	if data == nil {
 		return nil
 	}
-	return &Group{Name: data.Name}
+	return &Group{Group: *data}
 }
 
 func ToGroup(data Group) model.Group {
-	return model.Group{
-		Members:    mapSliceFn(ToGroupMember)(data.Members),
-		Name:       data.Name,
-		Node:       som.NewNode(data.ID),
-		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-	}
+	return data.Group
 }
 func ToGroupPtr(data *Group) *model.Group {
 	if data == nil {
 		return nil
 	}
-	return &model.Group{
-		Members:    mapSliceFn(ToGroupMember)(data.Members),
-		Name:       data.Name,
-		Node:       som.NewNode(data.ID),
-		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-	}
+	result := data.Group
+	return &result
 }
 
 type groupLink struct {

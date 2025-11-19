@@ -1,12 +1,13 @@
 package codegen
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
 )
 
 type convBuilder struct {
@@ -61,13 +62,15 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	}
 
 	f.Line()
-	f.Type().Id(typeName).StructFunc(func(g *jen.Group) {
-		for _, f := range elem.GetFields() {
-			if code := f.CodeGen().FieldDef(fieldCtx); code != nil {
-				g.Add(code)
-			}
-		}
-	})
+	f.Type().Id(typeName).Struct(
+		jen.Add(b.SourceQual(elem.NameGo())),
+	)
+
+	f.Line()
+	f.Add(b.buildMarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge))
+
+	f.Line()
+	f.Add(b.buildUnmarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge))
 
 	f.Line()
 	f.Add(b.buildFrom(elem))
@@ -137,12 +140,6 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 }
 
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		TargetPkg: b.basePkg,
-		Table:     elem,
-	}
-
 	localName := elem.NameGoLower()
 	methodPrefix := "from"
 
@@ -155,24 +152,20 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	}
 
 	return jen.Add(
-		// NO PTR
+		// NO PTR - shallow wrapper: just embed
 		jen.Func().
 			Id(methodPrefix+elem.NameGo()).
 			Params(jen.Id("data").Add(b.SourceQual(elem.NameGo()))).
 			Id(localName).
 			Block(
-				jen.Return(jen.Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
-					for _, f := range elem.GetFields() {
-						if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
-							d[jen.Id(f.NameGo())] = code
-						}
-					}
-				}))),
+				jen.Return(jen.Id(localName).Values(jen.Dict{
+					jen.Id(elem.NameGo()): jen.Id("data"), // ONE field copy
+				})),
 			),
 
 		jen.Line(),
 
-		// PTR
+		// PTR - shallow wrapper: just embed
 		jen.Func().
 			Id(methodPrefix+elem.NameGo()+"Ptr").
 			Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
@@ -182,24 +175,370 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 					jen.Return(jen.Nil()),
 				),
 
-				jen.Return(jen.Op("&").Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
-					for _, f := range elem.GetFields() {
-						if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
-							d[jen.Id(f.NameGo())] = code
-						}
-					}
-				}))),
+				jen.Return(jen.Op("&").Id(localName).Values(jen.Dict{
+					jen.Id(elem.NameGo()): jen.Op("*").Id("data"), // ONE field copy
+				})),
 			),
 	)
 }
 
-func (b *convBuilder) buildTo(elem field.Element) jen.Code {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		TargetPkg: b.basePkg,
-		Table:     elem,
+func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
+	return jen.Func().
+		Params(jen.Id("c").Op("*").Id(typeName)).
+		Id("MarshalCBOR").Params().
+		Params(jen.Index().Byte(), jen.Error()).
+		BlockFunc(func(g *jen.Group) {
+			g.If(jen.Id("c").Op("==").Nil()).Block(
+				jen.Return(jen.Qual(def.PkgCBOR, "Marshal").Call(jen.Nil())),
+			)
+
+			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Interface())
+
+			// Marshal ID field for nodes and edges
+			if isNode || isEdge {
+				g.Line()
+				g.Comment("Embedded som.Node/Edge ID field")
+				g.If(jen.Id("c").Dot("ID").Call().Op("!=").Nil()).Block(
+					jen.Id("data").Index(jen.Lit("id")).Op("=").Id("c").Dot("ID").Call(),
+				)
+			}
+
+			// Marshal timestamp fields (CreatedAt, UpdatedAt)
+			for _, f := range elem.GetFields() {
+				if timeField, ok := f.(*field.Time); ok {
+					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
+						g.Line()
+						g.Comment("Embedded som.Timestamps field: " + f.NameGo())
+						g.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).BlockFunc(func(bg *jen.Group) {
+							bg.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), "MarshalDateTime").Call(
+								jen.Id("c").Dot(f.NameGo()).Call(),
+							)
+							bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
+						})
+					}
+				}
+			}
+
+			// Marshal regular fields
+			g.Line()
+			g.Comment("Regular fields")
+			for _, f := range elem.GetFields() {
+				// Skip timestamp fields (already handled)
+				if timeField, ok := f.(*field.Time); ok {
+					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
+						continue
+					}
+				}
+
+				// Skip ID field (handled specially for nodes/edges)
+				if f.NameDatabase() == "id" {
+					continue
+				}
+
+				// Generate marshal code for this field
+				g.Add(b.buildFieldMarshal(f, ctx))
+			}
+
+			g.Line()
+			g.Return(jen.Qual(def.PkgCBOR, "Marshal").Call(jen.Id("data")))
+		})
+}
+
+func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
+	return jen.Func().
+		Params(jen.Id("c").Op("*").Id(typeName)).
+		Id("UnmarshalCBOR").Params(jen.Id("data").Index().Byte()).
+		Error().
+		BlockFunc(func(g *jen.Group) {
+			g.Var().Id("rawMap").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+			g.If(
+				jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(
+					jen.Id("data"),
+					jen.Op("&").Id("rawMap"),
+				),
+				jen.Err().Op("!=").Nil(),
+			).Block(
+				jen.Return(jen.Err()),
+			)
+
+			// Unmarshal ID field for nodes and edges
+			if isNode || isEdge {
+				g.Line()
+				g.Comment("Embedded som.Node/Edge ID field")
+				g.If(
+					jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
+					jen.Id("ok"),
+				).BlockFunc(func(bg *jen.Group) {
+					bg.Var().Id("id").Op("*").Qual(b.subPkg(""), "ID")
+					bg.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("id"))
+
+					if isNode {
+						bg.Id("c").Dot("Node").Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("id"))
+					} else {
+						bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("id"))
+					}
+				})
+			}
+
+			// Unmarshal timestamp fields
+			var createdAtFound, updatedAtFound bool
+			var createdAtVar, updatedAtVar string
+			for _, f := range elem.GetFields() {
+				if timeField, ok := f.(*field.Time); ok {
+					if timeField.Source().IsCreatedAt {
+						createdAtFound = true
+						createdAtVar = "createdAt"
+						g.Line()
+						g.Comment("Embedded som.Timestamps field: CreatedAt")
+						g.Var().Id(createdAtVar).Qual("time", "Time")
+						g.If(
+							jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("created_at")),
+							jen.Id("ok"),
+						).BlockFunc(func(bg *jen.Group) {
+							bg.Id(createdAtVar).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), "UnmarshalDateTime").Call(jen.Id("raw"))
+						})
+					} else if timeField.Source().IsUpdatedAt {
+						updatedAtFound = true
+						updatedAtVar = "updatedAt"
+						g.Line()
+						g.Comment("Embedded som.Timestamps field: UpdatedAt")
+						g.Var().Id(updatedAtVar).Qual("time", "Time")
+						g.If(
+							jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("updated_at")),
+							jen.Id("ok"),
+						).BlockFunc(func(bg *jen.Group) {
+							bg.Id(updatedAtVar).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), "UnmarshalDateTime").Call(jen.Id("raw"))
+						})
+					}
+				}
+			}
+
+			// Initialize Timestamps if we have timestamp fields
+			if createdAtFound || updatedAtFound {
+				g.Line()
+				g.Comment("Initialize Timestamps embedding")
+				createdPtr := jen.Nil()
+				updatedPtr := jen.Nil()
+				if createdAtFound {
+					g.Id("createdAtDT").Op(":=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
+						jen.Dict{jen.Id("Time"): jen.Id(createdAtVar)},
+					)
+					createdPtr = jen.Id("createdAtDT")
+				}
+				if updatedAtFound {
+					g.Id("updatedAtDT").Op(":=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
+						jen.Dict{jen.Id("Time"): jen.Id(updatedAtVar)},
+					)
+					updatedPtr = jen.Id("updatedAtDT")
+				}
+				g.Id("c").Dot("Timestamps").Op("=").Qual(b.subPkg(""), "NewTimestamps").Call(createdPtr, updatedPtr)
+			}
+
+			// Unmarshal regular fields
+			g.Line()
+			g.Comment("Regular fields")
+			for _, f := range elem.GetFields() {
+				// Skip timestamp fields
+				if timeField, ok := f.(*field.Time); ok {
+					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
+						continue
+					}
+				}
+
+				// Skip ID field (handled specially for nodes/edges)
+				if f.NameDatabase() == "id" {
+					continue
+				}
+
+				// Generate unmarshal code for this field
+				g.Add(b.buildFieldUnmarshal(f, ctx))
+			}
+
+			g.Line()
+			g.Return(jen.Nil())
+		})
+}
+
+func (b *convBuilder) buildFieldMarshal(f field.Field, ctx field.Context) jen.Code {
+	// Helper function to generate marshal code for each field type
+	// Check if field is a pointer in Go code
+	isPointer := b.isFieldPointerInGo(f)
+
+	// Wrap in nil check if pointer type
+	if isPointer {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(g *jen.Group) {
+			b.generateFieldMarshalCode(f, ctx, g)
+		})
 	}
 
+	return jen.BlockFunc(func(g *jen.Group) {
+		b.generateFieldMarshalCode(f, ctx, g)
+	})
+}
+
+func (b *convBuilder) isFieldPointerInGo(f field.Field) bool {
+	// Check specific field types that have Source() method with Pointer()
+	switch tf := f.(type) {
+	case *field.Time:
+		return tf.Source().Pointer()
+	case *field.Duration:
+		return tf.Source().Pointer()
+	case *field.UUID:
+		return tf.Source().Pointer()
+	case *field.URL:
+		return tf.Source().Pointer()
+	case *field.String:
+		return tf.Source().Pointer()
+	case *field.Bool:
+		return tf.Source().Pointer()
+	case *field.Numeric:
+		return tf.Source().Pointer()
+	case *field.Byte:
+		return tf.Source().Pointer()
+	case *field.Node:
+		return tf.Source().Pointer()
+	case *field.Struct:
+		return tf.Source().Pointer()
+	case *field.Slice:
+		// Slices can be nil, so always check for nil before marshaling
+		return true
+	case *field.Edge, *field.Enum:
+		// These types: For now assume they're not supported as pointers
+		return false
+	default:
+		return false
+	}
+}
+
+func (b *convBuilder) generateFieldMarshalCode(f field.Field, ctx field.Context, g *jen.Group) {
+	switch tf := f.(type) {
+	case *field.Time:
+		// Use helper - check if pointer type
+		helper := "MarshalDateTime"
+		if tf.Source().Pointer() {
+			helper = "MarshalDateTimePtr"
+		}
+		g.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("c").Dot(f.NameGo()))
+		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
+	case *field.Duration:
+		// Use helper - check if pointer type
+		helper := "MarshalDuration"
+		if tf.Source().Pointer() {
+			helper = "MarshalDurationPtr"
+		}
+		g.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("c").Dot(f.NameGo()))
+		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
+	case *field.UUID:
+		// Use helper - check if pointer type
+		helper := "MarshalUUID"
+		if tf.Source().Pointer() {
+			helper = "MarshalUUIDPtr"
+		}
+		g.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("c").Dot(f.NameGo()))
+		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
+	case *field.URL:
+		// Convert URL to string for marshaling
+		convFuncName := "fromURL"
+		if tf.Source().Pointer() {
+			convFuncName += "Ptr"
+		}
+		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
+	case *field.Struct:
+		// Convert to conv wrapper which has proper MarshalCBOR
+		convFuncName := "from" + tf.Table().NameGo()
+		if tf.Source().Pointer() {
+			convFuncName += "Ptr"
+		}
+		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
+	case *field.Node:
+		// Node fields: convert to link (only ID, not full object)
+		convFuncName := "to" + tf.Table().NameGo() + "Link"
+		if tf.Source().Pointer() {
+			convFuncName += "Ptr"
+		}
+		// For non-pointer fields, the conversion can still return nil if node has no ID
+		// We need to check the result and only add if not nil
+		if !tf.Source().Pointer() {
+			g.If(jen.Id("link").Op(":=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo())), jen.Id("link").Op("!=").Nil()).Block(
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("link"),
+			)
+		} else {
+			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
+		}
+	default:
+		// Simple types: direct assignment
+		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+	}
+}
+
+func (b *convBuilder) buildFieldUnmarshal(f field.Field, ctx field.Context) jen.Code {
+	// Helper function to generate unmarshal code for each field type
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).BlockFunc(func(g *jen.Group) {
+		switch tf := f.(type) {
+		case *field.Time:
+			// Use helper - check if pointer type
+			helper := "UnmarshalDateTime"
+			if tf.Source().Pointer() {
+				helper = "UnmarshalDateTimePtr"
+			}
+			g.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("raw"))
+		case *field.Duration:
+			// Use helper - check if pointer type
+			helper := "UnmarshalDuration"
+			if tf.Source().Pointer() {
+				helper = "UnmarshalDurationPtr"
+			}
+			g.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("raw"))
+		case *field.UUID:
+			// Use helper - check if pointer type
+			helper := "UnmarshalUUID"
+			if tf.Source().Pointer() {
+				helper = "UnmarshalUUIDPtr"
+			}
+			g.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("raw"))
+		case *field.URL:
+			// Convert string to URL for unmarshaling
+			if tf.Source().Pointer() {
+				g.Var().Id("convVal").Op("*").String()
+				g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+				g.Id("c").Dot(f.NameGo()).Op("=").Id("toURLPtr").Call(jen.Id("convVal"))
+			} else {
+				g.Var().Id("convVal").String()
+				g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+				g.Id("c").Dot(f.NameGo()).Op("=").Id("toURL").Call(jen.Id("convVal"))
+			}
+		case *field.Struct:
+			// Unmarshal through conv wrapper
+			if tf.Source().Pointer() {
+				g.Var().Id("convVal").Op("*").Id(tf.Table().NameGoLower())
+				g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+				g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + tf.Table().NameGo() + "Ptr").Call(jen.Id("convVal"))
+			} else {
+				g.Var().Id("convVal").Id(tf.Table().NameGoLower())
+				g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+				g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + tf.Table().NameGo()).Call(jen.Id("convVal"))
+			}
+		case *field.Node:
+			// Node fields: unmarshal through link (only ID, not full object)
+			// convVal is always *groupLink, but we convert differently based on field type
+			g.Var().Id("convVal").Op("*").Id(tf.Table().NameGoLower() + "Link")
+			g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+			if tf.Source().Pointer() {
+				g.Id("c").Dot(f.NameGo()).Op("=").Id("from" + tf.Table().NameGo() + "LinkPtr").Call(jen.Id("convVal"))
+			} else {
+				g.Id("c").Dot(f.NameGo()).Op("=").Id("from" + tf.Table().NameGo() + "Link").Call(jen.Id("convVal"))
+			}
+		default:
+			// Simple types: direct unmarshal
+			g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo()))
+		}
+	})
+}
+
+func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 	localName := elem.NameGoLower()
 	methodPrefix := "to"
 
@@ -212,47 +551,23 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 	}
 
 	ptr := jen.Empty()
-
 	if isEdge {
 		ptr = jen.Op("*")
 	}
 
 	return jen.Add(
-		// NO PTR
+		// NO PTR - shallow wrapper: just unwrap
 		jen.Func().
 			Id(methodPrefix+elem.NameGo()).
 			Params(jen.Id("data").Add(ptr).Id(localName)).
 			Add(b.SourceQual(elem.NameGo())).
 			Block(
-				jen.Return(jen.Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
-					for _, f := range elem.GetFields() {
-						if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
-							if fieldCode := f.CodeGen().ConvToField(fieldCtx); fieldCode != nil {
-								d[fieldCode] = code
-								continue
-							}
-
-							d[jen.Id(f.NameGo())] = code
-						}
-					}
-
-					if _, ok := elem.(*field.NodeTable); ok {
-						d[jen.Id("Node")] = jen.Qual(b.subPkg(""), "NewNode").Call(
-							jen.Id("data").Dot("ID"),
-						)
-					}
-
-					if _, ok := elem.(*field.EdgeTable); ok {
-						d[jen.Id("Edge")] = jen.Qual(b.subPkg(""), "NewEdge").Call(
-							jen.Id("data").Dot("ID"),
-						)
-					}
-				}))),
+				jen.Return(jen.Id("data").Dot(elem.NameGo())), // Just unwrap the embedding
 			),
 
 		jen.Line(),
 
-		// PTR
+		// PTR - shallow wrapper: just unwrap
 		jen.Func().
 			Id(methodPrefix+elem.NameGo()+"Ptr").
 			Params(jen.Id("data").Op("*").Id(localName)).
@@ -262,30 +577,8 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 					jen.Return(jen.Nil()),
 				),
 
-				jen.Return(jen.Op("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
-					for _, f := range elem.GetFields() {
-						if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
-							if fieldCode := f.CodeGen().ConvToField(fieldCtx); fieldCode != nil {
-								d[fieldCode] = code
-								continue
-							}
-
-							d[jen.Id(f.NameGo())] = code
-						}
-					}
-
-					if _, ok := elem.(*field.NodeTable); ok {
-						d[jen.Id("Node")] = jen.Qual(b.subPkg(""), "NewNode").Call(
-							jen.Id("data").Dot("ID"),
-						)
-					}
-
-					if _, ok := elem.(*field.EdgeTable); ok {
-						d[jen.Id("Edge")] = jen.Qual(b.subPkg(""), "NewEdge").Call(
-							jen.Id("data").Dot("ID"),
-						)
-					}
-				}))),
+				jen.Id("result").Op(":=").Id("data").Dot(elem.NameGo()),
+				jen.Return(jen.Op("&").Id("result")), // Unwrap and return pointer
 			),
 	)
 }

@@ -12,6 +12,10 @@ type URL struct {
 	source *parser.FieldURL
 }
 
+func (f *URL) Source() *parser.FieldURL {
+	return f.source
+}
+
 func (f *URL) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgURL, "URL")
 }

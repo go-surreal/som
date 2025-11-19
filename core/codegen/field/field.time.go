@@ -14,6 +14,10 @@ type Time struct {
 	source *parser.FieldTime
 }
 
+func (f *Time) Source() *parser.FieldTime {
+	return f.source
+}
+
 func (f *Time) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Time")
 }
@@ -59,7 +63,11 @@ func (f *Time) CodeGen() *CodeGen {
 		convFrom:    f.convFrom,
 		convTo:      f.convTo,
 		convToField: f.convToField,
-		fieldDef:    f.fieldDef,
+
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+
+		fieldDef: f.fieldDef,
 	}
 }
 
@@ -145,4 +153,53 @@ func (f *Time) fieldDef(ctx Context) jen.Code {
 
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Time) cborMarshal(ctx Context) jen.Code {
+	// Skip timestamp fields - they're handled separately in buildMarshalCBOR
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return nil
+	}
+
+	helper := "marshalDateTime"
+	if f.source.Pointer() {
+		helper += "Ptr"
+	}
+
+	return jen.BlockFunc(func(g *jen.Group) {
+		if f.source.Pointer() {
+			// For pointers, check if non-nil before marshaling
+			g.If(jen.Id("m").Dot(f.NameGo()).Op("!=").Nil()).Block(
+				jen.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(ctx.TargetPkg, def.PkgCBOR), helper).Call(
+					jen.Id("m").Dot(f.NameGo()),
+				),
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val")),
+			)
+		} else {
+			// For non-pointers, always marshal
+			g.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(ctx.TargetPkg, def.PkgCBOR), helper).Call(
+				jen.Id("m").Dot(f.NameGo()),
+			)
+			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
+		}
+	})
+}
+
+func (f *Time) cborUnmarshal(ctx Context) jen.Code {
+	// Skip timestamp fields - they're handled separately in buildUnmarshalCBOR
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return nil
+	}
+
+	helper := "unmarshalDateTime"
+	if f.source.Pointer() {
+		helper += "Ptr"
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Id("m").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(path.Join(ctx.TargetPkg, def.PkgCBOR), helper).Call(jen.Id("raw")),
+	)
 }

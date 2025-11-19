@@ -8,53 +8,86 @@ import (
 )
 
 type FieldsLikeDBResponse struct {
-	ID     *som.ID  `cbor:"id,omitempty"`
-	Time   string   `cbor:"time"`
-	Status string   `cbor:"status"`
-	Detail string   `cbor:"detail"`
-	Result []string `cbor:"result,omitempty"`
+	model.FieldsLikeDBResponse
+}
+
+func (c *FieldsLikeDBResponse) MarshalCBOR() ([]byte, error) {
+	if c == nil {
+		return v2.Marshal(nil)
+	}
+	data := make(map[string]interface{})
+
+	// Embedded som.Node/Edge ID field
+	if c.ID() != nil {
+		data["id"] = c.ID()
+	}
+
+	// Regular fields
+	{
+		data["time"] = c.Time
+	}
+	{
+		data["status"] = c.Status
+	}
+	{
+		data["detail"] = c.Detail
+	}
+	if c.Result != nil {
+		data["result"] = c.Result
+	}
+
+	return v2.Marshal(data)
+}
+
+func (c *FieldsLikeDBResponse) UnmarshalCBOR(data []byte) error {
+	var rawMap map[string]v2.RawMessage
+	if err := v2.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Embedded som.Node/Edge ID field
+	if raw, ok := rawMap["id"]; ok {
+		var id *som.ID
+		v2.Unmarshal(raw, &id)
+		c.Node = som.NewNode(id)
+	}
+
+	// Regular fields
+	if raw, ok := rawMap["time"]; ok {
+		v2.Unmarshal(raw, &c.Time)
+	}
+	if raw, ok := rawMap["status"]; ok {
+		v2.Unmarshal(raw, &c.Status)
+	}
+	if raw, ok := rawMap["detail"]; ok {
+		v2.Unmarshal(raw, &c.Detail)
+	}
+	if raw, ok := rawMap["result"]; ok {
+		v2.Unmarshal(raw, &c.Result)
+	}
+
+	return nil
 }
 
 func FromFieldsLikeDBResponse(data model.FieldsLikeDBResponse) FieldsLikeDBResponse {
-	return FieldsLikeDBResponse{
-		Detail: data.Detail,
-		Result: data.Result,
-		Status: data.Status,
-		Time:   data.Time,
-	}
+	return FieldsLikeDBResponse{FieldsLikeDBResponse: data}
 }
 func FromFieldsLikeDBResponsePtr(data *model.FieldsLikeDBResponse) *FieldsLikeDBResponse {
 	if data == nil {
 		return nil
 	}
-	return &FieldsLikeDBResponse{
-		Detail: data.Detail,
-		Result: data.Result,
-		Status: data.Status,
-		Time:   data.Time,
-	}
+	return &FieldsLikeDBResponse{FieldsLikeDBResponse: *data}
 }
 
 func ToFieldsLikeDBResponse(data FieldsLikeDBResponse) model.FieldsLikeDBResponse {
-	return model.FieldsLikeDBResponse{
-		Detail: data.Detail,
-		Node:   som.NewNode(data.ID),
-		Result: data.Result,
-		Status: data.Status,
-		Time:   data.Time,
-	}
+	return data.FieldsLikeDBResponse
 }
 func ToFieldsLikeDBResponsePtr(data *FieldsLikeDBResponse) *model.FieldsLikeDBResponse {
 	if data == nil {
 		return nil
 	}
-	return &model.FieldsLikeDBResponse{
-		Detail: data.Detail,
-		Node:   som.NewNode(data.ID),
-		Result: data.Result,
-		Status: data.Status,
-		Time:   data.Time,
-	}
+	result := data.FieldsLikeDBResponse
+	return &result
 }
 
 type fieldsLikeDbresponseLink struct {

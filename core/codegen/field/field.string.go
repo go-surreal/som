@@ -12,6 +12,10 @@ type String struct {
 	source *parser.FieldString
 }
 
+func (f *String) Source() *parser.FieldString {
+	return f.source
+}
+
 func (f *String) typeGo() jen.Code {
 	return jen.Add(f.ptr()).String()
 }
@@ -36,6 +40,10 @@ func (f *String) CodeGen() *CodeGen {
 
 		convFrom: f.convFrom,
 		convTo:   f.convTo,
+
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+
 		fieldDef: f.fieldDef,
 	}
 }
@@ -79,4 +87,25 @@ func (f *String) convTo(_ Context) (jen.Code, jen.Code) {
 func (f *String) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *String) cborMarshal(_ Context) jen.Code {
+	return jen.BlockFunc(func(g *jen.Group) {
+		if f.source.Pointer() {
+			g.If(jen.Id("m").Dot(f.NameGo()).Op("!=").Nil()).Block(
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("m").Dot(f.NameGo()),
+			)
+		} else {
+			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("m").Dot(f.NameGo())
+		}
+	})
+}
+
+func (f *String) cborUnmarshal(_ Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("m").Dot(f.NameGo())),
+	)
 }

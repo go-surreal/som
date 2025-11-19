@@ -12,6 +12,10 @@ type UUID struct {
 	source *parser.FieldUUID
 }
 
+func (f *UUID) Source() *parser.FieldUUID {
+	return f.source
+}
+
 func (f *UUID) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
 }
@@ -40,6 +44,10 @@ func (f *UUID) CodeGen() *CodeGen {
 
 		convFrom: f.convFrom,
 		convTo:   f.convTo,
+
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+
 		fieldDef: f.fieldDef,
 	}
 }
@@ -90,4 +98,41 @@ func (f *UUID) convTo(_ Context) (jen.Code, jen.Code) {
 func (f *UUID) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *UUID) cborMarshal(ctx Context) jen.Code {
+	helper := "marshalUUID"
+	if f.source.Pointer() {
+		helper += "Ptr"
+	}
+
+	return jen.BlockFunc(func(g *jen.Group) {
+		if f.source.Pointer() {
+			g.If(jen.Id("m").Dot(f.NameGo()).Op("!=").Nil()).Block(
+				jen.Id("val").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), helper).Call(
+					jen.Id("m").Dot(f.NameGo()),
+				),
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val")),
+			)
+		} else {
+			g.Id("val").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), helper).Call(
+				jen.Id("m").Dot(f.NameGo()),
+			)
+			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
+		}
+	})
+}
+
+func (f *UUID) cborUnmarshal(ctx Context) jen.Code {
+	helper := "unmarshalUUID"
+	if f.source.Pointer() {
+		helper += "Ptr"
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Id("m").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
+	)
 }

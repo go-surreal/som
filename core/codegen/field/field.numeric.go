@@ -15,6 +15,10 @@ type Numeric struct {
 	source *parser.FieldNumeric
 }
 
+func (f *Numeric) Source() *parser.FieldNumeric {
+	return f.source
+}
+
 func (f *Numeric) typeGo() jen.Code {
 	switch f.source.Type {
 	case parser.NumberInt:

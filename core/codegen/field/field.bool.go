@@ -12,6 +12,10 @@ type Bool struct {
 	source *parser.FieldBool
 }
 
+func (f *Bool) Source() *parser.FieldBool {
+	return f.source
+}
+
 func (f *Bool) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Bool()
 }

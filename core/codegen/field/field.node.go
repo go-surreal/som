@@ -15,8 +15,12 @@ type Node struct {
 	table  *NodeTable
 }
 
+func (f *Node) Source() *parser.FieldNode {
+	return f.source
+}
+
 func (f *Node) typeGo() jen.Code {
-	return jen.Qual(f.SourcePkg, f.table.NameGo())
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }
 
 func (f *Node) typeConv(_ Context) jen.Code {

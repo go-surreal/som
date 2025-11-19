@@ -13,6 +13,10 @@ type Struct struct {
 	table  Table
 }
 
+func (f *Struct) Source() *parser.FieldStruct {
+	return f.source
+}
+
 func (f *Struct) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }

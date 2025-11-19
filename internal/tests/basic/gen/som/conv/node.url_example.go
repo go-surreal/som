@@ -8,43 +8,78 @@ import (
 )
 
 type URLExample struct {
-	ID           *som.ID `cbor:"id,omitempty"`
-	SomeURL      *string `cbor:"some_url,omitempty"`
-	SomeOtherURL string  `cbor:"some_other_url"`
+	model.URLExample
+}
+
+func (c *URLExample) MarshalCBOR() ([]byte, error) {
+	if c == nil {
+		return v2.Marshal(nil)
+	}
+	data := make(map[string]interface{})
+
+	// Embedded som.Node/Edge ID field
+	if c.ID() != nil {
+		data["id"] = c.ID()
+	}
+
+	// Regular fields
+	if c.SomeURL != nil {
+		data["some_url"] = fromURLPtr(c.SomeURL)
+	}
+	{
+		data["some_other_url"] = fromURL(c.SomeOtherURL)
+	}
+
+	return v2.Marshal(data)
+}
+
+func (c *URLExample) UnmarshalCBOR(data []byte) error {
+	var rawMap map[string]v2.RawMessage
+	if err := v2.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Embedded som.Node/Edge ID field
+	if raw, ok := rawMap["id"]; ok {
+		var id *som.ID
+		v2.Unmarshal(raw, &id)
+		c.Node = som.NewNode(id)
+	}
+
+	// Regular fields
+	if raw, ok := rawMap["some_url"]; ok {
+		var convVal *string
+		v2.Unmarshal(raw, &convVal)
+		c.SomeURL = toURLPtr(convVal)
+	}
+	if raw, ok := rawMap["some_other_url"]; ok {
+		var convVal string
+		v2.Unmarshal(raw, &convVal)
+		c.SomeOtherURL = toURL(convVal)
+	}
+
+	return nil
 }
 
 func FromURLExample(data model.URLExample) URLExample {
-	return URLExample{
-		SomeOtherURL: fromURL(data.SomeOtherURL),
-		SomeURL:      fromURLPtr(data.SomeURL),
-	}
+	return URLExample{URLExample: data}
 }
 func FromURLExamplePtr(data *model.URLExample) *URLExample {
 	if data == nil {
 		return nil
 	}
-	return &URLExample{
-		SomeOtherURL: fromURL(data.SomeOtherURL),
-		SomeURL:      fromURLPtr(data.SomeURL),
-	}
+	return &URLExample{URLExample: *data}
 }
 
 func ToURLExample(data URLExample) model.URLExample {
-	return model.URLExample{
-		Node:         som.NewNode(data.ID),
-		SomeOtherURL: toURL(data.SomeOtherURL),
-		SomeURL:      toURLPtr(data.SomeURL),
-	}
+	return data.URLExample
 }
 func ToURLExamplePtr(data *URLExample) *model.URLExample {
 	if data == nil {
 		return nil
 	}
-	return &model.URLExample{
-		Node:         som.NewNode(data.ID),
-		SomeOtherURL: toURL(data.SomeOtherURL),
-		SomeURL:      toURLPtr(data.SomeURL),
-	}
+	result := data.URLExample
+	return &result
 }
 
 type urlexampleLink struct {

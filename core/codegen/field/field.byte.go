@@ -15,6 +15,10 @@ type Byte struct {
 	source *parser.FieldByte
 }
 
+func (f *Byte) Source() *parser.FieldByte {
+	return f.source
+}
+
 func (f *Byte) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Byte()
 }

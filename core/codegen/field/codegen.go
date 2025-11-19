@@ -43,6 +43,9 @@ type CodeGen struct {
 	convTo      CodeGenTuple
 	convToField CodeGenFunc
 
+	cborMarshal   CodeGenFunc
+	cborUnmarshal CodeGenFunc
+
 	fieldDef CodeGenFunc
 }
 
@@ -92,4 +95,12 @@ func (g *CodeGen) ConvToField(ctx Context) jen.Code {
 
 func (g *CodeGen) FieldDef(ctx Context) jen.Code {
 	return g.fieldDef.Exec(ctx)
+}
+
+func (g *CodeGen) CBORMarshal(ctx Context) jen.Code {
+	return g.cborMarshal.Exec(ctx)
+}
+
+func (g *CodeGen) CBORUnmarshal(ctx Context) jen.Code {
+	return g.cborUnmarshal.Exec(ctx)
 }
