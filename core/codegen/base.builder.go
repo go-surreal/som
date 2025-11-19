@@ -73,7 +73,6 @@ func (b *build) build() error {
 	}
 
 	builders := []builder{
-		b.newCBORHelpersBuilder(),
 		b.newQueryBuilder(),
 		b.newFilterBuilder(),
 		b.newSortBuilder(),
@@ -496,10 +495,6 @@ func (b *build) newSortBuilder() builder {
 
 func (b *build) newFetchBuilder() builder {
 	return newFetchBuilder(b.input, b.fs, b.basePkg(), def.PkgFetch)
-}
-
-func (b *build) newCBORHelpersBuilder() builder {
-	return newCBORHelpersBuilder(b.input, b.fs, b.basePkg(), "cbor")
 }
 
 func (b *build) newConvBuilder() builder {
