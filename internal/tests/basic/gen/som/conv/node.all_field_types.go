@@ -18,7 +18,7 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{}, 80)
+	data := make(map[string]any, 80)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {

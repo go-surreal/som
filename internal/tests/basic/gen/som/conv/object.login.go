@@ -14,7 +14,7 @@ func (c *login) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{}, 2)
+	data := make(map[string]any, 2)
 
 	// Regular fields
 	{

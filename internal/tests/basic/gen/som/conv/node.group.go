@@ -18,7 +18,7 @@ func (c *Group) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{}, 5)
+	data := make(map[string]any, 5)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {

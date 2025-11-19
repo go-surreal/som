@@ -16,7 +16,7 @@ func (c *someStruct) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{}, 4)
+	data := make(map[string]any, 4)
 
 	// Regular fields
 	if c.StringPtr != nil {

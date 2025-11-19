@@ -209,7 +209,7 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				}
 			}
 
-			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Interface(), jen.Lit(fieldCount))
+			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Any(), jen.Lit(fieldCount))
 
 			// Marshal ID field for nodes and edges
 			if isNode || isEdge {
