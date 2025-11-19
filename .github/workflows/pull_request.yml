@@ -42,7 +42,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1 # static key - cache cleared monthly via cache_cleanup.yml
+          key: go-modules-v1
 
       - name: Sync
         working-directory: .
@@ -79,7 +79,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1 # static key - cache cleared monthly via cache_cleanup.yml
+          key: go-modules-v1
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
@@ -115,13 +115,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1 # static key - cache cleared monthly via cache_cleanup.yml
+          key: go-modules-v1
 
       - name: Cache Go Build
         uses: actions/cache@v4
         with:
           path: ~/.cache/go-build
-          key: go-build-v1 # static key - cache cleared monthly via cache_cleanup.yml
+          key: go-build-v1
 
       - name: Build
         working-directory: .
@@ -146,13 +146,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1 # static key - cache cleared monthly via cache_cleanup.yml
+          key: go-modules-v1
 
       - name: Cache Go Build
         uses: actions/cache@v4
         with:
           path: ~/.cache/go-build
-          key: go-build-v1 # static key - cache cleared monthly via cache_cleanup.yml
+          key: go-build-v1
 
       - name: Test Library
         working-directory: .
