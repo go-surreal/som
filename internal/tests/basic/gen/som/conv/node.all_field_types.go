@@ -18,7 +18,7 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{})
+	data := make(map[string]interface{}, 80)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {
@@ -27,14 +27,12 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 
 	// Embedded som.Timestamps field: CreatedAt
 	if !c.CreatedAt().IsZero() {
-		val, _ := cbor.MarshalDateTime(c.CreatedAt())
-		data["created_at"] = v2.RawMessage(val)
+		data["created_at"] = &types.DateTime{Time: c.CreatedAt()}
 	}
 
 	// Embedded som.Timestamps field: UpdatedAt
 	if !c.UpdatedAt().IsZero() {
-		val, _ := cbor.MarshalDateTime(c.UpdatedAt())
-		data["updated_at"] = v2.RawMessage(val)
+		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
 	}
 
 	// Regular fields
@@ -147,16 +145,17 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 		data["bool_slice"] = c.BoolSlice
 	}
 	{
-		val, _ := cbor.MarshalDateTime(c.Time)
-		data["time"] = v2.RawMessage(val)
+		data["time"] = &types.DateTime{Time: c.Time}
 	}
 	if c.TimePtr != nil {
-		val, _ := cbor.MarshalDateTimePtr(c.TimePtr)
-		data["time_ptr"] = v2.RawMessage(val)
+		if c.TimePtr != nil {
+			data["time_ptr"] = &types.DateTime{Time: *c.TimePtr}
+		}
 	}
 	if c.TimeNil != nil {
-		val, _ := cbor.MarshalDateTimePtr(c.TimeNil)
-		data["time_nil"] = v2.RawMessage(val)
+		if c.TimeNil != nil {
+			data["time_nil"] = &types.DateTime{Time: *c.TimeNil}
+		}
 	}
 	if c.TimeSlice != nil {
 		data["time_slice"] = c.TimeSlice
@@ -165,31 +164,36 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 		data["time_slice_slice"] = c.TimeSliceSlice
 	}
 	{
-		val, _ := cbor.MarshalDuration(c.Duration)
-		data["duration"] = v2.RawMessage(val)
+		data["duration"] = &types.Duration{Duration: c.Duration}
 	}
 	if c.DurationPtr != nil {
-		val, _ := cbor.MarshalDurationPtr(c.DurationPtr)
-		data["duration_ptr"] = v2.RawMessage(val)
+		if c.DurationPtr != nil {
+			data["duration_ptr"] = &types.Duration{Duration: *c.DurationPtr}
+		}
 	}
 	if c.DurationNil != nil {
-		val, _ := cbor.MarshalDurationPtr(c.DurationNil)
-		data["duration_nil"] = v2.RawMessage(val)
+		if c.DurationNil != nil {
+			data["duration_nil"] = &types.Duration{Duration: *c.DurationNil}
+		}
 	}
 	if c.DurationSlice != nil {
 		data["duration_slice"] = c.DurationSlice
 	}
 	{
-		val, _ := cbor.MarshalUUID(c.UUID)
-		data["uuid"] = v2.RawMessage(val)
+		uuidVal := types.UUID(c.UUID)
+		data["uuid"] = &uuidVal
 	}
 	if c.UUIDPtr != nil {
-		val, _ := cbor.MarshalUUIDPtr(c.UUIDPtr)
-		data["uuid_ptr"] = v2.RawMessage(val)
+		if c.UUIDPtr != nil {
+			uuidVal := types.UUID(*c.UUIDPtr)
+			data["uuid_ptr"] = &uuidVal
+		}
 	}
 	if c.UUIDNil != nil {
-		val, _ := cbor.MarshalUUIDPtr(c.UUIDNil)
-		data["uuid_nil"] = v2.RawMessage(val)
+		if c.UUIDNil != nil {
+			uuidVal := types.UUID(*c.UUIDNil)
+			data["uuid_nil"] = &uuidVal
+		}
 	}
 	if c.UUIDSlice != nil {
 		data["uuid_slice"] = c.UUIDSlice

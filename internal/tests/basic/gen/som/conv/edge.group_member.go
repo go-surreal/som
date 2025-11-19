@@ -18,7 +18,7 @@ func (c *GroupMember) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{})
+	data := make(map[string]interface{}, 4)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {
@@ -27,14 +27,12 @@ func (c *GroupMember) MarshalCBOR() ([]byte, error) {
 
 	// Embedded som.Timestamps field: CreatedAt
 	if !c.CreatedAt().IsZero() {
-		val, _ := cbor.MarshalDateTime(c.CreatedAt())
-		data["created_at"] = v2.RawMessage(val)
+		data["created_at"] = &types.DateTime{Time: c.CreatedAt()}
 	}
 
 	// Embedded som.Timestamps field: UpdatedAt
 	if !c.UpdatedAt().IsZero() {
-		val, _ := cbor.MarshalDateTime(c.UpdatedAt())
-		data["updated_at"] = v2.RawMessage(val)
+		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
 	}
 
 	// Regular fields

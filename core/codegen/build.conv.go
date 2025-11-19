@@ -192,7 +192,24 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				jen.Return(jen.Qual(def.PkgCBOR, "Marshal").Call(jen.Nil())),
 			)
 
-			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Interface())
+			// Count fields for pre-sized map allocation
+			fieldCount := 0
+			if isNode || isEdge {
+				fieldCount++ // ID field
+			}
+			for _, f := range elem.GetFields() {
+				if timeField, ok := f.(*field.Time); ok {
+					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
+						fieldCount++ // Timestamp fields
+						continue
+					}
+				}
+				if f.NameDatabase() != "id" {
+					fieldCount++ // Regular fields
+				}
+			}
+
+			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Interface(), jen.Lit(fieldCount))
 
 			// Marshal ID field for nodes and edges
 			if isNode || isEdge {
@@ -209,12 +226,11 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
 						g.Line()
 						g.Comment("Embedded som.Timestamps field: " + f.NameGo())
-						g.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).BlockFunc(func(bg *jen.Group) {
-							bg.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), "MarshalDateTime").Call(
-								jen.Id("c").Dot(f.NameGo()).Call(),
-							)
-							bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
-						})
+						g.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).Block(
+							jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
+								jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()).Call(),
+							),
+						)
 					}
 				}
 			}
@@ -413,29 +429,47 @@ func (b *convBuilder) isFieldPointerInGo(f field.Field) bool {
 func (b *convBuilder) generateFieldMarshalCode(f field.Field, ctx field.Context, g *jen.Group) {
 	switch tf := f.(type) {
 	case *field.Time:
-		// Use helper - check if pointer type
-		helper := "MarshalDateTime"
+		// Direct assignment - types.DateTime has MarshalCBOR that cbor.Marshal will call
 		if tf.Source().Pointer() {
-			helper = "MarshalDateTimePtr"
+			g.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
+					jen.Id("Time").Op(":").Op("*").Id("c").Dot(f.NameGo()),
+				),
+			)
+		} else {
+			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()),
+			)
 		}
-		g.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("c").Dot(f.NameGo()))
-		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
 	case *field.Duration:
-		// Use helper - check if pointer type
-		helper := "MarshalDuration"
+		// Direct assignment - types.Duration has MarshalCBOR that cbor.Marshal will call
 		if tf.Source().Pointer() {
-			helper = "MarshalDurationPtr"
+			g.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "Duration").Values(
+					jen.Id("Duration").Op(":").Op("*").Id("c").Dot(f.NameGo()),
+				),
+			)
+		} else {
+			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "Duration").Values(
+				jen.Id("Duration").Op(":").Id("c").Dot(f.NameGo()),
+			)
 		}
-		g.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("c").Dot(f.NameGo()))
-		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
 	case *field.UUID:
-		// Use helper - check if pointer type
-		helper := "MarshalUUID"
+		// Direct assignment - types.UUID has MarshalCBOR that cbor.Marshal will call
+		// UUID is a type alias, not a struct, so use type conversion
 		if tf.Source().Pointer() {
-			helper = "MarshalUUIDPtr"
+			g.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(bg *jen.Group) {
+				bg.Id("uuidVal").Op(":=").Qual(path.Join(b.basePkg, def.PkgTypes), "UUID").Call(
+					jen.Op("*").Id("c").Dot(f.NameGo()),
+				)
+				bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
+			})
+		} else {
+			g.Id("uuidVal").Op(":=").Qual(path.Join(b.basePkg, def.PkgTypes), "UUID").Call(
+				jen.Id("c").Dot(f.NameGo()),
+			)
+			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
 		}
-		g.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("c").Dot(f.NameGo()))
-		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
 	case *field.URL:
 		// Convert URL to string for marshaling
 		convFuncName := "fromURL"

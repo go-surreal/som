@@ -14,7 +14,7 @@ func (c *groupMemberMeta) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{})
+	data := make(map[string]interface{}, 2)
 
 	// Regular fields
 	{

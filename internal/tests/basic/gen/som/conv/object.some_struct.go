@@ -4,6 +4,7 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -15,7 +16,7 @@ func (c *someStruct) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{})
+	data := make(map[string]interface{}, 4)
 
 	// Regular fields
 	if c.StringPtr != nil {
@@ -25,12 +26,15 @@ func (c *someStruct) MarshalCBOR() ([]byte, error) {
 		data["int_ptr"] = c.IntPtr
 	}
 	if c.TimePtr != nil {
-		val, _ := cbor.MarshalDateTimePtr(c.TimePtr)
-		data["time_ptr"] = v2.RawMessage(val)
+		if c.TimePtr != nil {
+			data["time_ptr"] = &types.DateTime{Time: *c.TimePtr}
+		}
 	}
 	if c.UuidPtr != nil {
-		val, _ := cbor.MarshalUUIDPtr(c.UuidPtr)
-		data["uuid_ptr"] = v2.RawMessage(val)
+		if c.UuidPtr != nil {
+			uuidVal := types.UUID(*c.UuidPtr)
+			data["uuid_ptr"] = &uuidVal
+		}
 	}
 
 	return v2.Marshal(data)

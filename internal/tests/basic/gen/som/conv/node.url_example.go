@@ -15,7 +15,7 @@ func (c *URLExample) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return v2.Marshal(nil)
 	}
-	data := make(map[string]interface{})
+	data := make(map[string]interface{}, 3)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {
