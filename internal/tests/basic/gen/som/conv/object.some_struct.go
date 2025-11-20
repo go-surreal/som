@@ -14,7 +14,7 @@ type someStruct struct {
 
 func (c *someStruct) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return v2.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 4)
 
@@ -37,21 +37,21 @@ func (c *someStruct) MarshalCBOR() ([]byte, error) {
 		}
 	}
 
-	return v2.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *someStruct) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]v2.RawMessage
-	if err := v2.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Regular fields
 	if raw, ok := rawMap["string_ptr"]; ok {
-		v2.Unmarshal(raw, &c.StringPtr)
+		cbor.Unmarshal(raw, &c.StringPtr)
 	}
 	if raw, ok := rawMap["int_ptr"]; ok {
-		v2.Unmarshal(raw, &c.IntPtr)
+		cbor.Unmarshal(raw, &c.IntPtr)
 	}
 	if raw, ok := rawMap["time_ptr"]; ok {
 		c.TimePtr, _ = cbor.UnmarshalDateTimePtr(raw)

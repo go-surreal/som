@@ -2,11 +2,11 @@
 package cbor
 
 import (
-	cbor "github.com/fxamacker/cbor/v2"
-	"github.com/google/uuid"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"net/url"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 const (
@@ -16,27 +16,27 @@ const (
 )
 
 // DateTime marshaling helpers
-func MarshalDateTime(t time.Time) (cbor.RawMessage, error) {
-	content, err := cbor.Marshal([]int64{t.Unix(), int64(t.Nanosecond())})
+func MarshalDateTime(t time.Time) (RawMessage, error) {
+	content, err := Marshal([]int64{t.Unix(), int64(t.Nanosecond())})
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{
+	return Marshal(RawTag{
 		Content: content,
 		Number:  tagDatetime,
 	})
 }
 
-func MarshalDateTimePtr(t *time.Time) (cbor.RawMessage, error) {
+func MarshalDateTimePtr(t *time.Time) (RawMessage, error) {
 	if t == nil {
-		return cbor.Marshal(nil)
+		return Marshal(nil)
 	}
 	return MarshalDateTime(*t)
 }
 
 func UnmarshalDateTime(data []byte) (time.Time, error) {
 	var val []int64
-	if err := cbor.Unmarshal(data, &val); err != nil {
+	if err := Unmarshal(data, &val); err != nil {
 		return time.Time{}, err
 	}
 	if len(val) == 0 {
@@ -59,30 +59,30 @@ func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
 }
 
 // Duration marshaling helpers
-func MarshalDuration(d time.Duration) (cbor.RawMessage, error) {
+func MarshalDuration(d time.Duration) (RawMessage, error) {
 	totalSeconds := int64(d.Seconds())
 	totalNanoseconds := d.Nanoseconds()
 	remainingNanoseconds := totalNanoseconds - (totalSeconds * nanosecond)
-	content, err := cbor.Marshal([]int64{totalSeconds, remainingNanoseconds})
+	content, err := Marshal([]int64{totalSeconds, remainingNanoseconds})
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{
+	return Marshal(RawTag{
 		Content: content,
 		Number:  tagDuration,
 	})
 }
 
-func MarshalDurationPtr(d *time.Duration) (cbor.RawMessage, error) {
+func MarshalDurationPtr(d *time.Duration) (RawMessage, error) {
 	if d == nil {
-		return cbor.Marshal(nil)
+		return Marshal(nil)
 	}
 	return MarshalDuration(*d)
 }
 
 func UnmarshalDuration(data []byte) (time.Duration, error) {
 	var val []int64
-	if err := cbor.Unmarshal(data, &val); err != nil {
+	if err := Unmarshal(data, &val); err != nil {
 		return 0, err
 	}
 	var dur time.Duration
@@ -104,31 +104,31 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 }
 
 // UUID marshaling helpers
-func MarshalUUID(u uuid.UUID) (cbor.RawMessage, error) {
-	raw, err := cbor.Marshal(u)
+func MarshalUUID(u uuid.UUID) (RawMessage, error) {
+	raw, err := Marshal(u)
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{
+	return Marshal(RawTag{
 		Content: raw,
 		Number:  models.TagSpecBinaryUUID,
 	})
 }
 
-func MarshalUUIDPtr(u *uuid.UUID) (cbor.RawMessage, error) {
+func MarshalUUIDPtr(u *uuid.UUID) (RawMessage, error) {
 	if u == nil {
-		return cbor.Marshal(nil)
+		return Marshal(nil)
 	}
 	return MarshalUUID(*u)
 }
 
 func UnmarshalUUID(data []byte) (uuid.UUID, error) {
-	var tag cbor.RawTag
-	if err := cbor.Unmarshal(data, &tag); err != nil {
+	var tag RawTag
+	if err := Unmarshal(data, &tag); err != nil {
 		return uuid.UUID{}, err
 	}
 	var uuidBytes []byte
-	if err := cbor.Unmarshal(tag.Content, &uuidBytes); err != nil {
+	if err := Unmarshal(tag.Content, &uuidBytes); err != nil {
 		return uuid.UUID{}, err
 	}
 	return uuid.FromBytes(uuidBytes)

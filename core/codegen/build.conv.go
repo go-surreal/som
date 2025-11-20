@@ -93,7 +93,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.If(jen.Id("f").Op("==").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Nil()),
 				),
-				jen.Return(jen.Qual(def.PkgCBOR, "Marshal").Call(jen.Id("f").Dot("ID"))),
+				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("f").Dot("ID"))),
 			)
 
 		f.Line()
@@ -102,7 +102,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 			Error().
 			Block(
 				jen.If(
-					jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("f").Dot("ID")),
+					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("f").Dot("ID")),
 					jen.Err().Op("==").Nil(),
 				).Block(
 					jen.Return(jen.Nil()),
@@ -111,7 +111,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.Type().Id("alias").Id(node.NameGoLower()+"Link"),
 				jen.Var().Id("link").Id("alias"),
 
-				jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("link")),
+				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("link")),
 				jen.If(jen.Err().Op("==").Nil()).Block(
 					jen.Op("*").Id("f").Op("=").Id(node.NameGoLower()+"Link").Call(jen.Id("link")),
 				),
@@ -189,7 +189,7 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 		Params(jen.Index().Byte(), jen.Error()).
 		BlockFunc(func(g *jen.Group) {
 			g.If(jen.Id("c").Op("==").Nil()).Block(
-				jen.Return(jen.Qual(def.PkgCBOR, "Marshal").Call(jen.Nil())),
+				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Nil())),
 			)
 
 			// Count fields for pre-sized map allocation
@@ -256,7 +256,7 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 			}
 
 			g.Line()
-			g.Return(jen.Qual(def.PkgCBOR, "Marshal").Call(jen.Id("data")))
+			g.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("data")))
 		})
 }
 
@@ -268,7 +268,7 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 		BlockFunc(func(g *jen.Group) {
 			g.Var().Id("rawMap").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
 			g.If(
-				jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(
+				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(
 					jen.Id("data"),
 					jen.Op("&").Id("rawMap"),
 				),
@@ -286,7 +286,7 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 					jen.Id("ok"),
 				).BlockFunc(func(bg *jen.Group) {
 					bg.Var().Id("id").Op("*").Qual(b.subPkg(""), "ID")
-					bg.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("id"))
+					bg.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("id"))
 
 					if isNode {
 						bg.Id("c").Dot("Node").Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("id"))
@@ -537,29 +537,29 @@ func (b *convBuilder) buildFieldUnmarshal(f field.Field, ctx field.Context) jen.
 			// Convert string to URL for unmarshaling
 			if tf.Source().Pointer() {
 				g.Var().Id("convVal").Op("*").String()
-				g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+				g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
 				g.Id("c").Dot(f.NameGo()).Op("=").Id("toURLPtr").Call(jen.Id("convVal"))
 			} else {
 				g.Var().Id("convVal").String()
-				g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+				g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
 				g.Id("c").Dot(f.NameGo()).Op("=").Id("toURL").Call(jen.Id("convVal"))
 			}
 		case *field.Struct:
 			// Unmarshal through conv wrapper
 			if tf.Source().Pointer() {
 				g.Var().Id("convVal").Op("*").Id(tf.Table().NameGoLower())
-				g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+				g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
 				g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + tf.Table().NameGo() + "Ptr").Call(jen.Id("convVal"))
 			} else {
 				g.Var().Id("convVal").Id(tf.Table().NameGoLower())
-				g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+				g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
 				g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + tf.Table().NameGo()).Call(jen.Id("convVal"))
 			}
 		case *field.Node:
 			// Node fields: unmarshal through link (only ID, not full object)
 			// convVal is always *groupLink, but we convert differently based on field type
 			g.Var().Id("convVal").Op("*").Id(tf.Table().NameGoLower() + "Link")
-			g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+			g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
 			if tf.Source().Pointer() {
 				g.Id("c").Dot(f.NameGo()).Op("=").Id("from" + tf.Table().NameGo() + "LinkPtr").Call(jen.Id("convVal"))
 			} else {
@@ -567,7 +567,7 @@ func (b *convBuilder) buildFieldUnmarshal(f field.Field, ctx field.Context) jen.
 			}
 		default:
 			// Simple types: direct unmarshal
-			g.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo()))
+			g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo()))
 		}
 	})
 }

@@ -3,6 +3,7 @@ package conv
 
 import (
 	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -12,7 +13,7 @@ type groupMemberMeta struct {
 
 func (c *groupMemberMeta) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return v2.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 2)
 
@@ -24,21 +25,21 @@ func (c *groupMemberMeta) MarshalCBOR() ([]byte, error) {
 		data["is_active"] = c.IsActive
 	}
 
-	return v2.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *groupMemberMeta) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]v2.RawMessage
-	if err := v2.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Regular fields
 	if raw, ok := rawMap["is_admin"]; ok {
-		v2.Unmarshal(raw, &c.IsAdmin)
+		cbor.Unmarshal(raw, &c.IsAdmin)
 	}
 	if raw, ok := rawMap["is_active"]; ok {
-		v2.Unmarshal(raw, &c.IsActive)
+		cbor.Unmarshal(raw, &c.IsActive)
 	}
 
 	return nil

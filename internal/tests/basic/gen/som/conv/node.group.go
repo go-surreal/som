@@ -16,7 +16,7 @@ type Group struct {
 
 func (c *Group) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return v2.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 5)
 
@@ -43,19 +43,19 @@ func (c *Group) MarshalCBOR() ([]byte, error) {
 		data["members"] = c.Members
 	}
 
-	return v2.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *Group) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]v2.RawMessage
-	if err := v2.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var id *som.ID
-		v2.Unmarshal(raw, &id)
+		cbor.Unmarshal(raw, &id)
 		c.Node = som.NewNode(id)
 	}
 
@@ -78,10 +78,10 @@ func (c *Group) UnmarshalCBOR(data []byte) error {
 
 	// Regular fields
 	if raw, ok := rawMap["name"]; ok {
-		v2.Unmarshal(raw, &c.Name)
+		cbor.Unmarshal(raw, &c.Name)
 	}
 	if raw, ok := rawMap["members"]; ok {
-		v2.Unmarshal(raw, &c.Members)
+		cbor.Unmarshal(raw, &c.Members)
 	}
 
 	return nil
@@ -117,16 +117,16 @@ func (f *groupLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return v2.Marshal(f.ID)
+	return cbor.Marshal(f.ID)
 }
 
 func (f *groupLink) UnmarshalCBOR(data []byte) error {
-	if err := v2.Unmarshal(data, &f.ID); err == nil {
+	if err := cbor.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias groupLink
 	var link alias
-	err := v2.Unmarshal(data, &link)
+	err := cbor.Unmarshal(data, &link)
 	if err == nil {
 		*f = groupLink(link)
 	}

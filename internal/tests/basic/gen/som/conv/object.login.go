@@ -3,6 +3,7 @@ package conv
 
 import (
 	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -12,7 +13,7 @@ type login struct {
 
 func (c *login) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return v2.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 2)
 
@@ -24,21 +25,21 @@ func (c *login) MarshalCBOR() ([]byte, error) {
 		data["password"] = c.Password
 	}
 
-	return v2.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *login) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]v2.RawMessage
-	if err := v2.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Regular fields
 	if raw, ok := rawMap["username"]; ok {
-		v2.Unmarshal(raw, &c.Username)
+		cbor.Unmarshal(raw, &c.Username)
 	}
 	if raw, ok := rawMap["password"]; ok {
-		v2.Unmarshal(raw, &c.Password)
+		cbor.Unmarshal(raw, &c.Password)
 	}
 
 	return nil

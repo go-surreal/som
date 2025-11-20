@@ -4,6 +4,7 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -13,7 +14,7 @@ type URLExample struct {
 
 func (c *URLExample) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return v2.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 3)
 
@@ -30,31 +31,31 @@ func (c *URLExample) MarshalCBOR() ([]byte, error) {
 		data["some_other_url"] = fromURL(c.SomeOtherURL)
 	}
 
-	return v2.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *URLExample) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]v2.RawMessage
-	if err := v2.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var id *som.ID
-		v2.Unmarshal(raw, &id)
+		cbor.Unmarshal(raw, &id)
 		c.Node = som.NewNode(id)
 	}
 
 	// Regular fields
 	if raw, ok := rawMap["some_url"]; ok {
 		var convVal *string
-		v2.Unmarshal(raw, &convVal)
+		cbor.Unmarshal(raw, &convVal)
 		c.SomeURL = toURLPtr(convVal)
 	}
 	if raw, ok := rawMap["some_other_url"]; ok {
 		var convVal string
-		v2.Unmarshal(raw, &convVal)
+		cbor.Unmarshal(raw, &convVal)
 		c.SomeOtherURL = toURL(convVal)
 	}
 
@@ -91,16 +92,16 @@ func (f *urlexampleLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return v2.Marshal(f.ID)
+	return cbor.Marshal(f.ID)
 }
 
 func (f *urlexampleLink) UnmarshalCBOR(data []byte) error {
-	if err := v2.Unmarshal(data, &f.ID); err == nil {
+	if err := cbor.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias urlexampleLink
 	var link alias
-	err := v2.Unmarshal(data, &link)
+	err := cbor.Unmarshal(data, &link)
 	if err == nil {
 		*f = urlexampleLink(link)
 	}

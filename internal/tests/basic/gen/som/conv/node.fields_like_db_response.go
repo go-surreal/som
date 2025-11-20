@@ -4,6 +4,7 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -13,7 +14,7 @@ type FieldsLikeDBResponse struct {
 
 func (c *FieldsLikeDBResponse) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return v2.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 5)
 
@@ -36,34 +37,34 @@ func (c *FieldsLikeDBResponse) MarshalCBOR() ([]byte, error) {
 		data["result"] = c.Result
 	}
 
-	return v2.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *FieldsLikeDBResponse) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]v2.RawMessage
-	if err := v2.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var id *som.ID
-		v2.Unmarshal(raw, &id)
+		cbor.Unmarshal(raw, &id)
 		c.Node = som.NewNode(id)
 	}
 
 	// Regular fields
 	if raw, ok := rawMap["time"]; ok {
-		v2.Unmarshal(raw, &c.Time)
+		cbor.Unmarshal(raw, &c.Time)
 	}
 	if raw, ok := rawMap["status"]; ok {
-		v2.Unmarshal(raw, &c.Status)
+		cbor.Unmarshal(raw, &c.Status)
 	}
 	if raw, ok := rawMap["detail"]; ok {
-		v2.Unmarshal(raw, &c.Detail)
+		cbor.Unmarshal(raw, &c.Detail)
 	}
 	if raw, ok := rawMap["result"]; ok {
-		v2.Unmarshal(raw, &c.Result)
+		cbor.Unmarshal(raw, &c.Result)
 	}
 
 	return nil
@@ -99,16 +100,16 @@ func (f *fieldsLikeDbresponseLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return v2.Marshal(f.ID)
+	return cbor.Marshal(f.ID)
 }
 
 func (f *fieldsLikeDbresponseLink) UnmarshalCBOR(data []byte) error {
-	if err := v2.Unmarshal(data, &f.ID); err == nil {
+	if err := cbor.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias fieldsLikeDbresponseLink
 	var link alias
-	err := v2.Unmarshal(data, &link)
+	err := cbor.Unmarshal(data, &link)
 	if err == nil {
 		*f = fieldsLikeDbresponseLink(link)
 	}

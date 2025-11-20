@@ -16,7 +16,7 @@ type GroupMember struct {
 
 func (c *GroupMember) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return v2.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 4)
 
@@ -40,19 +40,19 @@ func (c *GroupMember) MarshalCBOR() ([]byte, error) {
 		data["meta"] = fromGroupMemberMeta(c.Meta)
 	}
 
-	return v2.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *GroupMember) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]v2.RawMessage
-	if err := v2.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var id *som.ID
-		v2.Unmarshal(raw, &id)
+		cbor.Unmarshal(raw, &id)
 		c.Edge = som.NewEdge(id)
 	}
 
@@ -76,7 +76,7 @@ func (c *GroupMember) UnmarshalCBOR(data []byte) error {
 	// Regular fields
 	if raw, ok := rawMap["meta"]; ok {
 		var convVal groupMemberMeta
-		v2.Unmarshal(raw, &convVal)
+		cbor.Unmarshal(raw, &convVal)
 		c.Meta = toGroupMemberMeta(convVal)
 	}
 
