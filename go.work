@@ -1,3 +1,5 @@
+go 1.25
+
 use (
 	.
 	internal/tests/basic
