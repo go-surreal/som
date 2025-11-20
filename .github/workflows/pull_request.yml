@@ -161,7 +161,7 @@ jobs:
           path: ~/.cache/go-build
           key: go-build-v1
 
-      - name: Test Library
+      - name: Test
         working-directory: .
         run: |
           go test \
@@ -181,7 +181,7 @@ jobs:
       - name: Setup Mise
         uses: jdx/mise-action@v3
         with:
-          working_directory: internal/tests/basic
+          working_directory: internal/tests
           install: true
           cache: true
 
@@ -197,7 +197,7 @@ jobs:
           path: ~/.cache/go-build
           key: go-build-v1
 
-      - name: Test Basic
+      - name: Test
         working-directory: internal/tests/basic
         run: |
           go test \
