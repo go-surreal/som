@@ -163,12 +163,14 @@ jobs:
 
       - name: Test Library
         working-directory: .
-        run:   go test \
+        run: |
+          go test \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
           -failfast -parallel 3 -count=1 -race -vet=off -v ./...
 
       - name: Test Basic
         working-directory: internal/tests/basic
-        run:   go test \
+        run: |
+          go test \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
           -failfast -parallel 3 -count=1 -race -vet=off -v ./...
