@@ -1,6 +1,6 @@
 module github.com/go-surreal/som/tests/basic
 
-go 1.24
+go 1.24.0
 
 replace github.com/go-surreal/som => ../../../
 
