@@ -199,6 +199,8 @@ jobs:
 
       - name: Test
         working-directory: internal/tests/basic
+        env:
+          GOTOOLCHAIN: local
         run: |
           go test \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
