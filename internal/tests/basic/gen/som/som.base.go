@@ -103,8 +103,37 @@ func (t Timestamps) UpdatedAt() time.Time {
 // 	return t.deletedAt
 // }
 
-// Enum describes a database type with a fixed set of allowed values.
-type Enum string
+// Enum types are defined using type alias markers and declaring constants.
+// Use EnumString, EnumInt, etc. to explicitly mark types as enums.
+//
+// Example:
+//     type Role EnumString
+//     const (
+//         RoleUser  Role = "user"
+//         RoleAdmin Role = "admin"
+//     )
+//
+//     type Status EnumInt
+//     const (
+//         StatusPending  Status = 0
+//         StatusActive   Status = 1
+//     )
+
+// Enum type markers for explicit enum definitions
+type EnumString = string
+type EnumInt = int
+type EnumInt8 = int8
+type EnumInt16 = int16
+type EnumInt32 = int32
+type EnumInt64 = int64
+type EnumUint8 = uint8
+type EnumUint16 = uint16
+type EnumUint32 = uint32
+type EnumFloat32 = float32
+type EnumFloat64 = float64
+
+// Enum is the default enum marker (alias for EnumString)
+type Enum = EnumString
 
 // Email describes a string field that should contain an email address.
 type Email string

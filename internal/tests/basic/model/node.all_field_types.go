@@ -105,6 +105,10 @@ type AllFieldTypes struct {
 	EnumPtrSlice    []*Role
 	EnumPtrSlicePtr *[]*Role
 
+	Status          Status
+	StatusPtr       *Status
+	StatusSlice     []Status
+
 	// structs
 
 	Login             Login
@@ -165,11 +169,19 @@ type SomeStruct struct {
 	UuidPtr   *uuid.UUID
 }
 
-type Role som.Enum
+type Role som.EnumString
 
 const (
 	RoleUser  Role = "user"
 	RoleAdmin Role = "admin"
+)
+
+type Status som.EnumInt
+
+const (
+	StatusPending  Status = 0
+	StatusActive   Status = 1
+	StatusInactive Status = 2
 )
 
 type Group struct {

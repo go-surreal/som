@@ -21,6 +21,7 @@ type Struct struct {
 
 type Enum struct {
 	Name string
+	Type string
 }
 
 type EnumValue struct {

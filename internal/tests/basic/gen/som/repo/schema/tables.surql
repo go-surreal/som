@@ -76,6 +76,9 @@ DEFINE FIELD enum_ptr ON TABLE all_field_types TYPE option<"" | "admin" | "user"
 DEFINE FIELD roles ON TABLE all_field_types TYPE option<array<"" | "admin" | "user"> | null>;
 DEFINE FIELD enum_ptr_slice ON TABLE all_field_types TYPE option<array<option<"" | "admin" | "user" | null>> | null>;
 DEFINE FIELD enum_ptr_slice_ptr ON TABLE all_field_types TYPE option<array<option<"" | "admin" | "user" | null>> | null>;
+DEFINE FIELD status ON TABLE all_field_types TYPE 0 | 1 | 2;
+DEFINE FIELD status_ptr ON TABLE all_field_types TYPE option<0 | 1 | 2 | null>;
+DEFINE FIELD status_slice ON TABLE all_field_types TYPE option<array<0 | 1 | 2> | null>;
 DEFINE FIELD login ON TABLE all_field_types TYPE object;
 DEFINE FIELD login.username ON TABLE all_field_types TYPE string;
 DEFINE FIELD login.password ON TABLE all_field_types TYPE string;
