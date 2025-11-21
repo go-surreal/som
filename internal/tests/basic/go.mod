@@ -1,6 +1,6 @@
 module github.com/go-surreal/som/tests/basic
 
-go 1.24.10
+go 1.25
 
 replace github.com/go-surreal/som => ../../../
 
@@ -14,6 +14,11 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/testcontainers/testcontainers-go v0.40.0
 	gotest.tools/v3 v3.5.2
+)
+
+require (
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 )
 
 require (
@@ -55,6 +60,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.25.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/testify v1.11.0 // indirect
+	github.com/surrealdb/surrealdb.go v1.0.0
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
@@ -70,5 +76,4 @@ require (
 	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	github.com/surrealdb/surrealdb.go v1.0.0
 )
