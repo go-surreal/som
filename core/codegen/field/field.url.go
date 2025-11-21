@@ -46,8 +46,6 @@ func (f *URL) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil,
 
-		convFrom:      f.convFrom,
-		convTo:        f.convTo,
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 		fieldDef:      f.fieldDef,
@@ -71,28 +69,6 @@ func (f *URL) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *URL) convFrom(_ Context) (jen.Code, jen.Code) {
-	fromFunc := "fromURL"
-
-	if f.source.Pointer() {
-		fromFunc += fnSuffixPtr
-	}
-
-	return jen.Id(fromFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *URL) convTo(_ Context) (jen.Code, jen.Code) {
-	toFunc := "toURL"
-
-	if f.source.Pointer() {
-		toFunc += fnSuffixPtr
-	}
-
-	return jen.Id(toFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *URL) fieldDef(ctx Context) jen.Code {

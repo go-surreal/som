@@ -129,8 +129,6 @@ func (f *Numeric) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom:      f.convFrom,
-		convTo:        f.convTo,
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 		fieldDef:      f.fieldDef,
@@ -193,52 +191,6 @@ func (f *Numeric) sortDefine(ctx Context) jen.Code {
 func (f *Numeric) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *Numeric) convFrom(_ Context) (jen.Code, jen.Code) {
-	switch f.source.Type {
-
-	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-	//	{
-	//		var typ jen.Code
-	//
-	//		switch f.source.Type {
-	//		case parser.NumberUint:
-	//			typ = jen.Uint()
-	//		case parser.NumberUint64:
-	//			typ = jen.Uint64()
-	//		case parser.NumberUintptr:
-	//			typ = jen.Uintptr()
-	//		}
-	//
-	//		field := jen.Id("data").Dot(f.NameGo())
-	//		if !f.source.Pointer() {
-	//			field = jen.Op("&").Add(field)
-	//		}
-	//
-	//		return jen.Id("unsignedNumber").Types(typ).Values(field)
-	//	}
-
-	default:
-		return jen.Null(), jen.Id("data").Dot(f.NameGo())
-	}
-}
-
-func (f *Numeric) convTo(_ Context) (jen.Code, jen.Code) {
-	switch f.source.Type {
-
-	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-	//	{
-	//		if !f.source.Pointer() {
-	//			return jen.Op("*").Id("data").Dot(f.NameGo()).Dot("val")
-	//		}
-	//
-	//		return jen.Id("data").Dot(f.NameGo()).Dot("val")
-	//	}
-
-	default:
-		return jen.Null(), jen.Id("data").Dot(f.NameGo())
-	}
 }
 
 func (f *Numeric) fieldDef(ctx Context) jen.Code {

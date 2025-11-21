@@ -42,8 +42,6 @@ func (f *Node) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   f.sortFunc,
 
-		convFrom:      f.convFrom,
-		convTo:        f.convTo,
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 		fieldDef:      f.fieldDef,
@@ -81,28 +79,6 @@ func (f *Node) sortFunc(ctx Context) jen.Code {
 		Block(
 			jen.Return(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel).
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
-}
-
-func (f *Node) convFrom(_ Context) (jen.Code, jen.Code) {
-	funcName := "to" + f.table.NameGo() + "Link"
-
-	if f.source.Pointer() {
-		funcName += fnSuffixPtr
-	}
-
-	return jen.Id(funcName),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *Node) convTo(_ Context) (jen.Code, jen.Code) {
-	funcName := "from" + f.table.NameGo() + "Link"
-
-	if f.source.Pointer() {
-		funcName += fnSuffixPtr
-	}
-
-	return jen.Id(funcName),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Node) fieldDef(ctx Context) jen.Code {

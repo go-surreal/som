@@ -58,8 +58,6 @@ func (f *Enum) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil,
 
-		convFrom:      f.convFrom,
-		convTo:        f.convTo,
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 		fieldDef:      f.fieldDef,
@@ -83,14 +81,6 @@ func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ)),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *Enum) convFrom(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
-}
-
-func (f *Enum) convTo(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Enum) fieldDef(ctx Context) jen.Code {
