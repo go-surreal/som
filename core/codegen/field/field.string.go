@@ -12,10 +12,6 @@ type String struct {
 	source *parser.FieldString
 }
 
-func (f *String) Source() *parser.FieldString {
-	return f.source
-}
-
 func (f *String) typeGo() jen.Code {
 	return jen.Add(f.ptr()).String()
 }
@@ -90,22 +86,20 @@ func (f *String) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *String) cborMarshal(_ Context) jen.Code {
-	return jen.BlockFunc(func(g *jen.Group) {
-		if f.source.Pointer() {
-			g.If(jen.Id("m").Dot(f.NameGo()).Op("!=").Nil()).Block(
-				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("m").Dot(f.NameGo()),
-			)
-		} else {
-			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("m").Dot(f.NameGo())
-		}
-	})
+	// Simple types: direct assignment
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+		)
+	}
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
 }
 
-func (f *String) cborUnmarshal(_ Context) jen.Code {
+func (f *String) cborUnmarshal(ctx Context) jen.Code {
 	return jen.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).Block(
-		jen.Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("m").Dot(f.NameGo())),
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
 	)
 }

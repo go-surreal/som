@@ -17,13 +17,8 @@ func (c *login) MarshalCBOR() ([]byte, error) {
 	}
 	data := make(map[string]any, 2)
 
-	// Regular fields
-	{
-		data["username"] = c.Username
-	}
-	{
-		data["password"] = c.Password
-	}
+	data["username"] = c.Username
+	data["password"] = c.Password
 
 	return cbor.Marshal(data)
 }
@@ -34,7 +29,6 @@ func (c *login) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	// Regular fields
 	if raw, ok := rawMap["username"]; ok {
 		cbor.Unmarshal(raw, &c.Username)
 	}

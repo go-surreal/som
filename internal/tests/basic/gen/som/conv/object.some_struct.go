@@ -18,7 +18,6 @@ func (c *someStruct) MarshalCBOR() ([]byte, error) {
 	}
 	data := make(map[string]any, 4)
 
-	// Regular fields
 	if c.StringPtr != nil {
 		data["string_ptr"] = c.StringPtr
 	}
@@ -26,15 +25,11 @@ func (c *someStruct) MarshalCBOR() ([]byte, error) {
 		data["int_ptr"] = c.IntPtr
 	}
 	if c.TimePtr != nil {
-		if c.TimePtr != nil {
-			data["time_ptr"] = &types.DateTime{Time: *c.TimePtr}
-		}
+		data["time_ptr"] = &types.DateTime{Time: *c.TimePtr}
 	}
 	if c.UuidPtr != nil {
-		if c.UuidPtr != nil {
-			uuidVal := types.UUID(*c.UuidPtr)
-			data["uuid_ptr"] = &uuidVal
-		}
+		uuidVal := types.UUID(*c.UuidPtr)
+		data["uuid_ptr"] = &uuidVal
 	}
 
 	return cbor.Marshal(data)
@@ -46,7 +41,6 @@ func (c *someStruct) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	// Regular fields
 	if raw, ok := rawMap["string_ptr"]; ok {
 		cbor.Unmarshal(raw, &c.StringPtr)
 	}

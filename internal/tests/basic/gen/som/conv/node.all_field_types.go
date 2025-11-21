@@ -7,7 +7,6 @@ import (
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"time"
 )
 
 type AllFieldTypes struct {
@@ -25,20 +24,13 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 		data["id"] = c.ID()
 	}
 
-	// Embedded som.Timestamps field: CreatedAt
 	if !c.CreatedAt().IsZero() {
 		data["created_at"] = &types.DateTime{Time: c.CreatedAt()}
 	}
-
-	// Embedded som.Timestamps field: UpdatedAt
 	if !c.UpdatedAt().IsZero() {
 		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
 	}
-
-	// Regular fields
-	{
-		data["string"] = c.String
-	}
+	data["string"] = c.String
 	if c.StringPtr != nil {
 		data["string_ptr"] = c.StringPtr
 	}
@@ -51,9 +43,7 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c.StringSlicePtr != nil {
 		data["string_slice_ptr"] = c.StringSlicePtr
 	}
-	{
-		data["int"] = c.Int
-	}
+	data["int"] = c.Int
 	if c.IntPtr != nil {
 		data["int_ptr"] = c.IntPtr
 	}
@@ -69,51 +59,35 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c.IntPtrSlicePtr != nil {
 		data["int_ptr_slice_ptr"] = c.IntPtrSlicePtr
 	}
-	{
-		data["int_8"] = c.Int8
-	}
+	data["int_8"] = c.Int8
 	if c.Int8Ptr != nil {
 		data["int_8_ptr"] = c.Int8Ptr
 	}
-	{
-		data["int_16"] = c.Int16
-	}
+	data["int_16"] = c.Int16
 	if c.Int16Ptr != nil {
 		data["int_16_ptr"] = c.Int16Ptr
 	}
-	{
-		data["int_32"] = c.Int32
-	}
+	data["int_32"] = c.Int32
 	if c.Int32Ptr != nil {
 		data["int_32_ptr"] = c.Int32Ptr
 	}
-	{
-		data["int_64"] = c.Int64
-	}
+	data["int_64"] = c.Int64
 	if c.Int64Ptr != nil {
 		data["int_64_ptr"] = c.Int64Ptr
 	}
-	{
-		data["uint_8"] = c.Uint8
-	}
+	data["uint_8"] = c.Uint8
 	if c.Uint8Ptr != nil {
 		data["uint_8_ptr"] = c.Uint8Ptr
 	}
-	{
-		data["uint_16"] = c.Uint16
-	}
+	data["uint_16"] = c.Uint16
 	if c.Uint16Ptr != nil {
 		data["uint_16_ptr"] = c.Uint16Ptr
 	}
-	{
-		data["uint_32"] = c.Uint32
-	}
+	data["uint_32"] = c.Uint32
 	if c.Uint32Ptr != nil {
 		data["uint_32_ptr"] = c.Uint32Ptr
 	}
-	{
-		data["float_32"] = c.Float32
-	}
+	data["float_32"] = c.Float32
 	if c.Float32Slice != nil {
 		data["float_32_slice"] = c.Float32Slice
 	}
@@ -126,36 +100,24 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c.Float32PtrSlicePtr != nil {
 		data["float_32_ptr_slice_ptr"] = c.Float32PtrSlicePtr
 	}
-	{
-		data["float_64"] = c.Float64
-	}
-	{
-		data["rune"] = c.Rune
-	}
+	data["float_64"] = c.Float64
+	data["rune"] = c.Rune
 	if c.RuneSlice != nil {
 		data["rune_slice"] = c.RuneSlice
 	}
-	{
-		data["bool"] = c.Bool
-	}
+	data["bool"] = c.Bool
 	if c.BoolPtr != nil {
 		data["bool_ptr"] = c.BoolPtr
 	}
 	if c.BoolSlice != nil {
 		data["bool_slice"] = c.BoolSlice
 	}
-	{
-		data["time"] = &types.DateTime{Time: c.Time}
-	}
+	data["time"] = &types.DateTime{Time: c.Time}
 	if c.TimePtr != nil {
-		if c.TimePtr != nil {
-			data["time_ptr"] = &types.DateTime{Time: *c.TimePtr}
-		}
+		data["time_ptr"] = &types.DateTime{Time: *c.TimePtr}
 	}
 	if c.TimeNil != nil {
-		if c.TimeNil != nil {
-			data["time_nil"] = &types.DateTime{Time: *c.TimeNil}
-		}
+		data["time_nil"] = &types.DateTime{Time: *c.TimeNil}
 	}
 	if c.TimeSlice != nil {
 		data["time_slice"] = c.TimeSlice
@@ -163,18 +125,12 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c.TimeSliceSlice != nil {
 		data["time_slice_slice"] = c.TimeSliceSlice
 	}
-	{
-		data["duration"] = &types.Duration{Duration: c.Duration}
-	}
+	data["duration"] = &types.Duration{Duration: c.Duration}
 	if c.DurationPtr != nil {
-		if c.DurationPtr != nil {
-			data["duration_ptr"] = &types.Duration{Duration: *c.DurationPtr}
-		}
+		data["duration_ptr"] = &types.Duration{Duration: *c.DurationPtr}
 	}
 	if c.DurationNil != nil {
-		if c.DurationNil != nil {
-			data["duration_nil"] = &types.Duration{Duration: *c.DurationNil}
-		}
+		data["duration_nil"] = &types.Duration{Duration: *c.DurationNil}
 	}
 	if c.DurationSlice != nil {
 		data["duration_slice"] = c.DurationSlice
@@ -184,23 +140,17 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 		data["uuid"] = &uuidVal
 	}
 	if c.UUIDPtr != nil {
-		if c.UUIDPtr != nil {
-			uuidVal := types.UUID(*c.UUIDPtr)
-			data["uuid_ptr"] = &uuidVal
-		}
+		uuidVal := types.UUID(*c.UUIDPtr)
+		data["uuid_ptr"] = &uuidVal
 	}
 	if c.UUIDNil != nil {
-		if c.UUIDNil != nil {
-			uuidVal := types.UUID(*c.UUIDNil)
-			data["uuid_nil"] = &uuidVal
-		}
+		uuidVal := types.UUID(*c.UUIDNil)
+		data["uuid_nil"] = &uuidVal
 	}
 	if c.UUIDSlice != nil {
 		data["uuid_slice"] = c.UUIDSlice
 	}
-	{
-		data["url"] = fromURL(c.URL)
-	}
+	data["url"] = fromURL(c.URL)
 	if c.URLPtr != nil {
 		data["url_ptr"] = fromURLPtr(c.URLPtr)
 	}
@@ -210,10 +160,8 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c.URLSlice != nil {
 		data["url_slice"] = c.URLSlice
 	}
-	{
-		data["role"] = c.Role
-	}
-	{
+	data["role"] = c.Role
+	if c.EnumPtr != nil {
 		data["enum_ptr"] = c.EnumPtr
 	}
 	if c.Roles != nil {
@@ -225,9 +173,7 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c.EnumPtrSlicePtr != nil {
 		data["enum_ptr_slice_ptr"] = c.EnumPtrSlicePtr
 	}
-	{
-		data["login"] = fromLogin(c.Login)
-	}
+	data["login"] = fromLogin(c.Login)
 	if c.StructPtr != nil {
 		data["struct_ptr"] = fromSomeStructPtr(c.StructPtr)
 	}
@@ -240,10 +186,8 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c.StructPtrSlicePtr != nil {
 		data["struct_ptr_slice_ptr"] = c.StructPtrSlicePtr
 	}
-	{
-		if link := toGroupLink(c.MainGroup); link != nil {
-			data["main_group"] = link
-		}
+	if link := toGroupLink(c.MainGroup); link != nil {
+		data["main_group"] = link
 	}
 	if c.MainGroupPtr != nil {
 		data["main_group_ptr"] = toGroupLinkPtr(c.MainGroupPtr)
@@ -272,9 +216,7 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c.SliceSliceSlice2 != nil {
 		data["slice_slice_slice_2"] = c.SliceSliceSlice2
 	}
-	{
-		data["byte"] = c.Byte
-	}
+	data["byte"] = c.Byte
 	if c.BytePtr != nil {
 		data["byte_ptr"] = c.BytePtr
 	}
@@ -301,24 +243,14 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 		c.Node = som.NewNode(id)
 	}
 
-	// Embedded som.Timestamps field: CreatedAt
-	var createdAt time.Time
 	if raw, ok := rawMap["created_at"]; ok {
-		createdAt, _ = cbor.UnmarshalDateTime(raw)
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		c.Timestamps.SetCreatedAt(tm)
 	}
-
-	// Embedded som.Timestamps field: UpdatedAt
-	var updatedAt time.Time
 	if raw, ok := rawMap["updated_at"]; ok {
-		updatedAt, _ = cbor.UnmarshalDateTime(raw)
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		c.Timestamps.SetUpdatedAt(tm)
 	}
-
-	// Initialize Timestamps embedding
-	createdAtDT := &types.DateTime{Time: createdAt}
-	updatedAtDT := &types.DateTime{Time: updatedAt}
-	c.Timestamps = som.NewTimestamps(createdAtDT, updatedAtDT)
-
-	// Regular fields
 	if raw, ok := rawMap["string"]; ok {
 		cbor.Unmarshal(raw, &c.String)
 	}

@@ -23,13 +23,10 @@ func (c *URLExample) MarshalCBOR() ([]byte, error) {
 		data["id"] = c.ID()
 	}
 
-	// Regular fields
 	if c.SomeURL != nil {
 		data["some_url"] = fromURLPtr(c.SomeURL)
 	}
-	{
-		data["some_other_url"] = fromURL(c.SomeOtherURL)
-	}
+	data["some_other_url"] = fromURL(c.SomeOtherURL)
 
 	return cbor.Marshal(data)
 }
@@ -47,7 +44,6 @@ func (c *URLExample) UnmarshalCBOR(data []byte) error {
 		c.Node = som.NewNode(id)
 	}
 
-	// Regular fields
 	if raw, ok := rawMap["some_url"]; ok {
 		var convVal *string
 		cbor.Unmarshal(raw, &convVal)

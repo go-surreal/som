@@ -7,7 +7,6 @@ import (
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"time"
 )
 
 type GroupMember struct {
@@ -25,20 +24,13 @@ func (c *GroupMember) MarshalCBOR() ([]byte, error) {
 		data["id"] = c.ID()
 	}
 
-	// Embedded som.Timestamps field: CreatedAt
 	if !c.CreatedAt().IsZero() {
 		data["created_at"] = &types.DateTime{Time: c.CreatedAt()}
 	}
-
-	// Embedded som.Timestamps field: UpdatedAt
 	if !c.UpdatedAt().IsZero() {
 		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
 	}
-
-	// Regular fields
-	{
-		data["meta"] = fromGroupMemberMeta(c.Meta)
-	}
+	data["meta"] = fromGroupMemberMeta(c.Meta)
 
 	return cbor.Marshal(data)
 }
@@ -56,24 +48,14 @@ func (c *GroupMember) UnmarshalCBOR(data []byte) error {
 		c.Edge = som.NewEdge(id)
 	}
 
-	// Embedded som.Timestamps field: CreatedAt
-	var createdAt time.Time
 	if raw, ok := rawMap["created_at"]; ok {
-		createdAt, _ = cbor.UnmarshalDateTime(raw)
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		c.Timestamps.SetCreatedAt(tm)
 	}
-
-	// Embedded som.Timestamps field: UpdatedAt
-	var updatedAt time.Time
 	if raw, ok := rawMap["updated_at"]; ok {
-		updatedAt, _ = cbor.UnmarshalDateTime(raw)
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		c.Timestamps.SetUpdatedAt(tm)
 	}
-
-	// Initialize Timestamps embedding
-	createdAtDT := &types.DateTime{Time: createdAt}
-	updatedAtDT := &types.DateTime{Time: updatedAt}
-	c.Timestamps = som.NewTimestamps(createdAtDT, updatedAtDT)
-
-	// Regular fields
 	if raw, ok := rawMap["meta"]; ok {
 		var convVal groupMemberMeta
 		cbor.Unmarshal(raw, &convVal)

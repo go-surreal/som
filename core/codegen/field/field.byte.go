@@ -15,10 +15,6 @@ type Byte struct {
 	source *parser.FieldByte
 }
 
-func (f *Byte) Source() *parser.FieldByte {
-	return f.source
-}
-
 func (f *Byte) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Byte()
 }
@@ -49,9 +45,11 @@ func (f *Byte) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // Byte does not need a sort function.
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		convFrom:      f.convFrom,
+		convTo:        f.convTo,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -87,4 +85,23 @@ func (f *Byte) convTo(_ Context) (jen.Code, jen.Code) {
 func (f *Byte) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Byte) cborMarshal(_ Context) jen.Code {
+	// Simple types: direct assignment
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+		)
+	}
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+}
+
+func (f *Byte) cborUnmarshal(ctx Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }

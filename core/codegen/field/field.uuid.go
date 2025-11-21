@@ -12,10 +12,6 @@ type UUID struct {
 	source *parser.FieldUUID
 }
 
-func (f *UUID) Source() *parser.FieldUUID {
-	return f.source
-}
-
 func (f *UUID) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
 }
@@ -101,38 +97,35 @@ func (f *UUID) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *UUID) cborMarshal(ctx Context) jen.Code {
-	helper := "marshalUUID"
+	// Direct assignment - types.UUID has MarshalCBOR that cbor.Marshal will call
+	// UUID is a type alias, not a struct, so use type conversion
 	if f.source.Pointer() {
-		helper += "Ptr"
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(bg *jen.Group) {
+			bg.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
+				jen.Op("*").Id("c").Dot(f.NameGo()),
+			)
+			bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
+		})
 	}
 
 	return jen.BlockFunc(func(g *jen.Group) {
-		if f.source.Pointer() {
-			g.If(jen.Id("m").Dot(f.NameGo()).Op("!=").Nil()).Block(
-				jen.Id("val").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), helper).Call(
-					jen.Id("m").Dot(f.NameGo()),
-				),
-				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val")),
-			)
-		} else {
-			g.Id("val").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), helper).Call(
-				jen.Id("m").Dot(f.NameGo()),
-			)
-			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
-		}
+		g.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
+			jen.Id("c").Dot(f.NameGo()),
+		)
+		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
 	})
 }
 
 func (f *UUID) cborUnmarshal(ctx Context) jen.Code {
-	helper := "unmarshalUUID"
+	helper := "UnmarshalUUID"
 	if f.source.Pointer() {
-		helper += "Ptr"
+		helper = "UnmarshalUUIDPtr"
 	}
 
 	return jen.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).Block(
-		jen.Id("m").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBORHelpers(), helper).Call(jen.Id("raw")),
 	)
 }

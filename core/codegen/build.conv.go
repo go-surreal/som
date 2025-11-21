@@ -198,14 +198,8 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				fieldCount++ // ID field
 			}
 			for _, f := range elem.GetFields() {
-				if timeField, ok := f.(*field.Time); ok {
-					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
-						fieldCount++ // Timestamp fields
-						continue
-					}
-				}
 				if f.NameDatabase() != "id" {
-					fieldCount++ // Regular fields
+					fieldCount++
 				}
 			}
 
@@ -220,39 +214,18 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				)
 			}
 
-			// Marshal timestamp fields (CreatedAt, UpdatedAt)
-			for _, f := range elem.GetFields() {
-				if timeField, ok := f.(*field.Time); ok {
-					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
-						g.Line()
-						g.Comment("Embedded som.Timestamps field: " + f.NameGo())
-						g.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).Block(
-							jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
-								jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()).Call(),
-							),
-						)
-					}
-				}
-			}
-
-			// Marshal regular fields
+			// Marshal all fields
 			g.Line()
-			g.Comment("Regular fields")
 			for _, f := range elem.GetFields() {
-				// Skip timestamp fields (already handled)
-				if timeField, ok := f.(*field.Time); ok {
-					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
-						continue
-					}
-				}
-
 				// Skip ID field (handled specially for nodes/edges)
 				if f.NameDatabase() == "id" {
 					continue
 				}
 
-				// Generate marshal code for this field
-				g.Add(b.buildFieldMarshal(f, ctx))
+				// Generate marshal code for this field using field's CodeGen method
+				if code := f.CodeGen().CBORMarshal(ctx); code != nil {
+					g.Add(code)
+				}
 			}
 
 			g.Line()
@@ -296,280 +269,23 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 				})
 			}
 
-			// Unmarshal timestamp fields
-			var createdAtFound, updatedAtFound bool
-			var createdAtVar, updatedAtVar string
-			for _, f := range elem.GetFields() {
-				if timeField, ok := f.(*field.Time); ok {
-					if timeField.Source().IsCreatedAt {
-						createdAtFound = true
-						createdAtVar = "createdAt"
-						g.Line()
-						g.Comment("Embedded som.Timestamps field: CreatedAt")
-						g.Var().Id(createdAtVar).Qual("time", "Time")
-						g.If(
-							jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("created_at")),
-							jen.Id("ok"),
-						).BlockFunc(func(bg *jen.Group) {
-							bg.Id(createdAtVar).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), "UnmarshalDateTime").Call(jen.Id("raw"))
-						})
-					} else if timeField.Source().IsUpdatedAt {
-						updatedAtFound = true
-						updatedAtVar = "updatedAt"
-						g.Line()
-						g.Comment("Embedded som.Timestamps field: UpdatedAt")
-						g.Var().Id(updatedAtVar).Qual("time", "Time")
-						g.If(
-							jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("updated_at")),
-							jen.Id("ok"),
-						).BlockFunc(func(bg *jen.Group) {
-							bg.Id(updatedAtVar).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), "UnmarshalDateTime").Call(jen.Id("raw"))
-						})
-					}
-				}
-			}
-
-			// Initialize Timestamps if we have timestamp fields
-			if createdAtFound || updatedAtFound {
-				g.Line()
-				g.Comment("Initialize Timestamps embedding")
-				createdPtr := jen.Nil()
-				updatedPtr := jen.Nil()
-				if createdAtFound {
-					g.Id("createdAtDT").Op(":=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
-						jen.Dict{jen.Id("Time"): jen.Id(createdAtVar)},
-					)
-					createdPtr = jen.Id("createdAtDT")
-				}
-				if updatedAtFound {
-					g.Id("updatedAtDT").Op(":=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
-						jen.Dict{jen.Id("Time"): jen.Id(updatedAtVar)},
-					)
-					updatedPtr = jen.Id("updatedAtDT")
-				}
-				g.Id("c").Dot("Timestamps").Op("=").Qual(b.subPkg(""), "NewTimestamps").Call(createdPtr, updatedPtr)
-			}
-
-			// Unmarshal regular fields
+			// Unmarshal all fields
 			g.Line()
-			g.Comment("Regular fields")
 			for _, f := range elem.GetFields() {
-				// Skip timestamp fields
-				if timeField, ok := f.(*field.Time); ok {
-					if timeField.Source().IsCreatedAt || timeField.Source().IsUpdatedAt {
-						continue
-					}
-				}
-
 				// Skip ID field (handled specially for nodes/edges)
 				if f.NameDatabase() == "id" {
 					continue
 				}
 
-				// Generate unmarshal code for this field
-				g.Add(b.buildFieldUnmarshal(f, ctx))
+				// Generate unmarshal code for this field using field's CodeGen method
+				if code := f.CodeGen().CBORUnmarshal(ctx); code != nil {
+					g.Add(code)
+				}
 			}
 
 			g.Line()
 			g.Return(jen.Nil())
 		})
-}
-
-func (b *convBuilder) buildFieldMarshal(f field.Field, ctx field.Context) jen.Code {
-	// Helper function to generate marshal code for each field type
-	// Check if field is a pointer in Go code
-	isPointer := b.isFieldPointerInGo(f)
-
-	// Wrap in nil check if pointer type
-	if isPointer {
-		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(g *jen.Group) {
-			b.generateFieldMarshalCode(f, ctx, g)
-		})
-	}
-
-	return jen.BlockFunc(func(g *jen.Group) {
-		b.generateFieldMarshalCode(f, ctx, g)
-	})
-}
-
-func (b *convBuilder) isFieldPointerInGo(f field.Field) bool {
-	// Check specific field types that have Source() method with Pointer()
-	switch tf := f.(type) {
-	case *field.Time:
-		return tf.Source().Pointer()
-	case *field.Duration:
-		return tf.Source().Pointer()
-	case *field.UUID:
-		return tf.Source().Pointer()
-	case *field.URL:
-		return tf.Source().Pointer()
-	case *field.String:
-		return tf.Source().Pointer()
-	case *field.Bool:
-		return tf.Source().Pointer()
-	case *field.Numeric:
-		return tf.Source().Pointer()
-	case *field.Byte:
-		return tf.Source().Pointer()
-	case *field.Node:
-		return tf.Source().Pointer()
-	case *field.Struct:
-		return tf.Source().Pointer()
-	case *field.Slice:
-		// Slices can be nil, so always check for nil before marshaling
-		return true
-	case *field.Edge, *field.Enum:
-		// These types: For now assume they're not supported as pointers
-		return false
-	default:
-		return false
-	}
-}
-
-func (b *convBuilder) generateFieldMarshalCode(f field.Field, ctx field.Context, g *jen.Group) {
-	switch tf := f.(type) {
-	case *field.Time:
-		// Direct assignment - types.DateTime has MarshalCBOR that cbor.Marshal will call
-		if tf.Source().Pointer() {
-			g.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
-				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
-					jen.Id("Time").Op(":").Op("*").Id("c").Dot(f.NameGo()),
-				),
-			)
-		} else {
-			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
-				jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()),
-			)
-		}
-	case *field.Duration:
-		// Direct assignment - types.Duration has MarshalCBOR that cbor.Marshal will call
-		if tf.Source().Pointer() {
-			g.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
-				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "Duration").Values(
-					jen.Id("Duration").Op(":").Op("*").Id("c").Dot(f.NameGo()),
-				),
-			)
-		} else {
-			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "Duration").Values(
-				jen.Id("Duration").Op(":").Id("c").Dot(f.NameGo()),
-			)
-		}
-	case *field.UUID:
-		// Direct assignment - types.UUID has MarshalCBOR that cbor.Marshal will call
-		// UUID is a type alias, not a struct, so use type conversion
-		if tf.Source().Pointer() {
-			g.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(bg *jen.Group) {
-				bg.Id("uuidVal").Op(":=").Qual(path.Join(b.basePkg, def.PkgTypes), "UUID").Call(
-					jen.Op("*").Id("c").Dot(f.NameGo()),
-				)
-				bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
-			})
-		} else {
-			g.Id("uuidVal").Op(":=").Qual(path.Join(b.basePkg, def.PkgTypes), "UUID").Call(
-				jen.Id("c").Dot(f.NameGo()),
-			)
-			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
-		}
-	case *field.URL:
-		// Convert URL to string for marshaling
-		convFuncName := "fromURL"
-		if tf.Source().Pointer() {
-			convFuncName += "Ptr"
-		}
-		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
-	case *field.Struct:
-		// Convert to conv wrapper which has proper MarshalCBOR
-		convFuncName := "from" + tf.Table().NameGo()
-		if tf.Source().Pointer() {
-			convFuncName += "Ptr"
-		}
-		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
-	case *field.Node:
-		// Node fields: convert to link (only ID, not full object)
-		convFuncName := "to" + tf.Table().NameGo() + "Link"
-		if tf.Source().Pointer() {
-			convFuncName += "Ptr"
-		}
-		// For non-pointer fields, the conversion can still return nil if node has no ID
-		// We need to check the result and only add if not nil
-		if !tf.Source().Pointer() {
-			g.If(jen.Id("link").Op(":=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo())), jen.Id("link").Op("!=").Nil()).Block(
-				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("link"),
-			)
-		} else {
-			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
-		}
-	default:
-		// Simple types: direct assignment
-		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
-	}
-}
-
-func (b *convBuilder) buildFieldUnmarshal(f field.Field, ctx field.Context) jen.Code {
-	// Helper function to generate unmarshal code for each field type
-	return jen.If(
-		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
-		jen.Id("ok"),
-	).BlockFunc(func(g *jen.Group) {
-		switch tf := f.(type) {
-		case *field.Time:
-			// Use helper - check if pointer type
-			helper := "UnmarshalDateTime"
-			if tf.Source().Pointer() {
-				helper = "UnmarshalDateTimePtr"
-			}
-			g.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("raw"))
-		case *field.Duration:
-			// Use helper - check if pointer type
-			helper := "UnmarshalDuration"
-			if tf.Source().Pointer() {
-				helper = "UnmarshalDurationPtr"
-			}
-			g.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("raw"))
-		case *field.UUID:
-			// Use helper - check if pointer type
-			helper := "UnmarshalUUID"
-			if tf.Source().Pointer() {
-				helper = "UnmarshalUUIDPtr"
-			}
-			g.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(path.Join(b.basePkg, def.PkgCBORHelpers), helper).Call(jen.Id("raw"))
-		case *field.URL:
-			// Convert string to URL for unmarshaling
-			if tf.Source().Pointer() {
-				g.Var().Id("convVal").Op("*").String()
-				g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-				g.Id("c").Dot(f.NameGo()).Op("=").Id("toURLPtr").Call(jen.Id("convVal"))
-			} else {
-				g.Var().Id("convVal").String()
-				g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-				g.Id("c").Dot(f.NameGo()).Op("=").Id("toURL").Call(jen.Id("convVal"))
-			}
-		case *field.Struct:
-			// Unmarshal through conv wrapper
-			if tf.Source().Pointer() {
-				g.Var().Id("convVal").Op("*").Id(tf.Table().NameGoLower())
-				g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-				g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + tf.Table().NameGo() + "Ptr").Call(jen.Id("convVal"))
-			} else {
-				g.Var().Id("convVal").Id(tf.Table().NameGoLower())
-				g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-				g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + tf.Table().NameGo()).Call(jen.Id("convVal"))
-			}
-		case *field.Node:
-			// Node fields: unmarshal through link (only ID, not full object)
-			// convVal is always *groupLink, but we convert differently based on field type
-			g.Var().Id("convVal").Op("*").Id(tf.Table().NameGoLower() + "Link")
-			g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-			if tf.Source().Pointer() {
-				g.Id("c").Dot(f.NameGo()).Op("=").Id("from" + tf.Table().NameGo() + "LinkPtr").Call(jen.Id("convVal"))
-			} else {
-				g.Id("c").Dot(f.NameGo()).Op("=").Id("from" + tf.Table().NameGo() + "Link").Call(jen.Id("convVal"))
-			}
-		default:
-			// Simple types: direct unmarshal
-			g.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo()))
-		}
-	})
 }
 
 func (b *convBuilder) buildTo(elem field.Element) jen.Code {

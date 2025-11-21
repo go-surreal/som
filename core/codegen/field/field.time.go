@@ -14,8 +14,12 @@ type Time struct {
 	source *parser.FieldTime
 }
 
-func (f *Time) Source() *parser.FieldTime {
-	return f.source
+func (f *Time) IsCreatedAt() bool {
+	return f.source.IsCreatedAt
+}
+
+func (f *Time) IsUpdatedAt() bool {
+	return f.source.IsUpdatedAt
 }
 
 func (f *Time) typeGo() jen.Code {
@@ -156,50 +160,54 @@ func (f *Time) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *Time) cborMarshal(ctx Context) jen.Code {
-	// Skip timestamp fields - they're handled separately in buildMarshalCBOR
+	// Timestamp fields use getter methods from embedded Timestamps
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return nil
+		return jen.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()).Call(),
+			),
+		)
 	}
 
-	helper := "marshalDateTime"
+	// Direct assignment - types.DateTime has MarshalCBOR that cbor.Marshal will call
 	if f.source.Pointer() {
-		helper += "Ptr"
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Op("*").Id("c").Dot(f.NameGo()),
+			),
+		)
 	}
 
-	return jen.BlockFunc(func(g *jen.Group) {
-		if f.source.Pointer() {
-			// For pointers, check if non-nil before marshaling
-			g.If(jen.Id("m").Dot(f.NameGo()).Op("!=").Nil()).Block(
-				jen.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(ctx.TargetPkg, def.PkgCBOR), helper).Call(
-					jen.Id("m").Dot(f.NameGo()),
-				),
-				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val")),
-			)
-		} else {
-			// For non-pointers, always marshal
-			g.Id("val").Op(",").Id("_").Op(":=").Qual(path.Join(ctx.TargetPkg, def.PkgCBOR), helper).Call(
-				jen.Id("m").Dot(f.NameGo()),
-			)
-			g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Qual(def.PkgCBOR, "RawMessage").Call(jen.Id("val"))
-		}
-	})
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+		jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()),
+	)
 }
 
 func (f *Time) cborUnmarshal(ctx Context) jen.Code {
-	// Skip timestamp fields - they're handled separately in buildUnmarshalCBOR
+	// Timestamp fields use setter methods on embedded Timestamps
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return nil
+		setter := "SetCreatedAt"
+		if f.source.IsUpdatedAt {
+			setter = "SetUpdatedAt"
+		}
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBORHelpers(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Id("c").Dot("Timestamps").Dot(setter).Call(jen.Id("tm")),
+		)
 	}
 
-	helper := "unmarshalDateTime"
+	helper := "UnmarshalDateTime"
 	if f.source.Pointer() {
-		helper += "Ptr"
+		helper = "UnmarshalDateTimePtr"
 	}
 
 	return jen.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).Block(
-		jen.Id("m").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(path.Join(ctx.TargetPkg, def.PkgCBOR), helper).Call(jen.Id("raw")),
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBORHelpers(), helper).Call(jen.Id("raw")),
 	)
 }

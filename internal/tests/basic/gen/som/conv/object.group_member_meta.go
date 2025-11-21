@@ -17,13 +17,8 @@ func (c *groupMemberMeta) MarshalCBOR() ([]byte, error) {
 	}
 	data := make(map[string]any, 2)
 
-	// Regular fields
-	{
-		data["is_admin"] = c.IsAdmin
-	}
-	{
-		data["is_active"] = c.IsActive
-	}
+	data["is_admin"] = c.IsAdmin
+	data["is_active"] = c.IsActive
 
 	return cbor.Marshal(data)
 }
@@ -34,7 +29,6 @@ func (c *groupMemberMeta) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	// Regular fields
 	if raw, ok := rawMap["is_admin"]; ok {
 		cbor.Unmarshal(raw, &c.IsAdmin)
 	}

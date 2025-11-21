@@ -3,9 +3,7 @@
 package som
 
 import (
-	"time"
-
-	"{{.GenerateOutPath}}/internal/types"
+	"{{.GenerateOutPath}}/internal"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -61,32 +59,7 @@ func (e Edge) ID() *ID {
 	return e.id
 }
 
-type Timestamps struct {
-	createdAt time.Time
-	updatedAt time.Time
-}
-
-func NewTimestamps(createdAt *types.DateTime, updatedAt *types.DateTime) Timestamps {
-	var ts Timestamps
-
-	if createdAt != nil {
-		ts.createdAt = createdAt.Time
-	}
-
-	if updatedAt != nil {
-		ts.updatedAt = updatedAt.Time
-	}
-
-	return ts
-}
-
-func (t Timestamps) CreatedAt() time.Time {
-	return t.createdAt
-}
-
-func (t Timestamps) UpdatedAt() time.Time {
-	return t.updatedAt
-}
+type Timestamps = internal.Timestamps
 
 // TODO: implement soft delete feature
 // type SoftDelete struct {

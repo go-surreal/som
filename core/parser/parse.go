@@ -2,13 +2,14 @@ package parser
 
 import (
 	"fmt"
-	"github.com/go-surreal/som/core/util/gomod"
-	"github.com/wzshiming/gotype"
 	"go/ast"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/go-surreal/som/core/util/gomod"
+	"github.com/wzshiming/gotype"
 )
 
 func Parse(dir string, outPkg string) (*Output, error) {
@@ -161,6 +162,8 @@ func isEnum(t gotype.Type, outPkg string) bool {
 }
 
 func parseNode(v gotype.Type, outPkg string) (*Node, error) {
+	internalPkg := path.Join(outPkg, "internal")
+
 	node := &Node{Name: v.Name()}
 
 	nf := v.NumField()
@@ -173,18 +176,14 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 		}
 
 		if f.IsAnonymous() {
-			if f.Elem().PkgPath() != outPkg {
-				return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
-			}
-
-			if f.Name() == "Node" {
+			if f.Elem().PkgPath() == outPkg && f.Name() == "Node" {
 				node.Fields = append(node.Fields,
 					&FieldID{&fieldAtomic{"ID", false}},
 				)
 				continue
 			}
 
-			if f.Name() == "Timestamps" {
+			if f.Elem().PkgPath() == internalPkg && f.Name() == "Timestamps" {
 				node.Timestamps = true
 				node.Fields = append(node.Fields,
 					&FieldTime{
@@ -201,7 +200,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 				continue
 			}
 
-			return nil, fmt.Errorf("model %s: unexpected anonymous field %s", v.Name(), f.Name())
+			return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
 		}
 
 		// prevent custom ID field
@@ -221,6 +220,8 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 }
 
 func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
+	internalPkg := path.Join(outPkg, "internal")
+
 	edge := &Edge{Name: v.Name()}
 
 	nf := v.NumField()
@@ -233,18 +234,14 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 		}
 
 		if f.IsAnonymous() {
-			if f.Elem().PkgPath() != outPkg {
-				return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
-			}
-
-			if f.Name() == "Edge" {
+			if f.Elem().PkgPath() == outPkg && f.Name() == "Edge" {
 				edge.Fields = append(edge.Fields,
 					&FieldID{&fieldAtomic{"ID", false}},
 				)
 				continue
 			}
 
-			if f.Name() == "Timestamps" {
+			if f.Elem().PkgPath() == internalPkg && f.Name() == "Timestamps" {
 				edge.Timestamps = true
 				edge.Fields = append(edge.Fields,
 					&FieldTime{
@@ -261,7 +258,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 				continue
 			}
 
-			return nil, fmt.Errorf("model %s: unexpected anonymous field %s", v.Name(), f.Name())
+			return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
 		}
 
 		// prevent custom ID field

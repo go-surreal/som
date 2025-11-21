@@ -23,16 +23,9 @@ func (c *FieldsLikeDBResponse) MarshalCBOR() ([]byte, error) {
 		data["id"] = c.ID()
 	}
 
-	// Regular fields
-	{
-		data["time"] = c.Time
-	}
-	{
-		data["status"] = c.Status
-	}
-	{
-		data["detail"] = c.Detail
-	}
+	data["time"] = c.Time
+	data["status"] = c.Status
+	data["detail"] = c.Detail
 	if c.Result != nil {
 		data["result"] = c.Result
 	}
@@ -53,7 +46,6 @@ func (c *FieldsLikeDBResponse) UnmarshalCBOR(data []byte) error {
 		c.Node = som.NewNode(id)
 	}
 
-	// Regular fields
 	if raw, ok := rawMap["time"]; ok {
 		cbor.Unmarshal(raw, &c.Time)
 	}
