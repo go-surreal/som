@@ -1,8 +1,8 @@
 module github.com/go-surreal/som
 
-go 1.25
+go 1.24.0
 
-retract [v0.1.0, v0.7.0] // only the latest version is supported for now
+retract [v0.0.0, v0.8.99] // only the latest version is supported for now
 
 require (
 	github.com/dave/jennifer v1.7.1
