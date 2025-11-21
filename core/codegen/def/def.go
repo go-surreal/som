@@ -13,6 +13,7 @@ const (
 
 	PkgLib   = "internal/lib"
 	PkgTypes = "internal/types"
+	PkgCBORHelpers = "internal/cbor"
 )
 
 const (

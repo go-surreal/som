@@ -39,9 +39,11 @@ func (f *Struct) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // TODO
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		convFrom:      f.convFrom,
+		convTo:        f.convTo,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -88,4 +90,43 @@ func (f *Struct) convTo(_ Context) (jen.Code, jen.Code) {
 func (f *Struct) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Struct) cborMarshal(_ Context) jen.Code {
+	// Convert to conv wrapper which has proper MarshalCBOR
+	convFuncName := "from" + f.table.NameGo()
+	if f.source.Pointer() {
+		convFuncName += "Ptr"
+	}
+
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo())),
+		)
+	}
+
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
+}
+
+func (f *Struct) cborUnmarshal(ctx Context) jen.Code {
+	// Unmarshal through conv wrapper
+	if f.source.Pointer() {
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).BlockFunc(func(g *jen.Group) {
+			g.Var().Id("convVal").Op("*").Id(f.table.NameGoLower())
+			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+			g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + f.table.NameGo() + "Ptr").Call(jen.Id("convVal"))
+		})
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).BlockFunc(func(g *jen.Group) {
+		g.Var().Id("convVal").Id(f.table.NameGoLower())
+		g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+		g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + f.table.NameGo()).Call(jen.Id("convVal"))
+	})
 }

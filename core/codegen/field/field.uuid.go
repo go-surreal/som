@@ -40,6 +40,10 @@ func (f *UUID) CodeGen() *CodeGen {
 
 		convFrom: f.convFrom,
 		convTo:   f.convTo,
+
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+
 		fieldDef: f.fieldDef,
 	}
 }
@@ -90,4 +94,37 @@ func (f *UUID) convTo(_ Context) (jen.Code, jen.Code) {
 func (f *UUID) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *UUID) cborMarshal(ctx Context) jen.Code {
+	// Using custom types.UUID with MarshalCBOR method.
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(bg *jen.Group) {
+			bg.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
+				jen.Op("*").Id("c").Dot(f.NameGo()),
+			)
+			bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
+		})
+	}
+
+	return jen.BlockFunc(func(g *jen.Group) {
+		g.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
+			jen.Id("c").Dot(f.NameGo()),
+		)
+		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
+	})
+}
+
+func (f *UUID) cborUnmarshal(ctx Context) jen.Code {
+	helper := "UnmarshalUUID"
+	if f.source.Pointer() {
+		helper = "UnmarshalUUIDPtr"
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
+	)
 }

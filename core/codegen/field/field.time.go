@@ -59,7 +59,11 @@ func (f *Time) CodeGen() *CodeGen {
 		convFrom:    f.convFrom,
 		convTo:      f.convTo,
 		convToField: f.convToField,
-		fieldDef:    f.fieldDef,
+
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+
+		fieldDef: f.fieldDef,
 	}
 }
 
@@ -145,4 +149,57 @@ func (f *Time) fieldDef(ctx Context) jen.Code {
 
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Time) cborMarshal(ctx Context) jen.Code {
+	// Timestamp fields use getter methods from embedded Timestamps.
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return jen.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()).Call(),
+			),
+		)
+	}
+
+	// Using custom types.DateTime with MarshalCBOR method.
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Op("*").Id("c").Dot(f.NameGo()),
+			),
+		)
+	}
+
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+		jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()),
+	)
+}
+
+func (f *Time) cborUnmarshal(ctx Context) jen.Code {
+	// Timestamp fields use setter methods on embedded Timestamps.
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		setter := "SetCreatedAt"
+		if f.source.IsUpdatedAt {
+			setter = "SetUpdatedAt"
+		}
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Id("c").Dot("Timestamps").Dot(setter).Call(jen.Id("tm")),
+		)
+	}
+
+	helper := "UnmarshalDateTime"
+	if f.source.Pointer() {
+		helper = "UnmarshalDateTimePtr"
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
+	)
 }

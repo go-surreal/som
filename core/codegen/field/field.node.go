@@ -16,7 +16,7 @@ type Node struct {
 }
 
 func (f *Node) typeGo() jen.Code {
-	return jen.Qual(f.SourcePkg, f.table.NameGo())
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }
 
 func (f *Node) typeConv(_ Context) jen.Code {
@@ -42,9 +42,11 @@ func (f *Node) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   f.sortFunc,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		convFrom:      f.convFrom,
+		convTo:        f.convTo,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -106,4 +108,46 @@ func (f *Node) convTo(_ Context) (jen.Code, jen.Code) {
 func (f *Node) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
+}
+
+func (f *Node) cborMarshal(_ Context) jen.Code {
+	// Node fields: convert to link (only ID, not full object)
+	convFuncName := "to" + f.table.NameGo() + "Link"
+	if f.source.Pointer() {
+		convFuncName += "Ptr"
+	}
+
+	// For non-pointer fields, the conversion can still return nil if node has no ID
+	// We need to check the result and only add if not nil
+	if !f.source.Pointer() {
+		return jen.If(
+			jen.Id("link").Op(":=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo())),
+			jen.Id("link").Op("!=").Nil(),
+		).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("link"),
+		)
+	}
+
+	// Pointer fields: check if non-nil before converting
+	return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+		jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo())),
+	)
+}
+
+func (f *Node) cborUnmarshal(ctx Context) jen.Code {
+	// Node fields: unmarshal through link (only ID, not full object)
+	// convVal is always *nodeLink, but we convert differently based on field type
+	toFuncName := "from" + f.table.NameGo() + "Link"
+	if f.source.Pointer() {
+		toFuncName += "Ptr"
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).BlockFunc(func(g *jen.Group) {
+		g.Var().Id("convVal").Op("*").Id(f.table.NameGoLower() + "Link")
+		g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+		g.Id("c").Dot(f.NameGo()).Op("=").Id(toFuncName).Call(jen.Id("convVal"))
+	})
 }

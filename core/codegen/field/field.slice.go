@@ -69,9 +69,11 @@ func (f *Slice) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // TODO
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		convFrom:      f.convFrom,
+		convTo:        f.convTo,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -574,4 +576,19 @@ func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
 func (f *Slice) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
+}
+
+func (f *Slice) cborMarshal(_ Context) jen.Code {
+	return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+		jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+	)
+}
+
+func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }
