@@ -247,7 +247,6 @@ func (f *Numeric) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *Numeric) cborMarshal(_ Context) jen.Code {
-	// Simple types: direct assignment
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),

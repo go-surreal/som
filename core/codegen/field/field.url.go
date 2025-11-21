@@ -101,7 +101,6 @@ func (f *URL) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *URL) cborMarshal(_ Context) jen.Code {
-	// Convert URL to string for marshaling
 	convFuncName := "fromURL"
 	if f.source.Pointer() {
 		convFuncName += "Ptr"
@@ -117,7 +116,6 @@ func (f *URL) cborMarshal(_ Context) jen.Code {
 }
 
 func (f *URL) cborUnmarshal(ctx Context) jen.Code {
-	// Convert string to URL for unmarshaling
 	if f.source.Pointer() {
 		return jen.If(
 			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),

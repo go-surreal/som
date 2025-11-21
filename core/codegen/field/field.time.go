@@ -14,14 +14,6 @@ type Time struct {
 	source *parser.FieldTime
 }
 
-func (f *Time) IsCreatedAt() bool {
-	return f.source.IsCreatedAt
-}
-
-func (f *Time) IsUpdatedAt() bool {
-	return f.source.IsUpdatedAt
-}
-
 func (f *Time) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Time")
 }
@@ -160,7 +152,7 @@ func (f *Time) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *Time) cborMarshal(ctx Context) jen.Code {
-	// Timestamp fields use getter methods from embedded Timestamps
+	// Timestamp fields use getter methods from embedded Timestamps.
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		return jen.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
@@ -169,7 +161,7 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 		)
 	}
 
-	// Direct assignment - types.DateTime has MarshalCBOR that cbor.Marshal will call
+	// Using custom types.DateTime with MarshalCBOR method.
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
@@ -184,7 +176,7 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 }
 
 func (f *Time) cborUnmarshal(ctx Context) jen.Code {
-	// Timestamp fields use setter methods on embedded Timestamps
+	// Timestamp fields use setter methods on embedded Timestamps.
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		setter := "SetCreatedAt"
 		if f.source.IsUpdatedAt {
@@ -194,7 +186,7 @@ func (f *Time) cborUnmarshal(ctx Context) jen.Code {
 			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 			jen.Id("ok"),
 		).Block(
-			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBORHelpers(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
 			jen.Id("c").Dot("Timestamps").Dot(setter).Call(jen.Id("tm")),
 		)
 	}
@@ -208,6 +200,6 @@ func (f *Time) cborUnmarshal(ctx Context) jen.Code {
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).Block(
-		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBORHelpers(), helper).Call(jen.Id("raw")),
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
 	)
 }

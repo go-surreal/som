@@ -100,7 +100,6 @@ func (f *Duration) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *Duration) cborMarshal(ctx Context) jen.Code {
-	// Direct assignment - types.Duration has MarshalCBOR that cbor.Marshal will call
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration").Values(
@@ -124,6 +123,6 @@ func (f *Duration) cborUnmarshal(ctx Context) jen.Code {
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).Block(
-		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBORHelpers(), helper).Call(jen.Id("raw")),
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
 	)
 }

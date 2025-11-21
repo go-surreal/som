@@ -97,8 +97,7 @@ func (f *UUID) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *UUID) cborMarshal(ctx Context) jen.Code {
-	// Direct assignment - types.UUID has MarshalCBOR that cbor.Marshal will call
-	// UUID is a type alias, not a struct, so use type conversion
+	// Using custom types.UUID with MarshalCBOR method.
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(bg *jen.Group) {
 			bg.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
@@ -126,6 +125,6 @@ func (f *UUID) cborUnmarshal(ctx Context) jen.Code {
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).Block(
-		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBORHelpers(), helper).Call(jen.Id("raw")),
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
 	)
 }

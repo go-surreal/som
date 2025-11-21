@@ -99,7 +99,6 @@ func (f *Enum) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *Enum) cborMarshal(_ Context) jen.Code {
-	// Enums are simple types: direct assignment
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),

@@ -579,7 +579,6 @@ func (f *Slice) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *Slice) cborMarshal(_ Context) jen.Code {
-	// Slices can be nil, so always check before marshaling
 	return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 		jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
 	)
