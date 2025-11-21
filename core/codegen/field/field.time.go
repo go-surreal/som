@@ -56,10 +56,6 @@ func (f *Time) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom:    f.convFrom,
-		convTo:      f.convTo,
-		convToField: f.convToField,
-
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 
@@ -93,52 +89,6 @@ func (f *Time) sortDefine(ctx Context) jen.Code {
 func (f *Time) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *Time) convFrom(_ Context) (jen.Code, jen.Code) {
-	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return nil, nil // never sent a timestamp to the database, as it will be set automatically
-	}
-
-	fromFunc := "fromTime"
-
-	if f.source.Pointer() {
-		fromFunc += fnSuffixPtr
-	}
-
-	return jen.Id(fromFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *Time) convTo(ctx Context) (jen.Code, jen.Code) {
-	if f.source.IsCreatedAt {
-		return jen.Qual(ctx.TargetPkg, "NewTimestamps"),
-			jen.Call(
-				jen.Id("data").Dot("CreatedAt"),
-				jen.Id("data").Dot("UpdatedAt"),
-			)
-	}
-
-	if f.source.IsUpdatedAt {
-		return nil, nil
-	}
-
-	toFunc := "toTime"
-
-	if f.source.Pointer() {
-		toFunc += fnSuffixPtr
-	}
-
-	return jen.Id(toFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *Time) convToField(_ Context) jen.Code {
-	if !f.source.IsCreatedAt {
-		return nil
-	}
-
-	return jen.Id("Timestamps")
 }
 
 func (f *Time) fieldDef(ctx Context) jen.Code {

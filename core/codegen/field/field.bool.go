@@ -34,8 +34,6 @@ func (f *Bool) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // Bool does not need a sort function.
 
-		convFrom:      f.convFrom,
-		convTo:        f.convTo,
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 		fieldDef:      f.fieldDef,
@@ -59,14 +57,6 @@ func (f *Bool) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *Bool) convFrom(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
-}
-
-func (f *Bool) convTo(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Bool) fieldDef(ctx Context) jen.Code {

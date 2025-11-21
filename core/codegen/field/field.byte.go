@@ -45,8 +45,6 @@ func (f *Byte) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // Byte does not need a sort function.
 
-		convFrom:      f.convFrom,
-		convTo:        f.convTo,
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 		fieldDef:      f.fieldDef,
@@ -72,14 +70,6 @@ func (f *Byte) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *Byte) convFrom(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
-}
-
-func (f *Byte) convTo(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *Byte) fieldDef(ctx Context) jen.Code {

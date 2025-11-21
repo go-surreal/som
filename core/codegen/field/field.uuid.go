@@ -38,9 +38,6 @@ func (f *UUID) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 
@@ -67,28 +64,6 @@ func (f *UUID) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Params(
 			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 		)
-}
-
-func (f *UUID) convFrom(_ Context) (jen.Code, jen.Code) {
-	fromFunc := "fromUUID"
-
-	if f.source.Pointer() {
-		fromFunc += fnSuffixPtr
-	}
-
-	return jen.Id(fromFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *UUID) convTo(_ Context) (jen.Code, jen.Code) {
-	toFunc := "toUUID"
-
-	if f.source.Pointer() {
-		toFunc += fnSuffixPtr
-	}
-
-	return jen.Id(toFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *UUID) fieldDef(ctx Context) jen.Code {

@@ -34,9 +34,6 @@ func (f *String) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 
@@ -70,14 +67,6 @@ func (f *String) sortDefine(ctx Context) jen.Code {
 func (f *String) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewStringSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *String) convFrom(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo()) // TODO: record link inject vulnerability? solved by cbor?
-}
-
-func (f *String) convTo(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
 }
 
 func (f *String) fieldDef(ctx Context) jen.Code {

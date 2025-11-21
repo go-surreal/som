@@ -39,8 +39,6 @@ func (f *Struct) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // TODO
 
-		convFrom:      f.convFrom,
-		convTo:        f.convTo,
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 		fieldDef:      f.fieldDef,
@@ -63,28 +61,6 @@ func (f *Struct) filterFunc(ctx Context) jen.Code {
 		Block(
 			jen.Return(jen.Add(f.filterInit(ctx)).
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
-}
-
-func (f *Struct) convFrom(_ Context) (jen.Code, jen.Code) {
-	fn := "from" + f.table.NameGo()
-
-	if f.source.Pointer() {
-		fn += fnSuffixPtr
-	}
-
-	return jen.Id(fn),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *Struct) convTo(_ Context) (jen.Code, jen.Code) {
-	fn := "to" + f.table.NameGo()
-
-	if f.source.Pointer() {
-		fn += fnSuffixPtr
-	}
-
-	return jen.Id(fn),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
 }
 
 func (f *Struct) fieldDef(ctx Context) jen.Code {
