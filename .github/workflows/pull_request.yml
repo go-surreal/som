@@ -133,8 +133,8 @@ jobs:
         working-directory: .
         run: go build -v ./...
 
-  test-som:
-    name: Test SOM
+  test-core:
+    name: Test Core
     #if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -168,8 +168,8 @@ jobs:
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
           -failfast -parallel 3 -count=1 -race -vet=off -v ./...
 
-  test-gen:
-    name: Test Gen
+  test-basic:
+    name: Test Basic
     #if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -181,7 +181,7 @@ jobs:
       - name: Setup Mise
         uses: jdx/mise-action@v3
         with:
-          working_directory: internal/tests
+          working_directory: internal/tests/basic
           install: true
           cache: true
 
