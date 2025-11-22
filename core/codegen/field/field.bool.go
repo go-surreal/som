@@ -34,9 +34,9 @@ func (f *Bool) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // Bool does not need a sort function.
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -59,15 +59,25 @@ func (f *Bool) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Bool) convFrom(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
-}
-
-func (f *Bool) convTo(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
-}
-
 func (f *Bool) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Bool) cborMarshal(_ Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+		)
+	}
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+}
+
+func (f *Bool) cborUnmarshal(ctx Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }

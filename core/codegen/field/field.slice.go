@@ -69,9 +69,9 @@ func (f *Slice) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // TODO
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -384,193 +384,6 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 	}
 }
 
-func (f *Slice) convFrom(ctx Context) (jen.Code, jen.Code) {
-	switch element := f.element.(type) {
-
-	case *Slice:
-		{
-			fromFunc, _ := element.CodeGen().convFrom(ctx.fromSlice())
-
-			if fromFunc == nil || isCodeEqual(fromFunc, jen.Null()) {
-				return jen.Null(), jen.Id("data").Dot(f.NameGo())
-			}
-
-			mapperFunc := "mapSliceFn"
-
-			if f.source.Pointer() {
-				mapperFunc += fnSuffixPtr
-			}
-
-			return jen.Id(mapperFunc).Call(fromFunc),
-				jen.Call(jen.Id("data").Dot(f.NameGo()))
-		}
-
-	case *Node:
-		{
-			mapperFunc := "mapSliceFn"
-			fromFunc := "to" + element.table.NameGo() + "Link"
-
-			if f.source.Pointer() {
-				mapperFunc += fnSuffixPtr
-			}
-
-			if element.source.Pointer() {
-				fromFunc += fnSuffixPtr
-			}
-
-			return jen.Id(mapperFunc).Call(jen.Id(fromFunc)),
-				jen.Call(jen.Id("data").Dot(f.NameGo()))
-		}
-
-	//case *Struct:
-	//	{
-	//		mapperFunc := "mapSliceFn"
-	//		fromFunc := jen.Id("from" + element.table.NameGo())
-	//
-	//		if f.source.Pointer() {
-	//			mapperFunc += fnSuffixPtr
-	//		}
-	//
-	//		if !element.source.Pointer() {
-	//			fromFunc = jen.Id("noPtrFunc").Call(fromFunc)
-	//		}
-	//
-	//		return jen.Id(mapperFunc).Call(fromFunc),
-	//			jen.Call(jen.Id("data").Dot(f.NameGo()))
-	//	}
-
-	case *Edge:
-		{
-			return nil, nil // TODO: should an edge really not be addable like that?
-		}
-
-	case *Enum:
-		{
-			return nil, jen.Id("data").Dot(f.NameGo()) // TODO: correct?
-		}
-
-	default:
-		{
-			fromFunc, _ := element.CodeGen().convFrom(ctx.fromSlice())
-
-			if ctx.isFromSlice && isCodeEqual(fromFunc, jen.Null()) {
-				return nil, nil // native types do not need conversion
-			}
-
-			if fromFunc != nil && !isCodeEqual(fromFunc, jen.Null()) {
-				mapperFunc := "mapSliceFn"
-
-				if f.source.Pointer() {
-					mapperFunc += fnSuffixPtr
-				}
-
-				return jen.Id(mapperFunc).Call(fromFunc), jen.Call(jen.Id("data").Dot(f.NameGo()))
-			}
-
-			return jen.Null(), jen.Id("data").Dot(f.NameGo())
-		}
-	}
-}
-
-func (f *Slice) convTo(ctx Context) (jen.Code, jen.Code) {
-	switch element := f.element.(type) {
-
-	case *Slice:
-		{
-			toFunc, _ := element.CodeGen().convTo(ctx.fromSlice())
-
-			if toFunc == nil || isCodeEqual(toFunc, jen.Null()) {
-				return jen.Null(), jen.Id("data").Dot(f.NameGo())
-			}
-
-			mapperFunc := "mapSliceFn"
-
-			if f.source.Pointer() {
-				mapperFunc += fnSuffixPtr
-			}
-
-			return jen.Id(mapperFunc).Call(toFunc),
-				jen.Call(jen.Id("data").Dot(f.NameGo()))
-		}
-
-	case *Node:
-		{
-			mapperFunc := "mapSliceFn"
-			toFunc := "from" + element.table.NameGo() + "Link"
-
-			if f.source.Pointer() {
-				mapperFunc += fnSuffixPtr
-			}
-
-			if element.source.Pointer() {
-				toFunc += fnSuffixPtr
-			}
-
-			return jen.Id(mapperFunc).Call(jen.Id(toFunc)),
-				jen.Call(jen.Id("data").Dot(f.NameGo()))
-		}
-
-	//case *Struct:
-	//	{
-	//		mapperFunc := "mapSliceFn"
-	//		toFunc := jen.Id("to" + element.table.NameGo())
-	//
-	//		if f.source.Pointer() {
-	//			mapperFunc += fnSuffixPtr
-	//		}
-	//
-	//		if !element.source.Pointer() {
-	//			toFunc = jen.Id("noPtrFunc").Call(toFunc)
-	//		}
-	//
-	//		return jen.Id(mapperFunc).Call(toFunc),
-	//			jen.Call(jen.Id("data").Dot(f.NameGo()))
-	//	}
-
-	//case *Edge:
-	//	{
-	//		mapperFunc := "mapSliceFn"
-	//		toFunc := jen.Id("To" + element.table.NameGo()) // jen.Id("noPtrFunc").Call(...)
-	//
-	//		if f.source.Pointer() {
-	//			mapperFunc += fnSuffixPtr
-	//		}
-	//
-	//		// TODO: Edge can be not a pointer, no?
-	//
-	//		return jen.Id(mapperFunc).Call(toFunc),
-	//			jen.Call(jen.Id("data").Dot(f.NameGo()))
-	//	}
-
-	case *Enum:
-		{
-			return nil, jen.Id("data").Dot(f.NameGo()) // TODO: correct?
-		}
-
-	default:
-		{
-			toFunc, _ := element.CodeGen().convTo(ctx.fromSlice())
-
-			if ctx.isFromSlice && isCodeEqual(toFunc, jen.Null()) {
-				return nil, nil // native types do not need conversion
-			}
-
-			if toFunc != nil && !isCodeEqual(toFunc, jen.Null()) {
-				mapperFunc := "mapSliceFn"
-
-				if f.source.Pointer() {
-					mapperFunc += fnSuffixPtr
-				}
-
-				return jen.Id(mapperFunc).Call(toFunc), jen.Call(jen.Id("data").Dot(f.NameGo()))
-			}
-
-			return jen.Null(), jen.Id("data").Dot(f.NameGo())
-		}
-
-	}
-}
-
 func (f *Slice) fieldDef(ctx Context) jen.Code {
 	omitEmpty := ""
 	if _, isEdge := f.element.(*Edge); isEdge {
@@ -579,4 +392,19 @@ func (f *Slice) fieldDef(ctx Context) jen.Code {
 
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + omitEmpty})
+}
+
+func (f *Slice) cborMarshal(_ Context) jen.Code {
+	return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+		jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+	)
+}
+
+func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }

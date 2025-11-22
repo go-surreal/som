@@ -2,53 +2,78 @@
 package conv
 
 import (
+	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type someStruct struct {
-	StringPtr *string         `cbor:"string_ptr,omitempty"`
-	IntPtr    *int            `cbor:"int_ptr,omitempty"`
-	TimePtr   *types.DateTime `cbor:"time_ptr,omitempty"`
-	UuidPtr   *types.UUID     `cbor:"uuid_ptr,omitempty"`
+	model.SomeStruct
+}
+
+func (c *someStruct) MarshalCBOR() ([]byte, error) {
+	if c == nil {
+		return cbor.Marshal(nil)
+	}
+	data := make(map[string]any, 4)
+
+	if c.StringPtr != nil {
+		data["string_ptr"] = c.StringPtr
+	}
+	if c.IntPtr != nil {
+		data["int_ptr"] = c.IntPtr
+	}
+	if c.TimePtr != nil {
+		data["time_ptr"] = &types.DateTime{Time: *c.TimePtr}
+	}
+	if c.UuidPtr != nil {
+		uuidVal := types.UUID(*c.UuidPtr)
+		data["uuid_ptr"] = &uuidVal
+	}
+
+	return cbor.Marshal(data)
+}
+
+func (c *someStruct) UnmarshalCBOR(data []byte) error {
+	var rawMap map[string]v2.RawMessage
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	if raw, ok := rawMap["string_ptr"]; ok {
+		cbor.Unmarshal(raw, &c.StringPtr)
+	}
+	if raw, ok := rawMap["int_ptr"]; ok {
+		cbor.Unmarshal(raw, &c.IntPtr)
+	}
+	if raw, ok := rawMap["time_ptr"]; ok {
+		c.TimePtr, _ = cbor.UnmarshalDateTimePtr(raw)
+	}
+	if raw, ok := rawMap["uuid_ptr"]; ok {
+		c.UuidPtr, _ = cbor.UnmarshalUUIDPtr(raw)
+	}
+
+	return nil
 }
 
 func fromSomeStruct(data model.SomeStruct) someStruct {
-	return someStruct{
-		IntPtr:    data.IntPtr,
-		StringPtr: data.StringPtr,
-		TimePtr:   fromTimePtr(data.TimePtr),
-		UuidPtr:   fromUUIDPtr(data.UuidPtr),
-	}
+	return someStruct{SomeStruct: data}
 }
 func fromSomeStructPtr(data *model.SomeStruct) *someStruct {
 	if data == nil {
 		return nil
 	}
-	return &someStruct{
-		IntPtr:    data.IntPtr,
-		StringPtr: data.StringPtr,
-		TimePtr:   fromTimePtr(data.TimePtr),
-		UuidPtr:   fromUUIDPtr(data.UuidPtr),
-	}
+	return &someStruct{SomeStruct: *data}
 }
 
 func toSomeStruct(data someStruct) model.SomeStruct {
-	return model.SomeStruct{
-		IntPtr:    data.IntPtr,
-		StringPtr: data.StringPtr,
-		TimePtr:   toTimePtr(data.TimePtr),
-		UuidPtr:   toUUIDPtr(data.UuidPtr),
-	}
+	return data.SomeStruct
 }
 func toSomeStructPtr(data *someStruct) *model.SomeStruct {
 	if data == nil {
 		return nil
 	}
-	return &model.SomeStruct{
-		IntPtr:    data.IntPtr,
-		StringPtr: data.StringPtr,
-		TimePtr:   toTimePtr(data.TimePtr),
-		UuidPtr:   toUUIDPtr(data.UuidPtr),
-	}
+	result := data.SomeStruct
+	return &result
 }

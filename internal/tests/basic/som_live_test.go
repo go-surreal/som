@@ -87,14 +87,21 @@ func TestLiveQueries(t *testing.T) {
 
 	// LIVE CREATE
 
-	liveRes, more := <-liveChan
-	if !more {
-		t.Fatal("liveChan closed unexpectedly")
+	var liveRes query.LiveResult[*model.FieldsLikeDBResponse]
+	var more bool
+
+	select {
+	case liveRes, more = <-liveChan:
+		if !more {
+			t.Fatal("liveChan closed unexpectedly")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for CREATE event")
 	}
 
 	liveCreate, ok := liveRes.(query.LiveCreate[*model.FieldsLikeDBResponse])
 	if !ok {
-		t.Fatal("liveChan did not receive a create event")
+		t.Fatalf("expected LiveCreate event, got %T", liveRes)
 	}
 
 	created, err := liveCreate.Get()
@@ -106,14 +113,18 @@ func TestLiveQueries(t *testing.T) {
 
 	// LIVE UPDATE
 
-	liveRes, more = <-liveChan
-	if !more {
-		t.Fatal("liveChan closed unexpectedly")
+	select {
+	case liveRes, more = <-liveChan:
+		if !more {
+			t.Fatal("liveChan closed unexpectedly")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for UPDATE event")
 	}
 
 	liveUpdate, ok := liveRes.(query.LiveUpdate[*model.FieldsLikeDBResponse])
 	if !ok {
-		t.Fatal("liveChan did not receive an update event")
+		t.Fatalf("expected LiveUpdate event, got %T", liveRes)
 	}
 
 	updated, err := liveUpdate.Get()
@@ -125,14 +136,18 @@ func TestLiveQueries(t *testing.T) {
 
 	// LIVE DELETE
 
-	liveRes, more = <-liveChan
-	if !more {
-		t.Fatal("liveChan closed unexpectedly")
+	select {
+	case liveRes, more = <-liveChan:
+		if !more {
+			t.Fatal("liveChan closed unexpectedly")
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for DELETE event")
 	}
 
 	liveDelete, ok := liveRes.(query.LiveDelete[*model.FieldsLikeDBResponse])
 	if !ok {
-		t.Fatal("liveChan did not receive a delete event")
+		t.Fatalf("expected LiveDelete event, got %T", liveRes)
 	}
 
 	deleted, err := liveDelete.Get()

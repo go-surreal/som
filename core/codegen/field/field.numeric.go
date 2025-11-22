@@ -129,9 +129,9 @@ func (f *Numeric) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -193,53 +193,25 @@ func (f *Numeric) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Numeric) convFrom(_ Context) (jen.Code, jen.Code) {
-	switch f.source.Type {
-
-	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-	//	{
-	//		var typ jen.Code
-	//
-	//		switch f.source.Type {
-	//		case parser.NumberUint:
-	//			typ = jen.Uint()
-	//		case parser.NumberUint64:
-	//			typ = jen.Uint64()
-	//		case parser.NumberUintptr:
-	//			typ = jen.Uintptr()
-	//		}
-	//
-	//		field := jen.Id("data").Dot(f.NameGo())
-	//		if !f.source.Pointer() {
-	//			field = jen.Op("&").Add(field)
-	//		}
-	//
-	//		return jen.Id("unsignedNumber").Types(typ).Values(field)
-	//	}
-
-	default:
-		return jen.Null(), jen.Id("data").Dot(f.NameGo())
-	}
-}
-
-func (f *Numeric) convTo(_ Context) (jen.Code, jen.Code) {
-	switch f.source.Type {
-
-	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-	//	{
-	//		if !f.source.Pointer() {
-	//			return jen.Op("*").Id("data").Dot(f.NameGo()).Dot("val")
-	//		}
-	//
-	//		return jen.Id("data").Dot(f.NameGo()).Dot("val")
-	//	}
-
-	default:
-		return jen.Null(), jen.Id("data").Dot(f.NameGo())
-	}
-}
-
 func (f *Numeric) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Numeric) cborMarshal(_ Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+		)
+	}
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+}
+
+func (f *Numeric) cborUnmarshal(ctx Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }

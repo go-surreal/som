@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fxamacker/cbor/v2"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 )
 
 const (

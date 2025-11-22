@@ -4,57 +4,83 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type FieldsLikeDBResponse struct {
-	ID     *som.ID  `cbor:"id,omitempty"`
-	Time   string   `cbor:"time"`
-	Status string   `cbor:"status"`
-	Detail string   `cbor:"detail"`
-	Result []string `cbor:"result"`
+	model.FieldsLikeDBResponse
+}
+
+func (c *FieldsLikeDBResponse) MarshalCBOR() ([]byte, error) {
+	if c == nil {
+		return cbor.Marshal(nil)
+	}
+	data := make(map[string]any, 5)
+
+	// Embedded som.Node/Edge ID field
+	if c.ID() != nil {
+		data["id"] = c.ID()
+	}
+
+	data["time"] = c.Time
+	data["status"] = c.Status
+	data["detail"] = c.Detail
+	if c.Result != nil {
+		data["result"] = c.Result
+	}
+
+	return cbor.Marshal(data)
+}
+
+func (c *FieldsLikeDBResponse) UnmarshalCBOR(data []byte) error {
+	var rawMap map[string]v2.RawMessage
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Embedded som.Node/Edge ID field
+	if raw, ok := rawMap["id"]; ok {
+		var id *som.ID
+		cbor.Unmarshal(raw, &id)
+		c.Node = som.NewNode(id)
+	}
+
+	if raw, ok := rawMap["time"]; ok {
+		cbor.Unmarshal(raw, &c.Time)
+	}
+	if raw, ok := rawMap["status"]; ok {
+		cbor.Unmarshal(raw, &c.Status)
+	}
+	if raw, ok := rawMap["detail"]; ok {
+		cbor.Unmarshal(raw, &c.Detail)
+	}
+	if raw, ok := rawMap["result"]; ok {
+		cbor.Unmarshal(raw, &c.Result)
+	}
+
+	return nil
 }
 
 func FromFieldsLikeDBResponse(data model.FieldsLikeDBResponse) FieldsLikeDBResponse {
-	return FieldsLikeDBResponse{
-		Detail: data.Detail,
-		Result: data.Result,
-		Status: data.Status,
-		Time:   data.Time,
-	}
+	return FieldsLikeDBResponse{FieldsLikeDBResponse: data}
 }
 func FromFieldsLikeDBResponsePtr(data *model.FieldsLikeDBResponse) *FieldsLikeDBResponse {
 	if data == nil {
 		return nil
 	}
-	return &FieldsLikeDBResponse{
-		Detail: data.Detail,
-		Result: data.Result,
-		Status: data.Status,
-		Time:   data.Time,
-	}
+	return &FieldsLikeDBResponse{FieldsLikeDBResponse: *data}
 }
 
 func ToFieldsLikeDBResponse(data FieldsLikeDBResponse) model.FieldsLikeDBResponse {
-	return model.FieldsLikeDBResponse{
-		Detail: data.Detail,
-		Node:   som.NewNode(data.ID),
-		Result: data.Result,
-		Status: data.Status,
-		Time:   data.Time,
-	}
+	return data.FieldsLikeDBResponse
 }
 func ToFieldsLikeDBResponsePtr(data *FieldsLikeDBResponse) *model.FieldsLikeDBResponse {
 	if data == nil {
 		return nil
 	}
-	return &model.FieldsLikeDBResponse{
-		Detail: data.Detail,
-		Node:   som.NewNode(data.ID),
-		Result: data.Result,
-		Status: data.Status,
-		Time:   data.Time,
-	}
+	result := data.FieldsLikeDBResponse
+	return &result
 }
 
 type fieldsLikeDbresponseLink struct {
@@ -66,16 +92,16 @@ func (f *fieldsLikeDbresponseLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return v2.Marshal(f.ID)
+	return cbor.Marshal(f.ID)
 }
 
 func (f *fieldsLikeDbresponseLink) UnmarshalCBOR(data []byte) error {
-	if err := v2.Unmarshal(data, &f.ID); err == nil {
+	if err := cbor.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias fieldsLikeDbresponseLink
 	var link alias
-	err := v2.Unmarshal(data, &link)
+	err := cbor.Unmarshal(data, &link)
 	if err == nil {
 		*f = fieldsLikeDbresponseLink(link)
 	}

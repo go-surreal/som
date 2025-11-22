@@ -36,9 +36,9 @@ func (f *Duration) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -70,29 +70,35 @@ func (f *Duration) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Duration) convFrom(_ Context) (jen.Code, jen.Code) {
-	fromFunc := "fromDuration"
-
-	if f.source.Pointer() {
-		fromFunc += fnSuffixPtr
-	}
-
-	return jen.Id(fromFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *Duration) convTo(_ Context) (jen.Code, jen.Code) {
-	toFunc := "toDuration"
-
-	if f.source.Pointer() {
-		toFunc += fnSuffixPtr
-	}
-
-	return jen.Id(toFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
 func (f *Duration) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
 		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Duration) cborMarshal(ctx Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration").Values(
+				jen.Id("Duration").Op(":").Op("*").Id("c").Dot(f.NameGo()),
+			),
+		)
+	}
+
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration").Values(
+		jen.Id("Duration").Op(":").Id("c").Dot(f.NameGo()),
+	)
+}
+
+func (f *Duration) cborUnmarshal(ctx Context) jen.Code {
+	helper := "UnmarshalDuration"
+	if f.source.Pointer() {
+		helper = "UnmarshalDurationPtr"
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
+	)
 }
