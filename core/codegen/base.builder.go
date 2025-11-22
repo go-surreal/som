@@ -137,6 +137,14 @@ func (b *build) buildSchemaFile() error {
 				fieldFn(table, fld, prefix+f.NameDatabase()+".")
 			}
 		}
+
+		if slice, ok := f.(*field.Slice); ok {
+			if structElem, ok := slice.Element().(*field.Struct); ok {
+				for _, fld := range structElem.Table().GetFields() {
+					fieldFn(table, fld, prefix+f.NameDatabase()+".*.")
+				}
+			}
+		}
 	}
 
 	for _, node := range b.input.nodes {

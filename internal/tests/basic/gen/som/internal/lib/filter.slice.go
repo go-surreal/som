@@ -2,6 +2,8 @@
 
 package lib
 
+import "strings"
+
 type makeFilter[M, F any] func(key Key[M]) F
 
 // Slice is a filter that can be used for slice fields.
@@ -48,6 +50,36 @@ func NewSliceMakerPtr[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) mak
 //
 // -- COMPARISONS
 //
+
+// Empty returns a filter that checks if the slice is empty.
+//
+// This checks for NONE (field absent), NULL (field explicitly null),
+// or zero-length (array with no elements).
+func (s *Slice[M, E, F]) Empty(is bool) Filter[M] {
+	if is {
+		return filter[M](func(ctx *context, _ M) string {
+			fieldName := strings.TrimPrefix(s.render(ctx), ".")
+			return "(" + fieldName + " == NONE OR " + fieldName + " == NULL OR array::len(" + fieldName + ") == 0)"
+		})
+	}
+
+	return filter[M](func(ctx *context, _ M) string {
+		fieldName := strings.TrimPrefix(s.render(ctx), ".")
+		return "(" + fieldName + " != NONE AND " + fieldName + " != NULL AND array::len(" + fieldName + ") > 0)"
+	})
+}
+
+// IsEmpty is a convenience method that returns a filter for empty slices.
+// Equivalent to Empty(true).
+func (s *Slice[M, E, F]) IsEmpty() Filter[M] {
+	return s.Empty(true)
+}
+
+// NotEmpty is a convenience method that returns a filter for non-empty slices.
+// Equivalent to Empty(false).
+func (s *Slice[M, E, F]) NotEmpty() Filter[M] {
+	return s.Empty(false)
+}
 
 func (s *Slice[M, E, F]) AnyEqual(val E) Filter[M] {
 	return s.op(OpAnyEqual, val)
