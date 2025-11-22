@@ -178,13 +178,25 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 		data["struct_ptr"] = fromSomeStructPtr(c.StructPtr)
 	}
 	if c.StructSlice != nil {
-		data["struct_slice"] = c.StructSlice
+		convSlice := make([]someStruct, len(c.StructSlice))
+		for i, v := range c.StructSlice {
+			convSlice[i] = fromSomeStruct(v)
+		}
+		data["struct_slice"] = convSlice
 	}
 	if c.StructPtrSlice != nil {
-		data["struct_ptr_slice"] = c.StructPtrSlice
+		convSlice := make([]*someStruct, len(c.StructPtrSlice))
+		for i, v := range c.StructPtrSlice {
+			convSlice[i] = fromSomeStructPtr(v)
+		}
+		data["struct_ptr_slice"] = convSlice
 	}
 	if c.StructPtrSlicePtr != nil {
-		data["struct_ptr_slice_ptr"] = c.StructPtrSlicePtr
+		convSlice := make([]*someStruct, len(*c.StructPtrSlicePtr))
+		for i, v := range *c.StructPtrSlicePtr {
+			convSlice[i] = fromSomeStructPtr(v)
+		}
+		data["struct_ptr_slice_ptr"] = convSlice
 	}
 	if link := toGroupLink(c.MainGroup); link != nil {
 		data["main_group"] = link
@@ -442,13 +454,35 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 		c.StructPtr = toSomeStructPtr(convVal)
 	}
 	if raw, ok := rawMap["struct_slice"]; ok {
-		cbor.Unmarshal(raw, &c.StructSlice)
+		var convSlice []someStruct
+		cbor.Unmarshal(raw, &convSlice)
+		{
+			c.StructSlice = make([]model.SomeStruct, len(convSlice))
+			for i, v := range convSlice {
+				c.StructSlice[i] = toSomeStruct(v)
+			}
+		}
 	}
 	if raw, ok := rawMap["struct_ptr_slice"]; ok {
-		cbor.Unmarshal(raw, &c.StructPtrSlice)
+		var convSlice []*someStruct
+		cbor.Unmarshal(raw, &convSlice)
+		{
+			c.StructPtrSlice = make([]*model.SomeStruct, len(convSlice))
+			for i, v := range convSlice {
+				c.StructPtrSlice[i] = toSomeStructPtr(v)
+			}
+		}
 	}
 	if raw, ok := rawMap["struct_ptr_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.StructPtrSlicePtr)
+		var convSlice []*someStruct
+		cbor.Unmarshal(raw, &convSlice)
+		{
+			result := make([]*model.SomeStruct, len(convSlice))
+			for i, v := range convSlice {
+				result[i] = toSomeStructPtr(v)
+			}
+			c.StructPtrSlicePtr = &result
+		}
 	}
 	if raw, ok := rawMap["main_group"]; ok {
 		var convVal *groupLink
