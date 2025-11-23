@@ -166,7 +166,7 @@ jobs:
         run: |
           go test \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
-          -failfast -parallel 3 -count=1 -race -vet=off -v ./...
+          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
 
   test-basic:
     name: Test Basic
@@ -205,4 +205,4 @@ jobs:
         run: |
           go test \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
-          -failfast -parallel 3 -count=1 -race -vet=off -v ./...
+          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
