@@ -7,8 +7,8 @@ DEFINE FIELD some_other_url ON TABLE url_example TYPE string ASSERT $value == ""
 
 DEFINE TABLE group SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE group TYPE string;
-DEFINE FIELD created_at ON TABLE group TYPE option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE;
-DEFINE FIELD updated_at ON TABLE group TYPE option<datetime> VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE;
+DEFINE FIELD created_at ON TABLE group TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE group TYPE option<datetime> VALUE time::now();
 DEFINE FIELD name ON TABLE group TYPE string;
 
 DEFINE TABLE fields_like_db_response SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
@@ -20,8 +20,8 @@ DEFINE FIELD result ON TABLE fields_like_db_response TYPE option<array<string>>;
 
 DEFINE TABLE all_field_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_field_types TYPE string;
-DEFINE FIELD created_at ON TABLE all_field_types TYPE option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE;
-DEFINE FIELD updated_at ON TABLE all_field_types TYPE option<datetime> VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE;
+DEFINE FIELD created_at ON TABLE all_field_types TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE all_field_types TYPE option<datetime> VALUE time::now();
 DEFINE FIELD string ON TABLE all_field_types TYPE string;
 DEFINE FIELD string_ptr ON TABLE all_field_types TYPE option<string>;
 DEFINE FIELD other ON TABLE all_field_types TYPE option<array<string>>;
@@ -119,8 +119,8 @@ DEFINE FIELD byte_slice_ptr ON TABLE all_field_types TYPE option<bytes>;
 
 DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group ENFORCED PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE group_member TYPE string;
-DEFINE FIELD created_at ON TABLE group_member TYPE option<datetime> VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE;
-DEFINE FIELD updated_at ON TABLE group_member TYPE option<datetime> VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE;
+DEFINE FIELD created_at ON TABLE group_member TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE group_member TYPE option<datetime> VALUE time::now();
 DEFINE FIELD meta ON TABLE group_member TYPE object;
 DEFINE FIELD meta.is_admin ON TABLE group_member TYPE bool;
 DEFINE FIELD meta.is_active ON TABLE group_member TYPE bool;
