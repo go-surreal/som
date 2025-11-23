@@ -1,6 +1,8 @@
 package field
 
 import (
+	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -28,12 +30,20 @@ func (f *URL) TypeDatabase() string {
 	return "string"
 }
 
-func (f *URL) TypeDatabaseExtend() string {
+func (f *URL) SchemaStatements(table, prefix string) []string {
+	var extend string
 	if f.source.Pointer() {
-		return "ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
+		extend = "ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
+	} else {
+		extend = `ASSERT $value == "" OR string::is::url($value)`
 	}
 
-	return `ASSERT $value == "" OR string::is::url($value)`
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
+		),
+	}
 }
 
 func (f *URL) CodeGen() *CodeGen {

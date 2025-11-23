@@ -42,10 +42,19 @@ func (f *Enum) TypeDatabase() string {
 	literals := strings.Join(formattedValues, " | ")
 
 	if f.source.Pointer() {
-		return "option<" + literals + " | null>"
+		return "option<" + literals + ">"
 	}
 
 	return literals
+}
+
+func (f *Enum) SchemaStatements(table, prefix string) []string {
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 }
 
 func (f *Enum) CodeGen() *CodeGen {

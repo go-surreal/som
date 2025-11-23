@@ -25,6 +25,11 @@ func (f *Edge) TypeDatabase() string {
 	return ""
 }
 
+func (f *Edge) SchemaStatements(_, _ string) []string {
+	// Edges are no real fields in the database schema.
+	return nil
+}
+
 func (f *Edge) Table() *EdgeTable {
 	return f.table
 }

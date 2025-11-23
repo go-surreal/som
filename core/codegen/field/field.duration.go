@@ -1,6 +1,7 @@
 package field
 
 import (
+	"fmt"
 	"path"
 
 	"github.com/dave/jennifer/jen"
@@ -24,6 +25,15 @@ func (f *Duration) typeConv(ctx Context) jen.Code {
 
 func (f *Duration) TypeDatabase() string {
 	return f.optionWrap("duration")
+}
+
+func (f *Duration) SchemaStatements(table, prefix string) []string {
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 }
 
 func (f *Duration) CodeGen() *CodeGen {

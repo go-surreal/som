@@ -2,7 +2,6 @@ package field
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -38,21 +37,30 @@ func (f *Slice) TypeDatabase() string {
 	return fmt.Sprintf("option<array<%s>>", f.element.TypeDatabase())
 }
 
-func (f *Slice) TypeDatabaseExtend() string {
-	if _, ok := f.element.(*Byte); ok {
-		// Byte slices ([]byte) map to "bytes" type and do not need element validation.
-		return ""
+func (f *Slice) SchemaStatements(table, prefix string) []string {
+	fieldType := f.TypeDatabase()
+	if fieldType == "" {
+		return nil
 	}
 
-	elementAssert := f.element.TypeDatabaseExtend()
-	if elementAssert == "" {
-		return ""
+	// Generate own DEFINE FIELD statement.
+	statements := []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
 	}
 
-	elementCondition := strings.TrimPrefix(elementAssert, "ASSERT ")
-	itemCondition := strings.ReplaceAll(elementCondition, "$value", "$item")
+	// Only recurse into struct elements - primitive elements don't need
+	// separate DEFINE FIELD statements as their type is already in the array definition.
+	if structElem, ok := f.element.(*Struct); ok {
+		nestedPrefix := prefix + f.NameDatabase() + ".*."
+		for _, field := range structElem.Table().GetFields() {
+			statements = append(statements, field.SchemaStatements(table, nestedPrefix)...)
+		}
+	}
 
-	return fmt.Sprintf("ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| %s)", itemCondition)
+	return statements
 }
 
 func (f *Slice) Element() Field {

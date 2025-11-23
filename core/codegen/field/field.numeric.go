@@ -87,7 +87,16 @@ func (f *Numeric) TypeDatabase() string {
 	}
 }
 
-func (f *Numeric) TypeDatabaseExtend() string {
+func (f *Numeric) SchemaStatements(table, prefix string) []string {
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), f.typeDatabaseExtend(),
+		),
+	}
+}
+
+func (f *Numeric) typeDatabaseExtend() string {
 	nilCheck := ""
 	if f.source.Pointer() {
 		nilCheck = "$value == NONE OR $value == NULL OR "

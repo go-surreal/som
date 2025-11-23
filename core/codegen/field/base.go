@@ -30,7 +30,8 @@ type Field interface {
 	typeGo() jen.Code
 	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
-	TypeDatabaseExtend() string
+
+	SchemaStatements(table string, prefix string) []string
 
 	CodeGen() *CodeGen
 }
@@ -120,8 +121,4 @@ func (f *baseField) NameGoLower() string {
 
 func (f *baseField) NameDatabase() string {
 	return f.ToDatabaseName(f.source.Name())
-}
-
-func (f *baseField) TypeDatabaseExtend() string {
-	return ""
 }

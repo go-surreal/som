@@ -1,6 +1,8 @@
 package field
 
 import (
+	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -21,7 +23,20 @@ func (f *ID) typeConv(ctx Context) jen.Code {
 }
 
 func (f *ID) TypeDatabase() string {
-	return ""
+	// TODO: type "uuid" works, but there is no native type "ulid"
+	// see: https://github.com/surrealdb/surrealdb/issues/1722
+	return "string"
+}
+
+func (f *ID) SchemaStatements(table, prefix string) []string {
+	// TODO: assert := "string::is::ulid(record::id($value))"
+
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 }
 
 func (f *ID) CodeGen() *CodeGen {
