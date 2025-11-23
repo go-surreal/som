@@ -30,18 +30,12 @@ func (f *Slice) TypeDatabase() string {
 	}
 
 	if _, ok := f.element.(*Byte); ok {
-		return "option<bytes | null>"
+		return "option<bytes>"
 	}
 
-	// Go treats empty slices as nil, so the database needs
-	// to accept the json NULL value for any array field.
-	// However, for struct slices we cannot use "| null" because
-	// SurrealDB doesn't allow defining nested fields on union types.
-	if _, ok := f.element.(*Struct); ok {
-		return fmt.Sprintf("option<array<%s>>", f.element.TypeDatabase())
-	}
-
-	return fmt.Sprintf("option<array<%s> | null>", f.element.TypeDatabase())
+	// Go treats empty slices as nil, but the custom marshaling
+	// ensures that they are stored as NONE in the database.
+	return fmt.Sprintf("option<array<%s>>", f.element.TypeDatabase())
 }
 
 func (f *Slice) TypeDatabaseExtend() string {
