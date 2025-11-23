@@ -44,7 +44,7 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 		}
 	}
 
-	info, err := mod.CheckSDBCVersion()
+	info, err := mod.CheckDriverVersion()
 	if err != nil {
 		return err
 	}
@@ -59,20 +59,29 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 
 	outPkg := path.Join(mod.Module(), strings.TrimPrefix(absDir, mod.Dir()))
 
-	source, err := parser.Parse(inPath)
+	out := fs.New()
+
+	err = codegen.BuildStatic(out, outPkg)
 	if err != nil {
-		return fmt.Errorf("could not parse source: %v", err)
+		return fmt.Errorf("could not generate code: %w", err)
 	}
 
-	out := fs.New()
+	if err := out.Flush(absDir); err != nil {
+		return fmt.Errorf("could not write static files: %w", err)
+	}
+
+	source, err := parser.Parse(inPath, outPkg)
+	if err != nil {
+		return fmt.Errorf("could not parse source: %w", err)
+	}
 
 	err = codegen.Build(source, out, outPkg)
 	if err != nil {
-		return fmt.Errorf("could not generate code: %v", err)
+		return fmt.Errorf("could not generate code: %w", err)
 	}
 
 	if verbose {
-		if err := out.Dry(outPath); err != nil {
+		if err := out.Dry(absDir); err != nil {
 			return err
 		}
 	}
@@ -81,5 +90,5 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 		return nil
 	}
 
-	return out.Flush(outPath)
+	return out.Flush(absDir)
 }

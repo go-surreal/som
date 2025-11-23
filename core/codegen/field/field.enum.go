@@ -2,12 +2,13 @@ package field
 
 import (
 	"fmt"
-	"github.com/dave/jennifer/jen"
-	"github.com/go-surreal/som/core/codegen/def"
-	"github.com/go-surreal/som/core/parser"
 	"slices"
 	"sort"
 	"strings"
+
+	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Enum struct {
@@ -33,18 +34,27 @@ func (f *Enum) TypeDatabase() string {
 
 	sort.Strings(f.values)
 
-	var values []string
+	var formattedValues []string
 	for _, value := range f.values {
-		values = append(values, fmt.Sprintf(`"%s"`, value))
+		formattedValues = append(formattedValues, fmt.Sprintf(`"%s"`, value))
 	}
 
-	in := strings.Join(values, ", ")
+	literals := strings.Join(formattedValues, " | ")
 
 	if f.source.Pointer() {
-		return "option<string | null> ASSERT $value == NULL OR $value INSIDE [" + in + "]"
+		return "option<" + literals + ">"
 	}
 
-	return "string ASSERT $value INSIDE [" + in + "]"
+	return literals
+}
+
+func (f *Enum) SchemaStatements(table, prefix string) []string {
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 }
 
 func (f *Enum) CodeGen() *CodeGen {
@@ -57,14 +67,14 @@ func (f *Enum) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
 func (f *Enum) filterDefine(ctx Context) jen.Code {
-	filter := "Base"
+	filter := "Enum"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
@@ -73,7 +83,7 @@ func (f *Enum) filterDefine(ctx Context) jen.Code {
 }
 
 func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
-	filter := "NewBase"
+	filter := "NewEnum"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
@@ -82,15 +92,25 @@ func (f *Enum) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Enum) convFrom(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
-}
-
-func (f *Enum) convTo(_ Context) (jen.Code, jen.Code) {
-	return jen.Null(), jen.Id("data").Dot(f.NameGo())
-}
-
 func (f *Enum) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Enum) cborMarshal(_ Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+		)
+	}
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+}
+
+func (f *Enum) cborUnmarshal(ctx Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }

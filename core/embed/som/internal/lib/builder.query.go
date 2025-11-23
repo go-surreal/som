@@ -9,14 +9,19 @@ import (
 )
 
 type context struct {
-	varIndex int
+	varIndex int32
 	vars     map[string]any
 }
 
+func (c *context) Vars() map[string]any {
+	return c.vars
+}
+
+// TODO: deduplicate same values in the same query
 func (c *context) asVar(val any) string {
-	index := strconv.Itoa(c.varIndex)
-	c.vars[index] = val
+	index := intToLetters(c.varIndex)
 	c.varIndex++
+	c.vars[index] = val
 	return "$" + index
 }
 
@@ -98,6 +103,12 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 func (q Query[T]) render() string {
 	var out strings.Builder
 
+	// TODO: possible optimization: preallocate buffer (e.g. out.Grow(<known bytes>))
+
+	if q.live {
+		out.WriteString("LIVE ")
+	}
+
 	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
 
 	var t T
@@ -165,35 +176,77 @@ type Result struct {
 type Operator string
 
 const (
-	OpEqual            Operator = "="
-	OpNotEqual         Operator = "!="
-	OpExactlyEqual     Operator = "=="
-	OpAnyEqual         Operator = "?="
-	OpAllEqual         Operator = "*="
-	OpFuzzyMatch       Operator = "~"
-	OpFuzzyNotMatch    Operator = "!~"
-	OpAnyFuzzyMatch    Operator = "?~"
-	OpAllFuzzyMatch    Operator = "*~"
-	OpLessThan         Operator = "<"
-	OpLessThanEqual    Operator = "<="
-	OpGreaterThan      Operator = ">"
-	OpGreaterThanEqual Operator = ">="
-	OpAdd              Operator = "+"
-	OpSub              Operator = "-"
-	OpMul              Operator = "*"
-	OpDiv              Operator = "/"
-	OpAnd              Operator = "AND" // "&&"
-	OpOr               Operator = "OR"  // "||"
-	OpContains         Operator = "CONTAINS"
-	OpContainsNot      Operator = "CONTAINSNOT"
-	OpContainsAll      Operator = "CONTAINSALL"
-	OpContainsAny      Operator = "CONTAINSANY"
-	OpContainsNone     Operator = "CONTAINSNONE"
-	OpInside           Operator = "INSIDE"
-	OpNotInside        Operator = "NOTINSIDE"
-	OpAllInside        Operator = "ALLINSIDE"
-	OpAnyInside        Operator = "ANYINSIDE"
-	OpNoneInside       Operator = "NONEINSIDE"
-	OpOutside          Operator = "OUTSIDE"
-	OpIntersect        Operator = "INTERSECTS"
+	OpAnd Operator = "AND" // ("&&") Checks whether both of two values are truthy.
+	OpOr  Operator = "OR"  // ("||") Checks whether either of two values is truthy.
+
+	OpEqual         Operator = "="  // ("IS") Check whether two values are equal.
+	OpNotEqual      Operator = "!=" // ("IS NOT") Check whether two values are not equal.
+	OpExactlyEqual  Operator = "==" // Check whether two values are exactly equal.
+	OpFuzzyMatch    Operator = "~"  // Compare two values for equality using fuzzy matching.
+	OpFuzzyNotMatch Operator = "!~" // Compare two values for inequality using fuzzy matching.
+
+	OpAnyEqual      Operator = "?=" // Check whether any value in a set is equal to a value.
+	OpAllEqual      Operator = "*=" // Check whether all values in a set are equal to a value.
+	OpAnyFuzzyMatch Operator = "?~" // Check whether any value in a set is equal to a value using fuzzy matching.
+	OpAllFuzzyMatch Operator = "*~" // Check whether all values in a set are equal to a value using fuzzy matching.
+
+	OpLessThan         Operator = "<"  // Check whether a value is less than another value.
+	OpLessThanEqual    Operator = "<=" // Check whether a value is less than or equal to another value.
+	OpGreaterThan      Operator = ">"  // Check whether a value is greater than another value.
+	OpGreaterThanEqual Operator = ">=" // Check whether a value is greater than or equal to another value.
+
+	OpAdd   Operator = "+"  // 	Add two values together.
+	OpSub   Operator = "-"  // Subtract a value from another value.
+	OpMul   Operator = "×"  // ("*") Multiply two values together.
+	OpDiv   Operator = "÷"  // ("/") Divide a value by another value.
+	OpRaise Operator = "**" // Raises a base value by another value.
+
+	OpInvert               Operator = "!"  // Reverses the truthiness of a value.
+	OpTruth                Operator = "!!" // Determines the truthiness of a value.
+	OpEitherTrueAndNotNull Operator = "??" // Check whether either of two values are truthy and not NULL.
+	OpEitherTrue           Operator = "?:" // Check whether either of two values are truthy.
+
+	OpContains     Operator = "∋" // ("CONTAINS") Checks whether a value contains another value.
+	OpContainsNot  Operator = "∌" // ("CONTAINSNOT") Checks whether a value does not contain another value.
+	OpContainsAll  Operator = "⊇" // ("CONTAINSALL") Checks whether a value contains all other values.
+	OpContainsAny  Operator = "⊃" // ("CONTAINSANY") Checks whether a value contains any other value.
+	OpContainsNone Operator = "⊅" // ("CONTAINSNONE") Checks whether a value contains none of the following values.
+
+	OpIn     Operator = "∈" // ("INSIDE") Checks whether a value is contained within another value. - TODO: geo!
+	OpNotIn  Operator = "∉" // ("NOTINSIDE" | "NOT IN") Checks whether a value is not contained within another value. - TODO: geo!
+	OpAllIn  Operator = "⊆" // ("ALLINSIDE") Checks whether all values are contained within other values.
+	OpAnyIn  Operator = "⊂" // ("ANYINSIDE") Checks whether any value is contained within other values.
+	OpNoneIn Operator = "⊄" // ("NONEINSIDE") Checks whether no value is contained within other values.
+
+	OpGeoOutside    Operator = "OUTSIDE"    // Checks whether a geometry type is outside another geometry type.
+	OpGeoIntersects Operator = "INTERSECTS" // Checks whether a geometry type intersects another geometry type.
+
+	OpSearch Operator = "@@" // ("@[ref]@") Checks whether the terms are found in a full-text indexed field. - TODO!
+
+	OpX = "<|4|> or <|3,HAMMING|>" // KNN - TODO!
+
+	CastInt   Operator = "<int>"
+	CastFloat Operator = "<float>"
+
+	OpModulo Operator = "%" // https://github.com/surrealdb/surrealdb/pull/4182
 )
+
+//
+// -- HELPER
+//
+
+var letterDef = [...]string{
+	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+}
+
+func intToLetters(number int32) (letters string) {
+	if firstLetter := number / 26; firstLetter > 0 {
+		letters += intToLetters(firstLetter)
+		letters += letterDef[number%26]
+		return
+	}
+
+	letters += letterDef[number]
+	return
+}

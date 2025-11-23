@@ -1,9 +1,10 @@
 package field
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
-	"path/filepath"
 )
 
 type Context struct {
@@ -15,11 +16,15 @@ type Context struct {
 }
 
 func (c Context) pkgLib() string {
-	return filepath.Join(c.TargetPkg, def.PkgLib)
+	return path.Join(c.TargetPkg, def.PkgLib)
 }
 
 func (c Context) pkgTypes() string {
-	return filepath.Join(c.TargetPkg, def.PkgTypes)
+	return path.Join(c.TargetPkg, def.PkgTypes)
+}
+
+func (c Context) pkgCBOR() string {
+	return path.Join(c.TargetPkg, def.PkgCBORHelpers)
 }
 
 func (c Context) fromSlice() Context {

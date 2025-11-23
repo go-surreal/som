@@ -81,7 +81,7 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	file.Type().Id(elem.NameGoLower()).
 		Types(jen.Add(def.TypeModel).Any()).
 		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel))
+			g.Add(jen.Qual(pkgLib, "Key").Types(def.TypeModel)) // TODO: name clash with Key field! -> go1.23: type key_[M any] = lib.Key[M]
 			for _, f := range elem.GetFields() {
 				if code := f.CodeGen().FilterDefine(fieldCtx); code != nil {
 					g.Add(code)
@@ -96,12 +96,15 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 		}
 	}
 
+	// TODO: add record::exists filter function
+	// https://github.com/surrealdb/surrealdb/pull/4602
+
 	file.Line()
 	file.Type().Id(elem.NameGoLower()+"Edges").
 		Types(jen.Add(def.TypeModel).Any()).
 		Struct(
-			jen.Qual(pkgLib, "Filter").Types(def.TypeModel),
-			jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel),
+			jen.Qual(pkgLib, "Filter").Types(def.TypeModel), // TODO: needed?
+			jen.Qual(pkgLib, "Key").Types(def.TypeModel),
 		)
 
 	fieldCtx.Receiver = jen.Id(elem.NameGoLower() + "Edges").Types(def.TypeModel)
@@ -151,7 +154,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 	file.Type().Id(edge.NameGoLower()).
 		Types(jen.Add(def.TypeModel).Any()).
 		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").Qual(pkgLib, "Key").Types(def.TypeModel))
+			g.Add(jen.Qual(pkgLib, "Key").Types(def.TypeModel))
 			for _, f := range edge.GetFields() {
 				if code := f.CodeGen().FilterDefine(fieldCtx); code != nil {
 					g.Add(code)
@@ -268,7 +271,7 @@ func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 			jen.Return(
 				jen.Id(elem.NameGoLower()).Types(def.TypeModel).
 					Values(jen.DictFunc(func(d jen.Dict) {
-						d[jen.Id("key")] = jen.Id("key")
+						d[jen.Id("Key")] = jen.Id("key")
 						for _, f := range elem.GetFields() {
 							if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
 								d[jen.Id(f.NameGo())] = code

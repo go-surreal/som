@@ -1,6 +1,8 @@
 package field
 
 import (
+	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -16,12 +18,25 @@ func (f *ID) typeGo() jen.Code {
 	return jen.String()
 }
 
-func (f *ID) typeConv(_ Context) jen.Code {
-	return jen.Op("*").Qual(def.PkgSDBC, "ID") // f.typeGo()
+func (f *ID) typeConv(ctx Context) jen.Code {
+	return jen.Op("*").Qual(ctx.TargetPkg, "ID") // f.typeGo()
 }
 
 func (f *ID) TypeDatabase() string {
-	return ""
+	// TODO: type "uuid" works, but there is no native type "ulid"
+	// see: https://github.com/surrealdb/surrealdb/issues/1722
+	return "string"
+}
+
+func (f *ID) SchemaStatements(table, prefix string) []string {
+	// TODO: assert := "string::is::ulid(record::id($value))"
+
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 }
 
 func (f *ID) CodeGen() *CodeGen {
@@ -34,8 +49,6 @@ func (f *ID) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: nil, // the ID field must not be passed as field
-		convTo:   nil, // handled directly, because it is so special ;)
 		fieldDef: f.fieldDef,
 	}
 }

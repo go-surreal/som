@@ -40,19 +40,19 @@ func (fs *FS) Flush(dir string) error {
 		return fmt.Errorf("failed to create dir %s: %w", dir, err)
 	}
 
-	dirs := make(map[string]struct{})
+	subDirs := make(map[string]struct{})
 
 	for path := range fs.writes {
-		dirs[filepath.Dir(filepath.Join(dir, path))] = struct{}{}
+		subDirs[filepath.Dir(filepath.Join(dir, path))] = struct{}{}
 	}
 
 	for path := range fs.writer {
-		dirs[filepath.Dir(filepath.Join(dir, path))] = struct{}{}
+		subDirs[filepath.Dir(filepath.Join(dir, path))] = struct{}{}
 	}
 
-	for _, dir := range maps.Keys(dirs) {
-		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			return fmt.Errorf("failed to create dir %s: %w", dir, err)
+	for _, subDir := range maps.Keys(subDirs) {
+		if err := os.MkdirAll(subDir, os.ModePerm); err != nil {
+			return fmt.Errorf("failed to create dir %s: %w", subDir, err)
 		}
 	}
 
@@ -101,40 +101,45 @@ func (fs *FS) Dry(dir string) error {
 		changes[file] = &valTrue
 	}
 
-	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
+	if _, err := os.Stat(dir); os.IsExist(err) {
+		err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
 
-		if d.IsDir() {
-			return nil // TODO: mark directories that are removed?
-		}
+			if d.IsDir() {
+				return nil // TODO: mark directories that are removed?
+			}
 
-		path = strings.TrimPrefix(path, dir+string(os.PathSeparator))
+			path = strings.TrimPrefix(path, dir+string(os.PathSeparator))
 
-		if slices.Contains(allFiles, path) {
-			changes[path] = nil
+			if slices.Contains(allFiles, path) {
+				changes[path] = nil
+				return nil
+			}
+
+			changes[path] = &valFalse
+
+			allFiles = append(allFiles, path)
+
 			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("failed to walk dir %s: %w", dir, err)
 		}
-
-		changes[path] = &valFalse
-
-		allFiles = append(allFiles, path)
-
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to walk dir %s: %w", dir, err)
 	}
 
 	slices.Sort(allFiles)
 
 	for _, file := range allFiles {
 		switch changes[file] {
+
 		case nil:
 			fmt.Println("× " + filepath.Join(dir, file)) // TODO: only if content changed? (±)
+
 		case &valTrue:
 			fmt.Println("+ " + filepath.Join(dir, file))
+
 		case &valFalse:
 			fmt.Println("- " + filepath.Join(dir, file))
 		}
