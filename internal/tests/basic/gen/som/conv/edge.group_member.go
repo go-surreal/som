@@ -2,42 +2,86 @@
 package conv
 
 import (
+	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type GroupMember struct {
-	ID        *som.ID         `cbor:"id,omitempty"`
-	CreatedAt *types.DateTime `cbor:"created_at,omitempty"`
-	UpdatedAt *types.DateTime `cbor:"updated_at,omitempty"`
-	Meta      groupMemberMeta `cbor:"meta"`
+	model.GroupMember
+}
+
+func (c *GroupMember) MarshalCBOR() ([]byte, error) {
+	if c == nil {
+		return cbor.Marshal(nil)
+	}
+	data := make(map[string]any, 4)
+
+	// Embedded som.Node/Edge ID field
+	if c.ID() != nil {
+		data["id"] = c.ID()
+	}
+
+	if !c.CreatedAt().IsZero() {
+		data["created_at"] = &types.DateTime{Time: c.CreatedAt()}
+	}
+	if !c.UpdatedAt().IsZero() {
+		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
+	}
+	data["meta"] = fromGroupMemberMeta(c.Meta)
+
+	return cbor.Marshal(data)
+}
+
+func (c *GroupMember) UnmarshalCBOR(data []byte) error {
+	var rawMap map[string]v2.RawMessage
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Embedded som.Node/Edge ID field
+	if raw, ok := rawMap["id"]; ok {
+		var id *som.ID
+		cbor.Unmarshal(raw, &id)
+		c.Edge = som.NewEdge(id)
+	}
+
+	if raw, ok := rawMap["created_at"]; ok {
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		c.Timestamps.SetCreatedAt(tm)
+	}
+	if raw, ok := rawMap["updated_at"]; ok {
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		c.Timestamps.SetUpdatedAt(tm)
+	}
+	if raw, ok := rawMap["meta"]; ok {
+		var convVal groupMemberMeta
+		cbor.Unmarshal(raw, &convVal)
+		c.Meta = toGroupMemberMeta(convVal)
+	}
+
+	return nil
 }
 
 func FromGroupMember(data model.GroupMember) GroupMember {
-	return GroupMember{Meta: fromGroupMemberMeta(data.Meta)}
+	return GroupMember{GroupMember: data}
 }
 func FromGroupMemberPtr(data *model.GroupMember) *GroupMember {
 	if data == nil {
 		return nil
 	}
-	return &GroupMember{Meta: fromGroupMemberMeta(data.Meta)}
+	return &GroupMember{GroupMember: *data}
 }
 
 func ToGroupMember(data *GroupMember) model.GroupMember {
-	return model.GroupMember{
-		Edge:       som.NewEdge(data.ID),
-		Meta:       toGroupMemberMeta(data.Meta),
-		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-	}
+	return data.GroupMember
 }
 func ToGroupMemberPtr(data *GroupMember) *model.GroupMember {
 	if data == nil {
 		return nil
 	}
-	return &model.GroupMember{
-		Edge:       som.NewEdge(data.ID),
-		Meta:       toGroupMemberMeta(data.Meta),
-		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-	}
+	result := data.GroupMember
+	return &result
 }

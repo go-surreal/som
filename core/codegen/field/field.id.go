@@ -34,8 +34,6 @@ func (f *ID) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: nil, // the ID field must not be passed as field
-		convTo:   nil, // handled directly, because it is so special ;)
 		fieldDef: f.fieldDef,
 	}
 }

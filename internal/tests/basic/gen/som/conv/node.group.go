@@ -4,46 +4,90 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type Group struct {
-	ID        *som.ID         `cbor:"id,omitempty"`
-	CreatedAt *types.DateTime `cbor:"created_at,omitempty"`
-	UpdatedAt *types.DateTime `cbor:"updated_at,omitempty"`
-	Name      string          `cbor:"name"`
-	Members   []*GroupMember  `cbor:"members,omitempty"`
+	model.Group
+}
+
+func (c *Group) MarshalCBOR() ([]byte, error) {
+	if c == nil {
+		return cbor.Marshal(nil)
+	}
+	data := make(map[string]any, 5)
+
+	// Embedded som.Node/Edge ID field
+	if c.ID() != nil {
+		data["id"] = c.ID()
+	}
+
+	if !c.CreatedAt().IsZero() {
+		data["created_at"] = &types.DateTime{Time: c.CreatedAt()}
+	}
+	if !c.UpdatedAt().IsZero() {
+		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
+	}
+	data["name"] = c.Name
+	if c.Members != nil {
+		data["members"] = c.Members
+	}
+
+	return cbor.Marshal(data)
+}
+
+func (c *Group) UnmarshalCBOR(data []byte) error {
+	var rawMap map[string]v2.RawMessage
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Embedded som.Node/Edge ID field
+	if raw, ok := rawMap["id"]; ok {
+		var id *som.ID
+		cbor.Unmarshal(raw, &id)
+		c.Node = som.NewNode(id)
+	}
+
+	if raw, ok := rawMap["created_at"]; ok {
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		c.Timestamps.SetCreatedAt(tm)
+	}
+	if raw, ok := rawMap["updated_at"]; ok {
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		c.Timestamps.SetUpdatedAt(tm)
+	}
+	if raw, ok := rawMap["name"]; ok {
+		cbor.Unmarshal(raw, &c.Name)
+	}
+	if raw, ok := rawMap["members"]; ok {
+		cbor.Unmarshal(raw, &c.Members)
+	}
+
+	return nil
 }
 
 func FromGroup(data model.Group) Group {
-	return Group{Name: data.Name}
+	return Group{Group: data}
 }
 func FromGroupPtr(data *model.Group) *Group {
 	if data == nil {
 		return nil
 	}
-	return &Group{Name: data.Name}
+	return &Group{Group: *data}
 }
 
 func ToGroup(data Group) model.Group {
-	return model.Group{
-		Members:    mapSliceFn(ToGroupMember)(data.Members),
-		Name:       data.Name,
-		Node:       som.NewNode(data.ID),
-		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-	}
+	return data.Group
 }
 func ToGroupPtr(data *Group) *model.Group {
 	if data == nil {
 		return nil
 	}
-	return &model.Group{
-		Members:    mapSliceFn(ToGroupMember)(data.Members),
-		Name:       data.Name,
-		Node:       som.NewNode(data.ID),
-		Timestamps: som.NewTimestamps(data.CreatedAt, data.UpdatedAt),
-	}
+	result := data.Group
+	return &result
 }
 
 type groupLink struct {
@@ -55,16 +99,16 @@ func (f *groupLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return v2.Marshal(f.ID)
+	return cbor.Marshal(f.ID)
 }
 
 func (f *groupLink) UnmarshalCBOR(data []byte) error {
-	if err := v2.Unmarshal(data, &f.ID); err == nil {
+	if err := cbor.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias groupLink
 	var link alias
-	err := v2.Unmarshal(data, &link)
+	err := cbor.Unmarshal(data, &link)
 	if err == nil {
 		*f = groupLink(link)
 	}

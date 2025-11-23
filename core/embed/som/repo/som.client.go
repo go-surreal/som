@@ -58,7 +58,7 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 		statement := fmt.Sprintf("CREATE %s CONTENT $data", v.String())
 		queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, map[string]any{"data": data})
 		if err != nil {
-			return nil, fmt.Errorf("failed to create with custom ID: %w", err)
+			return nil, fmt.Errorf("failed to execute: %w", err)
 		}
 		if queryResult == nil || len(*queryResult) == 0 {
 			return nil, fmt.Errorf("empty response from create")

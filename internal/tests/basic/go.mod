@@ -1,6 +1,6 @@
 module github.com/go-surreal/som/tests/basic
 
-go 1.25.4
+go 1.24.0
 
 replace github.com/go-surreal/som => ../../../
 
@@ -56,7 +56,7 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/stretchr/testify v1.11.0 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/surrealdb/surrealdb.go v1.0.0
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect

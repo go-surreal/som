@@ -5,7 +5,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/fxamacker/cbor/v2"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/google/uuid"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
