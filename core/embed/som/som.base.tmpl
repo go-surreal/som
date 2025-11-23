@@ -82,14 +82,6 @@ type Enum string
 // Email describes a string field that should contain an email address.
 type Email string
 
-// Password encryption algorithm marker types.
-type (
-	Bcrypt struct{}
-	Argon2 struct{}
-	Pbkdf2 struct{}
-	Scrypt struct{}
-)
-
 // Password describes a string field that contains a password.
 // The type parameter A specifies the encryption algorithm to use.
 // Passwords are automatically encrypted when written to the database.
@@ -102,7 +94,24 @@ type (
 //	    som.Node
 //	    Password som.Password[som.Bcrypt]
 //	}
-type Password[A any] string
+type Password[A PasswordAlgorithm] string
+
+type PasswordAlgorithm interface {
+    isPasswordAlgorithm()
+}
+
+// Password encryption algorithm marker types.
+type (
+	Bcrypt struct{}
+	Argon2 struct{}
+	Pbkdf2 struct{}
+	Scrypt struct{}
+)
+
+func (Bcrypt) isPasswordAlgorithm() {}
+func (Argon2) isPasswordAlgorithm() {}
+func (Pbkdf2) isPasswordAlgorithm() {}
+func (Scrypt) isPasswordAlgorithm() {}
 
 // SemVer describes a string field that should contain a semantic version.
 type SemVer string
