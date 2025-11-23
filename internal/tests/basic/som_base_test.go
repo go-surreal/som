@@ -99,6 +99,7 @@ func TestWithDatabase(t *testing.T) {
 	assert.DeepEqual(t,
 		userNew, *userOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreFields(model.AllFieldTypes{}, "Password", "PasswordPtr"),
 	)
 }
 
@@ -149,6 +150,7 @@ func TestNumerics(t *testing.T) {
 	assert.DeepEqual(t,
 		userMax, *userOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreFields(model.AllFieldTypes{}, "Password", "PasswordPtr"),
 	)
 
 	// MIN
@@ -190,6 +192,7 @@ func TestNumerics(t *testing.T) {
 	assert.DeepEqual(t,
 		userMin, *userOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreFields(model.AllFieldTypes{}, "Password", "PasswordPtr"),
 	)
 }
 
@@ -509,6 +512,7 @@ func TestDuration(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.AllFieldTypes{}, "Password", "PasswordPtr"),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -525,6 +529,7 @@ func TestDuration(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.AllFieldTypes{}, "Password", "PasswordPtr"),
 	)
 }
 
@@ -560,6 +565,7 @@ func TestUUID(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.AllFieldTypes{}, "Password", "PasswordPtr"),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -576,6 +582,7 @@ func TestUUID(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.AllFieldTypes{}, "Password", "PasswordPtr"),
 	)
 }
 

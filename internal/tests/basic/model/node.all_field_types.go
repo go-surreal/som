@@ -146,9 +146,8 @@ type AllFieldTypes struct {
 
 	// special types
 
-	Password    som.Password
-	PasswordPtr *som.Password
-	// PasswordSlice []som.Password
+	Password    som.Password[som.Bcrypt]
+	PasswordPtr *som.Password[som.Argon2]
 }
 
 func (u *AllFieldTypes) GetGroups() []Group {

@@ -163,7 +163,37 @@ func isEnum(t gotype.Type, outPkg string) bool {
 }
 
 func isPassword(t gotype.Type, outPkg string) bool {
-	return t.Kind() == gotype.String && t.PkgPath() == outPkg && t.Name() == "Password"
+	if t.PkgPath() != outPkg {
+		return false
+	}
+	return t.Name() == "Password"
+}
+
+func parsePasswordAlgorithm(t gotype.Type) PasswordAlgorithm {
+	// Extract the type parameter from the AST
+	origin := t.Origin()
+	if origin == nil {
+		return PasswordBcrypt
+	}
+
+	// Handle *ast.IndexExpr for Password[Algo]
+	if indexExpr, ok := origin.(*ast.IndexExpr); ok {
+		if selExpr, ok := indexExpr.Index.(*ast.SelectorExpr); ok {
+			switch selExpr.Sel.Name {
+			case "Bcrypt":
+				return PasswordBcrypt
+			case "Argon2":
+				return PasswordArgon2
+			case "Pbkdf2":
+				return PasswordPbkdf2
+			case "Scrypt":
+				return PasswordScrypt
+			}
+		}
+	}
+
+	// Default to Bcrypt
+	return PasswordBcrypt
 }
 
 func parseNode(v gotype.Type, outPkg string) (*Node, error) {
@@ -324,7 +354,7 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 			switch {
 			case isPassword(t.Elem(), outPkg):
 				{
-					return &FieldPassword{atomic}, nil
+					return &FieldPassword{atomic, parsePasswordAlgorithm(t.Elem())}, nil
 				}
 			case isEnum(t.Elem(), outPkg):
 				{

@@ -14,23 +14,44 @@ type Password struct {
 	source *parser.FieldPassword
 }
 
+func (f *Password) Algorithm() parser.PasswordAlgorithm {
+	return f.source.Algorithm
+}
+
 func (f *Password) typeGo() jen.Code {
-	return jen.Add(f.ptr()).Qual(f.SourcePkg, "Password")
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, "Password").Types(jen.Qual(f.SourcePkg, string(f.Algorithm())))
 }
 
 func (f *Password) typeConv(ctx Context) jen.Code {
-	return jen.Add(f.ptr()).Qual(ctx.TargetPkg, "Password")
+	return jen.Add(f.ptr()).Qual(ctx.TargetPkg, "Password").Types(jen.Qual(ctx.TargetPkg, string(f.Algorithm())))
 }
 
 func (f *Password) TypeDatabase() string {
 	return f.optionWrap("string")
 }
 
+func (f *Password) cryptoGenerateFunc() string {
+	switch f.source.Algorithm {
+	case parser.PasswordBcrypt:
+		return "crypto::bcrypt::generate"
+	case parser.PasswordArgon2:
+		return "crypto::argon2::generate"
+	case parser.PasswordPbkdf2:
+		return "crypto::pbkdf2::generate"
+	case parser.PasswordScrypt:
+		return "crypto::scrypt::generate"
+	default:
+		return "crypto::bcrypt::generate"
+	}
+}
+
 func (f *Password) SchemaStatements(table, prefix string) []string {
+	valueClause := fmt.Sprintf("IF $value != NONE AND $value != NULL THEN %s($value) ELSE $value END", f.cryptoGenerateFunc())
+
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+			"DEFINE FIELD %s ON TABLE %s TYPE %s VALUE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), valueClause,
 		),
 	}
 }
@@ -68,7 +89,10 @@ func (f *Password) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		jen.Params(
+			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+			jen.Qual(ctx.pkgLib(), string(f.Algorithm())).Values(),
+		)
 }
 
 func (f *Password) fieldDef(ctx Context) jen.Code {
