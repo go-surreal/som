@@ -41,9 +41,9 @@ func (f *Bool) CodeGen() *CodeGen {
 		filterInit:   f.filterInit,
 		filterFunc:   nil, // Bool does not need a filter function.
 
-		sortDefine: nil, // TODO: should bool be sortable?
-		sortInit:   nil,
-		sortFunc:   nil, // Bool does not need a sort function.
+		sortDefine: f.sortDefine,
+		sortInit:   f.sortInit,
+		sortFunc:   nil,
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
@@ -68,6 +68,15 @@ func (f *Bool) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+}
+
+func (f *Bool) sortDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
+}
+
+func (f *Bool) sortInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Bool) fieldDef(ctx Context) jen.Code {

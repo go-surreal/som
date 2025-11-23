@@ -47,11 +47,11 @@ func (f *Byte) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
-		filterFunc:   nil, // Byte does not need a filter function.
+		filterFunc:   nil,
 
-		sortDefine: nil, // TODO: should be sortable
-		sortInit:   nil,
-		sortFunc:   nil, // Byte does not need a sort function.
+		sortDefine: f.sortDefine,
+		sortInit:   f.sortInit,
+		sortFunc:   nil,
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
@@ -78,6 +78,15 @@ func (f *Byte) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+}
+
+func (f *Byte) sortDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
+}
+
+func (f *Byte) sortInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Byte) fieldDef(ctx Context) jen.Code {
