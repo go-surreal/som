@@ -35,13 +35,9 @@ func (f *Time) SchemaStatements(table, prefix string) []string {
 	var extend string
 
 	if f.source.IsCreatedAt {
-		// READONLY not working as expected, so using permissions as workaround for now.
-		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
-		extend = "VALUE $before OR time::now() PERMISSIONS FOR SELECT WHERE TRUE"
+		extend = "VALUE $before OR time::now() READONLY"
 	} else if f.source.IsUpdatedAt {
-		// READONLY not working as expected, so using permissions as workaround for now.
-		// See: https://surrealdb.com/docs/surrealdb/surrealql/statements/define/field#making-a-field-readonly-since-120
-		extend = "VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE"
+		extend = "VALUE time::now()"
 	}
 
 	return []string{
