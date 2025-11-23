@@ -91,13 +91,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1
+          key: go-modules-tests-v1
 
       - name: Cache Go Build
         uses: actions/cache@v4
         with:
           path: ~/.cache/go-build
-          key: go-build-v1
+          key: go-build-tests-v1
 
       - name: Test
         working-directory: internal/tests/basic
