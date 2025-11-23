@@ -39,9 +39,16 @@ func NewPassword[M any](key Key[M], algo PasswordAlgorithm) *Password[M] {
 }
 
 // Compare validates the given plaintext password against the stored hash
-// using the configured encryption algorithm.
+// using the configured encryption algorithm. Returns a Bool filter.
 func (p *Password[M]) Compare(val string) *Bool[M] {
 	return NewBool(p.fn(p.algo.cryptoFunc(), val))
+}
+
+// Matches validates the given plaintext password against the stored hash
+// using the configured encryption algorithm. Returns a Filter that matches
+// when the password comparison is true.
+func (p *Password[M]) Matches(val string) Filter[M] {
+	return p.Compare(val).True()
 }
 
 type PasswordPtr[M any] struct {

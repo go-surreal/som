@@ -82,7 +82,8 @@ DEFINE FIELD enum_ptr_slice ON TABLE all_field_types TYPE option<array<option<""
 DEFINE FIELD enum_ptr_slice_ptr ON TABLE all_field_types TYPE option<array<option<"" | "admin" | "user">>>;
 DEFINE FIELD login ON TABLE all_field_types TYPE object;
 DEFINE FIELD login.username ON TABLE all_field_types TYPE string;
-DEFINE FIELD login.password ON TABLE all_field_types TYPE string;
+DEFINE FIELD login.password ON TABLE all_field_types TYPE string VALUE IF $value != NONE AND $value != NULL AND $value != $before THEN crypto::bcrypt::generate($value) ELSE $value END;
+DEFINE FIELD login.password_ptr ON TABLE all_field_types TYPE option<string> VALUE IF $value != NONE AND $value != NULL AND $value != $before THEN crypto::argon2::generate($value) ELSE $value END;
 DEFINE FIELD struct_ptr ON TABLE all_field_types TYPE option<object>;
 DEFINE FIELD struct_ptr.string_ptr ON TABLE all_field_types TYPE option<string>;
 DEFINE FIELD struct_ptr.int_ptr ON TABLE all_field_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
@@ -116,8 +117,6 @@ DEFINE FIELD byte ON TABLE all_field_types TYPE int ASSERT $value >= 0 AND $valu
 DEFINE FIELD byte_ptr ON TABLE all_field_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
 DEFINE FIELD byte_slice ON TABLE all_field_types TYPE option<bytes>;
 DEFINE FIELD byte_slice_ptr ON TABLE all_field_types TYPE option<bytes>;
-DEFINE FIELD password ON TABLE all_field_types TYPE string VALUE IF $value != NONE AND $value != NULL THEN crypto::bcrypt::generate($value) ELSE $value END;
-DEFINE FIELD password_ptr ON TABLE all_field_types TYPE option<string> VALUE IF $value != NONE AND $value != NULL THEN crypto::argon2::generate($value) ELSE $value END;
 
 DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group ENFORCED PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE group_member TYPE string;

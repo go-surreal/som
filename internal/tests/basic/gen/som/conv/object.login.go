@@ -15,10 +15,13 @@ func (c *login) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 2)
+	data := make(map[string]any, 3)
 
 	data["username"] = c.Username
 	data["password"] = c.Password
+	if c.PasswordPtr != nil {
+		data["password_ptr"] = c.PasswordPtr
+	}
 
 	return cbor.Marshal(data)
 }
@@ -34,6 +37,9 @@ func (c *login) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["password"]; ok {
 		cbor.Unmarshal(raw, &c.Password)
+	}
+	if raw, ok := rawMap["password_ptr"]; ok {
+		cbor.Unmarshal(raw, &c.PasswordPtr)
 	}
 
 	return nil

@@ -143,11 +143,6 @@ type AllFieldTypes struct {
 	//// MappedRoles  map[string]Role  // map of string and enum
 	//// MappedGroups map[string]Group // map of string and node
 	//// OtherMap     map[Role]string  // map of enum and string
-
-	// special types
-
-	Password    som.Password[som.Bcrypt]
-	PasswordPtr *som.Password[som.Argon2]
 }
 
 func (u *AllFieldTypes) GetGroups() []Group {
@@ -160,7 +155,9 @@ func (u *AllFieldTypes) GetGroups() []Group {
 
 type Login struct {
 	Username string
-	Password string
+
+	Password    som.Password[som.Bcrypt]
+	PasswordPtr *som.Password[som.Argon2]
 }
 
 type SomeStruct struct {

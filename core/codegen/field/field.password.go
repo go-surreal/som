@@ -46,7 +46,8 @@ func (f *Password) cryptoGenerateFunc() string {
 }
 
 func (f *Password) SchemaStatements(table, prefix string) []string {
-	valueClause := fmt.Sprintf("IF $value != NONE AND $value != NULL THEN %s($value) ELSE $value END", f.cryptoGenerateFunc())
+	// Only hash if value is present AND different from $before (prevents double-hashing on updates)
+	valueClause := fmt.Sprintf("IF $value != NONE AND $value != NULL AND $value != $before THEN %s($value) ELSE $value END", f.cryptoGenerateFunc())
 
 	return []string{
 		fmt.Sprintf(
