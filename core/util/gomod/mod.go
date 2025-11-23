@@ -18,7 +18,7 @@ const (
 	pkgSOM    = "github.com/go-surreal/som"
 	pkgDriver = "github.com/surrealdb/surrealdb.go"
 
-	requiredSOMVersion    = "v0.9.0"
+	requiredSOMVersion    = "v0.10.0"
 	requiredDriverVersion = "v1.0.0"
 )
 
