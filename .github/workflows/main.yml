@@ -1,0 +1,110 @@
+name: "Main"
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          cache: true
+
+      - name: Cache Go Modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: go-modules-v1
+
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-v1
+
+      - name: Build
+        working-directory: .
+        run: go build -v ./...
+
+  test-core:
+    name: Test Core
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          cache: true
+
+      - name: Cache Go Modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: go-modules-v1
+
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-v1
+
+      - name: Test
+        working-directory: .
+        run: |
+          go test \
+          -trimpath -ldflags="-s -w" -buildvcs=false -short \
+          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
+
+  test-basic:
+    name: Test Basic
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
+        with:
+          working_directory: internal/tests/basic
+          install: true
+          cache: true
+
+      - name: Cache Go Modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: go-modules-v1
+
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-v1
+
+      - name: Test
+        working-directory: internal/tests/basic
+        env:
+          GOTOOLCHAIN: local
+          GOWORK: "off"
+        run: |
+          go test \
+          -trimpath -ldflags="-s -w" -buildvcs=false -short \
+          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
