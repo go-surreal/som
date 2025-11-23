@@ -45,8 +45,8 @@ func (f *UUID) CodeGen() *CodeGen {
 		filterInit:   f.filterInit,
 		filterFunc:   nil,
 
-		sortDefine: nil,
-		sortInit:   nil,
+		sortDefine: f.sortDefine,
+		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
 		cborMarshal:   f.cborMarshal,
@@ -75,6 +75,15 @@ func (f *UUID) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Params(
 			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 		)
+}
+
+func (f *UUID) sortDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
+}
+
+func (f *UUID) sortInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *UUID) fieldDef(ctx Context) jen.Code {
