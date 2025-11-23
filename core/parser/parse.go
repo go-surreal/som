@@ -162,6 +162,10 @@ func isEnum(t gotype.Type, outPkg string) bool {
 	return t.String() != "string" && t.PkgPath() == outPkg // TODO: might not be an enum..?!
 }
 
+func isPassword(t gotype.Type, outPkg string) bool {
+	return t.Kind() == gotype.String && t.PkgPath() == outPkg && t.Name() == "Password"
+}
+
 func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 	internalPkg := path.Join(outPkg, "internal")
 
@@ -318,6 +322,10 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 	case gotype.String:
 		{
 			switch {
+			case isPassword(t.Elem(), outPkg):
+				{
+					return &FieldPassword{atomic}, nil
+				}
 			case isEnum(t.Elem(), outPkg):
 				{
 					return &FieldEnum{atomic, t.Elem().Name()}, nil

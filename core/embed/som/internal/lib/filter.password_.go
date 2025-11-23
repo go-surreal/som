@@ -2,19 +2,18 @@
 
 package lib
 
-// TODO!
-//func (e *Email[M]) CompareArgon2_(val string) *Bool[M] {
-//	return NewBool(e.fn("crypto::argon2::compare", val))
-//}
-//
-//func (e *Email[M]) CompareBcrypt_(val string) *Bool[M] {
-//	return NewBool(e.fn("crypto::bcrypt::compare", val))
-//}
-//
-//func (e *Email[M]) ComparePbkdf2_(val string) *Bool[M] {
-//	return NewBool(e.fn("crypto::pbkdf2::compare", val))
-//}
-//
-//func (e *Email[M]) CompareScrypt_(val string) *Bool[M] {
-//	return NewBool(e.fn("crypto::scrypt::compare", val))
-//}
+func (p *Password[M]) CompareArgon2_(val *String[M]) *Bool[M] {
+	return NewBool(p.fn_("crypto::argon2::compare", val.key()))
+}
+
+func (p *Password[M]) CompareBcrypt_(val *String[M]) *Bool[M] {
+	return NewBool(p.fn_("crypto::bcrypt::compare", val.key()))
+}
+
+func (p *Password[M]) ComparePbkdf2_(val *String[M]) *Bool[M] {
+	return NewBool(p.fn_("crypto::pbkdf2::compare", val.key()))
+}
+
+func (p *Password[M]) CompareScrypt_(val *String[M]) *Bool[M] {
+	return NewBool(p.fn_("crypto::scrypt::compare", val.key()))
+}

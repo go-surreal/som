@@ -52,6 +52,8 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		IntSlicePtr:        lib.NewIntSlicePtr[M, int](lib.Field(key, "int_slice_ptr")),
 		Key:                key,
 		Other:              lib.NewStringSlice[M](lib.Field(key, "other")),
+		Password:           lib.NewPassword[M](lib.Field(key, "password")),
+		PasswordPtr:        lib.NewPasswordPtr[M](lib.Field(key, "password_ptr")),
 		Role:               lib.NewEnum[M, model.Role](lib.Field(key, "role")),
 		Roles:              lib.NewSlice[M, model.Role](lib.Field(key, "roles"), lib.NewEnum[M, model.Role]),
 		Rune:               lib.NewInt[M, rune](lib.Field(key, "rune")),
@@ -163,6 +165,8 @@ type allFieldTypes[M any] struct {
 	BytePtr            *lib.BytePtr[M]
 	ByteSlice          *lib.ByteSlice[M]
 	ByteSlicePtr       *lib.ByteSlice[M]
+	Password           *lib.Password[M]
+	PasswordPtr        *lib.PasswordPtr[M]
 }
 
 func (n allFieldTypes[M]) Login() login[M] {

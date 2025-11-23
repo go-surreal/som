@@ -116,6 +116,8 @@ DEFINE FIELD byte ON TABLE all_field_types TYPE int ASSERT $value >= 0 AND $valu
 DEFINE FIELD byte_ptr ON TABLE all_field_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
 DEFINE FIELD byte_slice ON TABLE all_field_types TYPE option<bytes>;
 DEFINE FIELD byte_slice_ptr ON TABLE all_field_types TYPE option<bytes>;
+DEFINE FIELD password ON TABLE all_field_types TYPE string;
+DEFINE FIELD password_ptr ON TABLE all_field_types TYPE option<string>;
 
 DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group ENFORCED PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE group_member TYPE string;

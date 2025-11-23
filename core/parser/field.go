@@ -98,6 +98,10 @@ type FieldURL struct {
 	*fieldAtomic
 }
 
+type FieldPassword struct {
+	*fieldAtomic
+}
+
 type FieldNode struct {
 	*fieldAtomic
 	Node string
