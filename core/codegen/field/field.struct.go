@@ -28,7 +28,7 @@ func (f *Struct) TypeDatabase() string {
 }
 
 func (f *Struct) SchemaStatements(table, prefix string) []string {
-	// Generate own DEFINE FIELD statement
+	// Generate own DEFINE FIELD statement.
 	statements := []string{
 		fmt.Sprintf(
 			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
@@ -36,7 +36,7 @@ func (f *Struct) SchemaStatements(table, prefix string) []string {
 		),
 	}
 
-	// Recursively get nested field statements
+	// Recursively get nested field statements.
 	nestedPrefix := prefix + f.NameDatabase() + "."
 	for _, field := range f.table.GetFields() {
 		statements = append(statements, field.SchemaStatements(table, nestedPrefix)...)
