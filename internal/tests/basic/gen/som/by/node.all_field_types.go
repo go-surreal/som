@@ -102,6 +102,14 @@ type allFieldTypes[M any] struct {
 	BytePtr     *lib.BaseSort[M]
 }
 
+func (n allFieldTypes[M]) Login() login[M] {
+	return newLogin[M](keyed(n.key, "login"))
+}
+
+func (n allFieldTypes[M]) StructPtr() someStruct[M] {
+	return newSomeStruct[M](keyed(n.key, "struct_ptr"))
+}
+
 func (n allFieldTypes[M]) MainGroup() group[M] {
 	return newGroup[M](keyed(n.key, "main_group"))
 }

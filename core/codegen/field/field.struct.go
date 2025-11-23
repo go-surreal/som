@@ -57,7 +57,7 @@ func (f *Struct) CodeGen() *CodeGen {
 
 		sortDefine: nil,
 		sortInit:   nil,
-		sortFunc:   nil, // TODO
+		sortFunc:   f.sortFunc,
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
@@ -81,6 +81,16 @@ func (f *Struct) filterFunc(ctx Context) jen.Code {
 		Block(
 			jen.Return(jen.Add(f.filterInit(ctx)).
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
+}
+
+func (f *Struct) sortFunc(ctx Context) jen.Code {
+	return jen.Func().
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
+		Id(f.NameGo()).Params().
+		Id(f.table.NameGoLower()).Types(def.TypeModel).
+		Block(
+			jen.Return(jen.Id("new" + f.source.Struct).Types(def.TypeModel).
+				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Struct) fieldDef(ctx Context) jen.Code {
