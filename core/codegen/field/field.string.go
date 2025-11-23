@@ -1,6 +1,8 @@
 package field
 
 import (
+	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -25,7 +27,12 @@ func (f *String) TypeDatabase() string {
 }
 
 func (f *String) SchemaStatements(table, prefix string) []string {
-	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), "")}
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 }
 
 func (f *String) CodeGen() *CodeGen {

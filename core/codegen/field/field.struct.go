@@ -1,6 +1,8 @@
 package field
 
 import (
+	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -26,16 +28,18 @@ func (f *Struct) TypeDatabase() string {
 }
 
 func (f *Struct) SchemaStatements(table, prefix string) []string {
-	var statements []string
-
 	// Generate own DEFINE FIELD statement
-	statement := f.schemaStatement(table, prefix, f.TypeDatabase(), "")
-	statements = append(statements, statement)
+	statements := []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 
 	// Recursively get nested field statements
 	nestedPrefix := prefix + f.NameDatabase() + "."
-	for _, fld := range f.table.GetFields() {
-		statements = append(statements, fld.SchemaStatements(table, nestedPrefix)...)
+	for _, field := range f.table.GetFields() {
+		statements = append(statements, field.SchemaStatements(table, nestedPrefix)...)
 	}
 
 	return statements

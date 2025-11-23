@@ -43,13 +43,15 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 		return nil
 	}
 
-	var statements []string
+	// Generate own DEFINE FIELD statement.
+	statements := []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 
-	// Generate own DEFINE FIELD statement
-	statement := f.schemaStatement(table, prefix, fieldType, "")
-	statements = append(statements, statement)
-
-	// Recursively get nested field statements from element (e.g., for struct elements)
+	// Recursively get nested field statements from element (e.g., for struct elements).
 	nestedPrefix := prefix + f.NameDatabase() + ".*."
 	statements = append(statements, f.element.SchemaStatements(table, nestedPrefix)...)
 

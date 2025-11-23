@@ -1,6 +1,8 @@
 package field
 
 import (
+	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -35,7 +37,13 @@ func (f *URL) SchemaStatements(table, prefix string) []string {
 	} else {
 		extend = `ASSERT $value == "" OR string::is::url($value)`
 	}
-	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), extend)}
+
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
+		),
+	}
 }
 
 func (f *URL) CodeGen() *CodeGen {

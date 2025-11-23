@@ -1,6 +1,7 @@
 package field
 
 import (
+	"fmt"
 	"path"
 
 	"github.com/dave/jennifer/jen"
@@ -43,7 +44,12 @@ func (f *Time) SchemaStatements(table, prefix string) []string {
 		extend = "VALUE time::now() PERMISSIONS FOR SELECT WHERE TRUE"
 	}
 
-	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), extend)}
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
+		),
+	}
 }
 
 func (f *Time) CodeGen() *CodeGen {

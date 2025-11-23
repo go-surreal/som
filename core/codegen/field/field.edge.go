@@ -26,7 +26,7 @@ func (f *Edge) TypeDatabase() string {
 }
 
 func (f *Edge) SchemaStatements(_, _ string) []string {
-	// Edges don't generate DEFINE FIELD statements
+	// Edges are no real fields in the database schema.
 	return nil
 }
 

@@ -29,7 +29,12 @@ func (f *Node) TypeDatabase() string {
 }
 
 func (f *Node) SchemaStatements(table, prefix string) []string {
-	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), "")}
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 }
 
 func (f *Node) Table() *NodeTable {

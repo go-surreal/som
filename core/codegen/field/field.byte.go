@@ -34,7 +34,13 @@ func (f *Byte) SchemaStatements(table, prefix string) []string {
 	}
 
 	extend := fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint8)
-	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), extend)}
+
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
+		),
+	}
 }
 
 func (f *Byte) CodeGen() *CodeGen {

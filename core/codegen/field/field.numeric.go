@@ -88,8 +88,12 @@ func (f *Numeric) TypeDatabase() string {
 }
 
 func (f *Numeric) SchemaStatements(table, prefix string) []string {
-	extend := f.typeDatabaseExtend()
-	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), extend)}
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), f.typeDatabaseExtend(),
+		),
+	}
 }
 
 func (f *Numeric) typeDatabaseExtend() string {

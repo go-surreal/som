@@ -1,7 +1,6 @@
 package field
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/dave/jennifer/jen"
@@ -122,32 +121,4 @@ func (f *baseField) NameGoLower() string {
 
 func (f *baseField) NameDatabase() string {
 	return f.ToDatabaseName(f.source.Name())
-}
-
-// SchemaStatements returns the DEFINE FIELD statements for this field.
-// This default implementation works for simple fields. Complex fields
-// like Struct and Slice override this to handle nested fields.
-func (f *baseField) SchemaStatements(table, prefix string, fieldType string) []string {
-	if fieldType == "" {
-		return nil
-	}
-
-	statement := fmt.Sprintf(
-		"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-		prefix+f.NameDatabase(), table, fieldType,
-	)
-
-	return []string{statement}
-}
-
-// schemaStatement is a helper that generates a single DEFINE FIELD statement
-// with an optional extension (ASSERT, VALUE, etc.).
-func (f *baseField) schemaStatement(table, prefix, fieldType, extend string) string {
-	if extend != "" {
-		fieldType = fieldType + " " + extend
-	}
-	return fmt.Sprintf(
-		"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-		prefix+f.NameDatabase(), table, fieldType,
-	)
 }

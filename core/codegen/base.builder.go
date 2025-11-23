@@ -130,7 +130,7 @@ func (b *build) buildSchemaFile() error {
 			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
-			edge.Out.NameDatabase(), // can be OR'ed with "|"
+			edge.Out.NameDatabase(), // TODO: can be OR'ed with "|"
 		)
 		statements = append(statements, statement)
 
