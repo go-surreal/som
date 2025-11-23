@@ -29,12 +29,12 @@ func (f *ID) TypeDatabase() string {
 }
 
 func (f *ID) SchemaStatements(table, prefix string) []string {
-	assert := "string::is::ulid(record::id($value))"
+	// TODO: assert := "string::is::ulid(record::id($value))"
 
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s ASSERT %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(), assert,
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
 		),
 	}
 }

@@ -51,9 +51,14 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 		),
 	}
 
-	// Recursively get nested field statements from element (e.g., for struct elements).
-	nestedPrefix := prefix + f.NameDatabase() + ".*."
-	statements = append(statements, f.element.SchemaStatements(table, nestedPrefix)...)
+	// Only recurse into struct elements - primitive elements don't need
+	// separate DEFINE FIELD statements as their type is already in the array definition.
+	if structElem, ok := f.element.(*Struct); ok {
+		nestedPrefix := prefix + f.NameDatabase() + ".*."
+		for _, field := range structElem.Table().GetFields() {
+			statements = append(statements, field.SchemaStatements(table, nestedPrefix)...)
+		}
+	}
 
 	return statements
 }
