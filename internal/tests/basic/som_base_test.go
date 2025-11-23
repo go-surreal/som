@@ -243,15 +243,23 @@ func TestSlice(t *testing.T) {
 
 	assert.Check(t, user.StructSlice != nil)
 
-	// non-empty slice
+	// non-empty slice with actual data
 
-	user.StructSlice = []model.SomeStruct{{}}
+	str1 := "hello"
+	num1 := 42
+	now1 := time.Now().Truncate(time.Microsecond).UTC()
+	id1 := uuid.New()
 
-	assert.Check(t, user.StructSlice != nil)
+	user.StructSlice = []model.SomeStruct{{
+		StringPtr: &str1,
+		IntPtr:    &num1,
+		TimePtr:   &now1,
+		UuidPtr:   &id1,
+	}}
 
 	err = client.AllFieldTypesRepo().Update(ctx, user)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("could not update entity: %v", err)
 	}
 
 	user, err = client.AllFieldTypesRepo().Query().
@@ -263,7 +271,114 @@ func TestSlice(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, user.StructSlice != nil)
+	assert.Check(t, len(user.StructSlice) == 1)
+	assert.Check(t, user.StructSlice[0].StringPtr != nil && *user.StructSlice[0].StringPtr == str1)
+	assert.Check(t, user.StructSlice[0].IntPtr != nil && *user.StructSlice[0].IntPtr == num1)
+	assert.Check(t, user.StructSlice[0].TimePtr != nil && user.StructSlice[0].TimePtr.Equal(now1))
+	assert.Check(t, user.StructSlice[0].UuidPtr != nil && *user.StructSlice[0].UuidPtr == id1)
+
+	// multiple elements
+
+	str2 := "world"
+	num2 := 99
+
+	user.StructSlice = []model.SomeStruct{
+		{StringPtr: &str1, IntPtr: &num1},
+		{StringPtr: &str2, IntPtr: &num2},
+	}
+
+	err = client.AllFieldTypesRepo().Update(ctx, user)
+	if err != nil {
+		t.Fatalf("could not update entity with multiple elements: %v", err)
+	}
+
+	user, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.StructSlice.NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.StructSlice) == 2)
+	assert.Check(t, *user.StructSlice[0].StringPtr == str1)
+	assert.Check(t, *user.StructSlice[0].IntPtr == num1)
+	assert.Check(t, *user.StructSlice[1].StringPtr == str2)
+	assert.Check(t, *user.StructSlice[1].IntPtr == num2)
+
+	// test StructPtrSlice ([]*SomeStruct)
+
+	user.StructPtrSlice = []*model.SomeStruct{
+		{StringPtr: &str1, IntPtr: &num1},
+		{StringPtr: &str2, IntPtr: &num2},
+	}
+
+	err = client.AllFieldTypesRepo().Update(ctx, user)
+	if err != nil {
+		t.Fatalf("could not update entity with StructPtrSlice: %v", err)
+	}
+
+	user, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.StructPtrSlice.NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.StructPtrSlice) == 2)
+	assert.Check(t, user.StructPtrSlice[0] != nil && *user.StructPtrSlice[0].StringPtr == str1)
+	assert.Check(t, user.StructPtrSlice[1] != nil && *user.StructPtrSlice[1].StringPtr == str2)
+
+	// test StructPtrSlicePtr (*[]*SomeStruct)
+
+	ptrSlice := []*model.SomeStruct{
+		{StringPtr: &str1, IntPtr: &num1},
+	}
+	user.StructPtrSlicePtr = &ptrSlice
+
+	err = client.AllFieldTypesRepo().Update(ctx, user)
+	if err != nil {
+		t.Fatalf("could not update entity with StructPtrSlicePtr: %v", err)
+	}
+
+	user, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.StructPtrSlicePtr.NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user.StructPtrSlicePtr != nil)
+	assert.Check(t, len(*user.StructPtrSlicePtr) == 1)
+	assert.Check(t, (*user.StructPtrSlicePtr)[0] != nil && *(*user.StructPtrSlicePtr)[0].StringPtr == str1)
+
+	// test refresh with struct slice data
+
+	str3 := "refreshed"
+	user.StructSlice = []model.SomeStruct{{StringPtr: &str3}}
+
+	err = client.AllFieldTypesRepo().Update(ctx, user)
+	if err != nil {
+		t.Fatalf("could not update entity for refresh test: %v", err)
+	}
+
+	// modify local data
+	modified := "modified"
+	user.StructSlice[0].StringPtr = &modified
+
+	// refresh should restore to DB value
+	err = client.AllFieldTypesRepo().Refresh(ctx, user)
+	if err != nil {
+		t.Fatalf("could not refresh entity: %v", err)
+	}
+
+	assert.Check(t, len(user.StructSlice) == 1)
+	assert.Check(t, *user.StructSlice[0].StringPtr == str3)
 }
 
 func TestTimestamps(t *testing.T) {
