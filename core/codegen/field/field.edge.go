@@ -25,6 +25,11 @@ func (f *Edge) TypeDatabase() string {
 	return ""
 }
 
+func (f *Edge) SchemaStatements(_, _ string) []string {
+	// Edges don't generate DEFINE FIELD statements
+	return nil
+}
+
 func (f *Edge) Table() *EdgeTable {
 	return f.table
 }

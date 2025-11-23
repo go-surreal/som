@@ -28,6 +28,10 @@ func (f *UUID) TypeDatabase() string {
 	return "uuid"
 }
 
+func (f *UUID) SchemaStatements(table, prefix string) []string {
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), "")}
+}
+
 func (f *UUID) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

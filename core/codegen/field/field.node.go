@@ -28,6 +28,10 @@ func (f *Node) TypeDatabase() string {
 	return fmt.Sprintf("option<record<%s>>", f.table.NameDatabase())
 }
 
+func (f *Node) SchemaStatements(table, prefix string) []string {
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), "")}
+}
+
 func (f *Node) Table() *NodeTable {
 	return f.table
 }

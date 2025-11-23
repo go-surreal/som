@@ -26,6 +26,10 @@ func (f *Duration) TypeDatabase() string {
 	return f.optionWrap("duration")
 }
 
+func (f *Duration) SchemaStatements(table, prefix string) []string {
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), "")}
+}
+
 func (f *Duration) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

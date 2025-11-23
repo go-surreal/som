@@ -24,6 +24,10 @@ func (f *Bool) TypeDatabase() string {
 	return f.optionWrap("bool")
 }
 
+func (f *Bool) SchemaStatements(table, prefix string) []string {
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), "")}
+}
+
 func (f *Bool) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

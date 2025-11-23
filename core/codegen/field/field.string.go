@@ -24,6 +24,10 @@ func (f *String) TypeDatabase() string {
 	return f.optionWrap("string")
 }
 
+func (f *String) SchemaStatements(table, prefix string) []string {
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), "")}
+}
+
 func (f *String) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

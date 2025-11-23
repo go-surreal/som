@@ -2,7 +2,6 @@ package field
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -38,21 +37,23 @@ func (f *Slice) TypeDatabase() string {
 	return fmt.Sprintf("option<array<%s>>", f.element.TypeDatabase())
 }
 
-func (f *Slice) TypeDatabaseExtend() string {
-	if _, ok := f.element.(*Byte); ok {
-		// Byte slices ([]byte) map to "bytes" type and do not need element validation.
-		return ""
+func (f *Slice) SchemaStatements(table, prefix string) []string {
+	fieldType := f.TypeDatabase()
+	if fieldType == "" {
+		return nil
 	}
 
-	elementAssert := f.element.TypeDatabaseExtend()
-	if elementAssert == "" {
-		return ""
-	}
+	var statements []string
 
-	elementCondition := strings.TrimPrefix(elementAssert, "ASSERT ")
-	itemCondition := strings.ReplaceAll(elementCondition, "$value", "$item")
+	// Generate own DEFINE FIELD statement
+	statement := f.schemaStatement(table, prefix, fieldType, "")
+	statements = append(statements, statement)
 
-	return fmt.Sprintf("ASSERT $value == NONE OR $value == NULL OR array::all($value, |$item| %s)", itemCondition)
+	// Recursively get nested field statements from element (e.g., for struct elements)
+	nestedPrefix := prefix + f.NameDatabase() + ".*."
+	statements = append(statements, f.element.SchemaStatements(table, nestedPrefix)...)
+
+	return statements
 }
 
 func (f *Slice) Element() Field {

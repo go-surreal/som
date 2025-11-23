@@ -28,12 +28,14 @@ func (f *URL) TypeDatabase() string {
 	return "string"
 }
 
-func (f *URL) TypeDatabaseExtend() string {
+func (f *URL) SchemaStatements(table, prefix string) []string {
+	var extend string
 	if f.source.Pointer() {
-		return "ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
+		extend = "ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
+	} else {
+		extend = `ASSERT $value == "" OR string::is::url($value)`
 	}
-
-	return `ASSERT $value == "" OR string::is::url($value)`
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), extend)}
 }
 
 func (f *URL) CodeGen() *CodeGen {

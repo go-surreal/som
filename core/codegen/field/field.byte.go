@@ -24,15 +24,17 @@ func (f *Byte) typeConv(_ Context) jen.Code {
 }
 
 func (f *Byte) TypeDatabase() string {
+	return f.optionWrap("int")
+}
+
+func (f *Byte) SchemaStatements(table, prefix string) []string {
 	nilCheck := ""
 	if f.source.Pointer() {
 		nilCheck = "$value == NONE OR $value == NULL OR "
 	}
 
-	return fmt.Sprintf(
-		"%s ASSERT %s$value >= %d AND $value <= %d",
-		f.optionWrap("int"), nilCheck, 0, math.MaxUint8,
-	)
+	extend := fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint8)
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), extend)}
 }
 
 func (f *Byte) CodeGen() *CodeGen {

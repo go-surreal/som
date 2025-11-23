@@ -114,45 +114,12 @@ func (b *build) buildInterfaceFile() error {
 func (b *build) buildSchemaFile() error {
 	statements := []string{string(embed.CodegenComment), ""}
 
-	var fieldFn func(table string, f field.Field, prefix string)
-	fieldFn = func(table string, f field.Field, prefix string) {
-		fieldType := f.TypeDatabase()
-		if fieldType == "" {
-			return // TODO: is this actually valid?
-		}
-
-		fieldTypeExtend := f.TypeDatabaseExtend()
-		if fieldTypeExtend != "" {
-			fieldType = fieldType + " " + fieldTypeExtend
-		}
-
-		statement := fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, fieldType,
-		)
-		statements = append(statements, statement)
-
-		if object, ok := f.(*field.Struct); ok {
-			for _, fld := range object.Table().GetFields() {
-				fieldFn(table, fld, prefix+f.NameDatabase()+".")
-			}
-		}
-
-		if slice, ok := f.(*field.Slice); ok {
-			if structElem, ok := slice.Element().(*field.Struct); ok {
-				for _, fld := range structElem.Table().GetFields() {
-					fieldFn(table, fld, prefix+f.NameDatabase()+".*.")
-				}
-			}
-		}
-	}
-
 	for _, node := range b.input.nodes {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
 		statements = append(statements, statement)
 
 		for _, f := range node.GetFields() {
-			fieldFn(node.NameDatabase(), f, "")
+			statements = append(statements, f.SchemaStatements(node.NameDatabase(), "")...)
 		}
 
 		statements = append(statements, "")
@@ -168,7 +135,7 @@ func (b *build) buildSchemaFile() error {
 		statements = append(statements, statement)
 
 		for _, f := range edge.GetFields() {
-			fieldFn(edge.NameDatabase(), f, "")
+			statements = append(statements, f.SchemaStatements(edge.NameDatabase(), "")...)
 		}
 
 		statements = append(statements, "")

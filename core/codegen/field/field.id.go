@@ -24,6 +24,11 @@ func (f *ID) TypeDatabase() string {
 	return ""
 }
 
+func (f *ID) SchemaStatements(_, _ string) []string {
+	// ID fields don't generate DEFINE FIELD statements
+	return nil
+}
+
 func (f *ID) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

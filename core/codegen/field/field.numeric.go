@@ -87,7 +87,12 @@ func (f *Numeric) TypeDatabase() string {
 	}
 }
 
-func (f *Numeric) TypeDatabaseExtend() string {
+func (f *Numeric) SchemaStatements(table, prefix string) []string {
+	extend := f.typeDatabaseExtend()
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), extend)}
+}
+
+func (f *Numeric) typeDatabaseExtend() string {
 	nilCheck := ""
 	if f.source.Pointer() {
 		nilCheck = "$value == NONE OR $value == NULL OR "
@@ -108,12 +113,8 @@ func (f *Numeric) TypeDatabaseExtend() string {
 		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint16)
 	case parser.NumberUint32:
 		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint32)
-	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-	//	return fmt.Sprintf("%s ASSERT %s$value >= %ddec AND $value <= %ddec", f.optionWrap("number"), nilCheck, 0, uint64(math.MaxUint64))
-	case parser.NumberFloat32:
-		return "" // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "1.2E-38", "3.4E+38")
-	case parser.NumberFloat64:
-		return "" // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "2.2E-308", "1.7E+308")
+	case parser.NumberFloat32, parser.NumberFloat64:
+		return ""
 	default:
 		panic(fmt.Sprintf("unmapped numeric type: %d", f.source.Type))
 	}

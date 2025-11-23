@@ -25,6 +25,22 @@ func (f *Struct) TypeDatabase() string {
 	return f.optionWrap("object")
 }
 
+func (f *Struct) SchemaStatements(table, prefix string) []string {
+	var statements []string
+
+	// Generate own DEFINE FIELD statement
+	statement := f.schemaStatement(table, prefix, f.TypeDatabase(), "")
+	statements = append(statements, statement)
+
+	// Recursively get nested field statements
+	nestedPrefix := prefix + f.NameDatabase() + "."
+	for _, fld := range f.table.GetFields() {
+		statements = append(statements, fld.SchemaStatements(table, nestedPrefix)...)
+	}
+
+	return statements
+}
+
 func (f *Struct) Table() Table {
 	return f.table
 }

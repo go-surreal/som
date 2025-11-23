@@ -48,6 +48,10 @@ func (f *Enum) TypeDatabase() string {
 	return literals
 }
 
+func (f *Enum) SchemaStatements(table, prefix string) []string {
+	return []string{f.schemaStatement(table, prefix, f.TypeDatabase(), "")}
+}
+
 func (f *Enum) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
