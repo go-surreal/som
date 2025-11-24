@@ -25,3 +25,15 @@ func (e *Email[M]) User() *String[M] {
 func (e *Email[M]) Host() *String[M] {
 	return NewString[M](e.fn("parse::email::host"))
 }
+
+type EmailPtr[M any] struct {
+	*Email[M]
+	*Nillable[M]
+}
+
+func NewEmailPtr[M any](key Key[M]) *EmailPtr[M] {
+	return &EmailPtr[M]{
+		Email:    NewEmail[M](key),
+		Nillable: NewNillable[M](key),
+	}
+}

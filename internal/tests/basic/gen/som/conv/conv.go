@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 )
 
@@ -303,4 +304,32 @@ func toUUIDPtr(val *types.UUID) *uuid.UUID {
 
 	u := uuid.UUID(*val)
 	return &u
+}
+
+//
+// -- EMAIL
+//
+
+func fromEmail(val som.Email) string {
+	return string(val)
+}
+
+func fromEmailPtr(val *som.Email) *string {
+	if val == nil {
+		return nil
+	}
+	str := string(*val)
+	return &str
+}
+
+func toEmail(val string) som.Email {
+	return som.Email(val)
+}
+
+func toEmailPtr(val *string) *som.Email {
+	if val == nil {
+		return nil
+	}
+	email := som.Email(*val)
+	return &email
 }
