@@ -5,7 +5,6 @@ import lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 
 func newLogin[M any](key string) login[M] {
 	return login[M]{
-		Password: lib.NewStringSort[M](keyed(key, "password")),
 		Username: lib.NewStringSort[M](keyed(key, "username")),
 		key:      key,
 	}
@@ -14,5 +13,4 @@ func newLogin[M any](key string) login[M] {
 type login[M any] struct {
 	key      string
 	Username *lib.StringSort[M]
-	Password *lib.StringSort[M]
 }
