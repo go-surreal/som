@@ -2,9 +2,11 @@ package field
 
 import (
 	"fmt"
-	"github.com/dave/jennifer/jen"
-	"github.com/go-surreal/som/core/parser"
 	"math"
+
+	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Numeric struct {
@@ -48,7 +50,7 @@ func (f *Numeric) typeGo() jen.Code {
 	}
 }
 
-func (f *Numeric) typeConv() jen.Code {
+func (f *Numeric) typeConv(_ Context) jen.Code {
 	switch f.source.Type {
 
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
@@ -73,6 +75,28 @@ func (f *Numeric) typeConv() jen.Code {
 }
 
 func (f *Numeric) TypeDatabase() string {
+	switch f.source.Type {
+	case parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberRune,
+		parser.NumberInt64, parser.NumberInt,
+		parser.NumberUint8, parser.NumberUint16, parser.NumberUint32:
+		return f.optionWrap("int")
+	case parser.NumberFloat32, parser.NumberFloat64:
+		return f.optionWrap("float")
+	default:
+		panic(fmt.Sprintf("unmapped numeric type: %d", f.source.Type))
+	}
+}
+
+func (f *Numeric) SchemaStatements(table, prefix string) []string {
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), f.typeDatabaseExtend(),
+		),
+	}
+}
+
+func (f *Numeric) typeDatabaseExtend() string {
 	nilCheck := ""
 	if f.source.Pointer() {
 		nilCheck = "$value == NONE OR $value == NULL OR "
@@ -80,25 +104,25 @@ func (f *Numeric) TypeDatabase() string {
 
 	switch f.source.Type {
 	case parser.NumberInt8:
-		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, math.MinInt8, math.MaxInt8)
+		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, math.MinInt8, math.MaxInt8)
 	case parser.NumberInt16:
-		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, math.MinInt16, math.MaxInt16)
+		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, math.MinInt16, math.MaxInt16)
 	case parser.NumberInt32, parser.NumberRune:
-		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, math.MinInt32, math.MaxInt32)
+		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, math.MinInt32, math.MaxInt32)
 	case parser.NumberInt64, parser.NumberInt:
-		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, math.MinInt64, math.MaxInt64)
+		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, math.MinInt64, math.MaxInt64)
 	case parser.NumberUint8:
-		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint8)
+		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint8)
 	case parser.NumberUint16:
-		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint16)
+		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint16)
 	case parser.NumberUint32:
-		return fmt.Sprintf("%s ASSERT %s$value >= %d AND $value <= %d", f.optionWrap("int"), nilCheck, 0, math.MaxUint32)
+		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint32)
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
 	//	return fmt.Sprintf("%s ASSERT %s$value >= %ddec AND $value <= %ddec", f.optionWrap("number"), nilCheck, 0, uint64(math.MaxUint64))
 	case parser.NumberFloat32:
-		return f.optionWrap("float") // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "1.2E-38", "3.4E+38")
+		return "" // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "1.2E-38", "3.4E+38")
 	case parser.NumberFloat64:
-		return f.optionWrap("float") // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "2.2E-308", "1.7E+308")
+		return "" // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "2.2E-308", "1.7E+308")
 	default:
 		panic(fmt.Sprintf("unmapped numeric type: %d", f.source.Type))
 	}
@@ -114,87 +138,89 @@ func (f *Numeric) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
 func (f *Numeric) filterDefine(ctx Context) jen.Code {
 	filter := "Numeric"
-	if f.source.Pointer() {
-		filter += "Ptr"
+
+	switch f.source.Type {
+
+	case parser.NumberInt, parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberInt64,
+		parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
+		{
+			filter = "Int"
+		}
+
+	case parser.NumberFloat32, parser.NumberFloat64:
+		{
+			filter = "Float"
+		}
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(f.typeGo(), jen.Id("T"))
+	if f.source.Pointer() {
+		filter += fnSuffixPtr
+	}
+
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo())
 }
 
-func (f *Numeric) filterInit(ctx Context) jen.Code {
+func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewNumeric"
-	if f.source.Pointer() {
-		filter += "Ptr"
+
+	switch f.source.Type {
+
+	case parser.NumberInt, parser.NumberInt8, parser.NumberInt16, parser.NumberInt32, parser.NumberInt64,
+		parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
+		{
+			filter = "NewInt"
+		}
+
+	case parser.NumberFloat32, parser.NumberFloat64:
+		{
+			filter = "NewFloat"
+		}
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(f.typeGo(), jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	if f.source.Pointer() {
+		filter += fnSuffixPtr
+	}
+
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo()),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Numeric) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
 func (f *Numeric) sortInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Numeric) convFrom(ctx Context) jen.Code {
-	switch f.source.Type {
-
-	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-	//	{
-	//		var typ jen.Code
-	//
-	//		switch f.source.Type {
-	//		case parser.NumberUint:
-	//			typ = jen.Uint()
-	//		case parser.NumberUint64:
-	//			typ = jen.Uint64()
-	//		case parser.NumberUintptr:
-	//			typ = jen.Uintptr()
-	//		}
-	//
-	//		field := jen.Id("data").Dot(f.NameGo())
-	//		if !f.source.Pointer() {
-	//			field = jen.Op("&").Add(field)
-	//		}
-	//
-	//		return jen.Id("unsignedNumber").Types(typ).Values(field)
-	//	}
-
-	default:
-		return jen.Id("data").Dot(f.NameGo())
-	}
-}
-
-func (f *Numeric) convTo(_ Context) jen.Code {
-	switch f.source.Type {
-
-	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-	//	{
-	//		if !f.source.Pointer() {
-	//			return jen.Op("*").Id("data").Dot(f.NameGo()).Dot("val")
-	//		}
-	//
-	//		return jen.Id("data").Dot(f.NameGo()).Dot("val")
-	//	}
-
-	default:
-		return jen.Id("data").Dot(f.NameGo())
-	}
-}
-
 func (f *Numeric) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase()})
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Numeric) cborMarshal(_ Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+		)
+	}
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+}
+
+func (f *Numeric) cborUnmarshal(ctx Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }

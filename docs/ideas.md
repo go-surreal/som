@@ -13,6 +13,125 @@ can be created at any point and linked back to this document.
 
 ## Features
 
+### ?
+
+Can I get the total count when doing a paginate query?
+So a count where limit and offset are basically ignored, but the result set still takes them into account.
+
+### Views
+
+```
+package model
+
+import "github.com/go-surreal/som"
+
+type TestView struct {
+	som.View
+}
+```
+
+### Migrations
+
+Rename:
+
+```
+DEFINE FIELD new ON x VALUE $before OR $after.old; // works with value? otherwise:
+UPDATE x SET new = old;
+DROP FIELD old ON x;
+```
+
+Ignore:
+
+```
+change.Field.X.Ignore(reason: "must add comment here")
+change.Field.X.TODO()
+```
+
+### Custom functions
+
+https://surrealdb.com/docs/surrealdb/surrealql/datamodel/closures
+
+Note: SOM might define its own functions in the future.
+
+### Computed Fields
+
+tbd.
+
+### LiveRead model
+
+```
+func (r *allFieldTypes) LiveRead(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error) {
+	allFieldTypes, exists, err := r.Read(ctx, id) // TODO: mark model as live (similar to fragment) to prevent it from being updated
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !exists {
+		return nil, false, nil
+	}
+
+	liveRes, err := r.Query().
+		Filter(where.AllFieldTypes.ID.Equal(id)).
+		Live(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+
+	go func() {
+		for {
+			select {
+
+			case live := <-liveRes:
+				{
+				switch res := live.(type) {
+
+				case query.LiveUpdate[model.AllFieldTypes]:
+					updatedModel,err := res.Get()
+					if err != nil {
+						return
+					}
+					*allFieldTypes = updatedModel
+
+				case query.LiveCreate[model.AllFieldTypes]:
+				case query.LiveDelete[model.AllFieldTypes]:
+				}
+				}
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return allFieldTypes, true, nil
+}
+```
+
+### Cache
+
+```
+// TTL sets the time-to-live for the result set of the query.
+// After the given duration, the result set will be invalidated.
+// This means that the next query will re-fetch the data from the database.
+func (b builder[M, C]) TTL(dur time.Duration) string {
+	panic("not implemented")
+}
+```
+
+### On Delete Cascade
+
+not yet a native feature but might be at some time
+
+```
+DEFINE EVENT event_name ON TABLE table_name WHEN ($after == NONE) THEN {
+    delete contact where id == $before.contact;
+    delete adress where id inside $before.adresses;
+};
+```
+
+https://github.com/surrealdb/surrealdb/issues/1782
+https://github.com/surrealdb/surrealdb/issues/1783
+
 ### Soft Delete
 
 - https://www.jmix.io/blog/to-delete-or-to-soft-delete-that-is-the-question/
@@ -65,21 +184,6 @@ som.Email
 ```
 parse::email::domain() - Parses and returns an email domain from an email address
 parse::email::user() - Parses and returns an email username from an email address
-```
-
-### Support URL type
-
-```
-url.Url // go standard type
-```
-
-```
-parse::url::domain() - Parses and returns the domain from a URL
-parse::url::fragment() - Parses and returns the fragment from a URL
-parse::url::host() - Parses and returns the hostname from a URL
-parse::url::path() - Parses and returns the path from a URL
-parse::url::port() - Parses and returns the port number from a URL
-parse::url::query() - Parses and returns the query string from a URL
 ```
 
 ### More query functions
@@ -147,6 +251,7 @@ repo.db.user.Update(&userModel,
 )
 
 ```
+(or use patch instead)
 
 ### Better edges with generics
 
@@ -284,6 +389,15 @@ DEFINE EVENT example_uid_setting ON TABLE example WHEN $before = null AND $befor
     UPDATE counter:example SET val = $next;
 };
 ```
+
+### Caching
+
+add caching to the generation process
+
+### Watch
+
+add a watch command to the generation process
+should watch the input dir as well as all other imported dirs
 
 ## Optimisations
 

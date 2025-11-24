@@ -2,7 +2,6 @@ package basic
 
 import (
 	"context"
-	"fmt"
 	sombase "github.com/go-surreal/som"
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
@@ -481,12 +480,3 @@ func TestRefresh(t *testing.T) {
 	assert.Equal(t, "some value", allFieldTypes.String)
 }
 
-func TestIterate(t *testing.T) {
-	for val, next := iterate(); next; {
-		fmt.Println(val)
-	}
-}
-
-func iterator() (string, bool) {
-
-}

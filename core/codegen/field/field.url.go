@@ -1,6 +1,8 @@
 package field
 
 import (
+	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -16,17 +18,32 @@ func (f *URL) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(def.PkgURL, "URL")
 }
 
-func (f *URL) typeConv() jen.Code {
+func (f *URL) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).String()
 }
 
 func (f *URL) TypeDatabase() string {
 	if f.source.Pointer() {
-		return "option<string | null> ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
-		// TODO: should field be omitted (omitempty) if value is null (instead of being set to null)?
+		return "option<string>"
 	}
 
-	return `string ASSERT $value == "" OR string::is::url($value)`
+	return "string"
+}
+
+func (f *URL) SchemaStatements(table, prefix string) []string {
+	var extend string
+	if f.source.Pointer() {
+		extend = "ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
+	} else {
+		extend = `ASSERT $value == "" OR string::is::url($value)`
+	}
+
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
+		),
+	}
 }
 
 func (f *URL) CodeGen() *CodeGen {
@@ -35,52 +52,82 @@ func (f *URL) CodeGen() *CodeGen {
 		filterInit:   f.filterInit,
 		filterFunc:   nil,
 
-		sortDefine: nil,
-		sortInit:   nil,
+		sortDefine: f.sortDefine,
+		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
 func (f *URL) filterDefine(ctx Context) jen.Code {
 	filter := "URL"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
-func (f *URL) filterInit(ctx Context) jen.Code {
+func (f *URL) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewURL"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *URL) convFrom(_ Context) jen.Code {
-	if f.source.Pointer() {
-		return jen.Id("urlPtr").Call(jen.Id("data").Dot(f.NameGo()))
-	}
-
-	return jen.Id("data").Dot(f.NameGo()).Dot("String").Call()
+func (f *URL) sortDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
-func (f *URL) convTo(_ Context) jen.Code {
-	if f.source.Pointer() {
-		return jen.Id("ptrFunc").Call(jen.Id("parseURL")).Call(jen.Id("data").Dot(f.NameGo()))
-	}
-
-	return jen.Id("parseURL").Call(jen.Id("data").Dot(f.NameGo()))
+func (f *URL) sortInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *URL) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase()})
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *URL) cborMarshal(_ Context) jen.Code {
+	convFuncName := "fromURL"
+	if f.source.Pointer() {
+		convFuncName += "Ptr"
+	}
+
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo())),
+		)
+	}
+
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
+}
+
+func (f *URL) cborUnmarshal(ctx Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).BlockFunc(func(g *jen.Group) {
+			g.Var().Id("convVal").Op("*").String()
+			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+			g.Id("c").Dot(f.NameGo()).Op("=").Id("toURLPtr").Call(jen.Id("convVal"))
+		})
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).BlockFunc(func(g *jen.Group) {
+		g.Var().Id("convVal").String()
+		g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
+		g.Id("c").Dot(f.NameGo()).Op("=").Id("toURL").Call(jen.Id("convVal"))
+	})
 }
