@@ -4,7 +4,7 @@ This guide helps you upgrade between SOM versions.
 
 ## General Upgrade Steps
 
-1. Review the [Changelog](../10_development/03_changelog.md) for breaking changes
+1. Review the [GitHub Releases](https://github.com/go-surreal/som/releases) for breaking changes
 2. Update your SOM version
 3. Regenerate all code
 4. Fix any compilation errors
