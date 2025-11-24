@@ -18,6 +18,9 @@ func newAllFieldTypes[M any](key string) allFieldTypes[M] {
 		Duration:    lib.NewBaseSort[M](keyed(key, "duration")),
 		DurationNil: lib.NewBaseSort[M](keyed(key, "duration_nil")),
 		DurationPtr: lib.NewBaseSort[M](keyed(key, "duration_ptr")),
+		Email:       lib.NewBaseSort[M](keyed(key, "email")),
+		EmailNil:    lib.NewBaseSort[M](keyed(key, "email_nil")),
+		EmailPtr:    lib.NewBaseSort[M](keyed(key, "email_ptr")),
 		EnumPtr:     lib.NewBaseSort[M](keyed(key, "enum_ptr")),
 		Float32:     lib.NewBaseSort[M](keyed(key, "float_32")),
 		Float64:     lib.NewBaseSort[M](keyed(key, "float_64")),
@@ -96,6 +99,9 @@ type allFieldTypes[M any] struct {
 	URL         *lib.BaseSort[M]
 	URLPtr      *lib.BaseSort[M]
 	URLNil      *lib.BaseSort[M]
+	Email       *lib.BaseSort[M]
+	EmailPtr    *lib.BaseSort[M]
+	EmailNil    *lib.BaseSort[M]
 	Role        *lib.BaseSort[M]
 	EnumPtr     *lib.BaseSort[M]
 	Byte        *lib.BaseSort[M]

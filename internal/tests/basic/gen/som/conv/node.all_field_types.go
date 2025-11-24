@@ -17,7 +17,7 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 80)
+	data := make(map[string]any, 84)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {
@@ -159,6 +159,16 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	}
 	if c.URLSlice != nil {
 		data["url_slice"] = c.URLSlice
+	}
+	data["email"] = fromEmail(c.Email)
+	if c.EmailPtr != nil {
+		data["email_ptr"] = fromEmailPtr(c.EmailPtr)
+	}
+	if c.EmailNil != nil {
+		data["email_nil"] = fromEmailPtr(c.EmailNil)
+	}
+	if c.EmailSlice != nil {
+		data["email_slice"] = c.EmailSlice
 	}
 	data["role"] = c.Role
 	if c.EnumPtr != nil {
@@ -427,6 +437,24 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["url_slice"]; ok {
 		cbor.Unmarshal(raw, &c.URLSlice)
+	}
+	if raw, ok := rawMap["email"]; ok {
+		var convVal string
+		cbor.Unmarshal(raw, &convVal)
+		c.Email = toEmail(convVal)
+	}
+	if raw, ok := rawMap["email_ptr"]; ok {
+		var convVal *string
+		cbor.Unmarshal(raw, &convVal)
+		c.EmailPtr = toEmailPtr(convVal)
+	}
+	if raw, ok := rawMap["email_nil"]; ok {
+		var convVal *string
+		cbor.Unmarshal(raw, &convVal)
+		c.EmailNil = toEmailPtr(convVal)
+	}
+	if raw, ok := rawMap["email_slice"]; ok {
+		cbor.Unmarshal(raw, &c.EmailSlice)
 	}
 	if raw, ok := rawMap["role"]; ok {
 		cbor.Unmarshal(raw, &c.Role)
