@@ -2,8 +2,6 @@ package field
 
 import (
 	"fmt"
-	"path"
-	"strings"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -17,18 +15,7 @@ type Email struct {
 }
 
 func (f *Email) typeGo() jen.Code {
-	// Email is defined in the generated som package, not the model package
-	// Compute the som package path by going up from the model package
-	// e.g., if model is "github.com/user/project/model", som is "github.com/user/project/gen/som"
-	parts := strings.Split(f.SourcePkg, "/")
-	if len(parts) > 0 {
-		// Remove last segment (model package name) and add gen/som
-		basePath := strings.Join(parts[:len(parts)-1], "/")
-		somPkg := path.Join(basePath, "gen/som")
-		return jen.Add(f.ptr()).Qual(somPkg, "Email")
-	}
-	// Fallback
-	return jen.Add(f.ptr()).Qual(f.SourcePkg, "Email")
+	return jen.Add(f.ptr()).Qual(f.TargetPkg, "Email")
 }
 
 func (f *Email) typeConv(_ Context) jen.Code {
