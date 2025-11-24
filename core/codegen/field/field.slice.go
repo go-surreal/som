@@ -51,8 +51,8 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 		),
 	}
 
-	// Only recurse into struct elements - primitive elements don't need
-	// separate DEFINE FIELD statements as their type is already in the array definition.
+	// Only recurse into struct elements, because for primitive
+	// elements the type is already part of the array definition.
 	if structElem, ok := f.element.(*Struct); ok {
 		nestedPrefix := prefix + f.NameDatabase() + ".*."
 		for _, field := range structElem.Table().GetFields() {
@@ -75,7 +75,7 @@ func (f *Slice) CodeGen() *CodeGen {
 
 		sortDefine: nil,
 		sortInit:   nil,
-		sortFunc:   nil, // TODO
+		sortFunc:   nil, // sorting by slices has no real use case
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,

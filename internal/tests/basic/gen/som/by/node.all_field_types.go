@@ -10,10 +10,15 @@ var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes]("")
 
 func newAllFieldTypes[M any](key string) allFieldTypes[M] {
 	return allFieldTypes[M]{
+		Bool:        lib.NewBaseSort[M](keyed(key, "bool")),
+		BoolPtr:     lib.NewBaseSort[M](keyed(key, "bool_ptr")),
+		Byte:        lib.NewBaseSort[M](keyed(key, "byte")),
+		BytePtr:     lib.NewBaseSort[M](keyed(key, "byte_ptr")),
 		CreatedAt:   lib.NewBaseSort[M](keyed(key, "created_at")),
 		Duration:    lib.NewBaseSort[M](keyed(key, "duration")),
 		DurationNil: lib.NewBaseSort[M](keyed(key, "duration_nil")),
 		DurationPtr: lib.NewBaseSort[M](keyed(key, "duration_ptr")),
+		EnumPtr:     lib.NewBaseSort[M](keyed(key, "enum_ptr")),
 		Float32:     lib.NewBaseSort[M](keyed(key, "float_32")),
 		Float64:     lib.NewBaseSort[M](keyed(key, "float_64")),
 		ID:          lib.NewBaseSort[M](keyed(key, "id")),
@@ -27,12 +32,19 @@ func newAllFieldTypes[M any](key string) allFieldTypes[M] {
 		Int8:        lib.NewBaseSort[M](keyed(key, "int_8")),
 		Int8Ptr:     lib.NewBaseSort[M](keyed(key, "int_8_ptr")),
 		IntPtr:      lib.NewBaseSort[M](keyed(key, "int_ptr")),
+		Role:        lib.NewBaseSort[M](keyed(key, "role")),
 		Rune:        lib.NewBaseSort[M](keyed(key, "rune")),
 		String:      lib.NewStringSort[M](keyed(key, "string")),
 		StringPtr:   lib.NewStringSort[M](keyed(key, "string_ptr")),
 		Time:        lib.NewBaseSort[M](keyed(key, "time")),
 		TimeNil:     lib.NewBaseSort[M](keyed(key, "time_nil")),
 		TimePtr:     lib.NewBaseSort[M](keyed(key, "time_ptr")),
+		URL:         lib.NewBaseSort[M](keyed(key, "url")),
+		URLNil:      lib.NewBaseSort[M](keyed(key, "url_nil")),
+		URLPtr:      lib.NewBaseSort[M](keyed(key, "url_ptr")),
+		UUID:        lib.NewBaseSort[M](keyed(key, "uuid")),
+		UUIDNil:     lib.NewBaseSort[M](keyed(key, "uuid_nil")),
+		UUIDPtr:     lib.NewBaseSort[M](keyed(key, "uuid_ptr")),
 		Uint16:      lib.NewBaseSort[M](keyed(key, "uint_16")),
 		Uint16Ptr:   lib.NewBaseSort[M](keyed(key, "uint_16_ptr")),
 		Uint32:      lib.NewBaseSort[M](keyed(key, "uint_32")),
@@ -70,12 +82,32 @@ type allFieldTypes[M any] struct {
 	Float32     *lib.BaseSort[M]
 	Float64     *lib.BaseSort[M]
 	Rune        *lib.BaseSort[M]
+	Bool        *lib.BaseSort[M]
+	BoolPtr     *lib.BaseSort[M]
 	Time        *lib.BaseSort[M]
 	TimePtr     *lib.BaseSort[M]
 	TimeNil     *lib.BaseSort[M]
 	Duration    *lib.BaseSort[M]
 	DurationPtr *lib.BaseSort[M]
 	DurationNil *lib.BaseSort[M]
+	UUID        *lib.BaseSort[M]
+	UUIDPtr     *lib.BaseSort[M]
+	UUIDNil     *lib.BaseSort[M]
+	URL         *lib.BaseSort[M]
+	URLPtr      *lib.BaseSort[M]
+	URLNil      *lib.BaseSort[M]
+	Role        *lib.BaseSort[M]
+	EnumPtr     *lib.BaseSort[M]
+	Byte        *lib.BaseSort[M]
+	BytePtr     *lib.BaseSort[M]
+}
+
+func (n allFieldTypes[M]) Login() login[M] {
+	return newLogin[M](keyed(n.key, "login"))
+}
+
+func (n allFieldTypes[M]) StructPtr() someStruct[M] {
+	return newSomeStruct[M](keyed(n.key, "struct_ptr"))
 }
 
 func (n allFieldTypes[M]) MainGroup() group[M] {

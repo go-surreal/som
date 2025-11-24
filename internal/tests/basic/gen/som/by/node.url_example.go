@@ -10,12 +10,16 @@ var URLExample = newURLExample[model.URLExample]("")
 
 func newURLExample[M any](key string) urlexample[M] {
 	return urlexample[M]{
-		ID:  lib.NewBaseSort[M](keyed(key, "id")),
-		key: key,
+		ID:           lib.NewBaseSort[M](keyed(key, "id")),
+		SomeOtherURL: lib.NewBaseSort[M](keyed(key, "some_other_url")),
+		SomeURL:      lib.NewBaseSort[M](keyed(key, "some_url")),
+		key:          key,
 	}
 }
 
 type urlexample[M any] struct {
-	key string
-	ID  *lib.BaseSort[M]
+	key          string
+	ID           *lib.BaseSort[M]
+	SomeURL      *lib.BaseSort[M]
+	SomeOtherURL *lib.BaseSort[M]
 }
