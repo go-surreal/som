@@ -15,9 +15,10 @@ type input struct {
 	objects       []*field.DatabaseObject
 }
 
-func newInput(source *parser.Output) (*input, error) {
+func newInput(source *parser.Output, outPkg string) (*input, error) {
 	buildConf := &field.BuildConfig{
 		SourcePkg:      source.PkgPath,
+		TargetPkg:      outPkg,
 		ToDatabaseName: strcase.ToSnake, // TODO
 	}
 

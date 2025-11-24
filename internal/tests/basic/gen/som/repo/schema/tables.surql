@@ -75,6 +75,10 @@ DEFINE FIELD url ON TABLE all_field_types TYPE string ASSERT $value == "" OR str
 DEFINE FIELD url_ptr ON TABLE all_field_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
 DEFINE FIELD url_nil ON TABLE all_field_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
 DEFINE FIELD url_slice ON TABLE all_field_types TYPE option<array<string>>;
+DEFINE FIELD email ON TABLE all_field_types TYPE string ASSERT $value == "" OR string::is::email($value);
+DEFINE FIELD email_ptr ON TABLE all_field_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is::email($value);
+DEFINE FIELD email_nil ON TABLE all_field_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is::email($value);
+DEFINE FIELD email_slice ON TABLE all_field_types TYPE option<array<string>>;
 DEFINE FIELD role ON TABLE all_field_types TYPE "" | "admin" | "user";
 DEFINE FIELD enum_ptr ON TABLE all_field_types TYPE option<"" | "admin" | "user">;
 DEFINE FIELD roles ON TABLE all_field_types TYPE option<array<"" | "admin" | "user">>;
