@@ -38,7 +38,7 @@ func TestQuery(t *testing.T) {
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM all_field_types WHERE (->group_member[WHERE (created_at < $A)]->group[WHERE (id = $B)] "+
+		"SELECT * OMIT login.password, login.password_ptr FROM all_field_types WHERE (->group_member[WHERE (created_at < $A)]->group[WHERE (id = $B)] "+
 			"AND duration::days(duration) < $C)",
 		query.Describe(),
 	)
@@ -50,7 +50,7 @@ func TestQuery(t *testing.T) {
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM all_field_types WHERE "+
+		"SELECT * OMIT login.password, login.password_ptr FROM all_field_types WHERE "+
 			"(encoding::base64::encode(encoding::base64::decode(string_ptr)) "+
 			"= encoding::base64::encode(encoding::base64::decode(string)))",
 		query.Describe(),

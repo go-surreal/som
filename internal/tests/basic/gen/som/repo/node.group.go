@@ -27,6 +27,7 @@ func (c *ClientImpl) GroupRepo() GroupRepo {
 	return &group{repo: &repo[model.Group, conv.Group]{
 		db:       c.db,
 		name:     "group",
+		omit:     nil,
 		convTo:   conv.ToGroupPtr,
 		convFrom: conv.FromGroupPtr}}
 }

@@ -12,6 +12,6 @@ func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse, co
 		convFrom: conv.FromFieldsLikeDBResponsePtr,
 		convTo:   conv.ToFieldsLikeDBResponsePtr,
 		db:       db,
-		query:    lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
+		query:    lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response", nil),
 	}}
 }

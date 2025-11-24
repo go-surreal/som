@@ -18,7 +18,9 @@ func (c *login) MarshalCBOR() ([]byte, error) {
 	data := make(map[string]any, 3)
 
 	data["username"] = c.Username
-	data["password"] = c.Password
+	if c.Password != "" {
+		data["password"] = c.Password
+	}
 	if c.PasswordPtr != nil {
 		data["password_ptr"] = c.PasswordPtr
 	}

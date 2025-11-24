@@ -16,13 +16,14 @@ type repo[N any, C any] struct {
 	db Database
 
 	name     string
+	omit     []string
 	convFrom func(*N) *C
 	convTo   func(*C) *N
 }
 
 func (r *repo[N, C]) create(ctx context.Context, node *N) error {
 	data := r.convFrom(node)
-	raw, err := r.db.Create(ctx, newULID(r.name), data) // TODO: make ID type configurable
+	raw, err := r.db.Create(ctx, newULID(r.name), data, r.omit) // TODO: make ID type configurable
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -37,7 +38,7 @@ func (r *repo[N, C]) create(ctx context.Context, node *N) error {
 
 func (r *repo[N, C]) createWithID(ctx context.Context, id string, node *N) error {
 	data := r.convFrom(node)
-	res, err := r.db.Create(ctx, models.NewRecordID(r.name, id), data)
+	res, err := r.db.Create(ctx, models.NewRecordID(r.name, id), data, r.omit)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -51,7 +52,7 @@ func (r *repo[N, C]) createWithID(ctx context.Context, id string, node *N) error
 }
 
 func (r *repo[N, C]) read(ctx context.Context, id *ID) (*N, bool, error) {
-	res, err := r.db.Select(ctx, id)
+	res, err := r.db.Select(ctx, id, r.omit)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
@@ -65,7 +66,7 @@ func (r *repo[N, C]) read(ctx context.Context, id *ID) (*N, bool, error) {
 
 func (r *repo[N, C]) update(ctx context.Context, id *ID, node *N) error {
 	data := r.convFrom(node)
-	res, err := r.db.Update(ctx, id, data)
+	res, err := r.db.Update(ctx, id, data, r.omit)
 	if err != nil {
 		return fmt.Errorf("could not update entity: %w", err)
 	}

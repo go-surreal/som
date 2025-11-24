@@ -27,7 +27,12 @@ func (f *Password) typeConv(ctx Context) jen.Code {
 }
 
 func (f *Password) TypeDatabase() string {
-	return f.optionWrap("string")
+	// Password fields are always optional in the database schema.
+	// This is necessary because:
+	// - CREATE: empty passwords are not sent (to allow NONE)
+	// - UPDATE with MERGE: empty passwords are not sent (preserves existing hash)
+	// The Go type (pointer vs non-pointer) controls application-level requirements.
+	return "option<string>"
 }
 
 func (f *Password) cryptoGenerateFunc() string {
@@ -51,7 +56,7 @@ func (f *Password) SchemaStatements(table, prefix string) []string {
 
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s VALUE %s;",
+			"DEFINE FIELD %s ON TABLE %s TYPE %s VALUE %s PERMISSIONS FOR SELECT NONE;",
 			prefix+f.NameDatabase(), table, f.TypeDatabase(), valueClause,
 		),
 	}
@@ -102,12 +107,19 @@ func (f *Password) fieldDef(ctx Context) jen.Code {
 }
 
 func (f *Password) cborMarshal(_ Context) jen.Code {
+	// For pointer passwords: only serialize if not nil
+	// For non-pointer passwords: only serialize if non-empty.
+	// This prevents overwriting hashed passwords with empty strings
+	// when models are read with OMIT and then updated.
+	// With MERGE updates, missing fields are preserved in the database.
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
 		)
 	}
-	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+	return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Lit("")).Block(
+		jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+	)
 }
 
 func (f *Password) cborUnmarshal(ctx Context) jen.Code {

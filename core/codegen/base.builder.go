@@ -115,7 +115,7 @@ func (b *build) buildSchemaFile() error {
 	statements := []string{string(embed.CodegenComment), ""}
 
 	for _, node := range b.input.nodes {
-		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
+		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL;", node.NameDatabase())
 		statements = append(statements, statement)
 
 		for _, f := range node.GetFields() {
@@ -127,7 +127,7 @@ func (b *build) buildSchemaFile() error {
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
+			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED;",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
 			edge.Out.NameDatabase(), // TODO: can be OR'ed with "|"
@@ -201,6 +201,21 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
 	)
 
+	// Collect password field paths for OMIT clause
+	passwordPaths := field.CollectPasswordPaths(node.Fields, "")
+
+	// Build the omit slice literal
+	var omitArg jen.Code
+	if len(passwordPaths) > 0 {
+		var omitItems []jen.Code
+		for _, p := range passwordPaths {
+			omitItems = append(omitItems, jen.Lit(p))
+		}
+		omitArg = jen.Index().String().Values(omitItems...)
+	} else {
+		omitArg = jen.Nil()
+	}
+
 	f.Line().
 		Add(comment(`
 ` + node.NameGo() + `Repo returns a new repository instance for the ` + node.NameGo() + ` model.
@@ -223,6 +238,10 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							jen.Add(
 								jen.Line(),
 								jen.Id("name").Op(":").Lit(node.NameDatabase()),
+							),
+							jen.Add(
+								jen.Line(),
+								jen.Id("omit").Op(":").Add(omitArg),
 							),
 							jen.Add(
 								jen.Line(),

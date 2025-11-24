@@ -12,6 +12,6 @@ func NewAllFieldTypes(db Database) Builder[model.AllFieldTypes, conv.AllFieldTyp
 		convFrom: conv.FromAllFieldTypesPtr,
 		convTo:   conv.ToAllFieldTypesPtr,
 		db:       db,
-		query:    lib.NewQuery[model.AllFieldTypes]("all_field_types"),
+		query:    lib.NewQuery[model.AllFieldTypes]("all_field_types", []string{"login.password", "login.password_ptr"}),
 	}}
 }

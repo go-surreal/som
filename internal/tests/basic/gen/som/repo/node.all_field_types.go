@@ -27,6 +27,7 @@ func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
 	return &allFieldTypes{repo: &repo[model.AllFieldTypes, conv.AllFieldTypes]{
 		db:       c.db,
 		name:     "all_field_types",
+		omit:     []string{"login.password", "login.password_ptr"},
 		convTo:   conv.ToAllFieldTypesPtr,
 		convFrom: conv.FromAllFieldTypesPtr}}
 }
