@@ -45,7 +45,7 @@ go mod tidy
 1. Check for syntax errors in your model files
 2. Ensure all imports are valid
 3. Try with a minimal model to isolate the issue
-4. Check for unsupported types (see [Supported Types](../04_data_types/01_primitives.md))
+4. Check for unsupported types (see [Supported Types](../data_types/01_primitives.md))
 5. Report the issue on GitHub with reproduction steps
 
 ### Edge missing In/Out fields

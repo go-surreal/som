@@ -47,7 +47,7 @@ users, _ := client.UserRepo().Query().
 
 ## Project Status
 
-SOM is currently in **early development** and considered experimental. While core functionality works, the API may change between versions. See the [FAQ](../11_appendix/01_faq.md) for details on production readiness.
+SOM is currently in **early development** and considered experimental. While core functionality works, the API may change between versions. See the [FAQ](../appendix/01_faq.md) for details on production readiness.
 
 ## Dependencies
 

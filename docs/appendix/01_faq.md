@@ -166,4 +166,4 @@ for update := range updates {
 
 - Check [GitHub Issues](https://github.com/go-surreal/som/issues)
 - Open a [GitHub Discussion](https://github.com/go-surreal/som/discussions)
-- Read the [API Reference](../08_api_reference/README.md)
+- Read the [API Reference](../api_reference/README.md)
