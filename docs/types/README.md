@@ -9,6 +9,7 @@ This section provides comprehensive documentation for all field types supported 
 | [String](string.md) | `string` | `string` | Direct | Yes | 50+ |
 | [Numeric](numeric.md) | `int`, `float64`, etc. | `int` / `float` | Direct | Yes | 20+ |
 | [Bool](bool.md) | `bool` | `bool` | Direct | Yes | 4 |
+| [Byte](byte.md) | `byte` / `[]byte` | `int` / `bytes` | Direct | Yes/No | 8+ |
 | [Time](time.md) | `time.Time` | `datetime` | Tag 12 | Yes | 25+ |
 | [Duration](duration.md) | `time.Duration` | `duration` | Tag 14 | Yes | 15+ |
 | [UUID](uuid.md) | `uuid.UUID` | `uuid` | Tag 37 | Yes | 8 |
@@ -28,6 +29,7 @@ Basic Go types with direct database mapping:
 - **[String](string.md)** - Text data with extensive string operations
 - **[Numeric](numeric.md)** - Integers and floating-point numbers
 - **[Bool](bool.md)** - Boolean true/false values
+- **[Byte](byte.md)** - Single bytes and binary data
 
 ### Time Types
 

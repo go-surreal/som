@@ -92,22 +92,18 @@ where.User.PrimaryEmail.Host().Equal("example.com")
 where.User.PrimaryEmail.Host().EndsWith(".edu")
 ```
 
-### String Operations
+### String Operations on Components
 
-Email inherits string filter operations:
+After extracting email components, you can use string operations:
 
 ```go
-// Contains
-where.User.PrimaryEmail.Contains("@company")
+// String operations on user part
+where.User.PrimaryEmail.User().Lowercase().Equal("alice")
+where.User.PrimaryEmail.User().StartsWith("support")
 
-// Starts with
-where.User.PrimaryEmail.StartsWith("support")
-
-// Ends with
-where.User.PrimaryEmail.EndsWith("@gmail.com")
-
-// Lowercase comparison
-where.User.PrimaryEmail.Lowercase().Equal("alice@example.com")
+// String operations on host part
+where.User.PrimaryEmail.Host().Lowercase().Equal("example.com")
+where.User.PrimaryEmail.Host().EndsWith(".edu")
 ```
 
 ### Nil Operations (Pointer Types Only)
@@ -148,7 +144,7 @@ query.Order(
 
 ## Method Chaining
 
-Email filters support component extraction and string operations:
+Email filters support component extraction, which returns String filters for further chaining:
 
 ```go
 // Find company emails
@@ -157,8 +153,11 @@ where.User.PrimaryEmail.Host().Equal("company.com")
 // Find admin users
 where.User.PrimaryEmail.User().StartsWith("admin")
 
-// Case-insensitive domain match
+// Case-insensitive domain match (Host() returns String filter)
 where.User.PrimaryEmail.Host().Lowercase().Equal("company.com")
+
+// Complex user filtering (User() returns String filter)
+where.User.PrimaryEmail.User().Lowercase().Contains("support")
 ```
 
 ## Common Patterns
@@ -264,24 +263,24 @@ func main() {
 
 ## Filter Reference Table
 
+### Base Operations
+
 | Operation | Description | Returns |
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
 | `In(vals...)` | Value in set | Bool filter |
 | `NotIn(vals...)` | Value not in set | Bool filter |
-| `LessThan(val)` | Lexicographic < | Bool filter |
-| `LessThanEqual(val)` | Lexicographic <= | Bool filter |
-| `GreaterThan(val)` | Lexicographic > | Bool filter |
-| `GreaterThanEqual(val)` | Lexicographic >= | Bool filter |
-| `User()` | Extract user part | String filter |
-| `Host()` | Extract host part | String filter |
-| `Contains(sub)` | Contains substring | Bool filter |
-| `StartsWith(prefix)` | Starts with | Bool filter |
-| `EndsWith(suffix)` | Ends with | Bool filter |
-| `Lowercase()` | Convert to lowercase | Email filter |
-| `Uppercase()` | Convert to uppercase | Email filter |
 | `Zero(bool)` | Check empty | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr) | Bool filter |
-| `IsNotNil()` | Not null (ptr) | Bool filter |
+| `IsNil()` | Is null (ptr only) | Bool filter |
+| `IsNotNil()` | Not null (ptr only) | Bool filter |
+
+### Component Extraction
+
+| Operation | Description | Returns |
+|-----------|-------------|---------|
+| `User()` | Extract user part (before @) | String filter |
+| `Host()` | Extract host part (after @) | String filter |
+
+After extraction, all [String filter operations](string.md) are available on the component.
