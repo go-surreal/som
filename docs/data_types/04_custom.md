@@ -4,7 +4,7 @@ SOM provides custom types for common patterns that aren't covered by Go's standa
 
 ## som.Enum
 
-Enums provide type-safe enumerated values. See [Enums](../03_models/04_enums.md) for detailed documentation.
+Enums provide type-safe enumerated values. See [Enums](../models/04_enums.md) for detailed documentation.
 
 ```go
 type Status string

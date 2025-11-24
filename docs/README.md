@@ -17,10 +17,10 @@ SOM is an ORM and query builder for [SurrealDB](https://surrealdb.com/) with bui
 
 ## Quick Links
 
-- [Installation](02_getting_started/01_installation.md)
-- [Quick Start](02_getting_started/02_quick_start.md)
-- [API Reference](08_api_reference/README.md)
+- [Installation](getting_started/01_installation.md)
+- [Quick Start](getting_started/02_quick_start.md)
+- [API Reference](api_reference/README.md)
 
 ## Status
 
-This library is currently considered **experimental** and under active development. See the [FAQ](11_appendix/01_faq.md) for more details.
+This library is currently considered **experimental** and under active development. See the [FAQ](appendix/01_faq.md) for more details.

@@ -77,7 +77,7 @@ You cannot manually set these values - they're controlled by the database.
 
 ## Field Types
 
-Nodes support all [Data Types](../04_data_types/README.md):
+Nodes support all [Data Types](../data_types/README.md):
 
 ```go
 type AllFields struct {

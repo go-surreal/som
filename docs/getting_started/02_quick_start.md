@@ -225,6 +225,6 @@ func main() {
 ## Next Steps
 
 - [Core Concepts](03_concepts.md) - Understand Nodes, Edges, and Repositories
-- [Models](../03_models/README.md) - Define complex data models
-- [Querying](../06_querying/README.md) - Master the query builder
-- [Relationships](../07_relationships/README.md) - Work with graph edges
+- [Models](../models/README.md) - Define complex data models
+- [Querying](../querying/README.md) - Master the query builder
+- [Relationships](../relationships/README.md) - Work with graph edges

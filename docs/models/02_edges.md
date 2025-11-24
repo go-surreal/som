@@ -263,4 +263,4 @@ type Likes struct {
 }
 ```
 
-See [Relationships](../07_relationships/README.md) for more advanced graph queries and traversal patterns.
+See [Relationships](../relationships/README.md) for more advanced graph queries and traversal patterns.
