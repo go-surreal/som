@@ -16,30 +16,17 @@ tasks:
     aliases: [ r ]
     desc: "Run the somgen cli tool."
     cmds:
-      - cd ./cmd/somgen && go run main.go -- {{.CLI_ARGS}}
+      - go run main.go -- {{.CLI_ARGS}}
 
   gen:
     aliases: [ g ]
     desc: "Generate code for the example codebase."
     cmds:
-      - cd examples/testing && go generate gen.go
-      - cd examples/basic && go generate gen.go
-      - cd examples/movie && go generate gen.go
+      - cd internal/tests/basic && go generate gen.go
     sources:
-      - examples/testing/model/**/*
-      - examples/basic/model/**/*
-      - examples/movie/model/**/*
+      - internal/tests/basic/model/**/*
     generates:
-      - examples/testing/gen/som/**/*
-      - examples/basic/gen/som/**/*
-      - examples/movie/gen/som/**/*
-
-  example:
-    aliases: [ e ]
-    desc: "Run the test code for the example codebase."
-    deps: [ gen ]
-    cmds:
-      - cd ./test && go run main.go
+      - internal/tests/basic/gen/som/**/*
 
   lint:
     aliases: [ l ]
@@ -52,10 +39,16 @@ tasks:
     desc: "Execute all go tests."
     deps: [ gen ]
     cmds:
-      - go test ./...
-      - cd examples/testing && go test ./...
-      - cd examples/basic && go test ./...
-      - cd examples/movie && go test ./...
+      - go test -v ./...
+      - cd internal/tests/basic && go test -v ./...
+
+  test-clean:
+    aliases: [ tc ]
+    desc: "Execute all go tests without cache."
+    deps: [ gen ]
+    cmds:
+      - go test -count=1 ./...
+      - cd internal/tests/basic && go test -v -count=1 ./...
 
   benchmark:
     aliases: [ b ]

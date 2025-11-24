@@ -2,227 +2,207 @@ name: PR
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, ready_for_review, synchronize, reopened]
     paths:
       - ".github/workflows/pull_request.yml"
       - "cmd/**/*"
       - "core/**/*"
-      - "examples/**/*"
-      - ".envrc"
+      - "internal/tests/**/*"
       - ".golangci.yml"
-      - ".tool-versions"
+      - "mise.toml"
       - "go.mod"
       - "go.sum"
       - "go.work"
       - "go.work.sum"
       - "som.go"
 
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
+
 jobs:
 
   sync:
     name: Sync
+    #if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    env:
-      GOPRIVATE: github.com/go-surreal/sdbc
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+    permissions: "write-all"
+    timeout-minutes: 1
     steps:
 
-      - name: Setup Access Token
-        run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
-
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: ASDF Environment
-        id: asdf
-        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+        uses: actions/checkout@v5
         with:
-          path_to_tool_versions: "./.tool-versions"
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
-      - name: Setup Go
-        uses: actions/setup-go@v4
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
         with:
-          go-version: ${{ steps.asdf.outputs.golang_version }}
-          check-latest: true
-
-      - name: Check Go Version
-        run: go version
+          install: true
+          cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
+          key: go-modules-v1
 
       - name: Sync
         working-directory: .
         run: go mod download
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: EndBug/add-and-commit@v9
         with:
-          commit_message: "Apply dependency sync"
-          branch: ${{ github.head_ref }}
+          message: "Apply dependency sync"
+          default_author: github_actions
+          pull: "--rebase --autostash"
+          push: true
 
   lint:
     name: Lint
+    #if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    env:
-      GOPRIVATE: github.com/go-surreal/sdbc
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+    permissions: "write-all"
+    timeout-minutes: 5
     steps:
 
-      - name: Setup Access Token
-        run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
-
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: ASDF Environment
-        id: asdf
-        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+        uses: actions/checkout@v5
         with:
-          path_to_tool_versions: "./.tool-versions"
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
-      - name: Setup Go
-        uses: actions/setup-go@v4
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
         with:
-          go-version: ${{ steps.asdf.outputs.golang_version }}
-          check-latest: true
-
-      - name: Check Go Version
-        run: go version
+          install: true
+          cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
+          key: go-modules-v1
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: "v${{ steps.asdf.outputs.golangci-lint_version }}"
+          install-mode: "none"
           working-directory: .
-          args: --path-prefix=. --go ${{ steps.asdf.outputs.golang_version }} --timeout 5m
+          args: --path-prefix=. --new=false --whole-files --timeout 5m
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v4
-        if: always()
+        uses: EndBug/add-and-commit@v9
         with:
-          commit_message: "Apply golangci-lint auto-fix changes"
-          branch: ${{ github.head_ref }}
+          message: "Apply golangci-lint auto-fix changes"
+          default_author: github_actions
+          pull: "--rebase --autostash"
+          push: true
 
   build:
     name: Build
+    #if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    env:
-      GOPRIVATE: github.com/go-surreal/sdbc
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+    timeout-minutes: 5
     steps:
 
-      - name: Setup Access Token
-        run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
-
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: ASDF Environment
-        id: asdf
-        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
         with:
-          path_to_tool_versions: "./.tool-versions"
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ steps.asdf.outputs.golang_version }}
-          check-latest: true
-
-      - name: Check Go Version
-        run: go version
+          install: true
+          cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
+          key: go-modules-v1
+
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-v1
 
       - name: Build
-        working-directory: cmd/somgen
+        working-directory: .
         run: go build -v ./...
 
-  test:
-    name: Test
+  test-core:
+    name: Test Core
+    #if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    env:
-      GOPRIVATE: github.com/go-surreal/sdbc
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+    timeout-minutes: 5
     steps:
 
-      - name: Setup Access Token
-        run: git config --global url.https://$GH_ACCESS_TOKEN@github.com/.insteadOf https://github.com/
-
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: ASDF Environment
-        id: asdf
-        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
         with:
-          path_to_tool_versions: "./.tool-versions"
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ steps.asdf.outputs.golang_version }}
-          check-latest: true
-
-      - name: Check Go Version
-        run: go version
+          install: true
+          cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
+          key: go-modules-v1
 
-      - name: Test Library
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-v1
+
+      - name: Test
         working-directory: .
-        run: go test -v ./...
+        run: |
+          go test \
+          -trimpath -ldflags="-s -w" -buildvcs=false -short \
+          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
 
-      - name: Test Example Testing
-        working-directory: examples/testing
-        run: go test -v ./...
+  test-basic:
+    name: Test Basic
+    #if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
 
-      - name: Test Example Basic
-        working-directory: examples/basic
-        run: go test -v ./...
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Test Example Movie
-        working-directory: examples/movie
-        run: go test -v ./...
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
+        with:
+          working_directory: internal/tests/basic
+          install: true
+          cache: true
+
+      - name: Cache Go Modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: go-modules-tests-v1
+
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-tests-v1
+
+      - name: Test
+        working-directory: internal/tests/basic
+        env:
+          GOTOOLCHAIN: local
+          GOWORK: "off"
+        run: |
+          go test \
+          -trimpath -ldflags="-s -w" -buildvcs=false -short \
+          -failfast -parallel 10 -count=1 -race -vet=off -v ./...

@@ -57,21 +57,44 @@ type NumberType int32
 
 const (
 	NumberInt NumberType = iota
+	NumberInt8
+	NumberInt16
 	NumberInt32
 	NumberInt64
+	//NumberUint
+	NumberUint8
+	NumberUint16
+	NumberUint32
+	//NumberUint64
+	//NumberUintptr
 	NumberFloat32
 	NumberFloat64
+	NumberRune
 )
 
 type FieldBool struct {
 	*fieldAtomic
 }
 
-type FieldTime struct {
+type FieldByte struct {
 	*fieldAtomic
 }
 
+type FieldDuration struct {
+	*fieldAtomic
+}
+
+type FieldTime struct {
+	*fieldAtomic
+	IsCreatedAt bool
+	IsUpdatedAt bool
+}
+
 type FieldUUID struct {
+	*fieldAtomic
+}
+
+type FieldURL struct {
 	*fieldAtomic
 }
 

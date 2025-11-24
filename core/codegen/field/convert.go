@@ -1,7 +1,6 @@
 package field
 
 import (
-	"errors"
 	"fmt"
 	"github.com/go-surreal/som/core/parser"
 )
@@ -24,7 +23,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		for _, f := range node.Fields {
 			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
-				return nil, fmt.Errorf("could not convert field: %v", f)
+				return nil, fmt.Errorf("could not convert field a: %v", f)
 			}
 			dbNode.Fields = append(dbNode.Fields, dbField)
 		}
@@ -53,7 +52,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		for _, f := range edge.Fields {
 			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
-				return nil, fmt.Errorf("could not convert field: %v", f)
+				return nil, fmt.Errorf("could not convert field b: %v", f)
 			}
 			dbEdge.Fields = append(dbEdge.Fields, dbField)
 		}
@@ -69,7 +68,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		for _, f := range str.Fields {
 			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
-				return nil, errors.New("could not convert field")
+				return nil, fmt.Errorf("could not convert field c: %v", f)
 			}
 			dbObject.Fields = append(dbObject.Fields, dbField)
 		}
@@ -117,6 +116,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldByte:
+		{
+			return &Byte{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldTime:
 		{
 			return &Time{
@@ -125,9 +132,25 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldDuration:
+		{
+			return &Duration{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldUUID:
 		{
 			return &UUID{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldURL:
+		{
+			return &URL{
 				baseField: base,
 				source:    f,
 			}, true
@@ -158,6 +181,10 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 					object = elem
 					break
 				}
+			}
+
+			if object == nil {
+				return nil, false // TODO: anonymous struct type not supported // return error msg!
 			}
 
 			var fields []Field

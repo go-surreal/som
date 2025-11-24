@@ -1,0 +1,19 @@
+# Docker Compose
+
+services:
+
+  surrealdb:
+    image: surrealdb/surrealdb:v2.4.0
+    command: start --allow-funcs --log trace
+    environment:
+      SURREAL_PATH: surrealkv:data/surreal,
+      SURREAL_STRICT: true,
+      SURREAL_USER": root,
+      SURREAL_PASS": root,
+    ports:
+      - "8020:8000"
+    volumes:
+      - type: bind
+        source: ~/.local/share/docker/volumes/som/surrealdb
+        target: /data
+    restart: always

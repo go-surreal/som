@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"os"
+	"github.com/go-surreal/som/core/util/fs"
 	"path"
 )
 
@@ -12,8 +12,8 @@ type builder interface {
 type baseBuilder struct {
 	*input
 
-	// basePath holds the base path for all the generated code.
-	basePath string
+	// fs is the in-memory file system all generated file should be written to.
+	fs *fs.FS
 
 	// basePkg holds the base package path for all the generated code.
 	basePkg string
@@ -22,24 +22,20 @@ type baseBuilder struct {
 	pkgName string
 }
 
-func newBaseBuilder(input *input, basePath, basePkg, pkgName string) *baseBuilder {
+func newBaseBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *baseBuilder {
 	return &baseBuilder{
-		input:    input,
-		basePath: basePath,
-		basePkg:  basePkg,
-		pkgName:  pkgName,
+		input:   input,
+		fs:      fs,
+		basePkg: basePkg,
+		pkgName: pkgName,
 	}
 }
 
+// TODO: rename to pkg()
 func (b *baseBuilder) path() string {
-	return path.Join(b.basePath, b.pkgName)
+	return b.pkgName
 }
 
 func (b *baseBuilder) subPkg(pkg string) string {
 	return path.Join(b.basePkg, pkg)
-}
-
-// createDir creates the directory for the generated files.
-func (b *baseBuilder) createDir() error {
-	return os.MkdirAll(b.path(), os.ModePerm)
 }
