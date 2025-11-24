@@ -10,18 +10,17 @@ Create `model/user.go`:
 package model
 
 import (
-    "time"
     "github.com/go-surreal/som"
 )
 
 type User struct {
     som.Node
+    som.Timestamps  // Adds CreatedAt and UpdatedAt
 
-    Name      string
-    Email     string
-    Age       int
-    IsActive  bool
-    CreatedAt time.Time
+    Name     string
+    Email    string
+    Age      int
+    IsActive bool
 }
 ```
 
@@ -42,11 +41,10 @@ import (
     "context"
     "fmt"
     "log"
-    "time"
 
     "yourproject/gen/som"
+    "yourproject/gen/som/by"
     "yourproject/gen/som/where"
-    "yourproject/gen/som/order"
     "yourproject/model"
 )
 
@@ -67,23 +65,26 @@ func main() {
 
     // CREATE
     user := &model.User{
-        Name:      "Alice",
-        Email:     "alice@example.com",
-        Age:       30,
-        IsActive:  true,
-        CreatedAt: time.Now(),
+        Name:     "Alice",
+        Email:    "alice@example.com",
+        Age:      30,
+        IsActive: true,
     }
 
     err = client.UserRepo().Create(ctx, user)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("Created user with ID: %s\n", user.ID)
+    fmt.Printf("Created user with ID: %s\n", user.ID())
 
     // READ
-    retrieved, err := client.UserRepo().Read(ctx, user.ID)
+    // Note: Read returns (record, exists, error)
+    retrieved, exists, err := client.UserRepo().Read(ctx, user.ID())
     if err != nil {
         log.Fatal(err)
+    }
+    if !exists {
+        log.Fatal("User not found")
     }
     fmt.Printf("Retrieved user: %s\n", retrieved.Name)
 
@@ -98,8 +99,8 @@ func main() {
 
     // QUERY
     activeUsers, err := client.UserRepo().Query().
-        Filter(where.User.IsActive.Equal(true)).
-        OrderBy(order.User.Name.Asc()).
+        Filter(where.User.IsActive.IsTrue()).
+        Order(by.User.Name.Asc()).
         All(ctx)
     if err != nil {
         log.Fatal(err)
@@ -107,7 +108,7 @@ func main() {
     fmt.Printf("Found %d active users\n", len(activeUsers))
 
     // DELETE
-    err = client.UserRepo().Delete(ctx, user.ID)
+    err = client.UserRepo().Delete(ctx, retrieved)
     if err != nil {
         log.Fatal(err)
     }
@@ -119,7 +120,7 @@ func main() {
 
 1. Start SurrealDB:
    ```bash
-   surreal start --user root --pass root
+   surreal start --user root --pass root memory
    ```
 
 2. Run the application:
@@ -130,9 +131,86 @@ func main() {
 ## Expected Output
 
 ```
-Created user with ID: user:abc123
+Created user with ID: user:01HQ...
 Retrieved user: Alice
 Updated user
 Found 1 active users
 Deleted user
+```
+
+## Key Points
+
+### Create
+
+- Pass a pointer to your model
+- The `ID()` method is populated after successful creation
+- `CreatedAt` and `UpdatedAt` are set automatically (with `som.Timestamps`)
+
+### Read
+
+- Returns three values: `(record, exists, error)`
+- Check `exists` before using the record
+- Returns `nil, false, nil` if record doesn't exist (not an error)
+
+### Update
+
+- The record must have a valid ID from a previous Create or Read
+- `UpdatedAt` is updated automatically (with `som.Timestamps`)
+
+### Delete
+
+- Pass the record (not just the ID)
+- The record must have a valid ID
+
+### Query
+
+- Use the fluent builder pattern
+- Filter with type-safe conditions from `where` package
+- Order with helpers from `by` package
+- Execute with `All()`, `First()`, `One()`, `Count()`, or `Exists()`
+
+## Error Handling Pattern
+
+```go
+user, exists, err := client.UserRepo().Read(ctx, id)
+
+// Always check error first
+if err != nil {
+    return fmt.Errorf("database error: %w", err)
+}
+
+// Then check existence
+if !exists {
+    return ErrUserNotFound
+}
+
+// Now safely use the record
+fmt.Println(user.Name)
+```
+
+## Using CreateWithID
+
+For custom IDs instead of auto-generated ULIDs:
+
+```go
+user := &model.User{
+    Name:  "Bob",
+    Email: "bob@example.com",
+}
+
+// Creates user:bob instead of user:01HQ...
+err := client.UserRepo().CreateWithID(ctx, "bob", user)
+```
+
+## Refreshing Records
+
+Reload a record to get the latest data:
+
+```go
+// After potential updates from other sources
+err := client.UserRepo().Refresh(ctx, user)
+if err != nil {
+    log.Fatal(err)
+}
+// user now has current database values
 ```

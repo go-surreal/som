@@ -1,80 +1,180 @@
 # Query Builder API
 
-The query builder provides a fluent interface for constructing database queries.
+The query builder provides a fluent interface for constructing database queries. It's generated for each model and provides compile-time type safety.
 
-## Method Reference
+## Getting a Query Builder
+
+Access through the repository:
+
+```go
+query := client.UserRepo().Query()
+```
+
+## Builder Methods (Chainable)
+
+All builder methods return the builder for chaining.
 
 ### Filter
 
-Add conditions to narrow results:
+Add WHERE conditions. Multiple filters are ANDed together:
 
 ```go
 Query().Filter(conditions...)
 ```
 
-Multiple conditions are combined with AND.
+```go
+query.Filter(
+    where.User.IsActive.IsTrue(),
+    where.User.Age.GreaterThan(18),
+)
+```
 
-### OrderBy
+### Order
 
-Sort results:
+Sort results by one or more fields:
 
 ```go
-Query().OrderBy(order.Model.Field.Asc())
-Query().OrderBy(order.Model.Field.Desc())
+Query().Order(sorts...)
+```
+
+```go
+query.Order(by.User.Name.Asc())
+query.Order(by.User.CreatedAt.Desc(), by.User.Name.Asc())
+```
+
+### OrderRandom
+
+Sort results randomly:
+
+```go
+Query().OrderRandom()
 ```
 
 ### Limit
 
-Restrict result count:
+Restrict maximum number of results:
 
 ```go
-Query().Limit(10)
+Query().Limit(n int)
 ```
 
 ### Offset
 
-Skip results for pagination:
+Skip first n results (for pagination):
 
 ```go
-Query().Offset(20)
+Query().Offset(n int)
+```
+
+### Fetch
+
+Eager load related records:
+
+```go
+Query().Fetch(relations...)
+```
+
+```go
+query.Fetch(with.User.Groups...)
+```
+
+### Timeout
+
+Set query execution timeout:
+
+```go
+Query().Timeout(d time.Duration)
+```
+
+### Parallel
+
+Enable parallel query execution:
+
+```go
+Query().Parallel(enabled bool)
 ```
 
 ## Execution Methods
 
+These methods execute the query and return results.
+
 ### All
 
-Get all matching results:
+Get all matching records:
 
 ```go
-results, err := Query().All(ctx)
-// Returns []*Model, error
+func (b Builder) All(ctx context.Context) ([]*Model, error)
+```
+
+```go
+users, err := client.UserRepo().Query().
+    Filter(where.User.IsActive.IsTrue()).
+    All(ctx)
 ```
 
 ### First
 
-Get the first matching result:
+Get the first matching record:
 
 ```go
-result, err := Query().First(ctx)
-// Returns *Model, error
+func (b Builder) First(ctx context.Context) (*Model, bool, error)
+```
+
+Returns:
+- `*Model` - The record (or nil if not found)
+- `bool` - Whether a record was found
+- `error` - Any error that occurred
+
+```go
+user, exists, err := client.UserRepo().Query().
+    Filter(where.User.Email.Equal("john@example.com")).
+    First(ctx)
+
+if exists {
+    fmt.Println(user.Name)
+}
+```
+
+### One
+
+Get exactly one matching record. Errors if multiple exist:
+
+```go
+func (b Builder) One(ctx context.Context) (*Model, bool, error)
+```
+
+```go
+user, exists, err := client.UserRepo().Query().
+    Filter(where.User.Email.Equal("john@example.com")).
+    One(ctx)
 ```
 
 ### Count
 
-Get the count of matching results:
+Get count of matching records:
 
 ```go
-count, err := Query().Count(ctx)
-// Returns int, error
+func (b Builder) Count(ctx context.Context) (int, error)
+```
+
+```go
+count, err := client.UserRepo().Query().
+    Filter(where.User.IsActive.IsTrue()).
+    Count(ctx)
 ```
 
 ### Exists
 
-Check if any results exist:
+Check if any matching records exist:
 
 ```go
-exists, err := Query().Exists(ctx)
-// Returns bool, error
+func (b Builder) Exists(ctx context.Context) (bool, error)
+```
+
+```go
+exists, err := client.UserRepo().Query().
+    Filter(where.User.Email.Equal("john@example.com")).
+    Exists(ctx)
 ```
 
 ### Live
@@ -82,36 +182,138 @@ exists, err := Query().Exists(ctx)
 Subscribe to real-time updates:
 
 ```go
-channel, err := Query().Live(ctx)
-// Returns <-chan LiveResult, error
+func (b Builder) Live(ctx context.Context) (<-chan LiveResult[Model], error)
 ```
 
-## Chaining Example
+```go
+updates, err := client.UserRepo().Query().
+    Filter(where.User.IsActive.IsTrue()).
+    Live(ctx)
+
+for update := range updates {
+    if update.Error != nil {
+        log.Println("Error:", update.Error)
+        continue
+    }
+    fmt.Printf("Action: %s, Data: %+v\n", update.Action, update.Data)
+}
+```
+
+## Async Methods
+
+Every execution method has an async variant that returns immediately:
+
+| Sync | Async |
+|------|-------|
+| `All(ctx)` | `AllAsync(ctx)` |
+| `First(ctx)` | `FirstAsync(ctx)` |
+| `One(ctx)` | `OneAsync(ctx)` |
+| `Count(ctx)` | `CountAsync(ctx)` |
+| `Exists(ctx)` | `ExistsAsync(ctx)` |
+| `Live(ctx)` | `LiveAsync(ctx)` |
+
+### Using Async Methods
 
 ```go
+// Start query in background
+result := client.UserRepo().Query().
+    Filter(where.User.IsActive.IsTrue()).
+    AllAsync(ctx)
+
+// Do other work...
+doOtherWork()
+
+// Get results when needed
+users := <-result.Val()
+err := <-result.Err()
+```
+
+### Async Result Type
+
+```go
+type asyncResult[T any] struct {
+    val chan T
+    err chan error
+}
+
+func (r *asyncResult[T]) Val() <-chan T
+func (r *asyncResult[T]) Err() <-chan error
+```
+
+## LiveResult Type
+
+```go
+type LiveResult[M any] struct {
+    Action string  // "CREATE", "UPDATE", or "DELETE"
+    Data   *M      // The affected record
+    Error  error   // Any error
+}
+```
+
+## Complete Example
+
+```go
+// Complex query with all features
 users, err := client.UserRepo().Query().
+    // Filter conditions
     Filter(
-        where.User.IsActive.Equal(true),
-        where.User.Age.GreaterThan(18),
+        where.User.IsActive.IsTrue(),
+        where.User.Age.GreaterThanOrEqual(18),
+        where.Any(
+            where.User.Role.Equal("admin"),
+            where.User.Role.Equal("moderator"),
+        ),
     ).
-    OrderBy(order.User.Name.Asc()).
-    Limit(10).
+    // Sorting
+    Order(
+        by.User.CreatedAt.Desc(),
+        by.User.Name.Asc(),
+    ).
+    // Pagination
+    Limit(20).
     Offset(0).
+    // Eager loading
+    Fetch(with.User.Posts...).
+    // Execution options
+    Timeout(5 * time.Second).
+    Parallel(true).
+    // Execute
     All(ctx)
 ```
 
-## Filter Operations
+## Pagination Helper
 
-| Operation | Description |
-|-----------|-------------|
-| `Equal(v)` | Equals value |
-| `NotEqual(v)` | Not equals value |
-| `GreaterThan(v)` | Greater than value |
-| `GreaterThanOrEqual(v)` | Greater than or equal |
-| `LessThan(v)` | Less than value |
-| `LessThanOrEqual(v)` | Less than or equal |
-| `Contains(v)` | String contains |
-| `StartsWith(v)` | String starts with |
-| `EndsWith(v)` | String ends with |
-| `IsNull()` | Is null/nil |
-| `IsNotNull()` | Is not null/nil |
+```go
+func GetPage(ctx context.Context, page, pageSize int) ([]*model.User, error) {
+    return client.UserRepo().Query().
+        Filter(where.User.IsActive.IsTrue()).
+        Order(by.User.CreatedAt.Desc()).
+        Limit(pageSize).
+        Offset((page - 1) * pageSize).
+        All(ctx)
+}
+
+// Get total for pagination UI
+func GetTotal(ctx context.Context) (int, error) {
+    return client.UserRepo().Query().
+        Filter(where.User.IsActive.IsTrue()).
+        Count(ctx)
+}
+```
+
+## Query Reuse
+
+Queries can be built incrementally:
+
+```go
+// Base query
+baseQuery := client.UserRepo().Query().
+    Filter(where.User.IsActive.IsTrue())
+
+// Different executions
+count, _ := baseQuery.Count(ctx)
+first, _, _ := baseQuery.First(ctx)
+all, _ := baseQuery.Limit(10).All(ctx)
+```
+
+Note: Each execution creates a new query based on the builder state at that point.
