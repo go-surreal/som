@@ -1,6 +1,9 @@
 package field
 
 import (
+	"fmt"
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -16,12 +19,21 @@ func (f *Duration) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Duration")
 }
 
-func (f *Duration) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).Qual(def.PkgSDBC, "Duration")
+func (f *Duration) typeConv(ctx Context) jen.Code {
+	return jen.Add(f.ptr()).Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration")
 }
 
 func (f *Duration) TypeDatabase() string {
 	return f.optionWrap("duration")
+}
+
+func (f *Duration) SchemaStatements(table, prefix string) []string {
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+		),
+	}
 }
 
 func (f *Duration) CodeGen() *CodeGen {
@@ -34,9 +46,9 @@ func (f *Duration) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -68,29 +80,35 @@ func (f *Duration) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Duration) convFrom(_ Context) (jen.Code, jen.Code) {
-	fromFunc := "fromDuration"
-
-	if f.source.Pointer() {
-		fromFunc += fnSuffixPtr
-	}
-
-	return jen.Id(fromFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *Duration) convTo(_ Context) (jen.Code, jen.Code) {
-	toFunc := "toDuration"
-
-	if f.source.Pointer() {
-		toFunc += fnSuffixPtr
-	}
-
-	return jen.Id(toFunc),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
 func (f *Duration) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase()})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Duration) cborMarshal(ctx Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration").Values(
+				jen.Id("Duration").Op(":").Op("*").Id("c").Dot(f.NameGo()),
+			),
+		)
+	}
+
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration").Values(
+		jen.Id("Duration").Op(":").Id("c").Dot(f.NameGo()),
+	)
+}
+
+func (f *Duration) cborUnmarshal(ctx Context) jen.Code {
+	helper := "UnmarshalDuration"
+	if f.source.Pointer() {
+		helper = "UnmarshalDurationPtr"
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
+	)
 }

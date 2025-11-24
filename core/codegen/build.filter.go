@@ -96,6 +96,9 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 		}
 	}
 
+	// TODO: add record::exists filter function
+	// https://github.com/surrealdb/surrealdb/pull/4602
+
 	file.Line()
 	file.Type().Id(elem.NameGoLower()+"Edges").
 		Types(jen.Add(def.TypeModel).Any()).

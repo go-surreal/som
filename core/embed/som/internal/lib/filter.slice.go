@@ -2,13 +2,9 @@
 
 package lib
 
-type makeFilter[M, F any] func(key Key[M]) F
+import "strings"
 
-func NewSliceMaker[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFilter[M, *Slice[M, E, F]] {
-	return func(key Key[M]) *Slice[M, E, F] {
-		return NewSlice[M, E, F](key, makeElemFilter)
-	}
-}
+type makeFilter[M, F any] func(key Key[M]) F
 
 // Slice is a filter that can be used for slice fields.
 // M is the type of the outgoing model for the filter statement.
@@ -25,6 +21,92 @@ func NewSlice[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F])
 		Key:            key,
 		makeElemFilter: makeElemFilter,
 	}
+}
+
+type SlicePtr[M, E any, F field[M]] struct {
+	*Slice[M, E, F]
+	*Nillable[M]
+}
+
+func NewSlicePtr[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F]) *SlicePtr[M, E, F] {
+	return &SlicePtr[M, E, F]{
+		Slice:    NewSlice[M, E, F](key, makeElemFilter),
+		Nillable: NewNillable[M](key),
+	}
+}
+
+func NewSliceMaker[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFilter[M, *Slice[M, E, F]] {
+	return func(key Key[M]) *Slice[M, E, F] {
+		return NewSlice[M, E, F](key, makeElemFilter)
+	}
+}
+
+func NewSliceMakerPtr[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) makeFilter[M, *SlicePtr[M, E, F]] {
+	return func(key Key[M]) *SlicePtr[M, E, F] {
+		return NewSlicePtr[M, E, F](key, makeElemFilter)
+	}
+}
+
+//
+// -- COMPARISONS
+//
+
+// Empty returns a filter that checks if the slice is empty.
+//
+// This checks for NONE (field absent), NULL (field explicitly null),
+// or zero-length (array with no elements).
+func (s *Slice[M, E, F]) Empty(is bool) Filter[M] {
+	if is {
+		return filter[M](func(ctx *context, _ M) string {
+			fieldName := strings.TrimPrefix(s.render(ctx), ".")
+			return "(" + fieldName + " == NONE OR " + fieldName + " == NULL OR array::len(" + fieldName + ") == 0)"
+		})
+	}
+
+	return filter[M](func(ctx *context, _ M) string {
+		fieldName := strings.TrimPrefix(s.render(ctx), ".")
+		return "(" + fieldName + " != NONE AND " + fieldName + " != NULL AND array::len(" + fieldName + ") > 0)"
+	})
+}
+
+// IsEmpty is a convenience method that returns a filter for empty slices.
+// Equivalent to Empty(true).
+func (s *Slice[M, E, F]) IsEmpty() Filter[M] {
+	return s.Empty(true)
+}
+
+// NotEmpty is a convenience method that returns a filter for non-empty slices.
+// Equivalent to Empty(false).
+func (s *Slice[M, E, F]) NotEmpty() Filter[M] {
+	return s.Empty(false)
+}
+
+func (s *Slice[M, E, F]) AnyEqual(val E) Filter[M] {
+	return s.op(OpAnyEqual, val)
+}
+
+func (s *Slice[M, E, F]) AllEqual(val E) Filter[M] {
+	return s.op(OpAllEqual, val)
+}
+
+func (s *Slice[M, E, F]) AnyFuzzyMatch(val E) Filter[M] {
+	return s.op(OpAnyFuzzyMatch, val)
+}
+
+func (s *Slice[M, E, F]) AllFuzzyMatch(val E) Filter[M] {
+	return s.op(OpAllFuzzyMatch, val)
+}
+
+func (s *Slice[M, E, F]) AllIn(val []E) Filter[M] {
+	return s.op(OpAllIn, val)
+}
+
+func (s *Slice[M, E, F]) AnyIn(val []E) Filter[M] {
+	return s.op(OpAnyIn, val)
+}
+
+func (s *Slice[M, E, F]) NoneIn(val []E) Filter[M] {
+	return s.op(OpNoneIn, val)
 }
 
 func (s *Slice[M, E, F]) Contains(val E) Filter[M] {
@@ -47,6 +129,10 @@ func (s *Slice[M, E, F]) ContainsNone(vals []E) Filter[M] {
 	return s.op(OpContainsNone, vals)
 }
 
+func (s *Slice[M, E, F]) Add(val E) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::add", val), s.makeElemFilter)
+}
+
 func (s *Slice[M, E, F]) All() *Bool[M] {
 	return NewBool[M](s.fn("array::all"))
 }
@@ -59,9 +145,51 @@ func (s *Slice[M, E, F]) At(index int) F {
 	return s.makeElemFilter(s.fn("array::at", index))
 }
 
+func (s *Slice[M, E, F]) Append(val E) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::append", val), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) BooleanAnd(val []E) *Slice[M, bool, *Bool[M]] {
+	return NewSlice[M, bool, *Bool[M]](s.fn("array::boolean_and", val), NewBool)
+}
+
+func (s *Slice[M, E, F]) BooleanOr(val []E) *Slice[M, bool, *Bool[M]] {
+	return NewSlice[M, bool, *Bool[M]](s.fn("array::boolean_or", val), NewBool)
+}
+
+func (s *Slice[M, E, F]) BooleanXor(val []E) *Slice[M, bool, *Bool[M]] {
+	return NewSlice[M, bool, *Bool[M]](s.fn("array::boolean_xor", val), NewBool)
+}
+
+func (s *Slice[M, E, F]) BooleanNot(val []E) *Slice[M, bool, *Bool[M]] {
+	return NewSlice[M, bool, *Bool[M]](s.fn("array::boolean_not", val), NewBool)
+}
+
+//func (s *Slice[M, E, F]) Combine(val []E) *Slice[M, []E, *Slice[M, E, F]] {
+//	return NewSlice[M, []E, *Slice[M, E, F]](s.fn("array::combine", val), NewSliceMaker[M, E, F](s.makeElemFilter))
+//} --> error: instantiation cycle
+
+func (s *Slice[M, E, F]) Complement(val []E) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::complement", val), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) Concat(val []E) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::concat", val), s.makeElemFilter)
+}
+
+//func (s *Slice[M, E, F]) Clump(size int) *Slice[M, []E, *Slice[M, E, F]] {
+//	return NewSlice[M, []E, *Slice[M, E, F]](s.fn("array::clump", size), NewSliceMaker[M, E, F](s.makeElemFilter))
+//} --> error: instantiation cycle
+
+func (s *Slice[M, E, F]) Diff(val []E) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::difference", val), s.makeElemFilter)
+}
+
 func (s *Slice[M, E, F]) Distinct() *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn("array::distinct"), s.makeElemFilter)
 }
+
+// func (s *Slice[M, E, F]) Flatten() *Slice[M, E, F] {} -> only works for arrays of arrays
 
 func (s *Slice[M, E, F]) FindIndex(val E) *Numeric[M, int] {
 	return NewNumeric[M, int](s.fn("array::find_index", val))
@@ -78,6 +206,20 @@ func (s *Slice[M, E, F]) First() F {
 	return s.makeElemFilter(s.fn("array::first"))
 }
 
+// func (s *Slice[M, E, F]) Group() *Slice[M, E, F] {} -> only works for arrays of arrays
+
+func (s *Slice[M, E, F]) Insert(val E, pos int) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::insert", val, pos), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) Intersect(val []E) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::intersect", val), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) Join(sep string) *String[M] {
+	return NewString[M](s.fn("array::join", sep)) // TODO: works for any type?
+}
+
 func (s *Slice[M, E, F]) Last() F {
 	return s.makeElemFilter(s.fn("array::last"))
 }
@@ -86,23 +228,49 @@ func (s *Slice[M, E, F]) Len() *Numeric[M, int] {
 	return NewNumeric[M, int](s.fn("array::len"))
 }
 
+func (s *Slice[M, E, F]) LogicalAnd(val []E) *Slice[M, bool, *Bool[M]] {
+	// TODO: return type might vary if the arrays are different in length
+	return NewSlice[M, bool, *Bool[M]](s.fn("array::logical_and", val), NewBool)
+}
+
+func (s *Slice[M, E, F]) LogicalOr(val []E) *Slice[M, bool, *Bool[M]] {
+	// TODO: return type might vary if the arrays are different in length
+	return NewSlice[M, bool, *Bool[M]](s.fn("array::logical_or", val), NewBool)
+}
+
+func (s *Slice[M, E, F]) LogicalXor(val []E) *Slice[M, bool, *Bool[M]] {
+	// TODO: return type might vary if the arrays are different in length
+	return NewSlice[M, bool, *Bool[M]](s.fn("array::logical_xor", val), NewBool)
+}
+
 func (s *Slice[M, E, F]) Max() F {
 	return s.makeElemFilter(s.fn("array::max"))
 }
 
 func (s *Slice[M, E, F]) Matches(val E) *Slice[M, bool, *Bool[M]] {
-	return NewSlice[M, bool, *Bool[M]](
-		s.fn("array::matches", val),
-		NewBool[M],
-	)
+	return NewSlice[M, bool, *Bool[M]](s.fn("array::matches", val), NewBool[M])
 }
 
 func (s *Slice[M, E, F]) Min() F {
 	return s.makeElemFilter(s.fn("array::min"))
 }
 
+// func (s *Slice[M, E, F]) Pop() F {} -> needed? - might modify the model?!
+
+func (s *Slice[M, E, F]) Prepend(val E) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::prepend", val), s.makeElemFilter)
+}
+
+// func (s *Slice[M, E, F]) Push(val E) F {} -> needed? - might modify the model?!
+
+// func (s *Slice[M, E, F]) Remove(pos int) F {} -> needed? - might modify the model?!
+
 func (s *Slice[M, E, F]) Reverse() *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn("array::reverse"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) Slice(start, len int) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::slice", start, len), s.makeElemFilter)
 }
 
 func (s *Slice[M, E, F]) SortAsc() *Slice[M, E, F] {
@@ -113,18 +281,17 @@ func (s *Slice[M, E, F]) SortDesc() *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn("array::sort::desc"), s.makeElemFilter)
 }
 
-func (s *Slice[M, E, F]) Slice(start, len int) *Slice[M, E, F] {
-	return NewSlice[M, E, F](s.fn("array::slice", start, len), s.makeElemFilter)
+// TODO: Transpose
+
+func (s *Slice[M, E, F]) Union(val []E) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::union", val), s.makeElemFilter)
 }
 
-type SlicePtr[M, E any, F field[M]] struct {
-	*Slice[M, E, F]
-	*Nillable[M]
-}
+// TODO: Windows (v2.0.0)
 
-func NewSlicePtr[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F]) *SlicePtr[M, E, F] {
-	return &SlicePtr[M, E, F]{
-		Slice:    NewSlice[M, E, F](key, makeElemFilter),
-		Nillable: NewNillable[M](key),
-	}
-}
+// TODO: https://surrealdb.com/docs/surrealdb/surrealql/functions/database/vector
+
+// TODO: new functions
+// Array function changes and additions: array::all(), array::any(), array::filter_index(), array::find_index()
+// functions can now take a value or a closure. Also added array::filter() and array::find() functions.
+// https://github.com/surrealdb/surrealdb/pull/4612

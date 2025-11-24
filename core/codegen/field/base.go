@@ -1,10 +1,11 @@
 package field
 
 import (
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
-	"strings"
 )
 
 const (
@@ -29,6 +30,8 @@ type Field interface {
 	typeGo() jen.Code
 	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
+
+	SchemaStatements(table string, prefix string) []string
 
 	CodeGen() *CodeGen
 }
@@ -91,10 +94,18 @@ func (f *baseField) ptr() jen.Code {
 	return jen.Empty()
 }
 
+func (f *baseField) omitEmptyIfPtr() string {
+	if f.source.Pointer() {
+		return ",omitempty"
+	}
+
+	return ""
+}
+
 // optionWrap wraps the given value in an option type if the field is a pointer.
 func (f *baseField) optionWrap(val string) string {
 	if f.source.Pointer() {
-		return "option<" + val + " | null>"
+		return "option<" + val + ">"
 	}
 
 	return val

@@ -5,6 +5,7 @@ package lib
 // Comparable is a filter with comparison operations.
 // M is the type of the model this filter is for.
 // T is the type of the field this filter is for.
+// F is the filter for the field type.
 type Comparable[M any, T any, F field[M]] struct {
 	Key[M]
 	conv func(T) any

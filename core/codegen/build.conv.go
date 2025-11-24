@@ -1,12 +1,13 @@
 package codegen
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
 )
 
 type convBuilder struct {
@@ -61,13 +62,15 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	}
 
 	f.Line()
-	f.Type().Id(typeName).StructFunc(func(g *jen.Group) {
-		for _, f := range elem.GetFields() {
-			if code := f.CodeGen().FieldDef(fieldCtx); code != nil {
-				g.Add(code)
-			}
-		}
-	})
+	f.Type().Id(typeName).Struct(
+		jen.Add(b.SourceQual(elem.NameGo())),
+	)
+
+	f.Line()
+	f.Add(b.buildMarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge))
+
+	f.Line()
+	f.Add(b.buildUnmarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge))
 
 	f.Line()
 	f.Add(b.buildFrom(elem))
@@ -79,7 +82,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		f.Line()
 		f.Type().Id(node.NameGoLower()+"Link").Struct(
 			jen.Id(node.NameGo()),
-			jen.Id("ID").Op("*").Qual(def.PkgSDBC, "ID"),
+			jen.Id("ID").Op("*").Qual(b.subPkg(""), "ID"),
 		)
 
 		f.Line()
@@ -90,7 +93,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.If(jen.Id("f").Op("==").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Nil()),
 				),
-				jen.Return(jen.Qual(def.PkgCBOR, "Marshal").Call(jen.Id("f").Dot("ID"))),
+				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("f").Dot("ID"))),
 			)
 
 		f.Line()
@@ -99,7 +102,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 			Error().
 			Block(
 				jen.If(
-					jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("f").Dot("ID")),
+					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("f").Dot("ID")),
 					jen.Err().Op("==").Nil(),
 				).Block(
 					jen.Return(jen.Nil()),
@@ -108,7 +111,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.Type().Id("alias").Id(node.NameGoLower()+"Link"),
 				jen.Var().Id("link").Id("alias"),
 
-				jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("link")),
+				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("link")),
 				jen.If(jen.Err().Op("==").Nil()).Block(
 					jen.Op("*").Id("f").Op("=").Id(node.NameGoLower()+"Link").Call(jen.Id("link")),
 				),
@@ -137,12 +140,6 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 }
 
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		TargetPkg: b.basePkg,
-		Table:     elem,
-	}
-
 	localName := elem.NameGoLower()
 	methodPrefix := "from"
 
@@ -154,32 +151,144 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 		methodPrefix = "From"
 	}
 
-	return jen.Func().
-		Id(methodPrefix+elem.NameGo()).
-		Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
-		Op("*").Id(localName).
-		Block(
-			jen.If(jen.Id("data").Op("==").Nil()).Block(
-				jen.Return(jen.Nil()),
+	return jen.Add(
+		// NO PTR - shallow wrapper: just embed
+		jen.Func().
+			Id(methodPrefix+elem.NameGo()).
+			Params(jen.Id("data").Add(b.SourceQual(elem.NameGo()))).
+			Id(localName).
+			Block(
+				jen.Return(jen.Id(localName).Values(jen.Dict{
+					jen.Id(elem.NameGo()): jen.Id("data"), // ONE field copy
+				})),
 			),
 
-			jen.Return(jen.Op("&").Id(localName).Values(jen.DictFunc(func(d jen.Dict) {
-				for _, f := range elem.GetFields() {
-					if code := f.CodeGen().ConvFrom(fieldCtx); code != nil {
-						d[jen.Id(f.NameGo())] = code
-					}
+		jen.Line(),
+
+		// PTR - shallow wrapper: just embed
+		jen.Func().
+			Id(methodPrefix+elem.NameGo()+"Ptr").
+			Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
+			Op("*").Id(localName).
+			Block(
+				jen.If(jen.Id("data").Op("==").Nil()).Block(
+					jen.Return(jen.Nil()),
+				),
+
+				jen.Return(jen.Op("&").Id(localName).Values(jen.Dict{
+					jen.Id(elem.NameGo()): jen.Op("*").Id("data"), // ONE field copy
+				})),
+			),
+	)
+}
+
+func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
+	return jen.Func().
+		Params(jen.Id("c").Op("*").Id(typeName)).
+		Id("MarshalCBOR").Params().
+		Params(jen.Index().Byte(), jen.Error()).
+		BlockFunc(func(g *jen.Group) {
+			g.If(jen.Id("c").Op("==").Nil()).Block(
+				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Nil())),
+			)
+
+			// Count fields for pre-sized map allocation
+			fieldCount := 0
+			if isNode || isEdge {
+				fieldCount++ // ID field
+			}
+			for _, f := range elem.GetFields() {
+				if f.NameDatabase() != "id" {
+					fieldCount++
 				}
-			}))),
-		)
+			}
+
+			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Any(), jen.Lit(fieldCount))
+
+			// Marshal ID field for nodes and edges
+			if isNode || isEdge {
+				g.Line()
+				g.Comment("Embedded som.Node/Edge ID field")
+				g.If(jen.Id("c").Dot("ID").Call().Op("!=").Nil()).Block(
+					jen.Id("data").Index(jen.Lit("id")).Op("=").Id("c").Dot("ID").Call(),
+				)
+			}
+
+			// Marshal all fields
+			g.Line()
+			for _, f := range elem.GetFields() {
+				// Skip ID field (handled specially for nodes/edges)
+				if f.NameDatabase() == "id" {
+					continue
+				}
+
+				// Generate marshal code for this field using field's CodeGen method
+				if code := f.CodeGen().CBORMarshal(ctx); code != nil {
+					g.Add(code)
+				}
+			}
+
+			g.Line()
+			g.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("data")))
+		})
+}
+
+func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
+	return jen.Func().
+		Params(jen.Id("c").Op("*").Id(typeName)).
+		Id("UnmarshalCBOR").Params(jen.Id("data").Index().Byte()).
+		Error().
+		BlockFunc(func(g *jen.Group) {
+			g.Var().Id("rawMap").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+			g.If(
+				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(
+					jen.Id("data"),
+					jen.Op("&").Id("rawMap"),
+				),
+				jen.Err().Op("!=").Nil(),
+			).Block(
+				jen.Return(jen.Err()),
+			)
+
+			// Unmarshal ID field for nodes and edges
+			if isNode || isEdge {
+				g.Line()
+				g.Comment("Embedded som.Node/Edge ID field")
+				g.If(
+					jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
+					jen.Id("ok"),
+				).BlockFunc(func(bg *jen.Group) {
+					bg.Var().Id("id").Op("*").Qual(b.subPkg(""), "ID")
+					bg.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("id"))
+
+					if isNode {
+						bg.Id("c").Dot("Node").Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("id"))
+					} else {
+						bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("id"))
+					}
+				})
+			}
+
+			// Unmarshal all fields
+			g.Line()
+			for _, f := range elem.GetFields() {
+				// Skip ID field (handled specially for nodes/edges)
+				if f.NameDatabase() == "id" {
+					continue
+				}
+
+				// Generate unmarshal code for this field using field's CodeGen method
+				if code := f.CodeGen().CBORUnmarshal(ctx); code != nil {
+					g.Add(code)
+				}
+			}
+
+			g.Line()
+			g.Return(jen.Nil())
+		})
 }
 
 func (b *convBuilder) buildTo(elem field.Element) jen.Code {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		TargetPkg: b.basePkg,
-		Table:     elem,
-	}
-
 	localName := elem.NameGoLower()
 	methodPrefix := "to"
 
@@ -191,39 +300,37 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 		methodPrefix = "To"
 	}
 
-	return jen.Func().
-		Id(methodPrefix+elem.NameGo()).
-		Params(jen.Id("data").Op("*").Id(localName)).
-		Op("*").Add(b.SourceQual(elem.NameGo())).
-		Block(
-			jen.If(jen.Id("data").Op("==").Nil()).Block(
-				jen.Return(jen.Nil()),
+	ptr := jen.Empty()
+	if isEdge {
+		ptr = jen.Op("*")
+	}
+
+	return jen.Add(
+		// NO PTR - shallow wrapper: just unwrap
+		jen.Func().
+			Id(methodPrefix+elem.NameGo()).
+			Params(jen.Id("data").Add(ptr).Id(localName)).
+			Add(b.SourceQual(elem.NameGo())).
+			Block(
+				jen.Return(jen.Id("data").Dot(elem.NameGo())), // Just unwrap the embedding
 			),
 
-			jen.Return(jen.Op("&").Add(b.SourceQual(elem.NameGo())).Values(jen.DictFunc(func(d jen.Dict) {
-				for _, f := range elem.GetFields() {
-					if code := f.CodeGen().ConvTo(fieldCtx); code != nil {
-						if fieldCode := f.CodeGen().ConvToField(fieldCtx); fieldCode != nil {
-							d[fieldCode] = code
-							continue
-						}
+		jen.Line(),
 
-						d[jen.Id(f.NameGo())] = code
-					}
-				}
+		// PTR - shallow wrapper: just unwrap
+		jen.Func().
+			Id(methodPrefix+elem.NameGo()+"Ptr").
+			Params(jen.Id("data").Op("*").Id(localName)).
+			Op("*").Add(b.SourceQual(elem.NameGo())).
+			Block(
+				jen.If(jen.Id("data").Op("==").Nil()).Block(
+					jen.Return(jen.Nil()),
+				),
 
-				if _, ok := elem.(*field.NodeTable); ok {
-					d[jen.Id("Node")] = jen.Qual(def.PkgSom, "NewNode").Call(
-						jen.Id("data").Dot("ID"),
-					)
-				}
-
-				if _, ok := elem.(*field.EdgeTable); ok {
-					d[jen.Id("Edge")] = jen.Qual(def.PkgSom, "NewEdge").Call(
-						jen.Id("data").Dot("ID"),
-					)
-				}
-			}))))
+				jen.Id("result").Op(":=").Id("data").Dot(elem.NameGo()),
+				jen.Return(jen.Op("&").Id("result")), // Unwrap and return pointer
+			),
+	)
 }
 
 func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
@@ -236,8 +343,7 @@ func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Add(b.SourceQual(node.NameGo())).Values()),
 			),
 			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
-			jen.Id("out").Op(":=").Id("To"+node.NameGo()).Call(jen.Op("&").Id("res")),
-			jen.Return(jen.Op("*").Id("out")),
+			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Id("res"))),
 		)
 }
 
@@ -251,7 +357,8 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Nil()),
 			),
 			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
-			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Op("&").Id("res"))),
+			jen.Id("out").Op(":=").Id("To"+node.NameGo()).Call(jen.Id("res")),
+			jen.Return(jen.Id("&").Id("out")),
 		)
 }
 
@@ -265,7 +372,7 @@ func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Nil()),
 			),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-				jen.Id(node.NameGo()).Op(":").Op("*").Id("From"+node.NameGo()).Call(jen.Op("&").Id("node")),
+				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Id("node")),
 				jen.Id("ID").Op(":").Id("node").Dot("ID").Call(),
 			),
 			jen.Return(jen.Op("&").Id("link")),
@@ -287,7 +394,7 @@ func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 					jen.Return(jen.Nil()),
 				),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-				jen.Id(node.NameGo()).Op(":").Op("*").Id("From"+node.NameGo()).Call(jen.Id("node")),
+				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Op("*").Id("node")),
 				jen.Id("ID").Op(":").Id("node").Dot("ID").Call(),
 			),
 			jen.Return(jen.Op("&").Id("link")),

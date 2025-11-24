@@ -16,24 +16,17 @@ tasks:
     aliases: [ r ]
     desc: "Run the somgen cli tool."
     cmds:
-      - cd ./cmd/somgen && go run main.go -- {{.CLI_ARGS}}
+      - go run main.go -- {{.CLI_ARGS}}
 
   gen:
     aliases: [ g ]
     desc: "Generate code for the example codebase."
     cmds:
-      - cd tests/basic && go generate gen.go
+      - cd internal/tests/basic && go generate gen.go
     sources:
-      - tests/basic/model/**/*
+      - internal/tests/basic/model/**/*
     generates:
-      - tests/basic/gen/som/**/*
-
-  example:
-    aliases: [ e ]
-    desc: "Run the test code for the example codebase."
-    deps: [ gen ]
-    cmds:
-      - cd ./test && go run main.go
+      - internal/tests/basic/gen/som/**/*
 
   lint:
     aliases: [ l ]
@@ -47,7 +40,7 @@ tasks:
     deps: [ gen ]
     cmds:
       - go test -v ./...
-      - cd tests/basic && go test -v ./...
+      - cd internal/tests/basic && go test -v ./...
 
   test-clean:
     aliases: [ tc ]
@@ -55,7 +48,7 @@ tasks:
     deps: [ gen ]
     cmds:
       - go test -count=1 ./...
-      - cd tests/basic && go test -v -count=1 ./...
+      - cd internal/tests/basic && go test -v -count=1 ./...
 
   benchmark:
     aliases: [ b ]

@@ -2,15 +2,16 @@ package codegen
 
 import (
 	"fmt"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -22,6 +23,23 @@ type build struct {
 	input  *input
 	fs     *fs.FS
 	outPkg string
+}
+
+func BuildStatic(fs *fs.FS, outPkg string) error {
+	tmpl := &embed.Template{
+		GenerateOutPath: outPkg,
+	}
+
+	files, err := embed.Read(tmpl)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		fs.Write(file.Path, file.Content)
+	}
+
+	return nil
 }
 
 func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
@@ -40,10 +58,6 @@ func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
 }
 
 func (b *build) build() error {
-	if err := b.embedStaticFiles(); err != nil {
-		return err
-	}
-
 	if err := b.buildInterfaceFile(); err != nil {
 		return err
 	}
@@ -76,25 +90,8 @@ func (b *build) build() error {
 	return nil
 }
 
-func (b *build) embedStaticFiles() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Read(tmpl)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		b.fs.Write(file.Path, file.Content)
-	}
-
-	return nil
-}
-
 func (b *build) buildInterfaceFile() error {
-	f := jen.NewFile(b.basePkgName())
+	f := jen.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -107,7 +104,7 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("Close").Call()
 	})
 
-	if err := f.Render(b.fs.Writer(filenameInterfaces)); err != nil {
+	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, filenameInterfaces))); err != nil {
 		return err
 	}
 
@@ -117,59 +114,12 @@ func (b *build) buildInterfaceFile() error {
 func (b *build) buildSchemaFile() error {
 	statements := []string{string(embed.CodegenComment), ""}
 
-	var fieldFn func(table string, f field.Field, prefix string)
-	fieldFn = func(table string, f field.Field, prefix string) {
-		fieldType := f.TypeDatabase()
-		if fieldType == "" {
-			return // TODO: is this actually valid?
-		}
-
-		statement := fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, fieldType,
-		)
-		statements = append(statements, statement)
-
-		if object, ok := f.(*field.Struct); ok {
-			for _, fld := range object.Table().GetFields() {
-				fieldFn(table, fld, prefix+f.NameDatabase()+".")
-			}
-		}
-
-		if slice, ok := f.(*field.Slice); ok {
-
-			if _, ok := slice.Element().(*field.Byte); ok {
-				// byte slice has the type "string" in the database,
-				// so we do not need to specify its elements.
-				return
-			}
-
-			statement := fmt.Sprintf(
-				"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-				prefix+f.NameDatabase()+".*", table, slice.Element().TypeDatabase(),
-			)
-			statements = append(statements, statement)
-
-			if object, ok := slice.Element().(*field.Struct); ok {
-				for _, fld := range object.Table().GetFields() {
-					fieldFn(table, fld, prefix+f.NameDatabase()+".*.")
-				}
-			}
-		}
-	}
-
 	for _, node := range b.input.nodes {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
 		statements = append(statements, statement)
 
-		statement = fmt.Sprintf(
-			`DEFINE FIELD id ON TABLE %s TYPE record<%s> ASSERT $value != NONE AND $value != NULL AND $value != "";`,
-			node.NameDatabase(), node.NameDatabase(),
-		)
-		statements = append(statements, statement)
-
 		for _, f := range node.GetFields() {
-			fieldFn(node.NameDatabase(), f, "")
+			statements = append(statements, f.SchemaStatements(node.NameDatabase(), "")...)
 		}
 
 		statements = append(statements, "")
@@ -177,15 +127,15 @@ func (b *build) buildSchemaFile() error {
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s PERMISSIONS FULL;",
+			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
-			edge.Out.NameDatabase(), // can be OR'ed with "|"
+			edge.Out.NameDatabase(), // TODO: can be OR'ed with "|"
 		)
 		statements = append(statements, statement)
 
 		for _, f := range edge.GetFields() {
-			fieldFn(edge.NameDatabase(), f, "")
+			statements = append(statements, f.SchemaStatements(edge.NameDatabase(), "")...)
 		}
 
 		statements = append(statements, "")
@@ -193,7 +143,7 @@ func (b *build) buildSchemaFile() error {
 
 	content := strings.Join(statements, "\n")
 
-	b.fs.Write(path.Join("schema", filenameSchema), []byte(content))
+	b.fs.Write(path.Join(def.PkgRepo, "schema", filenameSchema), []byte(content))
 
 	return nil
 }
@@ -202,7 +152,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
 
-	f := jen.NewFile(b.basePkgName())
+	f := jen.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -226,7 +176,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(def.PkgSDBC, "ID"),
+			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
 		).Parens(jen.List(
 			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Bool(),
@@ -276,11 +226,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()),
+								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()+"Ptr"),
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()),
+								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()+"Ptr"),
 							),
 						),
 				),
@@ -384,7 +334,7 @@ The returned bool indicates whether the record was found or not.
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(def.PkgSDBC, "ID"),
+			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
@@ -499,7 +449,7 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			),
 		)
 
-	if err := f.Render(b.fs.Writer(node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName()))); err != nil {
 		return err
 	}
 
@@ -532,11 +482,6 @@ func (b *build) newRelateBuilder() builder {
 
 func (b *build) basePkg() string {
 	return b.outPkg
-}
-
-func (b *build) basePkgName() string {
-	_, name := filepath.Split(b.outPkg)
-	return name
 }
 
 func (b *build) subPkg(pkg string) string {

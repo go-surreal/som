@@ -18,11 +18,16 @@ func (f *Edge) typeGo() jen.Code {
 }
 
 func (f *Edge) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).Id(f.table.NameGo())
+	return jen.Op("*").Id(f.table.NameGo())
 }
 
 func (f *Edge) TypeDatabase() string {
 	return ""
+}
+
+func (f *Edge) SchemaStatements(_, _ string) []string {
+	// Edges are no real fields in the database schema.
+	return nil
 }
 
 func (f *Edge) Table() *EdgeTable {
@@ -39,8 +44,6 @@ func (f *Edge) CodeGen() *CodeGen {
 		sortInit:   nil,
 		sortFunc:   nil, // TODO: f.sortFunc, // edge currently not sortable
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
 		fieldDef: f.fieldDef,
 	}
 }
@@ -64,8 +67,8 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 		Id(f.NameGo()).Params().
 		Add(f.filterDefine(ctx)).
 		Block(
-			jen.Return(jen.Add(f.filterInit(ctx)).
-				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
+			jen.Return(jen.Add(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel)).
+				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
 }
 
 //nolint:unused // currently not fully implemented
@@ -76,20 +79,10 @@ func (f *Edge) sortFunc(ctx Context) jen.Code {
 		Id(f.NameGoLower()).Types(def.TypeModel).
 		Block(
 			jen.Return(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel).
-				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
-}
-
-func (f *Edge) convFrom(_ Context) (jen.Code, jen.Code) {
-	return jen.Id("From" + f.table.NameGo()),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
-}
-
-func (f *Edge) convTo(_ Context) (jen.Code, jen.Code) {
-	return jen.Id("To" + f.table.NameGo()),
-		jen.Call(jen.Id("data").Dot(f.NameGo()))
+				Params(jen.Id("keyed").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Edge) fieldDef(ctx Context) jen.Code {
 	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }

@@ -39,9 +39,8 @@ type CodeGen struct {
 	sortInit   CodeGenFunc
 	sortFunc   CodeGenFunc
 
-	convFrom    CodeGenTuple
-	convTo      CodeGenTuple
-	convToField CodeGenFunc
+	cborMarshal   CodeGenFunc
+	cborUnmarshal CodeGenFunc
 
 	fieldDef CodeGenFunc
 }
@@ -78,18 +77,14 @@ func (g *CodeGen) SortFunc(ctx Context) jen.Code {
 	return g.sortFunc.Exec(ctx)
 }
 
-func (g *CodeGen) ConvFrom(ctx Context) jen.Code {
-	return g.convFrom.Exec(ctx)
-}
-
-func (g *CodeGen) ConvTo(ctx Context) jen.Code {
-	return g.convTo.Exec(ctx)
-}
-
-func (g *CodeGen) ConvToField(ctx Context) jen.Code {
-	return g.convToField.Exec(ctx)
-}
-
 func (g *CodeGen) FieldDef(ctx Context) jen.Code {
 	return g.fieldDef.Exec(ctx)
+}
+
+func (g *CodeGen) CBORMarshal(ctx Context) jen.Code {
+	return g.cborMarshal.Exec(ctx)
+}
+
+func (g *CodeGen) CBORUnmarshal(ctx Context) jen.Code {
+	return g.cborUnmarshal.Exec(ctx)
 }

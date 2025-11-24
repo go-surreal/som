@@ -122,7 +122,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 				Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
 				Lit(" CONTENT $data"),
 
-			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Id("edge")),
+			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
 
 			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("e").Dot("db").Dot("Query").Call(
 				jen.Id("ctx"),
@@ -140,7 +140,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			),
 
 			jen.Op("*").Id("edge").Op("=").
-				Op("*").Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
+				Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
 
 			jen.Return(jen.Nil()),
 		)
@@ -150,6 +150,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
+			jen.Comment("TODO: implement!"),
 			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not yet implemented"))),
 		)
 
@@ -158,6 +159,8 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
 		Error().
 		Block(
+			jen.Comment("TODO: implement!"),
+			jen.Comment("https://surrealdb.com/docs/surrealdb/surrealql/statements/delete#deleting-graph-edges"),
 			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not yet implemented"))),
 		)
 
