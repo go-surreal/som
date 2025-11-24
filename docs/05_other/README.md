@@ -1,6 +1,0 @@
----
-icon: page
----
-
-# Other
-
