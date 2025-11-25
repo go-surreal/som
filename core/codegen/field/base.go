@@ -77,6 +77,7 @@ func tableEqual(t1, t2 Table) bool {
 
 type BuildConfig struct {
 	SourcePkg      string
+	TargetPkg      string
 	ToDatabaseName func(base string) string
 }
 

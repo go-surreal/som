@@ -97,6 +97,11 @@ type AllFieldTypes struct {
 	URLNil   *url.URL
 	URLSlice []url.URL
 
+	Email      som.Email
+	EmailPtr   *som.Email
+	EmailNil   *som.Email
+	EmailSlice []som.Email
+
 	// enums
 
 	Role            Role

@@ -2,6 +2,7 @@
 package where
 
 import (
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	model "github.com/go-surreal/som/tests/basic/model"
 	uuid "github.com/google/uuid"
@@ -25,6 +26,10 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		DurationNil:        lib.NewDurationPtr[M](lib.Field(key, "duration_nil")),
 		DurationPtr:        lib.NewDurationPtr[M](lib.Field(key, "duration_ptr")),
 		DurationSlice:      lib.NewSliceMaker[M, time.Duration, *lib.Duration[M]](lib.NewDuration[M])(lib.Field(key, "duration_slice")),
+		Email:              lib.NewEmail[M](lib.Field(key, "email")),
+		EmailNil:           lib.NewEmailPtr[M](lib.Field(key, "email_nil")),
+		EmailPtr:           lib.NewEmailPtr[M](lib.Field(key, "email_ptr")),
+		EmailSlice:         lib.NewSliceMaker[M, som.Email, *lib.Email[M]](lib.NewEmail[M])(lib.Field(key, "email_slice")),
 		EnumPtr:            lib.NewEnumPtr[M, model.Role](lib.Field(key, "enum_ptr")),
 		EnumPtrSlice:       lib.NewSlice[M, model.Role](lib.Field(key, "enum_ptr_slice"), lib.NewEnumPtr[M, model.Role]),
 		EnumPtrSlicePtr:    lib.NewSlicePtr[M, model.Role](lib.Field(key, "enum_ptr_slice_ptr"), lib.NewEnumPtr[M, model.Role]),
@@ -147,6 +152,10 @@ type allFieldTypes[M any] struct {
 	URLPtr             *lib.URLPtr[M]
 	URLNil             *lib.URLPtr[M]
 	URLSlice           *lib.Slice[M, url.URL, *lib.URL[M]]
+	Email              *lib.Email[M]
+	EmailPtr           *lib.EmailPtr[M]
+	EmailNil           *lib.EmailPtr[M]
+	EmailSlice         *lib.Slice[M, som.Email, *lib.Email[M]]
 	Role               *lib.Enum[M, model.Role]
 	EnumPtr            *lib.EnumPtr[M, model.Role]
 	Roles              *lib.Slice[M, model.Role, *lib.Enum[M, model.Role]]

@@ -672,6 +672,74 @@ func TestPassword(t *testing.T) {
 	assert.Equal(t, "updated_user_name", modelFoundAfterUpdate.Login.Username)
 }
 
+func TestEmail(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	emailValue := som.Email("testuser@example.com")
+	emailPtr := som.Email("admin@test.org")
+
+	userNew := &model.AllFieldTypes{
+		Email:    emailValue,
+		EmailPtr: &emailPtr,
+		EmailNil: nil,
+	}
+
+	modelIn := userNew
+
+	err := client.AllFieldTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	modelOut, exists, err := client.AllFieldTypesRepo().Read(ctx, modelIn.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
+	)
+
+	modelOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.Email.Equal(emailValue),
+			where.AllFieldTypes.EmailPtr.Equal(emailPtr),
+			where.AllFieldTypes.EmailNil.Nil(true),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
+	)
+
+	// Test email-specific filter methods
+	modelOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.Email.User().Equal("testuser"),
+			where.AllFieldTypes.Email.Host().Equal("example.com"),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, emailValue, modelOut.Email)
+}
+
 func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 

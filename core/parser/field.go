@@ -112,6 +112,10 @@ const (
 	PasswordScrypt PasswordAlgorithm = "Scrypt"
 )
 
+type FieldEmail struct {
+	*fieldAtomic
+}
+
 type FieldNode struct {
 	*fieldAtomic
 	Node string

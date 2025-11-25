@@ -356,6 +356,10 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 				{
 					return &FieldPassword{atomic, parsePasswordAlgorithm(t.Elem())}, nil
 				}
+			case t.Elem().PkgPath() == outPkg && t.Elem().Name() == "Email":
+				{
+					return &FieldEmail{atomic}, nil
+				}
 			case isEnum(t.Elem(), outPkg):
 				{
 					return &FieldEnum{atomic, t.Elem().Name()}, nil

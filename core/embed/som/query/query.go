@@ -15,8 +15,36 @@ type Database interface {
 	Unmarshal(buf []byte, val any) error
 }
 
+// recordID represents a SurrealDB record ID for query results.
+// It unmarshals from the CBOR tagged array format [table, id].
+type recordID struct {
+	Table string
+	ID    any
+}
+
+func (r *recordID) UnmarshalCBOR(data []byte) error {
+	var arr []any
+	if err := cbor.Unmarshal(data, &arr); err != nil {
+		return err
+	}
+	if len(arr) != 2 {
+		return fmt.Errorf("invalid record ID format: expected 2 elements, got %d", len(arr))
+	}
+	table, ok := arr[0].(string)
+	if !ok {
+		return fmt.Errorf("invalid record ID format: table must be a string")
+	}
+	r.Table = table
+	r.ID = arr[1]
+	return nil
+}
+
+func (r recordID) String() string {
+	return fmt.Sprintf("%s:%v", r.Table, r.ID)
+}
+
 type idNode struct {
-	ID string
+	ID recordID
 }
 
 type countResult struct {

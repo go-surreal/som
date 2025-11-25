@@ -43,7 +43,7 @@ func BuildStatic(fs *fs.FS, outPkg string) error {
 }
 
 func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
-	in, err := newInput(source)
+	in, err := newInput(source, outPkg)
 	if err != nil {
 		return fmt.Errorf("error creating input: %v", err)
 	}
