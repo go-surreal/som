@@ -15,9 +15,10 @@ type input struct {
 	objects       []*field.DatabaseObject
 }
 
-func newInput(source *parser.Output) (*input, error) {
+func newInput(source *parser.Output, outPkg string) (*input, error) {
 	buildConf := &field.BuildConfig{
 		SourcePkg:      source.PkgPath,
+		TargetPkg:      outPkg,
 		ToDatabaseName: strcase.ToSnake, // TODO
 	}
 
@@ -27,7 +28,7 @@ func newInput(source *parser.Output) (*input, error) {
 
 	def, err := field.NewDef(source, buildConf)
 	if err != nil {
-		return nil, fmt.Errorf("could not build def: %v", err)
+		return nil, fmt.Errorf("could not build def: %w", err)
 	}
 
 	in.nodes = def.Nodes

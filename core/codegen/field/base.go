@@ -1,10 +1,16 @@
 package field
 
 import (
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
-	"strings"
+)
+
+const (
+	convTag     = "cbor"
+	fnSuffixPtr = "Ptr"
 )
 
 // type Edge struct {
@@ -22,8 +28,10 @@ type Field interface {
 	NameDatabase() string
 
 	typeGo() jen.Code
-	typeConv() jen.Code
+	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
+
+	SchemaStatements(table string, prefix string) []string
 
 	CodeGen() *CodeGen
 }
@@ -69,6 +77,7 @@ func tableEqual(t1, t2 Table) bool {
 
 type BuildConfig struct {
 	SourcePkg      string
+	TargetPkg      string
 	ToDatabaseName func(base string) string
 }
 
@@ -86,10 +95,18 @@ func (f *baseField) ptr() jen.Code {
 	return jen.Empty()
 }
 
+func (f *baseField) omitEmptyIfPtr() string {
+	if f.source.Pointer() {
+		return ",omitempty"
+	}
+
+	return ""
+}
+
 // optionWrap wraps the given value in an option type if the field is a pointer.
 func (f *baseField) optionWrap(val string) string {
 	if f.source.Pointer() {
-		return "option<" + val + " | null>"
+		return "option<" + val + ">"
 	}
 
 	return val

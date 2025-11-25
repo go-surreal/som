@@ -1,0 +1,52 @@
+name: tests
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
+        with:
+          working_directory: internal/tests/basic
+          install: true
+          cache: true
+
+      - name: Cache Go Modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: go-modules-tests-v1
+
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-tests-v1
+
+      - name: Test Basic (with coverage for generated layer)
+        working-directory: internal/tests/basic
+        env:
+          GOTOOLCHAIN: local
+          GOWORK: "off"
+        run: |
+          go test \
+          -coverprofile=coverage.txt -covermode=atomic \
+          -coverpkg=github.com/go-surreal/som/tests/basic/gen/som/... \
+          -v ./...
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./internal/tests/basic/coverage.txt

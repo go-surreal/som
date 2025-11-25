@@ -1,60 +1,28 @@
 package codegen
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
+	"github.com/go-surreal/som/core/util/fs"
 )
 
 type defineBuilder struct {
 	*baseBuilder
 }
 
-func newDefineBuilder(input *input, basePath, basePkg, pkgName string) *defineBuilder {
+func newDefineBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *defineBuilder {
 	return &defineBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *defineBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
-	if err := b.embedStaticFiles(); err != nil {
-		return err
-	}
-
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (b *defineBuilder) embedStaticFiles() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Define(tmpl)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		err := os.WriteFile(filepath.Join(b.path(), file.Path), []byte(content), os.ModePerm)
-		if err != nil {
 			return err
 		}
 	}
@@ -67,7 +35,7 @@ func (b *defineBuilder) buildFile(node *field.NodeTable) error {
 
 	f := jen.NewFile(b.pkgName)
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	nodeType := "node" + node.NameGo()
 	nodeTypeLive := "Node" + node.NameGo()
@@ -120,7 +88,7 @@ func (b *defineBuilder) buildFile(node *field.NodeTable) error {
 		f.Add(fn)
 	}
 
-	if err := f.Save(path.Join(b.path(), node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
 

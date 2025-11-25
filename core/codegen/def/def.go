@@ -1,5 +1,7 @@
 package def
 
+import "github.com/dave/jennifer/jen"
+
 const (
 	PkgQuery  = "query"
 	PkgFilter = "where"
@@ -8,17 +10,23 @@ const (
 	PkgConv   = "conv"
 	PkgRelate = "relate"
 	PkgDefine = "define"
+	PkgRepo   = "repo"
 
-	PkgLib = "internal/lib"
+	PkgLib         = "internal/lib"
+	PkgTypes       = "internal/types"
+	PkgCBORHelpers = "internal/cbor"
 )
 
 const (
-	PkgSom = "github.com/go-surreal/som"
+	//PkgSom  = "github.com/go-surreal/som"
+	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"
+	PkgModels    = "github.com/surrealdb/surrealdb.go/pkg/models"
+	PkgCBOR      = "github.com/fxamacker/cbor/v2"
 
-	PkgJson             = "encoding/json"
-	PkgURL              = "net/url"
-	PkgUUID             = "github.com/google/uuid"
-	PkgSurrealDB        = "github.com/surrealdb/surrealdb.go"
-	PkgSurrealMarshal   = "github.com/surrealdb/surrealdb.go/pkg/marshal"
-	PkgSurrealConstants = "github.com/surrealdb/surrealdb.go/pkg/constants"
+	PkgURL  = "net/url"
+	PkgUUID = "github.com/google/uuid"
+)
+
+var (
+	TypeModel = jen.Id("M")
 )

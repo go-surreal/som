@@ -2,9 +2,11 @@ package field
 
 import (
 	"fmt"
-	"github.com/dave/jennifer/jen"
-	"github.com/go-surreal/som/core/parser"
 	"math"
+
+	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Byte struct {
@@ -17,68 +19,95 @@ func (f *Byte) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Byte()
 }
 
-func (f *Byte) typeConv() jen.Code {
+func (f *Byte) typeConv(_ Context) jen.Code {
 	return f.typeGo()
 }
 
 func (f *Byte) TypeDatabase() string {
+	return f.optionWrap("int")
+}
+
+func (f *Byte) SchemaStatements(table, prefix string) []string {
 	nilCheck := ""
 	if f.source.Pointer() {
 		nilCheck = "$value == NONE OR $value == NULL OR "
 	}
 
-	return fmt.Sprintf(
-		"%s ASSERT %s$value >= %d AND $value <= %d",
-		f.optionWrap("int"), nilCheck, 0, math.MaxUint8,
-	)
+	extend := fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint8)
+
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
+		),
+	}
 }
 
 func (f *Byte) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
-		filterFunc:   nil, // Byte does not need a filter function.
+		filterFunc:   nil,
 
-		sortDefine: nil, // TODO: should be sortable
-		sortInit:   nil,
-		sortFunc:   nil, // Byte does not need a sort function.
+		sortDefine: f.sortDefine,
+		sortInit:   f.sortInit,
+		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
+		fieldDef:      f.fieldDef,
 	}
 }
 
 // IMP: https://github.com/orgs/surrealdb/discussions/1451
 
 func (f *Byte) filterDefine(ctx Context) jen.Code {
-	filter := "Base"
+	filter := "Byte"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(jen.Byte(), jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
-func (f *Byte) filterInit(ctx Context) jen.Code {
-	filter := "NewBase"
+func (f *Byte) filterInit(ctx Context) (jen.Code, jen.Code) {
+	filter := "NewByte"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(jen.Byte(), jen.Id("T")).
-		Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Byte) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Byte) sortDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
-func (f *Byte) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Byte) sortInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
+		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Byte) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase()})
+	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
+		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+}
+
+func (f *Byte) cborMarshal(_ Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
+		)
+	}
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+}
+
+func (f *Byte) cborUnmarshal(ctx Context) jen.Code {
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }

@@ -2,37 +2,55 @@ package codegen
 
 import (
 	"fmt"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/parser"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
+	"github.com/go-surreal/som/core/util/fs"
 )
 
 const (
 	filenameInterfaces = "som.interfaces.go"
-	filenameSchema     = "som.schema.go"
+	filenameSchema     = "tables.surql"
 )
 
 type build struct {
 	input  *input
-	outDir string
+	fs     *fs.FS
 	outPkg string
 }
 
-func Build(source *parser.Output, outDir string, outPkg string) error {
-	in, err := newInput(source)
+func BuildStatic(fs *fs.FS, outPkg string) error {
+	tmpl := &embed.Template{
+		GenerateOutPath: outPkg,
+	}
+
+	files, err := embed.Read(tmpl)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		fs.Write(file.Path, file.Content)
+	}
+
+	return nil
+}
+
+func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
+	in, err := newInput(source, outPkg)
 	if err != nil {
 		return fmt.Errorf("error creating input: %v", err)
 	}
 
 	builder := &build{
 		input:  in,
-		outDir: outDir,
+		fs:     fs,
 		outPkg: outPkg,
 	}
 
@@ -40,18 +58,6 @@ func Build(source *parser.Output, outDir string, outPkg string) error {
 }
 
 func (b *build) build() error {
-	if err := os.MkdirAll(b.basePath(), os.ModePerm); err != nil {
-		return err
-	}
-
-	if err := b.copyInternalPackage(); err != nil {
-		return err
-	}
-
-	if err := b.embedStaticFiles(); err != nil {
-		return err
-	}
-
 	if err := b.buildInterfaceFile(); err != nil {
 		return err
 	}
@@ -85,63 +91,10 @@ func (b *build) build() error {
 	return nil
 }
 
-func (b *build) copyInternalPackage() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Lib(tmpl)
-	if err != nil {
-		return err
-	}
-
-	dir := filepath.Join(b.outDir, "internal", "lib")
-
-	err = os.MkdirAll(dir, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		err := os.WriteFile(filepath.Join(dir, file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (b *build) embedStaticFiles() error {
-	tmpl := &embed.Template{
-		GenerateOutPath: b.subPkg(""),
-	}
-
-	files, err := embed.Som(tmpl)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		content := string(file.Content)
-		content = strings.Replace(content, embedComment, codegenComment, 1)
-
-		err := os.WriteFile(filepath.Join(b.basePath(), file.Path), []byte(content), os.ModePerm)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (b *build) buildInterfaceFile() error {
-	f := jen.NewFile(b.basePkgName())
+	f := jen.NewFile(def.PkgRepo)
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	f.Type().Id("Client").InterfaceFunc(func(g *jen.Group) {
 		for _, node := range b.input.nodes {
@@ -152,7 +105,7 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("Close").Call()
 	})
 
-	if err := f.Save(path.Join(b.basePath(), filenameInterfaces)); err != nil {
+	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, filenameInterfaces))); err != nil {
 		return err
 	}
 
@@ -160,61 +113,14 @@ func (b *build) buildInterfaceFile() error {
 }
 
 func (b *build) buildSchemaFile() error {
-	statements := []string{"", ""}
-
-	var fieldFn func(table string, f field.Field, prefix string)
-	fieldFn = func(table string, f field.Field, prefix string) {
-		fieldType := f.TypeDatabase()
-		if fieldType == "" {
-			return // TODO: is this actually valid?
-		}
-
-		statement := fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, fieldType,
-		)
-		statements = append(statements, statement)
-
-		if object, ok := f.(*field.Struct); ok {
-			for _, fld := range object.Table().GetFields() {
-				fieldFn(table, fld, prefix+f.NameDatabase()+".")
-			}
-		}
-
-		if slice, ok := f.(*field.Slice); ok {
-
-			if _, ok := slice.Element().(*field.Byte); ok {
-				// byte slice has the type "string" in the database,
-				// so we do not need to specify its elements.
-				return
-			}
-
-			statement := fmt.Sprintf(
-				"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-				prefix+f.NameDatabase()+".*", table, slice.Element().TypeDatabase(),
-			)
-			statements = append(statements, statement)
-
-			if object, ok := slice.Element().(*field.Struct); ok {
-				for _, fld := range object.Table().GetFields() {
-					fieldFn(table, fld, prefix+f.NameDatabase()+".*.")
-				}
-			}
-		}
-	}
+	statements := []string{string(embed.CodegenComment), ""}
 
 	for _, node := range b.input.nodes {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
 		statements = append(statements, statement)
 
-		statement = fmt.Sprintf(
-			`DEFINE FIELD id ON TABLE %s TYPE record<%s> ASSERT $value != NONE AND $value != NULL AND $value != "";`,
-			node.NameDatabase(), node.NameDatabase(),
-		)
-		statements = append(statements, statement)
-
 		for _, f := range node.GetFields() {
-			fieldFn(node.NameDatabase(), f, "")
+			statements = append(statements, f.SchemaStatements(node.NameDatabase(), "")...)
 		}
 
 		statements = append(statements, "")
@@ -222,15 +128,15 @@ func (b *build) buildSchemaFile() error {
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s PERMISSIONS FULL;",
+			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
-			edge.Out.NameDatabase(), // can be OR'ed with "|"
+			edge.Out.NameDatabase(), // TODO: can be OR'ed with "|"
 		)
 		statements = append(statements, statement)
 
 		for _, f := range edge.GetFields() {
-			fieldFn(edge.NameDatabase(), f, "")
+			statements = append(statements, f.SchemaStatements(edge.NameDatabase(), "")...)
 		}
 
 		statements = append(statements, "")
@@ -238,33 +144,7 @@ func (b *build) buildSchemaFile() error {
 
 	content := strings.Join(statements, "\n")
 
-	tmpl := `%s
-
-package %s
-
-import(
-	"context"
-	"fmt"
-)
-	
-func (c *ClientImpl) ApplySchema(ctx context.Context) error {
-	_, err := c.db.Query(ctx, tmpl, nil)
-	if err != nil {
-		return fmt.Errorf("could not apply schema: %%v", err)
-	}
-
-	return nil
-}
-
-var tmpl = %s
-`
-
-	data := []byte(fmt.Sprintf(tmpl, codegenComment, b.basePkgName(), "`"+content+"`"))
-
-	err := os.WriteFile(path.Join(b.basePath(), filenameSchema), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
+	b.fs.Write(path.Join(def.PkgRepo, "schema", filenameSchema), []byte(content))
 
 	return nil
 }
@@ -273,9 +153,9 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
 
-	f := jen.NewFile(b.basePkgName())
+	f := jen.NewFile(def.PkgRepo)
 
-	f.PackageComment(codegenComment)
+	f.PackageComment(string(embed.CodegenComment))
 
 	//
 	// type {NodeName}Repo interface {...}
@@ -286,18 +166,18 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("CreateWithID").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("id").String(),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").String(),
+			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
 		).Parens(jen.List(
 			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Bool(),
@@ -306,17 +186,17 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		jen.Id("Update").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Delete").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Refresh").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("user").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
@@ -343,23 +223,15 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("marshal").Op(":").Id("c").Dot("marshal"),
-							),
-							jen.Add(
-								jen.Line(),
-								jen.Id("unmarshal").Op(":").Id("c").Dot("unmarshal"),
-							),
-							jen.Add(
-								jen.Line(),
 								jen.Id("name").Op(":").Lit(node.NameDatabase()),
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()),
+								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()+"Ptr"),
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()),
+								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()+"Ptr"),
 							),
 						),
 				),
@@ -388,7 +260,6 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
 				jen.Id("r").Dot("db"),
-				jen.Id("r").Dot("unmarshal"),
 			)),
 		)
 
@@ -410,7 +281,7 @@ The ID will be generated automatically as a ULID.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
 				),
@@ -441,7 +312,7 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
 				),
@@ -464,7 +335,7 @@ The returned bool indicates whether the record was found or not.
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").String(),
+			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
@@ -493,7 +364,7 @@ Update updates the record for the given model.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
 				),
@@ -550,7 +421,7 @@ Refresh refreshes the given model with the remote data.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot refresh "+node.NameGo()+" without existing record ID"))),
 				),
@@ -575,12 +446,11 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			jen.Return(
 				jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(
 					jen.Id("r").Dot("db"),
-					jen.Id("r").Dot("unmarshal"),
 				),
 			),
 		)
 
-	if err := f.Save(path.Join(b.basePath(), node.FileName())); err != nil {
+	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName()))); err != nil {
 		return err
 	}
 
@@ -588,44 +458,35 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 }
 
 func (b *build) newQueryBuilder() builder {
-	return newQueryBuilder(b.input, b.basePath(), b.basePkg(), def.PkgQuery)
+	return newQueryBuilder(b.input, b.fs, b.basePkg(), def.PkgQuery)
 }
 
 func (b *build) newFilterBuilder() builder {
-	return newFilterBuilder(b.input, b.basePath(), b.basePkg(), def.PkgFilter)
+	return newFilterBuilder(b.input, b.fs, b.basePkg(), def.PkgFilter)
 }
 
 func (b *build) newSortBuilder() builder {
-	return newSortBuilder(b.input, b.basePath(), b.basePkg(), def.PkgSort)
+	return newSortBuilder(b.input, b.fs, b.basePkg(), def.PkgSort)
 }
 
 func (b *build) newFetchBuilder() builder {
-	return newFetchBuilder(b.input, b.basePath(), b.basePkg(), def.PkgFetch)
+	return newFetchBuilder(b.input, b.fs, b.basePkg(), def.PkgFetch)
 }
 
 func (b *build) newConvBuilder() builder {
-	return newConvBuilder(b.input, b.basePath(), b.basePkg(), def.PkgConv)
+	return newConvBuilder(b.input, b.fs, b.basePkg(), def.PkgConv)
 }
 
 func (b *build) newRelateBuilder() builder {
-	return newRelateBuilder(b.input, b.basePath(), b.basePkg(), def.PkgRelate)
+	return newRelateBuilder(b.input, b.fs, b.basePkg(), def.PkgRelate)
 }
 
 func (b *build) newDefineBuilder() builder {
-	return newDefineBuilder(b.input, b.basePath(), b.basePkg(), def.PkgDefine)
-}
-
-func (b *build) basePath() string {
-	return b.outDir
+	return newDefineBuilder(b.input, b.fs, b.basePkg(), def.PkgDefine)
 }
 
 func (b *build) basePkg() string {
 	return b.outPkg
-}
-
-func (b *build) basePkgName() string {
-	_, name := filepath.Split(b.outPkg)
-	return name
 }
 
 func (b *build) subPkg(pkg string) string {
