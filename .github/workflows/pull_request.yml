@@ -206,11 +206,12 @@ jobs:
         run: |
           go test \
           -coverprofile=coverage.txt -covermode=atomic \
+          -coverpkg=github.com/go-surreal/som/tests/basic/gen/som/... \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
           -failfast -parallel 10 -count=1 -race -vet=off -v ./...
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.txt,./internal/tests/basic/coverage.txt
+          files: ./internal/tests/basic/coverage.txt
