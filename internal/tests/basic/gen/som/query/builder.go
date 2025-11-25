@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"strings"
 	"time"
 
@@ -336,4 +337,322 @@ func (b builder[M, C]) Debug(prefix ...string) Builder[M, C] {
 	)
 
 	return Builder[M, C]{b}
+}
+
+// Paginate returns a paginated result set with cursor-based navigation.
+// Use lib.First(n) for forward pagination and lib.Last(n) for backward pagination.
+// Use lib.After(cursor) and lib.Before(cursor) to navigate between pages.
+// Use lib.WithTotalCount() to include the total count (requires additional query).
+// Use lib.WithAccuratePageInfo() to enable accurate HasPreviousPage/HasNextPage detection.
+func (b builder[M, C]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*lib.Page[M], error) {
+	// Parse options
+	cfg := &lib.PaginateConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid pagination options: %w", err)
+	}
+
+	// Check for incompatible random sort
+	if b.query.SortRandom {
+		return nil, errors.New("cursor pagination is not compatible with random ordering")
+	}
+
+	// Ensure we have sort criteria (default to id ASC)
+	sorts := b.query.Sort
+	if len(sorts) == 0 {
+		sorts = []*lib.SortBuilder{lib.NewSortBuilder("id", lib.SortAsc)}
+	}
+
+	// Ensure id is included as tiebreaker
+	hasID := false
+	for _, s := range sorts {
+		if s.Field == "id" {
+			hasID = true
+			break
+		}
+	}
+	if !hasID {
+		sorts = append(sorts, lib.NewSortBuilder("id", lib.SortAsc))
+	}
+
+	// Store original sorts for cursor generation (before potential reversal)
+	originalSorts := sorts
+
+	// For backward pagination, reverse sort directions
+	backward := cfg.IsBackward()
+	if backward {
+		sorts = reverseSorts(sorts)
+	}
+
+	// Store original filters before adding cursor filter
+	originalWhereLen := len(b.query.Where)
+
+	// Build cursor filter if cursor provided
+	cursor := cfg.Cursor()
+	if cursor != "" {
+		cursorData, err := lib.DecodeCursor(cursor)
+		if err != nil {
+			return nil, fmt.Errorf("invalid cursor: %w", err)
+		}
+		cursorFilter := lib.CursorFilter[M](cursorData, sorts, backward)
+		b.query.Where = append(b.query.Where, cursorFilter)
+	}
+
+	// Set sort and limit (fetch one extra to detect hasMore)
+	b.query.Sort = sorts
+	pageSize := cfg.Limit()
+	b.query.Limit = pageSize + 1
+
+	// Execute query
+	items, err := b.All(ctx)
+	if err != nil {
+		// Handle empty result gracefully
+		if err.Error() == "empty result" {
+			return &lib.Page[M]{
+				Items:      []*M{},
+				Entries:    []lib.Entry[M]{},
+				PageInfo:   lib.PageInfo{},
+				TotalCount: -1,
+			}, nil
+		}
+		return nil, err
+	}
+
+	// Check if there are more items
+	hasMore := len(items) > pageSize
+	if hasMore {
+		items = items[:pageSize]
+	}
+
+	// For backward pagination, reverse results to correct order
+	if backward {
+		reverseSlice(items)
+	}
+
+	// Build Entries with per-item cursors
+	entries := make([]lib.Entry[M], len(items))
+	for i, item := range items {
+		itemCursor, err := generateCursor(item, originalSorts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate cursor for item %d: %w", i, err)
+		}
+		entries[i] = lib.Entry[M]{
+			Node:   item,
+			Cursor: itemCursor,
+		}
+	}
+
+	// Build PageInfo
+	pageInfo := lib.PageInfo{}
+	if backward {
+		pageInfo.HasPreviousPage = hasMore
+		pageInfo.HasNextPage = cursor != "" // If we have a before cursor, there's a next page
+	} else {
+		pageInfo.HasNextPage = hasMore
+		pageInfo.HasPreviousPage = cursor != "" // If we have an after cursor, there's a previous page
+	}
+
+	// Set start/end cursors from entries
+	if len(entries) > 0 {
+		pageInfo.StartCursor = entries[0].Cursor
+		pageInfo.EndCursor = entries[len(entries)-1].Cursor
+	}
+
+	// Accurate page detection (opt-in)
+	if cfg.AccuratePageInfo && len(items) > 0 {
+		// For forward pagination without cursor, check if there are items before
+		// For backward pagination without cursor, check if there are items after
+		if !backward && cursor == "" {
+			// Check HasPreviousPage: are there items before the first item?
+			firstCursorData, err := lib.DecodeCursor(entries[0].Cursor)
+			if err == nil {
+				prevFilter := lib.CursorFilter[M](firstCursorData, originalSorts, true) // true = backward check
+				checkBuilder := b
+				checkBuilder.query.Where = append(b.query.Where[:originalWhereLen:originalWhereLen], prevFilter)
+				checkBuilder.query.Sort = reverseSorts(originalSorts)
+				checkBuilder.query.Limit = 1
+				prevItems, err := checkBuilder.All(ctx)
+				if err == nil && len(prevItems) > 0 {
+					pageInfo.HasPreviousPage = true
+				}
+			}
+		} else if backward && cursor == "" {
+			// Check HasNextPage: are there items after the last item?
+			lastCursorData, err := lib.DecodeCursor(entries[len(entries)-1].Cursor)
+			if err == nil {
+				nextFilter := lib.CursorFilter[M](lastCursorData, originalSorts, false) // false = forward check
+				checkBuilder := b
+				checkBuilder.query.Where = append(b.query.Where[:originalWhereLen:originalWhereLen], nextFilter)
+				checkBuilder.query.Sort = originalSorts
+				checkBuilder.query.Limit = 1
+				nextItems, err := checkBuilder.All(ctx)
+				if err == nil && len(nextItems) > 0 {
+					pageInfo.HasNextPage = true
+				}
+			}
+		}
+	}
+
+	// Get total count if requested
+	totalCount := -1
+	if cfg.IncludeTotalCount {
+		// Create a fresh query without cursor filter and pagination
+		countBuilder := b
+		countBuilder.query.Where = b.query.Where[:originalWhereLen]
+		countBuilder.query.Limit = 0
+		countBuilder.query.Offset = 0
+		count, err := countBuilder.Count(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get total count: %w", err)
+		}
+		totalCount = count
+	}
+
+	return &lib.Page[M]{
+		Items:      items,
+		Entries:    entries,
+		PageInfo:   pageInfo,
+		TotalCount: totalCount,
+	}, nil
+}
+
+// PaginateAsync is the asynchronous version of Paginate.
+func (b builder[M, C]) PaginateAsync(ctx context.Context, opts ...lib.PaginateOption) *asyncResult[*lib.Page[M]] {
+	return async(ctx, func(ctx context.Context) (*lib.Page[M], error) {
+		return b.Paginate(ctx, opts...)
+	})
+}
+
+// reverseSorts creates a copy of sorts with reversed directions.
+func reverseSorts(sorts []*lib.SortBuilder) []*lib.SortBuilder {
+	reversed := make([]*lib.SortBuilder, len(sorts))
+	for i, s := range sorts {
+		order := lib.SortDesc
+		if s.Order == lib.SortDesc {
+			order = lib.SortAsc
+		}
+		reversed[i] = lib.NewSortBuilder(s.Field, order)
+		reversed[i].IsCollate = s.IsCollate
+		reversed[i].IsNumeric = s.IsNumeric
+	}
+	return reversed
+}
+
+// reverseSlice reverses a slice in place.
+func reverseSlice[T any](s []T) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
+// generateCursor creates a cursor string from an item and sort fields.
+func generateCursor[M any](item *M, sorts []*lib.SortBuilder) (string, error) {
+	if item == nil {
+		return "", nil
+	}
+
+	sortValues := make(map[string]any)
+	var id string
+
+	val := reflect.ValueOf(item)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	for _, s := range sorts {
+		fieldVal, err := getFieldValue(val, s.Field)
+		if err != nil {
+			continue // Skip fields we can't access
+		}
+
+		if s.Field == "id" {
+			if str, ok := fieldVal.(string); ok {
+				id = str
+			} else {
+				id = fmt.Sprintf("%v", fieldVal)
+			}
+		} else {
+			sortValues[s.Field] = fieldVal
+		}
+	}
+
+	// If we didn't find id in sorts, try to get it from the struct
+	if id == "" {
+		if idVal, err := getFieldValue(val, "id"); err == nil {
+			if str, ok := idVal.(string); ok {
+				id = str
+			} else {
+				id = fmt.Sprintf("%v", idVal)
+			}
+		}
+	}
+
+	cursor := lib.CursorData{
+		SortValues: sortValues,
+		ID:         id,
+	}
+
+	return lib.EncodeCursor(cursor)
+}
+
+// getFieldValue extracts a field value from a struct using reflection.
+// Supports nested fields using dot notation (e.g., "group.name").
+func getFieldValue(val reflect.Value, fieldPath string) (any, error) {
+	parts := strings.Split(fieldPath, ".")
+
+	for _, part := range parts {
+		if val.Kind() == reflect.Ptr {
+			if val.IsNil() {
+				return nil, errors.New("nil pointer")
+			}
+			val = val.Elem()
+		}
+
+		if val.Kind() != reflect.Struct {
+			return nil, errors.New("not a struct")
+		}
+
+		// Try to find field by name (case-insensitive for first char)
+		field := val.FieldByNameFunc(func(name string) bool {
+			return strings.EqualFold(name, part) ||
+				strings.EqualFold(name, strings.Title(part)) ||
+				strings.EqualFold(strings.ToLower(name), strings.ToLower(part))
+		})
+
+		if !field.IsValid() {
+			// Try json tag
+			typ := val.Type()
+			for i := 0; i < typ.NumField(); i++ {
+				f := typ.Field(i)
+				tag := f.Tag.Get("json")
+				if tag == "" {
+					continue
+				}
+				tagName := strings.Split(tag, ",")[0]
+				if tagName == part {
+					field = val.Field(i)
+					break
+				}
+			}
+		}
+
+		if !field.IsValid() {
+			return nil, fmt.Errorf("field %s not found", part)
+		}
+
+		val = field
+	}
+
+	if val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			return nil, nil
+		}
+		val = val.Elem()
+	}
+
+	return val.Interface(), nil
 }
