@@ -145,10 +145,7 @@ func (b builder[M, C]) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 
 // All returns all records matching the conditions of the query.
 func (b builder[M, C]) All(ctx context.Context) ([]*M, error) {
-	return b.all(ctx, b.query.BuildAsAll())
-}
-
-func (b builder[M, C]) all(ctx context.Context, req *lib.Result) ([]*M, error) {
+	req := b.query.BuildAsAll()
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
@@ -181,14 +178,17 @@ func (b builder[M, C]) AllIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	var rawNodes []idNode
+	var rawNodes []queryResult[idNode]
 	err = b.db.Unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
+	if len(rawNodes) < 1 {
+		return nil, nil
+	}
 	var ids []string
-	for _, rawNode := range rawNodes {
-		ids = append(ids, rawNode.ID)
+	for _, rawNode := range rawNodes[0].Result {
+		ids = append(ids, rawNode.ID.String())
 	}
 	return ids, nil
 }
