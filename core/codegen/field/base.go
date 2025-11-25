@@ -123,19 +123,3 @@ func (f *baseField) NameGoLower() string {
 func (f *baseField) NameDatabase() string {
 	return f.ToDatabaseName(f.source.Name())
 }
-
-// CollectPasswordPaths recursively collects database paths for all password fields.
-// It traverses nested struct fields to find passwords at any depth.
-func CollectPasswordPaths(fields []Field, prefix string) []string {
-	var paths []string
-	for _, f := range fields {
-		switch field := f.(type) {
-		case *Password:
-			paths = append(paths, prefix+field.NameDatabase())
-		case *Struct:
-			nestedPrefix := prefix + field.NameDatabase() + "."
-			paths = append(paths, CollectPasswordPaths(field.Table().GetFields(), nestedPrefix)...)
-		}
-	}
-	return paths
-}

@@ -12,6 +12,6 @@ func NewGroup(db Database) Builder[model.Group, conv.Group] {
 		convFrom: conv.FromGroupPtr,
 		convTo:   conv.ToGroupPtr,
 		db:       db,
-		query:    lib.NewQuery[model.Group]("group", nil),
+		query:    lib.NewQuery[model.Group]("group"),
 	}}
 }

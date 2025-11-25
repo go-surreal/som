@@ -27,7 +27,6 @@ func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
 	return &urlexample{repo: &repo[model.URLExample, conv.URLExample]{
 		db:       c.db,
 		name:     "url_example",
-		omit:     nil,
 		convTo:   conv.ToURLExamplePtr,
 		convFrom: conv.FromURLExamplePtr}}
 }

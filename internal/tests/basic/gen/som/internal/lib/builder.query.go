@@ -30,7 +30,6 @@ type Query[T any] struct {
 	node       string
 	live       bool
 	fields     string
-	omit       []string
 	groupBy    string
 	groupAll   bool
 	Where      []Filter[T]
@@ -43,14 +42,13 @@ type Query[T any] struct {
 	Parallel   bool
 }
 
-func NewQuery[T any](node string, omit []string) Query[T] {
+func NewQuery[T any](node string) Query[T] {
 	return Query[T]{
 		context: context{
 			varIndex: 0,
 			vars:     map[string]any{},
 		},
 		node: node,
-		omit: omit,
 	}
 }
 
@@ -111,14 +109,7 @@ func (q Query[T]) render() string {
 		out.WriteString("LIVE ")
 	}
 
-	out.WriteString("SELECT ")
-	out.WriteString(q.fields)
-	if !q.live && len(q.omit) > 0 {
-		out.WriteString(" OMIT ")
-		out.WriteString(strings.Join(q.omit, ", "))
-	}
-	out.WriteString(" FROM ")
-	out.WriteString(q.node)
+	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
 
 	var t T
 	whereStatement := All[T](q.Where).build(&q.context, t)

@@ -18,15 +18,12 @@ import (
 type ID = models.RecordID
 
 type Database interface {
-	// Create accepts either a table name (string) for server-generated IDs or a RecordID for specific IDs.
-	// The omit parameter specifies fields to exclude from the returned result.
-	Create(ctx context.Context, what any, data any, omit []string) ([]byte, error)
-	// Select retrieves a record by ID. The omit parameter specifies fields to exclude from the result.
-	Select(ctx context.Context, id *ID, omit []string) ([]byte, error)
+	// Create accepts either a table name (string) for server-generated IDs or a RecordID for specific IDs
+	Create(ctx context.Context, what any, data any) ([]byte, error)
+	Select(ctx context.Context, id *ID) ([]byte, error)
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	// Update modifies a record. The omit parameter specifies fields to exclude from the returned result.
-	Update(ctx context.Context, id *ID, data any, omit []string) ([]byte, error)
+	Update(ctx context.Context, id *ID, data any) ([]byte, error)
 	Delete(ctx context.Context, id *ID) ([]byte, error)
 
 	Marshal(val any) ([]byte, error)
@@ -52,104 +49,59 @@ type surrealDBWrapper struct {
 	db *surrealdb.DB
 }
 
-func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any, omit []string) ([]byte, error) {
-	// For CREATE, we use RETURN AFTER and then SELECT with OMIT if needed,
-	// since SurrealDB doesn't support OMIT with CREATE/UPDATE RETURN clauses.
-	var statement string
-	var selectID string
+func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]byte, error) {
+	var result *any
+	var err error
 
 	switch v := what.(type) {
 	case *newRecordID:
-		statement = fmt.Sprintf("CREATE %s CONTENT $data RETURN AFTER", v.String())
-		selectID = v.String()
+		statement := fmt.Sprintf("CREATE %s CONTENT $data", v.String())
+		queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, map[string]any{"data": data})
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute: %w", err)
+		}
+		if queryResult == nil || len(*queryResult) == 0 {
+			return nil, fmt.Errorf("empty response from create")
+		}
+		if (*queryResult)[0].Error != nil {
+			return nil, fmt.Errorf("create failed: %w", (*queryResult)[0].Error)
+		}
+		resultArray := (*queryResult)[0].Result
+		if len(resultArray) == 0 {
+			return nil, fmt.Errorf("empty result array from create")
+		}
+		return cbor.Marshal(resultArray[0])
 	case string:
-		statement = fmt.Sprintf("CREATE %s CONTENT $data RETURN AFTER", v)
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
 	case models.RecordID:
-		statement = fmt.Sprintf("CREATE %s CONTENT $data RETURN AFTER", v.String())
-		selectID = v.String()
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
 	case models.Table:
-		statement = fmt.Sprintf("CREATE %s CONTENT $data RETURN AFTER", string(v))
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case []models.Table:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
+	case []models.RecordID:
+		result, err = surrealdb.Create[any](ctx, w.db, v, data)
 	default:
 		return nil, fmt.Errorf("invalid type for 'what' parameter: %T (expected string, RecordID, or Table)", what)
 	}
 
-	queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, map[string]any{"data": data})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute: %w", err)
-	}
-	if queryResult == nil || len(*queryResult) == 0 {
-		return nil, fmt.Errorf("empty response from create")
-	}
-	if (*queryResult)[0].Error != nil {
-		return nil, fmt.Errorf("create failed: %w", (*queryResult)[0].Error)
-	}
-	resultArray := (*queryResult)[0].Result
-	if len(resultArray) == 0 {
-		return nil, fmt.Errorf("empty result array from create")
+		return nil, fmt.Errorf("failed to create: %w", err)
 	}
 
-	// If no OMIT needed, return directly
-	if len(omit) == 0 {
-		return cbor.Marshal(resultArray[0])
-	}
-
-	// Extract ID from result for the follow-up SELECT
-	resultMap, ok := resultArray[0].(map[string]any)
-	if !ok {
-		return cbor.Marshal(resultArray[0])
-	}
-	if id, exists := resultMap["id"]; exists {
-		selectID = fmt.Sprintf("%v", id)
-	}
-	if selectID == "" {
-		return cbor.Marshal(resultArray[0])
-	}
-
-	// Do a follow-up SELECT with OMIT
-	selectStatement := fmt.Sprintf("SELECT * OMIT %s FROM %s", strings.Join(omit, ", "), selectID)
-	selectResult, err := surrealdb.Query[[]any](ctx, w.db, selectStatement, nil)
-	if err != nil {
-		return cbor.Marshal(resultArray[0])
-	}
-	if selectResult == nil || len(*selectResult) == 0 {
-		return cbor.Marshal(resultArray[0])
-	}
-	if (*selectResult)[0].Error != nil {
-		return cbor.Marshal(resultArray[0])
-	}
-	selectArray := (*selectResult)[0].Result
-	if len(selectArray) == 0 {
-		return cbor.Marshal(resultArray[0])
-	}
-	return cbor.Marshal(selectArray[0])
+	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Select(ctx context.Context, id *ID, omit []string) ([]byte, error) {
+func (w *surrealDBWrapper) Select(ctx context.Context, id *ID) ([]byte, error) {
 	if id == nil {
 		return nil, fmt.Errorf("id cannot be nil")
 	}
 
-	// Build SELECT query with OMIT if needed
-	statement := fmt.Sprintf("SELECT * FROM %s", id.String())
-	if len(omit) > 0 {
-		statement = fmt.Sprintf("SELECT * OMIT %s FROM %s", strings.Join(omit, ", "), id.String())
-	}
-
-	queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, nil)
+	result, err := surrealdb.Select[any](ctx, w.db, *id)
 	if err != nil {
 		return nil, err
 	}
-	if queryResult == nil || len(*queryResult) == 0 {
-		return nil, fmt.Errorf("empty response from select")
-	}
-	if (*queryResult)[0].Error != nil {
-		return nil, fmt.Errorf("select failed: %w", (*queryResult)[0].Error)
-	}
-	resultArray := (*queryResult)[0].Result
-	if len(resultArray) == 0 {
-		return nil, fmt.Errorf("record not found")
-	}
-	return cbor.Marshal(resultArray[0])
+	return cbor.Marshal(result)
 }
 
 func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
@@ -260,54 +212,16 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 	return out, nil
 }
 
-func (w *surrealDBWrapper) Update(ctx context.Context, id *ID, data any, omit []string) ([]byte, error) {
+func (w *surrealDBWrapper) Update(ctx context.Context, id *ID, data any) ([]byte, error) {
 	if id == nil {
 		return nil, fmt.Errorf("id cannot be nil")
 	}
 
-	// For UPDATE, we use MERGE (not CONTENT) so missing fields are preserved.
-	// This is important for password fields that may be empty after OMIT reads.
-	// CONTENT replaces the entire document, MERGE only updates provided fields.
-	// We also use RETURN AFTER and then SELECT with OMIT if needed,
-	// since SurrealDB doesn't support OMIT with CREATE/UPDATE RETURN clauses.
-	statement := fmt.Sprintf("UPDATE %s MERGE $data RETURN AFTER", id.String())
-	queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, map[string]any{"data": data})
+	result, err := surrealdb.Update[any](ctx, w.db, *id, data)
 	if err != nil {
 		return nil, err
 	}
-	if queryResult == nil || len(*queryResult) == 0 {
-		return nil, fmt.Errorf("empty response from update")
-	}
-	if (*queryResult)[0].Error != nil {
-		return nil, fmt.Errorf("update failed: %w", (*queryResult)[0].Error)
-	}
-	resultArray := (*queryResult)[0].Result
-	if len(resultArray) == 0 {
-		return nil, fmt.Errorf("empty result array from update")
-	}
-
-	// If no OMIT needed, return directly
-	if len(omit) == 0 {
-		return cbor.Marshal(resultArray[0])
-	}
-
-	// Do a follow-up SELECT with OMIT
-	selectStatement := fmt.Sprintf("SELECT * OMIT %s FROM %s", strings.Join(omit, ", "), id.String())
-	selectResult, err := surrealdb.Query[[]any](ctx, w.db, selectStatement, nil)
-	if err != nil {
-		return cbor.Marshal(resultArray[0])
-	}
-	if selectResult == nil || len(*selectResult) == 0 {
-		return cbor.Marshal(resultArray[0])
-	}
-	if (*selectResult)[0].Error != nil {
-		return cbor.Marshal(resultArray[0])
-	}
-	selectArray := (*selectResult)[0].Result
-	if len(selectArray) == 0 {
-		return cbor.Marshal(resultArray[0])
-	}
-	return cbor.Marshal(selectArray[0])
+	return cbor.Marshal(result)
 }
 
 func (w *surrealDBWrapper) Delete(ctx context.Context, id *ID) ([]byte, error) {

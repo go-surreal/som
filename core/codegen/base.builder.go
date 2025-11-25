@@ -201,21 +201,6 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
 	)
 
-	// Collect password field paths for OMIT clause
-	passwordPaths := field.CollectPasswordPaths(node.Fields, "")
-
-	// Build the omit slice literal
-	var omitArg jen.Code
-	if len(passwordPaths) > 0 {
-		var omitItems []jen.Code
-		for _, p := range passwordPaths {
-			omitItems = append(omitItems, jen.Lit(p))
-		}
-		omitArg = jen.Index().String().Values(omitItems...)
-	} else {
-		omitArg = jen.Nil()
-	}
-
 	f.Line().
 		Add(comment(`
 ` + node.NameGo() + `Repo returns a new repository instance for the ` + node.NameGo() + ` model.
@@ -238,10 +223,6 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							jen.Add(
 								jen.Line(),
 								jen.Id("name").Op(":").Lit(node.NameDatabase()),
-							),
-							jen.Add(
-								jen.Line(),
-								jen.Id("omit").Op(":").Add(omitArg),
 							),
 							jen.Add(
 								jen.Line(),

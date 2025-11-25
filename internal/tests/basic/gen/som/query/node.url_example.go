@@ -12,6 +12,6 @@ func NewURLExample(db Database) Builder[model.URLExample, conv.URLExample] {
 		convFrom: conv.FromURLExamplePtr,
 		convTo:   conv.ToURLExamplePtr,
 		db:       db,
-		query:    lib.NewQuery[model.URLExample]("url_example", nil),
+		query:    lib.NewQuery[model.URLExample]("url_example"),
 	}}
 }
