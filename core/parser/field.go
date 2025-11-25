@@ -98,6 +98,20 @@ type FieldURL struct {
 	*fieldAtomic
 }
 
+type FieldPassword struct {
+	*fieldAtomic
+	Algorithm PasswordAlgorithm
+}
+
+type PasswordAlgorithm string
+
+const (
+	PasswordBcrypt PasswordAlgorithm = "Bcrypt"
+	PasswordArgon2 PasswordAlgorithm = "Argon2"
+	PasswordPbkdf2 PasswordAlgorithm = "Pbkdf2"
+	PasswordScrypt PasswordAlgorithm = "Scrypt"
+)
+
 type FieldEmail struct {
 	*fieldAtomic
 }

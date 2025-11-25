@@ -82,17 +82,39 @@ type Enum string
 // Email describes a string field that should contain an email address.
 type Email string
 
-// Password describes a string field that should contain a password.
-type Password string
+// Password describes a string field that contains a password.
+// The type parameter A specifies the encryption algorithm to use.
+// Passwords are automatically encrypted when written to the database.
+// On read, password fields will be empty (for security).
+// Use the Compare method in queries to validate passwords.
+//
+// Example:
+//
+//	type User struct {
+//	    som.Node
+//	    Password som.Password[som.Bcrypt]
+//	}
+type Password[A PasswordAlgorithm] string
+
+type PasswordAlgorithm interface {
+    isPasswordAlgorithm()
+}
+
+// Password encryption algorithm marker types.
+type (
+	Bcrypt struct{}
+	Argon2 struct{}
+	Pbkdf2 struct{}
+	Scrypt struct{}
+)
+
+func (Bcrypt) isPasswordAlgorithm() {}
+func (Argon2) isPasswordAlgorithm() {}
+func (Pbkdf2) isPasswordAlgorithm() {}
+func (Scrypt) isPasswordAlgorithm() {}
 
 // SemVer describes a string field that should contain a semantic version.
 type SemVer string
-
-// Password describes a special string field.
-// Regarding the generated database query operations, it can only be matched, but never read.
-// In a query result, the Password field will always be empty.
-// TODO: implement!
-// type Password string
 
 // Meta describes a model that is not related to any Node or Edge.
 // Instead, it is used to hold metadata that was queried from a Node or Edge.

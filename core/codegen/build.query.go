@@ -1,12 +1,13 @@
 package codegen
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
 )
 
 type queryBuilder struct {

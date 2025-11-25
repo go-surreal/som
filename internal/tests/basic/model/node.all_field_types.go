@@ -160,7 +160,9 @@ func (u *AllFieldTypes) GetGroups() []Group {
 
 type Login struct {
 	Username string
-	Password string
+
+	Password    som.Password[som.Bcrypt]
+	PasswordPtr *som.Password[som.Argon2]
 }
 
 type SomeStruct struct {

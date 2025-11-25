@@ -100,6 +100,7 @@ func TestWithDatabase(t *testing.T) {
 	assert.DeepEqual(t,
 		userNew, *userOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
 }
 
@@ -150,6 +151,7 @@ func TestNumerics(t *testing.T) {
 	assert.DeepEqual(t,
 		userMax, *userOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
 
 	// MIN
@@ -191,6 +193,7 @@ func TestNumerics(t *testing.T) {
 	assert.DeepEqual(t,
 		userMin, *userOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
 }
 
@@ -510,6 +513,7 @@ func TestDuration(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -526,6 +530,7 @@ func TestDuration(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
 }
 
@@ -561,6 +566,7 @@ func TestUUID(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -577,7 +583,93 @@ func TestUUID(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
+}
+
+func TestPassword(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	plainPassword := "test_password_123"
+
+	// Step 1: Create a model with a known password (password is now in Login struct)
+	modelIn := &model.AllFieldTypes{
+		String: "password_test_user",
+		Login: model.Login{
+			Username: "testuser",
+			Password: som.Password[som.Bcrypt](plainPassword),
+		},
+	}
+
+	if string(modelIn.Login.Password) != plainPassword {
+		t.Fatal("password should still be plaintext")
+	}
+
+	err := client.AllFieldTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(modelIn.Login.Password) == plainPassword {
+		t.Fatal("password should be hashed, not stored as plaintext")
+	}
+
+	// Step 2: Verify password was hashed (not equal to original)
+	modelOut, exists, err := client.AllFieldTypesRepo().Read(ctx, modelIn.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	if string(modelOut.Login.Password) == plainPassword {
+		t.Fatal("password should be hashed, not stored as plaintext")
+	}
+
+	// Step 3: Verify password comparison works
+	modelFound, err := client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.ID.Equal(modelIn.ID()),
+			where.AllFieldTypes.Login().Password.Matches(plainPassword),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatalf("password comparison query failed: %v", err)
+	}
+	if modelFound == nil {
+		t.Fatal("password comparison should have found the model")
+	}
+
+	// Step 4: Update OTHER field (not password)
+	modelOut.Login.Username = "updated_user_name"
+
+	err = client.AllFieldTypesRepo().Update(ctx, modelOut)
+	if err != nil {
+		t.Fatalf("failed to update model: %v", err)
+	}
+
+	// Step 5: Verify password comparison STILL works after update
+	// This will FAIL if double-hashing occurs
+	modelFoundAfterUpdate, err := client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.ID.Equal(modelIn.ID()),
+			where.AllFieldTypes.Login().Password.Matches(plainPassword),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatalf("password comparison after update failed: %v", err)
+	}
+	if modelFoundAfterUpdate == nil {
+		t.Fatal("password comparison should still work after updating other fields - possible double-hashing issue")
+	}
+
+	assert.Equal(t, "updated_user_name", modelFoundAfterUpdate.Login.Username)
 }
 
 func TestEmail(t *testing.T) {
@@ -613,6 +705,7 @@ func TestEmail(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
@@ -629,6 +722,7 @@ func TestEmail(t *testing.T) {
 
 	assert.DeepEqual(t, modelIn, modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
 	)
 
 	// Test email-specific filter methods

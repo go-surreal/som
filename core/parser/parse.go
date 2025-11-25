@@ -52,6 +52,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 
 		case !ast.IsExported(v.Name()):
 			{
+				// TODO: imagine an unexported enum that is set with exported method.. possible, no?
 				continue
 			}
 
@@ -87,7 +88,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 				continue
 			}
 
-		case v.Kind() == gotype.String && v.PkgPath() == outPkg:
+		case isEnum(v, outPkg):
 			{
 				res.Enums = append(res.Enums, &Enum{
 					Name: v.Name(),
@@ -95,7 +96,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 				continue
 			}
 
-		case v.Kind() == gotype.Declaration:
+		case v.Kind() == gotype.Declaration: // TODO: what about other decls? :/ -> new parser
 			{
 				res.EnumValues = append(res.EnumValues, &EnumValue{
 					Enum:     v.Declaration().Name(),
@@ -159,6 +160,40 @@ func isEnum(t gotype.Type, outPkg string) bool {
 	}
 
 	return t.String() != "string" && t.PkgPath() == outPkg // TODO: might not be an enum..?!
+}
+
+func isPassword(t gotype.Type, outPkg string) bool {
+	if t.PkgPath() != outPkg {
+		return false
+	}
+	return t.Name() == "Password"
+}
+
+func parsePasswordAlgorithm(t gotype.Type) PasswordAlgorithm {
+	// Extract the type parameter from the AST
+	origin := t.Origin()
+	if origin == nil {
+		return PasswordBcrypt
+	}
+
+	// Handle *ast.IndexExpr for Password[Algo]
+	if indexExpr, ok := origin.(*ast.IndexExpr); ok {
+		if selExpr, ok := indexExpr.Index.(*ast.SelectorExpr); ok {
+			switch selExpr.Sel.Name {
+			case "Bcrypt":
+				return PasswordBcrypt
+			case "Argon2":
+				return PasswordArgon2
+			case "Pbkdf2":
+				return PasswordPbkdf2
+			case "Scrypt":
+				return PasswordScrypt
+			}
+		}
+	}
+
+	// Default to Bcrypt
+	return PasswordBcrypt
 }
 
 func parseNode(v gotype.Type, outPkg string) (*Node, error) {
@@ -317,6 +352,10 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 	case gotype.String:
 		{
 			switch {
+			case isPassword(t.Elem(), outPkg):
+				{
+					return &FieldPassword{atomic, parsePasswordAlgorithm(t.Elem())}, nil
+				}
 			case t.Elem().PkgPath() == outPkg && t.Elem().Name() == "Email":
 				{
 					return &FieldEmail{atomic}, nil
