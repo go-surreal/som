@@ -9,37 +9,30 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: ASDF Environment
-        id: asdf
-        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+      - name: Setup Mise
+        uses: jdx/mise-action@v3
         with:
-          path_to_tool_versions: "./.tool-versions"
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ steps.asdf.outputs.golang_version }}
-          check-latest: true
-
-      - name: Check Go Version
-        run: go version
+          working_directory: internal/tests/basic
+          install: true
+          cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-go-modules
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ env.cache-name }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
+          key: go-modules-tests-v1
+
+      - name: Cache Go Build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-tests-v1
 
       - name: Test Basic (with coverage for generated layer)
         working-directory: internal/tests/basic
