@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"log/slog"
 	"strings"
 	"time"
@@ -158,7 +159,7 @@ func (b builder[M, C]) all(ctx context.Context, req *lib.Result) ([]*M, error) {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
 	if len(rawNodes) < 1 {
-		return nil, errors.New("empty result")
+		return nil, nil
 	}
 	var nodes []*M
 	for _, rawNode := range rawNodes[0].Result {
@@ -235,6 +236,80 @@ func (b builder[M, C]) FirstID(ctx context.Context) (string, error) {
 // FirstIDAsync is the asynchronous version of FirstID.
 func (b builder[M, C]) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 	return async(ctx, b.FirstID)
+}
+
+// Iterate returns an iterator that yields records in batches.
+// The batchSize parameter controls how many records are fetched per database query.
+// Iteration stops on the first error encountered.
+func (b builder[M, C]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, error] {
+	return func(yield func(*M, error) bool) {
+		offset := b.query.Offset
+
+		for {
+			batchBuilder := b
+			batchBuilder.query.Limit = batchSize
+			batchBuilder.query.Offset = offset
+
+			results, err := batchBuilder.All(ctx)
+			if err != nil {
+				yield(nil, err)
+				return
+			}
+
+			if len(results) == 0 {
+				return
+			}
+
+			for _, node := range results {
+				if !yield(node, nil) {
+					return
+				}
+			}
+
+			if len(results) < batchSize {
+				return
+			}
+
+			offset += batchSize
+		}
+	}
+}
+
+// IterateID returns an iterator that yields record IDs in batches.
+// The batchSize parameter controls how many IDs are fetched per database query.
+// Iteration stops on the first error encountered.
+func (b builder[M, C]) IterateID(ctx context.Context, batchSize int) iter.Seq2[string, error] {
+	return func(yield func(string, error) bool) {
+		offset := b.query.Offset
+
+		for {
+			batchBuilder := b
+			batchBuilder.query.Limit = batchSize
+			batchBuilder.query.Offset = offset
+
+			ids, err := batchBuilder.AllIDs(ctx)
+			if err != nil {
+				yield("", err)
+				return
+			}
+
+			if len(ids) == 0 {
+				return
+			}
+
+			for _, id := range ids {
+				if !yield(id, nil) {
+					return
+				}
+			}
+
+			if len(ids) < batchSize {
+				return
+			}
+
+			offset += batchSize
+		}
+	}
 }
 
 // Live registers the constructed query as a live query.
