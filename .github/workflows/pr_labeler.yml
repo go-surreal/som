@@ -1,7 +1,6 @@
-name: PR Labeler
+name: Pull Request Labeler
 
-on:
-  - pull_request_target
+on: pull_request_target
 
 jobs:
 
@@ -11,9 +10,14 @@ jobs:
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     steps:
 
-      - uses: actions/labeler@v4
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: .github/labeler.yml
+
+      - uses: actions/labeler@v6
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           sync-labels: true
