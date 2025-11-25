@@ -1,0 +1,59 @@
+name: tests
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: ASDF Environment
+        id: asdf
+        uses: smartcontractkit/tool-versions-to-env-action@v1.0.8
+        with:
+          path_to_tool_versions: "./.tool-versions"
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ steps.asdf.outputs.golang_version }}
+          check-latest: true
+
+      - name: Check Go Version
+        run: go version
+
+      - name: Cache Go Modules
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-go-modules
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.OS }}-build-${{ env.cache-name }}-
+            ${{ runner.OS }}-build-
+            ${{ runner.OS }}-
+
+      - name: Test Basic (with coverage for generated layer)
+        working-directory: internal/tests/basic
+        env:
+          GOTOOLCHAIN: local
+          GOWORK: "off"
+        run: |
+          go test \
+          -coverprofile=coverage.txt -covermode=atomic \
+          -coverpkg=github.com/go-surreal/som/tests/basic/gen/som/... \
+          -v ./...
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./internal/tests/basic/coverage.txt

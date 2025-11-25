@@ -16,6 +16,8 @@
     <img src="https://github.com/go-surreal/som/actions/workflows/main.yml/badge.svg" alt="Main">
   </a><a href="https://github.com/go-surreal/som/actions/workflows/codeql.yml">
     <img src="https://github.com/go-surreal/som/actions/workflows/codeql.yml/badge.svg" alt="CodeQL">
+  </a><a href="https://codecov.io/gh/go-surreal/som">
+    <img src="https://codecov.io/gh/go-surreal/som/graph/badge.svg?token=FHSP3ZAKRC" alt="Codecov"/>
   </a><a href="https://discord.gg/surrealdb">
     <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord">
   </a><img src="https://img.shields.io/github/contributors/marcbinz/som" alt="Contributors">
