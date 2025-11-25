@@ -156,6 +156,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldEmail:
+		{
+			return &Email{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldEnum:
 		{
 			var values []string

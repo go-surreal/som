@@ -18,18 +18,18 @@ func NewPassword[M any](key Key[M]) *Password[M] {
 	}
 }
 
-func (e *Email[M]) CompareArgon2(val string) *Bool[M] {
-	return NewBool(e.fn("crypto::argon2::compare", val))
+func (p *Password[M]) CompareArgon2(val string) *Bool[M] {
+	return NewBool(p.fn("crypto::argon2::compare", val))
 }
 
-func (e *Email[M]) CompareBcrypt(val string) *Bool[M] {
-	return NewBool(e.fn("crypto::bcrypt::compare", val))
+func (p *Password[M]) CompareBcrypt(val string) *Bool[M] {
+	return NewBool(p.fn("crypto::bcrypt::compare", val))
 }
 
-func (e *Email[M]) ComparePbkdf2(val string) *Bool[M] {
-	return NewBool(e.fn("crypto::pbkdf2::compare", val))
+func (p *Password[M]) ComparePbkdf2(val string) *Bool[M] {
+	return NewBool(p.fn("crypto::pbkdf2::compare", val))
 }
 
-func (e *Email[M]) CompareScrypt(val string) *Bool[M] {
-	return NewBool(e.fn("crypto::scrypt::compare", val))
+func (p *Password[M]) CompareScrypt(val string) *Bool[M] {
+	return NewBool(p.fn("crypto::scrypt::compare", val))
 }
