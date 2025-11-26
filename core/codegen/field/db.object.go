@@ -28,7 +28,3 @@ func (o *DatabaseObject) FileName() string {
 func (o *DatabaseObject) GetFields() []Field {
 	return o.Fields
 }
-
-func (o *DatabaseObject) HasTimestamps() bool {
-	return false // TODO: not needed for objects
-}

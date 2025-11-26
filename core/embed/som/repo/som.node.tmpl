@@ -6,7 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
+	som "{{.GenerateOutPath}}"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -67,6 +69,9 @@ func (r *repo[N, C]) update(ctx context.Context, id *ID, node *N) error {
 	data := r.convFrom(node)
 	res, err := r.db.Update(ctx, id, data)
 	if err != nil {
+		if strings.Contains(err.Error(), "optimistic_lock_failed") {
+			return som.ErrOptimisticLock
+		}
 		return fmt.Errorf("could not update entity: %w", err)
 	}
 	var conv *C

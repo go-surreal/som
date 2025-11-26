@@ -47,7 +47,6 @@ type Element interface {
 
 	FileName() string
 	GetFields() []Field
-	HasTimestamps() bool
 }
 
 type Table interface {

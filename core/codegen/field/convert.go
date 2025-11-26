@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+
 	"github.com/go-surreal/som/core/parser"
 )
 
@@ -16,8 +17,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, node := range source.Nodes {
 		dbNode := &NodeTable{
-			Name:       node.Name,
-			Timestamps: node.Timestamps,
+			Name: node.Name,
 		}
 
 		for _, f := range node.Fields {
@@ -33,8 +33,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, edge := range source.Edges {
 		dbEdge := &EdgeTable{
-			Name:       edge.Name,
-			Timestamps: edge.Timestamps,
+			Name: edge.Name,
 		}
 
 		inField, ok := Convert(source, buildConf, edge.In)
@@ -224,21 +223,12 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 
 	case *parser.FieldNode:
 		{
-			var node *parser.Node
-			for _, elem := range source.Nodes {
-				if elem.Name == f.Node {
-					node = elem
-					break
-				}
-			}
-
 			return &Node{
 				baseField: base,
 				source:    f,
 				table: &NodeTable{
-					Name:       f.Node,
-					Fields:     nil, // TODO: needed? -> node.Fields
-					Timestamps: node.Timestamps,
+					Name:   f.Node,
+					Fields: nil, // TODO: needed? -> node.Fields
 				},
 			}, true
 		}
@@ -276,11 +266,10 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				baseField: base,
 				source:    f,
 				table: &EdgeTable{
-					Name:       f.Edge,
-					In:         in.(*Node),
-					Out:        out.(*Node),
-					Fields:     fields,
-					Timestamps: edge.Timestamps,
+					Name:   f.Edge,
+					In:     in.(*Node),
+					Out:    out.(*Node),
+					Fields: fields,
 				},
 			}, true
 		}
@@ -296,6 +285,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				baseField: base,
 				source:    f,
 				element:   element,
+			}, true
+		}
+
+	case *parser.FieldVersion:
+		{
+			return &Version{
+				baseField: base,
+				source:    f,
 			}, true
 		}
 	}

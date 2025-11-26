@@ -146,6 +146,7 @@ type FieldSlice struct {
 }
 
 type FieldVersion struct {
+	*fieldAtomic
 }
 
 // type FieldMap struct {

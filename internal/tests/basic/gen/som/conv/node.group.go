@@ -17,7 +17,7 @@ func (c *Group) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 5)
+	data := make(map[string]any, 6)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {
@@ -34,6 +34,7 @@ func (c *Group) MarshalCBOR() ([]byte, error) {
 	if c.Members != nil {
 		data["members"] = c.Members
 	}
+	data["__som_lock_version"] = c.Version()
 
 	return cbor.Marshal(data)
 }
@@ -64,6 +65,11 @@ func (c *Group) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["members"]; ok {
 		cbor.Unmarshal(raw, &c.Members)
+	}
+	if raw, ok := rawMap["__som_lock_version"]; ok {
+		var v int
+		cbor.Unmarshal(raw, &v)
+		c.OptimisticLock.SetVersion(v)
 	}
 
 	return nil
