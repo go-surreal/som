@@ -175,14 +175,28 @@ type User struct {
 
 ### som.Password
 
-Secure password handling:
+Secure password handling with automatic hashing. Supports multiple algorithms:
 
 ```go
 type User struct {
     som.Node
-    Password som.Password
+    Password som.Password[som.Bcrypt]   // Bcrypt algorithm
+}
+
+type Admin struct {
+    som.Node
+    Password som.Password[som.Argon2]   // Argon2 (most secure)
 }
 ```
+
+**Supported algorithms:** `som.Bcrypt`, `som.Argon2`, `som.Pbkdf2`, `som.Scrypt`
+
+**Key features:**
+- Passwords are automatically hashed when stored
+- `PERMISSIONS FOR SELECT NONE` - never returned in queries
+- Only re-hashes when the value changes
+
+See [Password Type Reference](../types/password.md) for complete documentation.
 
 ### som.SemVer
 
