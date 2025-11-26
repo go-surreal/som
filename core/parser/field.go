@@ -167,6 +167,10 @@ type FieldSlice struct {
 	// IsEnum bool
 }
 
+type FieldVersion struct {
+	*fieldAtomic
+}
+
 // type FieldMap struct {
 // 	fieldAtomic
 // 	Key   string

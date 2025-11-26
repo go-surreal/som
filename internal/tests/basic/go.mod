@@ -20,7 +20,7 @@ require (
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/dave/jennifer v1.7.1 // indirect
 	github.com/go-surreal/sdbc v0.9.4 // indirect
-	github.com/go-surreal/som v0.10.0 // indirect
+	github.com/go-surreal/som v0.11.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect

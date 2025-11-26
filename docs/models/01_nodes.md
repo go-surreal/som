@@ -75,6 +75,36 @@ DEFINE FIELD updated_at ON user VALUE time::now();
 
 You cannot manually set these values - they're controlled by the database.
 
+## Optimistic Locking
+
+Prevent concurrent update conflicts by embedding `som.OptimisticLock`:
+
+```go
+type Document struct {
+    som.Node
+    som.OptimisticLock  // Adds version tracking
+
+    Title   string
+    Content string
+}
+```
+
+This adds a hidden version field that:
+
+- Starts at 1 for new records
+- Increments on each successful update
+- Throws an error if updating with a stale version
+
+```go
+// Detect conflicts
+err := client.DocumentRepo().Update(ctx, staleDoc)
+if errors.Is(err, som.ErrOptimisticLock) {
+    // Another process updated this record
+}
+```
+
+See [Optimistic Locking](05_optimistic_locking.md) for detailed documentation.
+
 ## Field Types
 
 Nodes support all [Data Types](../data_types/README.md):

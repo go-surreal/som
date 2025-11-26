@@ -1,8 +1,9 @@
 package field
 
 import (
-	"gotest.tools/v3/assert"
 	"testing"
+
+	"gotest.tools/v3/assert"
 )
 
 func TestNodeTable(t *testing.T) {
@@ -16,15 +17,13 @@ func TestNodeTable(t *testing.T) {
 	assert.Equal(t, "user", nodeTable.NameDatabase())
 
 	nodeTable = NodeTable{
-		Name:       "Account",
-		Timestamps: true,
+		Name: "Account",
 	}
 
 	assert.Equal(t, "node.account.go", nodeTable.FileName())
 	assert.Equal(t, "Account", nodeTable.NameGo())
 	assert.Equal(t, "account", nodeTable.NameGoLower())
 	assert.Equal(t, "account", nodeTable.NameDatabase())
-	assert.Equal(t, true, nodeTable.HasTimestamps())
 
 	nodeTable = NodeTable{
 		Name: "FieldsLikeDBResponse",

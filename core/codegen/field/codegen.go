@@ -41,8 +41,6 @@ type CodeGen struct {
 
 	cborMarshal   CodeGenFunc
 	cborUnmarshal CodeGenFunc
-
-	fieldDef CodeGenFunc
 }
 
 func (g *CodeGen) FilterDefine(ctx Context) jen.Code {
@@ -75,10 +73,6 @@ func (g *CodeGen) SortInit(ctx Context) jen.Code {
 
 func (g *CodeGen) SortFunc(ctx Context) jen.Code {
 	return g.sortFunc.Exec(ctx)
-}
-
-func (g *CodeGen) FieldDef(ctx Context) jen.Code {
-	return g.fieldDef.Exec(ctx)
 }
 
 func (g *CodeGen) CBORMarshal(ctx Context) jen.Code {

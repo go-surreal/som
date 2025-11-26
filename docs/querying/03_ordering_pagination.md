@@ -97,3 +97,49 @@ query := client.UserRepo().Query().
 total, _ := query.Count(ctx)
 users, _ := query.Limit(10).Offset(0).All(ctx)
 ```
+
+## Iterating Large Result Sets
+
+For processing large datasets without loading everything into memory, use the iterator methods:
+
+### Iterate
+
+Stream records in batches:
+
+```go
+for user, err := range client.UserRepo().Query().
+    Filter(where.User.IsActive.Equal(true)).
+    Order(by.User.CreatedAt.Desc()).
+    Iterate(ctx, 100) {  // Batch size of 100
+
+    if err != nil {
+        log.Fatal(err)
+    }
+    processUser(user)
+}
+```
+
+### IterateID
+
+Stream only record IDs (more efficient when you just need IDs):
+
+```go
+for id, err := range client.UserRepo().Query().IterateID(ctx, 500) {
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(id)
+}
+```
+
+### When to Use Iterators vs Pagination
+
+| Use Case | Recommended Approach |
+|----------|---------------------|
+| Display page of results to user | `Limit()` + `Offset()` |
+| Process all records in background job | `Iterate()` |
+| Export all data | `Iterate()` |
+| Build list of IDs for batch operation | `IterateID()` |
+| Random access to results | `All()` |
+
+Iterators automatically handle batching internally and support early termination via `break`.

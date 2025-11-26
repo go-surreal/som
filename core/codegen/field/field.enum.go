@@ -69,7 +69,6 @@ func (f *Enum) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -99,11 +98,6 @@ func (f *Enum) sortDefine(ctx Context) jen.Code {
 func (f *Enum) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *Enum) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }
 
 func (f *Enum) cborMarshal(_ Context) jen.Code {

@@ -15,6 +15,7 @@ func newGroup[M any](key lib.Key[M]) group[M] {
 		Key:       key,
 		Name:      lib.NewString[M](lib.Field(key, "name")),
 		UpdatedAt: lib.NewTime[M](lib.Field(key, "updated_at")),
+		Version:   lib.NewInt[M, int](lib.Field(key, "__som_lock_version")),
 	}
 }
 
@@ -24,6 +25,7 @@ type group[M any] struct {
 	CreatedAt *lib.Time[M]
 	UpdatedAt *lib.Time[M]
 	Name      *lib.String[M]
+	Version   *lib.Int[M, int]
 }
 
 func (n group[M]) Members(filters ...lib.Filter[model.GroupMember]) groupMemberOut[M] {

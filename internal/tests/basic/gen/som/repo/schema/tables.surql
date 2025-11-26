@@ -13,6 +13,7 @@ DEFINE FIELD id ON TABLE group TYPE string;
 DEFINE FIELD created_at ON TABLE group TYPE option<datetime> VALUE $before OR time::now() READONLY;
 DEFINE FIELD updated_at ON TABLE group TYPE option<datetime> VALUE time::now();
 DEFINE FIELD name ON TABLE group TYPE string;
+DEFINE FIELD __som_lock_version ON TABLE group TYPE int VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };
 
 DEFINE TABLE fields_like_db_response SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE fields_like_db_response TYPE string;

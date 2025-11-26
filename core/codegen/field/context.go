@@ -8,11 +8,12 @@ import (
 )
 
 type Context struct {
-	SourcePkg   string
-	TargetPkg   string
-	Table       Table
-	Receiver    *jen.Statement
-	isFromSlice bool
+	SourcePkg      string
+	TargetPkg      string
+	Table          Table
+	Element        Element
+	Receiver       *jen.Statement
+	isFromSlice    bool
 }
 
 func (c Context) pkgLib() string {

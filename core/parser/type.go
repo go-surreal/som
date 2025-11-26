@@ -1,17 +1,19 @@
 package parser
 
 type Node struct {
-	Name       string
-	Fields     []Field
-	Timestamps bool
+	Name           string
+	Fields         []Field
+	Timestamps     bool
+	OptimisticLock bool
 }
 
 type Edge struct {
-	Name       string
-	In         Field
-	Out        Field
-	Fields     []Field
-	Timestamps bool
+	Name           string
+	In             Field
+	Out            Field
+	Fields         []Field
+	Timestamps     bool
+	OptimisticLock bool
 }
 
 type Struct struct {

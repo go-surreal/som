@@ -79,7 +79,6 @@ func (f *Slice) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -390,16 +389,6 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 	default:
 		return nil
 	}
-}
-
-func (f *Slice) fieldDef(ctx Context) jen.Code {
-	omitEmpty := ""
-	if _, isEdge := f.element.(*Edge); isEdge {
-		omitEmpty = ",omitempty"
-	}
-
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + omitEmpty})
 }
 
 func (f *Slice) cborMarshal(_ Context) jen.Code {

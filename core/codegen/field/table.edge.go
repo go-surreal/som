@@ -5,11 +5,10 @@ import (
 )
 
 type EdgeTable struct {
-	Name       string
-	In         *Node
-	Out        *Node
-	Fields     []Field
-	Timestamps bool
+	Name   string
+	In     *Node
+	Out    *Node
+	Fields []Field
 }
 
 func (t *EdgeTable) NameGo() string {
@@ -30,8 +29,4 @@ func (t *EdgeTable) FileName() string {
 
 func (t *EdgeTable) GetFields() []Field {
 	return t.Fields
-}
-
-func (t *EdgeTable) HasTimestamps() bool {
-	return t.Timestamps
 }

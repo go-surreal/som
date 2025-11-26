@@ -23,6 +23,7 @@
   * [Edges](models/02_edges.md)
   * [Structs](models/03_structs.md)
   * [Enums](models/04_enums.md)
+  * [Optimistic Locking](models/05_optimistic_locking.md)
 
 ## Data Types
 
@@ -77,6 +78,7 @@
   * [UUID](types/uuid.md)
   * [URL](types/url.md)
   * [Email](types/email.md)
+  * [Password](types/password.md)
   * [Enum](types/enum.md)
   * [Slice](types/slice.md)
   * [Node](types/node.md)
