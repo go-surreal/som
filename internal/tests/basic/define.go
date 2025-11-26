@@ -36,15 +36,3 @@ func init() {
 		)
 
 }
-
-// Legendary
-// Exceptional
-// Great
-// Good
-// Average
-// Mediocre
-// Poor
-// Bad
-// Terrible
-// Abysmal
-// Unplayable
