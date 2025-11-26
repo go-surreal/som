@@ -74,18 +74,13 @@ func (f *Version) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *Version) fieldDef(_ Context) jen.Code {
-	return jen.Id(f.NameGo()).Int().
-		Tag(map[string]string{convTag: f.NameDatabase()})
-}
-
 func (f *Version) cborMarshal(_ Context) jen.Code {
-	// Version() is a getter method on the embedded OptimisticLock struct
+	// Version() is a getter method on the embedded OptimisticLock struct.
 	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()).Call()
 }
 
 func (f *Version) cborUnmarshal(ctx Context) jen.Code {
-	// SetVersion is a setter method on the embedded OptimisticLock struct
+	// SetVersion is a setter method on the embedded OptimisticLock struct.
 	return jen.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
