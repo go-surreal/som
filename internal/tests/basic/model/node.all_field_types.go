@@ -182,6 +182,7 @@ const (
 type Group struct {
 	som.Node
 	som.Timestamps
+	som.OptimisticLock
 
 	Name string
 

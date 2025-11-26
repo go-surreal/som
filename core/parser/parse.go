@@ -235,6 +235,11 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 				continue
 			}
 
+			if f.Elem().PkgPath() == internalPkg && f.Name() == "OptimisticLock" {
+				node.OptimisticLock = true
+				continue
+			}
+
 			return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
 		}
 
@@ -249,6 +254,11 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 		}
 
 		node.Fields = append(node.Fields, field)
+	}
+
+	// If OptimisticLock is enabled, always add a version field
+	if node.OptimisticLock {
+		node.Fields = append(node.Fields, &FieldVersion{&fieldAtomic{"Version", false}})
 	}
 
 	return node, nil
@@ -293,6 +303,11 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 				continue
 			}
 
+			if f.Elem().PkgPath() == internalPkg && f.Name() == "OptimisticLock" {
+				edge.OptimisticLock = true
+				continue
+			}
+
 			return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
 		}
 
@@ -317,6 +332,11 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 		}
 
 		edge.Fields = append(edge.Fields, field)
+	}
+
+	// If OptimisticLock is enabled, always add a version field
+	if edge.OptimisticLock {
+		edge.Fields = append(edge.Fields, &FieldVersion{&fieldAtomic{"Version", false}})
 	}
 
 	return edge, nil

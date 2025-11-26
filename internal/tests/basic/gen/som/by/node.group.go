@@ -14,6 +14,7 @@ func newGroup[M any](key string) group[M] {
 		ID:        lib.NewBaseSort[M](keyed(key, "id")),
 		Name:      lib.NewStringSort[M](keyed(key, "name")),
 		UpdatedAt: lib.NewBaseSort[M](keyed(key, "updated_at")),
+		Version:   lib.NewBaseSort[M](keyed(key, "__som_lock_version")),
 		key:       key,
 	}
 }
@@ -24,4 +25,5 @@ type group[M any] struct {
 	CreatedAt *lib.BaseSort[M]
 	UpdatedAt *lib.BaseSort[M]
 	Name      *lib.StringSort[M]
+	Version   *lib.BaseSort[M]
 }

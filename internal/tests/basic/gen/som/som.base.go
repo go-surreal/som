@@ -3,9 +3,15 @@
 package som
 
 import (
+	"errors"
+
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
+
+// ErrOptimisticLock is returned when an update fails due to a version mismatch.
+// This indicates another process has modified the record since it was read.
+var ErrOptimisticLock = errors.New("optimistic lock: version mismatch")
 
 type ID = models.RecordID
 
@@ -60,6 +66,7 @@ func (e Edge) ID() *ID {
 }
 
 type Timestamps = internal.Timestamps
+type OptimisticLock = internal.OptimisticLock
 
 // TODO: implement soft delete feature
 // type SoftDelete struct {

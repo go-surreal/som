@@ -5,9 +5,8 @@ import (
 )
 
 type NodeTable struct {
-	Name       string
-	Fields     []Field
-	Timestamps bool
+	Name   string
+	Fields []Field
 
 	// TODO: include source package path + method(s)
 }
@@ -30,8 +29,4 @@ func (t *NodeTable) NameGoLower() string {
 
 func (t *NodeTable) NameDatabase() string {
 	return strcase.ToSnake(t.Name) // TODO
-}
-
-func (t *NodeTable) HasTimestamps() bool {
-	return t.Timestamps
 }
