@@ -2,13 +2,13 @@
 
 package model
 
-import "github.com/go-surreal/som/tests/basic/gen/som/define"
+import "github.com/go-surreal/som/define"
 
 // Analyzer definitions for fulltext search
 
 var english = define.Analyzer("english").
 	Tokenizers(define.Blank, define.Punct).
-	Filters(define.Lowercase, define.Snowball("en"))
+	Filters(define.Lowercase, define.Snowball(define.English))
 
 var autocomplete = define.Analyzer("autocomplete").
 	Tokenizers(define.Class).

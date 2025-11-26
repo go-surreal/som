@@ -223,7 +223,7 @@ func parseAnalyzerCall(expr ast.Expr, varName string) (AnalyzerDef, bool) {
 }
 
 // parseFilterArg parses a filter argument (either a selector like define.Lowercase
-// or a call like define.Snowball("en")).
+// or a call like define.Snowball(define.English)).
 func parseFilterArg(arg ast.Expr) (FilterDef, bool) {
 	switch v := arg.(type) {
 	case *ast.SelectorExpr:
@@ -231,22 +231,27 @@ func parseFilterArg(arg ast.Expr) (FilterDef, bool) {
 		return FilterDef{Name: strings.ToLower(v.Sel.Name)}, true
 
 	case *ast.CallExpr:
-		// Filter with parameters like define.Snowball("en")
+		// Filter with parameters like define.Snowball(define.English)
 		if sel, ok := v.Fun.(*ast.SelectorExpr); ok {
 			filter := FilterDef{Name: strings.ToLower(sel.Sel.Name)}
 			for _, arg := range v.Args {
-				if lit, ok := arg.(*ast.BasicLit); ok {
-					switch lit.Kind {
+				switch a := arg.(type) {
+				case *ast.BasicLit:
+					switch a.Kind {
 					case token.STRING:
-						val, _ := strconv.Unquote(lit.Value)
+						val, _ := strconv.Unquote(a.Value)
 						filter.Params = append(filter.Params, val)
 					case token.INT:
-						val, _ := strconv.Atoi(lit.Value)
+						val, _ := strconv.Atoi(a.Value)
 						filter.Params = append(filter.Params, val)
 					case token.FLOAT:
-						val, _ := strconv.ParseFloat(lit.Value, 64)
+						val, _ := strconv.ParseFloat(a.Value, 64)
 						filter.Params = append(filter.Params, val)
 					}
+				case *ast.SelectorExpr:
+					// Handle selector expressions like define.English
+					// The value is the lowercased selector name
+					filter.Params = append(filter.Params, strings.ToLower(a.Sel.Name))
 				}
 			}
 			return filter, true

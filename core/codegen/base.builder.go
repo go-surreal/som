@@ -197,7 +197,8 @@ func buildFilterString(filter parser.FilterDef) string {
 	for _, p := range filter.Params {
 		switch v := p.(type) {
 		case string:
-			paramStrs = append(paramStrs, fmt.Sprintf("'%s'", v))
+			// Language identifiers (e.g., snowball) must NOT be quoted
+			paramStrs = append(paramStrs, v)
 		case int:
 			paramStrs = append(paramStrs, fmt.Sprintf("%d", v))
 		case float64:
