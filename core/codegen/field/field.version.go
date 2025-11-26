@@ -53,7 +53,6 @@ func (f *Version) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-		fieldDef:      f.fieldDef,
 	}
 }
 
