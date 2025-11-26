@@ -51,8 +51,6 @@ func (f *UUID) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-
-		fieldDef: f.fieldDef,
 	}
 }
 
@@ -84,11 +82,6 @@ func (f *UUID) sortDefine(ctx Context) jen.Code {
 func (f *UUID) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *UUID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }
 
 func (f *UUID) cborMarshal(ctx Context) jen.Code {

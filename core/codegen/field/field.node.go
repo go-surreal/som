@@ -53,7 +53,6 @@ func (f *Node) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -88,11 +87,6 @@ func (f *Node) sortFunc(ctx Context) jen.Code {
 		Block(
 			jen.Return(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel).
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
-}
-
-func (f *Node) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
 }
 
 func (f *Node) cborMarshal(_ Context) jen.Code {
