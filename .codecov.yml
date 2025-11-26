@@ -1,0 +1,26 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        paths:
+          - "internal/tests/basic/gen/som/**"
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+        paths:
+          - "internal/tests/basic/gen/som/**"
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true
+
+ignore:
+  - "core/**"
+  - "cmd/**"
+  - "internal/tests/basic/model/**"
+  - "internal/tests/basic/repo/**"
+  - "**/*_test.go"
