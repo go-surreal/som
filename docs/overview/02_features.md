@@ -73,6 +73,39 @@ type User struct {
 }
 ```
 
+### Optimistic Locking
+
+Embed `som.OptimisticLock` to prevent concurrent update conflicts:
+
+```go
+type Document struct {
+    som.Node
+    som.OptimisticLock  // Adds version tracking
+
+    Title string
+}
+
+// Concurrent updates are detected
+err := client.DocumentRepo().Update(ctx, staleDoc)
+if errors.Is(err, som.ErrOptimisticLock) {
+    // Handle conflict
+}
+```
+
+### Iterator Methods
+
+Process large result sets efficiently with Go 1.22+ range-over-func:
+
+```go
+// Stream records in batches without loading all into memory
+for user, err := range client.UserRepo().Query().Iterate(ctx, 100) {
+    if err != nil {
+        break
+    }
+    process(user)
+}
+```
+
 ## Supported Data Types
 
 ### Primitive Types
@@ -98,8 +131,10 @@ type User struct {
 
 | Type | Filter Operations | Sort | CBOR Tag |
 |------|-------------------|------|----------|
-| `uuid.UUID` | Equal, NotEqual, In, NotIn | No | 37 |
-| `url.URL` | Equal, NotEqual | No | - |
+| `uuid.UUID` | Equal, NotEqual, In, NotIn | Yes | 37 |
+| `url.URL` | Equal, NotEqual | Yes | - |
+| `som.Email` | Equal, In, User(), Host() | Yes | - |
+| `som.Password` | Zero, IsNil (auto-hashed) | No | - |
 
 ### Custom Types
 

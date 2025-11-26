@@ -199,6 +199,79 @@ for update := range updates {
 }
 ```
 
+## Iterator Methods
+
+For processing large result sets efficiently, use the iterator methods. These leverage Go 1.22+'s range-over-func feature to stream results in batches.
+
+### Iterate
+
+Iterate over all matching records in batches:
+
+```go
+func (b Builder) Iterate(ctx context.Context, batchSize int) iter.Seq2[*Model, error]
+```
+
+```go
+// Process all active users in batches of 100
+for user, err := range client.UserRepo().Query().
+    Filter(where.User.IsActive.IsTrue()).
+    Iterate(ctx, 100) {
+
+    if err != nil {
+        log.Fatal(err)
+    }
+    processUser(user)
+}
+```
+
+### IterateID
+
+Iterate over record IDs only (more efficient when you only need IDs):
+
+```go
+func (b Builder) IterateID(ctx context.Context, batchSize int) iter.Seq2[string, error]
+```
+
+```go
+// Collect all user IDs
+var ids []string
+for id, err := range client.UserRepo().Query().IterateID(ctx, 500) {
+    if err != nil {
+        log.Fatal(err)
+    }
+    ids = append(ids, id)
+}
+```
+
+### Early Termination
+
+Iterators support breaking out early:
+
+```go
+// Find first 10 matching a condition
+count := 0
+for user, err := range client.UserRepo().Query().Iterate(ctx, 50) {
+    if err != nil {
+        break
+    }
+    if someCondition(user) {
+        count++
+        if count >= 10 {
+            break  // Stop iteration
+        }
+    }
+}
+```
+
+### When to Use Iterators
+
+| Scenario | Method |
+|----------|--------|
+| Process all records without loading into memory | `Iterate` |
+| Need only record IDs | `IterateID` |
+| Fixed number of results | `Limit().All()` |
+| Need random access to results | `All()` |
+
 ## Async Methods
 
 Every execution method has an async variant that returns immediately:
