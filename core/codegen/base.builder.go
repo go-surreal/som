@@ -115,12 +115,26 @@ func (b *build) buildInterfaceFile() error {
 func (b *build) buildSchemaFile() error {
 	statements := []string{string(embed.CodegenComment), ""}
 
+	// Generate DEFINE ANALYZER statements first
+	if b.input.config != nil {
+		for _, analyzer := range b.input.config.Analyzers {
+			statements = append(statements, buildAnalyzerStatement(analyzer))
+		}
+		if len(b.input.config.Analyzers) > 0 {
+			statements = append(statements, "")
+		}
+	}
+
+	// Collect index statements to add after table/field definitions
+	var indexStatements []string
+
 	for _, node := range b.input.nodes {
 		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
 		statements = append(statements, statement)
 
 		for _, f := range node.GetFields() {
 			statements = append(statements, f.SchemaStatements(node.NameDatabase(), "")...)
+			indexStatements = append(indexStatements, b.buildIndexStatements(node.NameDatabase(), "", f)...)
 		}
 
 		statements = append(statements, "")
@@ -137,8 +151,15 @@ func (b *build) buildSchemaFile() error {
 
 		for _, f := range edge.GetFields() {
 			statements = append(statements, f.SchemaStatements(edge.NameDatabase(), "")...)
+			indexStatements = append(indexStatements, b.buildIndexStatements(edge.NameDatabase(), "", f)...)
 		}
 
+		statements = append(statements, "")
+	}
+
+	// Append index statements at the end
+	if len(indexStatements) > 0 {
+		statements = append(statements, indexStatements...)
 		statements = append(statements, "")
 	}
 
@@ -146,6 +167,113 @@ func (b *build) buildSchemaFile() error {
 
 	b.fs.Write(path.Join(def.PkgRepo, "schema", filenameSchema), []byte(content))
 
+	return nil
+}
+
+func buildAnalyzerStatement(analyzer parser.AnalyzerDef) string {
+	var parts []string
+	parts = append(parts, fmt.Sprintf("DEFINE ANALYZER %s", analyzer.Name))
+
+	if len(analyzer.Tokenizers) > 0 {
+		parts = append(parts, fmt.Sprintf("TOKENIZERS %s", strings.Join(analyzer.Tokenizers, ", ")))
+	}
+
+	if len(analyzer.Filters) > 0 {
+		var filterParts []string
+		for _, filter := range analyzer.Filters {
+			filterParts = append(filterParts, buildFilterString(filter))
+		}
+		parts = append(parts, fmt.Sprintf("FILTERS %s", strings.Join(filterParts, ", ")))
+	}
+
+	return strings.Join(parts, " ") + ";"
+}
+
+func buildFilterString(filter parser.FilterDef) string {
+	if len(filter.Params) == 0 {
+		return filter.Name
+	}
+
+	var paramStrs []string
+	for _, p := range filter.Params {
+		switch v := p.(type) {
+		case string:
+			paramStrs = append(paramStrs, fmt.Sprintf("'%s'", v))
+		case int:
+			paramStrs = append(paramStrs, fmt.Sprintf("%d", v))
+		case float64:
+			paramStrs = append(paramStrs, fmt.Sprintf("%g", v))
+		default:
+			paramStrs = append(paramStrs, fmt.Sprintf("%v", v))
+		}
+	}
+	return fmt.Sprintf("%s(%s)", filter.Name, strings.Join(paramStrs, ", "))
+}
+
+func (b *build) buildIndexStatements(tableName, fieldPrefix string, f field.Field) []string {
+	var statements []string
+
+	indexInfo := f.IndexInfo()
+	searchInfo := f.SearchInfo()
+
+	fieldPath := f.NameDatabase()
+	if fieldPrefix != "" {
+		fieldPath = fieldPrefix + "." + fieldPath
+	}
+
+	if indexInfo != nil {
+		indexName := indexInfo.Name
+		if indexName == "" {
+			indexName = fmt.Sprintf("idx_%s_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
+		}
+
+		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s", indexName, tableName, fieldPath)
+		if indexInfo.Unique {
+			stmt += " UNIQUE"
+		}
+		stmt += ";"
+		statements = append(statements, stmt)
+	}
+
+	if searchInfo != nil && searchInfo.ConfigName != "" {
+		// Look up the search config to get analyzer and options
+		searchDef := b.findSearchConfig(searchInfo.ConfigName)
+		if searchDef != nil {
+			indexName := fmt.Sprintf("idx_%s_%s_search", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
+			stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s SEARCH ANALYZER %s",
+				indexName, tableName, fieldPath, searchDef.AnalyzerName)
+			if searchDef.HasBM25 {
+				stmt += fmt.Sprintf(" BM25(%g, %g)", searchDef.BM25K1, searchDef.BM25B)
+			} else {
+				stmt += " BM25"
+			}
+			if searchDef.Highlights {
+				stmt += " HIGHLIGHTS"
+			}
+			stmt += ";"
+			statements = append(statements, stmt)
+		}
+	}
+
+	// Handle nested struct fields
+	if nestedFields := f.NestedFields(); nestedFields != nil {
+		for _, nested := range nestedFields {
+			statements = append(statements, b.buildIndexStatements(tableName, fieldPath, nested)...)
+		}
+	}
+
+	return statements
+}
+
+func (b *build) findSearchConfig(name string) *parser.SearchDef {
+	if b.input.config == nil {
+		return nil
+	}
+	for i := range b.input.config.Searches {
+		if b.input.config.Searches[i].Name == name {
+			return &b.input.config.Searches[i]
+		}
+	}
 	return nil
 }
 

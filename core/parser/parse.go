@@ -113,6 +113,13 @@ func Parse(dir string, outPkg string) (*Output, error) {
 		}
 	}
 
+	// Parse //go:build som config files for analyzer and search definitions
+	config, err := ParseConfig(absDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse config files: %w", err)
+	}
+	res.Config = config
+
 	return res, nil
 }
 
@@ -213,7 +220,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 		if f.IsAnonymous() {
 			if f.Elem().PkgPath() == outPkg && f.Name() == "Node" {
 				node.Fields = append(node.Fields,
-					&FieldID{&fieldAtomic{"ID", false}},
+					&FieldID{&fieldAtomic{name: "ID"}},
 				)
 				continue
 			}
@@ -222,14 +229,14 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 				node.Timestamps = true
 				node.Fields = append(node.Fields,
 					&FieldTime{
-						&fieldAtomic{"CreatedAt", false},
-						true,
-						false,
+						fieldAtomic: &fieldAtomic{name: "CreatedAt"},
+						IsCreatedAt: true,
+						IsUpdatedAt: false,
 					},
 					&FieldTime{
-						&fieldAtomic{"UpdatedAt", false},
-						false,
-						true,
+						fieldAtomic: &fieldAtomic{name: "UpdatedAt"},
+						IsCreatedAt: false,
+						IsUpdatedAt: true,
 					},
 				)
 				continue
@@ -271,7 +278,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 		if f.IsAnonymous() {
 			if f.Elem().PkgPath() == outPkg && f.Name() == "Edge" {
 				edge.Fields = append(edge.Fields,
-					&FieldID{&fieldAtomic{"ID", false}},
+					&FieldID{&fieldAtomic{name: "ID"}},
 				)
 				continue
 			}
@@ -280,14 +287,14 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 				edge.Timestamps = true
 				edge.Fields = append(edge.Fields,
 					&FieldTime{
-						&fieldAtomic{"CreatedAt", false},
-						true,
-						false,
+						fieldAtomic: &fieldAtomic{name: "CreatedAt"},
+						IsCreatedAt: true,
+						IsUpdatedAt: false,
 					},
 					&FieldTime{
-						&fieldAtomic{"UpdatedAt", false},
-						false,
-						true,
+						fieldAtomic: &fieldAtomic{name: "UpdatedAt"},
+						IsCreatedAt: false,
+						IsUpdatedAt: true,
 					},
 				)
 				continue
@@ -342,9 +349,24 @@ func parseStruct(v gotype.Type, outPkg string) (*Struct, error) {
 }
 
 func parseField(t gotype.Type, outPkg string) (Field, error) {
+	return parseFieldInternal(t, outPkg, true)
+}
+
+func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field, error) {
+	// Parse som tag for index/search info
+	// Only struct fields have tags
+	var indexInfo *IndexInfo
+	var searchInfo *SearchInfo
+	if isStructField {
+		somTag := t.Tag().Get("som")
+		indexInfo, searchInfo = parseSomTag(somTag)
+	}
+
 	atomic := &fieldAtomic{
 		name:    t.Name(),
 		pointer: false,
+		index:   indexInfo,
+		search:  searchInfo,
 	}
 
 	switch t.Elem().Kind() {
@@ -490,13 +512,17 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 
 	case gotype.Slice:
 		{
-			field, err := parseField(t.Elem(), outPkg)
+			field, err := parseFieldInternal(t.Elem(), outPkg, false)
 			if err != nil {
 				return nil, err
 			}
 
 			return &FieldSlice{
-				&fieldAtomic{name: t.Name()},
+				&fieldAtomic{
+					name:   t.Name(),
+					index:  indexInfo,
+					search: searchInfo,
+				},
 				field,
 			}, nil
 		}
@@ -504,13 +530,17 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 	case gotype.Array:
 		{
 			if t.Elem().PkgPath() == "github.com/google/uuid" {
-				return &FieldUUID{&fieldAtomic{name: t.Name()}}, nil
+				return &FieldUUID{&fieldAtomic{
+					name:   t.Name(),
+					index:  indexInfo,
+					search: searchInfo,
+				}}, nil
 			}
 		}
 
 	case gotype.Ptr:
 		{
-			field, err := parseField(t.Elem(), outPkg)
+			field, err := parseFieldInternal(t.Elem(), outPkg, false)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse elem for ptr field %s: %v", t.Name(), err)
 			}
@@ -520,11 +550,80 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 			}
 			field.setPointer(true)
 
+			// Index/search info comes from the outer pointer field, not the inner element
+			if indexInfo != nil {
+				field.setIndex(indexInfo)
+			}
+			if searchInfo != nil {
+				field.setSearch(searchInfo)
+			}
+
 			return field, nil
 		}
 	}
 
 	return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), t.Elem().Kind())
+}
+
+// parseSomTag parses the "som" struct tag and extracts index/search info.
+// Tag format examples:
+//   - som:"index"              -> simple index
+//   - som:"index,unique"       -> unique index
+//   - som:"index,name:idx_foo" -> named index (for composite)
+//   - som:"search:config_name" -> fulltext search with named config
+//   - som:"in"                 -> edge in field (existing)
+//   - som:"out"                -> edge out field (existing)
+func parseSomTag(tag string) (index *IndexInfo, search *SearchInfo) {
+	if tag == "" {
+		return nil, nil
+	}
+
+	// Handle existing edge markers
+	if tag == "in" || tag == "out" {
+		return nil, nil
+	}
+
+	parts := strings.Split(tag, ",")
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+
+		// Check for search:config_name
+		if strings.HasPrefix(part, "search:") {
+			configName := strings.TrimPrefix(part, "search:")
+			search = &SearchInfo{ConfigName: configName}
+			continue
+		}
+
+		// Check for index keyword
+		if part == "index" {
+			if index == nil {
+				index = &IndexInfo{}
+			}
+			continue
+		}
+
+		// Check for unique modifier
+		if part == "unique" {
+			if index == nil {
+				index = &IndexInfo{}
+			}
+			index.Unique = true
+			continue
+		}
+
+		// Check for name:xxx modifier
+		if strings.HasPrefix(part, "name:") {
+			name := strings.TrimPrefix(part, "name:")
+			if index == nil {
+				index = &IndexInfo{}
+			}
+			index.Name = name
+			continue
+		}
+	}
+
+	return index, search
 }
 
 type Output struct {
@@ -534,4 +633,7 @@ type Output struct {
 	Structs    []*Struct
 	Enums      []*Enum
 	EnumValues []*EnumValue
+
+	// Config holds analyzer and search definitions from //go:build som files
+	Config *ConfigOutput
 }

@@ -13,7 +13,7 @@ type AllFieldTypes struct {
 
 	// basic types
 
-	String         string
+	String         string `som:"search:english_search"`
 	StringPtr      *string
 	Other          []string
 	StringPtrSlice []*string
@@ -159,7 +159,7 @@ func (u *AllFieldTypes) GetGroups() []Group {
 }
 
 type Login struct {
-	Username string
+	Username string `som:"index"`
 
 	Password    som.Password[som.Bcrypt]
 	PasswordPtr *som.Password[som.Argon2]
@@ -183,7 +183,7 @@ type Group struct {
 	som.Node
 	som.Timestamps
 
-	Name string
+	Name string `som:"index,unique"`
 
 	Members []GroupMember
 }

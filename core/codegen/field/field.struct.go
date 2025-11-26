@@ -49,6 +49,10 @@ func (f *Struct) Table() Table {
 	return f.table
 }
 
+func (f *Struct) NestedFields() []Field {
+	return f.table.GetFields()
+}
+
 func (f *Struct) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,

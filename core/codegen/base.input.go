@@ -13,6 +13,7 @@ type input struct {
 	nodes         []*field.NodeTable
 	edges         []*field.EdgeTable
 	objects       []*field.DatabaseObject
+	config        *parser.ConfigOutput
 }
 
 func newInput(source *parser.Output, outPkg string) (*input, error) {
@@ -34,6 +35,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 	in.nodes = def.Nodes
 	in.edges = def.Edges
 	in.objects = def.Objects
+	in.config = source.Config
 
 	return &in, nil
 }
