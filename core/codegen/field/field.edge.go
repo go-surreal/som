@@ -43,8 +43,6 @@ func (f *Edge) CodeGen() *CodeGen {
 		sortDefine: nil,
 		sortInit:   nil,
 		sortFunc:   nil, // sorting by related edges is not supported
-
-		fieldDef: f.fieldDef,
 	}
 }
 
@@ -69,9 +67,4 @@ func (f *Edge) filterFunc(ctx Context) jen.Code {
 		Block(
 			jen.Return(jen.Add(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel)).
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
-}
-
-func (f *Edge) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
 }
