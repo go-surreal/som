@@ -2,7 +2,7 @@
 
 package model
 
-import "github.com/go-surreal/som/define"
+import "github.com/go-surreal/som/tests/basic/gen/som/define"
 
 // Analyzer definitions for fulltext search
 
