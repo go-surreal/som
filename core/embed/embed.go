@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	baseDir = "_embed/som"
+	baseDir = "som"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 	embedComment   = []byte("//go:build embed")
 )
 
-//go:embed _embed/som
+//go:embed som
 var content embed.FS
 
 type Template struct {
