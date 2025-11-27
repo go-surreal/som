@@ -663,5 +663,5 @@ type Output struct {
 	EnumValues []*EnumValue
 
 	// Config holds analyzer and search definitions from //go:build som files
-	Config *ConfigOutput
+	Config *DefineOutput
 }

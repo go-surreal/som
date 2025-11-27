@@ -23,9 +23,3 @@ var _ = define.Search("english_search").
 
 var _ = define.Search("autocomplete_search").
 	FulltextAnalyzer(autocomplete)
-
-type X struct {
-	som.Model
-
-	Field1 string `som:"index"`
-}

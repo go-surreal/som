@@ -37,16 +37,16 @@ type SearchDef struct {
 	Concurrently bool
 }
 
-// ConfigOutput holds all parsed configuration from //go:build som files.
-type ConfigOutput struct {
+// DefineOutput holds all parsed configuration from //go:build som files.
+type DefineOutput struct {
 	Analyzers []AnalyzerDef
 	Searches  []SearchDef
 }
 
 // ParseConfig parses all //go:build som files in the given directory
 // and extracts analyzer and search configuration definitions.
-func ParseConfig(dir string) (*ConfigOutput, error) {
-	output := &ConfigOutput{}
+func ParseConfig(dir string) (*DefineOutput, error) {
+	output := &DefineOutput{}
 
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
@@ -334,7 +334,7 @@ func parseSearchCall(expr ast.Expr) (SearchDef, bool) {
 }
 
 // resolveAnalyzerRefs resolves analyzer variable references in search definitions.
-func resolveAnalyzerRefs(output *ConfigOutput) error {
+func resolveAnalyzerRefs(output *DefineOutput) error {
 	// Build a map of variable name -> analyzer name
 	varToName := make(map[string]string)
 	for _, a := range output.Analyzers {
