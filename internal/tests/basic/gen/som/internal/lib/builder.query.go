@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+const (
+	sortFieldPrefix = "__som_sort__"
+)
+
 type context struct {
 	varIndex int32
 	vars     map[string]any
@@ -29,7 +33,7 @@ type Query[T any] struct {
 	context
 	node       string
 	live       bool
-	fields     string
+	fields     []string
 	groupBy    string
 	groupAll   bool
 	Where      []Filter[T]
@@ -53,7 +57,7 @@ func NewQuery[T any](node string) Query[T] {
 }
 
 func (q Query[T]) BuildAsAll() *Result {
-	q.fields = "*"
+	q.fields = []string{"*"}
 
 	return &Result{
 		Statement: q.render(),
@@ -62,7 +66,7 @@ func (q Query[T]) BuildAsAll() *Result {
 }
 
 func (q Query[T]) BuildAsAllIDs() *Result {
-	q.fields = "id"
+	q.fields = []string{"id"}
 
 	return &Result{
 		Statement: q.render(),
@@ -71,7 +75,7 @@ func (q Query[T]) BuildAsAllIDs() *Result {
 }
 
 func (q Query[T]) BuildAsCount() *Result {
-	q.fields = "count()"
+	q.fields = []string{"count()"}
 	q.groupAll = true
 
 	return &Result{
@@ -82,7 +86,7 @@ func (q Query[T]) BuildAsCount() *Result {
 
 func (q Query[T]) BuildAsLive() *Result {
 	q.live = true
-	q.fields = "*"
+	q.fields = []string{"*"}
 
 	return &Result{
 		Statement: q.render(),
@@ -92,7 +96,7 @@ func (q Query[T]) BuildAsLive() *Result {
 
 func (q Query[T]) BuildAsLiveDiff() *Result {
 	q.live = true
-	q.fields = "DIFF"
+	q.fields = []string{"DIFF"}
 
 	return &Result{
 		Statement: q.render(),
@@ -109,7 +113,24 @@ func (q Query[T]) render() string {
 		out.WriteString("LIVE ")
 	}
 
-	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
+	fields := q.fields
+	for _, s := range q.Sort {
+		fields = append(fields, s.Field+" as "+sortFieldPrefix+s.Field)
+	}
+
+	out.WriteString("SELECT " + strings.Join(fields, ", "))
+
+	// TODO: not working, but more a optimisation than anything else
+	//if len(q.Sort) > 0 {
+	//	out.WriteString(" OMIT ")
+	//	var omitFields []string
+	//	for _, s := range q.Sort {
+	//		omitFields = append(omitFields, "__som_"+s.Field)
+	//	}
+	//	out.WriteString(strings.Join(omitFields, ", "))
+	//}
+
+	out.WriteString(" FROM " + q.node)
 
 	var t T
 	whereStatement := All[T](q.Where).build(&q.context, t)
