@@ -1,20 +1,19 @@
 package parser
 
 import (
+	"encoding/json"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
+
+	"github.com/go-surreal/som/core/util/gomod"
 )
 
-// AnalyzerDef represents a parsed analyzer definition from a //go:build som file.
+// AnalyzerDef represents an analyzer definition.
 type AnalyzerDef struct {
 	Name       string
-	VarName    string // The Go variable name (for reference in SearchDef)
 	Tokenizers []string
 	Filters    []FilterDef
 }
@@ -25,13 +24,12 @@ type FilterDef struct {
 	Params []any // string or int/float parameters
 }
 
-// SearchDef represents a parsed search configuration from a //go:build som file.
+// SearchDef represents a search configuration.
 type SearchDef struct {
 	Name         string
-	AnalyzerVar  string  // Variable name referencing an AnalyzerDef
-	AnalyzerName string  // Resolved analyzer name
-	BM25K1       float64 // BM25 k1 parameter (0 means not set)
-	BM25B        float64 // BM25 b parameter (0 means not set)
+	AnalyzerName string
+	BM25K1       float64
+	BM25B        float64
 	HasBM25      bool
 	Highlights   bool
 	Concurrently bool
@@ -43,62 +41,151 @@ type DefineOutput struct {
 	Searches  []SearchDef
 }
 
-// ParseConfig parses all //go:build som files in the given directory
-// and extracts analyzer and search configuration definitions.
-func ParseConfig(dir string) (*DefineOutput, error) {
-	output := &DefineOutput{}
+// defineOutputJSON matches the JSON structure from Definitions.ToJSON().
+type defineOutputJSON struct {
+	Analyzers []analyzerJSON `json:"analyzers"`
+	Searches  []searchJSON   `json:"searches"`
+}
 
+type analyzerJSON struct {
+	Name       string       `json:"name"`
+	Tokenizers []string     `json:"tokenizers"`
+	Filters    []filterJSON `json:"filters"`
+}
+
+type filterJSON struct {
+	Name   string `json:"name"`
+	Params []any  `json:"params,omitempty"`
+}
+
+type searchJSON struct {
+	Name         string  `json:"name"`
+	AnalyzerName string  `json:"analyzer_name"`
+	BM25K1       float64 `json:"bm25_k1,omitempty"`
+	BM25B        float64 `json:"bm25_b,omitempty"`
+	HasBM25      bool    `json:"has_bm25"`
+	Highlights   bool    `json:"highlights"`
+	Concurrently bool    `json:"concurrently"`
+}
+
+// ParseConfig parses all //go:build som files in the given directory
+// by compiling and running the user's Definitions() function.
+func ParseConfig(dir string) (*DefineOutput, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("could not get absolute path: %w", err)
 	}
 
-	// Find all .go files with //go:build som tag
-	entries, err := os.ReadDir(absDir)
+	// Check if any file has //go:build som tag
+	hasDefine, err := hasDefineFiles(absDir)
 	if err != nil {
-		return nil, fmt.Errorf("could not read directory: %w", err)
+		return nil, err
+	}
+	if !hasDefine {
+		return &DefineOutput{}, nil
 	}
 
-	fset := token.NewFileSet()
+	// Get the model package path
+	mod, err := gomod.FindGoMod(absDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not find go.mod: %w", err)
+	}
+
+	diff := strings.TrimPrefix(absDir, mod.Dir())
+	modelPkg := filepath.ToSlash(filepath.Join(mod.Module(), diff))
+
+	// Create temp directory for main.go
+	tempDir, err := os.MkdirTemp(absDir, ".somgen_temp_")
+	if err != nil {
+		return nil, fmt.Errorf("could not create temp directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Write temp main.go
+	mainContent := fmt.Sprintf(`//go:build som
+
+package main
+
+import (
+	"os"
+	model "%s"
+)
+
+func main() {
+	data, err := model.Definitions().ToJSON()
+	if err != nil {
+		os.Stderr.WriteString(err.Error())
+		os.Exit(1)
+	}
+	os.Stdout.Write(data)
+}
+`, modelPkg)
+
+	mainPath := filepath.Join(tempDir, "main.go")
+	if err := os.WriteFile(mainPath, []byte(mainContent), 0644); err != nil {
+		return nil, fmt.Errorf("could not write temp main.go: %w", err)
+	}
+
+	// Run go run -tags=som
+	cmd := exec.Command("go", "run", "-tags=som", mainPath)
+	cmd.Dir = mod.Dir()
+	output, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("failed to run Definitions(): %s", string(exitErr.Stderr))
+		}
+		return nil, fmt.Errorf("failed to run Definitions(): %w", err)
+	}
+
+	// Parse JSON output
+	var jsonOutput defineOutputJSON
+	if err := json.Unmarshal(output, &jsonOutput); err != nil {
+		return nil, fmt.Errorf("could not parse Definitions() output: %w", err)
+	}
+
+	// Convert to DefineOutput
+	result := &DefineOutput{}
+
+	for _, a := range jsonOutput.Analyzers {
+		analyzer := AnalyzerDef{
+			Name:       a.Name,
+			Tokenizers: a.Tokenizers,
+		}
+		for _, f := range a.Filters {
+			analyzer.Filters = append(analyzer.Filters, FilterDef(f))
+		}
+		result.Analyzers = append(result.Analyzers, analyzer)
+	}
+
+	for _, s := range jsonOutput.Searches {
+		result.Searches = append(result.Searches, SearchDef(s))
+	}
+
+	return result, nil
+}
+
+// hasDefineFiles checks if the directory contains any //go:build som files.
+func hasDefineFiles(dir string) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, fmt.Errorf("could not read directory: %w", err)
+	}
 
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
 			continue
 		}
 
-		filePath := filepath.Join(absDir, entry.Name())
-
-		// Check if file has //go:build som tag
+		filePath := filepath.Join(dir, entry.Name())
 		hasBuildTag, err := hasGoBuildSomTag(filePath)
 		if err != nil {
-			return nil, fmt.Errorf("could not check build tag for %s: %w", entry.Name(), err)
+			return false, err
 		}
-		if !hasBuildTag {
-			continue
+		if hasBuildTag {
+			return true, nil
 		}
-
-		// Parse the file
-		f, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
-		if err != nil {
-			return nil, fmt.Errorf("could not parse %s: %w", entry.Name(), err)
-		}
-
-		// Extract analyzer and search definitions
-		analyzers, searches, err := extractDefinitions(f)
-		if err != nil {
-			return nil, fmt.Errorf("could not extract definitions from %s: %w", entry.Name(), err)
-		}
-
-		output.Analyzers = append(output.Analyzers, analyzers...)
-		output.Searches = append(output.Searches, searches...)
 	}
-
-	// Resolve analyzer references in search definitions
-	if err := resolveAnalyzerRefs(output); err != nil {
-		return nil, err
-	}
-
-	return output, nil
+	return false, nil
 }
 
 // hasGoBuildSomTag checks if a file has the //go:build som build constraint.
@@ -125,235 +212,4 @@ func hasGoBuildSomTag(filePath string) (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-// extractDefinitions extracts analyzer and search definitions from a parsed file.
-func extractDefinitions(f *ast.File) ([]AnalyzerDef, []SearchDef, error) {
-	var analyzers []AnalyzerDef
-	var searches []SearchDef
-
-	for _, decl := range f.Decls {
-		genDecl, ok := decl.(*ast.GenDecl)
-		if !ok || genDecl.Tok != token.VAR {
-			continue
-		}
-
-		for _, spec := range genDecl.Specs {
-			valueSpec, ok := spec.(*ast.ValueSpec)
-			if !ok || len(valueSpec.Values) == 0 {
-				continue
-			}
-
-			varName := ""
-			if len(valueSpec.Names) > 0 {
-				varName = valueSpec.Names[0].Name
-			}
-
-			// Check if this is an Analyzer or Search call
-			for _, value := range valueSpec.Values {
-				if analyzer, ok := parseAnalyzerCall(value, varName); ok {
-					analyzers = append(analyzers, analyzer)
-				} else if search, ok := parseSearchCall(value); ok {
-					searches = append(searches, search)
-				}
-			}
-		}
-	}
-
-	return analyzers, searches, nil
-}
-
-// parseAnalyzerCall parses a define.FulltextAnalyzer(...) call chain.
-func parseAnalyzerCall(expr ast.Expr, varName string) (AnalyzerDef, bool) {
-	def := AnalyzerDef{VarName: varName}
-
-	// Walk up the call chain (method calls are nested)
-	current := expr
-	for {
-		call, ok := current.(*ast.CallExpr)
-		if !ok {
-			break
-		}
-
-		switch fn := call.Fun.(type) {
-		case *ast.SelectorExpr:
-			methodName := fn.Sel.Name
-
-			switch methodName {
-			case "FulltextAnalyzer":
-				// This is the root: define.FulltextAnalyzer("name")
-				if len(call.Args) > 0 {
-					if lit, ok := call.Args[0].(*ast.BasicLit); ok && lit.Kind == token.STRING {
-						def.Name, _ = strconv.Unquote(lit.Value)
-					}
-				}
-				return def, def.Name != ""
-
-			case "Tokenizers":
-				// .Tokenizers(define.Blank, define.Punct, ...)
-				for _, arg := range call.Args {
-					if sel, ok := arg.(*ast.SelectorExpr); ok {
-						def.Tokenizers = append(def.Tokenizers, strings.ToLower(sel.Sel.Name))
-					}
-				}
-				current = fn.X
-
-			case "Filters":
-				// .Filters(define.Lowercase, define.Snowball("en"), ...)
-				for _, arg := range call.Args {
-					if filter, ok := parseFilterArg(arg); ok {
-						def.Filters = append(def.Filters, filter)
-					}
-				}
-				current = fn.X
-
-			default:
-				current = fn.X
-			}
-
-		case *ast.Ident:
-			// Reached the end of the chain
-			return def, false
-
-		default:
-			return def, false
-		}
-	}
-
-	return def, false
-}
-
-// parseFilterArg parses a filter argument (either a selector like define.Lowercase
-// or a call like define.Snowball(define.English)).
-func parseFilterArg(arg ast.Expr) (FilterDef, bool) {
-	switch v := arg.(type) {
-	case *ast.SelectorExpr:
-		// Simple filter like define.Lowercase
-		return FilterDef{Name: strings.ToLower(v.Sel.Name)}, true
-
-	case *ast.CallExpr:
-		// Filter with parameters like define.Snowball(define.English)
-		if sel, ok := v.Fun.(*ast.SelectorExpr); ok {
-			filter := FilterDef{Name: strings.ToLower(sel.Sel.Name)}
-			for _, arg := range v.Args {
-				switch a := arg.(type) {
-				case *ast.BasicLit:
-					switch a.Kind {
-					case token.STRING:
-						val, _ := strconv.Unquote(a.Value)
-						filter.Params = append(filter.Params, val)
-					case token.INT:
-						val, _ := strconv.Atoi(a.Value)
-						filter.Params = append(filter.Params, val)
-					case token.FLOAT:
-						val, _ := strconv.ParseFloat(a.Value, 64)
-						filter.Params = append(filter.Params, val)
-					}
-				case *ast.SelectorExpr:
-					// Handle selector expressions like define.English
-					// The value is the lowercased selector name
-					filter.Params = append(filter.Params, strings.ToLower(a.Sel.Name))
-				}
-			}
-			return filter, true
-		}
-	}
-	return FilterDef{}, false
-}
-
-// parseSearchCall parses a define.Search(...) or som.Search(...) call chain.
-func parseSearchCall(expr ast.Expr) (SearchDef, bool) {
-	def := SearchDef{}
-
-	current := expr
-	for {
-		call, ok := current.(*ast.CallExpr)
-		if !ok {
-			break
-		}
-
-		switch fn := call.Fun.(type) {
-		case *ast.SelectorExpr:
-			methodName := fn.Sel.Name
-
-			switch methodName {
-			case "Search":
-				// Root: define.Search("name")
-				if len(call.Args) > 0 {
-					if lit, ok := call.Args[0].(*ast.BasicLit); ok && lit.Kind == token.STRING {
-						def.Name, _ = strconv.Unquote(lit.Value)
-					}
-				}
-				return def, def.Name != ""
-
-			case "FulltextAnalyzer":
-				// .FulltextAnalyzer(varName) - reference to an analyzer variable
-				if len(call.Args) > 0 {
-					if ident, ok := call.Args[0].(*ast.Ident); ok {
-						def.AnalyzerVar = ident.Name
-					}
-				}
-				current = fn.X
-
-			case "BM25":
-				// .BM25(k1, b)
-				def.HasBM25 = true
-				if len(call.Args) >= 2 {
-					if lit, ok := call.Args[0].(*ast.BasicLit); ok {
-						def.BM25K1, _ = strconv.ParseFloat(lit.Value, 64)
-					}
-					if lit, ok := call.Args[1].(*ast.BasicLit); ok {
-						def.BM25B, _ = strconv.ParseFloat(lit.Value, 64)
-					}
-				}
-				current = fn.X
-
-			case "Highlights":
-				// .Highlights()
-				def.Highlights = true
-				current = fn.X
-
-			case "Concurrently":
-				// .Concurrently()
-				def.Concurrently = true
-				current = fn.X
-
-			default:
-				current = fn.X
-			}
-
-		case *ast.Ident:
-			return def, false
-
-		default:
-			return def, false
-		}
-	}
-
-	return def, false
-}
-
-// resolveAnalyzerRefs resolves analyzer variable references in search definitions.
-func resolveAnalyzerRefs(output *DefineOutput) error {
-	// Build a map of variable name -> analyzer name
-	varToName := make(map[string]string)
-	for _, a := range output.Analyzers {
-		if a.VarName != "" && a.VarName != "_" {
-			varToName[a.VarName] = a.Name
-		}
-	}
-
-	// Resolve references
-	for i := range output.Searches {
-		if output.Searches[i].AnalyzerVar != "" {
-			name, ok := varToName[output.Searches[i].AnalyzerVar]
-			if !ok {
-				return fmt.Errorf("search config %q references unknown analyzer variable %q",
-					output.Searches[i].Name, output.Searches[i].AnalyzerVar)
-			}
-			output.Searches[i].AnalyzerName = name
-		}
-	}
-
-	return nil
 }

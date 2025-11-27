@@ -2,6 +2,8 @@
 
 package define
 
+import "encoding/json"
+
 // SearchBuilder builds a SEARCH ANALYZER index configuration.
 type SearchBuilder struct {
 	name         string
@@ -45,10 +47,66 @@ func (b *SearchBuilder) Concurrently() *SearchBuilder {
 }
 
 // Getters for parser access
-func (b *SearchBuilder) GetName() string                           { return b.name }
+func (b *SearchBuilder) GetName() string                               { return b.name }
 func (b *SearchBuilder) GetFulltextAnalyzer() *FulltextAnalyzerBuilder { return b.analyzer }
-func (b *SearchBuilder) GetBM25K1() float64                        { return b.bm25K1 }
-func (b *SearchBuilder) GetBM25B() float64                         { return b.bm25B }
-func (b *SearchBuilder) HasBM25() bool                             { return b.hasBM25 }
-func (b *SearchBuilder) HasHighlights() bool                       { return b.highlights }
-func (b *SearchBuilder) IsConcurrently() bool                      { return b.concurrently }
+func (b *SearchBuilder) GetBM25K1() float64                            { return b.bm25K1 }
+func (b *SearchBuilder) GetBM25B() float64                             { return b.bm25B }
+func (b *SearchBuilder) HasBM25() bool                                 { return b.hasBM25 }
+func (b *SearchBuilder) HasHighlights() bool                           { return b.highlights }
+func (b *SearchBuilder) IsConcurrently() bool                          { return b.concurrently }
+
+// SearchJSON is the JSON representation of a search configuration.
+type SearchJSON struct {
+	Name         string  `json:"name"`
+	AnalyzerName string  `json:"analyzer_name"`
+	BM25K1       float64 `json:"bm25_k1,omitempty"`
+	BM25B        float64 `json:"bm25_b,omitempty"`
+	HasBM25      bool    `json:"has_bm25"`
+	Highlights   bool    `json:"highlights"`
+	Concurrently bool    `json:"concurrently"`
+}
+
+// ToJSON converts the search builder to its JSON representation.
+func (b *SearchBuilder) ToJSON() SearchJSON {
+	analyzerName := ""
+	if b.analyzer != nil {
+		analyzerName = b.analyzer.GetName()
+	}
+	return SearchJSON{
+		Name:         b.name,
+		AnalyzerName: analyzerName,
+		BM25K1:       b.bm25K1,
+		BM25B:        b.bm25B,
+		HasBM25:      b.hasBM25,
+		Highlights:   b.highlights,
+		Concurrently: b.concurrently,
+	}
+}
+
+// Definitions holds all user-defined configurations.
+type Definitions struct {
+	Searches []*SearchBuilder
+}
+
+// DefineOutputJSON is the JSON structure for all definitions.
+type DefineOutputJSON struct {
+	Analyzers []AnalyzerJSON `json:"analyzers"`
+	Searches  []SearchJSON   `json:"searches"`
+}
+
+// ToJSON serializes all definitions to JSON for somgen.
+func (d Definitions) ToJSON() ([]byte, error) {
+	output := DefineOutputJSON{}
+
+	// Collect unique analyzers from searches
+	seen := make(map[string]bool)
+	for _, s := range d.Searches {
+		if a := s.GetFulltextAnalyzer(); a != nil && !seen[a.GetName()] {
+			seen[a.GetName()] = true
+			output.Analyzers = append(output.Analyzers, a.ToJSON())
+		}
+		output.Searches = append(output.Searches, s.ToJSON())
+	}
+
+	return json.Marshal(output)
+}
