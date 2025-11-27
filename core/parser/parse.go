@@ -588,9 +588,10 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 // parseSomTag parses the "som" struct tag and extracts index/search info.
 // Tag format examples:
 //   - som:"index"              -> simple index
-//   - som:"index,unique"       -> unique index
 //   - som:"index,name:idx_foo" -> named index (for composite)
-//   - som:"search:config_name" -> fulltext search with named config
+//   - som:"unique"             -> unique index on single field
+//   - som:"unique(name)"       -> composite unique index (grouped by name)
+//   - som:"fulltext(config_name)" -> fulltext search with named config
 //   - som:"in"                 -> edge in field (existing)
 //   - som:"out"                -> edge out field (existing)
 func parseSomTag(tag string) (index *IndexInfo, search *SearchInfo) {
@@ -608,9 +609,9 @@ func parseSomTag(tag string) (index *IndexInfo, search *SearchInfo) {
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
 
-		// Check for search:config_name
-		if strings.HasPrefix(part, "search:") {
-			configName := strings.TrimPrefix(part, "search:")
+		// Check for fulltext(config_name)
+		if strings.HasPrefix(part, "fulltext(") && strings.HasSuffix(part, ")") {
+			configName := part[9 : len(part)-1] // len("fulltext(") = 9
 			search = &SearchInfo{ConfigName: configName}
 			continue
 		}
@@ -623,12 +624,19 @@ func parseSomTag(tag string) (index *IndexInfo, search *SearchInfo) {
 			continue
 		}
 
-		// Check for unique modifier
-		if part == "unique" {
+		// Check for unique or unique(name)
+		if part == "unique" || strings.HasPrefix(part, "unique(") {
 			if index == nil {
 				index = &IndexInfo{}
 			}
 			index.Unique = true
+
+			// Parse unique(name) for composite unique index
+			if strings.HasPrefix(part, "unique(") && strings.HasSuffix(part, ")") {
+				// Extract the name from unique(name)
+				inner := part[7 : len(part)-1] // len("unique(") = 7
+				index.UniqueName = inner
+			}
 			continue
 		}
 

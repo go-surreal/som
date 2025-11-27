@@ -13,7 +13,7 @@ type AllFieldTypes struct {
 
 	// basic types
 
-	String         string `som:"search:english_search"`
+	String         string `som:"fulltext(english_search)"`
 	StringPtr      *string
 	Other          []string
 	StringPtrSlice []*string
@@ -184,7 +184,7 @@ type Group struct {
 	som.Timestamps
 	som.OptimisticLock
 
-	Name string `som:"index,unique"`
+	Name string `som:"unique"`
 
 	Members []GroupMember
 }

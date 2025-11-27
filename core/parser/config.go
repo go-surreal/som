@@ -34,6 +34,7 @@ type SearchDef struct {
 	BM25B        float64 // BM25 b parameter (0 means not set)
 	HasBM25      bool
 	Highlights   bool
+	Concurrently bool
 }
 
 // ConfigOutput holds all parsed configuration from //go:build som files.
@@ -162,7 +163,7 @@ func extractDefinitions(f *ast.File) ([]AnalyzerDef, []SearchDef, error) {
 	return analyzers, searches, nil
 }
 
-// parseAnalyzerCall parses a define.Analyzer(...) or som.Analyzer(...) call chain.
+// parseAnalyzerCall parses a define.FulltextAnalyzer(...) call chain.
 func parseAnalyzerCall(expr ast.Expr, varName string) (AnalyzerDef, bool) {
 	def := AnalyzerDef{VarName: varName}
 
@@ -179,8 +180,8 @@ func parseAnalyzerCall(expr ast.Expr, varName string) (AnalyzerDef, bool) {
 			methodName := fn.Sel.Name
 
 			switch methodName {
-			case "Analyzer":
-				// This is the root: define.Analyzer("name") or som.Analyzer("name")
+			case "FulltextAnalyzer":
+				// This is the root: define.FulltextAnalyzer("name")
 				if len(call.Args) > 0 {
 					if lit, ok := call.Args[0].(*ast.BasicLit); ok && lit.Kind == token.STRING {
 						def.Name, _ = strconv.Unquote(lit.Value)
@@ -285,8 +286,8 @@ func parseSearchCall(expr ast.Expr) (SearchDef, bool) {
 				}
 				return def, def.Name != ""
 
-			case "Analyzer":
-				// .Analyzer(varName) - reference to an analyzer variable
+			case "FulltextAnalyzer":
+				// .FulltextAnalyzer(varName) - reference to an analyzer variable
 				if len(call.Args) > 0 {
 					if ident, ok := call.Args[0].(*ast.Ident); ok {
 						def.AnalyzerVar = ident.Name
@@ -310,6 +311,11 @@ func parseSearchCall(expr ast.Expr) (SearchDef, bool) {
 			case "Highlights":
 				// .Highlights()
 				def.Highlights = true
+				current = fn.X
+
+			case "Concurrently":
+				// .Concurrently()
+				def.Concurrently = true
 				current = fn.X
 
 			default:

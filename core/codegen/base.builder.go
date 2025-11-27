@@ -133,8 +133,10 @@ func (b *build) buildSchemaFile() error {
 
 		for _, f := range node.GetFields() {
 			statements = append(statements, f.SchemaStatements(node.NameDatabase(), "")...)
-			indexStatements = append(indexStatements, b.buildIndexStatements(node.NameDatabase(), "", f)...)
 		}
+
+		// Build indexes for this table (handles both simple and composite)
+		indexStatements = append(indexStatements, b.buildTableIndexStatements(node.NameDatabase(), node.GetFields())...)
 
 		statements = append(statements, "")
 	}
@@ -150,8 +152,10 @@ func (b *build) buildSchemaFile() error {
 
 		for _, f := range edge.GetFields() {
 			statements = append(statements, f.SchemaStatements(edge.NameDatabase(), "")...)
-			indexStatements = append(indexStatements, b.buildIndexStatements(edge.NameDatabase(), "", f)...)
 		}
+
+		// Build indexes for this table (handles both simple and composite)
+		indexStatements = append(indexStatements, b.buildTableIndexStatements(edge.NameDatabase(), edge.GetFields())...)
 
 		statements = append(statements, "")
 	}
@@ -210,59 +214,94 @@ func buildFilterString(filter parser.FilterDef) string {
 	return fmt.Sprintf("%s(%s)", filter.Name, strings.Join(paramStrs, ", "))
 }
 
-func (b *build) buildIndexStatements(tableName, fieldPrefix string, f field.Field) []string {
+// buildTableIndexStatements builds all index statements for a table, handling both
+// simple indexes and composite unique indexes (fields grouped by UniqueName).
+func (b *build) buildTableIndexStatements(tableName string, fields []field.Field) []string {
 	var statements []string
 
-	indexInfo := f.IndexInfo()
-	searchInfo := f.SearchInfo()
+	// Collect composite unique index fields grouped by UniqueName
+	compositeUnique := make(map[string][]string) // UniqueName -> []fieldPath
 
-	fieldPath := f.NameDatabase()
-	if fieldPrefix != "" {
-		fieldPath = fieldPrefix + "." + fieldPath
-	}
+	// Process all fields (including nested)
+	b.collectIndexes(tableName, "", fields, &statements, compositeUnique)
 
-	if indexInfo != nil {
-		indexName := indexInfo.Name
-		if indexName == "" {
-			indexName = fmt.Sprintf("idx_%s_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-		}
-
-		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s", indexName, tableName, fieldPath)
-		if indexInfo.Unique {
-			stmt += " UNIQUE"
-		}
-		stmt += ";"
+	// Generate composite unique index statements
+	for uniqueName, fieldPaths := range compositeUnique {
+		// Index name format: __som_<table>_unique_<name>
+		indexName := fmt.Sprintf("__som_%s_unique_%s", tableName, uniqueName)
+		fieldsStr := strings.Join(fieldPaths, ", ")
+		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldsStr)
 		statements = append(statements, stmt)
 	}
 
-	if searchInfo != nil && searchInfo.ConfigName != "" {
-		// Look up the search config to get analyzer and options
-		searchDef := b.findSearchConfig(searchInfo.ConfigName)
-		if searchDef != nil {
-			indexName := fmt.Sprintf("idx_%s_%s_search", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-			stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s SEARCH ANALYZER %s",
-				indexName, tableName, fieldPath, searchDef.AnalyzerName)
-			if searchDef.HasBM25 {
-				stmt += fmt.Sprintf(" BM25(%g, %g)", searchDef.BM25K1, searchDef.BM25B)
-			} else {
-				stmt += " BM25"
-			}
-			if searchDef.Highlights {
-				stmt += " HIGHLIGHTS"
-			}
-			stmt += ";"
-			statements = append(statements, stmt)
-		}
-	}
-
-	// Handle nested struct fields
-	if nestedFields := f.NestedFields(); nestedFields != nil {
-		for _, nested := range nestedFields {
-			statements = append(statements, b.buildIndexStatements(tableName, fieldPath, nested)...)
-		}
-	}
-
 	return statements
+}
+
+// collectIndexes recursively collects index statements and composite unique fields.
+func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Field, statements *[]string, compositeUnique map[string][]string) {
+	for _, f := range fields {
+		fieldPath := f.NameDatabase()
+		if fieldPrefix != "" {
+			fieldPath = fieldPrefix + "." + fieldPath
+		}
+
+		indexInfo := f.IndexInfo()
+		searchInfo := f.SearchInfo()
+
+		if indexInfo != nil {
+			if indexInfo.Unique && indexInfo.UniqueName != "" {
+				// Composite unique index - collect field for later
+				compositeUnique[indexInfo.UniqueName] = append(compositeUnique[indexInfo.UniqueName], fieldPath)
+			} else if indexInfo.Unique {
+				// Simple unique index on single field
+				// Index name format: __som_<table>_unique_<field>
+				indexName := indexInfo.Name
+				if indexName == "" {
+					indexName = fmt.Sprintf("__som_%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
+				}
+				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
+				*statements = append(*statements, stmt)
+			} else {
+				// Regular (non-unique) index
+				// Index name format: __som_<table>_index_<field>
+				indexName := indexInfo.Name
+				if indexName == "" {
+					indexName = fmt.Sprintf("__som_%s_index_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
+				}
+				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s CONCURRENTLY;", indexName, tableName, fieldPath)
+				*statements = append(*statements, stmt)
+			}
+		}
+
+		if searchInfo != nil && searchInfo.ConfigName != "" {
+			// Look up the search config to get analyzer and options
+			searchDef := b.findSearchConfig(searchInfo.ConfigName)
+			if searchDef != nil {
+				// Index name format: __som_<table>_search_<field>
+				indexName := fmt.Sprintf("__som_%s_search_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
+				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s SEARCH ANALYZER %s",
+					indexName, tableName, fieldPath, searchDef.AnalyzerName)
+				if searchDef.HasBM25 {
+					stmt += fmt.Sprintf(" BM25(%g, %g)", searchDef.BM25K1, searchDef.BM25B)
+				} else {
+					stmt += " BM25"
+				}
+				if searchDef.Highlights {
+					stmt += " HIGHLIGHTS"
+				}
+				if searchDef.Concurrently {
+					stmt += " CONCURRENTLY"
+				}
+				stmt += ";"
+				*statements = append(*statements, stmt)
+			}
+		}
+
+		// Handle nested struct fields
+		if nestedFields := f.NestedFields(); nestedFields != nil {
+			b.collectIndexes(tableName, fieldPath, nestedFields, statements, compositeUnique)
+		}
+	}
 }
 
 func (b *build) findSearchConfig(name string) *parser.SearchDef {

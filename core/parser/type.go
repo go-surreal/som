@@ -38,6 +38,10 @@ type IndexInfo struct {
 
 	// Unique indicates this is a unique index.
 	Unique bool
+
+	// UniqueName is the composite unique index identifier from `unique(name)`.
+	// Fields with the same UniqueName are grouped into a single composite unique index.
+	UniqueName string
 }
 
 // SearchInfo holds fulltext search configuration parsed from struct tags.
