@@ -20,10 +20,6 @@ Go 1.23 or later is required due to heavy use of generics.
 
 SOM is tested against SurrealDB 2.x. Compatibility with older versions is not guaranteed.
 
-### Why does SOM use SDBC instead of the official client?
-
-SOM uses [sdbc](https://github.com/go-surreal/sdbc), a custom client optimized for code generation patterns and CBOR serialization. The official client may be supported in the future.
-
 ## Technical
 
 ### Why does SOM use code generation?
@@ -98,7 +94,7 @@ Both are managed by SOM and read-only in your code.
 
 ### Can I use raw SurrealQL queries?
 
-Currently, SOM focuses on the type-safe query builder. Raw query support may be added in the future. For now, you can use the underlying SDBC client directly for raw queries.
+Currently, SOM focuses on the type-safe query builder. Raw query support may be added in the future.
 
 ### How do I handle database migrations?
 

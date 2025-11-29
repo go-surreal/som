@@ -49,6 +49,3 @@ users, _ := client.UserRepo().Query().
 
 SOM is currently in **early development** and considered experimental. While core functionality works, the API may change between versions. See the [FAQ](../appendix/01_faq.md) for details on production readiness.
 
-## Dependencies
-
-SOM uses [sdbc](https://github.com/go-surreal/sdbc), a custom SurrealDB client optimized for code generation patterns. This provides CBOR protocol support and features tailored for SOM's needs. The official SurrealDB Go client is not currently supported.

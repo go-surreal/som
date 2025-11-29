@@ -186,15 +186,6 @@ SOM uses CBOR (Concise Binary Object Representation) for SurrealDB communication
 | Duration | 14 | Nanoseconds as int64 |
 | UUID | 37 | 16-byte binary |
 
-### SDBC Client
-
-SOM uses [sdbc](https://github.com/go-surreal/sdbc) (SurrealDB Client) instead of the official client:
-
-- Optimized for code generation patterns
-- Native CBOR marshaling support
-- WebSocket connection management
-- Live query streaming
-
 ## ID Handling
 
 SOM provides utilities for working with SurrealDB record IDs:
