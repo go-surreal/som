@@ -36,7 +36,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 	in.nodes = def.Nodes
 	in.edges = def.Edges
 	in.objects = def.Objects
-	in.define = source.Config
+	in.define = source.Define
 
 	return &in, nil
 }

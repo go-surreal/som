@@ -68,9 +68,9 @@ type searchJSON struct {
 	Concurrently bool    `json:"concurrently"`
 }
 
-// ParseConfig parses all //go:build som files in the given directory
+// parseDefine parses all //go:build som files in the given directory
 // by compiling and running the user's Definitions() function.
-func ParseConfig(dir string) (*DefineOutput, error) {
+func parseDefine(dir string) (*DefineOutput, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("could not get absolute path: %w", err)
@@ -95,7 +95,7 @@ func ParseConfig(dir string) (*DefineOutput, error) {
 	modelPkg := filepath.ToSlash(filepath.Join(mod.Module(), diff))
 
 	// Create temp directory for main.go
-	tempDir, err := os.MkdirTemp(absDir, ".somgen_temp_")
+	tempDir, err := os.MkdirTemp(absDir, ".som_temp_")
 	if err != nil {
 		return nil, fmt.Errorf("could not create temp directory: %w", err)
 	}

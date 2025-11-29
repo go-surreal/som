@@ -113,12 +113,12 @@ func Parse(dir string, outPkg string) (*Output, error) {
 		}
 	}
 
-	// Parse //go:build som config files for analyzer and search definitions
-	config, err := ParseConfig(absDir)
+	// Parse analyzer and search definitions.
+	define, err := parseDefine(absDir)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse config files: %w", err)
+		return nil, fmt.Errorf("could not parse define files: %w", err)
 	}
-	res.Config = config
+	res.Define = define
 
 	return res, nil
 }
@@ -662,6 +662,6 @@ type Output struct {
 	Enums      []*Enum
 	EnumValues []*EnumValue
 
-	// Config holds analyzer and search definitions from //go:build som files
-	Config *DefineOutput
+	// Define holds analyzer and search definitions.
+	Define *DefineOutput
 }
