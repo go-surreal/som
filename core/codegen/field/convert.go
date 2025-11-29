@@ -214,7 +214,7 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			return &Struct{
 				baseField: base,
 				source:    f,
-				table: &NodeTable{
+				element: &NodeTable{
 					Name:   f.Struct,
 					Fields: fields,
 				}, // TODO: struct not a NodeTable?!

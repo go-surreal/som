@@ -10,8 +10,10 @@ var URLExample = newURLExample[model.URLExample](lib.NewKey[model.URLExample]())
 
 func newURLExample[M any](key lib.Key[M]) urlexample[M] {
 	return urlexample[M]{
+		Account:      lib.NewString[M](lib.Field(key, "account")),
 		ID:           lib.NewID[M](lib.Field(key, "id"), "url_example"),
 		Key:          key,
+		Provider:     lib.NewString[M](lib.Field(key, "provider")),
 		SomeOtherURL: lib.NewURL[M](lib.Field(key, "some_other_url")),
 		SomeURL:      lib.NewURLPtr[M](lib.Field(key, "some_url")),
 	}
@@ -20,6 +22,8 @@ func newURLExample[M any](key lib.Key[M]) urlexample[M] {
 type urlexample[M any] struct {
 	lib.Key[M]
 	ID           *lib.ID[M]
+	Provider     *lib.String[M]
+	Account      *lib.String[M]
 	SomeURL      *lib.URLPtr[M]
 	SomeOtherURL *lib.URL[M]
 }

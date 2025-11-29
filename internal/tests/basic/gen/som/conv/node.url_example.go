@@ -16,13 +16,15 @@ func (c *URLExample) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 3)
+	data := make(map[string]any, 5)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {
 		data["id"] = c.ID()
 	}
 
+	data["provider"] = c.Provider
+	data["account"] = c.Account
 	if c.SomeURL != nil {
 		data["some_url"] = fromURLPtr(c.SomeURL)
 	}
@@ -44,6 +46,12 @@ func (c *URLExample) UnmarshalCBOR(data []byte) error {
 		c.Node = som.NewNode(id)
 	}
 
+	if raw, ok := rawMap["provider"]; ok {
+		cbor.Unmarshal(raw, &c.Provider)
+	}
+	if raw, ok := rawMap["account"]; ok {
+		cbor.Unmarshal(raw, &c.Account)
+	}
 	if raw, ok := rawMap["some_url"]; ok {
 		var convVal *string
 		cbor.Unmarshal(raw, &convVal)

@@ -11,9 +11,11 @@ const (
 	PkgRelate = "relate"
 	PkgRepo   = "repo"
 
-	PkgLib   = "internal/lib"
-	PkgTypes = "internal/types"
+	PkgLib         = "internal/lib"
+	PkgTypes       = "internal/types"
 	PkgCBORHelpers = "internal/cbor"
+
+	IndexPrefix = "__som__"
 )
 
 const (

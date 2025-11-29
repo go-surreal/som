@@ -10,7 +10,11 @@ type SortBuilder struct {
 }
 
 func (b *SortBuilder) render() string {
-	out := b.Field + " "
+	// Due to a bug in SurrealDB when using ORDER BY with indexed fields,
+	// we need to specifically SELECT all fields used for sorting with a
+	// special alias to avoid issues for now.
+	// see: https://github.com/surrealdb/surrealdb/issues/5588
+	out := sortFieldPrefix + b.Field + " "
 	if b.IsCollate {
 		out += "COLLATE "
 	}

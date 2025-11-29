@@ -34,6 +34,10 @@ type Field interface {
 	SchemaStatements(table string, prefix string) []string
 
 	CodeGen() *CodeGen
+
+	IndexInfo() *parser.IndexInfo
+	SearchInfo() *parser.SearchInfo
+	NestedFields() []Field
 }
 
 type Named interface {
@@ -113,4 +117,16 @@ func (f *baseField) NameGoLower() string {
 
 func (f *baseField) NameDatabase() string {
 	return f.ToDatabaseName(f.source.Name())
+}
+
+func (f *baseField) IndexInfo() *parser.IndexInfo {
+	return f.source.Index()
+}
+
+func (f *baseField) SearchInfo() *parser.SearchInfo {
+	return f.source.Search()
+}
+
+func (f *baseField) NestedFields() []Field {
+	return nil
 }

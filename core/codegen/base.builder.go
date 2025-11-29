@@ -14,10 +14,7 @@ import (
 	"github.com/go-surreal/som/core/util/fs"
 )
 
-const (
-	filenameInterfaces = "som.interfaces.go"
-	filenameSchema     = "tables.surql"
-)
+const filenameInterfaces = "som.interfaces.go"
 
 type build struct {
 	input  *input
@@ -107,43 +104,6 @@ func (b *build) buildInterfaceFile() error {
 	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, filenameInterfaces))); err != nil {
 		return err
 	}
-
-	return nil
-}
-
-func (b *build) buildSchemaFile() error {
-	statements := []string{string(embed.CodegenComment), ""}
-
-	for _, node := range b.input.nodes {
-		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
-		statements = append(statements, statement)
-
-		for _, f := range node.GetFields() {
-			statements = append(statements, f.SchemaStatements(node.NameDatabase(), "")...)
-		}
-
-		statements = append(statements, "")
-	}
-
-	for _, edge := range b.input.edges {
-		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
-			edge.NameDatabase(),
-			edge.In.NameDatabase(),
-			edge.Out.NameDatabase(), // TODO: can be OR'ed with "|"
-		)
-		statements = append(statements, statement)
-
-		for _, f := range edge.GetFields() {
-			statements = append(statements, f.SchemaStatements(edge.NameDatabase(), "")...)
-		}
-
-		statements = append(statements, "")
-	}
-
-	content := strings.Join(statements, "\n")
-
-	b.fs.Write(path.Join(def.PkgRepo, "schema", filenameSchema), []byte(content))
 
 	return nil
 }

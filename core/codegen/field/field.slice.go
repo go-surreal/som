@@ -395,7 +395,7 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 	// For struct slices, we need to convert each element through the conv wrapper
 	// to get proper snake_case field names in the CBOR output.
 	if structElem, ok := f.element.(*Struct); ok {
-		convFuncName := "from" + structElem.table.NameGo()
+		convFuncName := "from" + structElem.element.NameGo()
 		if structElem.source.Pointer() {
 			convFuncName += "Ptr"
 		}
@@ -403,9 +403,9 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 		// Determine the slice element type based on whether the struct element is a pointer
 		var sliceElemType jen.Code
 		if structElem.source.Pointer() {
-			sliceElemType = jen.Index().Op("*").Id(structElem.table.NameGoLower())
+			sliceElemType = jen.Index().Op("*").Id(structElem.element.NameGoLower())
 		} else {
-			sliceElemType = jen.Index().Id(structElem.table.NameGoLower())
+			sliceElemType = jen.Index().Id(structElem.element.NameGoLower())
 		}
 
 		// Handle pointer-to-slice case by dereferencing
@@ -436,7 +436,7 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 	// For struct slices, we need to unmarshal into the conv wrapper and then convert back.
 	if structElem, ok := f.element.(*Struct); ok {
-		convFuncName := "to" + structElem.table.NameGo()
+		convFuncName := "to" + structElem.element.NameGo()
 		if structElem.source.Pointer() {
 			convFuncName += "Ptr"
 		}
@@ -444,9 +444,9 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		// Determine the slice element type based on whether the struct element is a pointer
 		var sliceElemType jen.Code
 		if structElem.source.Pointer() {
-			sliceElemType = jen.Index().Op("*").Id(structElem.table.NameGoLower())
+			sliceElemType = jen.Index().Op("*").Id(structElem.element.NameGoLower())
 		} else {
-			sliceElemType = jen.Index().Id(structElem.table.NameGoLower())
+			sliceElemType = jen.Index().Id(structElem.element.NameGoLower())
 		}
 
 		// Determine the inner slice type (the model slice type)
