@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"fmt"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/parser"
@@ -13,7 +14,7 @@ type input struct {
 	nodes         []*field.NodeTable
 	edges         []*field.EdgeTable
 	objects       []*field.DatabaseObject
-	config        *parser.DefineOutput
+	define        *parser.DefineOutput
 }
 
 func newInput(source *parser.Output, outPkg string) (*input, error) {
@@ -35,7 +36,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 	in.nodes = def.Nodes
 	in.edges = def.Edges
 	in.objects = def.Objects
-	in.config = source.Config
+	in.define = source.Config
 
 	return &in, nil
 }

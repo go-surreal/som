@@ -17,11 +17,11 @@ func (b *build) buildSchemaFile() error {
 	statements := []string{string(embed.CodegenComment), ""}
 
 	// Generate DEFINE ANALYZER statements first
-	if b.input.config != nil {
-		for _, analyzer := range b.input.config.Analyzers {
+	if b.input.define != nil {
+		for _, analyzer := range b.input.define.Analyzers {
 			statements = append(statements, buildAnalyzerStatement(analyzer))
 		}
-		if len(b.input.config.Analyzers) > 0 {
+		if len(b.input.define.Analyzers) > 0 {
 			statements = append(statements, "")
 		}
 	}
@@ -207,12 +207,12 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 }
 
 func (b *build) findSearchConfig(name string) *parser.SearchDef {
-	if b.input.config == nil {
+	if b.input.define == nil {
 		return nil
 	}
-	for i := range b.input.config.Searches {
-		if b.input.config.Searches[i].Name == name {
-			return &b.input.config.Searches[i]
+	for i := range b.input.define.Searches {
+		if b.input.define.Searches[i].Name == name {
+			return &b.input.define.Searches[i]
 		}
 	}
 	return nil

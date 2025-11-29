@@ -46,15 +46,6 @@ func (b *SearchBuilder) Concurrently() *SearchBuilder {
 	return b
 }
 
-// Getters for parser access
-func (b *SearchBuilder) GetName() string                               { return b.name }
-func (b *SearchBuilder) GetFulltextAnalyzer() *FulltextAnalyzerBuilder { return b.analyzer }
-func (b *SearchBuilder) GetBM25K1() float64                            { return b.bm25K1 }
-func (b *SearchBuilder) GetBM25B() float64                             { return b.bm25B }
-func (b *SearchBuilder) HasBM25() bool                                 { return b.hasBM25 }
-func (b *SearchBuilder) HasHighlights() bool                           { return b.highlights }
-func (b *SearchBuilder) IsConcurrently() bool                          { return b.concurrently }
-
 // searchJSON is the JSON representation of a search configuration.
 type searchJSON struct {
 	Name         string  `json:"name"`
@@ -70,7 +61,7 @@ type searchJSON struct {
 func (b *SearchBuilder) toJSON() searchJSON {
 	analyzerName := ""
 	if b.analyzer != nil {
-		analyzerName = b.analyzer.GetName()
+		analyzerName = b.analyzer.name
 	}
 	return searchJSON{
 		Name:         b.name,
@@ -94,16 +85,16 @@ type defineOutputJSON struct {
 	Searches  []searchJSON   `json:"searches"`
 }
 
-// ToJSON serializes all definitions to JSON for somgen.
+// ToJSON serializes all definitions to JSON.
 func (d Definitions) ToJSON() ([]byte, error) {
 	output := defineOutputJSON{}
 
 	// Collect unique analyzers from searches
 	seen := make(map[string]bool)
 	for _, s := range d.Searches {
-		if a := s.GetFulltextAnalyzer(); a != nil && !seen[a.GetName()] {
-			seen[a.GetName()] = true
-			output.Analyzers = append(output.Analyzers, a.toJSON())
+		if s.analyzer != nil && !seen[s.analyzer.name] {
+			seen[s.analyzer.name] = true
+			output.Analyzers = append(output.Analyzers, s.analyzer.toJSON())
 		}
 		output.Searches = append(output.Searches, s.toJSON())
 	}
