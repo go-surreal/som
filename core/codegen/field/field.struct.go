@@ -11,16 +11,16 @@ import (
 type Struct struct {
 	*baseField
 
-	source *parser.FieldStruct
-	table  Table
+	source  *parser.FieldStruct
+	element Table
 }
 
 func (f *Struct) typeGo() jen.Code {
-	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
+	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.element.NameGo())
 }
 
 func (f *Struct) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).Id(f.table.NameGoLower())
+	return jen.Add(f.ptr()).Id(f.element.NameGoLower())
 }
 
 func (f *Struct) TypeDatabase() string {
@@ -38,7 +38,7 @@ func (f *Struct) SchemaStatements(table, prefix string) []string {
 
 	// Recursively get nested field statements.
 	nestedPrefix := prefix + f.NameDatabase() + "."
-	for _, field := range f.table.GetFields() {
+	for _, field := range f.element.GetFields() {
 		statements = append(statements, field.SchemaStatements(table, nestedPrefix)...)
 	}
 
@@ -46,12 +46,11 @@ func (f *Struct) SchemaStatements(table, prefix string) []string {
 }
 
 func (f *Struct) Table() Table {
-	return f.table
+	return f.element
 }
 
 func (f *Struct) NestedFields() []Field {
-	
-	return f.table.GetFields()
+	return f.element.GetFields()
 }
 
 func (f *Struct) CodeGen() *CodeGen {
@@ -70,7 +69,7 @@ func (f *Struct) CodeGen() *CodeGen {
 }
 
 func (f *Struct) filterDefine(_ Context) jen.Code {
-	return jen.Id(f.table.NameGoLower()).Types(def.TypeModel)
+	return jen.Id(f.element.NameGoLower()).Types(def.TypeModel)
 }
 
 func (f *Struct) filterInit(_ Context) (jen.Code, jen.Code) {
@@ -91,7 +90,7 @@ func (f *Struct) sortFunc(ctx Context) jen.Code {
 	return jen.Func().
 		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
 		Id(f.NameGo()).Params().
-		Id(f.table.NameGoLower()).Types(def.TypeModel).
+		Id(f.element.NameGoLower()).Types(def.TypeModel).
 		Block(
 			jen.Return(jen.Id("new" + f.source.Struct).Types(def.TypeModel).
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
@@ -99,7 +98,7 @@ func (f *Struct) sortFunc(ctx Context) jen.Code {
 
 func (f *Struct) cborMarshal(_ Context) jen.Code {
 	// Convert to conv wrapper which has proper MarshalCBOR
-	convFuncName := "from" + f.table.NameGo()
+	convFuncName := "from" + f.element.NameGo()
 	if f.source.Pointer() {
 		convFuncName += "Ptr"
 	}
@@ -120,9 +119,9 @@ func (f *Struct) cborUnmarshal(ctx Context) jen.Code {
 			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 			jen.Id("ok"),
 		).BlockFunc(func(g *jen.Group) {
-			g.Var().Id("convVal").Op("*").Id(f.table.NameGoLower())
+			g.Var().Id("convVal").Op("*").Id(f.element.NameGoLower())
 			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-			g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + f.table.NameGo() + "Ptr").Call(jen.Id("convVal"))
+			g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + f.element.NameGo() + "Ptr").Call(jen.Id("convVal"))
 		})
 	}
 
@@ -130,8 +129,8 @@ func (f *Struct) cborUnmarshal(ctx Context) jen.Code {
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).BlockFunc(func(g *jen.Group) {
-		g.Var().Id("convVal").Id(f.table.NameGoLower())
+		g.Var().Id("convVal").Id(f.element.NameGoLower())
 		g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-		g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + f.table.NameGo()).Call(jen.Id("convVal"))
+		g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + f.element.NameGo()).Call(jen.Id("convVal"))
 	})
 }

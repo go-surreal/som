@@ -23,8 +23,8 @@ var (
 		Filters(define.Lowercase, define.Snowball(define.English))
 
 	autocomplete = define.FulltextAnalyzer("autocomplete").
-		Tokenizers(define.Class).
-		Filters(define.Lowercase, define.Edgengram(1, 10))
+			Tokenizers(define.Class).
+			Filters(define.Lowercase, define.Edgengram(1, 10))
 )
 
 //
@@ -33,10 +33,10 @@ var (
 
 var (
 	searchEnglish = define.Search("english_search").
-		FulltextAnalyzer(english).
-		BM25(1.2, 0.75).
-		Highlights()
+			FulltextAnalyzer(english).
+			BM25(1.2, 0.75).
+			Highlights()
 
 	searchAutocomplete = define.Search("autocomplete_search").
-		FulltextAnalyzer(autocomplete)
+				FulltextAnalyzer(autocomplete)
 )

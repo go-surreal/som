@@ -11,7 +11,7 @@ import (
 	"github.com/go-surreal/som/core/parser"
 )
 
-const filenameSchema = "tables.surql"
+const filenameSchema = "schema.surql"
 
 func (b *build) buildSchemaFile() error {
 	statements := []string{string(embed.CodegenComment), ""}
