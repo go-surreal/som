@@ -50,6 +50,7 @@ func (f *Struct) Table() Table {
 }
 
 func (f *Struct) NestedFields() []Field {
+	
 	return f.table.GetFields()
 }
 
