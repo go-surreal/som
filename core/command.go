@@ -30,7 +30,7 @@ func Gen() *cli.Command {
 			},
 			&cli.BoolFlag{
 				Name:  flagNoCheck,
-				Usage: "Disable version checks for go, som and sdbc",
+				Usage: "Disable version checks for go and som",
 			},
 		},
 		Action: generate,

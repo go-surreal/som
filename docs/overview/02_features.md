@@ -235,4 +235,3 @@ where.Any(
 
 - No automatic migrations (schema changes require manual handling)
 - No transaction support across multiple operations
-- Official SurrealDB Go client not supported (uses sdbc)

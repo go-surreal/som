@@ -37,7 +37,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 	database := gofakeit.LastName()
 
 	req := testcontainers.ContainerRequest{
-		Name:  "sdbc_" + toSlug(tb.Name()),
+		Name:  "som_" + toSlug(tb.Name()),
 		Image: "surrealdb/surrealdb:v" + surrealDBVersion,
 		Env: map[string]string{
 			"SURREAL_PATH":   "memory",
