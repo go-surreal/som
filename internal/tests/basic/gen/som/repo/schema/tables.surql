@@ -136,7 +136,7 @@ DEFINE FIELD meta ON TABLE group_member TYPE object;
 DEFINE FIELD meta.is_admin ON TABLE group_member TYPE bool;
 DEFINE FIELD meta.is_active ON TABLE group_member TYPE bool;
 
-DEFINE INDEX __som_url_example_unique_provider_account ON url_example FIELDS provider, account UNIQUE;
-DEFINE INDEX __som_group_unique_name ON group FIELDS name UNIQUE;
-DEFINE INDEX __som_all_field_types_search_string ON all_field_types FIELDS string SEARCH ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
-DEFINE INDEX __som_all_field_types_index_login_username ON all_field_types FIELDS login.username CONCURRENTLY;
+DEFINE INDEX __som__url_example_unique_provider_account ON url_example FIELDS provider, account UNIQUE;
+DEFINE INDEX __som__group_unique_name ON group FIELDS name UNIQUE;
+DEFINE INDEX __som__all_field_types_search_string ON all_field_types FIELDS string SEARCH ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
+DEFINE INDEX __som__all_field_types_index_login_username ON all_field_types FIELDS login.username CONCURRENTLY;

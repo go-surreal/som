@@ -55,8 +55,8 @@ func (b *SearchBuilder) HasBM25() bool                                 { return 
 func (b *SearchBuilder) HasHighlights() bool                           { return b.highlights }
 func (b *SearchBuilder) IsConcurrently() bool                          { return b.concurrently }
 
-// SearchJSON is the JSON representation of a search configuration.
-type SearchJSON struct {
+// searchJSON is the JSON representation of a search configuration.
+type searchJSON struct {
 	Name         string  `json:"name"`
 	AnalyzerName string  `json:"analyzer_name"`
 	BM25K1       float64 `json:"bm25_k1,omitempty"`
@@ -66,13 +66,13 @@ type SearchJSON struct {
 	Concurrently bool    `json:"concurrently"`
 }
 
-// ToJSON converts the search builder to its JSON representation.
-func (b *SearchBuilder) ToJSON() SearchJSON {
+// toJSON converts the search builder to its JSON representation.
+func (b *SearchBuilder) toJSON() searchJSON {
 	analyzerName := ""
 	if b.analyzer != nil {
 		analyzerName = b.analyzer.GetName()
 	}
-	return SearchJSON{
+	return searchJSON{
 		Name:         b.name,
 		AnalyzerName: analyzerName,
 		BM25K1:       b.bm25K1,
@@ -88,24 +88,24 @@ type Definitions struct {
 	Searches []*SearchBuilder
 }
 
-// DefineOutputJSON is the JSON structure for all definitions.
-type DefineOutputJSON struct {
-	Analyzers []AnalyzerJSON `json:"analyzers"`
-	Searches  []SearchJSON   `json:"searches"`
+// defineOutputJSON is the JSON structure for all definitions.
+type defineOutputJSON struct {
+	Analyzers []analyzerJSON `json:"analyzers"`
+	Searches  []searchJSON   `json:"searches"`
 }
 
 // ToJSON serializes all definitions to JSON for somgen.
 func (d Definitions) ToJSON() ([]byte, error) {
-	output := DefineOutputJSON{}
+	output := defineOutputJSON{}
 
 	// Collect unique analyzers from searches
 	seen := make(map[string]bool)
 	for _, s := range d.Searches {
 		if a := s.GetFulltextAnalyzer(); a != nil && !seen[a.GetName()] {
 			seen[a.GetName()] = true
-			output.Analyzers = append(output.Analyzers, a.ToJSON())
+			output.Analyzers = append(output.Analyzers, a.toJSON())
 		}
-		output.Searches = append(output.Searches, s.ToJSON())
+		output.Searches = append(output.Searches, s.toJSON())
 	}
 
 	return json.Marshal(output)

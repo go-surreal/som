@@ -158,35 +158,35 @@ func (b *FulltextAnalyzerBuilder) GetFilters() []Filter       { return b.filters
 func (b *FulltextAnalyzerBuilder) GetFunction() string        { return b.function }
 func (b *FulltextAnalyzerBuilder) GetComment() string         { return b.comment }
 
-// AnalyzerJSON is the JSON representation of an analyzer definition.
-type AnalyzerJSON struct {
+// analyzerJSON is the JSON representation of an analyzer definition.
+type analyzerJSON struct {
 	Name       string       `json:"name"`
 	Tokenizers []string     `json:"tokenizers"`
-	Filters    []FilterJSON `json:"filters"`
+	Filters    []filterJSON `json:"filters"`
 }
 
-// FilterJSON is the JSON representation of a filter.
-type FilterJSON struct {
+// filterJSON is the JSON representation of a filter.
+type filterJSON struct {
 	Name   string `json:"name"`
 	Params []any  `json:"params,omitempty"`
 }
 
-// ToJSON converts the analyzer builder to its JSON representation.
-func (b *FulltextAnalyzerBuilder) ToJSON() AnalyzerJSON {
+// toJSON converts the analyzer builder to its JSON representation.
+func (b *FulltextAnalyzerBuilder) toJSON() analyzerJSON {
 	tokenizers := make([]string, len(b.tokenizers))
 	for i, t := range b.tokenizers {
 		tokenizers[i] = string(t)
 	}
 
-	filters := make([]FilterJSON, len(b.filters))
+	filters := make([]filterJSON, len(b.filters))
 	for i, f := range b.filters {
-		filters[i] = FilterJSON{
+		filters[i] = filterJSON{
 			Name:   f.Name,
 			Params: f.Params,
 		}
 	}
 
-	return AnalyzerJSON{
+	return analyzerJSON{
 		Name:       b.name,
 		Tokenizers: tokenizers,
 		Filters:    filters,
