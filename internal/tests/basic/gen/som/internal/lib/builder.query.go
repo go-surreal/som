@@ -136,11 +136,8 @@ func (q Query[T]) render() string {
 	// Add combined score projection if any score sort exists
 	for _, s := range q.Sort {
 		if s.IsScore && len(s.ScoreRefs) > 0 {
-			var scoreParts []string
-			for _, ref := range s.ScoreRefs {
-				scoreParts = append(scoreParts, "search::score("+strconv.Itoa(ref)+")")
-			}
-			fields = append(fields, "("+strings.Join(scoreParts, " + ")+") AS "+searchScorePrefix+"combined")
+			expr := renderScoreCombination(s.ScoreRefs, s.ScoreMode, s.ScoreWeights)
+			fields = append(fields, expr+" AS "+searchScorePrefix+"combined")
 			break
 		}
 	}
@@ -290,6 +287,29 @@ const (
 
 	OpModulo Operator = "%" // https://github.com/surrealdb/surrealdb/pull/4182
 )
+
+func renderScoreCombination(refs []int, mode ScoreCombineMode, weights []float64) string {
+	var scoreParts []string
+	for _, ref := range refs {
+		scoreParts = append(scoreParts, "search::score("+strconv.Itoa(ref)+")")
+	}
+
+	switch mode {
+	case ScoreCombineMax:
+		return "math::max(" + strings.Join(scoreParts, ", ") + ")"
+	case ScoreCombineAverage:
+		return "((" + strings.Join(scoreParts, " + ") + ") / " + strconv.Itoa(len(refs)) + ")"
+	case ScoreCombineWeighted:
+		var weightedParts []string
+		for i, ref := range refs {
+			weightedParts = append(weightedParts,
+				"search::score("+strconv.Itoa(ref)+") * "+strconv.FormatFloat(weights[i], 'f', -1, 64))
+		}
+		return "(" + strings.Join(weightedParts, " + ") + ")"
+	default: // ScoreCombineSum
+		return "(" + strings.Join(scoreParts, " + ") + ")"
+	}
+}
 
 //
 // -- HELPER

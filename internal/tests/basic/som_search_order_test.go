@@ -30,3 +30,42 @@ func TestFulltextSearchOrder(t *testing.T) {
 	assert.Assert(t, strings.Contains(query2.Describe(),
 		"ORDER BY __som_sort__string ASC, __som_search_score_combined DESC"))
 }
+
+func TestFulltextSearchScoreCombination(t *testing.T) {
+	client := &repo.ClientImpl{}
+
+	// Test Sum (default)
+	q1 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.String.Matches("test")).
+		Order(query.Score(0, 1).Desc())
+	assert.Assert(t, strings.Contains(q1.Describe(),
+		"(search::score(0) + search::score(1)) AS __som_search_score_combined"))
+
+	// Test Sum (explicit)
+	q1b := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.String.Matches("test")).
+		Order(query.Score(0, 1).Sum().Desc())
+	assert.Assert(t, strings.Contains(q1b.Describe(),
+		"(search::score(0) + search::score(1)) AS __som_search_score_combined"))
+
+	// Test Max
+	q2 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.String.Matches("test")).
+		Order(query.Score(0, 1).Max().Desc())
+	assert.Assert(t, strings.Contains(q2.Describe(),
+		"math::max(search::score(0), search::score(1)) AS __som_search_score_combined"))
+
+	// Test Average
+	q3 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.String.Matches("test")).
+		Order(query.Score(0, 1).Average().Desc())
+	assert.Assert(t, strings.Contains(q3.Describe(),
+		"((search::score(0) + search::score(1)) / 2) AS __som_search_score_combined"))
+
+	// Test Weighted
+	q4 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.String.Matches("test")).
+		Order(query.Score(0, 1).Weighted(2.0, 0.5).Desc())
+	assert.Assert(t, strings.Contains(q4.Describe(),
+		"(search::score(0) * 2 + search::score(1) * 0.5) AS __som_search_score_combined"))
+}

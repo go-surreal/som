@@ -13,8 +13,10 @@ type SortBuilder struct {
 	IsCollate bool
 	IsNumeric bool
 	// Score sorting
-	IsScore   bool
-	ScoreRefs []int
+	IsScore      bool
+	ScoreRefs    []int
+	ScoreMode    ScoreCombineMode
+	ScoreWeights []float64
 }
 
 func (b *SortBuilder) SearchSort() *SortBuilder {
