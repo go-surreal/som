@@ -49,7 +49,10 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 			"start", "--allow-funcs", "--log", "trace",
 		},
 		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor:   wait.ForLog(containerStartedMsg),
+		WaitingFor: wait.ForAll(
+			wait.ForLog(containerStartedMsg),
+			wait.ForListeningPort("8000/tcp"),
+		),
 		HostConfigModifier: func(conf *container.HostConfig) {
 			conf.AutoRemove = true
 		},

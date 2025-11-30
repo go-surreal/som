@@ -9,7 +9,11 @@ import (
 )
 
 const (
-	sortFieldPrefix = "__som_sort__"
+	somPrefix             = "__som__"
+	sortFieldPrefix       = somPrefix + "sort_"
+	searchScorePrefix     = somPrefix + "search_score_"
+	searchHighlightPrefix = somPrefix + "search_highlight_"
+	searchOffsetsPrefix   = somPrefix + "search_offsets_"
 )
 
 type context struct {
@@ -44,6 +48,9 @@ type Query[T any] struct {
 	Limit      int
 	Timeout    time.Duration
 	Parallel   bool
+
+	SearchClauses []SearchClause
+	SearchWhere   string
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -115,7 +122,36 @@ func (q Query[T]) render() string {
 
 	fields := q.fields
 	for _, s := range q.Sort {
+		if s.IsScore {
+			continue
+		}
 		fields = append(fields, s.Field+" as "+sortFieldPrefix+s.Field)
+	}
+
+	// Add search score, highlight, and offset projections
+	for _, sc := range q.SearchClauses {
+		ref := strconv.Itoa(sc.Ref)
+		fields = append(fields, "search::score("+ref+") AS "+searchScorePrefix+ref)
+		if sc.Highlights {
+			fields = append(fields,
+				"search::highlight("+q.context.asVar(sc.HLPrefix)+", "+q.context.asVar(sc.HLSuffix)+", "+ref+") AS "+searchHighlightPrefix+ref)
+		}
+		if sc.Offsets {
+			fields = append(fields, "search::offsets("+ref+") AS "+searchOffsetsPrefix+ref)
+		}
+	}
+
+	// Add score projection for each score sort
+	for _, s := range q.Sort {
+		if s.IsScore && len(s.ScoreRefs) > 0 {
+			expr := renderScoreCombination(s.ScoreRefs, s.ScoreMode, s.ScoreWeights)
+			refStrs := make([]string, len(s.ScoreRefs))
+			for i, ref := range s.ScoreRefs {
+				refStrs[i] = strconv.Itoa(ref)
+			}
+			alias := searchScorePrefix + strings.Join(refStrs, "_")
+			fields = append(fields, expr+" AS "+alias)
+		}
 	}
 
 	out.WriteString("SELECT " + strings.Join(fields, ", "))
@@ -132,11 +168,24 @@ func (q Query[T]) render() string {
 
 	out.WriteString(" FROM " + q.node)
 
+	// Build WHERE clause combining search and regular filters
+	var whereParts []string
+
+	// Add search conditions first
+	if q.SearchWhere != "" {
+		whereParts = append(whereParts, q.SearchWhere)
+	}
+
+	// Add regular filters
 	var t T
-	whereStatement := All[T](q.Where).build(&q.context, t)
-	if whereStatement != "" {
+	filterWhere := All[T](q.Where).build(&q.context, t)
+	if filterWhere != "" {
+		whereParts = append(whereParts, filterWhere)
+	}
+
+	if len(whereParts) > 0 {
 		out.WriteString(" WHERE ")
-		out.WriteString(whereStatement)
+		out.WriteString(strings.Join(whereParts, " AND "))
 	}
 
 	if !q.live && q.groupBy != "" {
@@ -155,7 +204,6 @@ func (q Query[T]) render() string {
 		for _, s := range q.Sort {
 			sorts = append(sorts, s.render())
 		}
-
 		out.WriteString(" ORDER BY ")
 		out.WriteString(strings.Join(sorts, ", "))
 	}
@@ -251,6 +299,29 @@ const (
 
 	OpModulo Operator = "%" // https://github.com/surrealdb/surrealdb/pull/4182
 )
+
+func renderScoreCombination(refs []int, mode ScoreCombineMode, weights []float64) string {
+	var scoreParts []string
+	for _, ref := range refs {
+		scoreParts = append(scoreParts, "search::score("+strconv.Itoa(ref)+")")
+	}
+
+	switch mode {
+	case ScoreCombineMax:
+		return "math::max(" + strings.Join(scoreParts, ", ") + ")"
+	case ScoreCombineAverage:
+		return "((" + strings.Join(scoreParts, " + ") + ") / " + strconv.Itoa(len(refs)) + ")"
+	case ScoreCombineWeighted:
+		var weightedParts []string
+		for i, ref := range refs {
+			weightedParts = append(weightedParts,
+				"search::score("+strconv.Itoa(ref)+") * "+strconv.FormatFloat(weights[i], 'f', -1, 64))
+		}
+		return "(" + strings.Join(weightedParts, " + ") + ")"
+	default: // ScoreCombineSum
+		return "(" + strings.Join(scoreParts, " + ") + ")"
+	}
+}
 
 //
 // -- HELPER

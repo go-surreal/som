@@ -369,7 +369,16 @@ func parseStruct(v gotype.Type, outPkg string) (*Struct, error) {
 }
 
 func parseField(t gotype.Type, outPkg string) (Field, error) {
-	return parseFieldInternal(t, outPkg, true)
+	field, err := parseFieldInternal(t, outPkg, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := field.Validate(); err != nil {
+		return nil, err
+	}
+
+	return field, nil
 }
 
 func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field, error) {

@@ -96,6 +96,14 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 		}
 	}
 
+	// Generate extra filter code (wrapper types with Matches() for search-indexed fields)
+	for _, fld := range elem.GetFields() {
+		if code := fld.CodeGen().FilterExtra(fieldCtx); code != nil {
+			file.Line()
+			file.Add(code)
+		}
+	}
+
 	// TODO: add record::exists filter function
 	// https://github.com/surrealdb/surrealdb/pull/4602
 
@@ -164,6 +172,14 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 
 	for _, fld := range edge.GetFields() {
 		if code := fld.CodeGen().FilterFunc(fieldCtx); code != nil {
+			file.Line()
+			file.Add(code)
+		}
+	}
+
+	// Generate extra filter code (wrapper types with Matches() for search-indexed fields)
+	for _, fld := range edge.GetFields() {
+		if code := fld.CodeGen().FilterExtra(fieldCtx); code != nil {
 			file.Line()
 			file.Add(code)
 		}

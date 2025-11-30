@@ -57,6 +57,75 @@ type queryResult[M any] struct {
 	Time   string `json:"time"`
 }
 
+// searchOffset represents a position offset for a matched search term.
+type searchOffset struct {
+	Start int `cbor:"s"`
+	End   int `cbor:"e"`
+}
+
+// searchRawResult holds the raw search result with embedded model and search metadata.
+// The model fields and search metadata are at the same level in the JSON/CBOR.
+type searchRawResult[M any] struct {
+	Model      M
+	Scores     []float64
+	Highlights map[int]string
+	Offsets    map[int][]searchOffset
+}
+
+func (s *searchRawResult[M]) UnmarshalCBOR(data []byte) error {
+	// First unmarshal the entire map to get access to all fields
+	var rawMap map[string]cbor.RawMessage
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Extract search scores, highlights, and offsets
+	s.Highlights = make(map[int]string)
+	s.Offsets = make(map[int][]searchOffset)
+
+	// Look for __som__search_score_*, __som__search_highlight_N, and __som__search_offsets_N fields
+	for key, val := range rawMap {
+		if strings.HasPrefix(key, "__som__search_score_") {
+			var score float64
+			if err := cbor.Unmarshal(val, &score); err == nil {
+				s.Scores = append(s.Scores, score)
+			}
+		} else if strings.HasPrefix(key, "__som__search_highlight_") {
+			refStr := strings.TrimPrefix(key, "__som__search_highlight_")
+			var ref int
+			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
+				var hl string
+				if err := cbor.Unmarshal(val, &hl); err == nil {
+					s.Highlights[ref] = hl
+				}
+			}
+		} else if strings.HasPrefix(key, "__som__search_offsets_") {
+			refStr := strings.TrimPrefix(key, "__som__search_offsets_")
+			var ref int
+			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
+				// Offsets come as: { "0": [{"s": 0, "e": 4}, ...] }
+				// The outer key is the field index (for array fields)
+				var rawOffsets map[string][]searchOffset
+				if err := cbor.Unmarshal(val, &rawOffsets); err == nil {
+					// Flatten: take all offsets regardless of field index
+					var offsets []searchOffset
+					for _, offs := range rawOffsets {
+						offsets = append(offsets, offs...)
+					}
+					s.Offsets[ref] = offsets
+				}
+			}
+		}
+	}
+
+	// Unmarshal the rest into the model
+	if err := cbor.Unmarshal(data, &s.Model); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type liveResponse struct {
 	Action string          `json:"action"`
 	Result cbor.RawMessage `json:"result"`

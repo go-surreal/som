@@ -415,3 +415,207 @@ func (b builder[M, C]) Debug(prefix ...string) Builder[M, C] {
 
 	return Builder[M, C]{b}
 }
+
+// Search adds full-text search conditions to the query.
+// Multiple search conditions are combined with OR (any can match).
+// This is the default behavior, similar to how search engines work.
+// Use SearchAll() if you need AND behavior (all must match).
+// Returns a SearchBuilder which provides search-specific methods.
+func (b builder[M, C]) Search(searches ...lib.Search[M]) SearchBuilder[M, C] {
+	where, clauses := lib.BuildSearchOr(searches, &b.query)
+	b.query.SearchWhere = where
+	b.query.SearchClauses = clauses
+	return SearchBuilder[M, C]{builder: b}
+}
+
+// SearchAll adds full-text search conditions to the query.
+// Multiple search conditions are combined with AND (all must match).
+// Use this when you need documents to match ALL search terms.
+// Returns a SearchBuilder which provides search-specific methods.
+func (b builder[M, C]) SearchAll(searches ...lib.Search[M]) SearchBuilder[M, C] {
+	searchAll := lib.SearchAll[M](searches)
+	where, clauses := searchAll.BuildClauses(&b.query)
+	b.query.SearchWhere = where
+	b.query.SearchClauses = clauses
+	return SearchBuilder[M, C]{builder: b}
+}
+
+// SearchBuilder provides search-specific query methods.
+// It does NOT expose Search() or SearchAll() to prevent chaining multiple search calls.
+type SearchBuilder[M, C any] struct {
+	builder[M, C]
+}
+
+// Filter adds additional conditions to the search query.
+// These are AND'd with the search conditions.
+func (b SearchBuilder[M, C]) Filter(filters ...lib.Filter[M]) SearchBuilder[M, C] {
+	b.query.Where = append(b.query.Where, filters...)
+	return b
+}
+
+// Order sorts the returned records based on the given conditions.
+// Accepts both field sorts (by.Field.Asc()) and score sorts (lib.Score(0).Desc()).
+func (b SearchBuilder[M, C]) Order(by ...lib.SearchSort) SearchBuilder[M, C] {
+	for _, s := range by {
+		b.query.Sort = append(b.query.Sort, s.SearchSort())
+	}
+	return b
+}
+
+// Offset skips the first x records for the result set.
+func (b SearchBuilder[M, C]) Offset(offset int) SearchBuilder[M, C] {
+	b.query.Offset = offset
+	return b
+}
+
+// Limit restricts the query to return at most x records.
+func (b SearchBuilder[M, C]) Limit(limit int) SearchBuilder[M, C] {
+	b.query.Limit = limit
+	return b
+}
+
+// Timeout adds an execution time limit to the query.
+func (b SearchBuilder[M, C]) Timeout(timeout time.Duration) SearchBuilder[M, C] {
+	b.query.Timeout = timeout
+	return b
+}
+
+// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
+func (b SearchBuilder[M, C]) Parallel(parallel bool) SearchBuilder[M, C] {
+	b.query.Parallel = parallel
+	return b
+}
+
+// All returns all records matching the search conditions (without search metadata).
+func (b SearchBuilder[M, C]) All(ctx context.Context) ([]*M, error) {
+	return b.builder.All(ctx)
+}
+
+// AllAsync is the asynchronous version of All.
+func (b SearchBuilder[M, C]) AllAsync(ctx context.Context) *asyncResult[[]*M] {
+	return async(ctx, b.All)
+}
+
+// First returns the first record matching the search conditions (without search metadata).
+func (b SearchBuilder[M, C]) First(ctx context.Context) (*M, error) {
+	return b.builder.First(ctx)
+}
+
+// FirstAsync is the asynchronous version of First.
+func (b SearchBuilder[M, C]) FirstAsync(ctx context.Context) *asyncResult[*M] {
+	return async(ctx, b.First)
+}
+
+// AllMatches returns all records matching the search conditions with search metadata.
+func (b SearchBuilder[M, C]) AllMatches(ctx context.Context) ([]lib.SearchResult[*M], error) {
+	req := b.query.BuildAsAll()
+	res, err := b.db.Query(ctx, req.Statement, req.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("could not query search records: %w", err)
+	}
+
+	clauses := b.query.SearchClauses
+
+	var rawNodes []queryResult[searchRawResult[*C]]
+	err = b.db.Unmarshal(res, &rawNodes)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal search records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, nil
+	}
+
+	var results []lib.SearchResult[*M]
+	for _, raw := range rawNodes[0].Result {
+		model := b.convTo(raw.Model)
+		result := lib.SearchResult[*M]{
+			Model:      model,
+			Scores:     raw.Scores,
+			Highlights: make(map[int]string),
+			Offsets:    make(map[int][]lib.Offset),
+		}
+
+		// Extract highlights and offsets for each search clause
+		for _, clause := range clauses {
+			if clause.Highlights {
+				if hl, ok := raw.Highlights[clause.Ref]; ok {
+					result.Highlights[clause.Ref] = hl
+				}
+			}
+			if clause.Offsets {
+				if offs, ok := raw.Offsets[clause.Ref]; ok {
+					// Convert searchOffset to lib.Offset
+					libOffsets := make([]lib.Offset, len(offs))
+					for i, off := range offs {
+						libOffsets[i] = lib.Offset{Start: off.Start, End: off.End}
+					}
+					result.Offsets[clause.Ref] = libOffsets
+				}
+			}
+		}
+
+		results = append(results, result)
+	}
+	return results, nil
+}
+
+// AllMatchesAsync is the asynchronous version of AllMatches.
+func (b SearchBuilder[M, C]) AllMatchesAsync(ctx context.Context) *asyncResult[[]lib.SearchResult[*M]] {
+	return async(ctx, b.AllMatches)
+}
+
+// FirstMatch returns the first record matching the search conditions with search metadata.
+func (b SearchBuilder[M, C]) FirstMatch(ctx context.Context) (lib.SearchResult[*M], bool, error) {
+	b.query.Limit = 1
+	results, err := b.AllMatches(ctx)
+	if err != nil {
+		return lib.SearchResult[*M]{}, false, err
+	}
+	if len(results) < 1 {
+		return lib.SearchResult[*M]{}, false, nil
+	}
+	return results[0], true, nil
+}
+
+// Count returns the number of records matching the search conditions.
+func (b SearchBuilder[M, C]) Count(ctx context.Context) (int, error) {
+	return b.builder.Count(ctx)
+}
+
+// CountAsync is the asynchronous version of Count.
+func (b SearchBuilder[M, C]) CountAsync(ctx context.Context) *asyncResult[int] {
+	return async(ctx, b.Count)
+}
+
+// Exists returns whether at least one record matches the search conditions.
+func (b SearchBuilder[M, C]) Exists(ctx context.Context) (bool, error) {
+	return b.builder.Exists(ctx)
+}
+
+// ExistsAsync is the asynchronous version of Exists.
+func (b SearchBuilder[M, C]) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+	return async(ctx, b.Exists)
+}
+
+// Describe returns a string representation of the search query.
+func (b SearchBuilder[M, C]) Describe() string {
+	return b.builder.Describe()
+}
+
+// DescribeWithVars returns a string representation of the search query with inlined variables.
+func (b SearchBuilder[M, C]) DescribeWithVars() string {
+	return b.builder.DescribeWithVars()
+}
+
+// Debug logs the search query to the default debug logger.
+func (b SearchBuilder[M, C]) Debug(prefix ...string) SearchBuilder[M, C] {
+	slog.Debug(strings.Join(prefix, " ")+b.Describe(),
+		"vars", b.query.Vars(),
+	)
+	return b
+}
+
+// Score creates a new score-based sort by the given predicate refs.
+// If multiple refs are provided, scores are summed.
+// Use with SearchBuilder.Order() to sort search results by relevance score.
+var Score = lib.Score

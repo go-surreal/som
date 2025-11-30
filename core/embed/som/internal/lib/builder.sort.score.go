@@ -1,0 +1,97 @@
+//go:build embed
+
+package lib
+
+// ScoreCombineMode specifies how multiple search scores are combined.
+type ScoreCombineMode int
+
+const (
+	ScoreCombineSum ScoreCombineMode = iota
+	ScoreCombineMax
+	ScoreCombineAverage
+	ScoreCombineWeighted
+)
+
+// ScoreSort represents score-based sorting for full-text search queries.
+type ScoreSort struct {
+	refs        []int
+	desc        bool
+	combineMode ScoreCombineMode
+	weights     []float64
+}
+
+// Score creates a new score-based sort by the given predicate refs.
+// If multiple refs are provided, scores are summed by default.
+// Use Sum(), Max(), Average(), or Weighted() to change the combination mode.
+func Score(refs ...int) *ScoreSort {
+	return &ScoreSort{refs: refs, desc: true, combineMode: ScoreCombineSum}
+}
+
+// Desc sets the sort order to descending (highest scores first).
+// This is the default.
+func (s *ScoreSort) Desc() *ScoreSort {
+	s.desc = true
+	return s
+}
+
+// Asc sets the sort order to ascending (lowest scores first).
+func (s *ScoreSort) Asc() *ScoreSort {
+	s.desc = false
+	return s
+}
+
+// Sum combines scores by adding them together (default behavior).
+func (s *ScoreSort) Sum() *ScoreSort {
+	s.combineMode = ScoreCombineSum
+	s.weights = nil
+	return s
+}
+
+// Max combines scores by taking the maximum value.
+func (s *ScoreSort) Max() *ScoreSort {
+	s.combineMode = ScoreCombineMax
+	s.weights = nil
+	return s
+}
+
+// Average combines scores by taking the arithmetic mean.
+func (s *ScoreSort) Average() *ScoreSort {
+	s.combineMode = ScoreCombineAverage
+	s.weights = nil
+	return s
+}
+
+// Weighted combines scores with custom weights per ref.
+// Panics if weights count doesn't match refs count.
+func (s *ScoreSort) Weighted(weights ...float64) *ScoreSort {
+	if len(weights) != len(s.refs) {
+		panic("weights count must match refs count")
+	}
+	s.combineMode = ScoreCombineWeighted
+	s.weights = weights
+	return s
+}
+
+// Refs returns the predicate refs used for scoring.
+func (s *ScoreSort) Refs() []int {
+	return s.refs
+}
+
+// IsDesc returns true if sorting descending.
+func (s *ScoreSort) IsDesc() bool {
+	return s.desc
+}
+
+func (s *ScoreSort) SearchSort() *SortBuilder {
+	order := SortDesc
+	if !s.desc {
+		order = SortAsc
+	}
+	return &SortBuilder{
+		IsScore:      true,
+		ScoreRefs:    s.refs,
+		ScoreMode:    s.combineMode,
+		ScoreWeights: s.weights,
+		Order:        order,
+	}
+}

@@ -40,6 +40,7 @@ func (f *String) CodeGen() *CodeGen {
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
 		filterFunc:   nil,
+		filterExtra:  f.filterExtra,
 
 		sortDefine: f.sortDefine,
 		sortInit:   f.sortInit,
@@ -51,6 +52,11 @@ func (f *String) CodeGen() *CodeGen {
 }
 
 func (f *String) filterDefine(ctx Context) jen.Code {
+	// For searchable (index) strings, we use a wrapper type (see filterExtra below).
+	if f.SearchInfo() != nil {
+		return jen.Id(f.NameGo()).Id(ctx.Table.NameGoLower() + f.NameGo()).Types(def.TypeModel)
+	}
+
 	filter := "String"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
@@ -60,6 +66,21 @@ func (f *String) filterDefine(ctx Context) jen.Code {
 }
 
 func (f *String) filterInit(ctx Context) (jen.Code, jen.Code) {
+	// For searchable (index) strings, we use a wrapper type (see filterExtra below).
+	if f.SearchInfo() != nil {
+		wrapperName := ctx.Table.NameGoLower() + f.NameGo()
+		filter := "NewString"
+
+		if f.source.Pointer() {
+			filter += fnSuffixPtr
+		}
+
+		return jen.Id(wrapperName).Types(def.TypeModel).Values(
+			jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel).
+				Call(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase()))),
+		), jen.Empty()
+	}
+
 	filter := "NewString"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
@@ -67,6 +88,48 @@ func (f *String) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+}
+
+// filterExtra generates the wrapper type and Matches() method for search-indexed strings.
+func (f *String) filterExtra(ctx Context) jen.Code {
+	if f.SearchInfo() == nil {
+		return nil
+	}
+
+	wrapperName := ctx.Table.NameGoLower() + f.NameGo()
+	embeddedType := "String"
+	if f.source.Pointer() {
+		embeddedType += fnSuffixPtr
+	}
+
+	return jen.Add(
+		jen.Type().Id(wrapperName).Types(jen.Add(def.TypeModel).Any()).Struct(
+			jen.Op("*").Qual(ctx.pkgLib(), embeddedType).Types(def.TypeModel),
+		),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("Matches").
+			Params(jen.Id("terms").String()).
+			Qual(ctx.pkgLib(), "Search").Types(def.TypeModel).
+			Block(
+				jen.Return(
+					jen.Qual(ctx.pkgLib(), "NewSearch").Types(def.TypeModel).Call(
+						jen.Id("f").Dot(embeddedType).Dot("Base").Dot("Key"),
+						jen.Id("terms"),
+					),
+				),
+			),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("key").
+			Params().
+			Qual(ctx.pkgLib(), "Key").Types(def.TypeModel).
+			Block(
+				jen.Return(jen.Id("f").Dot(embeddedType).Dot("Base").Dot("Key")),
+			),
+	)
 }
 
 func (f *String) sortDefine(ctx Context) jen.Code {

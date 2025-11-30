@@ -634,7 +634,7 @@ func TestPassword(t *testing.T) {
 	modelFound, err := client.AllFieldTypesRepo().Query().
 		Filter(
 			where.AllFieldTypes.ID.Equal(modelIn.ID()),
-			where.AllFieldTypes.Login().Password.Matches(plainPassword),
+			where.AllFieldTypes.Login().Password.Verify(plainPassword),
 		).
 		First(ctx)
 
@@ -658,7 +658,7 @@ func TestPassword(t *testing.T) {
 	modelFoundAfterUpdate, err := client.AllFieldTypesRepo().Query().
 		Filter(
 			where.AllFieldTypes.ID.Equal(modelIn.ID()),
-			where.AllFieldTypes.Login().Password.Matches(plainPassword),
+			where.AllFieldTypes.Login().Password.Verify(plainPassword),
 		).
 		First(ctx)
 
