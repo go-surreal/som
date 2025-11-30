@@ -12,6 +12,7 @@ const (
 	sortFieldPrefix       = "__som_sort__"
 	searchScorePrefix     = "__som_search_score_"
 	searchHighlightPrefix = "__som_search_hl_"
+	searchOffsetsPrefix   = "__som_search_off_"
 )
 
 type context struct {
@@ -123,13 +124,16 @@ func (q Query[T]) render() string {
 		fields = append(fields, s.Field+" as "+sortFieldPrefix+s.Field)
 	}
 
-	// Add search score and highlight projections
+	// Add search score, highlight, and offset projections
 	for _, sc := range q.SearchClauses {
 		ref := strconv.Itoa(sc.Ref)
 		fields = append(fields, "search::score("+ref+") AS "+searchScorePrefix+ref)
 		if sc.Highlights {
 			fields = append(fields,
 				"search::highlight("+q.context.asVar(sc.HLPrefix)+", "+q.context.asVar(sc.HLSuffix)+", "+ref+") AS "+searchHighlightPrefix+ref)
+		}
+		if sc.Offsets {
+			fields = append(fields, "search::offsets("+ref+") AS "+searchOffsetsPrefix+ref)
 		}
 	}
 

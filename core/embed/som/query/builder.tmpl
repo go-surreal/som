@@ -530,9 +530,10 @@ func (b SearchBuilder[M, C]) AllMatches(ctx context.Context) ([]lib.SearchResult
 			Model:      model,
 			Scores:     make(map[int]float64),
 			Highlights: make(map[int]string),
+			Offsets:    make(map[int][]lib.Offset),
 		}
 
-		// Extract scores and highlights for each search clause
+		// Extract scores, highlights, and offsets for each search clause
 		for _, clause := range clauses {
 			if score, ok := raw.Scores[clause.Ref]; ok {
 				result.Scores[clause.Ref] = score
@@ -540,6 +541,16 @@ func (b SearchBuilder[M, C]) AllMatches(ctx context.Context) ([]lib.SearchResult
 			if clause.Highlights {
 				if hl, ok := raw.Highlights[clause.Ref]; ok {
 					result.Highlights[clause.Ref] = hl
+				}
+			}
+			if clause.Offsets {
+				if offs, ok := raw.Offsets[clause.Ref]; ok {
+					// Convert searchOffset to lib.Offset
+					libOffsets := make([]lib.Offset, len(offs))
+					for i, off := range offs {
+						libOffsets[i] = lib.Offset{Start: off.Start, End: off.End}
+					}
+					result.Offsets[clause.Ref] = libOffsets
 				}
 			}
 		}

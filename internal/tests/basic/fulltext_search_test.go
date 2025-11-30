@@ -175,7 +175,7 @@ func TestFullTextSearchWithHighlights(t *testing.T) {
 	}
 
 	results, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("highlight").Highlights("<mark>", "</mark>")).
+		Search(where.AllFieldTypes.String.Matches("highlight").WithHighlights("<mark>", "</mark>")).
 		AllMatches(ctx)
 
 	if err != nil {

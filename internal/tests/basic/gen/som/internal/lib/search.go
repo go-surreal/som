@@ -2,6 +2,12 @@
 
 package lib
 
+// Offset represents the start and end position of a matched term in the original text.
+type Offset struct {
+	Start int `cbor:"s"`
+	End   int `cbor:"e"`
+}
+
 // SearchResult wraps a model with search metadata supporting multiple predicates.
 // M is the model type.
 type SearchResult[M any] struct {
@@ -10,6 +16,8 @@ type SearchResult[M any] struct {
 	Scores map[int]float64
 	// Highlights maps predicate ref -> highlighted text with matched terms wrapped.
 	Highlights map[int]string
+	// Offsets maps predicate ref -> slice of position offsets for matched terms.
+	Offsets map[int][]Offset
 }
 
 // Score returns the score for the given predicate ref.
@@ -28,4 +36,13 @@ func (r SearchResult[M]) Highlighted(ref ...int) string {
 		return r.Highlights[0]
 	}
 	return r.Highlights[ref[0]]
+}
+
+// Offset returns the offsets for the given predicate ref.
+// If no ref is provided, returns the offsets for ref 0 (convenience for single-field search).
+func (r SearchResult[M]) Offset(ref ...int) []Offset {
+	if len(ref) == 0 {
+		return r.Offsets[0]
+	}
+	return r.Offsets[ref[0]]
 }

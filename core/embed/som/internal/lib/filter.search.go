@@ -12,7 +12,8 @@ import (
 // Search conditions can only be used with Search()/SearchAny() methods.
 type Search[M any] interface {
 	Ref(ref int) Search[M]
-	Highlights(prefix, suffix string) Search[M]
+	WithHighlights(prefix, suffix string) Search[M]
+	WithOffsets() Search[M]
 	build(ctx *context, ref int) SearchClause
 }
 
@@ -23,6 +24,7 @@ type SearchClause struct {
 	Highlights bool
 	HLPrefix   string
 	HLSuffix   string
+	Offsets    bool
 }
 
 type search[M any] struct {
@@ -32,6 +34,7 @@ type search[M any] struct {
 	hlPrefix   string
 	hlSuffix   string
 	highlights bool
+	offsets    bool
 }
 
 // NewSearch creates a full-text search condition for the given key and terms.
@@ -47,12 +50,19 @@ func (s *search[M]) Ref(ref int) Search[M] {
 	return s
 }
 
-// Highlights enables highlighting for this search condition with the given
+// WithHighlights enables highlighting for this search condition with the given
 // prefix and suffix tags.
-func (s *search[M]) Highlights(prefix, suffix string) Search[M] {
+func (s *search[M]) WithHighlights(prefix, suffix string) Search[M] {
 	s.hlPrefix = prefix
 	s.hlSuffix = suffix
 	s.highlights = true
+	return s
+}
+
+// WithOffsets enables offset extraction for this search condition.
+// Offsets provide the start and end positions of matched terms.
+func (s *search[M]) WithOffsets() Search[M] {
+	s.offsets = true
 	return s
 }
 
@@ -73,6 +83,7 @@ func (s *search[M]) build(ctx *context, autoRef int) SearchClause {
 		Highlights: s.highlights,
 		HLPrefix:   s.hlPrefix,
 		HLSuffix:   s.hlSuffix,
+		Offsets:    s.offsets,
 	}
 }
 

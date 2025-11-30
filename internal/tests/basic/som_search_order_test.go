@@ -69,3 +69,27 @@ func TestFulltextSearchScoreCombination(t *testing.T) {
 	assert.Assert(t, strings.Contains(q4.Describe(),
 		"(search::score(0) * 2 + search::score(1) * 0.5) AS __som_search_score_combined"))
 }
+
+func TestSearchWithOffsets(t *testing.T) {
+	client := &repo.ClientImpl{}
+
+	q := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.String.Matches("test").WithOffsets())
+
+	assert.Assert(t, strings.Contains(q.Describe(),
+		"search::offsets(0) AS __som_search_off_0"))
+}
+
+func TestSearchWithHighlightsAndOffsets(t *testing.T) {
+	client := &repo.ClientImpl{}
+
+	q := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.String.Matches("test").
+			WithHighlights("<b>", "</b>").
+			WithOffsets())
+
+	desc := q.Describe()
+	assert.Assert(t, strings.Contains(desc, "search::highlight"))
+	assert.Assert(t, strings.Contains(desc, "search::offsets"))
+}
+
