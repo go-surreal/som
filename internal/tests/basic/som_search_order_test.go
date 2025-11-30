@@ -93,3 +93,37 @@ func TestSearchWithHighlightsAndOffsets(t *testing.T) {
 	assert.Assert(t, strings.Contains(desc, "search::offsets"))
 }
 
+func TestFulltextSearchValidTypes(t *testing.T) {
+	client := &repo.ClientImpl{}
+
+	// Test string
+	q1 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.String.Matches("test"))
+	assert.Assert(t, strings.Contains(q1.Describe(), "string @0@"))
+
+	// Test *string
+	q2 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.StringPtr.Matches("test"))
+	assert.Assert(t, strings.Contains(q2.Describe(), "string_ptr @0@"))
+
+	// Test []string (named "Other" in the model)
+	q3 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.Other.Matches("test"))
+	assert.Assert(t, strings.Contains(q3.Describe(), "other @0@"))
+
+	// Test []*string
+	q4 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.StringPtrSlice.Matches("test"))
+	assert.Assert(t, strings.Contains(q4.Describe(), "string_ptr_slice @0@"))
+
+	// Test *[]string
+	q5 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.StringSlicePtr.Matches("test"))
+	assert.Assert(t, strings.Contains(q5.Describe(), "string_slice_ptr @0@"))
+
+	// Test *[]*string
+	q6 := client.AllFieldTypesRepo().Query().
+		Search(where.AllFieldTypes.StringPtrSlicePtr.Matches("test"))
+	assert.Assert(t, strings.Contains(q6.Describe(), "string_ptr_slice_ptr @0@"))
+}
+

@@ -15,6 +15,7 @@ type Field interface {
 	Search() *SearchInfo
 	setIndex(*IndexInfo)
 	setSearch(*SearchInfo)
+	Validate() error
 }
 
 type fieldAtomic struct {
@@ -62,12 +63,23 @@ func (f *fieldAtomic) setSearch(info *SearchInfo) {
 	f.search = info
 }
 
+func (f *fieldAtomic) Validate() error {
+	if f.search != nil {
+		return fmt.Errorf("field %s: fulltext index only supports string types (string, *string, []string, []*string, *[]string, *[]*string)", f.name)
+	}
+	return nil
+}
+
 type FieldID struct {
 	*fieldAtomic
 }
 
 type FieldString struct {
 	*fieldAtomic
+}
+
+func (f *FieldString) Validate() error {
+	return nil // string and *string support fulltext
 }
 
 type FieldNumeric struct {
@@ -165,6 +177,21 @@ type FieldSlice struct {
 	// IsNode bool
 	// IsEdge bool
 	// IsEnum bool
+}
+
+func (f *FieldSlice) Validate() error {
+	// First validate the element
+	if err := f.Field.Validate(); err != nil {
+		return err
+	}
+
+	// Fulltext is only valid for string slices
+	if f.search != nil {
+		if _, ok := f.Field.(*FieldString); !ok {
+			return fmt.Errorf("field %s: fulltext index only supports string slice types, got slice of %T", f.name, f.Field)
+		}
+	}
+	return nil
 }
 
 type FieldVersion struct {

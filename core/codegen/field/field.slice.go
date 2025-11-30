@@ -72,6 +72,7 @@ func (f *Slice) CodeGen() *CodeGen {
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
 		filterFunc:   f.filterFunc,
+		filterExtra:  f.filterExtra,
 
 		sortDefine: nil,
 		sortInit:   nil,
@@ -112,6 +113,11 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 
 			if f.source.Pointer() {
 				filter += fnSuffixPtr
+			}
+
+			// For searchable string slices, we use a wrapper type (see filterExtra).
+			if f.SearchInfo() != nil {
+				return jen.Id(f.NameGo()).Id(ctx.Table.NameGoLower() + f.NameGo()).Types(def.TypeModel)
 			}
 
 			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).
@@ -200,19 +206,28 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	case *String:
 		{
-			filter := "NewString"
+			embeddedType := "String"
 
 			if element.source.Pointer() {
-				filter += fnSuffixPtr
+				embeddedType += fnSuffixPtr
 			}
 
-			filter += "Slice"
+			embeddedType += "Slice"
 
 			if f.source.Pointer() {
-				filter += fnSuffixPtr
+				embeddedType += fnSuffixPtr
 			}
 
-			return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+			// For searchable string slices, we use a wrapper type (see filterExtra).
+			if f.SearchInfo() != nil {
+				wrapperName := ctx.Table.NameGoLower() + f.NameGo()
+				return jen.Id(wrapperName).Types(def.TypeModel).Values(
+					jen.Qual(ctx.pkgLib(), "New"+embeddedType).Types(def.TypeModel).
+						Call(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase()))),
+				), jen.Empty()
+			}
+
+			return jen.Qual(ctx.pkgLib(), "New"+embeddedType).Types(def.TypeModel),
 				jen.Call(
 					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 				)
@@ -284,6 +299,72 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Call(
 			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 		)
+}
+
+// filterExtra generates the wrapper type and Matches() method for search-indexed string slices.
+func (f *Slice) filterExtra(ctx Context) jen.Code {
+	if f.SearchInfo() == nil {
+		return nil
+	}
+
+	// Only string slices support fulltext search.
+	stringElem, ok := f.element.(*String)
+	if !ok {
+		return nil
+	}
+
+	wrapperName := ctx.Table.NameGoLower() + f.NameGo()
+
+	// Determine the embedded type based on pointer variants.
+	// Use StringSlice, StringPtrSlice, StringSlicePtr, or StringPtrSlicePtr.
+	embeddedType := "String"
+	if stringElem.source.Pointer() {
+		embeddedType += fnSuffixPtr
+	}
+	embeddedType += "Slice"
+	if f.source.Pointer() {
+		embeddedType += fnSuffixPtr
+	}
+
+	// StringSlice embeds *Slice which embeds Key directly (not through Base).
+	// For SlicePtr variants, we access through .Slice.Key.
+	var keyAccess jen.Code
+	if f.source.Pointer() {
+		// StringSlicePtr and StringPtrSlicePtr embed *SlicePtr which has .Slice.Key
+		keyAccess = jen.Id("f").Dot(embeddedType).Dot("Slice").Dot("Key")
+	} else {
+		// StringSlice and StringPtrSlice embed *Slice which has .Key directly
+		keyAccess = jen.Id("f").Dot(embeddedType).Dot("Key")
+	}
+
+	return jen.Add(
+		jen.Type().Id(wrapperName).Types(jen.Add(def.TypeModel).Any()).Struct(
+			jen.Op("*").Qual(ctx.pkgLib(), embeddedType).Types(def.TypeModel),
+		),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("Matches").
+			Params(jen.Id("terms").String()).
+			Qual(ctx.pkgLib(), "Search").Types(def.TypeModel).
+			Block(
+				jen.Return(
+					jen.Qual(ctx.pkgLib(), "NewSearch").Types(def.TypeModel).Call(
+						keyAccess,
+						jen.Id("terms"),
+					),
+				),
+			),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("key").
+			Params().
+			Qual(ctx.pkgLib(), "Key").Types(def.TypeModel).
+			Block(
+				jen.Return(keyAccess),
+			),
+	)
 }
 
 func (f *Slice) filterFunc(ctx Context) jen.Code {

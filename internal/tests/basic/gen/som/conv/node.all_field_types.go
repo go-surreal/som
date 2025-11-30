@@ -17,7 +17,7 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 84)
+	data := make(map[string]any, 85)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {
@@ -42,6 +42,9 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	}
 	if c.StringSlicePtr != nil {
 		data["string_slice_ptr"] = c.StringSlicePtr
+	}
+	if c.StringPtrSlicePtr != nil {
+		data["string_ptr_slice_ptr"] = c.StringPtrSlicePtr
 	}
 	data["int"] = c.Int
 	if c.IntPtr != nil {
@@ -287,6 +290,9 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["string_slice_ptr"]; ok {
 		cbor.Unmarshal(raw, &c.StringSlicePtr)
+	}
+	if raw, ok := rawMap["string_ptr_slice_ptr"]; ok {
+		cbor.Unmarshal(raw, &c.StringPtrSlicePtr)
 	}
 	if raw, ok := rawMap["int"]; ok {
 		cbor.Unmarshal(raw, &c.Int)

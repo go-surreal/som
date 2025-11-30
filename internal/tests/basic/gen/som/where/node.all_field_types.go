@@ -56,7 +56,7 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		IntSlice:           lib.NewIntSlice[M, int](lib.Field(key, "int_slice")),
 		IntSlicePtr:        lib.NewIntSlicePtr[M, int](lib.Field(key, "int_slice_ptr")),
 		Key:                key,
-		Other:              lib.NewStringSlice[M](lib.Field(key, "other")),
+		Other:              allFieldTypesOther[M]{lib.NewStringSlice[M](lib.Field(key, "other"))},
 		Role:               lib.NewEnum[M, model.Role](lib.Field(key, "role")),
 		Roles:              lib.NewSlice[M, model.Role](lib.Field(key, "roles"), lib.NewEnum[M, model.Role]),
 		Rune:               lib.NewInt[M, rune](lib.Field(key, "rune")),
@@ -65,9 +65,10 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		SliceSliceSlice:    lib.NewSliceMaker[M, [][]string, *lib.Slice[M, []string, *lib.StringSlice[M]]](lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M]))(lib.Field(key, "slice_slice_slice")),
 		SliceSliceSlice2:   lib.NewSliceMaker[M, [][]model.SomeStruct, *lib.Slice[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]]](lib.NewSliceMaker[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]](lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])))(lib.Field(key, "slice_slice_slice_2")),
 		String:             allFieldTypesString[M]{lib.NewString[M](lib.Field(key, "string"))},
-		StringPtr:          lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
-		StringPtrSlice:     lib.NewStringPtrSlice[M](lib.Field(key, "string_ptr_slice")),
-		StringSlicePtr:     lib.NewStringSlicePtr[M](lib.Field(key, "string_slice_ptr")),
+		StringPtr:          allFieldTypesStringPtr[M]{lib.NewStringPtr[M](lib.Field(key, "string_ptr"))},
+		StringPtrSlice:     allFieldTypesStringPtrSlice[M]{lib.NewStringPtrSlice[M](lib.Field(key, "string_ptr_slice"))},
+		StringPtrSlicePtr:  allFieldTypesStringPtrSlicePtr[M]{lib.NewStringPtrSlicePtr[M](lib.Field(key, "string_ptr_slice_ptr"))},
+		StringSlicePtr:     allFieldTypesStringSlicePtr[M]{lib.NewStringSlicePtr[M](lib.Field(key, "string_slice_ptr"))},
 		StructPtrSlice:     lib.NewSliceMaker[M, *model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_ptr_slice")),
 		StructPtrSlicePtr:  lib.NewSliceMakerPtr[M, *model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_ptr_slice_ptr")),
 		StructSlice:        lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])(lib.Field(key, "struct_slice")),
@@ -100,10 +101,11 @@ type allFieldTypes[M any] struct {
 	CreatedAt          *lib.Time[M]
 	UpdatedAt          *lib.Time[M]
 	String             allFieldTypesString[M]
-	StringPtr          *lib.StringPtr[M]
-	Other              *lib.StringSlice[M]
-	StringPtrSlice     *lib.StringPtrSlice[M]
-	StringSlicePtr     *lib.StringSlicePtr[M]
+	StringPtr          allFieldTypesStringPtr[M]
+	Other              allFieldTypesOther[M]
+	StringPtrSlice     allFieldTypesStringPtrSlice[M]
+	StringSlicePtr     allFieldTypesStringSlicePtr[M]
+	StringPtrSlicePtr  allFieldTypesStringPtrSlicePtr[M]
 	Int                *lib.Int[M, int]
 	IntPtr             *lib.IntPtr[M, *int]
 	IntSlice           *lib.IntSlice[M, int]
@@ -218,6 +220,61 @@ func (f allFieldTypesString[M]) Matches(terms string) lib.Search[M] {
 }
 func (f allFieldTypesString[M]) key() lib.Key[M] {
 	return f.String.Base.Key
+}
+
+type allFieldTypesStringPtr[M any] struct {
+	*lib.StringPtr[M]
+}
+
+func (f allFieldTypesStringPtr[M]) Matches(terms string) lib.Search[M] {
+	return lib.NewSearch[M](f.StringPtr.Base.Key, terms)
+}
+func (f allFieldTypesStringPtr[M]) key() lib.Key[M] {
+	return f.StringPtr.Base.Key
+}
+
+type allFieldTypesOther[M any] struct {
+	*lib.StringSlice[M]
+}
+
+func (f allFieldTypesOther[M]) Matches(terms string) lib.Search[M] {
+	return lib.NewSearch[M](f.StringSlice.Key, terms)
+}
+func (f allFieldTypesOther[M]) key() lib.Key[M] {
+	return f.StringSlice.Key
+}
+
+type allFieldTypesStringPtrSlice[M any] struct {
+	*lib.StringPtrSlice[M]
+}
+
+func (f allFieldTypesStringPtrSlice[M]) Matches(terms string) lib.Search[M] {
+	return lib.NewSearch[M](f.StringPtrSlice.Key, terms)
+}
+func (f allFieldTypesStringPtrSlice[M]) key() lib.Key[M] {
+	return f.StringPtrSlice.Key
+}
+
+type allFieldTypesStringSlicePtr[M any] struct {
+	*lib.StringSlicePtr[M]
+}
+
+func (f allFieldTypesStringSlicePtr[M]) Matches(terms string) lib.Search[M] {
+	return lib.NewSearch[M](f.StringSlicePtr.Slice.Key, terms)
+}
+func (f allFieldTypesStringSlicePtr[M]) key() lib.Key[M] {
+	return f.StringSlicePtr.Slice.Key
+}
+
+type allFieldTypesStringPtrSlicePtr[M any] struct {
+	*lib.StringPtrSlicePtr[M]
+}
+
+func (f allFieldTypesStringPtrSlicePtr[M]) Matches(terms string) lib.Search[M] {
+	return lib.NewSearch[M](f.StringPtrSlicePtr.Slice.Key, terms)
+}
+func (f allFieldTypesStringPtrSlicePtr[M]) key() lib.Key[M] {
+	return f.StringPtrSlicePtr.Slice.Key
 }
 
 type allFieldTypesEdges[M any] struct {

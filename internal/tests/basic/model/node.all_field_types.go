@@ -13,11 +13,12 @@ type AllFieldTypes struct {
 
 	// basic types
 
-	String         string `som:"fulltext(english_search)"`
-	StringPtr      *string
-	Other          []string
-	StringPtrSlice []*string
-	StringSlicePtr *[]string // TODO: cannot be filtered for nil!
+	String            string     `som:"fulltext(english_search)"`
+	StringPtr         *string    `som:"fulltext(english_search)"`
+	Other             []string   `som:"fulltext(english_search)"`
+	StringPtrSlice    []*string  `som:"fulltext(english_search)"`
+	StringSlicePtr    *[]string  `som:"fulltext(english_search)"` // TODO: cannot be filtered for nil!
+	StringPtrSlicePtr *[]*string `som:"fulltext(english_search)"`
 
 	Int            int
 	IntPtr         *int
