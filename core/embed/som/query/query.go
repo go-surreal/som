@@ -67,7 +67,7 @@ type searchOffset struct {
 // The model fields and search metadata are at the same level in the JSON/CBOR.
 type searchRawResult[M any] struct {
 	Model      M
-	Scores     map[int]float64
+	Scores     []float64
 	Highlights map[int]string
 	Offsets    map[int][]searchOffset
 }
@@ -80,23 +80,15 @@ func (s *searchRawResult[M]) UnmarshalCBOR(data []byte) error {
 	}
 
 	// Extract search scores, highlights, and offsets
-	s.Scores = make(map[int]float64)
 	s.Highlights = make(map[int]string)
 	s.Offsets = make(map[int][]searchOffset)
 
-	// Look for __som__search_score_N, __som__search_highlight_N, and __som__search_offsets_N fields
+	// Look for __som__search_score_*, __som__search_highlight_N, and __som__search_offsets_N fields
 	for key, val := range rawMap {
 		if strings.HasPrefix(key, "__som__search_score_") {
-			refStr := strings.TrimPrefix(key, "__som__search_score_")
-			if refStr == "combined" {
-				continue // skip combined score, it's for sorting only
-			}
-			var ref int
-			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
-				var score float64
-				if err := cbor.Unmarshal(val, &score); err == nil {
-					s.Scores[ref] = score
-				}
+			var score float64
+			if err := cbor.Unmarshal(val, &score); err == nil {
+				s.Scores = append(s.Scores, score)
 			}
 		} else if strings.HasPrefix(key, "__som__search_highlight_") {
 			refStr := strings.TrimPrefix(key, "__som__search_highlight_")

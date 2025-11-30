@@ -122,6 +122,9 @@ func (q Query[T]) render() string {
 
 	fields := q.fields
 	for _, s := range q.Sort {
+		if s.IsScore {
+			continue
+		}
 		fields = append(fields, s.Field+" as "+sortFieldPrefix+s.Field)
 	}
 
@@ -138,12 +141,16 @@ func (q Query[T]) render() string {
 		}
 	}
 
-	// Add combined score projection if any score sort exists
+	// Add score projection for each score sort
 	for _, s := range q.Sort {
 		if s.IsScore && len(s.ScoreRefs) > 0 {
 			expr := renderScoreCombination(s.ScoreRefs, s.ScoreMode, s.ScoreWeights)
-			fields = append(fields, expr+" AS "+searchScorePrefix+"combined")
-			break
+			refStrs := make([]string, len(s.ScoreRefs))
+			for i, ref := range s.ScoreRefs {
+				refStrs[i] = strconv.Itoa(ref)
+			}
+			alias := searchScorePrefix + strings.Join(refStrs, "_")
+			fields = append(fields, expr+" AS "+alias)
 		}
 	}
 

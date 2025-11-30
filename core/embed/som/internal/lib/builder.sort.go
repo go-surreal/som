@@ -2,6 +2,11 @@
 
 package lib
 
+import (
+	"strconv"
+	"strings"
+)
+
 // SearchSort is implemented by types that can be used for sorting in search queries.
 type SearchSort interface {
 	SearchSort() *SortBuilder
@@ -25,7 +30,11 @@ func (b *SortBuilder) SearchSort() *SortBuilder {
 
 func (b *SortBuilder) render() string {
 	if b.IsScore {
-		return searchScorePrefix + "combined " + string(b.Order)
+		refStrs := make([]string, len(b.ScoreRefs))
+		for i, ref := range b.ScoreRefs {
+			refStrs[i] = strconv.Itoa(ref)
+		}
+		return searchScorePrefix + strings.Join(refStrs, "_") + " " + string(b.Order)
 	}
 
 	// Due to a bug in SurrealDB when using ORDER BY with indexed fields,

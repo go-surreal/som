@@ -3,6 +3,7 @@ package basic
 import (
 	"testing"
 
+	"github.com/go-surreal/som/tests/basic/gen/som/query"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
@@ -375,4 +376,43 @@ func TestFullTextSearchScore(t *testing.T) {
 	t.Logf("Search score: %f", score)
 	// BM25 scores can be negative, just verify we got a score value
 	assert.Assert(t, score != 0, "expected non-zero search score")
+}
+
+func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
+	ctx := t.Context()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	strVal := "test data for multiple scores"
+	err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{
+		String:    strVal,
+		StringPtr: &strVal,
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	// Search on two fields (String and StringPtr) to get two search refs (0 and 1)
+	// Then sort by Score(0) and Score(1) to get two different score aliases
+	results, err := client.AllFieldTypesRepo().Query().
+		Search(
+			where.AllFieldTypes.String.Matches("test"),
+			where.AllFieldTypes.StringPtr.Matches("test"),
+		).
+		Order(query.Score(0).Desc(), query.Score(1).Asc()).
+		AllMatches(ctx)
+
+	if err != nil {
+		t.Fatalf("failed to execute search: %v", err)
+	}
+
+	assert.Equal(t, 1, len(results))
+	t.Logf("Scores: %v", results[0].Scores)
+	// We should have at least 2 scores:
+	// - search::score(0) from first search clause
+	// - search::score(1) from second search clause
+	// - Plus the score projections from Order (which may duplicate the above)
+	assert.Assert(t, len(results[0].Scores) >= 2,
+		"expected at least 2 scores, got %d", len(results[0].Scores))
 }
