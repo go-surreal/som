@@ -64,7 +64,7 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		SliceSlice:         lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M])(lib.Field(key, "slice_slice")),
 		SliceSliceSlice:    lib.NewSliceMaker[M, [][]string, *lib.Slice[M, []string, *lib.StringSlice[M]]](lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M]))(lib.Field(key, "slice_slice_slice")),
 		SliceSliceSlice2:   lib.NewSliceMaker[M, [][]model.SomeStruct, *lib.Slice[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]]](lib.NewSliceMaker[M, []model.SomeStruct, *lib.Slice[M, model.SomeStruct, someStruct[M]]](lib.NewSliceMaker[M, model.SomeStruct, someStruct[M]](newSomeStruct[M])))(lib.Field(key, "slice_slice_slice_2")),
-		String:             lib.NewString[M](lib.Field(key, "string")),
+		String:             allFieldTypesString[M]{lib.NewString[M](lib.Field(key, "string"))},
 		StringPtr:          lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
 		StringPtrSlice:     lib.NewStringPtrSlice[M](lib.Field(key, "string_ptr_slice")),
 		StringSlicePtr:     lib.NewStringSlicePtr[M](lib.Field(key, "string_slice_ptr")),
@@ -99,7 +99,7 @@ type allFieldTypes[M any] struct {
 	ID                 *lib.ID[M]
 	CreatedAt          *lib.Time[M]
 	UpdatedAt          *lib.Time[M]
-	String             *lib.String[M]
+	String             allFieldTypesString[M]
 	StringPtr          *lib.StringPtr[M]
 	Other              *lib.StringSlice[M]
 	StringPtrSlice     *lib.StringPtrSlice[M]
@@ -207,6 +207,17 @@ func (n allFieldTypes[M]) NodePtrSlicePtr(filters ...lib.Filter[model.Group]) *l
 
 func (n allFieldTypes[M]) MemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[M] {
 	return newGroupMemberIn[M](lib.EdgeIn(n.Key, "group_member", filters))
+}
+
+type allFieldTypesString[M any] struct {
+	*lib.String[M]
+}
+
+func (f allFieldTypesString[M]) Matches(terms string) lib.Search[M] {
+	return lib.NewSearch[M](f.String.Base.Key, terms)
+}
+func (f allFieldTypesString[M]) key() lib.Key[M] {
+	return f.String.Base.Key
 }
 
 type allFieldTypesEdges[M any] struct {

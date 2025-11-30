@@ -57,6 +57,59 @@ type queryResult[M any] struct {
 	Time   string `json:"time"`
 }
 
+// searchRawResult holds the raw search result with embedded model and search metadata.
+// The model fields and search metadata are at the same level in the JSON/CBOR.
+type searchRawResult[M any] struct {
+	Model      M
+	Scores     map[int]float64
+	Highlights map[int]string
+}
+
+func (s *searchRawResult[M]) UnmarshalCBOR(data []byte) error {
+	// First unmarshal the entire map to get access to all fields
+	var rawMap map[string]cbor.RawMessage
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Extract search scores and highlights
+	s.Scores = make(map[int]float64)
+	s.Highlights = make(map[int]string)
+
+	// Look for __som_search_score_N and __som_search_hl_N fields
+	for key, val := range rawMap {
+		if strings.HasPrefix(key, "__som_search_score_") {
+			refStr := strings.TrimPrefix(key, "__som_search_score_")
+			if refStr == "combined" {
+				continue // skip combined score, it's for sorting only
+			}
+			var ref int
+			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
+				var score float64
+				if err := cbor.Unmarshal(val, &score); err == nil {
+					s.Scores[ref] = score
+				}
+			}
+		} else if strings.HasPrefix(key, "__som_search_hl_") {
+			refStr := strings.TrimPrefix(key, "__som_search_hl_")
+			var ref int
+			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
+				var hl string
+				if err := cbor.Unmarshal(val, &hl); err == nil {
+					s.Highlights[ref] = hl
+				}
+			}
+		}
+	}
+
+	// Unmarshal the rest into the model
+	if err := cbor.Unmarshal(data, &s.Model); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type liveResponse struct {
 	Action string          `json:"action"`
 	Result cbor.RawMessage `json:"result"`

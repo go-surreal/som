@@ -34,6 +34,9 @@ type CodeGen struct {
 	filterDefine CodeGenFunc
 	filterInit   CodeGenTuple
 	filterFunc   CodeGenFunc
+	// filterExtra generates additional code (types, methods) without disabling filterDefine/filterInit.
+	// This is used for wrapper types that need both struct fields AND extra type definitions.
+	filterExtra CodeGenFunc
 
 	sortDefine CodeGenFunc
 	sortInit   CodeGenFunc
@@ -61,6 +64,10 @@ func (g *CodeGen) FilterInit(ctx Context) jen.Code {
 
 func (g *CodeGen) FilterFunc(ctx Context) jen.Code {
 	return g.filterFunc.Exec(ctx)
+}
+
+func (g *CodeGen) FilterExtra(ctx Context) jen.Code {
+	return g.filterExtra.Exec(ctx)
 }
 
 func (g *CodeGen) SortDefine(ctx Context) jen.Code {
