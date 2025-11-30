@@ -41,7 +41,7 @@ func TestFilterCompareFields(t *testing.T) {
 
 	modelOut, err := client.AllFieldTypesRepo().Query().
 		Filter(
-			where.AllFieldTypes.StringPtr.Equal_(where.AllFieldTypes.String.String),
+			where.AllFieldTypes.StringPtr.Equal_(where.AllFieldTypes.String),
 			where.AllFieldTypes.TimePtr.After_(where.AllFieldTypes.Time),
 		).
 		First(ctx)
