@@ -103,6 +103,14 @@ func (b builder[M, C]) Parallel(parallel bool) BuilderNoLive[M, C] {
 	return BuilderNoLive[M, C]{b}
 }
 
+// TempFiles tells SurrealDB to process the query using temporary files
+// rather than memory. This reduces memory usage for large result sets
+// at the cost of slower performance.
+func (b builder[M, C]) TempFiles(tempFiles bool) BuilderNoLive[M, C] {
+	b.query.TempFiles = tempFiles
+	return BuilderNoLive[M, C]{b}
+}
+
 // Count returns the size of the result set, in other words, the
 // number of records matching the conditions of the query.
 func (b builder[M, C]) Count(ctx context.Context) (int, error) {
@@ -483,6 +491,14 @@ func (b SearchBuilder[M, C]) Timeout(timeout time.Duration) SearchBuilder[M, C] 
 // Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
 func (b SearchBuilder[M, C]) Parallel(parallel bool) SearchBuilder[M, C] {
 	b.query.Parallel = parallel
+	return b
+}
+
+// TempFiles tells SurrealDB to process the query using temporary files
+// rather than memory. This reduces memory usage for large result sets
+// at the cost of slower performance.
+func (b SearchBuilder[M, C]) TempFiles(tempFiles bool) SearchBuilder[M, C] {
+	b.query.TempFiles = tempFiles
 	return b
 }
 
