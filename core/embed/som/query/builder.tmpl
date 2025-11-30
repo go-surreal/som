@@ -422,7 +422,8 @@ func (b builder[M, C]) Debug(prefix ...string) Builder[M, C] {
 func (b builder[M, C]) Search(searches ...lib.Search[M]) SearchBuilder[M, C] {
 	searchAll := lib.SearchAll[M](searches)
 	where, clauses := searchAll.BuildClauses(&b.query)
-	b.query.SetSearchClauses(where, clauses)
+	b.query.SearchWhere = where
+	b.query.SearchClauses = clauses
 	return SearchBuilder[M, C]{builder: b}
 }
 
@@ -432,7 +433,8 @@ func (b builder[M, C]) Search(searches ...lib.Search[M]) SearchBuilder[M, C] {
 func (b builder[M, C]) SearchAny(searches ...lib.Search[M]) SearchBuilder[M, C] {
 	searchAny := lib.SearchAny[M](searches)
 	where, clauses := searchAny.BuildClauses(&b.query)
-	b.query.SetSearchClauses(where, clauses)
+	b.query.SearchWhere = where
+	b.query.SearchClauses = clauses
 	return SearchBuilder[M, C]{builder: b}
 }
 
@@ -460,7 +462,8 @@ func (b SearchBuilder[M, C]) Order(by ...*lib.Sort[M]) SearchBuilder[M, C] {
 // OrderByScore sorts the returned records by search score.
 // The ScoreSort specifies which predicate refs to use and the sort direction.
 func (b SearchBuilder[M, C]) OrderByScore(score *lib.ScoreSort) SearchBuilder[M, C] {
-	b.query.SetScoreSort(score.Refs(), score.IsDesc())
+	b.query.ScoreSortRefs = score.Refs()
+	b.query.ScoreSortDesc = score.IsDesc()
 	return b
 }
 
@@ -510,13 +513,13 @@ func (b SearchBuilder[M, C]) FirstAsync(ctx context.Context) *asyncResult[*M] {
 
 // AllMatches returns all records matching the search conditions with search metadata.
 func (b SearchBuilder[M, C]) AllMatches(ctx context.Context) ([]lib.SearchResult[*M], error) {
-	req := b.query.BuildAsSearch()
+	req := b.query.BuildAsAll()
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not query search records: %w", err)
 	}
 
-	clauses := b.query.GetSearchClauses()
+	clauses := b.query.SearchClauses
 
 	var rawNodes []queryResult[searchRawResult[*C]]
 	err = b.db.Unmarshal(res, &rawNodes)

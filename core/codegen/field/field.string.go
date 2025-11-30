@@ -52,14 +52,11 @@ func (f *String) CodeGen() *CodeGen {
 }
 
 func (f *String) filterDefine(ctx Context) jen.Code {
-	// For search-indexed strings, use a wrapper type
+	// For searchable (index) strings, we use a wrapper type (see filterExtra below).
 	if f.SearchInfo() != nil {
-		// Returns: FieldName tableNameFieldName[M]
-		wrapperName := ctx.Table.NameGoLower() + f.NameGo()
-		return jen.Id(f.NameGo()).Id(wrapperName).Types(def.TypeModel)
+		return jen.Id(f.NameGo()).Id(ctx.Table.NameGoLower() + f.NameGo()).Types(def.TypeModel)
 	}
 
-	// For non-indexed strings, use lib.String or lib.StringPtr
 	filter := "String"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
@@ -69,21 +66,21 @@ func (f *String) filterDefine(ctx Context) jen.Code {
 }
 
 func (f *String) filterInit(ctx Context) (jen.Code, jen.Code) {
-	// For search-indexed strings, use wrapper type initialization
+	// For searchable (index) strings, we use a wrapper type (see filterExtra below).
 	if f.SearchInfo() != nil {
 		wrapperName := ctx.Table.NameGoLower() + f.NameGo()
 		filter := "NewString"
+
 		if f.source.Pointer() {
 			filter += fnSuffixPtr
 		}
-		// Returns: tableNameFieldName[M]{lib.NewString[M](lib.Field(key, "field_name"))}
+
 		return jen.Id(wrapperName).Types(def.TypeModel).Values(
 			jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel).
 				Call(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase()))),
 		), jen.Empty()
 	}
 
-	// For non-indexed strings
 	filter := "NewString"
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
@@ -105,25 +102,11 @@ func (f *String) filterExtra(ctx Context) jen.Code {
 		embeddedType += fnSuffixPtr
 	}
 
-	// Generate:
-	// type tableNameFieldName[M any] struct {
-	//     *lib.String[M]  // or *lib.StringPtr[M]
-	// }
-	//
-	// func (f tableNameFieldName[M]) Matches(terms string) lib.Search[M] {
-	//     return lib.NewSearch[M](f.String.Base.Key, terms)
-	// }
-	//
-	// func (f tableNameFieldName[M]) key() lib.Key[M] {
-	//     return f.String.Base.Key
-	// }
 	return jen.Add(
-		// Wrapper type definition
 		jen.Type().Id(wrapperName).Types(jen.Add(def.TypeModel).Any()).Struct(
 			jen.Op("*").Qual(ctx.pkgLib(), embeddedType).Types(def.TypeModel),
 		),
 		jen.Line(),
-		// Matches() method
 		jen.Func().
 			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
 			Id("Matches").
@@ -138,7 +121,6 @@ func (f *String) filterExtra(ctx Context) jen.Code {
 				),
 			),
 		jen.Line(),
-		// key() method - implements field[M] interface for use with Equal_() etc.
 		jen.Func().
 			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
 			Id("key").

@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	sortFieldPrefix        = "__som_sort__"
-	searchScorePrefix      = "__som_search_score_"
-	searchHighlightPrefix  = "__som_search_hl_"
+	sortFieldPrefix       = "__som_sort__"
+	searchScorePrefix     = "__som_search_score_"
+	searchHighlightPrefix = "__som_search_hl_"
 )
 
 type context struct {
@@ -47,11 +47,10 @@ type Query[T any] struct {
 	Timeout    time.Duration
 	Parallel   bool
 
-	// Search-related fields
-	searchClauses  []SearchClause
-	searchWhere    string
-	scoreSortRefs  []int  // refs to use for score sorting
-	scoreSortDesc  bool   // true for DESC, false for ASC
+	SearchClauses []SearchClause
+	SearchWhere   string
+	ScoreSortRefs []int // refs to use for score sorting
+	ScoreSortDesc bool  // true for DESC, false for ASC
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -112,33 +111,6 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 	}
 }
 
-// BuildAsSearch returns results for search queries with metadata fields.
-func (q Query[T]) BuildAsSearch() *Result {
-	q.fields = []string{"*"}
-
-	return &Result{
-		Statement: q.render(),
-		Variables: q.context.vars,
-	}
-}
-
-// SetSearchClauses sets the search conditions and WHERE clause.
-func (q *Query[T]) SetSearchClauses(where string, clauses []SearchClause) {
-	q.searchWhere = where
-	q.searchClauses = clauses
-}
-
-// SetScoreSort sets the score-based sorting refs and direction.
-func (q *Query[T]) SetScoreSort(refs []int, desc bool) {
-	q.scoreSortRefs = refs
-	q.scoreSortDesc = desc
-}
-
-// GetSearchClauses returns the search clauses for extracting results.
-func (q *Query[T]) GetSearchClauses() []SearchClause {
-	return q.searchClauses
-}
-
 func (q Query[T]) render() string {
 	var out strings.Builder
 
@@ -154,7 +126,7 @@ func (q Query[T]) render() string {
 	}
 
 	// Add search score and highlight projections
-	for _, sc := range q.searchClauses {
+	for _, sc := range q.SearchClauses {
 		ref := strconv.Itoa(sc.Ref)
 		fields = append(fields, "search::score("+ref+") AS "+searchScorePrefix+ref)
 		if sc.Highlights {
@@ -164,9 +136,9 @@ func (q Query[T]) render() string {
 	}
 
 	// Add combined score projection for score-based sorting
-	if len(q.scoreSortRefs) > 0 {
+	if len(q.ScoreSortRefs) > 0 {
 		var scoreParts []string
-		for _, ref := range q.scoreSortRefs {
+		for _, ref := range q.ScoreSortRefs {
 			scoreParts = append(scoreParts, "search::score("+strconv.Itoa(ref)+")")
 		}
 		fields = append(fields, "("+strings.Join(scoreParts, " + ")+") AS "+searchScorePrefix+"combined")
@@ -190,8 +162,8 @@ func (q Query[T]) render() string {
 	var whereParts []string
 
 	// Add search conditions first
-	if q.searchWhere != "" {
-		whereParts = append(whereParts, q.searchWhere)
+	if q.SearchWhere != "" {
+		whereParts = append(whereParts, q.SearchWhere)
 	}
 
 	// Add regular filters
@@ -217,13 +189,13 @@ func (q Query[T]) render() string {
 
 	if !q.live && q.SortRandom {
 		out.WriteString(" ORDER BY RAND()")
-	} else if !q.live && (len(q.Sort) > 0 || len(q.scoreSortRefs) > 0) {
+	} else if !q.live && (len(q.Sort) > 0 || len(q.ScoreSortRefs) > 0) {
 		var sorts []string
 
 		// Add score sort first if specified
-		if len(q.scoreSortRefs) > 0 {
+		if len(q.ScoreSortRefs) > 0 {
 			scoreSort := searchScorePrefix + "combined"
-			if q.scoreSortDesc {
+			if q.ScoreSortDesc {
 				scoreSort += " DESC"
 			} else {
 				scoreSort += " ASC"
