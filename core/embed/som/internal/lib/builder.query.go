@@ -49,8 +49,6 @@ type Query[T any] struct {
 
 	SearchClauses []SearchClause
 	SearchWhere   string
-	ScoreSortRefs []int // refs to use for score sorting
-	ScoreSortDesc bool  // true for DESC, false for ASC
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -135,13 +133,16 @@ func (q Query[T]) render() string {
 		}
 	}
 
-	// Add combined score projection for score-based sorting
-	if len(q.ScoreSortRefs) > 0 {
-		var scoreParts []string
-		for _, ref := range q.ScoreSortRefs {
-			scoreParts = append(scoreParts, "search::score("+strconv.Itoa(ref)+")")
+	// Add combined score projection if any score sort exists
+	for _, s := range q.Sort {
+		if s.IsScore && len(s.ScoreRefs) > 0 {
+			var scoreParts []string
+			for _, ref := range s.ScoreRefs {
+				scoreParts = append(scoreParts, "search::score("+strconv.Itoa(ref)+")")
+			}
+			fields = append(fields, "("+strings.Join(scoreParts, " + ")+") AS "+searchScorePrefix+"combined")
+			break
 		}
-		fields = append(fields, "("+strings.Join(scoreParts, " + ")+") AS "+searchScorePrefix+"combined")
 	}
 
 	out.WriteString("SELECT " + strings.Join(fields, ", "))
@@ -189,25 +190,11 @@ func (q Query[T]) render() string {
 
 	if !q.live && q.SortRandom {
 		out.WriteString(" ORDER BY RAND()")
-	} else if !q.live && (len(q.Sort) > 0 || len(q.ScoreSortRefs) > 0) {
+	} else if !q.live && len(q.Sort) > 0 {
 		var sorts []string
-
-		// Add score sort first if specified
-		if len(q.ScoreSortRefs) > 0 {
-			scoreSort := searchScorePrefix + "combined"
-			if q.ScoreSortDesc {
-				scoreSort += " DESC"
-			} else {
-				scoreSort += " ASC"
-			}
-			sorts = append(sorts, scoreSort)
-		}
-
-		// Add regular sorts
 		for _, s := range q.Sort {
 			sorts = append(sorts, s.render())
 		}
-
 		out.WriteString(" ORDER BY ")
 		out.WriteString(strings.Join(sorts, ", "))
 	}

@@ -452,18 +452,11 @@ func (b SearchBuilder[M, C]) Filter(filters ...lib.Filter[M]) SearchBuilder[M, C
 }
 
 // Order sorts the returned records based on the given conditions.
-func (b SearchBuilder[M, C]) Order(by ...*lib.Sort[M]) SearchBuilder[M, C] {
+// Accepts both field sorts (by.Field.Asc()) and score sorts (lib.Score(0).Desc()).
+func (b SearchBuilder[M, C]) Order(by ...lib.SearchSort) SearchBuilder[M, C] {
 	for _, s := range by {
-		b.query.Sort = append(b.query.Sort, (*lib.SortBuilder)(s))
+		b.query.Sort = append(b.query.Sort, s.SearchSort())
 	}
-	return b
-}
-
-// OrderByScore sorts the returned records by search score.
-// The ScoreSort specifies which predicate refs to use and the sort direction.
-func (b SearchBuilder[M, C]) OrderByScore(score *lib.ScoreSort) SearchBuilder[M, C] {
-	b.query.ScoreSortRefs = score.Refs()
-	b.query.ScoreSortDesc = score.IsDesc()
 	return b
 }
 
@@ -611,3 +604,8 @@ func (b SearchBuilder[M, C]) Debug(prefix ...string) SearchBuilder[M, C] {
 	)
 	return b
 }
+
+// Score creates a new score-based sort by the given predicate refs.
+// If multiple refs are provided, scores are summed.
+// Use with SearchBuilder.Order() to sort search results by relevance score.
+var Score = lib.Score

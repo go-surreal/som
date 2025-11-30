@@ -36,3 +36,15 @@ func (s *ScoreSort) Refs() []int {
 func (s *ScoreSort) IsDesc() bool {
 	return s.desc
 }
+
+func (s *ScoreSort) SearchSort() *SortBuilder {
+	order := SortDesc
+	if !s.desc {
+		order = SortAsc
+	}
+	return &SortBuilder{
+		IsScore:   true,
+		ScoreRefs: s.refs,
+		Order:     order,
+	}
+}

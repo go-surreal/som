@@ -2,14 +2,29 @@
 
 package lib
 
+// SearchSort is implemented by types that can be used for sorting in search queries.
+type SearchSort interface {
+	SearchSort() *SortBuilder
+}
+
 type SortBuilder struct {
 	Field     string
 	Order     SortOrder
 	IsCollate bool
 	IsNumeric bool
+	// Score sorting
+	IsScore   bool
+	ScoreRefs []int
+}
+
+func (b *SortBuilder) SearchSort() *SortBuilder {
+	return b
 }
 
 func (b *SortBuilder) render() string {
+	if b.IsScore {
+		return searchScorePrefix + "combined " + string(b.Order)
+	}
 	// Due to a bug in SurrealDB when using ORDER BY with indexed fields,
 	// we need to specifically SELECT all fields used for sorting with a
 	// special alias to avoid issues for now.
