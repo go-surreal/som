@@ -94,11 +94,34 @@ err := client.UserRepo().Update(ctx, user)
 
 ## Password Verification
 
-Since passwords cannot be read from the database, verification must be done using SurrealDB's crypto comparison functions in a filter:
+SOM provides a type-safe `Verify()` filter method for password verification:
+
+```go
+// Type-safe password verification
+user, ok, err := client.UserRepo().Query().
+    Filter(
+        where.User.Username.Equal("alice"),
+        where.User.Password.Verify("plaintext_password"),
+    ).
+    First(ctx)
+
+if err != nil {
+    // Handle error
+}
+if !ok {
+    // Invalid credentials
+}
+// User authenticated successfully
+```
+
+The `Verify()` method automatically uses the correct crypto comparison function based on the password's algorithm type (Bcrypt, Argon2, etc.).
+
+### Raw Query Alternative
+
+You can also use raw SurrealQL queries if needed:
 
 ```go
 // Verify login credentials using a raw query
-// The crypto::bcrypt::compare function checks the plaintext against the hash
 query := `SELECT * FROM user WHERE username = $username AND crypto::bcrypt::compare(password, $password)`
 ```
 
@@ -110,6 +133,15 @@ query := `SELECT * FROM user WHERE username = $username AND crypto::argon2::comp
 ## Filter Operations
 
 Password fields have limited filter operations due to their secure nature:
+
+### Password Verification
+
+```go
+// Verify password against stored hash
+where.User.Password.Verify("plaintext_password")
+```
+
+This uses the appropriate crypto comparison function for the password's algorithm.
 
 ### Nil Operations (Pointer Types Only)
 
@@ -198,4 +230,3 @@ func main() {
 - Passwords cannot be sorted (not meaningful for hashed values)
 - Passwords cannot be compared with equality filters (hashes differ each time)
 - Reading a password field always returns empty value
-- Password verification requires raw SurrealQL queries

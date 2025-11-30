@@ -2,13 +2,14 @@ package repo
 
 import (
 	"context"
+	"time"
+
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/by"
 	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/gen/som/with"
 	"github.com/go-surreal/som/tests/basic/model"
-	"time"
 )
 
 type AllFieldTypesRepo interface {
@@ -18,21 +19,21 @@ type AllFieldTypesRepo interface {
 	List(ctx context.Context) ([]*model.AllFieldTypes, error)
 }
 
-type user struct {
+type allFieldTypesRepo struct {
 	repo.AllFieldTypesRepo
 }
 
-func User(db repo.Client) AllFieldTypesRepo {
-	return &user{
+func NewAllFieldTypesRepo(db repo.Client) AllFieldTypesRepo {
+	return &allFieldTypesRepo{
 		AllFieldTypesRepo: db.AllFieldTypesRepo(),
 	}
 }
 
-func (r *user) FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error) {
+func (r *allFieldTypesRepo) FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error) {
 	return r.AllFieldTypesRepo.Query().Filter(where.AllFieldTypes.ID.Equal(id)).First(ctx)
 }
 
-func (r *user) FetchByID(
+func (r *allFieldTypesRepo) FetchByID(
 	ctx context.Context,
 	id *som.ID,
 	fetch ...with.Fetch_[model.AllFieldTypes],
@@ -48,55 +49,55 @@ func (r *user) FetchByID(
 
 var b byte
 
-func (r *user) List(ctx context.Context) ([]*model.AllFieldTypes, error) {
+func (r *allFieldTypesRepo) List(ctx context.Context) ([]*model.AllFieldTypes, error) {
 	return r.AllFieldTypesRepo.Query().
 		Filter(
-		//where.Any[model.AllFieldTypes](
-		//	where.User.ID.Equal("9rb97n04ggwmekxats5a"),
-		//	where.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
-		//	where.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
-		//	where.User.MyGroups().Since.Before(time.Now()), // ->(member_of where since < $)
-		//	where.User.MyGroups().Group().ID.Equal(""),     // ->member_of->(group where id = $)
-		//
-		//	where.AllFieldTypes.MemberOf().Group().Members().User(
-		//		where.AllFieldTypes.ID.Equal("klkl4w6i9z8u0uyo5w7f"),
-		//	),
-		//
-		//	where.AllFieldTypes.Byte.Equal(b),
-		//
-		//	where.AllFieldTypes.BytePtr.Equal(b),
-		//
-		//	where.AllFieldTypes.ByteSlice().Equal([]byte("omr4f")),
-		//
-		//	where.AllFieldTypes.ByteSlicePtr().Equal([]byte("")),
-		//
-		//	where.User.Groups().ID.In(nil),
-		//	where.User.Groups().Name.In(nil),
-		//
-		//	where.User.Groups(
-		//		where.Group.ID.Equal(""),
-		//		where.Group.Name.Equal(""),
-		//	),
-		//),
-		// where.User.String.FuzzyMatch("my fuzzy value"),
-		// where.User.UUID.Equal(uuid.UUID{}),
-		// where.Any(
-		// 	where.User.Role.Equal(""),
-		// 	where.User.CreatedAt.Before(time.Now()),
-		// ),
-		// where.All(
-		// 	where.User.Role.Equal(""),
-		// 	where.User.Groups().Name.FuzzyMatch("some group"),
-		// 	where.User.Groups().Contains(model.Group{}),
-		// ),
-		// where.User.ID.Equal(""),
-		// where.User.Login().Username.Equal(""),
-		// where.User.Role.Equal(""),
-		// where.User.Groups().Count().GreaterThan(5),
-		// //
-		// where.User.Other().Contains(""),
-		// where.User.Other().ContainsAll([]string{"", ""}),
-		// where.User.Roles().ContainsNot(model.RoleAdmin),
+			//where.Any[model.AllFieldTypes](
+			//	where.User.ID.Equal("9rb97n04ggwmekxats5a"),
+			//	where.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
+			//	where.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
+			//	where.User.MyGroups().Since.Before(time.Now()), // ->(member_of where since < $)
+			//	where.User.MyGroups().Group().ID.Equal(""),     // ->member_of->(group where id = $)
+			//
+			//	where.AllFieldTypes.MemberOf().Group().Members().User(
+			//		where.AllFieldTypes.ID.Equal("klkl4w6i9z8u0uyo5w7f"),
+			//	),
+			//
+			//	where.AllFieldTypes.Byte.Equal(b),
+			//
+			//	where.AllFieldTypes.BytePtr.Equal(b),
+			//
+			//	where.AllFieldTypes.ByteSlice().Equal([]byte("omr4f")),
+			//
+			//	where.AllFieldTypes.ByteSlicePtr().Equal([]byte("")),
+			//
+			//	where.User.Groups().ID.In(nil),
+			//	where.User.Groups().Name.In(nil),
+			//
+			//	where.User.Groups(
+			//		where.Group.ID.Equal(""),
+			//		where.Group.Name.Equal(""),
+			//	),
+			//),
+			// where.User.String.FuzzyMatch("my fuzzy value"),
+			// where.User.UUID.Equal(uuid.UUID{}),
+			// where.Any(
+			// 	where.User.Role.Equal(""),
+			// 	where.User.CreatedAt.Before(time.Now()),
+			// ),
+			// where.All(
+			// 	where.User.Role.Equal(""),
+			// 	where.User.Groups().Name.FuzzyMatch("some group"),
+			// 	where.User.Groups().Contains(model.Group{}),
+			// ),
+			// where.User.ID.Equal(""),
+			// where.User.Login().Username.Equal(""),
+			// where.User.Role.Equal(""),
+			// where.User.Groups().Count().GreaterThan(5),
+			// //
+			// where.User.Other().Contains(""),
+			// where.User.Other().ContainsAll([]string{"", ""}),
+			// where.User.Roles().ContainsNot(model.RoleAdmin),
 		).
 		Order(
 			by.AllFieldTypes.CreatedAt.Asc(),

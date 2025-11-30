@@ -115,7 +115,7 @@ func (f *String) filterExtra(ctx Context) jen.Code {
 	// }
 	//
 	// func (f tableNameFieldName[M]) key() lib.Key[M] {
-	//     return f.String.key()
+	//     return f.String.Base.Key
 	// }
 	return jen.Add(
 		// Wrapper type definition
