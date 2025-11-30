@@ -121,6 +121,25 @@ Enable parallel query execution:
 Query().Parallel(enabled bool)
 ```
 
+### TempFiles
+
+Enable temporary file-based query processing for large result sets:
+
+```go
+Query().TempFiles(enabled bool)
+```
+
+```go
+// Process large result sets using temporary files instead of memory
+users, err := client.UserRepo().Query().
+    Filter(where.User.IsActive.IsTrue()).
+    Limit(100000).
+    TempFiles(true).
+    All(ctx)
+```
+
+Note: TempFiles reduces memory usage at the cost of slower performance. Not available with Live queries.
+
 ## Execution Methods
 
 These methods execute the query and return results.

@@ -48,6 +48,7 @@ type Query[T any] struct {
 	Limit      int
 	Timeout    time.Duration
 	Parallel   bool
+	TempFiles  bool
 
 	SearchClauses []SearchClause
 	SearchWhere   string
@@ -230,8 +231,12 @@ func (q Query[T]) render() string {
 		out.WriteString(q.Timeout.Round(time.Second).String())
 	}
 
+	if !q.live && q.TempFiles {
+		out.WriteString(" TEMPFILES")
+	}
+
 	if !q.live && q.Parallel {
-		out.WriteString(" PARALLEL")
+		out.WriteString(" PARALLEL") // TODO: not mentioned in official docs anymore?
 	}
 
 	return out.String()

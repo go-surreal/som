@@ -191,6 +191,7 @@ where.User.Address.City.Equal("Berlin")
 | `Fetch(...)` | Eager load relations |
 | `Timeout(d)` | Query timeout |
 | `Parallel(bool)` | Parallel execution |
+| `TempFiles(bool)` | Disk-based processing for large result sets |
 
 ## Filter Operations
 

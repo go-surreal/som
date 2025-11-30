@@ -46,8 +46,9 @@ type Query[T any] struct {
 	Fetch      []string
 	Offset     int
 	Limit      int
-	Timeout    time.Duration
-	Parallel   bool
+	Timeout   time.Duration
+	Parallel  bool
+	TempFiles bool
 
 	SearchClauses []SearchClause
 	SearchWhere   string
@@ -232,6 +233,10 @@ func (q Query[T]) render() string {
 
 	if !q.live && q.Parallel {
 		out.WriteString(" PARALLEL")
+	}
+
+	if !q.live && q.TempFiles {
+		out.WriteString(" TEMPFILES")
 	}
 
 	return out.String()
