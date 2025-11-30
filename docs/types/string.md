@@ -252,6 +252,31 @@ query.Order(by.User.Name.Desc())
 query.Order(by.User.Name.Lowercase().Asc())
 ```
 
+## Full-Text Search
+
+String fields with fulltext indexes support search operations:
+
+```go
+// Basic search
+where.User.Bio.Matches("software engineer")
+
+// With highlighting
+where.User.Bio.Matches("golang").WithHighlights("<mark>", "</mark>")
+
+// With explicit ref and offsets
+where.User.Bio.Matches("developer").Ref(0).WithOffsets()
+```
+
+Search is used with the query builder's `Search()` method:
+
+```go
+results, err := client.UserRepo().Query().
+    Search(where.User.Bio.Matches("golang developer")).
+    AllMatches(ctx)
+```
+
+See [Full-Text Search](../querying/05_fulltext_search.md) for the complete guide.
+
 ## Method Chaining
 
 String filters support extensive chaining:

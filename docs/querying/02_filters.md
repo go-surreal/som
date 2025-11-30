@@ -326,3 +326,19 @@ users, err := client.UserRepo().Query().
     Limit(100).
     All(ctx)
 ```
+
+## Combining with Full-Text Search
+
+Filters can be combined with full-text search conditions:
+
+```go
+results, err := client.ArticleRepo().Query().
+    Search(where.Article.Content.Matches("golang tutorial")).
+    Filter(
+        where.Article.Published.IsTrue(),
+        where.Article.Category.Equal("programming"),
+    ).
+    AllMatches(ctx)
+```
+
+The search and filter conditions are combined with AND in the WHERE clause. See [Full-Text Search](05_fulltext_search.md) for the complete search guide.
