@@ -10,17 +10,23 @@
 <p align="center">
   <a href="https://go.dev/doc/devel/release">
     <img src="https://img.shields.io/badge/go-1.24.10-informational" alt="Go 1.24.10">
-  </a><a href="https://goreportcard.com/report/github.com/go-surreal/som">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/go-surreal/som">
     <img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card">
-  </a><a href="https://github.com/go-surreal/som/actions/workflows/main.yml">
+  </a>
+  <a href="https://github.com/go-surreal/som/actions/workflows/main.yml">
     <img src="https://github.com/go-surreal/som/actions/workflows/main.yml/badge.svg" alt="Main">
-  </a><a href="https://github.com/go-surreal/som/actions/workflows/codeql.yml">
+  </a>
+  <a href="https://github.com/go-surreal/som/actions/workflows/codeql.yml">
     <img src="https://github.com/go-surreal/som/actions/workflows/codeql.yml/badge.svg" alt="CodeQL">
-  </a><a href="https://codecov.io/gh/go-surreal/som">
+  </a>
+  <a href="https://codecov.io/gh/go-surreal/som">
     <img src="https://codecov.io/gh/go-surreal/som/graph/badge.svg?token=FHSP3ZAKRC" alt="Codecov"/>
-  </a><a href="https://discord.gg/surrealdb">
+  </a>
+  <a href="https://discord.gg/surrealdb">
     <img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord">
-  </a><img src="https://img.shields.io/github/contributors/marcbinz/som" alt="Contributors">
+  </a>
+  <img src="https://img.shields.io/github/contributors/marcbinz/som" alt="Contributors">
 </p>
 
 SOM (SurrealDB object mapper) is an ORM and query builder for [SurrealDB](https://surrealdb.com/) with built-in model
