@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	sortFieldPrefix       = "__som_sort__"
-	searchScorePrefix     = "__som_search_score_"
-	searchHighlightPrefix = "__som_search_hl_"
-	searchOffsetsPrefix   = "__som_search_off_"
+	somPrefix             = "__som__"
+	sortFieldPrefix       = somPrefix + "sort_"
+	searchScorePrefix     = somPrefix + "search_score_"
+	searchHighlightPrefix = somPrefix + "search_highlight_"
+	searchOffsetsPrefix   = somPrefix + "search_offsets_"
 )
 
 type context struct {

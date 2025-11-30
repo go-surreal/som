@@ -84,10 +84,10 @@ func (s *searchRawResult[M]) UnmarshalCBOR(data []byte) error {
 	s.Highlights = make(map[int]string)
 	s.Offsets = make(map[int][]searchOffset)
 
-	// Look for __som_search_score_N, __som_search_hl_N, and __som_search_off_N fields
+	// Look for __som__search_score_N, __som__search_highlight_N, and __som__search_offsets_N fields
 	for key, val := range rawMap {
-		if strings.HasPrefix(key, "__som_search_score_") {
-			refStr := strings.TrimPrefix(key, "__som_search_score_")
+		if strings.HasPrefix(key, "__som__search_score_") {
+			refStr := strings.TrimPrefix(key, "__som__search_score_")
 			if refStr == "combined" {
 				continue // skip combined score, it's for sorting only
 			}
@@ -98,8 +98,8 @@ func (s *searchRawResult[M]) UnmarshalCBOR(data []byte) error {
 					s.Scores[ref] = score
 				}
 			}
-		} else if strings.HasPrefix(key, "__som_search_hl_") {
-			refStr := strings.TrimPrefix(key, "__som_search_hl_")
+		} else if strings.HasPrefix(key, "__som__search_highlight_") {
+			refStr := strings.TrimPrefix(key, "__som__search_highlight_")
 			var ref int
 			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
 				var hl string
@@ -107,8 +107,8 @@ func (s *searchRawResult[M]) UnmarshalCBOR(data []byte) error {
 					s.Highlights[ref] = hl
 				}
 			}
-		} else if strings.HasPrefix(key, "__som_search_off_") {
-			refStr := strings.TrimPrefix(key, "__som_search_off_")
+		} else if strings.HasPrefix(key, "__som__search_offsets_") {
+			refStr := strings.TrimPrefix(key, "__som__search_offsets_")
 			var ref int
 			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
 				// Offsets come as: { "0": [{"s": 0, "e": 4}, ...] }

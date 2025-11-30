@@ -185,7 +185,9 @@ func TestFullTextSearchWithHighlights(t *testing.T) {
 	assert.Equal(t, 1, len(results))
 }
 
-func TestFullTextSearchAny(t *testing.T) {
+// TestFullTextSearchOrDefault tests that Search() combines conditions with OR by default.
+// This is the standard search engine behavior where any matching term is sufficient.
+func TestFullTextSearchOrDefault(t *testing.T) {
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -212,8 +214,9 @@ func TestFullTextSearchAny(t *testing.T) {
 		t.Fatalf("failed to create test data: %v", err)
 	}
 
+	// Search() now uses OR by default - matches documents with "apple" OR "orange"
 	results, err := client.AllFieldTypesRepo().Query().
-		SearchAny(
+		Search(
 			where.AllFieldTypes.String.Matches("apple"),
 			where.AllFieldTypes.String.Matches("orange"),
 		).
@@ -224,6 +227,52 @@ func TestFullTextSearchAny(t *testing.T) {
 	}
 
 	assert.Equal(t, 2, len(results))
+}
+
+// TestFullTextSearchAndExplicit tests that SearchAll() combines conditions with AND.
+// Use this when documents must match ALL search terms.
+func TestFullTextSearchAndExplicit(t *testing.T) {
+	ctx := t.Context()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	err := client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{
+		String: "apple pie is delicious and sweet",
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	err = client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{
+		String: "apple juice is refreshing",
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	err = client.AllFieldTypesRepo().Create(ctx, &model.AllFieldTypes{
+		String: "orange juice is also refreshing",
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	// SearchAll() uses AND - only matches documents with BOTH "apple" AND "delicious"
+	results, err := client.AllFieldTypesRepo().Query().
+		SearchAll(
+			where.AllFieldTypes.String.Matches("apple"),
+			where.AllFieldTypes.String.Matches("delicious"),
+		).
+		AllMatches(ctx)
+
+	if err != nil {
+		t.Fatalf("failed to execute search: %v", err)
+	}
+
+	// Only the first document contains both "apple" and "delicious"
+	assert.Equal(t, 1, len(results))
+	assert.Assert(t, results[0].Model.String == "apple pie is delicious and sweet")
 }
 
 func TestFullTextSearchFirstMatch(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 
 // Search represents a full-text search condition.
 // This is a separate type from Filter to ensure type safety -
-// Search conditions can only be used with Search()/SearchAny() methods.
+// Search conditions can only be used with Search()/SearchAll() methods.
 type Search[M any] interface {
 	Ref(ref int) Search[M]
 	WithHighlights(prefix, suffix string) Search[M]
@@ -87,7 +87,30 @@ func (s *search[M]) build(ctx *context, autoRef int) SearchClause {
 	}
 }
 
+// BuildSearchOr combines multiple search conditions with OR and returns the SQL and clauses.
+// This is the default behavior used by the Search() method.
+// For OR semantics: any condition matching is sufficient.
+func BuildSearchOr[M any](searches []Search[M], q *Query[M]) (string, []SearchClause) {
+	if len(searches) == 0 {
+		return "", nil
+	}
+
+	var parts []string
+	var clauses []SearchClause
+	autoRef := 0
+
+	for _, s := range searches {
+		clause := s.build(&q.context, autoRef)
+		parts = append(parts, clause.SQL)
+		clauses = append(clauses, clause)
+		autoRef = clause.Ref + 1
+	}
+
+	return "(" + strings.Join(parts, " OR ") + ")", clauses
+}
+
 // SearchAll combines multiple search conditions with AND.
+// Use this when you need documents to match ALL search terms.
 type SearchAll[M any] []Search[M]
 
 // BuildClauses renders all search conditions and returns the SQL and clauses.
@@ -108,27 +131,4 @@ func (sa SearchAll[M]) BuildClauses(q *Query[M]) (string, []SearchClause) {
 	}
 
 	return "(" + strings.Join(parts, " AND ") + ")", clauses
-}
-
-// SearchAny combines multiple search conditions with OR.
-type SearchAny[M any] []Search[M]
-
-// BuildClauses renders all search conditions and returns the SQL and clauses.
-func (sa SearchAny[M]) BuildClauses(q *Query[M]) (string, []SearchClause) {
-	if len(sa) == 0 {
-		return "", nil
-	}
-
-	var parts []string
-	var clauses []SearchClause
-	autoRef := 0
-
-	for _, s := range sa {
-		clause := s.build(&q.context, autoRef)
-		parts = append(parts, clause.SQL)
-		clauses = append(clauses, clause)
-		autoRef = clause.Ref + 1
-	}
-
-	return "(" + strings.Join(parts, " OR ") + ")", clauses
 }

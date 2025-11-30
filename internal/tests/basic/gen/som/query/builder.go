@@ -417,9 +417,22 @@ func (b builder[M, C]) Debug(prefix ...string) Builder[M, C] {
 }
 
 // Search adds full-text search conditions to the query.
-// Multiple search conditions are combined with AND (all must match).
+// Multiple search conditions are combined with OR (any can match).
+// This is the default behavior, similar to how search engines work.
+// Use SearchAll() if you need AND behavior (all must match).
 // Returns a SearchBuilder which provides search-specific methods.
 func (b builder[M, C]) Search(searches ...lib.Search[M]) SearchBuilder[M, C] {
+	where, clauses := lib.BuildSearchOr(searches, &b.query)
+	b.query.SearchWhere = where
+	b.query.SearchClauses = clauses
+	return SearchBuilder[M, C]{builder: b}
+}
+
+// SearchAll adds full-text search conditions to the query.
+// Multiple search conditions are combined with AND (all must match).
+// Use this when you need documents to match ALL search terms.
+// Returns a SearchBuilder which provides search-specific methods.
+func (b builder[M, C]) SearchAll(searches ...lib.Search[M]) SearchBuilder[M, C] {
 	searchAll := lib.SearchAll[M](searches)
 	where, clauses := searchAll.BuildClauses(&b.query)
 	b.query.SearchWhere = where
@@ -427,19 +440,8 @@ func (b builder[M, C]) Search(searches ...lib.Search[M]) SearchBuilder[M, C] {
 	return SearchBuilder[M, C]{builder: b}
 }
 
-// SearchAny adds full-text search conditions to the query.
-// Multiple search conditions are combined with OR (any can match).
-// Returns a SearchBuilder which provides search-specific methods.
-func (b builder[M, C]) SearchAny(searches ...lib.Search[M]) SearchBuilder[M, C] {
-	searchAny := lib.SearchAny[M](searches)
-	where, clauses := searchAny.BuildClauses(&b.query)
-	b.query.SearchWhere = where
-	b.query.SearchClauses = clauses
-	return SearchBuilder[M, C]{builder: b}
-}
-
 // SearchBuilder provides search-specific query methods.
-// It does NOT expose Search() or SearchAny() to prevent chaining multiple search calls.
+// It does NOT expose Search() or SearchAll() to prevent chaining multiple search calls.
 type SearchBuilder[M, C any] struct {
 	builder[M, C]
 }
