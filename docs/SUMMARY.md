@@ -46,6 +46,7 @@
   * [Filters](querying/02_filters.md)
   * [Ordering & Pagination](querying/03_ordering_pagination.md)
   * [Live Queries](querying/04_live_queries.md)
+  * [Full-Text Search](querying/05_fulltext_search.md)
 
 ## Relationships
 

@@ -29,6 +29,33 @@ query.Filter(
 )
 ```
 
+### Search
+
+Add full-text search conditions. Multiple conditions are ORed (any match):
+
+```go
+Query().Search(searches...)
+```
+
+```go
+query.Search(where.Article.Content.Matches("golang tutorial"))
+```
+
+### SearchAll
+
+Add full-text search conditions with AND semantics (all must match):
+
+```go
+Query().SearchAll(searches...)
+```
+
+```go
+query.SearchAll(
+    where.Article.Content.Matches("golang"),
+    where.Article.Content.Matches("tutorial"),
+)
+```
+
 ### Order
 
 Sort results by one or more fields:
@@ -199,6 +226,42 @@ for update := range updates {
 }
 ```
 
+### AllMatches
+
+Get all search results with metadata (scores, highlights, offsets):
+
+```go
+func (b Builder) AllMatches(ctx context.Context) ([]SearchResult[Model], error)
+```
+
+```go
+results, err := client.ArticleRepo().Query().
+    Search(where.Article.Content.Matches("golang")).
+    AllMatches(ctx)
+
+for _, result := range results {
+    fmt.Printf("Score: %f, Title: %s\n", result.Score(), result.Model.Title)
+}
+```
+
+### FirstMatch
+
+Get the first search result with metadata:
+
+```go
+func (b Builder) FirstMatch(ctx context.Context) (*SearchResult[Model], bool, error)
+```
+
+```go
+result, found, err := client.ArticleRepo().Query().
+    Search(where.Article.Content.Matches("golang")).
+    FirstMatch(ctx)
+
+if found {
+    fmt.Printf("Best match: %s\n", result.Model.Title)
+}
+```
+
 ## Iterator Methods
 
 For processing large result sets efficiently, use the iterator methods. These leverage Go 1.22+'s range-over-func feature to stream results in batches.
@@ -321,6 +384,74 @@ type LiveResult[M any] struct {
     Data   *M      // The affected record
     Error  error   // Any error
 }
+```
+
+## SearchResult Type
+
+Returned by `AllMatches()` and `FirstMatch()`:
+
+```go
+type SearchResult[M any] struct {
+    Model      M                    // The matched model
+    Scores     []float64            // BM25 relevance scores
+    Highlights map[int]string       // Highlighted text by ref
+    Offsets    map[int][]Offset     // Match positions by ref
+}
+```
+
+### Helper Methods
+
+```go
+// Get the primary score (first in slice)
+func (r SearchResult[M]) Score() float64
+
+// Get highlighted text for a specific ref (defaults to 0)
+func (r SearchResult[M]) Highlighted(ref ...int) string
+
+// Get match offsets for a specific ref (defaults to 0)
+func (r SearchResult[M]) Offset(ref ...int) []Offset
+```
+
+## Score Sorting
+
+The `query` package provides score-based sorting for search queries:
+
+```go
+import "yourproject/gen/som/query"
+```
+
+### Basic Score Sort
+
+```go
+query.Score(0).Desc()      // Sort by score descending
+query.Score(0).Asc()       // Sort by score ascending
+```
+
+### Multiple Refs
+
+```go
+query.Score(0, 1).Desc()   // Sort by combined scores
+```
+
+### Combination Modes
+
+```go
+query.Score(0, 1).Sum().Desc()              // Sum scores (default)
+query.Score(0, 1).Max().Desc()              // Maximum score
+query.Score(0, 1).Average().Desc()          // Average score
+query.Score(0, 1).Weighted(2.0, 0.5).Desc() // Weighted combination
+```
+
+### Usage Example
+
+```go
+results, err := client.ArticleRepo().Query().
+    Search(
+        where.Article.Title.Matches("golang").Ref(0),
+        where.Article.Content.Matches("golang").Ref(1),
+    ).
+    Order(query.Score(0, 1).Weighted(2.0, 1.0).Desc()).
+    AllMatches(ctx)
 ```
 
 ## Complete Example
