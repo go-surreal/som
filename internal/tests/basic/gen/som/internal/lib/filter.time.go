@@ -48,6 +48,10 @@ func (t *Time[M]) Sub(dur time.Duration) *Time[M] {
 	return NewTime[M](t.calc(OpSub, types.Duration{Duration: dur}))
 }
 
+func (t *Time[M]) Ceil(dur time.Duration) *Time[M] {
+	return NewTime[M](t.fn("time::ceil", types.Duration{Duration: dur}))
+}
+
 func (t *Time[M]) Day() *Numeric[M, int] {
 	return NewNumeric[M, int](t.fn("time::day"))
 }

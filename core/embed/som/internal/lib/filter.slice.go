@@ -281,13 +281,69 @@ func (s *Slice[M, E, F]) SortDesc() *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn("array::sort::desc"), s.makeElemFilter)
 }
 
-// TODO: Transpose
+func (s *Slice[M, E, F]) SortLexical() *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::sort_lexical"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) SortNatural() *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::sort_natural"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) SortNaturalLexical() *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::sort_natural_lexical"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) Shuffle() *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::shuffle"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) Swap(from, to int) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::swap", from, to), s.makeElemFilter)
+}
 
 func (s *Slice[M, E, F]) Union(val []E) *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn("array::union", val), s.makeElemFilter)
 }
 
-// TODO: Windows (v2.0.0)
+//
+// -- STATIC ARRAY GENERATORS
+//
+
+func ArrayRange[M any](start, count int) *Slice[M, int, *Numeric[M, int]] {
+	key := Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return "array::range(" + ctx.asVar(start) + ", " + ctx.asVar(count) + ")"
+		}),
+	}
+	return NewSlice[M, int, *Numeric[M, int]](key, NewNumeric[M, int])
+}
+
+func ArrayRepeat[M, E any, F field[M]](val E, count int, makeElemFilter makeFilter[M, F]) *Slice[M, E, F] {
+	key := Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return "array::repeat(" + ctx.asVar(val) + ", " + ctx.asVar(count) + ")"
+		}),
+	}
+	return NewSlice[M, E, F](key, makeElemFilter)
+}
+
+func ArraySequence[M any](length int) *Slice[M, int, *Numeric[M, int]] {
+	key := Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return "array::sequence(" + ctx.asVar(length) + ")"
+		}),
+	}
+	return NewSlice[M, int, *Numeric[M, int]](key, NewNumeric[M, int])
+}
+
+func ArraySequenceFrom[M any](start, length int) *Slice[M, int, *Numeric[M, int]] {
+	key := Key[M]{
+		RawKeyPart(func(ctx *context) string {
+			return "array::sequence(" + ctx.asVar(start) + ", " + ctx.asVar(length) + ")"
+		}),
+	}
+	return NewSlice[M, int, *Numeric[M, int]](key, NewNumeric[M, int])
+}
 
 // TODO: https://surrealdb.com/docs/surrealdb/surrealql/functions/database/vector
 

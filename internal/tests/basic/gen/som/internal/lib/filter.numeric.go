@@ -73,44 +73,100 @@ func (n *Numeric[M, T]) Abs() *Numeric[M, T] {
 	return NewNumeric[M, T](n.Base.fn("math::abs"))
 }
 
-// TODO: math::acos (surrealdb v2)
+func (n *Numeric[M, T]) Acos() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::acos"))
+}
 
-// TODO: math::acot (surrealdb v2)
+func (n *Numeric[M, T]) Acot() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::acot"))
+}
 
-// TODO: math::asin (surrealdb v2)
+func (n *Numeric[M, T]) Asin() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::asin"))
+}
 
-// TODO: math::atan (surrealdb v2)
+func (n *Numeric[M, T]) Atan() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::atan"))
+}
 
-// TODO: math::clamp (surrealdb v2)
+func (n *Numeric[M, T]) Ceil() *Numeric[M, T] {
+	return NewNumeric[M, T](n.Base.fn("math::ceil"))
+}
 
-// TODO: math::cos (surrealdb v2)
+func (n *Numeric[M, T]) Clamp(min, max float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::clamp", min, max))
+}
 
-// TODO: math::cot (surrealdb v2)
+func (n *Numeric[M, T]) Cos() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::cos"))
+}
 
-// TODO: math::deg2rad (surrealdb v2)
+func (n *Numeric[M, T]) Cot() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::cot"))
+}
 
-// TODO: math::lerp (surrealdb v2)
+func (n *Numeric[M, T]) Deg2Rad() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::deg2rad"))
+}
 
-// TODO: math::lerpangle (surrealdb v2)
+func (n *Numeric[M, T]) Fixed(places int) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::fixed", places))
+}
 
-// TODO: math::ln (surrealdb v2)
+func (n *Numeric[M, T]) Floor() *Numeric[M, T] {
+	return NewNumeric[M, T](n.Base.fn("math::floor"))
+}
 
-// TODO: math::log (surrealdb v2)
+func (n *Numeric[M, T]) Lerp(a, b, t float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::lerp", a, b, t))
+}
 
-// TODO: math::log10 (surrealdb v2)
+func (n *Numeric[M, T]) LerpAngle(a, b, t float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::lerpangle", a, b, t))
+}
 
-// TODO: math::log2 (surrealdb v2)
+func (n *Numeric[M, T]) Ln() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::ln"))
+}
 
-// TODO: math::rad2deg (surrealdb v2)
+func (n *Numeric[M, T]) Log(base float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::log", base))
+}
 
-// TODO: math::sign (surrealdb v2)
+func (n *Numeric[M, T]) Log10() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::log10"))
+}
 
-// TODO: math::sin (surrealdb v2)
+func (n *Numeric[M, T]) Log2() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::log2"))
+}
 
-// TODO: math::tan (surrealdb v2)
+func (n *Numeric[M, T]) Pow(exp float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::pow", exp))
+}
 
-func (n *Numeric[M, T]) Sqrt() *Float[M, float64] { // TODO: number must not be negative!
+func (n *Numeric[M, T]) Rad2Deg() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::rad2deg"))
+}
+
+func (n *Numeric[M, T]) Round() *Numeric[M, T] {
+	return NewNumeric[M, T](n.Base.fn("math::round"))
+}
+
+func (n *Numeric[M, T]) Sign() *Numeric[M, int] {
+	return NewNumeric[M, int](n.Base.fn("math::sign"))
+}
+
+func (n *Numeric[M, T]) Sin() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::sin"))
+}
+
+func (n *Numeric[M, T]) Sqrt() *Float[M, float64] {
 	return NewFloat[M, float64](n.Base.fn("math::sqrt"))
+}
+
+func (n *Numeric[M, T]) Tan() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::tan"))
 }
 
 //
