@@ -28,6 +28,10 @@ func (s *String[M]) FuzzyNotMatch(val string) Filter[M] {
 	return s.Base.op(OpFuzzyNotMatch, val)
 }
 
+func (s *String[M]) Capitalize() *String[M] {
+	return NewString(s.Base.fn("string::capitalize"))
+}
+
 func (s *String[M]) Concat(vals ...string) *Bool[M] {
 	anys := make([]any, len(vals))
 
@@ -63,6 +67,10 @@ func (s *String[M]) Len() *Numeric[M, int] {
 
 func (s *String[M]) Lowercase() *String[M] {
 	return NewString(s.Base.fn("string::lowercase"))
+}
+
+func (s *String[M]) Matches(regex string) *Bool[M] {
+	return NewBool(s.Base.fn("string::matches", regex))
 }
 
 func (s *String[M]) Repeat(times int) *String[M] {
@@ -167,6 +175,10 @@ func (s *String[M]) IsSemVer() *Bool[M] {
 	return NewBool(s.Base.fn("string::is::semver"))
 }
 
+func (s *String[M]) IsULID() *Bool[M] {
+	return NewBool(s.Base.fn("string::is::ulid"))
+}
+
 func (s *String[M]) IsURL() *Bool[M] {
 	return NewBool(s.Base.fn("string::is::url"))
 }
@@ -181,6 +193,50 @@ func (s *String[M]) IsUUID() *Bool[M] {
 
 func (s *String[M]) Base64Decode() *ByteSlice[M] {
 	return NewByteSlice(s.Base.fn("encoding::base64::decode"))
+}
+
+//
+// -- DISTANCE
+//
+
+func (s *String[M]) DistanceDamerauLevenshtein(other string) *Numeric[M, int] {
+	return NewNumeric[M, int](s.Base.fn("string::distance::damerau_levenshtein", other))
+}
+
+func (s *String[M]) DistanceHamming(other string) *Numeric[M, int] {
+	return NewNumeric[M, int](s.Base.fn("string::distance::hamming", other))
+}
+
+func (s *String[M]) DistanceLevenshtein(other string) *Numeric[M, int] {
+	return NewNumeric[M, int](s.Base.fn("string::distance::levenshtein", other))
+}
+
+func (s *String[M]) DistanceNormalizedDamerauLevenshtein(other string) *Float[M, float64] {
+	return NewFloat[M, float64](s.Base.fn("string::distance::normalized_damerau_levenshtein", other))
+}
+
+func (s *String[M]) DistanceNormalizedLevenshtein(other string) *Float[M, float64] {
+	return NewFloat[M, float64](s.Base.fn("string::distance::normalized_levenshtein", other))
+}
+
+func (s *String[M]) DistanceOsa(other string) *Numeric[M, int] {
+	return NewNumeric[M, int](s.Base.fn("string::distance::osa", other))
+}
+
+//
+// -- SIMILARITY
+//
+
+func (s *String[M]) SimilarityFuzzy(other string) *Numeric[M, int] {
+	return NewNumeric[M, int](s.Base.fn("string::similarity::fuzzy", other))
+}
+
+func (s *String[M]) SimilarityJaro(other string) *Float[M, float64] {
+	return NewFloat[M, float64](s.Base.fn("string::similarity::jaro", other))
+}
+
+func (s *String[M]) SimilarityJaroWinkler(other string) *Float[M, float64] {
+	return NewFloat[M, float64](s.Base.fn("string::similarity::jaro_winkler", other))
 }
 
 type StringPtr[M any] struct {
