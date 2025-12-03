@@ -4,11 +4,15 @@ package conv
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	googleuuid "github.com/google/uuid"
+
+
+	gofrsuuid "github.com/gofrs/uuid"
 
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
@@ -277,32 +281,62 @@ func toDurationPtr(val *types.Duration) *time.Duration {
 }
 
 //
-// -- UUID
+// -- UUID (Google)
 //
 
-func fromUUID(val uuid.UUID) types.UUID {
-	return types.UUID(val)
+func fromUUIDGoogle(val googleuuid.UUID) types.UUIDGoogle {
+	return types.UUIDGoogle(val)
 }
 
-func fromUUIDPtr(val *uuid.UUID) *types.UUID {
+func fromUUIDGooglePtr(val *googleuuid.UUID) *types.UUIDGoogle {
 	if val == nil {
 		return nil
 	}
 
-	u := types.UUID(*val)
+	u := types.UUIDGoogle(*val)
 	return &u
 }
 
-func toUUID(val types.UUID) uuid.UUID {
-	return uuid.UUID(val)
+func toUUIDGoogle(val types.UUIDGoogle) googleuuid.UUID {
+	return googleuuid.UUID(val)
 }
 
-func toUUIDPtr(val *types.UUID) *uuid.UUID {
+func toUUIDGooglePtr(val *types.UUIDGoogle) *googleuuid.UUID {
 	if val == nil {
 		return nil
 	}
 
-	u := uuid.UUID(*val)
+	u := googleuuid.UUID(*val)
+	return &u
+}
+
+//
+// -- UUID (Gofrs)
+//
+
+func fromUUIDGofrs(val gofrsuuid.UUID) types.UUIDGofrs {
+	return types.UUIDGofrs(val)
+}
+
+func fromUUIDGofrsPtr(val *gofrsuuid.UUID) *types.UUIDGofrs {
+	if val == nil {
+		return nil
+	}
+
+	u := types.UUIDGofrs(*val)
+	return &u
+}
+
+func toUUIDGofrs(val types.UUIDGofrs) gofrsuuid.UUID {
+	return gofrsuuid.UUID(val)
+}
+
+func toUUIDGofrsPtr(val *types.UUIDGofrs) *gofrsuuid.UUID {
+	if val == nil {
+		return nil
+	}
+
+	u := gofrsuuid.UUID(*val)
 	return &u
 }
 

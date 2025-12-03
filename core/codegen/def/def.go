@@ -24,8 +24,9 @@ const (
 	PkgModels    = "github.com/surrealdb/surrealdb.go/pkg/models"
 	PkgCBOR      = "github.com/fxamacker/cbor/v2"
 
-	PkgURL  = "net/url"
-	PkgUUID = "github.com/google/uuid"
+	PkgURL        = "net/url"
+	PkgUUIDGoogle = "github.com/google/uuid"
+	PkgUUIDGofrs  = "github.com/gofrs/uuid"
 )
 
 var (

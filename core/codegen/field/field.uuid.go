@@ -14,12 +14,30 @@ type UUID struct {
 	source *parser.FieldUUID
 }
 
+func (f *UUID) uuidPkg() string {
+	switch f.source.Package {
+	case parser.UUIDPackageGofrs:
+		return def.PkgUUIDGofrs
+	default:
+		return def.PkgUUIDGoogle
+	}
+}
+
+func (f *UUID) uuidTypeName() string {
+	switch f.source.Package {
+	case parser.UUIDPackageGofrs:
+		return "UUIDGofrs"
+	default:
+		return "UUIDGoogle"
+	}
+}
+
 func (f *UUID) typeGo() jen.Code {
-	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
+	return jen.Add(f.ptr()).Qual(f.uuidPkg(), "UUID")
 }
 
 func (f *UUID) typeConv(ctx Context) jen.Code {
-	return jen.Add(f.ptr()).Qual(ctx.pkgTypes(), "UUID")
+	return jen.Add(f.ptr()).Qual(ctx.pkgTypes(), f.uuidTypeName())
 }
 
 func (f *UUID) TypeDatabase() string {
@@ -55,7 +73,7 @@ func (f *UUID) CodeGen() *CodeGen {
 }
 
 func (f *UUID) filterDefine(ctx Context) jen.Code {
-	filter := "UUID"
+	filter := f.uuidTypeName()
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
@@ -64,7 +82,7 @@ func (f *UUID) filterDefine(ctx Context) jen.Code {
 }
 
 func (f *UUID) filterInit(ctx Context) (jen.Code, jen.Code) {
-	filter := "NewUUID"
+	filter := "New" + f.uuidTypeName()
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
@@ -85,10 +103,10 @@ func (f *UUID) sortInit(ctx Context) jen.Code {
 }
 
 func (f *UUID) cborMarshal(ctx Context) jen.Code {
-	// Using custom types.UUID with MarshalCBOR method.
+	typeName := f.uuidTypeName()
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(bg *jen.Group) {
-			bg.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
+			bg.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), typeName).Call(
 				jen.Op("*").Id("c").Dot(f.NameGo()),
 			)
 			bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
@@ -96,7 +114,7 @@ func (f *UUID) cborMarshal(ctx Context) jen.Code {
 	}
 
 	return jen.BlockFunc(func(g *jen.Group) {
-		g.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
+		g.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), typeName).Call(
 			jen.Id("c").Dot(f.NameGo()),
 		)
 		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
@@ -104,9 +122,9 @@ func (f *UUID) cborMarshal(ctx Context) jen.Code {
 }
 
 func (f *UUID) cborUnmarshal(ctx Context) jen.Code {
-	helper := "UnmarshalUUID"
+	helper := "Unmarshal" + f.uuidTypeName()
 	if f.source.Pointer() {
-		helper = "UnmarshalUUIDPtr"
+		helper += "Ptr"
 	}
 
 	return jen.If(

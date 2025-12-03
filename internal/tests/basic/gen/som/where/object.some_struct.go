@@ -9,7 +9,7 @@ func newSomeStruct[M any](key lib.Key[M]) someStruct[M] {
 		Key:       key,
 		StringPtr: lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
 		TimePtr:   lib.NewTimePtr[M](lib.Field(key, "time_ptr")),
-		UuidPtr:   lib.NewUUIDPtr[M](lib.Field(key, "uuid_ptr")),
+		UuidPtr:   lib.NewUUIDGooglePtr[M](lib.Field(key, "uuid_ptr")),
 	}
 }
 
@@ -18,7 +18,7 @@ type someStruct[M any] struct {
 	StringPtr *lib.StringPtr[M]
 	IntPtr    *lib.IntPtr[M, *int]
 	TimePtr   *lib.TimePtr[M]
-	UuidPtr   *lib.UUIDPtr[M]
+	UuidPtr   *lib.UUIDGooglePtr[M]
 }
 
 type someStructEdges[M any] struct {

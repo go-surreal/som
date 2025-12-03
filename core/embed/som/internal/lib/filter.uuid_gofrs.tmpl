@@ -1,0 +1,35 @@
+//go:build embed
+
+package lib
+
+import (
+	"github.com/gofrs/uuid"
+
+	"{{.GenerateOutPath}}/internal/types"
+)
+
+type UUIDGofrs[M any] struct {
+	*Base[M, uuid.UUID, *UUIDGofrs[M], *Slice[M, uuid.UUID, *UUIDGofrs[M]]]
+}
+
+func NewUUIDGofrs[M any](key Key[M]) *UUIDGofrs[M] {
+	conv := func(val uuid.UUID) any {
+		return types.UUIDGofrs(val)
+	}
+
+	return &UUIDGofrs[M]{
+		Base: NewBaseConv[M, uuid.UUID, *UUIDGofrs[M], *Slice[M, uuid.UUID, *UUIDGofrs[M]]](key, conv),
+	}
+}
+
+type UUIDGofrsPtr[M any] struct {
+	*UUIDGofrs[M]
+	*Nillable[M]
+}
+
+func NewUUIDGofrsPtr[M any](key Key[M]) *UUIDGofrsPtr[M] {
+	return &UUIDGofrsPtr[M]{
+		UUIDGofrs: NewUUIDGofrs[M](key),
+		Nillable:  NewNillable[M](key),
+	}
+}
