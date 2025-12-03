@@ -22,9 +22,14 @@ type build struct {
 	outPkg string
 }
 
-func BuildStatic(fs *fs.FS, outPkg string) error {
+func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error {
 	tmpl := &embed.Template{
 		GenerateOutPath: outPkg,
+	}
+
+	if features != nil {
+		tmpl.UsesGoogleUUID = features.UsesGoogleUUID
+		tmpl.UsesGofrsUUID = features.UsesGofrsUUID
 	}
 
 	files, err := embed.Read(tmpl)

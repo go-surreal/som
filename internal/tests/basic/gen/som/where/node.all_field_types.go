@@ -81,10 +81,10 @@ func newAllFieldTypes[M any](key lib.Key[M]) allFieldTypes[M] {
 		URLNil:             lib.NewURLPtr[M](lib.Field(key, "url_nil")),
 		URLPtr:             lib.NewURLPtr[M](lib.Field(key, "url_ptr")),
 		URLSlice:           lib.NewSliceMaker[M, url.URL, *lib.URL[M]](lib.NewURL[M])(lib.Field(key, "url_slice")),
-		UUID:               lib.NewUUID[M](lib.Field(key, "uuid")),
-		UUIDNil:            lib.NewUUIDPtr[M](lib.Field(key, "uuid_nil")),
-		UUIDPtr:            lib.NewUUIDPtr[M](lib.Field(key, "uuid_ptr")),
-		UUIDSlice:          lib.NewSliceMaker[M, uuid.UUID, *lib.UUID[M]](lib.NewUUID[M])(lib.Field(key, "uuid_slice")),
+		UUID:               lib.NewUUIDGoogle[M](lib.Field(key, "uuid")),
+		UUIDNil:            lib.NewUUIDGooglePtr[M](lib.Field(key, "uuid_nil")),
+		UUIDPtr:            lib.NewUUIDGooglePtr[M](lib.Field(key, "uuid_ptr")),
+		UUIDSlice:          lib.NewSliceMaker[M, uuid.UUID, *lib.UUIDGoogle[M]](lib.NewUUIDGoogle[M])(lib.Field(key, "uuid_slice")),
 		Uint16:             lib.NewInt[M, uint16](lib.Field(key, "uint_16")),
 		Uint16Ptr:          lib.NewIntPtr[M, *uint16](lib.Field(key, "uint_16_ptr")),
 		Uint32:             lib.NewInt[M, uint32](lib.Field(key, "uint_32")),
@@ -146,10 +146,10 @@ type allFieldTypes[M any] struct {
 	DurationPtr        *lib.DurationPtr[M]
 	DurationNil        *lib.DurationPtr[M]
 	DurationSlice      *lib.Slice[M, time.Duration, *lib.Duration[M]]
-	UUID               *lib.UUID[M]
-	UUIDPtr            *lib.UUIDPtr[M]
-	UUIDNil            *lib.UUIDPtr[M]
-	UUIDSlice          *lib.Slice[M, uuid.UUID, *lib.UUID[M]]
+	UUID               *lib.UUIDGoogle[M]
+	UUIDPtr            *lib.UUIDGooglePtr[M]
+	UUIDNil            *lib.UUIDGooglePtr[M]
+	UUIDSlice          *lib.Slice[M, uuid.UUID, *lib.UUIDGoogle[M]]
 	URL                *lib.URL[M]
 	URLPtr             *lib.URLPtr[M]
 	URLNil             *lib.URLPtr[M]

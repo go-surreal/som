@@ -124,8 +124,16 @@ type FieldTime struct {
 	IsUpdatedAt bool
 }
 
+type UUIDPackage string
+
+const (
+	UUIDPackageGoogle UUIDPackage = "github.com/google/uuid"
+	UUIDPackageGofrs  UUIDPackage = "github.com/gofrs/uuid"
+)
+
 type FieldUUID struct {
 	*fieldAtomic
+	Package UUIDPackage
 }
 
 type FieldURL struct {

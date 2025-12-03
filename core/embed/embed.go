@@ -23,6 +23,27 @@ var content embed.FS
 
 type Template struct {
 	GenerateOutPath string
+	UsesGoogleUUID  bool
+	UsesGofrsUUID   bool
+}
+
+// FileCondition specifies when a file should be included in the output.
+type FileCondition int
+
+const (
+	FileAlways FileCondition = iota
+	FileIfGoogleUUID
+	FileIfGofrsUUID
+)
+
+// fileConditions maps output file paths to their inclusion conditions.
+var fileConditions = map[string]FileCondition{
+	"internal/types/uuid_google.go":        FileIfGoogleUUID,
+	"internal/types/uuid_gofrs.go":         FileIfGofrsUUID,
+	"internal/lib/filter.uuid_google.go":   FileIfGoogleUUID,
+	"internal/lib/filter.uuid_gofrs.go":    FileIfGofrsUUID,
+	"internal/cbor/helpers_uuid_google.go": FileIfGoogleUUID,
+	"internal/cbor/helpers_uuid_gofrs.go":  FileIfGofrsUUID,
 }
 
 type File struct {
@@ -44,6 +65,26 @@ func Read(tmpl *Template) ([]*File, error) {
 			return nil
 		}
 
+		// Compute output path early to check conditions
+		outputPath := strings.TrimPrefix(path, baseDir+string(filepath.Separator))
+		if strings.HasSuffix(outputPath, ".tmpl") {
+			outputPath = strings.TrimSuffix(outputPath, ".tmpl") + ".go"
+		}
+
+		// Check if file should be included based on condition
+		if condition, hasCondition := fileConditions[outputPath]; hasCondition {
+			switch condition {
+			case FileIfGoogleUUID:
+				if !tmpl.UsesGoogleUUID {
+					return nil // Skip this file
+				}
+			case FileIfGofrsUUID:
+				if !tmpl.UsesGofrsUUID {
+					return nil // Skip this file
+				}
+			}
+		}
+
 		file, err := fs.ReadFile(content, path)
 		if err != nil {
 			return err
@@ -60,15 +101,8 @@ func Read(tmpl *Template) ([]*File, error) {
 
 		defer buf.Reset()
 
-		path = strings.TrimPrefix(path, baseDir+string(filepath.Separator))
-
-		// Check if the file ends with ".tmpl" and replace it with ".go"
-		if strings.HasSuffix(path, ".tmpl") {
-			path = strings.TrimSuffix(path, ".tmpl") + ".go"
-		}
-
 		files = append(files, &File{
-			Path:    path,
+			Path:    outputPath,
 			Content: bytes.Replace(buf.Bytes(), embedComment, CodegenComment, 1),
 		})
 

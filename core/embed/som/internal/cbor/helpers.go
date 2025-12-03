@@ -4,9 +4,6 @@ package cbor
 import (
 	"net/url"
 	"time"
-
-	"github.com/google/uuid"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 const (
@@ -101,45 +98,6 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 		return nil, err
 	}
 	return &d, nil
-}
-
-// UUID marshaling helpers
-func MarshalUUID(u uuid.UUID) (RawMessage, error) {
-	raw, err := Marshal(u)
-	if err != nil {
-		return nil, err
-	}
-	return Marshal(RawTag{
-		Content: raw,
-		Number:  models.TagSpecBinaryUUID,
-	})
-}
-
-func MarshalUUIDPtr(u *uuid.UUID) (RawMessage, error) {
-	if u == nil {
-		return Marshal(nil)
-	}
-	return MarshalUUID(*u)
-}
-
-func UnmarshalUUID(data []byte) (uuid.UUID, error) {
-	var tag RawTag
-	if err := Unmarshal(data, &tag); err != nil {
-		return uuid.UUID{}, err
-	}
-	var uuidBytes []byte
-	if err := Unmarshal(tag.Content, &uuidBytes); err != nil {
-		return uuid.UUID{}, err
-	}
-	return uuid.FromBytes(uuidBytes)
-}
-
-func UnmarshalUUIDPtr(data []byte) (*uuid.UUID, error) {
-	u, err := UnmarshalUUID(data)
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
 }
 
 // URL marshaling helpers

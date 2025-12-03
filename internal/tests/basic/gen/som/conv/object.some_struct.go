@@ -28,7 +28,7 @@ func (c *someStruct) MarshalCBOR() ([]byte, error) {
 		data["time_ptr"] = &types.DateTime{Time: *c.TimePtr}
 	}
 	if c.UuidPtr != nil {
-		uuidVal := types.UUID(*c.UuidPtr)
+		uuidVal := types.UUIDGoogle(*c.UuidPtr)
 		data["uuid_ptr"] = &uuidVal
 	}
 
@@ -51,7 +51,7 @@ func (c *someStruct) UnmarshalCBOR(data []byte) error {
 		c.TimePtr, _ = cbor.UnmarshalDateTimePtr(raw)
 	}
 	if raw, ok := rawMap["uuid_ptr"]; ok {
-		c.UuidPtr, _ = cbor.UnmarshalUUIDPtr(raw)
+		c.UuidPtr, _ = cbor.UnmarshalUUIDGooglePtr(raw)
 	}
 
 	return nil

@@ -120,6 +120,9 @@ func Parse(dir string, outPkg string) (*Output, error) {
 	}
 	res.Define = define
 
+	// Collect which optional features are used.
+	res.UsedFeatures = collectUsedFeatures(res)
+
 	return res, nil
 }
 
@@ -558,12 +561,26 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 
 	case gotype.Array:
 		{
-			if t.Elem().PkgPath() == "github.com/google/uuid" {
-				return &FieldUUID{&fieldAtomic{
-					name:   t.Name(),
-					index:  indexInfo,
-					search: searchInfo,
-				}}, nil
+			pkgPath := t.Elem().PkgPath()
+			switch pkgPath {
+			case string(UUIDPackageGoogle):
+				return &FieldUUID{
+					fieldAtomic: &fieldAtomic{
+						name:   t.Name(),
+						index:  indexInfo,
+						search: searchInfo,
+					},
+					Package: UUIDPackageGoogle,
+				}, nil
+			case string(UUIDPackageGofrs):
+				return &FieldUUID{
+					fieldAtomic: &fieldAtomic{
+						name:   t.Name(),
+						index:  indexInfo,
+						search: searchInfo,
+					},
+					Package: UUIDPackageGofrs,
+				}, nil
 			}
 		}
 
@@ -673,4 +690,53 @@ type Output struct {
 
 	// Define holds analyzer and search definitions.
 	Define *DefineOutput
+
+	// UsedFeatures tracks which optional features are used in the models.
+	UsedFeatures *UsedFeatures
+}
+
+// UsedFeatures tracks which optional features are used across all models.
+type UsedFeatures struct {
+	UsesGoogleUUID bool
+	UsesGofrsUUID  bool
+}
+
+// collectUsedFeatures walks through all parsed fields to determine which features are used.
+func collectUsedFeatures(output *Output) *UsedFeatures {
+	features := &UsedFeatures{}
+
+	var checkField func(f Field)
+	checkField = func(f Field) {
+		switch field := f.(type) {
+		case *FieldUUID:
+			switch field.Package {
+			case UUIDPackageGoogle:
+				features.UsesGoogleUUID = true
+			case UUIDPackageGofrs:
+				features.UsesGofrsUUID = true
+			}
+		case *FieldSlice:
+			checkField(field.Field)
+		}
+	}
+
+	for _, node := range output.Nodes {
+		for _, field := range node.Fields {
+			checkField(field)
+		}
+	}
+
+	for _, edge := range output.Edges {
+		for _, field := range edge.Fields {
+			checkField(field)
+		}
+	}
+
+	for _, str := range output.Structs {
+		for _, field := range str.Fields {
+			checkField(field)
+		}
+	}
+
+	return features
 }

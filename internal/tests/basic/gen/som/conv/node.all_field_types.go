@@ -139,15 +139,15 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 		data["duration_slice"] = c.DurationSlice
 	}
 	{
-		uuidVal := types.UUID(c.UUID)
+		uuidVal := types.UUIDGoogle(c.UUID)
 		data["uuid"] = &uuidVal
 	}
 	if c.UUIDPtr != nil {
-		uuidVal := types.UUID(*c.UUIDPtr)
+		uuidVal := types.UUIDGoogle(*c.UUIDPtr)
 		data["uuid_ptr"] = &uuidVal
 	}
 	if c.UUIDNil != nil {
-		uuidVal := types.UUID(*c.UUIDNil)
+		uuidVal := types.UUIDGoogle(*c.UUIDNil)
 		data["uuid_nil"] = &uuidVal
 	}
 	if c.UUIDSlice != nil {
@@ -415,13 +415,13 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.DurationSlice)
 	}
 	if raw, ok := rawMap["uuid"]; ok {
-		c.UUID, _ = cbor.UnmarshalUUID(raw)
+		c.UUID, _ = cbor.UnmarshalUUIDGoogle(raw)
 	}
 	if raw, ok := rawMap["uuid_ptr"]; ok {
-		c.UUIDPtr, _ = cbor.UnmarshalUUIDPtr(raw)
+		c.UUIDPtr, _ = cbor.UnmarshalUUIDGooglePtr(raw)
 	}
 	if raw, ok := rawMap["uuid_nil"]; ok {
-		c.UUIDNil, _ = cbor.UnmarshalUUIDPtr(raw)
+		c.UUIDNil, _ = cbor.UnmarshalUUIDGooglePtr(raw)
 	}
 	if raw, ok := rawMap["uuid_slice"]; ok {
 		cbor.Unmarshal(raw, &c.UUIDSlice)
