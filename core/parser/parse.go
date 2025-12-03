@@ -405,14 +405,13 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 
 	case gotype.Invalid:
 		{
-			// When gotype can't fully resolve a type (e.g., external package types),
-			// it returns Invalid. We can still identify the type from String() which
-			// returns "pkg.TypeName" format.
+			// gotype returns Invalid for some external package types it can't fully resolve
+			// (notably orb and simplefeatures geo types). We detect them via String().
 			typeStr := t.Elem().String()
+
 			if strings.HasPrefix(typeStr, "orb.") {
 				typeName := strings.TrimPrefix(typeStr, "orb.")
-				geoType, ok := orbGeoType(typeName)
-				if ok {
+				if geoType, ok := orbGeoType(typeName); ok {
 					return &FieldGeometry{
 						fieldAtomic: atomic,
 						Package:     GeoPackageOrb,
@@ -420,10 +419,10 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 					}, nil
 				}
 			}
+
 			if strings.HasPrefix(typeStr, "geom.") {
 				typeName := strings.TrimPrefix(typeStr, "geom.")
-				geoType, ok := simpefeaturesGeoType(typeName)
-				if ok {
+				if geoType, ok := simpefeaturesGeoType(typeName); ok {
 					return &FieldGeometry{
 						fieldAtomic: atomic,
 						Package:     GeoPackageSimplefeatures,
@@ -431,47 +430,6 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 					}, nil
 				}
 			}
-			// For other Invalid types (like Email, Role, Password), they are
-			// typically handled elsewhere (as String types with isPassword/isEnum
-			// checks, or in Struct case). But if they reach here without matching,
-			// we should let them fall through to the error.
-			// HOWEVER, the gotype library sometimes returns Invalid for types it
-			// cannot fully resolve but that ARE valid (like som.Email which is
-			// a string type alias). So we need to check further.
-
-			// Check if it's a string-based type (like Email, Password, Enum)
-			// by looking at the name pattern
-			name := t.Elem().Name()
-			pkgPath := t.Elem().PkgPath()
-
-			// Email type from the generated package
-			if name == "Email" {
-				return &FieldEmail{atomic}, nil
-			}
-
-			// Password types
-			if isPassword(t.Elem(), outPkg) {
-				return &FieldPassword{atomic, parsePasswordAlgorithm(t.Elem())}, nil
-			}
-
-			// Enum types
-			if isEnum(t.Elem(), outPkg) {
-				return &FieldEnum{atomic, name}, nil
-			}
-
-			// If it's a struct from the same package, treat as FieldStruct
-			if pkgPath == outPkg || strings.HasSuffix(pkgPath, "/"+filepath.Base(outPkg)) {
-				// Could be a node, edge, or struct
-				if isNode(t.Elem(), outPkg) {
-					return &FieldNode{atomic, name}, nil
-				}
-				if isEdge(t.Elem(), outPkg) {
-					return &FieldEdge{atomic, name}, nil
-				}
-				return &FieldStruct{atomic, name}, nil
-			}
-
-			// Fall through to error at the end if not a recognized type
 		}
 
 	case gotype.String:
