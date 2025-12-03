@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-surreal/som/tests/basic/gen/som/query"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
+	"github.com/go-surreal/som/tests/basic/gen/som/with"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
@@ -315,5 +316,69 @@ func TestLiveQueryCount(t *testing.T) {
 
 	case <-time.After(1 * time.Second):
 		t.Fatal("timeout waiting for live channel to close after context was canceled")
+	}
+}
+
+func TestLiveQueryWithFetch(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Create a group first
+	group := &model.Group{
+		Name: "Test Group",
+	}
+	err := client.GroupRepo().Create(ctx, group)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Start live query with Fetch
+	liveChan, err := client.AllFieldTypesRepo().Query().
+		Fetch(with.AllFieldTypes.MainGroup()).
+		Live(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a record with MainGroup set
+	newModel := &model.AllFieldTypes{
+		Time:      time.Now(),
+		Duration:  time.Second,
+		MainGroup: *group,
+	}
+
+	err = client.AllFieldTypesRepo().Create(ctx, newModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Receive the live create event
+	select {
+	case liveRes, more := <-liveChan:
+		if !more {
+			t.Fatal("liveChan closed unexpectedly")
+		}
+
+		liveCreate, ok := liveRes.(query.LiveCreate[*model.AllFieldTypes])
+		if !ok {
+			t.Fatalf("expected LiveCreate event, got %T", liveRes)
+		}
+
+		created, err := liveCreate.Get()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Check(t, is.Equal(newModel.ID().String(), created.ID().String()))
+		// Verify that the fetched MainGroup has data populated
+		assert.Check(t, is.Equal(group.Name, created.MainGroup.Name))
+
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for CREATE event")
 	}
 }
