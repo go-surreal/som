@@ -12,6 +12,8 @@ import (
 	googleuuid "github.com/google/uuid"
 
 
+	gofrsuuid "github.com/gofrs/uuid"
+
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 )
@@ -311,6 +313,32 @@ func toUUIDGooglePtr(val *types.UUIDGoogle) *googleuuid.UUID {
 //
 // -- UUID (Gofrs)
 //
+
+func fromUUIDGofrs(val gofrsuuid.UUID) types.UUIDGofrs {
+	return types.UUIDGofrs(val)
+}
+
+func fromUUIDGofrsPtr(val *gofrsuuid.UUID) *types.UUIDGofrs {
+	if val == nil {
+		return nil
+	}
+
+	u := types.UUIDGofrs(*val)
+	return &u
+}
+
+func toUUIDGofrs(val types.UUIDGofrs) gofrsuuid.UUID {
+	return gofrsuuid.UUID(val)
+}
+
+func toUUIDGofrsPtr(val *types.UUIDGofrs) *gofrsuuid.UUID {
+	if val == nil {
+		return nil
+	}
+
+	u := gofrsuuid.UUID(*val)
+	return &u
+}
 
 //
 // -- EMAIL

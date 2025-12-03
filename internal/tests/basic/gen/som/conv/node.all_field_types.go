@@ -17,7 +17,7 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 85)
+	data := make(map[string]any, 89)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != nil {
@@ -152,6 +152,21 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 	}
 	if c.UUIDSlice != nil {
 		data["uuid_slice"] = c.UUIDSlice
+	}
+	{
+		uuidVal := types.UUIDGofrs(c.UUIDGofrs)
+		data["uuid_gofrs"] = &uuidVal
+	}
+	if c.UUIDGofrsPtr != nil {
+		uuidVal := types.UUIDGofrs(*c.UUIDGofrsPtr)
+		data["uuid_gofrs_ptr"] = &uuidVal
+	}
+	if c.UUIDGofrsNil != nil {
+		uuidVal := types.UUIDGofrs(*c.UUIDGofrsNil)
+		data["uuid_gofrs_nil"] = &uuidVal
+	}
+	if c.UUIDGofrsSlice != nil {
+		data["uuid_gofrs_slice"] = c.UUIDGofrsSlice
 	}
 	data["url"] = fromURL(c.URL)
 	if c.URLPtr != nil {
@@ -425,6 +440,18 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["uuid_slice"]; ok {
 		cbor.Unmarshal(raw, &c.UUIDSlice)
+	}
+	if raw, ok := rawMap["uuid_gofrs"]; ok {
+		c.UUIDGofrs, _ = cbor.UnmarshalUUIDGofrs(raw)
+	}
+	if raw, ok := rawMap["uuid_gofrs_ptr"]; ok {
+		c.UUIDGofrsPtr, _ = cbor.UnmarshalUUIDGofrsPtr(raw)
+	}
+	if raw, ok := rawMap["uuid_gofrs_nil"]; ok {
+		c.UUIDGofrsNil, _ = cbor.UnmarshalUUIDGofrsPtr(raw)
+	}
+	if raw, ok := rawMap["uuid_gofrs_slice"]; ok {
+		cbor.Unmarshal(raw, &c.UUIDGofrsSlice)
 	}
 	if raw, ok := rawMap["url"]; ok {
 		var convVal string

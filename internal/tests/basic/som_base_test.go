@@ -13,6 +13,7 @@ import (
 	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
+	gofrsuuid "github.com/gofrs/uuid"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gotest.tools/v3/assert"
@@ -574,6 +575,59 @@ func TestUUID(t *testing.T) {
 			where.AllFieldTypes.UUID.Equal(modelIn.UUID),
 			where.AllFieldTypes.UUIDPtr.Equal(*modelIn.UUIDPtr),
 			where.AllFieldTypes.UUIDNil.Nil(true),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
+	)
+}
+
+func TestUUIDGofrs(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ptr := gofrsuuid.Must(gofrsuuid.NewV4())
+
+	userNew := &model.AllFieldTypes{
+		UUIDGofrs:    gofrsuuid.Must(gofrsuuid.NewV4()),
+		UUIDGofrsPtr: &ptr,
+		UUIDGofrsNil: nil,
+	}
+
+	modelIn := userNew
+
+	err := client.AllFieldTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	modelOut, exists, err := client.AllFieldTypesRepo().Read(ctx, modelIn.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
+	)
+
+	modelOut, err = client.AllFieldTypesRepo().Query().
+		Filter(
+			where.AllFieldTypes.UUIDGofrs.Equal(modelIn.UUIDGofrs),
+			where.AllFieldTypes.UUIDGofrsPtr.Equal(*modelIn.UUIDGofrsPtr),
+			where.AllFieldTypes.UUIDGofrsNil.Nil(true),
 		).
 		First(ctx)
 

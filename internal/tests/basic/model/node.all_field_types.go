@@ -1,10 +1,12 @@
 package model
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/google/uuid"
 	"net/url"
 	"time"
+
+	"github.com/go-surreal/som/tests/basic/gen/som"
+	gofrsuuid "github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type AllFieldTypes struct {
@@ -92,6 +94,11 @@ type AllFieldTypes struct {
 	UUIDPtr   *uuid.UUID
 	UUIDNil   *uuid.UUID
 	UUIDSlice []uuid.UUID
+
+	UUIDGofrs      gofrsuuid.UUID
+	UUIDGofrsPtr   *gofrsuuid.UUID
+	UUIDGofrsNil   *gofrsuuid.UUID
+	UUIDGofrsSlice []gofrsuuid.UUID
 
 	URL      url.URL
 	URLPtr   *url.URL

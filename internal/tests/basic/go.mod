@@ -9,6 +9,7 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/go-surreal/som v0.11.0
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/testcontainers/testcontainers-go v0.40.0
@@ -19,7 +20,6 @@ require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/dave/jennifer v1.7.1 // indirect
-	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/urfave/cli/v3 v3.6.1 // indirect
