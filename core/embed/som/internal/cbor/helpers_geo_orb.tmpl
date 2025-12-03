@@ -4,6 +4,7 @@ package cbor
 
 import (
 	"github.com/paulmach/orb"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // Point helpers
@@ -152,15 +153,6 @@ func UnmarshalMultiPolygonOrbPtr(data []byte) (*orb.MultiPolygon, error) {
 
 // Collection helpers - Collection is complex so we use RawMessage approach
 
-const (
-	tagGeoPoint      = 88
-	tagGeoLine       = 89
-	tagGeoPolygon    = 90
-	tagGeoMultiPoint = 91
-	tagGeoMultiLine  = 92
-	tagGeoMultiPoly  = 93
-)
-
 func UnmarshalCollectionOrb(data []byte) (orb.Collection, error) {
 	var geometries []RawMessage
 	if err := Unmarshal(data, &geometries); err != nil {
@@ -173,12 +165,12 @@ func UnmarshalCollectionOrb(data []byte) (orb.Collection, error) {
 			continue
 		}
 		switch tag.Number {
-		case tagGeoPoint:
+		case models.TagGeometryPoint:
 			var coords [2]float64
 			if err := Unmarshal(tag.Content, &coords); err == nil {
 				collection = append(collection, orb.Point{coords[0], coords[1]})
 			}
-		case tagGeoLine:
+		case models.TagGeometryLine:
 			var coords [][2]float64
 			if err := Unmarshal(tag.Content, &coords); err == nil {
 				points := make(orb.LineString, len(coords))
@@ -187,7 +179,7 @@ func UnmarshalCollectionOrb(data []byte) (orb.Collection, error) {
 				}
 				collection = append(collection, points)
 			}
-		case tagGeoPolygon:
+		case models.TagGeometryPolygon:
 			var rings [][][2]float64
 			if err := Unmarshal(tag.Content, &rings); err == nil {
 				polygon := make(orb.Polygon, len(rings))
@@ -200,7 +192,7 @@ func UnmarshalCollectionOrb(data []byte) (orb.Collection, error) {
 				}
 				collection = append(collection, polygon)
 			}
-		case tagGeoMultiPoint:
+		case models.TagGeometryMultiPoint:
 			var coords [][2]float64
 			if err := Unmarshal(tag.Content, &coords); err == nil {
 				points := make(orb.MultiPoint, len(coords))
@@ -209,7 +201,7 @@ func UnmarshalCollectionOrb(data []byte) (orb.Collection, error) {
 				}
 				collection = append(collection, points)
 			}
-		case tagGeoMultiLine:
+		case models.TagGeometryMultiLine:
 			var lines [][][2]float64
 			if err := Unmarshal(tag.Content, &lines); err == nil {
 				multiLine := make(orb.MultiLineString, len(lines))
@@ -222,7 +214,7 @@ func UnmarshalCollectionOrb(data []byte) (orb.Collection, error) {
 				}
 				collection = append(collection, multiLine)
 			}
-		case tagGeoMultiPoly:
+		case models.TagGeometryMultiPolygon:
 			var polys [][][][2]float64
 			if err := Unmarshal(tag.Content, &polys); err == nil {
 				multiPoly := make(orb.MultiPolygon, len(polys))

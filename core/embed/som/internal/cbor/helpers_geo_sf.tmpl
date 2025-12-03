@@ -4,6 +4,7 @@ package cbor
 
 import (
 	"github.com/peterstace/simplefeatures/geom"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // Point helpers
@@ -160,15 +161,6 @@ func UnmarshalMultiPolygonSFPtr(data []byte) (*geom.MultiPolygon, error) {
 
 // GeometryCollection helpers - simplified for now
 
-const (
-	tagGeoPointSF      = 88
-	tagGeoLineSF       = 89
-	tagGeoPolygonSF    = 90
-	tagGeoMultiPointSF = 91
-	tagGeoMultiLineSF  = 92
-	tagGeoMultiPolySF  = 93
-)
-
 func UnmarshalCollectionSF(data []byte) (geom.GeometryCollection, error) {
 	var geometries []RawMessage
 	if err := Unmarshal(data, &geometries); err != nil {
@@ -181,13 +173,13 @@ func UnmarshalCollectionSF(data []byte) (geom.GeometryCollection, error) {
 			continue
 		}
 		switch tag.Number {
-		case tagGeoPointSF:
+		case models.TagGeometryPoint:
 			var coords [2]float64
 			if err := Unmarshal(tag.Content, &coords); err == nil {
 				pt := geom.NewPoint(geom.Coordinates{XY: geom.XY{X: coords[0], Y: coords[1]}})
 				geoms = append(geoms, pt.AsGeometry())
 			}
-		case tagGeoLineSF:
+		case models.TagGeometryLine:
 			var coords [][2]float64
 			if err := Unmarshal(tag.Content, &coords); err == nil {
 				seq := make([]float64, 0, len(coords)*2)
@@ -198,7 +190,7 @@ func UnmarshalCollectionSF(data []byte) (geom.GeometryCollection, error) {
 					geoms = append(geoms, ls.AsGeometry())
 				}
 			}
-		case tagGeoPolygonSF:
+		case models.TagGeometryPolygon:
 			var rings [][][2]float64
 			if err := Unmarshal(tag.Content, &rings); err == nil {
 				ringSeqs := make([]geom.Sequence, len(rings))
@@ -213,7 +205,7 @@ func UnmarshalCollectionSF(data []byte) (geom.GeometryCollection, error) {
 					geoms = append(geoms, poly.AsGeometry())
 				}
 			}
-		case tagGeoMultiPointSF:
+		case models.TagGeometryMultiPoint:
 			var coords [][2]float64
 			if err := Unmarshal(tag.Content, &coords); err == nil {
 				points := make([]geom.Point, len(coords))
@@ -223,7 +215,7 @@ func UnmarshalCollectionSF(data []byte) (geom.GeometryCollection, error) {
 				mp := geom.NewMultiPoint(points)
 				geoms = append(geoms, mp.AsGeometry())
 			}
-		case tagGeoMultiLineSF:
+		case models.TagGeometryMultiLine:
 			var lines [][][2]float64
 			if err := Unmarshal(tag.Content, &lines); err == nil {
 				lineStrings := make([]geom.LineString, 0, len(lines))
@@ -239,7 +231,7 @@ func UnmarshalCollectionSF(data []byte) (geom.GeometryCollection, error) {
 				mls := geom.NewMultiLineString(lineStrings)
 				geoms = append(geoms, mls.AsGeometry())
 			}
-		case tagGeoMultiPolySF:
+		case models.TagGeometryMultiPolygon:
 			var polys [][][][2]float64
 			if err := Unmarshal(tag.Content, &polys); err == nil {
 				polygons := make([]geom.Polygon, 0, len(polys))

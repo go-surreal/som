@@ -5,16 +5,7 @@ package types
 import (
 	cbor "{{.GenerateOutPath}}/internal/cbor"
 	"github.com/paulmach/orb"
-)
-
-const (
-	tagGeometryPoint           = 88
-	tagGeometryLine            = 89
-	tagGeometryPolygon         = 90
-	tagGeometryMultiPoint      = 91
-	tagGeometryMultiLine       = 92
-	tagGeometryMultiPolygon    = 93
-	tagGeometryCollection      = 94
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // PointOrb wraps orb.Point for CBOR marshaling.
@@ -29,7 +20,7 @@ func (p *PointOrb) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{Number: tagGeometryPoint, Content: raw})
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryPoint, Content: raw})
 }
 
 func (p *PointOrb) UnmarshalCBOR(data []byte) error {
@@ -56,7 +47,7 @@ func (l *LineStringOrb) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{Number: tagGeometryLine, Content: raw})
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryLine, Content: raw})
 }
 
 func (l *LineStringOrb) UnmarshalCBOR(data []byte) error {
@@ -91,7 +82,7 @@ func (p *PolygonOrb) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{Number: tagGeometryPolygon, Content: raw})
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryPolygon, Content: raw})
 }
 
 func (p *PolygonOrb) UnmarshalCBOR(data []byte) error {
@@ -126,7 +117,7 @@ func (m *MultiPointOrb) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{Number: tagGeometryMultiPoint, Content: raw})
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryMultiPoint, Content: raw})
 }
 
 func (m *MultiPointOrb) UnmarshalCBOR(data []byte) error {
@@ -161,7 +152,7 @@ func (m *MultiLineStringOrb) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{Number: tagGeometryMultiLine, Content: raw})
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryMultiLine, Content: raw})
 }
 
 func (m *MultiLineStringOrb) UnmarshalCBOR(data []byte) error {
@@ -204,7 +195,7 @@ func (m *MultiPolygonOrb) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{Number: tagGeometryMultiPolygon, Content: raw})
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryMultiPolygon, Content: raw})
 }
 
 func (m *MultiPolygonOrb) UnmarshalCBOR(data []byte) error {
@@ -264,7 +255,7 @@ func (c *CollectionOrb) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(cbor.RawTag{Number: tagGeometryCollection, Content: raw})
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryCollection, Content: raw})
 }
 
 func (c *CollectionOrb) UnmarshalCBOR(data []byte) error {
@@ -279,32 +270,32 @@ func (c *CollectionOrb) UnmarshalCBOR(data []byte) error {
 			continue
 		}
 		switch tag.Number {
-		case tagGeometryPoint:
+		case models.TagGeometryPoint:
 			var p PointOrb
 			if err := cbor.Unmarshal(tag.Content, &p); err == nil {
 				collection = append(collection, orb.Point(p))
 			}
-		case tagGeometryLine:
+		case models.TagGeometryLine:
 			var l LineStringOrb
 			if err := cbor.Unmarshal(tag.Content, &l); err == nil {
 				collection = append(collection, orb.LineString(l))
 			}
-		case tagGeometryPolygon:
+		case models.TagGeometryPolygon:
 			var p PolygonOrb
 			if err := cbor.Unmarshal(tag.Content, &p); err == nil {
 				collection = append(collection, orb.Polygon(p))
 			}
-		case tagGeometryMultiPoint:
+		case models.TagGeometryMultiPoint:
 			var m MultiPointOrb
 			if err := cbor.Unmarshal(tag.Content, &m); err == nil {
 				collection = append(collection, orb.MultiPoint(m))
 			}
-		case tagGeometryMultiLine:
+		case models.TagGeometryMultiLine:
 			var m MultiLineStringOrb
 			if err := cbor.Unmarshal(tag.Content, &m); err == nil {
 				collection = append(collection, orb.MultiLineString(m))
 			}
-		case tagGeometryMultiPolygon:
+		case models.TagGeometryMultiPolygon:
 			var m MultiPolygonOrb
 			if err := cbor.Unmarshal(tag.Content, &m); err == nil {
 				collection = append(collection, orb.MultiPolygon(m))
