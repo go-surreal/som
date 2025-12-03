@@ -48,12 +48,15 @@ func (l *LineStringSF) MarshalCBOR() ([]byte, error) {
 	ls := geom.LineString(*l)
 	seq := ls.Coordinates()
 	n := seq.Length()
-	coords := make([][2]float64, n)
+	// LineString must contain an array of tagged Points (Tag 88)
+	points := make([]*PointSF, n)
 	for i := 0; i < n; i++ {
 		xy := seq.GetXY(i)
-		coords[i] = [2]float64{xy.X, xy.Y}
+		pt := geom.NewPoint(geom.Coordinates{XY: xy})
+		p := PointSF(pt)
+		points[i] = &p
 	}
-	raw, err := cbor.Marshal(coords)
+	raw, err := cbor.Marshal(points)
 	if err != nil {
 		return nil, err
 	}
@@ -86,27 +89,16 @@ func (p *PolygonSF) MarshalCBOR() ([]byte, error) {
 	extRing := poly.ExteriorRing()
 	numHoles := poly.NumInteriorRings()
 
-	rings := make([][][2]float64, 1+numHoles)
+	// Polygon must contain an array of tagged LineStrings (Tag 89)
+	rings := make([]*LineStringSF, 1+numHoles)
 
-	extSeq := extRing.Coordinates()
-	extN := extSeq.Length()
-	extCoords := make([][2]float64, extN)
-	for i := 0; i < extN; i++ {
-		xy := extSeq.GetXY(i)
-		extCoords[i] = [2]float64{xy.X, xy.Y}
-	}
-	rings[0] = extCoords
+	extLS := LineStringSF(extRing)
+	rings[0] = &extLS
 
 	for h := 0; h < numHoles; h++ {
 		hole := poly.InteriorRingN(h)
-		holeSeq := hole.Coordinates()
-		holeN := holeSeq.Length()
-		holeCoords := make([][2]float64, holeN)
-		for i := 0; i < holeN; i++ {
-			xy := holeSeq.GetXY(i)
-			holeCoords[i] = [2]float64{xy.X, xy.Y}
-		}
-		rings[1+h] = holeCoords
+		holeLS := LineStringSF(hole)
+		rings[1+h] = &holeLS
 	}
 
 	raw, err := cbor.Marshal(rings)
@@ -150,15 +142,14 @@ func (m *MultiPointSF) MarshalCBOR() ([]byte, error) {
 	}
 	mp := geom.MultiPoint(*m)
 	n := mp.NumPoints()
-	coords := make([][2]float64, n)
+	// MultiPoint must contain an array of tagged Points (Tag 88)
+	points := make([]*PointSF, n)
 	for i := 0; i < n; i++ {
 		pt := mp.PointN(i)
-		xy, ok := pt.XY()
-		if ok {
-			coords[i] = [2]float64{xy.X, xy.Y}
-		}
+		p := PointSF(pt)
+		points[i] = &p
 	}
-	raw, err := cbor.Marshal(coords)
+	raw, err := cbor.Marshal(points)
 	if err != nil {
 		return nil, err
 	}
@@ -188,17 +179,12 @@ func (m *MultiLineStringSF) MarshalCBOR() ([]byte, error) {
 	}
 	mls := geom.MultiLineString(*m)
 	numLines := mls.NumLineStrings()
-	lines := make([][][2]float64, numLines)
+	// MultiLineString must contain an array of tagged LineStrings (Tag 89)
+	lines := make([]*LineStringSF, numLines)
 	for i := 0; i < numLines; i++ {
 		ls := mls.LineStringN(i)
-		seq := ls.Coordinates()
-		n := seq.Length()
-		coords := make([][2]float64, n)
-		for j := 0; j < n; j++ {
-			xy := seq.GetXY(j)
-			coords[j] = [2]float64{xy.X, xy.Y}
-		}
-		lines[i] = coords
+		l := LineStringSF(ls)
+		lines[i] = &l
 	}
 	raw, err := cbor.Marshal(lines)
 	if err != nil {
@@ -235,34 +221,12 @@ func (m *MultiPolygonSF) MarshalCBOR() ([]byte, error) {
 	}
 	mpoly := geom.MultiPolygon(*m)
 	numPolys := mpoly.NumPolygons()
-	polys := make([][][][2]float64, numPolys)
+	// MultiPolygon must contain an array of tagged Polygons (Tag 90)
+	polys := make([]*PolygonSF, numPolys)
 	for i := 0; i < numPolys; i++ {
 		poly := mpoly.PolygonN(i)
-		numHoles := poly.NumInteriorRings()
-		rings := make([][][2]float64, 1+numHoles)
-
-		extRing := poly.ExteriorRing()
-		extSeq := extRing.Coordinates()
-		extN := extSeq.Length()
-		extCoords := make([][2]float64, extN)
-		for j := 0; j < extN; j++ {
-			xy := extSeq.GetXY(j)
-			extCoords[j] = [2]float64{xy.X, xy.Y}
-		}
-		rings[0] = extCoords
-
-		for h := 0; h < numHoles; h++ {
-			hole := poly.InteriorRingN(h)
-			holeSeq := hole.Coordinates()
-			holeN := holeSeq.Length()
-			holeCoords := make([][2]float64, holeN)
-			for j := 0; j < holeN; j++ {
-				xy := holeSeq.GetXY(j)
-				holeCoords[j] = [2]float64{xy.X, xy.Y}
-			}
-			rings[1+h] = holeCoords
-		}
-		polys[i] = rings
+		p := PolygonSF(poly)
+		polys[i] = &p
 	}
 	raw, err := cbor.Marshal(polys)
 	if err != nil {

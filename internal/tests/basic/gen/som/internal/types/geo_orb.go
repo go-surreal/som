@@ -39,11 +39,13 @@ func (l *LineStringOrb) MarshalCBOR() ([]byte, error) {
 	if l == nil {
 		return cbor.Marshal(nil)
 	}
-	coords := make([][2]float64, len(*l))
+	// LineString must contain an array of tagged Points (Tag 88)
+	points := make([]*PointOrb, len(*l))
 	for i, pt := range *l {
-		coords[i] = [2]float64{pt[0], pt[1]}
+		p := PointOrb(pt)
+		points[i] = &p
 	}
-	raw, err := cbor.Marshal(coords)
+	raw, err := cbor.Marshal(points)
 	if err != nil {
 		return nil, err
 	}
@@ -70,13 +72,11 @@ func (p *PolygonOrb) MarshalCBOR() ([]byte, error) {
 	if p == nil {
 		return cbor.Marshal(nil)
 	}
-	rings := make([][][2]float64, len(*p))
+	// Polygon must contain an array of tagged LineStrings (Tag 89)
+	rings := make([]*LineStringOrb, len(*p))
 	for i, ring := range *p {
-		coords := make([][2]float64, len(ring))
-		for j, pt := range ring {
-			coords[j] = [2]float64{pt[0], pt[1]}
-		}
-		rings[i] = coords
+		ls := LineStringOrb(ring)
+		rings[i] = &ls
 	}
 	raw, err := cbor.Marshal(rings)
 	if err != nil {
@@ -109,11 +109,13 @@ func (m *MultiPointOrb) MarshalCBOR() ([]byte, error) {
 	if m == nil {
 		return cbor.Marshal(nil)
 	}
-	coords := make([][2]float64, len(*m))
+	// MultiPoint must contain an array of tagged Points (Tag 88)
+	points := make([]*PointOrb, len(*m))
 	for i, pt := range *m {
-		coords[i] = [2]float64{pt[0], pt[1]}
+		p := PointOrb(pt)
+		points[i] = &p
 	}
-	raw, err := cbor.Marshal(coords)
+	raw, err := cbor.Marshal(points)
 	if err != nil {
 		return nil, err
 	}
@@ -140,13 +142,11 @@ func (m *MultiLineStringOrb) MarshalCBOR() ([]byte, error) {
 	if m == nil {
 		return cbor.Marshal(nil)
 	}
-	lines := make([][][2]float64, len(*m))
+	// MultiLineString must contain an array of tagged LineStrings (Tag 89)
+	lines := make([]*LineStringOrb, len(*m))
 	for i, line := range *m {
-		coords := make([][2]float64, len(line))
-		for j, pt := range line {
-			coords[j] = [2]float64{pt[0], pt[1]}
-		}
-		lines[i] = coords
+		ls := LineStringOrb(line)
+		lines[i] = &ls
 	}
 	raw, err := cbor.Marshal(lines)
 	if err != nil {
@@ -179,17 +179,11 @@ func (m *MultiPolygonOrb) MarshalCBOR() ([]byte, error) {
 	if m == nil {
 		return cbor.Marshal(nil)
 	}
-	polys := make([][][][2]float64, len(*m))
+	// MultiPolygon must contain an array of tagged Polygons (Tag 90)
+	polys := make([]*PolygonOrb, len(*m))
 	for i, poly := range *m {
-		rings := make([][][2]float64, len(poly))
-		for j, ring := range poly {
-			coords := make([][2]float64, len(ring))
-			for k, pt := range ring {
-				coords[k] = [2]float64{pt[0], pt[1]}
-			}
-			rings[j] = coords
-		}
-		polys[i] = rings
+		p := PolygonOrb(poly)
+		polys[i] = &p
 	}
 	raw, err := cbor.Marshal(polys)
 	if err != nil {

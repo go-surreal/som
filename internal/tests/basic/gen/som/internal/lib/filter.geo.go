@@ -2,8 +2,6 @@
 
 package lib
 
-// https://surrealdb.com/docs/surrealdb/surrealql/functions/database/geo
-
 // Geo is a base filter for geometry types with spatial operations.
 type Geo[M, T any, F field[M]] struct {
 	*Base[M, T, F, *Slice[M, T, F]]
