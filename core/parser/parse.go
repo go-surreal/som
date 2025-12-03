@@ -403,6 +403,77 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 
 	switch t.Elem().Kind() {
 
+	case gotype.Invalid:
+		{
+			// When gotype can't fully resolve a type (e.g., external package types),
+			// it returns Invalid. We can still identify the type from String() which
+			// returns "pkg.TypeName" format.
+			typeStr := t.Elem().String()
+			if strings.HasPrefix(typeStr, "orb.") {
+				typeName := strings.TrimPrefix(typeStr, "orb.")
+				geoType, ok := orbGeoType(typeName)
+				if ok {
+					return &FieldGeometry{
+						fieldAtomic: atomic,
+						Package:     GeoPackageOrb,
+						Type:        geoType,
+					}, nil
+				}
+			}
+			if strings.HasPrefix(typeStr, "geom.") {
+				typeName := strings.TrimPrefix(typeStr, "geom.")
+				geoType, ok := simpefeaturesGeoType(typeName)
+				if ok {
+					return &FieldGeometry{
+						fieldAtomic: atomic,
+						Package:     GeoPackageSimplefeatures,
+						Type:        geoType,
+					}, nil
+				}
+			}
+			// For other Invalid types (like Email, Role, Password), they are
+			// typically handled elsewhere (as String types with isPassword/isEnum
+			// checks, or in Struct case). But if they reach here without matching,
+			// we should let them fall through to the error.
+			// HOWEVER, the gotype library sometimes returns Invalid for types it
+			// cannot fully resolve but that ARE valid (like som.Email which is
+			// a string type alias). So we need to check further.
+
+			// Check if it's a string-based type (like Email, Password, Enum)
+			// by looking at the name pattern
+			name := t.Elem().Name()
+			pkgPath := t.Elem().PkgPath()
+
+			// Email type from the generated package
+			if name == "Email" {
+				return &FieldEmail{atomic}, nil
+			}
+
+			// Password types
+			if isPassword(t.Elem(), outPkg) {
+				return &FieldPassword{atomic, parsePasswordAlgorithm(t.Elem())}, nil
+			}
+
+			// Enum types
+			if isEnum(t.Elem(), outPkg) {
+				return &FieldEnum{atomic, name}, nil
+			}
+
+			// If it's a struct from the same package, treat as FieldStruct
+			if pkgPath == outPkg || strings.HasSuffix(pkgPath, "/"+filepath.Base(outPkg)) {
+				// Could be a node, edge, or struct
+				if isNode(t.Elem(), outPkg) {
+					return &FieldNode{atomic, name}, nil
+				}
+				if isEdge(t.Elem(), outPkg) {
+					return &FieldEdge{atomic, name}, nil
+				}
+				return &FieldStruct{atomic, name}, nil
+			}
+
+			// Fall through to error at the end if not a recognized type
+		}
+
 	case gotype.String:
 		{
 			switch {
@@ -527,6 +598,13 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 				{
 					return &FieldURL{atomic}, nil
 				}
+			case t.Elem().PkgPath() == string(GeoPackageSimplefeatures):
+				{
+					geoType, ok := simpefeaturesGeoType(t.Elem().Name())
+					if ok {
+						return &FieldGeometry{atomic, GeoPackageSimplefeatures, geoType}, nil
+					}
+				}
 			case isNode(t.Elem(), outPkg):
 				{
 					return &FieldNode{atomic, t.Elem().Name()}, nil
@@ -544,6 +622,22 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 
 	case gotype.Slice:
 		{
+			// Check if this is an orb geometry slice type (LineString, Polygon, etc.)
+			if t.Elem().PkgPath() == string(GeoPackageOrb) {
+				geoType, ok := orbGeoType(t.Elem().Name())
+				if ok {
+					return &FieldGeometry{
+						fieldAtomic: &fieldAtomic{
+							name:   t.Name(),
+							index:  indexInfo,
+							search: searchInfo,
+						},
+						Package: GeoPackageOrb,
+						Type:    geoType,
+					}, nil
+				}
+			}
+
 			field, err := parseFieldInternal(t.Elem(), outPkg, false)
 			if err != nil {
 				return nil, err
@@ -581,6 +675,19 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 					},
 					Package: UUIDPackageGofrs,
 				}, nil
+			case string(GeoPackageOrb):
+				geoType, ok := orbGeoType(t.Elem().Name())
+				if ok {
+					return &FieldGeometry{
+						fieldAtomic: &fieldAtomic{
+							name:   t.Name(),
+							index:  indexInfo,
+							search: searchInfo,
+						},
+						Package: GeoPackageOrb,
+						Type:    geoType,
+					}, nil
+				}
 			}
 		}
 
@@ -697,8 +804,10 @@ type Output struct {
 
 // UsedFeatures tracks which optional features are used across all models.
 type UsedFeatures struct {
-	UsesGoogleUUID bool
-	UsesGofrsUUID  bool
+	UsesGoogleUUID       bool
+	UsesGofrsUUID        bool
+	UsesOrbGeo           bool
+	UsesSimpefeaturesGeo bool
 }
 
 // collectUsedFeatures walks through all parsed fields to determine which features are used.
@@ -714,6 +823,13 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 				features.UsesGoogleUUID = true
 			case UUIDPackageGofrs:
 				features.UsesGofrsUUID = true
+			}
+		case *FieldGeometry:
+			switch field.Package {
+			case GeoPackageOrb:
+				features.UsesOrbGeo = true
+			case GeoPackageSimplefeatures:
+				features.UsesSimpefeaturesGeo = true
 			}
 		case *FieldSlice:
 			checkField(field.Field)
@@ -739,4 +855,48 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 	}
 
 	return features
+}
+
+// orbGeoType maps orb type names to GeometryType.
+func orbGeoType(name string) (GeometryType, bool) {
+	switch name {
+	case "Point":
+		return GeometryPoint, true
+	case "LineString":
+		return GeometryLineString, true
+	case "Polygon":
+		return GeometryPolygon, true
+	case "MultiPoint":
+		return GeometryMultiPoint, true
+	case "MultiLineString":
+		return GeometryMultiLineString, true
+	case "MultiPolygon":
+		return GeometryMultiPolygon, true
+	case "Collection":
+		return GeometryCollection, true
+	default:
+		return 0, false
+	}
+}
+
+// simpefeaturesGeoType maps simplefeatures type names to GeometryType.
+func simpefeaturesGeoType(name string) (GeometryType, bool) {
+	switch name {
+	case "Point":
+		return GeometryPoint, true
+	case "LineString":
+		return GeometryLineString, true
+	case "Polygon":
+		return GeometryPolygon, true
+	case "MultiPoint":
+		return GeometryMultiPoint, true
+	case "MultiLineString":
+		return GeometryMultiLineString, true
+	case "MultiPolygon":
+		return GeometryMultiPolygon, true
+	case "GeometryCollection":
+		return GeometryCollection, true
+	default:
+		return 0, false
+	}
 }

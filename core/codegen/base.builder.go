@@ -30,6 +30,8 @@ func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error 
 	if features != nil {
 		tmpl.UsesGoogleUUID = features.UsesGoogleUUID
 		tmpl.UsesGofrsUUID = features.UsesGofrsUUID
+		tmpl.UsesOrbGeo = features.UsesOrbGeo
+		tmpl.UsesSimpefeaturesGeo = features.UsesSimpefeaturesGeo
 	}
 
 	files, err := embed.Read(tmpl)

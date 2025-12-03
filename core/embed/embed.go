@@ -22,9 +22,11 @@ var (
 var content embed.FS
 
 type Template struct {
-	GenerateOutPath string
-	UsesGoogleUUID  bool
-	UsesGofrsUUID   bool
+	GenerateOutPath      string
+	UsesGoogleUUID       bool
+	UsesGofrsUUID        bool
+	UsesOrbGeo           bool
+	UsesSimpefeaturesGeo bool
 }
 
 // FileCondition specifies when a file should be included in the output.
@@ -34,6 +36,8 @@ const (
 	FileAlways FileCondition = iota
 	FileIfGoogleUUID
 	FileIfGofrsUUID
+	FileIfOrbGeo
+	FileIfSimpefeaturesGeo
 )
 
 // fileConditions maps output file paths to their inclusion conditions.
@@ -44,6 +48,14 @@ var fileConditions = map[string]FileCondition{
 	"internal/lib/filter.uuid_gofrs.go":    FileIfGofrsUUID,
 	"internal/cbor/helpers_uuid_google.go": FileIfGoogleUUID,
 	"internal/cbor/helpers_uuid_gofrs.go":  FileIfGofrsUUID,
+	// Geo files - orb
+	"internal/types/geo_orb.go":        FileIfOrbGeo,
+	"internal/lib/filter.geo_orb.go":   FileIfOrbGeo,
+	"internal/cbor/helpers_geo_orb.go": FileIfOrbGeo,
+	// Geo files - simplefeatures
+	"internal/types/geo_sf.go":        FileIfSimpefeaturesGeo,
+	"internal/lib/filter.geo_sf.go":   FileIfSimpefeaturesGeo,
+	"internal/cbor/helpers_geo_sf.go": FileIfSimpefeaturesGeo,
 }
 
 type File struct {
@@ -80,6 +92,14 @@ func Read(tmpl *Template) ([]*File, error) {
 				}
 			case FileIfGofrsUUID:
 				if !tmpl.UsesGofrsUUID {
+					return nil // Skip this file
+				}
+			case FileIfOrbGeo:
+				if !tmpl.UsesOrbGeo {
+					return nil // Skip this file
+				}
+			case FileIfSimpefeaturesGeo:
+				if !tmpl.UsesSimpefeaturesGeo {
 					return nil // Skip this file
 				}
 			}

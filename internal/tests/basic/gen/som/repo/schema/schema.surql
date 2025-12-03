@@ -10,6 +10,23 @@ DEFINE FIELD account ON TABLE url_example TYPE string;
 DEFINE FIELD some_url ON TABLE url_example TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
 DEFINE FIELD some_other_url ON TABLE url_example TYPE string ASSERT $value == "" OR string::is::url($value);
 
+DEFINE TABLE location SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE location TYPE string;
+DEFINE FIELD created_at ON TABLE location TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE location TYPE option<datetime> VALUE time::now();
+DEFINE FIELD name ON TABLE location TYPE string;
+DEFINE FIELD point ON TABLE location TYPE geometry<point>;
+DEFINE FIELD point_ptr ON TABLE location TYPE option<geometry<point>>;
+DEFINE FIELD line_string ON TABLE location TYPE geometry<line>;
+DEFINE FIELD line_string_ptr ON TABLE location TYPE option<geometry<line>>;
+DEFINE FIELD polygon ON TABLE location TYPE geometry<polygon>;
+DEFINE FIELD polygon_ptr ON TABLE location TYPE option<geometry<polygon>>;
+DEFINE FIELD multi_point ON TABLE location TYPE geometry<multipoint>;
+DEFINE FIELD multi_point_ptr ON TABLE location TYPE option<geometry<multipoint>>;
+DEFINE FIELD multi_line_string ON TABLE location TYPE geometry<multiline>;
+DEFINE FIELD multi_polygon ON TABLE location TYPE geometry<multipolygon>;
+DEFINE FIELD collection ON TABLE location TYPE geometry<collection>;
+
 DEFINE TABLE group SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE group TYPE string;
 DEFINE FIELD created_at ON TABLE group TYPE option<datetime> VALUE $before OR time::now() READONLY;

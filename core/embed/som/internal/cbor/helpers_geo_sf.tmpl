@@ -1,0 +1,273 @@
+//go:build embed
+
+package cbor
+
+import (
+	"github.com/peterstace/simplefeatures/geom"
+)
+
+// Point helpers
+
+func UnmarshalPointSF(data []byte) (geom.Point, error) {
+	var coords [2]float64
+	if err := Unmarshal(data, &coords); err != nil {
+		return geom.Point{}, err
+	}
+	return geom.NewPoint(geom.Coordinates{XY: geom.XY{X: coords[0], Y: coords[1]}}), nil
+}
+
+func UnmarshalPointSFPtr(data []byte) (*geom.Point, error) {
+	p, err := UnmarshalPointSF(data)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// LineString helpers
+
+func UnmarshalLineStringSF(data []byte) (geom.LineString, error) {
+	var coords [][2]float64
+	if err := Unmarshal(data, &coords); err != nil {
+		return geom.LineString{}, err
+	}
+	seq := make([]float64, 0, len(coords)*2)
+	for _, c := range coords {
+		seq = append(seq, c[0], c[1])
+	}
+	return geom.NewLineString(geom.NewSequence(seq, geom.DimXY))
+}
+
+func UnmarshalLineStringSFPtr(data []byte) (*geom.LineString, error) {
+	l, err := UnmarshalLineStringSF(data)
+	if err != nil {
+		return nil, err
+	}
+	return &l, nil
+}
+
+// Polygon helpers
+
+func UnmarshalPolygonSF(data []byte) (geom.Polygon, error) {
+	var rings [][][2]float64
+	if err := Unmarshal(data, &rings); err != nil {
+		return geom.Polygon{}, err
+	}
+	ringSeqs := make([]geom.Sequence, len(rings))
+	for i, ring := range rings {
+		seq := make([]float64, 0, len(ring)*2)
+		for _, c := range ring {
+			seq = append(seq, c[0], c[1])
+		}
+		ringSeqs[i] = geom.NewSequence(seq, geom.DimXY)
+	}
+	return geom.NewPolygon(ringSeqs)
+}
+
+func UnmarshalPolygonSFPtr(data []byte) (*geom.Polygon, error) {
+	p, err := UnmarshalPolygonSF(data)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// MultiPoint helpers
+
+func UnmarshalMultiPointSF(data []byte) (geom.MultiPoint, error) {
+	var coords [][2]float64
+	if err := Unmarshal(data, &coords); err != nil {
+		return geom.MultiPoint{}, err
+	}
+	points := make([]geom.Point, len(coords))
+	for i, c := range coords {
+		points[i] = geom.NewPoint(geom.Coordinates{XY: geom.XY{X: c[0], Y: c[1]}})
+	}
+	return geom.NewMultiPoint(points), nil
+}
+
+func UnmarshalMultiPointSFPtr(data []byte) (*geom.MultiPoint, error) {
+	m, err := UnmarshalMultiPointSF(data)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// MultiLineString helpers
+
+func UnmarshalMultiLineStringSF(data []byte) (geom.MultiLineString, error) {
+	var lines [][][2]float64
+	if err := Unmarshal(data, &lines); err != nil {
+		return geom.MultiLineString{}, err
+	}
+	lineStrings := make([]geom.LineString, len(lines))
+	for i, line := range lines {
+		seq := make([]float64, 0, len(line)*2)
+		for _, c := range line {
+			seq = append(seq, c[0], c[1])
+		}
+		ls, err := geom.NewLineString(geom.NewSequence(seq, geom.DimXY))
+		if err != nil {
+			return geom.MultiLineString{}, err
+		}
+		lineStrings[i] = ls
+	}
+	return geom.NewMultiLineString(lineStrings), nil
+}
+
+func UnmarshalMultiLineStringSFPtr(data []byte) (*geom.MultiLineString, error) {
+	m, err := UnmarshalMultiLineStringSF(data)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// MultiPolygon helpers
+
+func UnmarshalMultiPolygonSF(data []byte) (geom.MultiPolygon, error) {
+	var polys [][][][2]float64
+	if err := Unmarshal(data, &polys); err != nil {
+		return geom.MultiPolygon{}, err
+	}
+	polygons := make([]geom.Polygon, len(polys))
+	for i, poly := range polys {
+		ringSeqs := make([]geom.Sequence, len(poly))
+		for j, ring := range poly {
+			seq := make([]float64, 0, len(ring)*2)
+			for _, c := range ring {
+				seq = append(seq, c[0], c[1])
+			}
+			ringSeqs[j] = geom.NewSequence(seq, geom.DimXY)
+		}
+		p, err := geom.NewPolygon(ringSeqs)
+		if err != nil {
+			return geom.MultiPolygon{}, err
+		}
+		polygons[i] = p
+	}
+	return geom.NewMultiPolygon(polygons), nil
+}
+
+func UnmarshalMultiPolygonSFPtr(data []byte) (*geom.MultiPolygon, error) {
+	m, err := UnmarshalMultiPolygonSF(data)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// GeometryCollection helpers - simplified for now
+
+const (
+	tagGeoPointSF      = 88
+	tagGeoLineSF       = 89
+	tagGeoPolygonSF    = 90
+	tagGeoMultiPointSF = 91
+	tagGeoMultiLineSF  = 92
+	tagGeoMultiPolySF  = 93
+)
+
+func UnmarshalCollectionSF(data []byte) (geom.GeometryCollection, error) {
+	var geometries []RawMessage
+	if err := Unmarshal(data, &geometries); err != nil {
+		return geom.GeometryCollection{}, err
+	}
+	geoms := make([]geom.Geometry, 0, len(geometries))
+	for _, raw := range geometries {
+		var tag RawTag
+		if err := Unmarshal(raw, &tag); err != nil {
+			continue
+		}
+		switch tag.Number {
+		case tagGeoPointSF:
+			var coords [2]float64
+			if err := Unmarshal(tag.Content, &coords); err == nil {
+				pt := geom.NewPoint(geom.Coordinates{XY: geom.XY{X: coords[0], Y: coords[1]}})
+				geoms = append(geoms, pt.AsGeometry())
+			}
+		case tagGeoLineSF:
+			var coords [][2]float64
+			if err := Unmarshal(tag.Content, &coords); err == nil {
+				seq := make([]float64, 0, len(coords)*2)
+				for _, c := range coords {
+					seq = append(seq, c[0], c[1])
+				}
+				if ls, err := geom.NewLineString(geom.NewSequence(seq, geom.DimXY)); err == nil {
+					geoms = append(geoms, ls.AsGeometry())
+				}
+			}
+		case tagGeoPolygonSF:
+			var rings [][][2]float64
+			if err := Unmarshal(tag.Content, &rings); err == nil {
+				ringSeqs := make([]geom.Sequence, len(rings))
+				for i, ring := range rings {
+					seq := make([]float64, 0, len(ring)*2)
+					for _, c := range ring {
+						seq = append(seq, c[0], c[1])
+					}
+					ringSeqs[i] = geom.NewSequence(seq, geom.DimXY)
+				}
+				if poly, err := geom.NewPolygon(ringSeqs); err == nil {
+					geoms = append(geoms, poly.AsGeometry())
+				}
+			}
+		case tagGeoMultiPointSF:
+			var coords [][2]float64
+			if err := Unmarshal(tag.Content, &coords); err == nil {
+				points := make([]geom.Point, len(coords))
+				for i, c := range coords {
+					points[i] = geom.NewPoint(geom.Coordinates{XY: geom.XY{X: c[0], Y: c[1]}})
+				}
+				mp := geom.NewMultiPoint(points)
+				geoms = append(geoms, mp.AsGeometry())
+			}
+		case tagGeoMultiLineSF:
+			var lines [][][2]float64
+			if err := Unmarshal(tag.Content, &lines); err == nil {
+				lineStrings := make([]geom.LineString, 0, len(lines))
+				for _, line := range lines {
+					seq := make([]float64, 0, len(line)*2)
+					for _, c := range line {
+						seq = append(seq, c[0], c[1])
+					}
+					if ls, err := geom.NewLineString(geom.NewSequence(seq, geom.DimXY)); err == nil {
+						lineStrings = append(lineStrings, ls)
+					}
+				}
+				mls := geom.NewMultiLineString(lineStrings)
+				geoms = append(geoms, mls.AsGeometry())
+			}
+		case tagGeoMultiPolySF:
+			var polys [][][][2]float64
+			if err := Unmarshal(tag.Content, &polys); err == nil {
+				polygons := make([]geom.Polygon, 0, len(polys))
+				for _, poly := range polys {
+					ringSeqs := make([]geom.Sequence, len(poly))
+					for j, ring := range poly {
+						seq := make([]float64, 0, len(ring)*2)
+						for _, c := range ring {
+							seq = append(seq, c[0], c[1])
+						}
+						ringSeqs[j] = geom.NewSequence(seq, geom.DimXY)
+					}
+					if p, err := geom.NewPolygon(ringSeqs); err == nil {
+						polygons = append(polygons, p)
+					}
+				}
+				mp := geom.NewMultiPolygon(polygons)
+				geoms = append(geoms, mp.AsGeometry())
+			}
+		}
+	}
+	return geom.NewGeometryCollection(geoms), nil
+}
+
+func UnmarshalCollectionSFPtr(data []byte) (*geom.GeometryCollection, error) {
+	c, err := UnmarshalCollectionSF(data)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
