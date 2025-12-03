@@ -3,6 +3,26 @@ package with
 
 import model "github.com/go-surreal/som/tests/basic/model"
 
+const (
+	allFieldTypesFetchedMainGroup uint64 = 1 << iota
+	allFieldTypesFetchedMainGroupPtr
+)
+
+func AllFieldTypesFetchBit(field string) uint64 {
+	switch field {
+	case "main_group":
+		return allFieldTypesFetchedMainGroup
+	case "main_group_ptr":
+		return allFieldTypesFetchedMainGroupPtr
+	default:
+		return 0
+	}
+}
+
+func AllFieldTypesSetFetched(m *model.AllFieldTypes, bits uint64) {
+	m.Node.SetFetched(bits)
+}
+
 var AllFieldTypes = allFieldTypes[model.AllFieldTypes]("")
 
 type allFieldTypes[M any] string

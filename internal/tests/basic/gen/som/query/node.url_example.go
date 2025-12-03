@@ -4,14 +4,17 @@ package query
 import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 func NewURLExample(db Database) Builder[model.URLExample, conv.URLExample] {
 	return Builder[model.URLExample, conv.URLExample]{builder[model.URLExample, conv.URLExample]{
-		convFrom: conv.FromURLExamplePtr,
-		convTo:   conv.ToURLExamplePtr,
-		db:       db,
-		query:    lib.NewQuery[model.URLExample]("url_example"),
+		convFrom:     conv.FromURLExamplePtr,
+		convTo:       conv.ToURLExamplePtr,
+		db:           db,
+		fetchBitFn:   with.URLExampleFetchBit,
+		query:        lib.NewQuery[model.URLExample]("url_example"),
+		setFetchedFn: with.URLExampleSetFetched,
 	}}
 }

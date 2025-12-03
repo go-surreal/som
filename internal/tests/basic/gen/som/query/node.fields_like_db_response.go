@@ -4,14 +4,17 @@ package query
 import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
 	return Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
-		convFrom: conv.FromFieldsLikeDBResponsePtr,
-		convTo:   conv.ToFieldsLikeDBResponsePtr,
-		db:       db,
-		query:    lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
+		convFrom:     conv.FromFieldsLikeDBResponsePtr,
+		convTo:       conv.ToFieldsLikeDBResponsePtr,
+		db:           db,
+		fetchBitFn:   with.FieldsLikeDBResponseFetchBit,
+		query:        lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
+		setFetchedFn: with.FieldsLikeDBResponseSetFetched,
 	}}
 }

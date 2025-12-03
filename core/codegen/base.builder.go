@@ -163,6 +163,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error(),
 
+		jen.Id("Fetch").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id("fetch").Op("...").Qual(b.subPkg(def.PkgFetch), "Fetch_").Types(b.input.SourceQual(node.NameGo())),
+		).Error(),
+
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
 	)
 
@@ -397,6 +403,53 @@ Refresh refreshes the given model with the remote data.
 					jen.Id(node.NameGoLower()),
 				),
 			),
+		)
+
+	pkgWith := b.subPkg(def.PkgFetch)
+
+	f.Line().
+		Add(comment(`
+Fetch fetches related records for the given model based on the specified fetch fields.
+The model is updated in-place with the fetched relations.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("Fetch").
+		Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id("fetch").Op("...").Qual(pkgWith, "Fetch_").Types(b.input.SourceQual(node.NameGo())),
+		).
+		Error().
+		Block(
+			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+				),
+
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot fetch "+node.NameGo()+" without existing record ID"))),
+				),
+
+			jen.Var().Id("fetchFields").Index().String(),
+			jen.Var().Id("fetchBits").Uint64(),
+			jen.For(jen.List(jen.Id("_"), jen.Id("f")).Op(":=").Range().Id("fetch")).Block(
+				jen.If(jen.Id("field").Op(":=").Qual("fmt", "Sprintf").Call(jen.Lit("%v"), jen.Id("f")).Op(";").Id("field").Op("!=").Lit("")).Block(
+					jen.Id("fetchFields").Op("=").Append(jen.Id("fetchFields"), jen.Id("field")),
+					jen.Id("fetchBits").Op("|=").Qual(pkgWith, node.NameGo()+"FetchBit").Call(jen.Id("field")),
+				),
+			),
+
+			jen.Id("err").Op(":=").Id("r").Dot("fetch").Call(
+				jen.Id("ctx"),
+				jen.Id(node.NameGoLower()).Dot("ID").Call(),
+				jen.Id(node.NameGoLower()),
+				jen.Id("fetchFields"),
+			),
+			jen.If(jen.Id("err").Op("==").Nil()).Block(
+				jen.Id(node.NameGoLower()).Dot("Node").Dot("SetFetched").Call(jen.Id("fetchBits")),
+			),
+			jen.Return(jen.Id("err")),
 		)
 
 	f.Line().

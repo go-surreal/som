@@ -4,10 +4,12 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
+	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -19,6 +21,7 @@ type FieldsLikeDBResponseRepo interface {
 	Update(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Delete(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Refresh(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	Fetch(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse, fetch ...with.Fetch_[model.FieldsLikeDBResponse]) error
 	Relate() *relate.FieldsLikeDBResponse
 }
 
@@ -97,6 +100,30 @@ func (r *fieldsLikeDbresponse) Refresh(ctx context.Context, fieldsLikeDbresponse
 		return errors.New("cannot refresh FieldsLikeDBResponse without existing record ID")
 	}
 	return r.refresh(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
+}
+
+// Fetch fetches related records for the given model based on the specified fetch fields.
+// The model is updated in-place with the fetched relations.
+func (r *fieldsLikeDbresponse) Fetch(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse, fetch ...with.Fetch_[model.FieldsLikeDBResponse]) error {
+	if fieldsLikeDbresponse == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if fieldsLikeDbresponse.ID() == nil {
+		return errors.New("cannot fetch FieldsLikeDBResponse without existing record ID")
+	}
+	var fetchFields []string
+	var fetchBits uint64
+	for _, f := range fetch {
+		if field := fmt.Sprintf("%v", f); field != "" {
+			fetchFields = append(fetchFields, field)
+			fetchBits |= with.FieldsLikeDBResponseFetchBit(field)
+		}
+	}
+	err := r.fetch(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, fetchFields)
+	if err == nil {
+		fieldsLikeDbresponse.Node.SetFetched(fetchBits)
+	}
+	return err
 }
 
 // Relate returns a new relate instance for the FieldsLikeDBResponse model.
