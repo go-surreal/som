@@ -77,15 +77,13 @@ func (b builder[M, C]) Limit(limit int) BuilderNoLive[M, C] {
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
-//
-// TODO: Allow fetch for live queries as soon as SurrealDB supports it.
-func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) BuilderNoLive[M, C] {
+func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) Builder[M, C] {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
 			b.query.Fetch = append(b.query.Fetch, field)
 		}
 	}
-	return BuilderNoLive[M, C]{b}
+	return Builder[M, C]{b}
 }
 
 // Timeout adds an execution time limit to the query.

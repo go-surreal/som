@@ -161,7 +161,13 @@ func (n *Numeric[M, T]) Sin() *Float[M, float64] {
 	return NewFloat[M, float64](n.Base.fn("math::sin"))
 }
 
+// Sqrt returns the square root of the number.
+// Note: If a negative number is used, the query will fail.
+// Consider adding a precondition check with "field >= 0 AND".
 func (n *Numeric[M, T]) Sqrt() *Float[M, float64] {
+	// TODO:
+	// Consider implementing a precondition check system that automatically prepends "field >= 0 AND"
+	// before operations requiring non-negative values, using short-circuit evaluation.
 	return NewFloat[M, float64](n.Base.fn("math::sqrt"))
 }
 

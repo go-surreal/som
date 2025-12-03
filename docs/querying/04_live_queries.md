@@ -65,6 +65,30 @@ updates, err := client.UserRepo().Query().
     Live(ctx)
 ```
 
+## Fetching Related Records
+
+Since SurrealDB 2.2, live queries support the `Fetch()` clause to include related records:
+
+```go
+// Receive updates with related organization data included
+updates, err := client.UserRepo().Query().
+    Filter(where.User.IsActive.IsTrue()).
+    Fetch(with.User.Organization()).
+    Live(ctx)
+if err != nil {
+    return err
+}
+
+for update := range updates {
+    switch u := update.(type) {
+    case query.LiveCreate[*model.User]:
+        user, _ := u.Get()
+        // user.Organization is fully populated
+        fmt.Printf("New user %s in org %s\n", user.Name, user.Organization.Name)
+    }
+}
+```
+
 ## Cancellation
 
 Use context cancellation to stop the live query:
