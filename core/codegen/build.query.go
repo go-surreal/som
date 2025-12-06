@@ -58,6 +58,26 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			),
 		)
 
+	if node.HasChangefeed() {
+		f.Line()
+		f.Func().Id("New"+node.Name+"Changes").
+			Params(
+				jen.Id("db").Id("Database"),
+			).
+			Id("ChangesBuilder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
+			Block(
+				jen.Return(
+					jen.Id("ChangesBuilder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
+						Values(jen.Dict{
+							jen.Id("db"):       jen.Id("db"),
+							jen.Id("table"):    jen.Lit(node.NameDatabase()),
+							jen.Id("convFrom"): jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()+"Ptr"),
+							jen.Id("convTo"):   jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()+"Ptr"),
+						}),
+				),
+			)
+	}
+
 	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
