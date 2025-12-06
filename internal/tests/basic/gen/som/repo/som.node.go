@@ -105,3 +105,36 @@ func (r *repo[N, C]) refresh(ctx context.Context, id *models.RecordID, node *N) 
 
 	return nil
 }
+
+// readWithCache attempts to read from cache first, falling back to DB if needed.
+// If cache is in eager mode and record not found, returns (nil, false, nil).
+// If cache is in lazy mode and record not found, queries DB and populates cache.
+func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, cache *Cache[N]) (*N, bool, error) {
+	if cache == nil {
+		return r.read(ctx, id)
+	}
+
+	idStr := id.String()
+
+	// Check cache first
+	if record, found := cache.Get(idStr); found {
+		return record, true, nil
+	}
+
+	// If eager cache and not found, the record doesn't exist in the cache
+	if cache.IsEager() {
+		return nil, false, nil
+	}
+
+	// Lazy cache: fetch from DB and populate cache
+	record, exists, err := r.read(ctx, id)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if exists && record != nil {
+		cache.Set(idStr, record)
+	}
+
+	return record, exists, nil
+}
