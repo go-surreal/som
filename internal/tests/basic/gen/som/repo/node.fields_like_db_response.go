@@ -85,7 +85,7 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
+	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false)
 }
 
 // Refresh refreshes the given model with the remote data.

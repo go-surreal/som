@@ -67,21 +67,7 @@ func (e Edge) ID() *ID {
 
 type Timestamps = internal.Timestamps
 type OptimisticLock = internal.OptimisticLock
-
-// TODO: implement soft delete feature
-// type SoftDelete struct {
-// 	deletedAt time.Time
-// }
-//
-// func NewSoftDelete(deletedAt time.Time) SoftDelete {
-// 	return SoftDelete{
-// 		deletedAt: deletedAt,
-// 	}
-// }
-//
-// func (t SoftDelete) DeletedAt() time.Time {
-// 	return t.deletedAt
-// }
+type SoftDelete = internal.SoftDelete
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string

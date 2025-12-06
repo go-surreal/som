@@ -85,7 +85,7 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, urlexample.ID(), urlexample)
+	return r.delete(ctx, urlexample.ID(), urlexample, false)
 }
 
 // Refresh refreshes the given model with the remote data.

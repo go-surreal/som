@@ -8,10 +8,11 @@ import (
 )
 
 func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
+	q := lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response")
 	return Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
 		convFrom: conv.FromFieldsLikeDBResponsePtr,
 		convTo:   conv.ToFieldsLikeDBResponsePtr,
 		db:       db,
-		query:    lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
+		query:    q,
 	}}
 }

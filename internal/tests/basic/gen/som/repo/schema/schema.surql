@@ -10,6 +10,19 @@ DEFINE FIELD account ON TABLE url_example TYPE string;
 DEFINE FIELD some_url ON TABLE url_example TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
 DEFINE FIELD some_other_url ON TABLE url_example TYPE string ASSERT $value == "" OR string::is::url($value);
 
+DEFINE TABLE soft_delete_user SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE soft_delete_user TYPE string;
+DEFINE FIELD deleted_at ON TABLE soft_delete_user TYPE option<datetime> DEFAULT NULL;
+DEFINE FIELD name ON TABLE soft_delete_user TYPE string;
+
+DEFINE TABLE soft_delete_complete SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE soft_delete_complete TYPE string;
+DEFINE FIELD created_at ON TABLE soft_delete_complete TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE soft_delete_complete TYPE option<datetime> VALUE time::now();
+DEFINE FIELD deleted_at ON TABLE soft_delete_complete TYPE option<datetime> DEFAULT NULL;
+DEFINE FIELD name ON TABLE soft_delete_complete TYPE string;
+DEFINE FIELD __som_lock_version ON TABLE soft_delete_complete TYPE int VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };
+
 DEFINE TABLE group SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE group TYPE string;
 DEFINE FIELD created_at ON TABLE group TYPE option<datetime> VALUE $before OR time::now() READONLY;
@@ -142,6 +155,8 @@ DEFINE FIELD meta.is_admin ON TABLE group_member TYPE bool;
 DEFINE FIELD meta.is_active ON TABLE group_member TYPE bool;
 
 DEFINE INDEX __som__url_example_unique_provider_account ON url_example FIELDS provider, account UNIQUE;
+DEFINE INDEX __som__soft_delete_user_index_deleted_at ON soft_delete_user FIELDS deleted_at CONCURRENTLY;
+DEFINE INDEX __som__soft_delete_complete_index_deleted_at ON soft_delete_complete FIELDS deleted_at CONCURRENTLY;
 DEFINE INDEX __som__group_unique_name ON group FIELDS name UNIQUE;
 DEFINE INDEX __som__all_field_types_search_string ON all_field_types FIELDS string SEARCH ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_field_types_search_string_ptr ON all_field_types FIELDS string_ptr SEARCH ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;

@@ -17,7 +17,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, node := range source.Nodes {
 		dbNode := &NodeTable{
-			Name: node.Name,
+			Name:   node.Name,
+			Source: node,
 		}
 
 		for _, f := range node.Fields {

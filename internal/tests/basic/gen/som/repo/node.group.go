@@ -85,7 +85,7 @@ func (r *group) Delete(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, group.ID(), group)
+	return r.delete(ctx, group.ID(), group, false)
 }
 
 // Refresh refreshes the given model with the remote data.

@@ -8,10 +8,11 @@ import (
 )
 
 func NewAllFieldTypes(db Database) Builder[model.AllFieldTypes, conv.AllFieldTypes] {
+	q := lib.NewQuery[model.AllFieldTypes]("all_field_types")
 	return Builder[model.AllFieldTypes, conv.AllFieldTypes]{builder[model.AllFieldTypes, conv.AllFieldTypes]{
 		convFrom: conv.FromAllFieldTypesPtr,
 		convTo:   conv.ToAllFieldTypesPtr,
 		db:       db,
-		query:    lib.NewQuery[model.AllFieldTypes]("all_field_types"),
+		query:    q,
 	}}
 }

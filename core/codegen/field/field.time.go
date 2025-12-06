@@ -24,7 +24,7 @@ func (f *Time) typeConv(ctx Context) jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
-	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt || f.source.IsDeletedAt {
 		return "option<datetime>"
 	}
 
@@ -38,6 +38,8 @@ func (f *Time) SchemaStatements(table, prefix string) []string {
 		extend = "VALUE $before OR time::now() READONLY"
 	} else if f.source.IsUpdatedAt {
 		extend = "VALUE time::now()"
+	} else if f.source.IsDeletedAt {
+		extend = "DEFAULT NULL"
 	}
 
 	return []string{
@@ -101,6 +103,15 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 		)
 	}
 
+	// SoftDelete field handling - access field directly
+	if f.source.IsDeletedAt {
+		return jen.If(jen.Id("c").Dot("SoftDelete").Dot("DeletedAt").Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Op("*").Id("c").Dot("SoftDelete").Dot("DeletedAt"),
+			),
+		)
+	}
+
 	// Using custom types.DateTime with MarshalCBOR method.
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
@@ -128,6 +139,17 @@ func (f *Time) cborUnmarshal(ctx Context) jen.Code {
 		).Block(
 			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
 			jen.Id("c").Dot("Timestamps").Dot(setter).Call(jen.Id("tm")),
+		)
+	}
+
+	// SoftDelete field handling - assign directly to field
+	if f.source.IsDeletedAt {
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Id("c").Dot("SoftDelete").Dot("DeletedAt").Op(",").Id("_").Op("=").
+				Qual(ctx.pkgCBOR(), "UnmarshalDateTimePtr").Call(jen.Id("raw")),
 		)
 	}
 

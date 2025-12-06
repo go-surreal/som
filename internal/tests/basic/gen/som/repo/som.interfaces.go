@@ -5,6 +5,8 @@ import "context"
 
 type Client interface {
 	URLExampleRepo() URLExampleRepo
+	SoftDeleteUserRepo() SoftDeleteUserRepo
+	SoftDeleteCompleteRepo() SoftDeleteCompleteRepo
 	GroupRepo() GroupRepo
 	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
 	AllFieldTypesRepo() AllFieldTypesRepo

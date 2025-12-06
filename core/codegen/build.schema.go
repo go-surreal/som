@@ -127,6 +127,22 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 	// Process all fields (including nested)
 	b.collectIndexes(tableName, "", fields, &statements, compositeUnique)
 
+	// Auto-generate index for deleted_at field (for soft delete performance)
+	// Check if table has soft delete enabled
+	hasDeletedAt := false
+	for _, f := range fields {
+		if f.NameDatabase() == "deleted_at" {
+			hasDeletedAt = true
+			break
+		}
+	}
+
+	if hasDeletedAt {
+		indexName := fmt.Sprintf(def.IndexPrefix+"%s_index_deleted_at", tableName)
+		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
+		statements = append(statements, stmt)
+	}
+
 	// Generate composite unique index statements
 	for uniqueName, fieldPaths := range compositeUnique {
 		// Index name format: __som__<table>_unique_<name>

@@ -85,7 +85,7 @@ func (r *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFiel
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes)
+	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes, false)
 }
 
 // Refresh refreshes the given model with the remote data.

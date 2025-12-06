@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	som "{{.GenerateOutPath}}"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
@@ -83,7 +84,18 @@ func (r *repo[N, C]) update(ctx context.Context, id *ID, node *N) error {
 	return nil
 }
 
-func (r *repo[N, C]) delete(ctx context.Context, id *ID, node *N) error {
+func (r *repo[N, C]) delete(ctx context.Context, id *ID, node *N, softDelete bool) error {
+	if softDelete {
+		// Soft delete: set deleted_at timestamp
+		patch := map[string]any{"deleted_at": time.Now()}
+		_, err := r.db.Update(ctx, id, patch)
+		if err != nil {
+			return fmt.Errorf("could not soft delete entity: %w", err)
+		}
+		return nil
+	}
+
+	// Hard delete
 	_, err := r.db.Delete(ctx, id)
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)

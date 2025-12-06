@@ -45,6 +45,14 @@ func (b builder[M, C]) Filter(filters ...lib.Filter[M]) Builder[M, C] {
 	return Builder[M, C]{b}
 }
 
+// IncludeDeleted allows querying soft-deleted records.
+// By default, soft-deleted records are automatically filtered out.
+// This method only has an effect on models with SoftDelete enabled.
+func (b builder[M, C]) IncludeDeleted() Builder[M, C] {
+	b.query.IncludeDeleted = true
+	return Builder[M, C]{b}
+}
+
 // Order sorts the returned records based on the given conditions.
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
