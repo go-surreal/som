@@ -176,6 +176,8 @@ func live[C, M any](
 	in <-chan []byte,
 	unmarshal func(buf []byte, val any) error,
 	convert func(C) M,
+	fetchBits uint64,
+	setFetched func(M, uint64),
 ) <-chan LiveResult[M] {
 	out := make(chan LiveResult[M], 1)
 
@@ -193,7 +195,7 @@ func live[C, M any](
 					return
 				}
 
-				out <- toLiveResult[C, M](data, unmarshal, convert)
+				out <- toLiveResult[C, M](data, unmarshal, convert, fetchBits, setFetched)
 			}
 		}
 	}()
@@ -205,6 +207,8 @@ func toLiveResult[C, M any](
 	in []byte,
 	unmarshal func(buf []byte, val any) error,
 	convert func(C) M,
+	fetchBits uint64,
+	setFetched func(M, uint64),
 ) LiveResult[M] {
 	var response liveResponse
 
@@ -227,6 +231,9 @@ func toLiveResult[C, M any](
 
 		if out.err == nil {
 			out.res = convert(result)
+			if fetchBits != 0 && setFetched != nil {
+				setFetched(out.res, fetchBits)
+			}
 		}
 
 		return &liveCreate[M]{
@@ -244,6 +251,9 @@ func toLiveResult[C, M any](
 
 		if out.err == nil {
 			out.res = convert(result)
+			if fetchBits != 0 && setFetched != nil {
+				setFetched(out.res, fetchBits)
+			}
 		}
 
 		return &liveUpdate[M]{
@@ -261,6 +271,9 @@ func toLiveResult[C, M any](
 
 		if out.err == nil {
 			out.res = convert(result)
+			if fetchBits != 0 && setFetched != nil {
+				setFetched(out.res, fetchBits)
+			}
 		}
 
 		return &liveDelete[M]{

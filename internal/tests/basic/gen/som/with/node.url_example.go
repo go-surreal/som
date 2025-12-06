@@ -3,6 +3,17 @@ package with
 
 import model "github.com/go-surreal/som/tests/basic/model"
 
+func URLExampleFetchBit(field string) uint64 {
+	switch field {
+	default:
+		return 0
+	}
+}
+
+func URLExampleSetFetched(m *model.URLExample, bits uint64) {
+	m.Node.SetFetched(bits)
+}
+
 var URLExample = urlexample[model.URLExample]("")
 
 type urlexample[M any] string

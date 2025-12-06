@@ -37,6 +37,8 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(string(embed.CodegenComment))
 
+	pkgWith := b.subPkg(def.PkgFetch)
+
 	f.Line()
 	f.Func().Id("New"+node.Name).
 		Params(
@@ -49,10 +51,12 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 					Values(
 						jen.Id("builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
 							Values(jen.Dict{
-								jen.Id("db"):       jen.Id("db"),
-								jen.Id("query"):    jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
-								jen.Id("convFrom"): jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()+"Ptr"),
-								jen.Id("convTo"):   jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()+"Ptr"),
+								jen.Id("db"):           jen.Id("db"),
+								jen.Id("query"):        jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
+								jen.Id("convFrom"):     jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()+"Ptr"),
+								jen.Id("convTo"):       jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()+"Ptr"),
+								jen.Id("fetchBitFn"):   jen.Qual(pkgWith, node.NameGo()+"FetchBit"),
+								jen.Id("setFetchedFn"): jen.Qual(pkgWith, node.NameGo()+"SetFetched"),
 							}),
 					),
 			),

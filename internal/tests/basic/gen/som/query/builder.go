@@ -21,8 +21,10 @@ type builder[M, C any] struct {
 	db    Database
 	query lib.Query[M]
 
-	convFrom func(*M) *C
-	convTo   func(*C) *M
+	convFrom     func(*M) *C
+	convTo       func(*C) *M
+	fetchBitFn   func(string) uint64
+	setFetchedFn func(*M, uint64)
 }
 
 type Builder[M, C any] struct {
@@ -77,7 +79,6 @@ func (b builder[M, C]) Limit(limit int) BuilderNoLive[M, C] {
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
-// Can also be used with live queries (supported since SurrealDB 2.2).
 func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) Builder[M, C] {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
@@ -165,9 +166,21 @@ func (b builder[M, C]) All(ctx context.Context) ([]*M, error) {
 	if len(rawNodes) < 1 {
 		return nil, nil
 	}
+
+	// Compute fetch bits from query.Fetch fields
+	var fetchBits uint64
+	if b.fetchBitFn != nil {
+		for _, field := range b.query.Fetch {
+			fetchBits |= b.fetchBitFn(field)
+		}
+	}
+
 	var nodes []*M
 	for _, rawNode := range rawNodes[0].Result {
 		node := b.convTo(rawNode)
+		if fetchBits != 0 && b.setFetchedFn != nil {
+			b.setFetchedFn(node, fetchBits)
+		}
 		nodes = append(nodes, node)
 	}
 	return nodes, nil
@@ -334,7 +347,15 @@ func (b Builder[M, C]) Live(ctx context.Context) (<-chan LiveResult[*M], error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
-	return live(ctx, resChan, b.db.Unmarshal, b.convTo), nil
+
+	var fetchBits uint64
+	if b.fetchBitFn != nil {
+		for _, field := range b.query.Fetch {
+			fetchBits |= b.fetchBitFn(field)
+		}
+	}
+
+	return live(ctx, resChan, b.db.Unmarshal, b.convTo, fetchBits, b.setFetchedFn), nil
 }
 
 // LiveCount is the live version of Count.

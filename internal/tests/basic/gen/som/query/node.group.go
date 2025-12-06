@@ -4,14 +4,17 @@ package query
 import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 func NewGroup(db Database) Builder[model.Group, conv.Group] {
 	return Builder[model.Group, conv.Group]{builder[model.Group, conv.Group]{
-		convFrom: conv.FromGroupPtr,
-		convTo:   conv.ToGroupPtr,
-		db:       db,
-		query:    lib.NewQuery[model.Group]("group"),
+		convFrom:     conv.FromGroupPtr,
+		convTo:       conv.ToGroupPtr,
+		db:           db,
+		fetchBitFn:   with.GroupFetchBit,
+		query:        lib.NewQuery[model.Group]("group"),
+		setFetchedFn: with.GroupSetFetched,
 	}}
 }

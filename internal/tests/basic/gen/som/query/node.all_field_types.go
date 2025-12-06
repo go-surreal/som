@@ -4,14 +4,17 @@ package query
 import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 func NewAllFieldTypes(db Database) Builder[model.AllFieldTypes, conv.AllFieldTypes] {
 	return Builder[model.AllFieldTypes, conv.AllFieldTypes]{builder[model.AllFieldTypes, conv.AllFieldTypes]{
-		convFrom: conv.FromAllFieldTypesPtr,
-		convTo:   conv.ToAllFieldTypesPtr,
-		db:       db,
-		query:    lib.NewQuery[model.AllFieldTypes]("all_field_types"),
+		convFrom:     conv.FromAllFieldTypesPtr,
+		convTo:       conv.ToAllFieldTypesPtr,
+		db:           db,
+		fetchBitFn:   with.AllFieldTypesFetchBit,
+		query:        lib.NewQuery[model.AllFieldTypes]("all_field_types"),
+		setFetchedFn: with.AllFieldTypesSetFetched,
 	}}
 }

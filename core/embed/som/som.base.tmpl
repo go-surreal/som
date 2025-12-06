@@ -36,17 +36,27 @@ func Table(name string) models.Table {
 // type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
 
 type Node struct {
-	id *ID
+	id      *ID
+	fetched uint64 // bitmask tracking which relations were fetched
 }
 
 func NewNode(id *ID) Node {
 	return Node{
-		id: id,
+		id:      id,
+		fetched: 0,
 	}
 }
 
 func (n Node) ID() *ID {
 	return n.id
+}
+
+func (n *Node) SetFetched(bits uint64) {
+	n.fetched |= bits
+}
+
+func (n Node) GetFetched() uint64 {
+	return n.fetched
 }
 
 // Edge describes an edge between two Node elements.
