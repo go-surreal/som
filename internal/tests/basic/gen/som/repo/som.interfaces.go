@@ -7,6 +7,7 @@ type Client interface {
 	URLExampleRepo() URLExampleRepo
 	GroupRepo() GroupRepo
 	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
+	ChangefeedModelRepo() ChangefeedModelRepo
 	AllFieldTypesRepo() AllFieldTypesRepo
 	ApplySchema(ctx context.Context) error
 	Close()

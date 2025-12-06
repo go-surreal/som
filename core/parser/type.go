@@ -5,6 +5,7 @@ type Node struct {
 	Fields         []Field
 	Timestamps     bool
 	OptimisticLock bool
+	Changefeed     string
 }
 
 type Edge struct {
@@ -14,6 +15,7 @@ type Edge struct {
 	Fields         []Field
 	Timestamps     bool
 	OptimisticLock bool
+	Changefeed     string
 }
 
 type Struct struct {

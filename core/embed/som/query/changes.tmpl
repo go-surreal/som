@@ -1,0 +1,119 @@
+//go:build embed
+
+package query
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"{{.GenerateOutPath}}/internal/lib"
+)
+
+// ChangesBuilder builds a SHOW CHANGES query for tables with changefeed enabled.
+type ChangesBuilder[M, C any] struct {
+	db       Database
+	table    string
+	since    any // time.Time or uint64 (versionstamp)
+	limit    int
+	convFrom func(*M) *C
+	convTo   func(*C) *M
+}
+
+// Since sets the starting point for changes using a timestamp.
+func (b ChangesBuilder[M, C]) Since(t time.Time) ChangesBuilder[M, C] {
+	b.since = t
+	return b
+}
+
+// SinceVersionstamp sets the starting point for changes using a versionstamp.
+// Versionstamps are monotonically increasing identifiers for ordering changes.
+func (b ChangesBuilder[M, C]) SinceVersionstamp(v uint64) ChangesBuilder[M, C] {
+	b.since = v
+	return b
+}
+
+// Limit restricts the number of change batches returned.
+func (b ChangesBuilder[M, C]) Limit(n int) ChangesBuilder[M, C] {
+	b.limit = n
+	return b
+}
+
+// TODO: Add IncludeOriginal() method for original record state
+
+// Show executes the SHOW CHANGES query and returns typed change entries.
+func (b ChangesBuilder[M, C]) Show(ctx context.Context) ([]ChangeEntry[*M], error) {
+	if b.since == nil {
+		return nil, fmt.Errorf("Since() or SinceVersionstamp() must be called before Show()")
+	}
+
+	query := lib.ChangesQuery{
+		Table: b.table,
+		Since: b.since,
+		Limit: b.limit,
+	}
+
+	req := query.Build()
+
+	res, err := b.db.Query(ctx, req.Statement, req.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query changes: %w", err)
+	}
+
+	var rawResults []queryResult[rawChangeEntry]
+	if err := b.db.Unmarshal(res, &rawResults); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal changes: %w", err)
+	}
+
+	if len(rawResults) < 1 {
+		return nil, nil
+	}
+
+	var entries []ChangeEntry[*M]
+	for _, raw := range rawResults[0].Result {
+		entry := ChangeEntry[*M]{
+			Versionstamp: raw.Versionstamp,
+		}
+
+		for _, change := range raw.Changes {
+			switch {
+			case change.DefineTable != nil:
+				// Table definition change, skip
+				continue
+			case change.Update != nil:
+				var conv *C
+				if err := b.db.Unmarshal(change.Update, &conv); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal update change: %w", err)
+				}
+				entry.Updates = append(entry.Updates, b.convTo(conv))
+			case change.Create != nil:
+				var conv *C
+				if err := b.db.Unmarshal(change.Create, &conv); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal create change: %w", err)
+				}
+				entry.Creates = append(entry.Creates, b.convTo(conv))
+			case change.Delete != nil:
+				var conv *C
+				if err := b.db.Unmarshal(change.Delete, &conv); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal delete change: %w", err)
+				}
+				entry.Deletes = append(entry.Deletes, b.convTo(conv))
+			}
+		}
+
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}
+
+// Describe returns a string representation of the changes query for debugging.
+func (b ChangesBuilder[M, C]) Describe() string {
+	query := lib.ChangesQuery{
+		Table: b.table,
+		Since: b.since,
+		Limit: b.limit,
+	}
+	req := query.Build()
+	return req.Statement
+}

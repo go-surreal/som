@@ -225,6 +225,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 				node.Fields = append(node.Fields,
 					&FieldID{&fieldAtomic{name: "ID"}},
 				)
+				node.Changefeed = parseChangefeedTag(f.Tag().Get("som"))
 				continue
 			}
 
@@ -293,6 +294,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 				edge.Fields = append(edge.Fields,
 					&FieldID{&fieldAtomic{name: "ID"}},
 				)
+				edge.Changefeed = parseChangefeedTag(f.Tag().Get("som"))
 				continue
 			}
 
@@ -609,6 +611,23 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 	}
 
 	return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), t.Elem().Kind())
+}
+
+// parseChangefeedTag extracts the changefeed duration from a som tag.
+// Tag format: som:"changefeed=2d" returns "2d"
+func parseChangefeedTag(tag string) string {
+	if tag == "" {
+		return ""
+	}
+
+	parts := strings.Split(tag, ",")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if strings.HasPrefix(part, "changefeed=") {
+			return strings.TrimPrefix(part, "changefeed=")
+		}
+	}
+	return ""
 }
 
 // parseSomTag parses the "som" struct tag and extracts index/search info.

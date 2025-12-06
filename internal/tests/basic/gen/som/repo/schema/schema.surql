@@ -24,6 +24,12 @@ DEFINE FIELD status ON TABLE fields_like_db_response TYPE string;
 DEFINE FIELD detail ON TABLE fields_like_db_response TYPE string;
 DEFINE FIELD result ON TABLE fields_like_db_response TYPE option<array<string>>;
 
+DEFINE TABLE changefeed_model SCHEMAFULL TYPE NORMAL CHANGEFEED 1d PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE changefeed_model TYPE string;
+DEFINE FIELD created_at ON TABLE changefeed_model TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE changefeed_model TYPE option<datetime> VALUE time::now();
+DEFINE FIELD name ON TABLE changefeed_model TYPE string;
+
 DEFINE TABLE all_field_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_field_types TYPE string;
 DEFINE FIELD created_at ON TABLE all_field_types TYPE option<datetime> VALUE $before OR time::now() READONLY;

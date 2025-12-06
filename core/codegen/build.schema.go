@@ -30,7 +30,11 @@ func (b *build) buildSchemaFile() error {
 	var indexStatements []string
 
 	for _, node := range b.input.nodes {
-		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
+		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL", node.NameDatabase())
+		if node.Changefeed != "" {
+			statement += fmt.Sprintf(" CHANGEFEED %s", node.Changefeed)
+		}
+		statement += " PERMISSIONS FULL;"
 		statements = append(statements, statement)
 
 		for _, f := range node.GetFields() {
@@ -45,11 +49,15 @@ func (b *build) buildSchemaFile() error {
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
+			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
 			edge.Out.NameDatabase(), // TODO: can be OR'ed with "|"
 		)
+		if edge.Changefeed != "" {
+			statement += fmt.Sprintf(" CHANGEFEED %s", edge.Changefeed)
+		}
+		statement += " PERMISSIONS FULL;"
 		statements = append(statements, statement)
 
 		for _, f := range edge.GetFields() {

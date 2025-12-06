@@ -5,8 +5,9 @@ import (
 )
 
 type NodeTable struct {
-	Name   string
-	Fields []Field
+	Name       string
+	Fields     []Field
+	Changefeed string
 
 	// TODO: include source package path + method(s)
 }
@@ -29,4 +30,8 @@ func (t *NodeTable) NameGoLower() string {
 
 func (t *NodeTable) NameDatabase() string {
 	return strcase.ToSnake(t.Name) // TODO
+}
+
+func (t *NodeTable) HasChangefeed() bool {
+	return t.Changefeed != ""
 }
