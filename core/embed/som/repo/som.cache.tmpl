@@ -1,0 +1,87 @@
+//go:build embed
+
+package repo
+
+import (
+	"context"
+	"sync"
+)
+
+// cacheKey is a unique context key for each table's cache.
+type cacheKey struct {
+	table string
+}
+
+// Cache holds cached records for a specific model type.
+// N is the node/model type.
+type Cache[N any] struct {
+	mu     sync.RWMutex
+	data   map[string]*N
+	loaded bool // true if all records have been loaded (eager mode)
+}
+
+// newCache creates a new empty cache in lazy mode.
+func newCache[N any]() *Cache[N] {
+	return &Cache[N]{
+		data:   make(map[string]*N),
+		loaded: false,
+	}
+}
+
+// newCacheWithAll creates a new cache pre-populated with all records (eager mode).
+func newCacheWithAll[N any](records []*N, idFunc func(*N) string) *Cache[N] {
+	c := &Cache[N]{
+		data:   make(map[string]*N, len(records)),
+		loaded: true,
+	}
+	for _, record := range records {
+		if record != nil {
+			c.data[idFunc(record)] = record
+		}
+	}
+	return c
+}
+
+// Get retrieves a record from the cache.
+// Returns (record, true) if found, (nil, false) if not found.
+func (c *Cache[N]) Get(id string) (*N, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	record, ok := c.data[id]
+	return record, ok
+}
+
+// Set stores a record in the cache.
+func (c *Cache[N]) Set(id string, record *N) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.data[id] = record
+}
+
+// IsEager returns true if the cache was populated with all records.
+func (c *Cache[N]) IsEager() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.loaded
+}
+
+// cacheFromContext retrieves the cache for a table from context.
+func cacheFromContext[N any](ctx context.Context, table string) *Cache[N] {
+	key := cacheKey{table: table}
+	if cache, ok := ctx.Value(key).(*Cache[N]); ok {
+		return cache
+	}
+	return nil
+}
+
+// cacheToContext stores a cache in the context for a table.
+func cacheToContext[N any](ctx context.Context, table string, cache *Cache[N]) context.Context {
+	key := cacheKey{table: table}
+	return context.WithValue(ctx, key, cache)
+}
+
+// cacheDropContext removes the cache for a table from context.
+func cacheDropContext(ctx context.Context, table string) context.Context {
+	key := cacheKey{table: table}
+	return context.WithValue(ctx, key, nil)
+}

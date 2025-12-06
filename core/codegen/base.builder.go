@@ -164,6 +164,21 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).Error(),
 
 		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
+
+		jen.Id("WithCache").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+		).Qual("context", "Context"),
+
+		jen.Id("WithCacheAll").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+		).Parens(jen.List(
+			jen.Qual("context", "Context"),
+			jen.Error(),
+		)),
+
+		jen.Id("DropCache").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+		).Qual("context", "Context"),
 	)
 
 	f.Line().
@@ -294,6 +309,7 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 		Add(comment(`
 Read returns the record for the given id, if it exists.
 The returned bool indicates whether the record was found or not.
+If a cache exists in the context, it will be used.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Read").
@@ -303,10 +319,14 @@ The returned bool indicates whether the record was found or not.
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
+			jen.Id("cache").Op(":=").Id("cacheFromContext").
+				Types(b.input.SourceQual(node.NameGo())).
+				Call(jen.Id("ctx"), jen.Id("r").Dot("name")),
 			jen.Return(
-				jen.Id("r").Dot("read").Call(
+				jen.Id("r").Dot("readWithCache").Call(
 					jen.Id("ctx"),
 					jen.Id("id"),
+					jen.Id("cache"),
 				),
 			),
 		)
@@ -410,6 +430,83 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			jen.Return(
 				jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(
 					jen.Id("r").Dot("db"),
+				),
+			),
+		)
+
+	f.Line().
+		Add(comment(`
+WithCache returns a context with an empty lazy cache for this model.
+Subsequent Read calls using this context will populate the cache on first access.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("WithCache").
+		Params(jen.Id("ctx").Qual("context", "Context")).
+		Qual("context", "Context").
+		Block(
+			jen.Id("cache").Op(":=").Id("newCache").
+				Types(b.input.SourceQual(node.NameGo())).
+				Call(),
+			jen.Return(
+				jen.Id("cacheToContext").Call(
+					jen.Id("ctx"),
+					jen.Id("r").Dot("name"),
+					jen.Id("cache"),
+				),
+			),
+		)
+
+	f.Line().
+		Add(comment(`
+WithCacheAll loads all records into an eager cache and returns the new context.
+Subsequent Read calls using this context will only check the cache.
+If loading records fails, the error is returned along with the original context.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("WithCacheAll").
+		Params(jen.Id("ctx").Qual("context", "Context")).
+		Parens(jen.List(jen.Qual("context", "Context"), jen.Error())).
+		Block(
+			jen.List(jen.Id("records"), jen.Err()).Op(":=").Id("r").Dot("Query").Call().Dot("All").Call(jen.Id("ctx")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(
+					jen.Id("ctx"),
+					jen.Qual("fmt", "Errorf").Call(jen.Lit("could not load all records for cache: %w"), jen.Err()),
+				),
+			),
+			jen.Id("cache").Op(":=").Id("newCacheWithAll").Call(
+				jen.Id("records"),
+				jen.Func().Params(jen.Id("n").Op("*").Add(b.input.SourceQual(node.NameGo()))).String().Block(
+					jen.If(jen.Id("n").Dot("ID").Call().Op("!=").Nil()).Block(
+						jen.Return(jen.Id("n").Dot("ID").Call().Dot("String").Call()),
+					),
+					jen.Return(jen.Lit("")),
+				),
+			),
+			jen.Return(
+				jen.Id("cacheToContext").Call(
+					jen.Id("ctx"),
+					jen.Id("r").Dot("name"),
+					jen.Id("cache"),
+				),
+				jen.Nil(),
+			),
+		)
+
+	f.Line().
+		Add(comment(`
+DropCache removes the cache for this model from the context.
+Subsequent Read calls using the returned context will query the database directly.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("DropCache").
+		Params(jen.Id("ctx").Qual("context", "Context")).
+		Qual("context", "Context").
+		Block(
+			jen.Return(
+				jen.Id("cacheDropContext").Call(
+					jen.Id("ctx"),
+					jen.Id("r").Dot("name"),
 				),
 			),
 		)
