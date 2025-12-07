@@ -39,7 +39,7 @@ func (f *Time) SchemaStatements(table, prefix string) []string {
 	} else if f.source.IsUpdatedAt {
 		extend = "VALUE time::now()"
 	} else if f.source.IsDeletedAt {
-		extend = "DEFAULT NULL"
+		extend = "DEFAULT NONE"
 	}
 
 	return []string{
@@ -103,11 +103,11 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 		)
 	}
 
-	// SoftDelete field handling - access field directly
+	// SoftDelete field handling - use getter method
 	if f.source.IsDeletedAt {
-		return jen.If(jen.Id("c").Dot("SoftDelete").Dot("DeletedAt").Op("!=").Nil()).Block(
+		return jen.If(jen.Id("c").Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
-				jen.Id("Time").Op(":").Op("*").Id("c").Dot("SoftDelete").Dot("DeletedAt"),
+				jen.Id("Time").Op(":").Id("c").Dot("SoftDelete").Dot("DeletedAt").Call(),
 			),
 		)
 	}
@@ -127,7 +127,7 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 }
 
 func (f *Time) cborUnmarshal(ctx Context) jen.Code {
-	// Timestamp fields use setter methods on embedded Timestamps.
+	// Timestamp fields use package-level setter functions to keep methods private.
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		setter := "SetCreatedAt"
 		if f.source.IsUpdatedAt {
@@ -138,18 +138,18 @@ func (f *Time) cborUnmarshal(ctx Context) jen.Code {
 			jen.Id("ok"),
 		).Block(
 			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
-			jen.Id("c").Dot("Timestamps").Dot(setter).Call(jen.Id("tm")),
+			jen.Qual(ctx.pkgInternal(), setter).Call(jen.Op("&").Id("c").Dot("Timestamps"), jen.Id("tm")),
 		)
 	}
 
-	// SoftDelete field handling - assign directly to field
+	// SoftDelete field handling - use package-level setter
 	if f.source.IsDeletedAt {
 		return jen.If(
 			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 			jen.Id("ok"),
 		).Block(
-			jen.Id("c").Dot("SoftDelete").Dot("DeletedAt").Op(",").Id("_").Op("=").
-				Qual(ctx.pkgCBOR(), "UnmarshalDateTimePtr").Call(jen.Id("raw")),
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Qual(ctx.pkgInternal(), "SetDeletedAt").Call(jen.Op("&").Id("c").Dot("SoftDelete"), jen.Id("tm")),
 		)
 	}
 

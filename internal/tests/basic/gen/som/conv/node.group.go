@@ -4,6 +4,7 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -54,11 +55,11 @@ func (c *Group) UnmarshalCBOR(data []byte) error {
 
 	if raw, ok := rawMap["created_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
-		c.Timestamps.SetCreatedAt(tm)
+		internal.SetCreatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["updated_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
-		c.Timestamps.SetUpdatedAt(tm)
+		internal.SetUpdatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["name"]; ok {
 		cbor.Unmarshal(raw, &c.Name)

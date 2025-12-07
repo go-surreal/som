@@ -12,14 +12,14 @@ DEFINE FIELD some_other_url ON TABLE url_example TYPE string ASSERT $value == ""
 
 DEFINE TABLE soft_delete_user SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE soft_delete_user TYPE string;
-DEFINE FIELD deleted_at ON TABLE soft_delete_user TYPE option<datetime> DEFAULT NULL;
+DEFINE FIELD deleted_at ON TABLE soft_delete_user TYPE option<datetime> DEFAULT NONE;
 DEFINE FIELD name ON TABLE soft_delete_user TYPE string;
 
 DEFINE TABLE soft_delete_complete SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE soft_delete_complete TYPE string;
 DEFINE FIELD created_at ON TABLE soft_delete_complete TYPE option<datetime> VALUE $before OR time::now() READONLY;
 DEFINE FIELD updated_at ON TABLE soft_delete_complete TYPE option<datetime> VALUE time::now();
-DEFINE FIELD deleted_at ON TABLE soft_delete_complete TYPE option<datetime> DEFAULT NULL;
+DEFINE FIELD deleted_at ON TABLE soft_delete_complete TYPE option<datetime> DEFAULT NONE;
 DEFINE FIELD name ON TABLE soft_delete_complete TYPE string;
 DEFINE FIELD __som_lock_version ON TABLE soft_delete_complete TYPE int VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };
 

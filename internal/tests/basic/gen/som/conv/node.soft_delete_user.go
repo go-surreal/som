@@ -4,6 +4,7 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -24,8 +25,8 @@ func (c *SoftDeleteUser) MarshalCBOR() ([]byte, error) {
 		data["id"] = c.ID()
 	}
 
-	if c.SoftDelete.DeletedAt != nil {
-		data["deleted_at"] = &types.DateTime{Time: *c.SoftDelete.DeletedAt}
+	if c.SoftDelete.IsDeleted() {
+		data["deleted_at"] = &types.DateTime{Time: c.SoftDelete.DeletedAt()}
 	}
 	data["name"] = c.Name
 
@@ -46,7 +47,8 @@ func (c *SoftDeleteUser) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {
-		c.SoftDelete.DeletedAt, _ = cbor.UnmarshalDateTimePtr(raw)
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		internal.SetDeletedAt(&c.SoftDelete, tm)
 	}
 	if raw, ok := rawMap["name"]; ok {
 		cbor.Unmarshal(raw, &c.Name)

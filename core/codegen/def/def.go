@@ -11,6 +11,7 @@ const (
 	PkgRelate = "relate"
 	PkgRepo   = "repo"
 
+	PkgInternal    = "internal"
 	PkgLib         = "internal/lib"
 	PkgTypes       = "internal/types"
 	PkgCBORHelpers = "internal/cbor"

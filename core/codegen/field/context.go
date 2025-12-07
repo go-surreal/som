@@ -28,6 +28,10 @@ func (c Context) pkgCBOR() string {
 	return path.Join(c.TargetPkg, def.PkgCBORHelpers)
 }
 
+func (c Context) pkgInternal() string {
+	return path.Join(c.TargetPkg, def.PkgInternal)
+}
+
 func (c Context) fromSlice() Context {
 	c.isFromSlice = true
 	return c
