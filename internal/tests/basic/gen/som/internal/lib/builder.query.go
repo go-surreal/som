@@ -54,8 +54,9 @@ type Query[T any] struct {
 	SearchWhere   string
 
 	// Soft delete support
-	SoftDeleteFilter Filter[T] // Injected at initialization
-	IncludeDeleted   bool       // Flag to skip soft delete filter
+	SoftDeleteFilter Filter[T]       // Injected at initialization
+	IncludeDeleted   bool            // Flag to skip soft delete filter
+	FetchWithDeleted map[string]bool // Fields to include soft-deleted records when fetching
 }
 
 func NewQuery[T any](node string) Query[T] {

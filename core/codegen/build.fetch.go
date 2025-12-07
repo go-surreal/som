@@ -34,29 +34,98 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(string(embed.CodegenComment))
 
-	f.Line()
-	f.Var().Id(node.Name).Op("=").Id(node.NameGoLower()).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+	typeName := node.NameGoLower()
 
-	f.Line()
-	f.Type().Id(node.NameGoLower()).
-		Types(jen.Add(def.TypeModel).Any()).
-		String()
+	// Check if this node has soft-delete enabled
+	if node.Source != nil && node.Source.SoftDelete {
+		// Generate struct-based type with WithDeleted() method
+		f.Line()
+		f.Var().Id(node.Name).Op("=").Id(typeName).Types(b.SourceQual(node.NameGo())).Values(jen.Dict{
+			jen.Id("field"): jen.Lit(""),
+		})
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Id(node.NameGoLower()).Types(def.TypeModel)).
-		Id("fetch").Params(def.TypeModel).Block()
+		f.Line()
+		f.Type().Id(typeName).Types(jen.Add(def.TypeModel).Any()).Struct(
+			jen.Id("field").String(),
+			jen.Id("withDeleted").Bool(),
+		)
 
-	for _, fld := range node.GetFields() {
-		if nodeField, ok := fld.(*field.Node); ok {
-			f.Line()
-			f.Func().
-				Params(jen.Id("n").Id(node.NameGoLower()).Types(def.TypeModel)).
-				Id(nodeField.NameGo()).Params().
-				Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
-				Block(
-					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
-						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
+		// fetch() method for Fetch_ interface
+		f.Line()
+		f.Func().
+			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+			Id("fetch").Params(def.TypeModel).Block()
+
+		// String() method for fmt.Sprintf
+		f.Line()
+		f.Func().
+			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+			Id("String").Params().String().
+			Block(jen.Return(jen.Id("n").Dot("field")))
+
+		// IncludesDeleted() method for FetchWithDeleted interface
+		f.Line()
+		f.Func().
+			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+			Id("IncludesDeleted").Params().Bool().
+			Block(jen.Return(jen.Id("n").Dot("withDeleted")))
+
+		// FetchField() method for FetchWithDeleted interface
+		f.Line()
+		f.Func().
+			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+			Id("FetchField").Params().String().
+			Block(jen.Return(jen.Id("n").Dot("field")))
+
+		// WithDeleted() method to get a copy with withDeleted=true
+		f.Line()
+		f.Func().
+			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+			Id("WithDeleted").Params().Id(typeName).Types(def.TypeModel).
+			Block(jen.Return(jen.Id(typeName).Types(def.TypeModel).Values(jen.Dict{
+				jen.Id("field"):       jen.Id("n").Dot("field"),
+				jen.Id("withDeleted"): jen.True(),
+			})))
+
+		// Generate sub-node accessors
+		for _, fld := range node.GetFields() {
+			if nodeField, ok := fld.(*field.Node); ok {
+				f.Line()
+				f.Func().
+					Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+					Id(nodeField.NameGo()).Params().
+					Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
+					Block(
+						jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
+							Params(jen.Id("keyedStruct").Call(jen.Id("n").Dot("field"), jen.Lit(nodeField.NameDatabase())))))
+			}
+		}
+	} else {
+		// Generate string-based type (original behavior)
+		f.Line()
+		f.Var().Id(node.Name).Op("=").Id(typeName).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+
+		f.Line()
+		f.Type().Id(typeName).
+			Types(jen.Add(def.TypeModel).Any()).
+			String()
+
+		f.Line()
+		f.Func().
+			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+			Id("fetch").Params(def.TypeModel).Block()
+
+		for _, fld := range node.GetFields() {
+			if nodeField, ok := fld.(*field.Node); ok {
+				f.Line()
+				f.Func().
+					Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+					Id(nodeField.NameGo()).Params().
+					Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
+					Block(
+						jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
+							Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
+			}
 		}
 	}
 

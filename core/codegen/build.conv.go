@@ -338,13 +338,13 @@ func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
 		Id("from"+node.NameGo()+"Link").
 		Params(jen.Id("link").Op("*").Id(node.NameGoLower()+"Link")).
 		Add(b.SourceQual(node.NameGo())).
-		Block(
-			jen.If(jen.Id("link").Op("==").Nil()).Block(
+		BlockFunc(func(g *jen.Group) {
+			g.If(jen.Id("link").Op("==").Nil()).Block(
 				jen.Return(jen.Add(b.SourceQual(node.NameGo())).Values()),
-			),
-			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
-			jen.Return(jen.Id("To"+node.NameGo()).Call(jen.Id("res"))),
-		)
+			)
+			g.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo()))
+			g.Return(jen.Id("To" + node.NameGo()).Call(jen.Id("res")))
+		})
 }
 
 func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
@@ -352,14 +352,14 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 		Id("from"+node.NameGo()+"LinkPtr").
 		Params(jen.Id("link").Op("*").Id(node.NameGoLower()+"Link")).
 		Op("*").Add(b.SourceQual(node.NameGo())).
-		Block(
-			jen.If(jen.Id("link").Op("==").Nil()).Block(
+		BlockFunc(func(g *jen.Group) {
+			g.If(jen.Id("link").Op("==").Nil()).Block(
 				jen.Return(jen.Nil()),
-			),
-			jen.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo())),
-			jen.Id("out").Op(":=").Id("To"+node.NameGo()).Call(jen.Id("res")),
-			jen.Return(jen.Id("&").Id("out")),
-		)
+			)
+			g.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo()))
+			g.Id("out").Op(":=").Id("To" + node.NameGo()).Call(jen.Id("res"))
+			g.Return(jen.Op("&").Id("out"))
+		})
 }
 
 func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {

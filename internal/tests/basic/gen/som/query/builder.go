@@ -85,10 +85,24 @@ func (b builder[M, C]) Limit(limit int) BuilderNoLive[M, C] {
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
+// For soft-delete enabled models, use .WithDeleted() on the fetch
+// to include soft-deleted records in the relation.
 func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) Builder[M, C] {
 	for _, f := range fetch {
-		if field := fmt.Sprintf("%v", f); field != "" {
+		field := fmt.Sprintf("%v", f)
+		if field != "" {
 			b.query.Fetch = append(b.query.Fetch, field)
+		}
+		// Check if this fetch should include soft-deleted records
+		if wd, ok := f.(with.FetchWithDeleted); ok && wd.IncludesDeleted() {
+			fetchField := wd.FetchField()
+			if fetchField == "" {
+				fetchField = field
+			}
+			if b.query.FetchWithDeleted == nil {
+				b.query.FetchWithDeleted = make(map[string]bool)
+			}
+			b.query.FetchWithDeleted[fetchField] = true
 		}
 	}
 	return Builder[M, C]{b}
