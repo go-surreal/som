@@ -45,10 +45,10 @@ func (b builder[M, C]) Filter(filters ...lib.Filter[M]) Builder[M, C] {
 	return Builder[M, C]{b}
 }
 
-// IncludeDeleted allows querying soft-deleted records.
+// WithDeleted allows querying soft-deleted records.
 // By default, soft-deleted records are automatically filtered out.
 // This method only has an effect on models with SoftDelete enabled.
-func (b builder[M, C]) IncludeDeleted() Builder[M, C] {
+func (b builder[M, C]) WithDeleted() Builder[M, C] {
 	b.query.IncludeDeleted = true
 	return Builder[M, C]{b}
 }
@@ -85,7 +85,6 @@ func (b builder[M, C]) Limit(limit int) BuilderNoLive[M, C] {
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
-// Can also be used with live queries (supported since SurrealDB 2.2).
 func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) Builder[M, C] {
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {

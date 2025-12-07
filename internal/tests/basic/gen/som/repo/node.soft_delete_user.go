@@ -19,7 +19,7 @@ type SoftDeleteUserRepo interface {
 	Read(ctx context.Context, id *som.ID) (*model.SoftDeleteUser, bool, error)
 	Update(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error
 	Delete(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error
-	Purge(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error
+	Erase(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error
 	Restore(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error
 	Refresh(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error
 	Relate() *relate.SoftDeleteUser
@@ -94,10 +94,10 @@ func (r *softDeleteUser) Delete(ctx context.Context, softDeleteUser *model.SoftD
 	return r.delete(ctx, softDeleteUser.ID(), softDeleteUser, true)
 }
 
-// Purge permanently deletes the record from the database.
+// Erase permanently deletes the record from the database.
 // This performs a hard delete and cannot be undone.
 // Use this to permanently remove soft-deleted records.
-func (r *softDeleteUser) Purge(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error {
+func (r *softDeleteUser) Erase(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error {
 	if softDeleteUser == nil {
 		return errors.New("the passed node must not be nil")
 	}

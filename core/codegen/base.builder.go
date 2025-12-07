@@ -158,9 +158,9 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error()
 
-		// Add Purge and Restore for soft delete models
+		// Add Erase and Restore for soft delete models
 		if node.Source.SoftDelete {
-			g.Id("Purge").Call(
+			g.Id("Erase").Call(
 				jen.Id("ctx").Qual("context", "Context"),
 				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 			).Error()
@@ -389,16 +389,16 @@ Delete deletes the record for the given model.
 			)
 		})
 
-	// Add Purge method for soft delete models
+	// Add Erase method for soft delete models
 	if node.Source.SoftDelete {
 		f.Line().
 			Add(comment(`
-Purge permanently deletes the record from the database.
+Erase permanently deletes the record from the database.
 This performs a hard delete and cannot be undone.
 Use this to permanently remove soft-deleted records.
 			`)).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
-			Id("Purge").
+			Id("Erase").
 			Params(
 				jen.Id("ctx").Qual("context", "Context"),
 				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
