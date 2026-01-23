@@ -67,6 +67,9 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
 func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error) {
+	if !som.CacheEnabled[model.URLExample](ctx) {
+		return r.read(ctx, id)
+	}
 	cache, err := getOrCreateCache[model.URLExample](ctx, r.name, func(n *model.URLExample) string {
 		if n.ID() != nil {
 			return n.ID().String()

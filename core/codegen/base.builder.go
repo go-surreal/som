@@ -290,7 +290,6 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 			),
 		)
 
-	// Read method with new cache system
 	f.Line().
 		Add(comment(`
 Read returns the record for the given id, if it exists.
@@ -305,6 +304,9 @@ If caching is enabled via som.WithCache, it will be used.
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
+			jen.If(jen.Op("!").Qual(b.subPkg(""), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
+				jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("id"))),
+			),
 			jen.List(jen.Id("cache"), jen.Err()).Op(":=").Id("getOrCreateCache").
 				Types(b.input.SourceQual(node.NameGo())).
 				Call(
