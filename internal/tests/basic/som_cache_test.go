@@ -4,7 +4,9 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 )
@@ -19,7 +21,32 @@ func TestCacheLazy(t *testing.T) {
 	err := client.GroupRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	cachedCtx := client.GroupRepo().WithCache(ctx)
+	cachedCtx := som.WithCache[model.Group](ctx)
+
+	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	assert.NilError(t, err)
+	assert.Assert(t, exists1)
+	assert.Equal(t, "Test Group", read1.Name)
+
+	read2, exists2, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	assert.NilError(t, err)
+	assert.Assert(t, exists2)
+	assert.Equal(t, "Test Group", read2.Name)
+
+	assert.Assert(t, read1 == read2, "expected same pointer from cache")
+}
+
+func TestCacheLazyExplicit(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	group := &model.Group{Name: "Test Group"}
+	err := client.GroupRepo().Create(ctx, group)
+	assert.NilError(t, err)
+
+	cachedCtx := som.WithCache[model.Group](ctx, som.Lazy())
 
 	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
@@ -49,8 +76,7 @@ func TestCacheEager(t *testing.T) {
 		assert.NilError(t, err)
 	}
 
-	cachedCtx, err := client.GroupRepo().WithCacheAll(ctx)
-	assert.NilError(t, err)
+	cachedCtx := som.WithCache[model.Group](ctx, som.Eager())
 
 	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group1.ID())
 	assert.NilError(t, err)
@@ -77,6 +103,24 @@ func TestCacheEager(t *testing.T) {
 	assert.Assert(t, read4 == nil, "eager cache should return nil for missing record")
 }
 
+func TestCacheEagerWithMaxSize(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	for i := 0; i < 5; i++ {
+		group := &model.Group{Name: "Group"}
+		err := client.GroupRepo().Create(ctx, group)
+		assert.NilError(t, err)
+	}
+
+	cachedCtx := som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(3))
+
+	_, _, err := client.GroupRepo().Read(cachedCtx, som.MakeID("group", "test"))
+	assert.ErrorIs(t, err, som.ErrCacheSizeLimitExceeded)
+}
+
 func TestCacheDrop(t *testing.T) {
 	ctx := context.Background()
 
@@ -87,14 +131,14 @@ func TestCacheDrop(t *testing.T) {
 	err := client.GroupRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	cachedCtx := client.GroupRepo().WithCache(ctx)
+	cachedCtx := som.WithCache[model.Group](ctx)
 
 	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1)
 	assert.Equal(t, "Test Group", read1.Name)
 
-	droppedCtx := client.GroupRepo().DropCache(cachedCtx)
+	droppedCtx := som.DropCache[model.Group](cachedCtx)
 
 	group.Name = "Updated Group"
 	err = client.GroupRepo().Update(ctx, group)
@@ -122,7 +166,7 @@ func TestCacheIsolation(t *testing.T) {
 	err = client.AllFieldTypesRepo().Create(ctx, allFieldTypes)
 	assert.NilError(t, err)
 
-	cachedCtx := client.GroupRepo().WithCache(ctx)
+	cachedCtx := som.WithCache[model.Group](ctx)
 
 	readGroup, existsGroup, err := client.GroupRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
@@ -161,8 +205,7 @@ func TestCacheConcurrent(t *testing.T) {
 		assert.NilError(t, err)
 	}
 
-	cachedCtx, err := client.GroupRepo().WithCacheAll(ctx)
-	assert.NilError(t, err)
+	cachedCtx := som.WithCache[model.Group](ctx, som.Eager())
 
 	const numGoroutines = 50
 	const readsPerGoroutine = 100
@@ -212,7 +255,7 @@ func TestCacheLazyPopulation(t *testing.T) {
 	err = client.GroupRepo().Create(ctx, group2)
 	assert.NilError(t, err)
 
-	cachedCtx := client.GroupRepo().WithCache(ctx)
+	cachedCtx := som.WithCache[model.Group](ctx)
 
 	read1a, _, _ := client.GroupRepo().Read(cachedCtx, group1.ID())
 	read1b, _, _ := client.GroupRepo().Read(cachedCtx, group1.ID())
@@ -223,4 +266,32 @@ func TestCacheLazyPopulation(t *testing.T) {
 
 	read2b, _, _ := client.GroupRepo().Read(cachedCtx, group2.ID())
 	assert.Assert(t, read2a == read2b, "same ID should return same cached pointer")
+}
+
+func TestCacheWithTTL(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	group := &model.Group{Name: "Test Group"}
+	err := client.GroupRepo().Create(ctx, group)
+	assert.NilError(t, err)
+
+	cachedCtx := som.WithCache[model.Group](ctx, som.WithTTL(100*time.Millisecond))
+
+	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	assert.NilError(t, err)
+	assert.Assert(t, exists1)
+	assert.Equal(t, "Test Group", read1.Name)
+
+	read2, _, _ := client.GroupRepo().Read(cachedCtx, group.ID())
+	assert.Assert(t, read1 == read2, "should return cached pointer before TTL expires")
+
+	time.Sleep(150 * time.Millisecond)
+
+	read3, exists3, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	assert.NilError(t, err)
+	assert.Assert(t, exists3)
+	assert.Assert(t, read1 != read3, "should return fresh data after TTL expires")
 }

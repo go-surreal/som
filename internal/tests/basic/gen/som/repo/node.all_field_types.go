@@ -4,13 +4,16 @@ package repo
 import (
 	"context"
 	"errors"
-	"fmt"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
+
+func init() {
+	som.RegisterTable[model.AllFieldTypes]("all_field_types")
+}
 
 type AllFieldTypesRepo interface {
 	Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes]
@@ -21,9 +24,6 @@ type AllFieldTypesRepo interface {
 	Delete(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	Refresh(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	Relate() *relate.AllFieldTypes
-	WithCache(ctx context.Context) context.Context
-	WithCacheAll(ctx context.Context) (context.Context, error)
-	DropCache(ctx context.Context) context.Context
 }
 
 // AllFieldTypesRepo returns a new repository instance for the AllFieldTypes model.
@@ -69,9 +69,21 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
-// If a cache exists in the context, it will be used.
+// If caching is enabled via som.WithCache, it will be used.
 func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error) {
-	cache := cacheFromContext[model.AllFieldTypes](ctx, r.name)
+	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, r.name, func(n *model.AllFieldTypes) string {
+		if n.ID() != nil {
+			return n.ID().String()
+		}
+		return ""
+	}, func(ctx context.Context) ([]*model.AllFieldTypes, error) {
+		return r.Query().All(ctx)
+	}, func(ctx context.Context) (int, error) {
+		return r.Query().Count(ctx)
+	})
+	if err != nil {
+		return nil, false, err
+	}
 	return r.readWithCache(ctx, id, cache)
 }
 
@@ -108,34 +120,4 @@ func (r *allFieldTypes) Refresh(ctx context.Context, allFieldTypes *model.AllFie
 // Relate returns a new relate instance for the AllFieldTypes model.
 func (r *allFieldTypes) Relate() *relate.AllFieldTypes {
 	return relate.NewAllFieldTypes(r.db)
-}
-
-// WithCache returns a context with an empty lazy cache for this model.
-// Subsequent Read calls using this context will populate the cache on first access.
-func (r *allFieldTypes) WithCache(ctx context.Context) context.Context {
-	cache := newCache[model.AllFieldTypes]()
-	return cacheToContext(ctx, r.name, cache)
-}
-
-// WithCacheAll loads all records into an eager cache and returns the new context.
-// Subsequent Read calls using this context will only check the cache.
-// If loading records fails, the error is returned along with the original context.
-func (r *allFieldTypes) WithCacheAll(ctx context.Context) (context.Context, error) {
-	records, err := r.Query().All(ctx)
-	if err != nil {
-		return ctx, fmt.Errorf("could not load all records for cache: %w", err)
-	}
-	cache := newCacheWithAll(records, func(n *model.AllFieldTypes) string {
-		if n.ID() != nil {
-			return n.ID().String()
-		}
-		return ""
-	})
-	return cacheToContext(ctx, r.name, cache), nil
-}
-
-// DropCache removes the cache for this model from the context.
-// Subsequent Read calls using the returned context will query the database directly.
-func (r *allFieldTypes) DropCache(ctx context.Context) context.Context {
-	return cacheDropContext(ctx, r.name)
 }

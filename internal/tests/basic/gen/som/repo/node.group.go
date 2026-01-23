@@ -4,13 +4,16 @@ package repo
 import (
 	"context"
 	"errors"
-	"fmt"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
+
+func init() {
+	som.RegisterTable[model.Group]("group")
+}
 
 type GroupRepo interface {
 	Query() query.Builder[model.Group, conv.Group]
@@ -21,9 +24,6 @@ type GroupRepo interface {
 	Delete(ctx context.Context, group *model.Group) error
 	Refresh(ctx context.Context, group *model.Group) error
 	Relate() *relate.Group
-	WithCache(ctx context.Context) context.Context
-	WithCacheAll(ctx context.Context) (context.Context, error)
-	DropCache(ctx context.Context) context.Context
 }
 
 // GroupRepo returns a new repository instance for the Group model.
@@ -69,9 +69,21 @@ func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
-// If a cache exists in the context, it will be used.
+// If caching is enabled via som.WithCache, it will be used.
 func (r *group) Read(ctx context.Context, id *som.ID) (*model.Group, bool, error) {
-	cache := cacheFromContext[model.Group](ctx, r.name)
+	cache, err := getOrCreateCache[model.Group](ctx, r.name, func(n *model.Group) string {
+		if n.ID() != nil {
+			return n.ID().String()
+		}
+		return ""
+	}, func(ctx context.Context) ([]*model.Group, error) {
+		return r.Query().All(ctx)
+	}, func(ctx context.Context) (int, error) {
+		return r.Query().Count(ctx)
+	})
+	if err != nil {
+		return nil, false, err
+	}
 	return r.readWithCache(ctx, id, cache)
 }
 
@@ -108,34 +120,4 @@ func (r *group) Refresh(ctx context.Context, group *model.Group) error {
 // Relate returns a new relate instance for the Group model.
 func (r *group) Relate() *relate.Group {
 	return relate.NewGroup(r.db)
-}
-
-// WithCache returns a context with an empty lazy cache for this model.
-// Subsequent Read calls using this context will populate the cache on first access.
-func (r *group) WithCache(ctx context.Context) context.Context {
-	cache := newCache[model.Group]()
-	return cacheToContext(ctx, r.name, cache)
-}
-
-// WithCacheAll loads all records into an eager cache and returns the new context.
-// Subsequent Read calls using this context will only check the cache.
-// If loading records fails, the error is returned along with the original context.
-func (r *group) WithCacheAll(ctx context.Context) (context.Context, error) {
-	records, err := r.Query().All(ctx)
-	if err != nil {
-		return ctx, fmt.Errorf("could not load all records for cache: %w", err)
-	}
-	cache := newCacheWithAll(records, func(n *model.Group) string {
-		if n.ID() != nil {
-			return n.ID().String()
-		}
-		return ""
-	})
-	return cacheToContext(ctx, r.name, cache), nil
-}
-
-// DropCache removes the cache for this model from the context.
-// Subsequent Read calls using the returned context will query the database directly.
-func (r *group) DropCache(ctx context.Context) context.Context {
-	return cacheDropContext(ctx, r.name)
 }

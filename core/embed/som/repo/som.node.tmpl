@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	som "{{.GenerateOutPath}}"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
@@ -121,8 +122,8 @@ func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, cache *Cache[N])
 		return record, true, nil
 	}
 
-	// If eager cache and not found, the record doesn't exist in the cache
-	if cache.IsEager() {
+	// If eager cache and already loaded, record doesn't exist
+	if cache.IsEager() && cache.IsLoaded() {
 		return nil, false, nil
 	}
 
@@ -137,4 +138,93 @@ func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, cache *Cache[N])
 	}
 
 	return record, exists, nil
+}
+
+// cacheStore holds the actual cache instances per table.
+// This is separate from context because we need to share the cache data
+// across multiple reads while the context just signals cache enablement.
+var (
+	cacheStoreMu sync.RWMutex
+	cacheStores  = make(map[cacheStoreKey]any)
+)
+
+type cacheStoreKey struct {
+	table string
+}
+
+// getOrCreateCache returns the cache for the given table, creating it if needed.
+// The idFunc is used for eager cache population.
+// The queryAll function loads all records for eager mode.
+// The countAll function counts records to check against maxSize.
+func getOrCreateCache[N any](
+	ctx context.Context,
+	table string,
+	idFunc func(*N) string,
+	queryAll func(context.Context) ([]*N, error),
+	countAll func(context.Context) (int, error),
+) (*Cache[N], error) {
+	if !som.CacheEnabled(ctx, table) {
+		return nil, nil
+	}
+
+	opts := som.GetCacheOptions(ctx, table)
+	if opts == nil {
+		return nil, nil
+	}
+
+	key := cacheStoreKey{table: table}
+
+	cacheStoreMu.RLock()
+	if cached, ok := cacheStores[key].(*Cache[N]); ok {
+		cacheStoreMu.RUnlock()
+		return cached, nil
+	}
+	cacheStoreMu.RUnlock()
+
+	cacheStoreMu.Lock()
+	defer cacheStoreMu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cached, ok := cacheStores[key].(*Cache[N]); ok {
+		return cached, nil
+	}
+
+	var mode CacheMode
+	switch opts.Mode {
+	case som.CacheModeEager:
+		mode = CacheModeEager
+	default:
+		mode = CacheModeLazy
+	}
+
+	cache := newCache[N](mode, opts.TTL, opts.MaxSize)
+
+	// For eager mode, load all records now
+	if mode == CacheModeEager {
+		count, err := countAll(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("could not count records for eager cache: %w", err)
+		}
+
+		if count > opts.MaxSize {
+			return nil, som.ErrCacheSizeLimitExceeded
+		}
+
+		records, err := queryAll(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("could not load records for eager cache: %w", err)
+		}
+
+		cache = newCacheWithAll(records, idFunc, opts.TTL)
+	}
+
+	cacheStores[key] = cache
+	return cache, nil
+}
+
+// dropCacheStore removes the cache for a table.
+func dropCacheStore(table string) {
+	cacheStoreMu.Lock()
+	defer cacheStoreMu.Unlock()
+	delete(cacheStores, cacheStoreKey{table: table})
 }
