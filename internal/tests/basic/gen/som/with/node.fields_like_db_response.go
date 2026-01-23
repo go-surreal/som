@@ -3,6 +3,17 @@ package with
 
 import model "github.com/go-surreal/som/tests/basic/model"
 
+func FieldsLikeDBResponseFetchBit(field string) uint64 {
+	switch field {
+	default:
+		return 0
+	}
+}
+
+func FieldsLikeDBResponseSetFetched(m *model.FieldsLikeDBResponse, bits uint64) {
+	m.Node.SetFetched(bits)
+}
+
 var FieldsLikeDBResponse = fieldsLikeDbresponse[model.FieldsLikeDBResponse]("")
 
 type fieldsLikeDbresponse[M any] string

@@ -105,3 +105,30 @@ func (r *repo[N, C]) refresh(ctx context.Context, id *models.RecordID, node *N) 
 
 	return nil
 }
+
+func (r *repo[N, C]) fetch(ctx context.Context, id *ID, node *N, fetchFields []string) error {
+	if len(fetchFields) == 0 {
+		return nil
+	}
+
+	statement := fmt.Sprintf("SELECT * FROM %s FETCH %s", id.String(), strings.Join(fetchFields, ", "))
+	res, err := r.db.Query(ctx, statement, nil)
+	if err != nil {
+		return fmt.Errorf("could not fetch relations: %w", err)
+	}
+
+	var result []struct {
+		Result []*C `json:"result"`
+	}
+	err = r.db.Unmarshal(res, &result)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal response: %w", err)
+	}
+
+	if len(result) == 0 || len(result[0].Result) == 0 {
+		return errors.New("record not found")
+	}
+
+	*node = *r.convTo(result[0].Result[0])
+	return nil
+}

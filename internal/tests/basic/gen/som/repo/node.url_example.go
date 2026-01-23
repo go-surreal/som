@@ -4,10 +4,12 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
+	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -19,6 +21,7 @@ type URLExampleRepo interface {
 	Update(ctx context.Context, urlexample *model.URLExample) error
 	Delete(ctx context.Context, urlexample *model.URLExample) error
 	Refresh(ctx context.Context, urlexample *model.URLExample) error
+	Fetch(ctx context.Context, urlexample *model.URLExample, fetch ...with.Fetch_[model.URLExample]) error
 	Relate() *relate.URLExample
 }
 
@@ -97,6 +100,30 @@ func (r *urlexample) Refresh(ctx context.Context, urlexample *model.URLExample) 
 		return errors.New("cannot refresh URLExample without existing record ID")
 	}
 	return r.refresh(ctx, urlexample.ID(), urlexample)
+}
+
+// Fetch fetches related records for the given model based on the specified fetch fields.
+// The model is updated in-place with the fetched relations.
+func (r *urlexample) Fetch(ctx context.Context, urlexample *model.URLExample, fetch ...with.Fetch_[model.URLExample]) error {
+	if urlexample == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if urlexample.ID() == nil {
+		return errors.New("cannot fetch URLExample without existing record ID")
+	}
+	var fetchFields []string
+	var fetchBits uint64
+	for _, f := range fetch {
+		if field := fmt.Sprintf("%v", f); field != "" {
+			fetchFields = append(fetchFields, field)
+			fetchBits |= with.URLExampleFetchBit(field)
+		}
+	}
+	err := r.fetch(ctx, urlexample.ID(), urlexample, fetchFields)
+	if err == nil {
+		urlexample.Node.SetFetched(fetchBits)
+	}
+	return err
 }
 
 // Relate returns a new relate instance for the URLExample model.

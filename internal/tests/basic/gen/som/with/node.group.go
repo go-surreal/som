@@ -3,6 +3,17 @@ package with
 
 import model "github.com/go-surreal/som/tests/basic/model"
 
+func GroupFetchBit(field string) uint64 {
+	switch field {
+	default:
+		return 0
+	}
+}
+
+func GroupSetFetched(m *model.Group, bits uint64) {
+	m.Node.SetFetched(bits)
+}
+
 var Group = group[model.Group]("")
 
 type group[M any] string

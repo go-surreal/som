@@ -4,10 +4,12 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
+	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -19,6 +21,7 @@ type GroupRepo interface {
 	Update(ctx context.Context, group *model.Group) error
 	Delete(ctx context.Context, group *model.Group) error
 	Refresh(ctx context.Context, group *model.Group) error
+	Fetch(ctx context.Context, group *model.Group, fetch ...with.Fetch_[model.Group]) error
 	Relate() *relate.Group
 }
 
@@ -97,6 +100,30 @@ func (r *group) Refresh(ctx context.Context, group *model.Group) error {
 		return errors.New("cannot refresh Group without existing record ID")
 	}
 	return r.refresh(ctx, group.ID(), group)
+}
+
+// Fetch fetches related records for the given model based on the specified fetch fields.
+// The model is updated in-place with the fetched relations.
+func (r *group) Fetch(ctx context.Context, group *model.Group, fetch ...with.Fetch_[model.Group]) error {
+	if group == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if group.ID() == nil {
+		return errors.New("cannot fetch Group without existing record ID")
+	}
+	var fetchFields []string
+	var fetchBits uint64
+	for _, f := range fetch {
+		if field := fmt.Sprintf("%v", f); field != "" {
+			fetchFields = append(fetchFields, field)
+			fetchBits |= with.GroupFetchBit(field)
+		}
+	}
+	err := r.fetch(ctx, group.ID(), group, fetchFields)
+	if err == nil {
+		group.Node.SetFetched(fetchBits)
+	}
+	return err
 }
 
 // Relate returns a new relate instance for the Group model.
