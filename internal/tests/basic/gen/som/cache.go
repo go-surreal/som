@@ -4,78 +4,23 @@ package som
 
 import (
 	"context"
-	"errors"
-	"time"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
 )
 
-// ErrCacheSizeLimitExceeded is returned when eager cache would exceed the max size.
-var ErrCacheSizeLimitExceeded = errors.New("cache size limit exceeded")
-
-// ErrCacheAlreadyCleaned is returned when attempting to use a cache that has
-// already been cleaned up via the cleanup function returned by WithCache.
-var ErrCacheAlreadyCleaned = errors.New("cache has already been cleaned up")
-
-// CacheMode specifies the caching strategy.
-type CacheMode int
-
-const (
-	// CacheModeLazy loads records on-demand as they are requested.
-	CacheModeLazy CacheMode = iota
-	// CacheModeEager loads all records on first Read() call.
-	CacheModeEager
+// Re-export errors from internal package.
+var (
+	ErrCacheSizeLimitExceeded = internal.ErrCacheSizeLimitExceeded
+	ErrCacheAlreadyCleaned    = internal.ErrCacheAlreadyCleaned
 )
 
-// CacheOptions configures cache behavior.
-type CacheOptions struct {
-	Mode    CacheMode
-	TTL     time.Duration
-	MaxSize int
-}
-
-// DefaultMaxSize is the default maximum number of records for eager cache.
-const DefaultMaxSize = 1000
-
-// CacheOption is a functional option for configuring cache behavior.
-type CacheOption func(*CacheOptions)
-
-// Lazy sets the cache to lazy loading mode (default).
-// Records are fetched from the database on first access and cached.
-func Lazy() CacheOption {
-	return func(o *CacheOptions) {
-		o.Mode = CacheModeLazy
-	}
-}
-
-// Eager sets the cache to eager loading mode.
-// All records are loaded on first Read() call.
-func Eager() CacheOption {
-	return func(o *CacheOptions) {
-		o.Mode = CacheModeEager
-	}
-}
-
-// WithTTL sets the time-to-live for cache entries.
-// Entries expire after the given duration.
-func WithTTL(d time.Duration) CacheOption {
-	return func(o *CacheOptions) {
-		o.TTL = d
-	}
-}
-
-// WithMaxSize sets the maximum number of records for eager cache.
-// Default is 1000. If the table has more records than maxSize,
-// ErrCacheSizeLimitExceeded is returned.
-func WithMaxSize(n int) CacheOption {
-	return func(o *CacheOptions) {
-		o.MaxSize = n
-	}
-}
-
-type cacheKey[T any] struct{}
-
-type cacheOptionsKey[T any] struct{}
+// Re-export option functions from internal package.
+var (
+	Lazy        = internal.Lazy
+	Eager       = internal.Eager
+	WithTTL     = internal.WithTTL
+	WithMaxSize = internal.WithMaxSize
+)
 
 // WithCache enables caching for the specified model type.
 // Returns the context with cache enabled and a cleanup function.
@@ -95,44 +40,21 @@ type cacheOptionsKey[T any] struct{}
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager())         // eager, load on first read
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.WithTTL(5*time.Minute))  // with expiration
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(5000))
-func WithCache[T Model](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
-	options := &CacheOptions{
-		Mode:    CacheModeLazy,
-		MaxSize: DefaultMaxSize,
+func WithCache[T Model](ctx context.Context, opts ...internal.CacheOption) (context.Context, func()) {
+	options := &internal.CacheOptions{
+		Mode:    internal.CacheModeLazy,
+		MaxSize: internal.DefaultMaxSize,
 	}
 	for _, opt := range opts {
 		opt(options)
 	}
 
 	id := internal.NextCacheID()
-
-	ctx = context.WithValue(ctx, cacheKey[T]{}, id)
-	ctx = context.WithValue(ctx, cacheOptionsKey[T]{}, options)
+	ctx = internal.SetCacheContext[T](ctx, id, options)
 
 	cleanup := func() {
 		internal.DropCacheByID(id)
 	}
 
 	return ctx, cleanup
-}
-
-// CacheEnabled returns true if caching is enabled for the specified model type.
-func CacheEnabled[T Model](ctx context.Context) bool {
-	return GetCacheKey[T](ctx) != ""
-}
-
-// GetCacheOptions retrieves cache options for the specified model type from context.
-func GetCacheOptions[T Model](ctx context.Context) *CacheOptions {
-	if opts, ok := ctx.Value(cacheOptionsKey[T]{}).(*CacheOptions); ok {
-		return opts
-	}
-	return nil
-}
-
-// GetCacheKey returns the cache instance ID for the model type, if set.
-func GetCacheKey[T Model](ctx context.Context) string {
-	if id, ok := ctx.Value(cacheKey[T]{}).(string); ok {
-		return id
-	}
-	return ""
 }

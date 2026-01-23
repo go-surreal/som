@@ -150,16 +150,16 @@ func getOrCreateCache[N som.Model](
 	queryAll func(context.Context) ([]*N, error),
 	countAll func(context.Context) (int, error),
 ) (*cache[N], error) {
-	if !som.CacheEnabled[N](ctx) {
+	if !internal.CacheEnabled[N](ctx) {
 		return nil, nil
 	}
 
-	opts := som.GetCacheOptions[N](ctx)
+	opts := internal.GetCacheOptions[N](ctx)
 	if opts == nil {
 		return nil, nil
 	}
 
-	cacheID := som.GetCacheKey[N](ctx)
+	cacheID := internal.GetCacheKey[N](ctx)
 	if cacheID == "" {
 		return nil, nil
 	}
@@ -178,7 +178,7 @@ func getOrCreateCache[N som.Model](
 
 	var mode cacheMode
 	switch opts.Mode {
-	case som.CacheModeEager:
+	case internal.CacheModeEager:
 		mode = cacheModeEager
 	default:
 		mode = cacheModeLazy

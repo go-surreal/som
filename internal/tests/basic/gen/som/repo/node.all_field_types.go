@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -67,7 +68,7 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
 func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error) {
-	if !som.CacheEnabled[model.AllFieldTypes](ctx) {
+	if !internal.CacheEnabled[model.AllFieldTypes](ctx) {
 		return r.read(ctx, id)
 	}
 	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, "all_field_types", func(n *model.AllFieldTypes) string {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -67,7 +68,7 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
 func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error) {
-	if !som.CacheEnabled[model.URLExample](ctx) {
+	if !internal.CacheEnabled[model.URLExample](ctx) {
 		return r.read(ctx, id)
 	}
 	cache, err := getOrCreateCache[model.URLExample](ctx, "url_example", func(n *model.URLExample) string {
