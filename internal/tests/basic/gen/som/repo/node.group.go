@@ -70,7 +70,7 @@ func (r *group) Read(ctx context.Context, id *som.ID) (*model.Group, bool, error
 	if !som.CacheEnabled[model.Group](ctx) {
 		return r.read(ctx, id)
 	}
-	cache, err := getOrCreateCache[model.Group](ctx, r.name, func(n *model.Group) string {
+	cache, err := getOrCreateCache[model.Group](ctx, "group", func(n *model.Group) string {
 		if n.ID() != nil {
 			return n.ID().String()
 		}

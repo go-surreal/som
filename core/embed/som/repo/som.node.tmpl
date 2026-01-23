@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 
 	som "{{.GenerateOutPath}}"
+	"{{.GenerateOutPath}}/internal"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -137,22 +137,12 @@ func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N]) (*N
 	return record, exists, nil
 }
 
-// cacheStore holds the actual cache instances per table.
-// This is separate from context because we need to share the cache data
-// across multiple reads while the context just signals cache enablement.
-var (
-	cacheStoreMu sync.RWMutex
-	cacheStores  = make(map[cacheStoreKey]any)
-)
-
-type cacheStoreKey struct {
-	table string
-}
-
 // getOrCreateCache returns the cache for the given table, creating it if needed.
+// The table parameter is the database table name used for cache key isolation.
 // The idFunc is used for eager cache population.
 // The queryAll function loads all records for eager mode.
 // The countAll function counts records to check against maxSize.
+// Returns ErrCacheAlreadyCleaned if the cache was previously cleaned up.
 func getOrCreateCache[N som.Model](
 	ctx context.Context,
 	table string,
@@ -169,21 +159,21 @@ func getOrCreateCache[N som.Model](
 		return nil, nil
 	}
 
-	key := cacheStoreKey{table: table}
-
-	cacheStoreMu.RLock()
-	if cached, ok := cacheStores[key].(*cache[N]); ok {
-		cacheStoreMu.RUnlock()
-		return cached, nil
+	cacheID := som.GetCacheKey[N](ctx)
+	if cacheID == "" {
+		return nil, nil
 	}
-	cacheStoreMu.RUnlock()
 
-	cacheStoreMu.Lock()
-	defer cacheStoreMu.Unlock()
+	if internal.IsCacheDropped(cacheID) {
+		return nil, som.ErrCacheAlreadyCleaned
+	}
 
-	// Double-check after acquiring write lock
-	if cached, ok := cacheStores[key].(*cache[N]); ok {
-		return cached, nil
+	key := internal.CacheKey(table, cacheID)
+
+	if cached, ok := internal.GetCache(key); ok {
+		if c, ok := cached.(*cache[N]); ok {
+			return c, nil
+		}
 	}
 
 	var mode cacheMode
@@ -214,13 +204,7 @@ func getOrCreateCache[N som.Model](
 		c = newCacheWithAll(records, idFunc, opts.TTL)
 	}
 
-	cacheStores[key] = c
+	internal.SetCache(key, c)
+	internal.RegisterCacheKey(cacheID, key)
 	return c, nil
-}
-
-// dropCacheStore removes the cache for a table.
-func dropCacheStore(table string) {
-	cacheStoreMu.Lock()
-	defer cacheStoreMu.Unlock()
-	delete(cacheStores, cacheStoreKey{table: table})
 }

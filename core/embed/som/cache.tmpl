@@ -6,10 +6,16 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"{{.GenerateOutPath}}/internal"
 )
 
 // ErrCacheSizeLimitExceeded is returned when eager cache would exceed the max size.
 var ErrCacheSizeLimitExceeded = errors.New("cache size limit exceeded")
+
+// ErrCacheAlreadyCleaned is returned when attempting to use a cache that has
+// already been cleaned up via the cleanup function returned by WithCache.
+var ErrCacheAlreadyCleaned = errors.New("cache has already been cleaned up")
 
 // CacheMode specifies the caching strategy.
 type CacheMode int
@@ -72,16 +78,24 @@ type cacheKey[T any] struct{}
 type cacheOptionsKey[T any] struct{}
 
 // WithCache enables caching for the specified model type.
-// The cache is stored in the context and used by subsequent Read calls.
+// Returns the context with cache enabled and a cleanup function.
+// The cleanup function should be called when the cache is no longer needed,
+// typically via defer.
+//
+// After the cleanup function is called, any attempt to use the returned context
+// for cached reads will return ErrCacheAlreadyCleaned. This prevents accidental
+// use of stale cache references.
 //
 // Example:
 //
-//	ctx = som.WithCache[model.Group](ctx)                              // lazy (default)
-//	ctx = som.WithCache[model.Group](ctx, som.Lazy())                  // explicit lazy
-//	ctx = som.WithCache[model.Group](ctx, som.Eager())                 // eager, load on first read
-//	ctx = som.WithCache[model.Group](ctx, som.WithTTL(5*time.Minute))  // with expiration
-//	ctx = som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(5000))
-func WithCache[T Model](ctx context.Context, opts ...CacheOption) context.Context {
+//	ctx, cleanup := som.WithCache[model.Group](ctx)
+//	defer cleanup()
+//
+//	ctx, cleanup := som.WithCache[model.Group](ctx, som.Lazy())          // explicit lazy
+//	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager())         // eager, load on first read
+//	ctx, cleanup := som.WithCache[model.Group](ctx, som.WithTTL(5*time.Minute))  // with expiration
+//	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(5000))
+func WithCache[T Model](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
 	options := &CacheOptions{
 		Mode:    CacheModeLazy,
 		MaxSize: DefaultMaxSize,
@@ -90,27 +104,21 @@ func WithCache[T Model](ctx context.Context, opts ...CacheOption) context.Contex
 		opt(options)
 	}
 
-	ctx = context.WithValue(ctx, cacheKey[T]{}, struct{}{})
+	id := internal.NextCacheID()
+
+	ctx = context.WithValue(ctx, cacheKey[T]{}, id)
 	ctx = context.WithValue(ctx, cacheOptionsKey[T]{}, options)
 
-	return ctx
-}
+	cleanup := func() {
+		internal.DropCacheByID(id)
+	}
 
-// DropCache removes the cache for the specified model type from context.
-// Subsequent Read calls using the returned context will query the database directly.
-//
-// Example:
-//
-//	ctx = som.DropCache[model.Group](ctx)
-func DropCache[T Model](ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, cacheKey[T]{}, nil)
-	ctx = context.WithValue(ctx, cacheOptionsKey[T]{}, nil)
-	return ctx
+	return ctx, cleanup
 }
 
 // CacheEnabled returns true if caching is enabled for the specified model type.
 func CacheEnabled[T Model](ctx context.Context) bool {
-	return ctx.Value(cacheKey[T]{}) != nil
+	return GetCacheKey[T](ctx) != ""
 }
 
 // GetCacheOptions retrieves cache options for the specified model type from context.
@@ -119,4 +127,12 @@ func GetCacheOptions[T Model](ctx context.Context) *CacheOptions {
 		return opts
 	}
 	return nil
+}
+
+// GetCacheKey returns the cache instance ID for the model type, if set.
+func GetCacheKey[T Model](ctx context.Context) string {
+	if id, ok := ctx.Value(cacheKey[T]{}).(string); ok {
+		return id
+	}
+	return ""
 }

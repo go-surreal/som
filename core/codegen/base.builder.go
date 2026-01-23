@@ -311,7 +311,7 @@ If caching is enabled via som.WithCache, it will be used.
 				Types(b.input.SourceQual(node.NameGo())).
 				Call(
 					jen.Id("ctx"),
-					jen.Id("r").Dot("name"),
+					jen.Lit(node.NameDatabase()),
 					jen.Func().Params(jen.Id("n").Op("*").Add(b.input.SourceQual(node.NameGo()))).String().Block(
 						jen.If(jen.Id("n").Dot("ID").Call().Op("!=").Nil()).Block(
 							jen.Return(jen.Id("n").Dot("ID").Call().Dot("String").Call()),
