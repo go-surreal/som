@@ -11,10 +11,6 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func init() {
-	som.RegisterTable[model.FieldsLikeDBResponse]("fields_like_db_response")
-}
-
 type FieldsLikeDBResponseRepo interface {
 	Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
 	Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error

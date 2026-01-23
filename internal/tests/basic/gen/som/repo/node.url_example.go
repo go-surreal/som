@@ -11,10 +11,6 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func init() {
-	som.RegisterTable[model.URLExample]("url_example")
-}
-
 type URLExampleRepo interface {
 	Query() query.Builder[model.URLExample, conv.URLExample]
 	Create(ctx context.Context, urlexample *model.URLExample) error

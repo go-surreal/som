@@ -116,18 +116,10 @@ func (b *build) buildInterfaceFile() error {
 func (b *build) buildBaseFile(node *field.NodeTable) error {
 	pkgQuery := b.subPkg(def.PkgQuery)
 	pkgConv := b.subPkg(def.PkgConv)
-	pkgSom := b.subPkg("")
 
 	f := jen.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
-
-	// Generate init function to register the table
-	f.Func().Id("init").Params().Block(
-		jen.Qual(pkgSom, "RegisterTable").Types(b.input.SourceQual(node.NameGo())).Call(
-			jen.Lit(node.NameDatabase()),
-		),
-	)
 
 	//
 	// type {NodeName}Repo interface {...}

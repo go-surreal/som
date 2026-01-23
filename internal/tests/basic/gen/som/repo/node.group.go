@@ -11,10 +11,6 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func init() {
-	som.RegisterTable[model.Group]("group")
-}
-
 type GroupRepo interface {
 	Query() query.Builder[model.Group, conv.Group]
 	Create(ctx context.Context, group *model.Group) error

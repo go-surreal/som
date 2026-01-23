@@ -11,10 +11,6 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func init() {
-	som.RegisterTable[model.AllFieldTypes]("all_field_types")
-}
-
 type AllFieldTypesRepo interface {
 	Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes]
 	Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error

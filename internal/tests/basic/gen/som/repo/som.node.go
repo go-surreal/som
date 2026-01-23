@@ -110,31 +110,28 @@ func (r *repo[N, C]) refresh(ctx context.Context, id *models.RecordID, node *N) 
 // readWithCache attempts to read from cache first, falling back to DB if needed.
 // If cache is in eager mode and record not found, returns (nil, false, nil).
 // If cache is in lazy mode and record not found, queries DB and populates cache.
-func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, cache *Cache[N]) (*N, bool, error) {
-	if cache == nil {
+func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N]) (*N, bool, error) {
+	if c == nil {
 		return r.read(ctx, id)
 	}
 
 	idStr := id.String()
 
-	// Check cache first
-	if record, found := cache.Get(idStr); found {
+	if record, found := c.get(idStr); found {
 		return record, true, nil
 	}
 
-	// If eager cache and already loaded, record doesn't exist
-	if cache.IsEager() && cache.IsLoaded() {
+	if c.isEager() && c.isLoaded() {
 		return nil, false, nil
 	}
 
-	// Lazy cache: fetch from DB and populate cache
 	record, exists, err := r.read(ctx, id)
 	if err != nil {
 		return nil, false, err
 	}
 
 	if exists && record != nil {
-		cache.Set(idStr, record)
+		c.set(idStr, record)
 	}
 
 	return record, exists, nil
@@ -156,18 +153,18 @@ type cacheStoreKey struct {
 // The idFunc is used for eager cache population.
 // The queryAll function loads all records for eager mode.
 // The countAll function counts records to check against maxSize.
-func getOrCreateCache[N any](
+func getOrCreateCache[N som.Model](
 	ctx context.Context,
 	table string,
 	idFunc func(*N) string,
 	queryAll func(context.Context) ([]*N, error),
 	countAll func(context.Context) (int, error),
-) (*Cache[N], error) {
-	if !som.CacheEnabled(ctx, table) {
+) (*cache[N], error) {
+	if !som.CacheEnabled[N](ctx) {
 		return nil, nil
 	}
 
-	opts := som.GetCacheOptions(ctx, table)
+	opts := som.GetCacheOptions[N](ctx)
 	if opts == nil {
 		return nil, nil
 	}
@@ -175,7 +172,7 @@ func getOrCreateCache[N any](
 	key := cacheStoreKey{table: table}
 
 	cacheStoreMu.RLock()
-	if cached, ok := cacheStores[key].(*Cache[N]); ok {
+	if cached, ok := cacheStores[key].(*cache[N]); ok {
 		cacheStoreMu.RUnlock()
 		return cached, nil
 	}
@@ -185,22 +182,21 @@ func getOrCreateCache[N any](
 	defer cacheStoreMu.Unlock()
 
 	// Double-check after acquiring write lock
-	if cached, ok := cacheStores[key].(*Cache[N]); ok {
+	if cached, ok := cacheStores[key].(*cache[N]); ok {
 		return cached, nil
 	}
 
-	var mode CacheMode
+	var mode cacheMode
 	switch opts.Mode {
 	case som.CacheModeEager:
-		mode = CacheModeEager
+		mode = cacheModeEager
 	default:
-		mode = CacheModeLazy
+		mode = cacheModeLazy
 	}
 
-	cache := newCache[N](mode, opts.TTL, opts.MaxSize)
+	c := newCache[N](mode, opts.TTL, opts.MaxSize)
 
-	// For eager mode, load all records now
-	if mode == CacheModeEager {
+	if mode == cacheModeEager {
 		count, err := countAll(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("could not count records for eager cache: %w", err)
@@ -215,11 +211,11 @@ func getOrCreateCache[N any](
 			return nil, fmt.Errorf("could not load records for eager cache: %w", err)
 		}
 
-		cache = newCacheWithAll(records, idFunc, opts.TTL)
+		c = newCacheWithAll(records, idFunc, opts.TTL)
 	}
 
-	cacheStores[key] = cache
-	return cache, nil
+	cacheStores[key] = c
+	return c, nil
 }
 
 // dropCacheStore removes the cache for a table.

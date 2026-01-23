@@ -67,15 +67,9 @@ func WithMaxSize(n int) CacheOption {
 	}
 }
 
-// cacheKey is a unique context key for each table's cache.
-type cacheKey struct {
-	table string
-}
+type cacheKey[T any] struct{}
 
-// cacheOptionsKey is a unique context key for cache options.
-type cacheOptionsKey struct {
-	table string
-}
+type cacheOptionsKey[T any] struct{}
 
 // WithCache enables caching for the specified model type.
 // The cache is stored in the context and used by subsequent Read calls.
@@ -87,12 +81,7 @@ type cacheOptionsKey struct {
 //	ctx = som.WithCache[model.Group](ctx, som.Eager())                 // eager, load on first read
 //	ctx = som.WithCache[model.Group](ctx, som.WithTTL(5*time.Minute))  // with expiration
 //	ctx = som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(5000))
-func WithCache[T any](ctx context.Context, opts ...CacheOption) context.Context {
-	tableName := getTableName[T]()
-	if tableName == "" {
-		return ctx
-	}
-
+func WithCache[T Model](ctx context.Context, opts ...CacheOption) context.Context {
 	options := &CacheOptions{
 		Mode:    CacheModeLazy,
 		MaxSize: DefaultMaxSize,
@@ -101,11 +90,8 @@ func WithCache[T any](ctx context.Context, opts ...CacheOption) context.Context 
 		opt(options)
 	}
 
-	key := cacheKey{table: tableName}
-	optsKey := cacheOptionsKey{table: tableName}
-
-	ctx = context.WithValue(ctx, key, struct{}{})
-	ctx = context.WithValue(ctx, optsKey, options)
+	ctx = context.WithValue(ctx, cacheKey[T]{}, struct{}{})
+	ctx = context.WithValue(ctx, cacheOptionsKey[T]{}, options)
 
 	return ctx
 }
@@ -116,32 +102,20 @@ func WithCache[T any](ctx context.Context, opts ...CacheOption) context.Context 
 // Example:
 //
 //	ctx = som.DropCache[model.Group](ctx)
-func DropCache[T any](ctx context.Context) context.Context {
-	tableName := getTableName[T]()
-	if tableName == "" {
-		return ctx
-	}
-
-	key := cacheKey{table: tableName}
-	optsKey := cacheOptionsKey{table: tableName}
-
-	ctx = context.WithValue(ctx, key, nil)
-	ctx = context.WithValue(ctx, optsKey, nil)
-
+func DropCache[T Model](ctx context.Context) context.Context {
+	ctx = context.WithValue(ctx, cacheKey[T]{}, nil)
+	ctx = context.WithValue(ctx, cacheOptionsKey[T]{}, nil)
 	return ctx
 }
 
-// CacheEnabled returns true if caching is enabled for the specified table.
-func CacheEnabled(ctx context.Context, table string) bool {
-	key := cacheKey{table: table}
-	v := ctx.Value(key)
-	return v != nil
+// CacheEnabled returns true if caching is enabled for the specified model type.
+func CacheEnabled[T Model](ctx context.Context) bool {
+	return ctx.Value(cacheKey[T]{}) != nil
 }
 
-// GetCacheOptions retrieves cache options for the specified table from context.
-func GetCacheOptions(ctx context.Context, table string) *CacheOptions {
-	optsKey := cacheOptionsKey{table: table}
-	if opts, ok := ctx.Value(optsKey).(*CacheOptions); ok {
+// GetCacheOptions retrieves cache options for the specified model type from context.
+func GetCacheOptions[T Model](ctx context.Context) *CacheOptions {
+	if opts, ok := ctx.Value(cacheOptionsKey[T]{}).(*CacheOptions); ok {
 		return opts
 	}
 	return nil

@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-// Cache holds cached records for a specific model type.
+// cache holds cached records for a specific model type.
 // N is the node/model type.
-type Cache[N any] struct {
+type cache[N any] struct {
 	mu      sync.RWMutex
 	data    map[string]*cacheEntry[N]
-	mode    CacheMode
+	mode    cacheMode
 	loaded  bool          // true if all records have been loaded (eager mode)
 	maxSize int           // max records for eager mode
 	ttl     time.Duration // time-to-live for entries (0 = no expiration)
@@ -24,17 +24,17 @@ type cacheEntry[N any] struct {
 	expiresAt time.Time // zero value means no expiration
 }
 
-// CacheMode specifies the caching strategy.
-type CacheMode int
+// cacheMode specifies the caching strategy.
+type cacheMode int
 
 const (
-	CacheModeLazy CacheMode = iota
-	CacheModeEager
+	cacheModeLazy cacheMode = iota
+	cacheModeEager
 )
 
 // newCache creates a new empty cache with the given options.
-func newCache[N any](mode CacheMode, ttl time.Duration, maxSize int) *Cache[N] {
-	return &Cache[N]{
+func newCache[N any](mode cacheMode, ttl time.Duration, maxSize int) *cache[N] {
+	return &cache[N]{
 		data:    make(map[string]*cacheEntry[N]),
 		mode:    mode,
 		loaded:  false,
@@ -44,10 +44,10 @@ func newCache[N any](mode CacheMode, ttl time.Duration, maxSize int) *Cache[N] {
 }
 
 // newCacheWithAll creates a new cache pre-populated with all records (eager mode).
-func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Duration) *Cache[N] {
-	c := &Cache[N]{
+func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Duration) *cache[N] {
+	c := &cache[N]{
 		data:   make(map[string]*cacheEntry[N], len(records)),
-		mode:   CacheModeEager,
+		mode:   cacheModeEager,
 		loaded: true,
 		ttl:    ttl,
 	}
@@ -68,9 +68,9 @@ func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Durat
 	return c
 }
 
-// Get retrieves a record from the cache.
+// get retrieves a record from the cache.
 // Returns (record, true) if found and not expired, (nil, false) otherwise.
-func (c *Cache[N]) Get(id string) (*N, bool) {
+func (c *cache[N]) get(id string) (*N, bool) {
 	c.mu.RLock()
 	entry, ok := c.data[id]
 	c.mu.RUnlock()
@@ -89,8 +89,8 @@ func (c *Cache[N]) Get(id string) (*N, bool) {
 	return entry.record, true
 }
 
-// Set stores a record in the cache.
-func (c *Cache[N]) Set(id string, record *N) {
+// set stores a record in the cache.
+func (c *cache[N]) set(id string, record *N) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -105,33 +105,33 @@ func (c *Cache[N]) Set(id string, record *N) {
 	}
 }
 
-// IsEager returns true if the cache was configured for eager loading.
-func (c *Cache[N]) IsEager() bool {
+// isEager returns true if the cache was configured for eager loading.
+func (c *cache[N]) isEager() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.mode == CacheModeEager
+	return c.mode == cacheModeEager
 }
 
-// IsLoaded returns true if all records have been loaded (for eager mode).
-func (c *Cache[N]) IsLoaded() bool {
+// isLoaded returns true if all records have been loaded (for eager mode).
+func (c *cache[N]) isLoaded() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.loaded
 }
 
-// SetLoaded marks the cache as fully loaded.
-func (c *Cache[N]) SetLoaded() {
+// setLoaded marks the cache as fully loaded.
+func (c *cache[N]) setLoaded() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.loaded = true
 }
 
-// MaxSize returns the maximum size configured for this cache.
-func (c *Cache[N]) MaxSize() int {
+// maxSize returns the maximum size configured for this cache.
+func (c *cache[N]) getMaxSize() int {
 	return c.maxSize
 }
 
-// Mode returns the cache mode.
-func (c *Cache[N]) Mode() CacheMode {
+// mode returns the cache mode.
+func (c *cache[N]) getMode() cacheMode {
 	return c.mode
 }
