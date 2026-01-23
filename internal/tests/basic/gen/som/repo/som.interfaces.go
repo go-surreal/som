@@ -5,6 +5,7 @@ import "context"
 
 type Client interface {
 	URLExampleRepo() URLExampleRepo
+	LocationRepo() LocationRepo
 	GroupRepo() GroupRepo
 	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
 	AllFieldTypesRepo() AllFieldTypesRepo

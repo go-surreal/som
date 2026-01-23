@@ -2,13 +2,14 @@ package basic
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
-	"testing"
-	"time"
 )
 
 func TestFilterCompareFields(t *testing.T) {

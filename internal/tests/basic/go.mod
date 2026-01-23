@@ -22,6 +22,7 @@ require (
 	github.com/dave/jennifer v1.7.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
+	github.com/paulmach/orb v0.12.0 // indirect
 	github.com/urfave/cli/v3 v3.6.1 // indirect
 	github.com/wzshiming/gotype v0.8.0 // indirect
 	golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39 // indirect

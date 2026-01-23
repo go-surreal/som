@@ -403,6 +403,35 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 
 	switch t.Elem().Kind() {
 
+	case gotype.Invalid:
+		{
+			// gotype returns Invalid for some external package types it can't fully resolve
+			// (notably orb and simplefeatures geo types). We detect them via String().
+			typeStr := t.Elem().String()
+
+			if strings.HasPrefix(typeStr, "orb.") {
+				typeName := strings.TrimPrefix(typeStr, "orb.")
+				if geoType, ok := orbGeoType(typeName); ok {
+					return &FieldGeometry{
+						fieldAtomic: atomic,
+						Package:     GeoPackageOrb,
+						Type:        geoType,
+					}, nil
+				}
+			}
+
+			if strings.HasPrefix(typeStr, "geom.") {
+				typeName := strings.TrimPrefix(typeStr, "geom.")
+				if geoType, ok := simpefeaturesGeoType(typeName); ok {
+					return &FieldGeometry{
+						fieldAtomic: atomic,
+						Package:     GeoPackageSimplefeatures,
+						Type:        geoType,
+					}, nil
+				}
+			}
+		}
+
 	case gotype.String:
 		{
 			switch {
@@ -527,6 +556,13 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 				{
 					return &FieldURL{atomic}, nil
 				}
+			case t.Elem().PkgPath() == string(GeoPackageSimplefeatures):
+				{
+					geoType, ok := simpefeaturesGeoType(t.Elem().Name())
+					if ok {
+						return &FieldGeometry{atomic, GeoPackageSimplefeatures, geoType}, nil
+					}
+				}
 			case isNode(t.Elem(), outPkg):
 				{
 					return &FieldNode{atomic, t.Elem().Name()}, nil
@@ -544,6 +580,22 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 
 	case gotype.Slice:
 		{
+			// Check if this is an orb geometry slice type (LineString, Polygon, etc.)
+			if t.Elem().PkgPath() == string(GeoPackageOrb) {
+				geoType, ok := orbGeoType(t.Elem().Name())
+				if ok {
+					return &FieldGeometry{
+						fieldAtomic: &fieldAtomic{
+							name:   t.Name(),
+							index:  indexInfo,
+							search: searchInfo,
+						},
+						Package: GeoPackageOrb,
+						Type:    geoType,
+					}, nil
+				}
+			}
+
 			field, err := parseFieldInternal(t.Elem(), outPkg, false)
 			if err != nil {
 				return nil, err
@@ -581,6 +633,19 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 					},
 					Package: UUIDPackageGofrs,
 				}, nil
+			case string(GeoPackageOrb):
+				geoType, ok := orbGeoType(t.Elem().Name())
+				if ok {
+					return &FieldGeometry{
+						fieldAtomic: &fieldAtomic{
+							name:   t.Name(),
+							index:  indexInfo,
+							search: searchInfo,
+						},
+						Package: GeoPackageOrb,
+						Type:    geoType,
+					}, nil
+				}
 			}
 		}
 
@@ -697,8 +762,10 @@ type Output struct {
 
 // UsedFeatures tracks which optional features are used across all models.
 type UsedFeatures struct {
-	UsesGoogleUUID bool
-	UsesGofrsUUID  bool
+	UsesGoogleUUID       bool
+	UsesGofrsUUID        bool
+	UsesOrbGeo           bool
+	UsesSimpefeaturesGeo bool
 }
 
 // collectUsedFeatures walks through all parsed fields to determine which features are used.
@@ -714,6 +781,13 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 				features.UsesGoogleUUID = true
 			case UUIDPackageGofrs:
 				features.UsesGofrsUUID = true
+			}
+		case *FieldGeometry:
+			switch field.Package {
+			case GeoPackageOrb:
+				features.UsesOrbGeo = true
+			case GeoPackageSimplefeatures:
+				features.UsesSimpefeaturesGeo = true
 			}
 		case *FieldSlice:
 			checkField(field.Field)
@@ -739,4 +813,48 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 	}
 
 	return features
+}
+
+// orbGeoType maps orb type names to GeometryType.
+func orbGeoType(name string) (GeometryType, bool) {
+	switch name {
+	case "Point":
+		return GeometryPoint, true
+	case "LineString":
+		return GeometryLineString, true
+	case "Polygon":
+		return GeometryPolygon, true
+	case "MultiPoint":
+		return GeometryMultiPoint, true
+	case "MultiLineString":
+		return GeometryMultiLineString, true
+	case "MultiPolygon":
+		return GeometryMultiPolygon, true
+	case "Collection":
+		return GeometryCollection, true
+	default:
+		return 0, false
+	}
+}
+
+// simpefeaturesGeoType maps simplefeatures type names to GeometryType.
+func simpefeaturesGeoType(name string) (GeometryType, bool) {
+	switch name {
+	case "Point":
+		return GeometryPoint, true
+	case "LineString":
+		return GeometryLineString, true
+	case "Polygon":
+		return GeometryPolygon, true
+	case "MultiPoint":
+		return GeometryMultiPoint, true
+	case "MultiLineString":
+		return GeometryMultiLineString, true
+	case "MultiPolygon":
+		return GeometryMultiPolygon, true
+	case "GeometryCollection":
+		return GeometryCollection, true
+	default:
+		return 0, false
+	}
 }
