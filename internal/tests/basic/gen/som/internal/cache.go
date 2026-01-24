@@ -108,11 +108,10 @@ func GetCacheKey[T any](ctx context.Context) string {
 }
 
 var (
-	cacheStoreMu     sync.RWMutex
-	cacheStores      = make(map[string]any)
-	cacheKeyRegistry = make(map[string]string)   // cacheID → fullKey
-	droppedCacheIDs  = make(map[string]struct{}) // tracks cleaned-up cache IDs
-	cacheCounter     atomic.Uint64
+	cacheStoreMu    sync.RWMutex
+	cacheStores     = make(map[string]any)      // keyed by cacheID directly
+	droppedCacheIDs = make(map[string]struct{}) // tracks cleaned-up cache IDs
+	cacheCounter    atomic.Uint64
 )
 
 // NextCacheID generates a unique cache instance ID.
@@ -120,43 +119,26 @@ func NextCacheID() string {
 	return strconv.FormatUint(cacheCounter.Add(1), 36)
 }
 
-// CacheKey builds the cache store key from table name and instance ID.
-func CacheKey(table, id string) string {
-	return table + ":" + id
-}
-
-// RegisterCacheKey maps a cache ID to its full key.
-// Called by repo when creating a cache.
-func RegisterCacheKey(cacheID, fullKey string) {
-	cacheStoreMu.Lock()
-	defer cacheStoreMu.Unlock()
-	cacheKeyRegistry[cacheID] = fullKey
-}
-
-// GetCache retrieves the cache for the given key.
-func GetCache(key string) (any, bool) {
+// GetCache retrieves the cache for the given cacheID.
+func GetCache(cacheID string) (any, bool) {
 	cacheStoreMu.RLock()
 	defer cacheStoreMu.RUnlock()
-	c, ok := cacheStores[key]
+	c, ok := cacheStores[cacheID]
 	return c, ok
 }
 
-// SetCache stores the cache for the given key.
-func SetCache(key string, cache any) {
+// SetCache stores the cache for the given cacheID.
+func SetCache(cacheID string, cache any) {
 	cacheStoreMu.Lock()
 	defer cacheStoreMu.Unlock()
-	cacheStores[key] = cache
+	cacheStores[cacheID] = cache
 }
 
 // DropCacheByID drops the cache for the given cache ID.
-// Looks up the full key from the registry.
 func DropCacheByID(cacheID string) {
 	cacheStoreMu.Lock()
 	defer cacheStoreMu.Unlock()
-	if fullKey, ok := cacheKeyRegistry[cacheID]; ok {
-		delete(cacheStores, fullKey)
-		delete(cacheKeyRegistry, cacheID)
-	}
+	delete(cacheStores, cacheID)
 	droppedCacheIDs[cacheID] = struct{}{}
 }
 

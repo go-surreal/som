@@ -71,7 +71,7 @@ func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTy
 	if !internal.CacheEnabled[model.AllFieldTypes](ctx) {
 		return r.read(ctx, id)
 	}
-	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, "all_field_types", func(n *model.AllFieldTypes) string {
+	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, func(n *model.AllFieldTypes) string {
 		if n.ID() != nil {
 			return n.ID().String()
 		}

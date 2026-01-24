@@ -137,15 +137,13 @@ func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N]) (*N
 	return record, exists, nil
 }
 
-// getOrCreateCache returns the cache for the given table, creating it if needed.
-// The table parameter is the database table name used for cache key isolation.
+// getOrCreateCache returns the cache for the given model type, creating it if needed.
 // The idFunc is used for eager cache population.
 // The queryAll function loads all records for eager mode.
 // The countAll function counts records to check against maxSize.
 // Returns ErrCacheAlreadyCleaned if the cache was previously cleaned up.
 func getOrCreateCache[N som.Model](
 	ctx context.Context,
-	table string,
 	idFunc func(*N) string,
 	queryAll func(context.Context) ([]*N, error),
 	countAll func(context.Context) (int, error),
@@ -168,9 +166,7 @@ func getOrCreateCache[N som.Model](
 		return nil, som.ErrCacheAlreadyCleaned
 	}
 
-	key := internal.CacheKey(table, cacheID)
-
-	if cached, ok := internal.GetCache(key); ok {
+	if cached, ok := internal.GetCache(cacheID); ok {
 		if c, ok := cached.(*cache[N]); ok {
 			return c, nil
 		}
@@ -204,7 +200,6 @@ func getOrCreateCache[N som.Model](
 		c = newCacheWithAll(records, idFunc, opts.TTL)
 	}
 
-	internal.SetCache(key, c)
-	internal.RegisterCacheKey(cacheID, key)
+	internal.SetCache(cacheID, c)
 	return c, nil
 }

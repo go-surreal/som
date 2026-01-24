@@ -71,7 +71,7 @@ func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, b
 	if !internal.CacheEnabled[model.URLExample](ctx) {
 		return r.read(ctx, id)
 	}
-	cache, err := getOrCreateCache[model.URLExample](ctx, "url_example", func(n *model.URLExample) string {
+	cache, err := getOrCreateCache[model.URLExample](ctx, func(n *model.URLExample) string {
 		if n.ID() != nil {
 			return n.ID().String()
 		}

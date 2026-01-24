@@ -71,7 +71,7 @@ func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *som.ID) (*model.Fie
 	if !internal.CacheEnabled[model.FieldsLikeDBResponse](ctx) {
 		return r.read(ctx, id)
 	}
-	cache, err := getOrCreateCache[model.FieldsLikeDBResponse](ctx, "fields_like_db_response", func(n *model.FieldsLikeDBResponse) string {
+	cache, err := getOrCreateCache[model.FieldsLikeDBResponse](ctx, func(n *model.FieldsLikeDBResponse) string {
 		if n.ID() != nil {
 			return n.ID().String()
 		}
