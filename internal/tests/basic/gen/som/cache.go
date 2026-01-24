@@ -34,6 +34,10 @@ type CacheOption = internal.CacheOption
 // for cached reads will return ErrCacheAlreadyCleaned. This prevents accidental
 // use of stale cache references.
 //
+// For eager caching, WithMaxSize limits the number of records that can be cached.
+// If the table exceeds MaxSize, Read returns ErrCacheSizeLimitExceeded.
+// This check happens both during initial cache load and during TTL-based refresh.
+//
 // Example:
 //
 //	ctx, cleanup := som.WithCache[model.Group](ctx)

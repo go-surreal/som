@@ -80,9 +80,10 @@ func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTy
 	queryAll := func(ctx context.Context) ([]*model.AllFieldTypes, error) {
 		return r.Query().All(ctx)
 	}
-	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, idFunc, queryAll, func(ctx context.Context) (int, error) {
+	countAll := func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
-	})
+	}
+	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, idFunc, queryAll, countAll)
 	if err != nil {
 		return nil, false, err
 	}
@@ -91,6 +92,7 @@ func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTy
 		refreshFuncs = &eagerRefreshFuncs[model.AllFieldTypes]{
 			cacheID:  internal.GetCacheKey[model.AllFieldTypes](ctx),
 			queryAll: queryAll,
+			countAll: countAll,
 			idFunc:   idFunc,
 		}
 	}

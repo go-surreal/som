@@ -80,9 +80,10 @@ func (r *group) Read(ctx context.Context, id *som.ID) (*model.Group, bool, error
 	queryAll := func(ctx context.Context) ([]*model.Group, error) {
 		return r.Query().All(ctx)
 	}
-	cache, err := getOrCreateCache[model.Group](ctx, idFunc, queryAll, func(ctx context.Context) (int, error) {
+	countAll := func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
-	})
+	}
+	cache, err := getOrCreateCache[model.Group](ctx, idFunc, queryAll, countAll)
 	if err != nil {
 		return nil, false, err
 	}
@@ -91,6 +92,7 @@ func (r *group) Read(ctx context.Context, id *som.ID) (*model.Group, bool, error
 		refreshFuncs = &eagerRefreshFuncs[model.Group]{
 			cacheID:  internal.GetCacheKey[model.Group](ctx),
 			queryAll: queryAll,
+			countAll: countAll,
 			idFunc:   idFunc,
 		}
 	}

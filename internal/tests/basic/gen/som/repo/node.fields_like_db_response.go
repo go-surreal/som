@@ -80,9 +80,10 @@ func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *som.ID) (*model.Fie
 	queryAll := func(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
 		return r.Query().All(ctx)
 	}
-	cache, err := getOrCreateCache[model.FieldsLikeDBResponse](ctx, idFunc, queryAll, func(ctx context.Context) (int, error) {
+	countAll := func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
-	})
+	}
+	cache, err := getOrCreateCache[model.FieldsLikeDBResponse](ctx, idFunc, queryAll, countAll)
 	if err != nil {
 		return nil, false, err
 	}
@@ -91,6 +92,7 @@ func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *som.ID) (*model.Fie
 		refreshFuncs = &eagerRefreshFuncs[model.FieldsLikeDBResponse]{
 			cacheID:  internal.GetCacheKey[model.FieldsLikeDBResponse](ctx),
 			queryAll: queryAll,
+			countAll: countAll,
 			idFunc:   idFunc,
 		}
 	}

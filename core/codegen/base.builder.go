@@ -316,15 +316,16 @@ If caching is enabled via som.WithCache, it will be used.
 			jen.Id("queryAll").Op(":=").Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
 				jen.Return(jen.Id("r").Dot("Query").Call().Dot("All").Call(jen.Id("ctx"))),
 			),
+			jen.Id("countAll").Op(":=").Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Int(), jen.Error()).Block(
+				jen.Return(jen.Id("r").Dot("Query").Call().Dot("Count").Call(jen.Id("ctx"))),
+			),
 			jen.List(jen.Id("cache"), jen.Err()).Op(":=").Id("getOrCreateCache").
 				Types(b.input.SourceQual(node.NameGo())).
 				Call(
 					jen.Id("ctx"),
 					jen.Id("idFunc"),
 					jen.Id("queryAll"),
-					jen.Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Int(), jen.Error()).Block(
-						jen.Return(jen.Id("r").Dot("Query").Call().Dot("Count").Call(jen.Id("ctx"))),
-					),
+					jen.Id("countAll"),
 				),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.False(), jen.Err()),
@@ -334,6 +335,7 @@ If caching is enabled via som.WithCache, it will be used.
 				jen.Id("refreshFuncs").Op("=").Op("&").Id("eagerRefreshFuncs").Types(b.input.SourceQual(node.NameGo())).Values(
 					jen.Id("cacheID").Op(":").Qual(b.subPkg("internal"), "GetCacheKey").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx")),
 					jen.Id("queryAll").Op(":").Id("queryAll"),
+					jen.Id("countAll").Op(":").Id("countAll"),
 					jen.Id("idFunc").Op(":").Id("idFunc"),
 				),
 			),

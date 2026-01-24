@@ -118,6 +118,7 @@ func (r *repo[N, C]) refresh(ctx context.Context, id *models.RecordID, node *N) 
 type eagerRefreshFuncs[N any] struct {
 	cacheID  string
 	queryAll func(context.Context) ([]*N, error)
+	countAll func(context.Context) (int, error)
 	idFunc   func(*N) string
 }
 
@@ -168,9 +169,26 @@ func (r *repo[N, C]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *
 			return nil, nil
 		}
 
+		// Check count first (like initialization)
+		maxSize := c.getMaxSize()
+		if maxSize > 0 {
+			count, err := funcs.countAll(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("could not count records for eager cache refresh: %w", err)
+			}
+			if count > maxSize {
+				return nil, som.ErrCacheSizeLimitExceeded
+			}
+		}
+
 		records, err := funcs.queryAll(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("could not refresh eager cache: %w", err)
+		}
+
+		// Post-query size check (guards against TOCTOU race)
+		if maxSize > 0 && len(records) > maxSize {
+			return nil, som.ErrCacheSizeLimitExceeded
 		}
 
 		c.refreshWith(records, funcs.idFunc)
@@ -254,6 +272,11 @@ func getOrCreateCache[N som.Model](
 			records, err := queryAll(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("could not load records for eager cache: %w", err)
+			}
+
+			// Post-query size check (guards against TOCTOU race)
+			if len(records) > opts.MaxSize {
+				return nil, som.ErrCacheSizeLimitExceeded
 			}
 
 			c = newCacheWithAll(records, idFunc, opts.TTL, opts.MaxSize)

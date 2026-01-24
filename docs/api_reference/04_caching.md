@@ -222,6 +222,7 @@ _, _, err := client.GroupRepo().Read(ctx, id)
 5. Cache misses return `(nil, false, nil)` without querying the database
 6. Records created after cache load are not visible through the cached context
 7. With TTL enabled, the entire cache expires and refreshes automatically on next access
+8. During TTL refresh, MaxSize is re-checked; returns `ErrCacheSizeLimitExceeded` if exceeded
 
 ### Cleanup Lifecycle
 

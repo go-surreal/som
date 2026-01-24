@@ -80,9 +80,10 @@ func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, b
 	queryAll := func(ctx context.Context) ([]*model.URLExample, error) {
 		return r.Query().All(ctx)
 	}
-	cache, err := getOrCreateCache[model.URLExample](ctx, idFunc, queryAll, func(ctx context.Context) (int, error) {
+	countAll := func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
-	})
+	}
+	cache, err := getOrCreateCache[model.URLExample](ctx, idFunc, queryAll, countAll)
 	if err != nil {
 		return nil, false, err
 	}
@@ -91,6 +92,7 @@ func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, b
 		refreshFuncs = &eagerRefreshFuncs[model.URLExample]{
 			cacheID:  internal.GetCacheKey[model.URLExample](ctx),
 			queryAll: queryAll,
+			countAll: countAll,
 			idFunc:   idFunc,
 		}
 	}
