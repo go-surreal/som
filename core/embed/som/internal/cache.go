@@ -69,8 +69,12 @@ func WithTTL(d time.Duration) CacheOption {
 // WithMaxSize sets the maximum number of records for eager cache.
 // Default is 1000. If the table has more records than maxSize,
 // ErrCacheSizeLimitExceeded is returned.
+// Non-positive values are clamped to DefaultMaxSize.
 func WithMaxSize(n int) CacheOption {
 	return func(o *CacheOptions) {
+		if n <= 0 {
+			n = DefaultMaxSize
+		}
 		o.MaxSize = n
 	}
 }

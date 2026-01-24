@@ -31,6 +31,7 @@ var WithTTL = internal.WithTTL
 // WithMaxSize sets the maximum number of records for eager cache.
 // Default is 1000. If the table has more records than maxSize,
 // ErrCacheSizeLimitExceeded is returned.
+// Non-positive values are clamped to DefaultMaxSize.
 var WithMaxSize = internal.WithMaxSize
 
 // CacheOption is a functional option for configuring cache behavior.
