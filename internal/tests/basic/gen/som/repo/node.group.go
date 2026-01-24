@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -65,8 +66,32 @@ func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
+// If caching is enabled via som.WithCache, it will be used.
 func (r *group) Read(ctx context.Context, id *som.ID) (*model.Group, bool, error) {
-	return r.read(ctx, id)
+	if !internal.CacheEnabled[model.Group](ctx) {
+		return r.read(ctx, id)
+	}
+	idFunc := func(n *model.Group) string {
+		if n.ID() != nil {
+			return n.ID().String()
+		}
+		return ""
+	}
+	queryAll := func(ctx context.Context) ([]*model.Group, error) {
+		return r.Query().All(ctx)
+	}
+	countAll := func(ctx context.Context) (int, error) {
+		return r.Query().Count(ctx)
+	}
+	cache, err := getOrCreateCache[model.Group](ctx, idFunc, queryAll, countAll)
+	if err != nil {
+		return nil, false, err
+	}
+	var refreshFuncs *eagerRefreshFuncs[model.Group]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.Group]{cacheID: internal.GetCacheKey[model.Group](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.
