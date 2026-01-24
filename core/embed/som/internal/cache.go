@@ -57,8 +57,9 @@ func Eager() CacheOption {
 	}
 }
 
-// WithTTL sets the time-to-live for cache entries.
-// Entries expire after the given duration.
+// WithTTL sets the time-to-live for cached data.
+// In lazy mode, each entry expires individually after the given duration.
+// In eager mode, the entire cache is refreshed after the given duration.
 func WithTTL(d time.Duration) CacheOption {
 	return func(o *CacheOptions) {
 		o.TTL = d
@@ -127,10 +128,16 @@ func GetCache(cacheID string) (any, bool) {
 }
 
 // SetCache stores the cache for the given cacheID.
-func SetCache(cacheID string, cache any) {
+// Returns true if the cache was stored, false if the cacheID was not found
+// (e.g., already cleaned up).
+func SetCache(cacheID string, cache any) bool {
 	cacheStoreMu.Lock()
 	defer cacheStoreMu.Unlock()
+	if _, exists := cacheStores[cacheID]; !exists {
+		return false
+	}
 	cacheStores[cacheID] = cache
+	return true
 }
 
 // DropCacheByID drops the cache for the given cache ID.

@@ -280,7 +280,10 @@ func getOrCreateCache[N som.Model](
 			c = newCacheWithAll(records, idFunc, opts.TTL, opts.MaxSize)
 		}
 
-		internal.SetCache(cacheID, c)
+		if !internal.SetCache(cacheID, c) {
+			// Cache was cleaned up while we were initializing
+			return nil, som.ErrCacheAlreadyCleaned
+		}
 		return c, nil
 	})
 
