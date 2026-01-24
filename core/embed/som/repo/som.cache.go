@@ -144,13 +144,6 @@ func (c *cache[N]) isLoaded() bool {
 	return c.loaded
 }
 
-// setLoaded marks the cache as fully loaded.
-func (c *cache[N]) setLoaded() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.loaded = true
-}
-
 // isExpired returns true if the eager cache has expired and needs refresh.
 func (c *cache[N]) isExpired() bool {
 	c.mu.RLock()
@@ -159,13 +152,6 @@ func (c *cache[N]) isExpired() bool {
 		return false
 	}
 	return time.Now().After(c.cacheExpiresAt)
-}
-
-// markForRefresh clears loaded flag so cache will be reloaded on next access.
-func (c *cache[N]) markForRefresh() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.loaded = false
 }
 
 // refreshWith replaces all cache data with new records (for eager mode TTL refresh).
@@ -194,12 +180,7 @@ func (c *cache[N]) refreshWith(records []*N, idFunc func(*N) string) {
 	c.loaded = true
 }
 
-// maxSize returns the maximum size configured for this cache.
+// getMaxSize returns the maximum size configured for this cache.
 func (c *cache[N]) getMaxSize() int {
 	return c.maxSize
-}
-
-// mode returns the cache mode.
-func (c *cache[N]) getMode() cacheMode {
-	return c.mode
 }
