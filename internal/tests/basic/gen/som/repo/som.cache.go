@@ -79,14 +79,32 @@ func (c *cache[N]) get(id string) (*N, bool) {
 		return nil, false
 	}
 
-	if !entry.expiresAt.IsZero() && time.Now().After(entry.expiresAt) {
-		c.mu.Lock()
-		delete(c.data, id)
-		c.mu.Unlock()
+	// No expiration configured
+	if entry.expiresAt.IsZero() {
+		return entry.record, true
+	}
+
+	// Not yet expired
+	if time.Now().Before(entry.expiresAt) {
+		return entry.record, true
+	}
+
+	// Possibly expired - acquire write lock and re-check
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	currentEntry, ok := c.data[id]
+	if !ok {
 		return nil, false
 	}
 
-	return entry.record, true
+	// Re-check expiration on current entry (may have been updated)
+	if !currentEntry.expiresAt.IsZero() && time.Now().After(currentEntry.expiresAt) {
+		delete(c.data, id)
+		return nil, false
+	}
+
+	return currentEntry.record, true
 }
 
 // set stores a record in the cache.

@@ -259,7 +259,7 @@ func TestCacheConcurrent(t *testing.T) {
 					return
 				}
 				if !exists {
-					errCh <- nil
+					errCh <- fmt.Errorf("expected group to exist (worker %d, groupIdx %d)", workerID, groupIdx)
 					return
 				}
 				_ = read.Name
