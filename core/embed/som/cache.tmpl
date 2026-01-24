@@ -8,21 +8,32 @@ import (
 	"{{.GenerateOutPath}}/internal"
 )
 
-// Re-export errors from internal package.
-var (
-	ErrCacheSizeLimitExceeded = internal.ErrCacheSizeLimitExceeded
-	ErrCacheAlreadyCleaned    = internal.ErrCacheAlreadyCleaned
-)
+// ErrCacheSizeLimitExceeded is returned when eager cache would exceed the max size.
+var ErrCacheSizeLimitExceeded = internal.ErrCacheSizeLimitExceeded
 
-// Re-export option functions from internal package.
-var (
-	Lazy        = internal.Lazy
-	Eager       = internal.Eager
-	WithTTL     = internal.WithTTL
-	WithMaxSize = internal.WithMaxSize
-)
+// ErrCacheAlreadyCleaned is returned when attempting to use a cache that has
+// already been cleaned up via the cleanup function returned by WithCache.
+var ErrCacheAlreadyCleaned = internal.ErrCacheAlreadyCleaned
 
-// Re-export CacheOption type from internal package.
+// Lazy sets the cache to lazy loading mode (default).
+// Records are fetched from the database on first access and cached.
+var Lazy = internal.Lazy
+
+// Eager sets the cache to eager loading mode.
+// All records are loaded on first Read() call.
+var Eager = internal.Eager
+
+// WithTTL sets the time-to-live for cached data.
+// In lazy mode, each entry expires individually after the given duration.
+// In eager mode, the entire cache is refreshed after the given duration.
+var WithTTL = internal.WithTTL
+
+// WithMaxSize sets the maximum number of records for eager cache.
+// Default is 1000. If the table has more records than maxSize,
+// ErrCacheSizeLimitExceeded is returned.
+var WithMaxSize = internal.WithMaxSize
+
+// CacheOption is a functional option for configuring cache behavior.
 type CacheOption = internal.CacheOption
 
 // WithCache enables caching for the specified model type.
