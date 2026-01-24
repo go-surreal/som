@@ -57,7 +57,7 @@ func WithCache[T Model](ctx context.Context, opts ...CacheOption) (context.Conte
 	}
 
 	id := internal.NextCacheID()
-	internal.SetCache(id, nil) // Initialize placeholder to track active cache
+	internal.InitCache(id, nil) // Initialize placeholder to track active cache
 	ctx = internal.SetCacheContext[T](ctx, id, options)
 
 	cleanup := func() {

@@ -119,6 +119,14 @@ func NextCacheID() string {
 	return strconv.FormatUint(cacheCounter.Add(1), 36)
 }
 
+// InitCache creates a new cache entry with the given cacheID.
+// Used by WithCache to initialize the placeholder entry.
+func InitCache(cacheID string, cache any) {
+	cacheStoreMu.Lock()
+	defer cacheStoreMu.Unlock()
+	cacheStores[cacheID] = cache
+}
+
 // GetCache retrieves the cache for the given cacheID.
 func GetCache(cacheID string) (any, bool) {
 	cacheStoreMu.RLock()
