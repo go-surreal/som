@@ -89,12 +89,7 @@ func (r *group) Read(ctx context.Context, id *som.ID) (*model.Group, bool, error
 	}
 	var refreshFuncs *eagerRefreshFuncs[model.Group]
 	if cache != nil && cache.isEager() {
-		refreshFuncs = &eagerRefreshFuncs[model.Group]{
-			cacheID:  internal.GetCacheKey[model.Group](ctx),
-			queryAll: queryAll,
-			countAll: countAll,
-			idFunc:   idFunc,
-		}
+		refreshFuncs = &eagerRefreshFuncs[model.Group]{cacheID: internal.GetCacheKey[model.Group](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }

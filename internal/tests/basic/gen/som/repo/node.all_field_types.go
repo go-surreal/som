@@ -89,12 +89,7 @@ func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTy
 	}
 	var refreshFuncs *eagerRefreshFuncs[model.AllFieldTypes]
 	if cache != nil && cache.isEager() {
-		refreshFuncs = &eagerRefreshFuncs[model.AllFieldTypes]{
-			cacheID:  internal.GetCacheKey[model.AllFieldTypes](ctx),
-			queryAll: queryAll,
-			countAll: countAll,
-			idFunc:   idFunc,
-		}
+		refreshFuncs = &eagerRefreshFuncs[model.AllFieldTypes]{cacheID: internal.GetCacheKey[model.AllFieldTypes](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }

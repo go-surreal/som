@@ -89,12 +89,7 @@ func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *som.ID) (*model.Fie
 	}
 	var refreshFuncs *eagerRefreshFuncs[model.FieldsLikeDBResponse]
 	if cache != nil && cache.isEager() {
-		refreshFuncs = &eagerRefreshFuncs[model.FieldsLikeDBResponse]{
-			cacheID:  internal.GetCacheKey[model.FieldsLikeDBResponse](ctx),
-			queryAll: queryAll,
-			countAll: countAll,
-			idFunc:   idFunc,
-		}
+		refreshFuncs = &eagerRefreshFuncs[model.FieldsLikeDBResponse]{cacheID: internal.GetCacheKey[model.FieldsLikeDBResponse](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }

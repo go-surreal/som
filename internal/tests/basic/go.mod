@@ -19,7 +19,14 @@ require (
 require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
+	github.com/dave/jennifer v1.7.1 // indirect
+	github.com/go-surreal/som v0.11.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/iancoleman/strcase v0.3.0 // indirect
+	github.com/urfave/cli/v3 v3.6.2 // indirect
+	github.com/wzshiming/gotype v0.8.0 // indirect
+	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
+	golang.org/x/mod v0.32.0 // indirect
 )
 
 require (
@@ -73,5 +80,4 @@ require (
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	github.com/go-surreal/som v0.11.0
 )

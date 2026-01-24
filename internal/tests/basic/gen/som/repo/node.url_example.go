@@ -89,12 +89,7 @@ func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, b
 	}
 	var refreshFuncs *eagerRefreshFuncs[model.URLExample]
 	if cache != nil && cache.isEager() {
-		refreshFuncs = &eagerRefreshFuncs[model.URLExample]{
-			cacheID:  internal.GetCacheKey[model.URLExample](ctx),
-			queryAll: queryAll,
-			countAll: countAll,
-			idFunc:   idFunc,
-		}
+		refreshFuncs = &eagerRefreshFuncs[model.URLExample]{cacheID: internal.GetCacheKey[model.URLExample](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
