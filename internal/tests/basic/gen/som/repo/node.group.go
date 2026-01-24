@@ -71,20 +71,30 @@ func (r *group) Read(ctx context.Context, id *som.ID) (*model.Group, bool, error
 	if !internal.CacheEnabled[model.Group](ctx) {
 		return r.read(ctx, id)
 	}
-	cache, err := getOrCreateCache[model.Group](ctx, func(n *model.Group) string {
+	idFunc := func(n *model.Group) string {
 		if n.ID() != nil {
 			return n.ID().String()
 		}
 		return ""
-	}, func(ctx context.Context) ([]*model.Group, error) {
+	}
+	queryAll := func(ctx context.Context) ([]*model.Group, error) {
 		return r.Query().All(ctx)
-	}, func(ctx context.Context) (int, error) {
+	}
+	cache, err := getOrCreateCache[model.Group](ctx, idFunc, queryAll, func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
 	})
 	if err != nil {
 		return nil, false, err
 	}
-	return r.readWithCache(ctx, id, cache)
+	var refreshFuncs *eagerRefreshFuncs[model.Group]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.Group]{
+			cacheID:  internal.GetCacheKey[model.Group](ctx),
+			queryAll: queryAll,
+			idFunc:   idFunc,
+		}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.

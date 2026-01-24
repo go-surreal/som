@@ -71,20 +71,30 @@ func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *som.ID) (*model.Fie
 	if !internal.CacheEnabled[model.FieldsLikeDBResponse](ctx) {
 		return r.read(ctx, id)
 	}
-	cache, err := getOrCreateCache[model.FieldsLikeDBResponse](ctx, func(n *model.FieldsLikeDBResponse) string {
+	idFunc := func(n *model.FieldsLikeDBResponse) string {
 		if n.ID() != nil {
 			return n.ID().String()
 		}
 		return ""
-	}, func(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
+	}
+	queryAll := func(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
 		return r.Query().All(ctx)
-	}, func(ctx context.Context) (int, error) {
+	}
+	cache, err := getOrCreateCache[model.FieldsLikeDBResponse](ctx, idFunc, queryAll, func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
 	})
 	if err != nil {
 		return nil, false, err
 	}
-	return r.readWithCache(ctx, id, cache)
+	var refreshFuncs *eagerRefreshFuncs[model.FieldsLikeDBResponse]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.FieldsLikeDBResponse]{
+			cacheID:  internal.GetCacheKey[model.FieldsLikeDBResponse](ctx),
+			queryAll: queryAll,
+			idFunc:   idFunc,
+		}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.

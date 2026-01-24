@@ -71,20 +71,30 @@ func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTy
 	if !internal.CacheEnabled[model.AllFieldTypes](ctx) {
 		return r.read(ctx, id)
 	}
-	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, func(n *model.AllFieldTypes) string {
+	idFunc := func(n *model.AllFieldTypes) string {
 		if n.ID() != nil {
 			return n.ID().String()
 		}
 		return ""
-	}, func(ctx context.Context) ([]*model.AllFieldTypes, error) {
+	}
+	queryAll := func(ctx context.Context) ([]*model.AllFieldTypes, error) {
 		return r.Query().All(ctx)
-	}, func(ctx context.Context) (int, error) {
+	}
+	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, idFunc, queryAll, func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
 	})
 	if err != nil {
 		return nil, false, err
 	}
-	return r.readWithCache(ctx, id, cache)
+	var refreshFuncs *eagerRefreshFuncs[model.AllFieldTypes]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.AllFieldTypes]{
+			cacheID:  internal.GetCacheKey[model.AllFieldTypes](ctx),
+			queryAll: queryAll,
+			idFunc:   idFunc,
+		}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.

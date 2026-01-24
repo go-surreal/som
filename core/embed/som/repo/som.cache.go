@@ -10,12 +10,13 @@ import (
 // cache holds cached records for a specific model type.
 // N is the node/model type.
 type cache[N any] struct {
-	mu      sync.RWMutex
-	data    map[string]*cacheEntry[N]
-	mode    cacheMode
-	loaded  bool          // true if all records have been loaded (eager mode)
-	maxSize int           // max records for eager mode
-	ttl     time.Duration // time-to-live for entries (0 = no expiration)
+	mu             sync.RWMutex
+	data           map[string]*cacheEntry[N]
+	mode           cacheMode
+	loaded         bool          // true if all records have been loaded (eager mode)
+	maxSize        int           // max records for eager mode
+	ttl            time.Duration // time-to-live for entries (0 = no expiration)
+	cacheExpiresAt time.Time     // when the entire cache expires (eager mode with TTL)
 }
 
 // cacheEntry wraps a cached record with optional expiration time.
@@ -45,16 +46,17 @@ func newCache[N any](mode cacheMode, ttl time.Duration, maxSize int) *cache[N] {
 
 // newCacheWithAll creates a new cache pre-populated with all records (eager mode).
 func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Duration) *cache[N] {
-	c := &cache[N]{
-		data:   make(map[string]*cacheEntry[N], len(records)),
-		mode:   cacheModeEager,
-		loaded: true,
-		ttl:    ttl,
+	var cacheExpiresAt time.Time
+	if ttl > 0 {
+		cacheExpiresAt = time.Now().Add(ttl)
 	}
 
-	var expiresAt time.Time
-	if ttl > 0 {
-		expiresAt = time.Now().Add(ttl)
+	c := &cache[N]{
+		data:           make(map[string]*cacheEntry[N], len(records)),
+		mode:           cacheModeEager,
+		loaded:         true,
+		ttl:            ttl,
+		cacheExpiresAt: cacheExpiresAt,
 	}
 
 	for _, record := range records {
@@ -66,8 +68,7 @@ func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Durat
 			continue
 		}
 		c.data[id] = &cacheEntry[N]{
-			record:    record,
-			expiresAt: expiresAt,
+			record: record,
 		}
 	}
 	return c
@@ -146,6 +147,49 @@ func (c *cache[N]) isLoaded() bool {
 func (c *cache[N]) setLoaded() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.loaded = true
+}
+
+// isExpired returns true if the eager cache has expired and needs refresh.
+func (c *cache[N]) isExpired() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.cacheExpiresAt.IsZero() {
+		return false
+	}
+	return time.Now().After(c.cacheExpiresAt)
+}
+
+// markForRefresh clears loaded flag so cache will be reloaded on next access.
+func (c *cache[N]) markForRefresh() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.loaded = false
+}
+
+// refreshWith replaces all cache data with new records (for eager mode TTL refresh).
+func (c *cache[N]) refreshWith(records []*N, idFunc func(*N) string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.data = make(map[string]*cacheEntry[N], len(records))
+
+	for _, record := range records {
+		if record == nil {
+			continue
+		}
+		id := idFunc(record)
+		if id == "" {
+			continue
+		}
+		c.data[id] = &cacheEntry[N]{
+			record: record,
+		}
+	}
+
+	if c.ttl > 0 {
+		c.cacheExpiresAt = time.Now().Add(c.ttl)
+	}
 	c.loaded = true
 }
 

@@ -17,6 +17,9 @@ import (
 // cacheInitGroup deduplicates concurrent cache initialization requests.
 var cacheInitGroup singleflight.Group
 
+// cacheRefreshGroup deduplicates concurrent cache refresh requests.
+var cacheRefreshGroup singleflight.Group
+
 // N is a placeholder for the node type.
 // C is a placeholder for the conversion type.
 type repo[N any, C any] struct {
@@ -111,12 +114,27 @@ func (r *repo[N, C]) refresh(ctx context.Context, id *models.RecordID, node *N) 
 	return nil
 }
 
+// eagerRefreshFuncs holds the functions needed to refresh an eager cache.
+type eagerRefreshFuncs[N any] struct {
+	cacheID  string
+	queryAll func(context.Context) ([]*N, error)
+	idFunc   func(*N) string
+}
+
 // readWithCache attempts to read from cache first, falling back to DB if needed.
 // If cache is in eager mode and record not found, returns (nil, false, nil).
 // If cache is in lazy mode and record not found, queries DB and populates cache.
-func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N]) (*N, bool, error) {
-	if c == nil {
+// For eager mode with TTL, expired caches are automatically refreshed.
+func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
+	if c == nil || id == nil {
 		return r.read(ctx, id)
+	}
+
+	// Check if eager cache needs refresh due to TTL expiration
+	if c.isEager() && c.isLoaded() && c.isExpired() && refreshFuncs != nil {
+		if err := r.refreshEagerCache(ctx, c, refreshFuncs); err != nil {
+			return nil, false, err
+		}
 	}
 
 	idStr := id.String()
@@ -141,10 +159,24 @@ func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N]) (*N
 	return record, exists, nil
 }
 
-// cacheResult wraps the result of cache initialization for singleflight.
-type cacheResult[N any] struct {
-	cache *cache[N]
-	err   error
+// refreshEagerCache reloads all records for an expired eager cache.
+// Uses singleflight to prevent concurrent refresh operations.
+func (r *repo[N, C]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *eagerRefreshFuncs[N]) error {
+	_, err, _ := cacheRefreshGroup.Do(funcs.cacheID, func() (any, error) {
+		// Re-check if still expired (another goroutine may have refreshed)
+		if !c.isExpired() {
+			return nil, nil
+		}
+
+		records, err := funcs.queryAll(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("could not refresh eager cache: %w", err)
+		}
+
+		c.refreshWith(records, funcs.idFunc)
+		return nil, nil
+	})
+	return err
 }
 
 // getOrCreateCache returns the cache for the given model type, creating it if needed.
@@ -194,15 +226,15 @@ func getOrCreateCache[N som.Model](
 	}
 
 	// Use singleflight to deduplicate concurrent cache initialization
-	result, _, _ := cacheInitGroup.Do(cacheID, func() (any, error) {
+	result, err, _ := cacheInitGroup.Do(cacheID, func() (any, error) {
 		// Re-check if another goroutine already created the cache
 		if cached, ok := internal.GetCache(cacheID); ok {
 			if c, ok := cached.(*cache[N]); ok && c != nil {
-				return &cacheResult[N]{cache: c}, nil
+				return c, nil
 			}
 		} else {
 			// Cache was cleaned up while we were waiting
-			return &cacheResult[N]{err: som.ErrCacheAlreadyCleaned}, nil
+			return nil, som.ErrCacheAlreadyCleaned
 		}
 
 		var c *cache[N]
@@ -212,25 +244,30 @@ func getOrCreateCache[N som.Model](
 			// Eager mode: load all records
 			count, err := countAll(ctx)
 			if err != nil {
-				return &cacheResult[N]{err: fmt.Errorf("could not count records for eager cache: %w", err)}, nil
+				return nil, fmt.Errorf("could not count records for eager cache: %w", err)
 			}
 
 			if count > opts.MaxSize {
-				return &cacheResult[N]{err: som.ErrCacheSizeLimitExceeded}, nil
+				return nil, som.ErrCacheSizeLimitExceeded
 			}
 
 			records, err := queryAll(ctx)
 			if err != nil {
-				return &cacheResult[N]{err: fmt.Errorf("could not load records for eager cache: %w", err)}, nil
+				return nil, fmt.Errorf("could not load records for eager cache: %w", err)
 			}
 
 			c = newCacheWithAll(records, idFunc, opts.TTL)
 		}
 
 		internal.SetCache(cacheID, c)
-		return &cacheResult[N]{cache: c}, nil
+		return c, nil
 	})
 
-	res := result.(*cacheResult[N])
-	return res.cache, res.err
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, nil
+	}
+	return result.(*cache[N]), nil
 }

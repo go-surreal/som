@@ -104,7 +104,7 @@ if errors.Is(err, som.ErrCacheSizeLimitExceeded) {
 }
 ```
 
-### Cache with TTL
+### Cache with TTL (Lazy Mode)
 
 ```go
 ctx, cleanup := som.WithCache[model.Group](ctx, som.WithTTL(5*time.Minute))
@@ -121,6 +121,29 @@ group2, _, _ := client.GroupRepo().Read(ctx, id)
 time.Sleep(6 * time.Minute)
 group3, _, _ := client.GroupRepo().Read(ctx, id)
 // group1 != group3 (different pointer, fresh data)
+```
+
+### Eager Cache with TTL (Auto-Refresh)
+
+```go
+ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager(), som.WithTTL(5*time.Minute))
+defer cleanup()
+
+// First Read loads ALL records into cache
+group1, exists, _ := client.GroupRepo().Read(ctx, group1ID)
+
+// New record created after cache load
+newGroup := &model.Group{Name: "New"}
+client.GroupRepo().Create(context.Background(), newGroup)
+
+// Not visible yet (cache hasn't expired)
+cached, exists, _ := client.GroupRepo().Read(ctx, newGroup.ID())
+// exists == false
+
+// After TTL expires, next Read triggers full cache refresh
+time.Sleep(6 * time.Minute)
+refreshed, exists, _ := client.GroupRepo().Read(ctx, newGroup.ID())
+// exists == true (cache was refreshed, new record is now visible)
 ```
 
 ### Multiple Models
@@ -198,6 +221,7 @@ _, _, err := client.GroupRepo().Read(ctx, id)
 4. After initial load, all reads only check the cache
 5. Cache misses return `(nil, false, nil)` without querying the database
 6. Records created after cache load are not visible through the cached context
+7. With TTL enabled, the entire cache expires and refreshes automatically on next access
 
 ### Cleanup Lifecycle
 

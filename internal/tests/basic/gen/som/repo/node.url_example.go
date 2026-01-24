@@ -71,20 +71,30 @@ func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, b
 	if !internal.CacheEnabled[model.URLExample](ctx) {
 		return r.read(ctx, id)
 	}
-	cache, err := getOrCreateCache[model.URLExample](ctx, func(n *model.URLExample) string {
+	idFunc := func(n *model.URLExample) string {
 		if n.ID() != nil {
 			return n.ID().String()
 		}
 		return ""
-	}, func(ctx context.Context) ([]*model.URLExample, error) {
+	}
+	queryAll := func(ctx context.Context) ([]*model.URLExample, error) {
 		return r.Query().All(ctx)
-	}, func(ctx context.Context) (int, error) {
+	}
+	cache, err := getOrCreateCache[model.URLExample](ctx, idFunc, queryAll, func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
 	})
 	if err != nil {
 		return nil, false, err
 	}
-	return r.readWithCache(ctx, id, cache)
+	var refreshFuncs *eagerRefreshFuncs[model.URLExample]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.URLExample]{
+			cacheID:  internal.GetCacheKey[model.URLExample](ctx),
+			queryAll: queryAll,
+			idFunc:   idFunc,
+		}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.
