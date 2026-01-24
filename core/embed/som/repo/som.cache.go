@@ -45,7 +45,7 @@ func newCache[N any](mode cacheMode, ttl time.Duration, maxSize int) *cache[N] {
 }
 
 // newCacheWithAll creates a new cache pre-populated with all records (eager mode).
-func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Duration) *cache[N] {
+func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Duration, maxSize int) *cache[N] {
 	var cacheExpiresAt time.Time
 	if ttl > 0 {
 		cacheExpiresAt = time.Now().Add(ttl)
@@ -56,6 +56,7 @@ func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Durat
 		mode:           cacheModeEager,
 		loaded:         true,
 		ttl:            ttl,
+		maxSize:        maxSize,
 		cacheExpiresAt: cacheExpiresAt,
 	}
 

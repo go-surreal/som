@@ -256,7 +256,7 @@ func getOrCreateCache[N som.Model](
 				return nil, fmt.Errorf("could not load records for eager cache: %w", err)
 			}
 
-			c = newCacheWithAll(records, idFunc, opts.TTL)
+			c = newCacheWithAll(records, idFunc, opts.TTL, opts.MaxSize)
 		}
 
 		internal.SetCache(cacheID, c)
