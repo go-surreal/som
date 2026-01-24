@@ -108,10 +108,9 @@ func GetCacheKey[T any](ctx context.Context) string {
 }
 
 var (
-	cacheStoreMu    sync.RWMutex
-	cacheStores     = make(map[string]any)      // keyed by cacheID directly
-	droppedCacheIDs = make(map[string]struct{}) // tracks cleaned-up cache IDs
-	cacheCounter    atomic.Uint64
+	cacheStoreMu sync.RWMutex
+	cacheStores  = make(map[string]any) // keyed by cacheID directly
+	cacheCounter atomic.Uint64
 )
 
 // NextCacheID generates a unique cache instance ID.
@@ -139,14 +138,4 @@ func DropCacheByID(cacheID string) {
 	cacheStoreMu.Lock()
 	defer cacheStoreMu.Unlock()
 	delete(cacheStores, cacheID)
-	droppedCacheIDs[cacheID] = struct{}{}
-}
-
-// IsCacheDropped returns true if the cache ID was previously dropped.
-// This is used to detect attempts to use a cleaned-up cache.
-func IsCacheDropped(cacheID string) bool {
-	cacheStoreMu.RLock()
-	defer cacheStoreMu.RUnlock()
-	_, dropped := droppedCacheIDs[cacheID]
-	return dropped
 }

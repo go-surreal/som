@@ -22,6 +22,9 @@ var (
 	WithMaxSize = internal.WithMaxSize
 )
 
+// Re-export CacheOption type from internal package.
+type CacheOption = internal.CacheOption
+
 // WithCache enables caching for the specified model type.
 // Returns the context with cache enabled and a cleanup function.
 // The cleanup function should be called when the cache is no longer needed,
@@ -40,7 +43,7 @@ var (
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager())         // eager, load on first read
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.WithTTL(5*time.Minute))  // with expiration
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(5000))
-func WithCache[T Model](ctx context.Context, opts ...internal.CacheOption) (context.Context, func()) {
+func WithCache[T Model](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
 	options := &internal.CacheOptions{
 		Mode:    internal.CacheModeLazy,
 		MaxSize: internal.DefaultMaxSize,
@@ -50,6 +53,7 @@ func WithCache[T Model](ctx context.Context, opts ...internal.CacheOption) (cont
 	}
 
 	id := internal.NextCacheID()
+	internal.SetCache(id, nil) // Initialize placeholder to track active cache
 	ctx = internal.SetCacheContext[T](ctx, id, options)
 
 	cleanup := func() {

@@ -58,11 +58,16 @@ func newCacheWithAll[N any](records []*N, idFunc func(*N) string, ttl time.Durat
 	}
 
 	for _, record := range records {
-		if record != nil {
-			c.data[idFunc(record)] = &cacheEntry[N]{
-				record:    record,
-				expiresAt: expiresAt,
-			}
+		if record == nil {
+			continue
+		}
+		id := idFunc(record)
+		if id == "" {
+			continue
+		}
+		c.data[id] = &cacheEntry[N]{
+			record:    record,
+			expiresAt: expiresAt,
 		}
 	}
 	return c

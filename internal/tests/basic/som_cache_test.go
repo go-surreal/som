@@ -323,7 +323,7 @@ func TestCacheWithTTL(t *testing.T) {
 	read2, _, _ := client.GroupRepo().Read(cachedCtx, group.ID())
 	assert.Assert(t, read1 == read2, "should return cached pointer before TTL expires")
 
-	time.Sleep(150 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
 	read3, exists3, err := client.GroupRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)

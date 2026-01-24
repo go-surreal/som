@@ -11,7 +11,11 @@ import (
 	som "{{.GenerateOutPath}}"
 	"{{.GenerateOutPath}}/internal"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"golang.org/x/sync/singleflight"
 )
+
+// cacheInitGroup deduplicates concurrent cache initialization requests.
+var cacheInitGroup singleflight.Group
 
 // N is a placeholder for the node type.
 // C is a placeholder for the conversion type.
@@ -137,6 +141,12 @@ func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N]) (*N
 	return record, exists, nil
 }
 
+// cacheResult wraps the result of cache initialization for singleflight.
+type cacheResult[N any] struct {
+	cache *cache[N]
+	err   error
+}
+
 // getOrCreateCache returns the cache for the given model type, creating it if needed.
 // The idFunc is used for eager cache population.
 // The queryAll function loads all records for eager mode.
@@ -162,16 +172,19 @@ func getOrCreateCache[N som.Model](
 		return nil, nil
 	}
 
-	if internal.IsCacheDropped(cacheID) {
+	// Check if cache entry exists (could be placeholder nil or real cache)
+	cached, ok := internal.GetCache(cacheID)
+	if !ok {
+		// No entry = cache was cleaned up
 		return nil, som.ErrCacheAlreadyCleaned
 	}
 
-	if cached, ok := internal.GetCache(cacheID); ok {
-		if c, ok := cached.(*cache[N]); ok {
-			return c, nil
-		}
+	// If it's already a real cache, return it
+	if c, ok := cached.(*cache[N]); ok && c != nil {
+		return c, nil
 	}
 
+	// Entry exists but is placeholder (nil) - need to create real cache
 	var mode cacheMode
 	switch opts.Mode {
 	case internal.CacheModeEager:
@@ -180,26 +193,44 @@ func getOrCreateCache[N som.Model](
 		mode = cacheModeLazy
 	}
 
-	c := newCache[N](mode, opts.TTL, opts.MaxSize)
-
-	if mode == cacheModeEager {
-		count, err := countAll(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("could not count records for eager cache: %w", err)
+	// Use singleflight to deduplicate concurrent cache initialization
+	result, _, _ := cacheInitGroup.Do(cacheID, func() (any, error) {
+		// Re-check if another goroutine already created the cache
+		if cached, ok := internal.GetCache(cacheID); ok {
+			if c, ok := cached.(*cache[N]); ok && c != nil {
+				return &cacheResult[N]{cache: c}, nil
+			}
+		} else {
+			// Cache was cleaned up while we were waiting
+			return &cacheResult[N]{err: som.ErrCacheAlreadyCleaned}, nil
 		}
 
-		if count > opts.MaxSize {
-			return nil, som.ErrCacheSizeLimitExceeded
+		var c *cache[N]
+		if mode == cacheModeLazy {
+			c = newCache[N](mode, opts.TTL, opts.MaxSize)
+		} else {
+			// Eager mode: load all records
+			count, err := countAll(ctx)
+			if err != nil {
+				return &cacheResult[N]{err: fmt.Errorf("could not count records for eager cache: %w", err)}, nil
+			}
+
+			if count > opts.MaxSize {
+				return &cacheResult[N]{err: som.ErrCacheSizeLimitExceeded}, nil
+			}
+
+			records, err := queryAll(ctx)
+			if err != nil {
+				return &cacheResult[N]{err: fmt.Errorf("could not load records for eager cache: %w", err)}, nil
+			}
+
+			c = newCacheWithAll(records, idFunc, opts.TTL)
 		}
 
-		records, err := queryAll(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("could not load records for eager cache: %w", err)
-		}
+		internal.SetCache(cacheID, c)
+		return &cacheResult[N]{cache: c}, nil
+	})
 
-		c = newCacheWithAll(records, idFunc, opts.TTL)
-	}
-
-	internal.SetCache(cacheID, c)
-	return c, nil
+	res := result.(*cacheResult[N])
+	return res.cache, res.err
 }

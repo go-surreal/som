@@ -12,20 +12,14 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/testcontainers/testcontainers-go v0.40.0
+	golang.org/x/sync v0.19.0
 	gotest.tools/v3 v3.5.2
 )
 
 require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/dave/jennifer v1.7.1 // indirect
-	github.com/go-surreal/som v0.11.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/iancoleman/strcase v0.3.0 // indirect
-	github.com/urfave/cli/v3 v3.6.2 // indirect
-	github.com/wzshiming/gotype v0.8.0 // indirect
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
-	golang.org/x/mod v0.32.0 // indirect
 )
 
 require (
