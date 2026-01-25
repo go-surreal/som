@@ -110,6 +110,9 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if urlexample.ID() == nil {
+		return errors.New("cannot delete URLExample without existing record ID")
+	}
 	return r.delete(ctx, urlexample.ID(), urlexample, false)
 }
 

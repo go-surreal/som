@@ -110,6 +110,9 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if fieldsLikeDbresponse.ID() == nil {
+		return errors.New("cannot delete FieldsLikeDBResponse without existing record ID")
+	}
 	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false)
 }
 

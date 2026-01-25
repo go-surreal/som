@@ -16,8 +16,8 @@ type SoftDeleteComplete struct {
 	Name string
 }
 
-// SoftDeletePost is used to test fetch filtering on single-pointer soft-delete relations.
-// Single relations require Go-side post-processing to filter soft-deleted records.
+// SoftDeletePost is used to test fetch behavior with single-pointer soft-delete relations.
+// Soft-delete filtering does NOT apply to fetched relations; all records are returned.
 type SoftDeletePost struct {
 	som.Node
 	som.SoftDelete
@@ -25,8 +25,8 @@ type SoftDeletePost struct {
 	Author *SoftDeleteUser
 }
 
-// SoftDeleteBlogPost tests fetch filtering for slice relations to soft-delete models.
-// Slice relations use DB-layer filtering (FETCH field[WHERE deleted_at IS NONE]).
+// SoftDeleteBlogPost tests fetch behavior with slice relations to soft-delete models.
+// Soft-delete filtering does NOT apply to fetched relations; all records are returned.
 type SoftDeleteBlogPost struct {
 	som.Node
 	som.SoftDelete

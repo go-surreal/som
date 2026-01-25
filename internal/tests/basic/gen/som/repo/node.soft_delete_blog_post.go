@@ -113,6 +113,9 @@ func (r *softDeleteBlogPost) Delete(ctx context.Context, softDeleteBlogPost *mod
 	if softDeleteBlogPost == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if softDeleteBlogPost.ID() == nil {
+		return errors.New("cannot delete SoftDeleteBlogPost without existing record ID")
+	}
 	if softDeleteBlogPost.SoftDelete.IsDeleted() {
 		return errors.New("record is already deleted")
 	}
@@ -126,17 +129,23 @@ func (r *softDeleteBlogPost) Erase(ctx context.Context, softDeleteBlogPost *mode
 	if softDeleteBlogPost == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if softDeleteBlogPost.ID() == nil {
+		return errors.New("cannot erase SoftDeleteBlogPost without existing record ID")
+	}
 	return r.delete(ctx, softDeleteBlogPost.ID(), softDeleteBlogPost, false)
 }
 
 // Restore un-deletes a soft-deleted record.
-// Sets deleted_at to NULL and refreshes the in-memory object.
+// Sets deleted_at to NONE and refreshes the in-memory object.
 func (r *softDeleteBlogPost) Restore(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error {
 	if softDeleteBlogPost == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if !softDeleteBlogPost.SoftDelete.IsDeleted() {
 		return errors.New("record is not deleted, cannot restore")
+	}
+	if softDeleteBlogPost.ID() == nil {
+		return errors.New("cannot restore SoftDeleteBlogPost without existing record ID")
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
 	vars := map[string]any{"id": softDeleteBlogPost.ID()}

@@ -113,6 +113,9 @@ func (r *softDeleteComplete) Delete(ctx context.Context, softDeleteComplete *mod
 	if softDeleteComplete == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if softDeleteComplete.ID() == nil {
+		return errors.New("cannot delete SoftDeleteComplete without existing record ID")
+	}
 	if softDeleteComplete.SoftDelete.IsDeleted() {
 		return errors.New("record is already deleted")
 	}
@@ -126,17 +129,23 @@ func (r *softDeleteComplete) Erase(ctx context.Context, softDeleteComplete *mode
 	if softDeleteComplete == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if softDeleteComplete.ID() == nil {
+		return errors.New("cannot erase SoftDeleteComplete without existing record ID")
+	}
 	return r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, false)
 }
 
 // Restore un-deletes a soft-deleted record.
-// Sets deleted_at to NULL and refreshes the in-memory object.
+// Sets deleted_at to NONE and refreshes the in-memory object.
 func (r *softDeleteComplete) Restore(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error {
 	if softDeleteComplete == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if !softDeleteComplete.SoftDelete.IsDeleted() {
 		return errors.New("record is not deleted, cannot restore")
+	}
+	if softDeleteComplete.ID() == nil {
+		return errors.New("cannot restore SoftDeleteComplete without existing record ID")
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
 	vars := map[string]any{"id": softDeleteComplete.ID()}

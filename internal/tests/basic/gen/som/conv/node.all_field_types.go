@@ -556,7 +556,9 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 	if raw, ok := rawMap["struct_ptr_slice_ptr"]; ok {
 		var convSlice []*someStruct
 		cbor.Unmarshal(raw, &convSlice)
-		{
+		if convSlice == nil {
+			c.StructPtrSlicePtr = nil
+		} else {
 			result := make([]*model.SomeStruct, len(convSlice))
 			for i, v := range convSlice {
 				result[i] = toSomeStructPtr(v)
@@ -600,7 +602,9 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 	if raw, ok := rawMap["node_ptr_slice_ptr"]; ok {
 		var convSlice []*groupLink
 		cbor.Unmarshal(raw, &convSlice)
-		{
+		if convSlice == nil {
+			c.NodePtrSlicePtr = nil
+		} else {
 			result := make([]*model.Group, len(convSlice))
 			for i, v := range convSlice {
 				result[i] = fromGroupLinkPtr(v)

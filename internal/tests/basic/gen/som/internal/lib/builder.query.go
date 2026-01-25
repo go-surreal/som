@@ -235,9 +235,9 @@ func (q Query[T]) render() string {
 
 	if len(q.Fetch) > 0 {
 		out.WriteString(" FETCH ")
-		// Note: FETCH clause filtering for soft-deleted relations is done
-		// in Go post-processing, not in the query. SurrealDB's FETCH clause
-		// doesn't support inline WHERE filtering for single record links.
+		// Note: Soft-delete filtering does NOT apply to fetched relations.
+		// All related records are returned regardless of their soft-delete status.
+		// Users should filter manually using IsDeleted() if needed.
 		out.WriteString(strings.Join(q.Fetch, ", "))
 	}
 

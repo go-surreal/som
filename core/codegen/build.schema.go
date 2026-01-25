@@ -127,8 +127,8 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 	// Process all fields (including nested)
 	b.collectIndexes(tableName, "", fields, &statements, compositeUnique)
 
-	// Auto-generate index for deleted_at field (for soft delete performance)
-	// Check if table has soft delete enabled
+	// Auto-generate index for deleted_at field (for soft delete performance).
+	// We detect soft delete by the presence of a deleted_at field.
 	hasDeletedAt := false
 	for _, f := range fields {
 		if f.NameDatabase() == "deleted_at" {

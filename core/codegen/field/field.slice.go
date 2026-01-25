@@ -569,7 +569,9 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		// Build the assignment statement - handle pointer-to-slice case
 		var assignStmt jen.Code
 		if f.source.Pointer() {
-			assignStmt = jen.Block(
+			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+			).Else().Block(
 				jen.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("convSlice"))),
 				jen.For(
 					jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice"),
@@ -618,7 +620,9 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		// Build the assignment statement - handle pointer-to-slice case
 		var assignStmt jen.Code
 		if f.source.Pointer() {
-			assignStmt = jen.Block(
+			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+			).Else().Block(
 				jen.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("convSlice"))),
 				jen.For(
 					jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice"),

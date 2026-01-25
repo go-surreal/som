@@ -410,6 +410,11 @@ Delete deletes the record for the given model.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				)
 
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot delete "+node.NameGo()+" without existing record ID"))),
+				)
+
 			// Check if already deleted (for SoftDelete models)
 			if node.Source.SoftDelete {
 				g.If(jen.Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
@@ -447,6 +452,10 @@ Use this to permanently remove soft-deleted records.
 					Block(
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					),
+				jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+					Block(
+						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot erase "+node.NameGo()+" without existing record ID"))),
+					),
 				jen.Return(
 					jen.Id("r").Dot("delete").Call(
 						jen.Id("ctx"),
@@ -460,7 +469,7 @@ Use this to permanently remove soft-deleted records.
 		f.Line().
 			Add(comment(`
 Restore un-deletes a soft-deleted record.
-Sets deleted_at to NULL and refreshes the in-memory object.
+Sets deleted_at to NONE and refreshes the in-memory object.
 			`)).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 			Id("Restore").
@@ -478,6 +487,10 @@ Sets deleted_at to NULL and refreshes the in-memory object.
 				// Validate that the record is actually deleted
 				jen.If(jen.Op("!").Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("record is not deleted, cannot restore"))),
+				),
+
+				jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot restore "+node.NameGo()+" without existing record ID"))),
 				),
 
 				// Use raw query to only set deleted_at without replacing the entire record

@@ -113,6 +113,9 @@ func (r *softDeleteUser) Delete(ctx context.Context, softDeleteUser *model.SoftD
 	if softDeleteUser == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if softDeleteUser.ID() == nil {
+		return errors.New("cannot delete SoftDeleteUser without existing record ID")
+	}
 	if softDeleteUser.SoftDelete.IsDeleted() {
 		return errors.New("record is already deleted")
 	}
@@ -126,17 +129,23 @@ func (r *softDeleteUser) Erase(ctx context.Context, softDeleteUser *model.SoftDe
 	if softDeleteUser == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if softDeleteUser.ID() == nil {
+		return errors.New("cannot erase SoftDeleteUser without existing record ID")
+	}
 	return r.delete(ctx, softDeleteUser.ID(), softDeleteUser, false)
 }
 
 // Restore un-deletes a soft-deleted record.
-// Sets deleted_at to NULL and refreshes the in-memory object.
+// Sets deleted_at to NONE and refreshes the in-memory object.
 func (r *softDeleteUser) Restore(ctx context.Context, softDeleteUser *model.SoftDeleteUser) error {
 	if softDeleteUser == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if !softDeleteUser.SoftDelete.IsDeleted() {
 		return errors.New("record is not deleted, cannot restore")
+	}
+	if softDeleteUser.ID() == nil {
+		return errors.New("cannot restore SoftDeleteUser without existing record ID")
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
 	vars := map[string]any{"id": softDeleteUser.ID()}
