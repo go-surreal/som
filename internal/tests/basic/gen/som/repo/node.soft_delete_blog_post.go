@@ -14,7 +14,7 @@ import (
 )
 
 type SoftDeleteBlogPostRepo interface {
-	Query() query.Builder[model.SoftDeleteBlogPost, conv.SoftDeleteBlogPost]
+	Query() query.Builder[model.SoftDeleteBlogPost]
 	Create(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
 	CreateWithID(ctx context.Context, id string, softDeleteBlogPost *model.SoftDeleteBlogPost) error
 	Read(ctx context.Context, id *som.ID) (*model.SoftDeleteBlogPost, bool, error)
@@ -26,21 +26,34 @@ type SoftDeleteBlogPostRepo interface {
 	Relate() *relate.SoftDeleteBlogPost
 }
 
+// softDeleteBlogPostRepoInfo holds the model-specific conversion functions for SoftDeleteBlogPost.
+var softDeleteBlogPostRepoInfo = RepoInfo[model.SoftDeleteBlogPost]{
+	MarshalOne: func(node *model.SoftDeleteBlogPost) any {
+		return conv.FromSoftDeleteBlogPostPtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SoftDeleteBlogPost, error) {
+		var raw *conv.SoftDeleteBlogPost
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToSoftDeleteBlogPostPtr(raw), nil
+	},
+}
+
 // SoftDeleteBlogPostRepo returns a new repository instance for the SoftDeleteBlogPost model.
 func (c *ClientImpl) SoftDeleteBlogPostRepo() SoftDeleteBlogPostRepo {
-	return &softDeleteBlogPost{repo: &repo[model.SoftDeleteBlogPost, conv.SoftDeleteBlogPost]{
-		db:       c.db,
-		name:     "soft_delete_blog_post",
-		convTo:   conv.ToSoftDeleteBlogPostPtr,
-		convFrom: conv.FromSoftDeleteBlogPostPtr}}
+	return &softDeleteBlogPost{repo: &repo[model.SoftDeleteBlogPost]{
+		db:   c.db,
+		name: "soft_delete_blog_post",
+		info: softDeleteBlogPostRepoInfo}}
 }
 
 type softDeleteBlogPost struct {
-	*repo[model.SoftDeleteBlogPost, conv.SoftDeleteBlogPost]
+	*repo[model.SoftDeleteBlogPost]
 }
 
 // Query returns a new query builder for the SoftDeleteBlogPost model.
-func (r *softDeleteBlogPost) Query() query.Builder[model.SoftDeleteBlogPost, conv.SoftDeleteBlogPost] {
+func (r *softDeleteBlogPost) Query() query.Builder[model.SoftDeleteBlogPost] {
 	return query.NewSoftDeleteBlogPost(r.db)
 }
 
@@ -141,11 +154,11 @@ func (r *softDeleteBlogPost) Restore(ctx context.Context, softDeleteBlogPost *mo
 	if softDeleteBlogPost == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if !softDeleteBlogPost.SoftDelete.IsDeleted() {
-		return errors.New("record is not deleted, cannot restore")
-	}
 	if softDeleteBlogPost.ID() == nil {
 		return errors.New("cannot restore SoftDeleteBlogPost without existing record ID")
+	}
+	if !softDeleteBlogPost.SoftDelete.IsDeleted() {
+		return errors.New("record is not deleted, cannot restore")
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
 	vars := map[string]any{"id": softDeleteBlogPost.ID()}

@@ -8,14 +8,27 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewSoftDeleteBlogPost(db Database) Builder[model.SoftDeleteBlogPost, conv.SoftDeleteBlogPost] {
+// softDeleteBlogPostModelInfo holds the model-specific unmarshal functions for SoftDeleteBlogPost.
+var softDeleteBlogPostModelInfo = modelInfo[model.SoftDeleteBlogPost]{
+	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SoftDeleteBlogPost, error) {
+		return unmarshalAll(unmarshal, data, conv.ToSoftDeleteBlogPostPtr)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SoftDeleteBlogPost, error) {
+		return unmarshalOne(unmarshal, data, conv.ToSoftDeleteBlogPostPtr)
+	},
+	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SoftDeleteBlogPost], error) {
+		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToSoftDeleteBlogPostPtr)
+	},
+}
+
+// NewSoftDeleteBlogPost creates a new query builder for SoftDeleteBlogPost models.
+func NewSoftDeleteBlogPost(db Database) Builder[model.SoftDeleteBlogPost] {
 	q := lib.NewQuery[model.SoftDeleteBlogPost]("soft_delete_blog_post")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = where.SoftDeleteBlogPost.DeletedAt.Nil(true)
-	return Builder[model.SoftDeleteBlogPost, conv.SoftDeleteBlogPost]{builder[model.SoftDeleteBlogPost, conv.SoftDeleteBlogPost]{
-		convFrom: conv.FromSoftDeleteBlogPostPtr,
-		convTo:   conv.ToSoftDeleteBlogPostPtr,
-		db:       db,
-		query:    q,
+	return Builder[model.SoftDeleteBlogPost]{builder[model.SoftDeleteBlogPost]{
+		db:    db,
+		info:  softDeleteBlogPostModelInfo,
+		query: q,
 	}}
 }

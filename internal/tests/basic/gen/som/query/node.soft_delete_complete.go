@@ -8,14 +8,27 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewSoftDeleteComplete(db Database) Builder[model.SoftDeleteComplete, conv.SoftDeleteComplete] {
+// softDeleteCompleteModelInfo holds the model-specific unmarshal functions for SoftDeleteComplete.
+var softDeleteCompleteModelInfo = modelInfo[model.SoftDeleteComplete]{
+	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SoftDeleteComplete, error) {
+		return unmarshalAll(unmarshal, data, conv.ToSoftDeleteCompletePtr)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SoftDeleteComplete, error) {
+		return unmarshalOne(unmarshal, data, conv.ToSoftDeleteCompletePtr)
+	},
+	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SoftDeleteComplete], error) {
+		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToSoftDeleteCompletePtr)
+	},
+}
+
+// NewSoftDeleteComplete creates a new query builder for SoftDeleteComplete models.
+func NewSoftDeleteComplete(db Database) Builder[model.SoftDeleteComplete] {
 	q := lib.NewQuery[model.SoftDeleteComplete]("soft_delete_complete")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = where.SoftDeleteComplete.DeletedAt.Nil(true)
-	return Builder[model.SoftDeleteComplete, conv.SoftDeleteComplete]{builder[model.SoftDeleteComplete, conv.SoftDeleteComplete]{
-		convFrom: conv.FromSoftDeleteCompletePtr,
-		convTo:   conv.ToSoftDeleteCompletePtr,
-		db:       db,
-		query:    q,
+	return Builder[model.SoftDeleteComplete]{builder[model.SoftDeleteComplete]{
+		db:    db,
+		info:  softDeleteCompleteModelInfo,
+		query: q,
 	}}
 }

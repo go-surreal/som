@@ -125,8 +125,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	// type {NodeName}Repo interface {...}
 	//
 	f.Line().Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
-		g.Id("Query").Call().Qual(pkgQuery, "Builder").
-			Types(b.input.SourceQual(node.NameGo()), jen.Qual(b.subPkg(def.PkgConv), node.NameGo()))
+		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
 
 		g.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -179,6 +178,28 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		g.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo())
 	})
 
+	repoInfoVarName := node.NameGoLower() + "RepoInfo"
+
+	f.Line()
+	f.Commentf("%s holds the model-specific conversion functions for %s.", repoInfoVarName, node.NameGo())
+	f.Var().Id(repoInfoVarName).Op("=").Id("RepoInfo").Types(b.input.SourceQual(node.NameGo())).Values(jen.Dict{
+		jen.Id("UnmarshalOne"): jen.Func().Params(
+			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
+			jen.Var().Id("raw").Op("*").Qual(pkgConv, node.NameGo()),
+			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Err()),
+			),
+			jen.Return(jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")), jen.Nil()),
+		),
+		jen.Id("MarshalOne"): jen.Func().Params(
+			jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Any().Block(
+			jen.Return(jen.Qual(pkgConv, "From"+node.NameGo()+"Ptr").Call(jen.Id("node"))),
+		),
+	})
+
 	f.Line().
 		Add(comment(`
 ` + node.NameGo() + `Repo returns a new repository instance for the ` + node.NameGo() + ` model.
@@ -191,7 +212,6 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Id("repo").Op(":").Op("&").Id("repo").
 						Types(
 							b.input.SourceQual(node.NameGo()),
-							jen.Id("conv."+node.NameGo()),
 						).
 						Values(
 							jen.Add(
@@ -204,11 +224,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()+"Ptr"),
-							),
-							jen.Add(
-								jen.Line(),
-								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()+"Ptr"),
+								jen.Id("info").Op(":").Id(repoInfoVarName),
 							),
 						),
 				),
@@ -219,7 +235,6 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	f.Type().Id(node.NameGoLower()).Struct(
 		jen.Op("*").Id("repo").Types(
 			b.input.SourceQual(node.NameGo()),
-			jen.Id("conv."+node.NameGo()),
 		),
 	)
 
@@ -229,11 +244,7 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
-		Qual(pkgQuery, "Builder").
-		Types(
-			b.input.SourceQual(node.NameGo()),
-			jen.Qual(b.subPkg(def.PkgConv), node.NameGo()),
-		).
+		Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo())).
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
 				jen.Id("r").Dot("db"),

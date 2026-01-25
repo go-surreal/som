@@ -8,14 +8,27 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewSoftDeleteUser(db Database) Builder[model.SoftDeleteUser, conv.SoftDeleteUser] {
+// softDeleteUserModelInfo holds the model-specific unmarshal functions for SoftDeleteUser.
+var softDeleteUserModelInfo = modelInfo[model.SoftDeleteUser]{
+	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SoftDeleteUser, error) {
+		return unmarshalAll(unmarshal, data, conv.ToSoftDeleteUserPtr)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SoftDeleteUser, error) {
+		return unmarshalOne(unmarshal, data, conv.ToSoftDeleteUserPtr)
+	},
+	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SoftDeleteUser], error) {
+		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToSoftDeleteUserPtr)
+	},
+}
+
+// NewSoftDeleteUser creates a new query builder for SoftDeleteUser models.
+func NewSoftDeleteUser(db Database) Builder[model.SoftDeleteUser] {
 	q := lib.NewQuery[model.SoftDeleteUser]("soft_delete_user")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = where.SoftDeleteUser.DeletedAt.Nil(true)
-	return Builder[model.SoftDeleteUser, conv.SoftDeleteUser]{builder[model.SoftDeleteUser, conv.SoftDeleteUser]{
-		convFrom: conv.FromSoftDeleteUserPtr,
-		convTo:   conv.ToSoftDeleteUserPtr,
-		db:       db,
-		query:    q,
+	return Builder[model.SoftDeleteUser]{builder[model.SoftDeleteUser]{
+		db:    db,
+		info:  softDeleteUserModelInfo,
+		query: q,
 	}}
 }

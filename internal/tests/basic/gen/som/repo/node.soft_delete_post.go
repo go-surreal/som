@@ -14,7 +14,7 @@ import (
 )
 
 type SoftDeletePostRepo interface {
-	Query() query.Builder[model.SoftDeletePost, conv.SoftDeletePost]
+	Query() query.Builder[model.SoftDeletePost]
 	Create(ctx context.Context, softDeletePost *model.SoftDeletePost) error
 	CreateWithID(ctx context.Context, id string, softDeletePost *model.SoftDeletePost) error
 	Read(ctx context.Context, id *som.ID) (*model.SoftDeletePost, bool, error)
@@ -26,21 +26,34 @@ type SoftDeletePostRepo interface {
 	Relate() *relate.SoftDeletePost
 }
 
+// softDeletePostRepoInfo holds the model-specific conversion functions for SoftDeletePost.
+var softDeletePostRepoInfo = RepoInfo[model.SoftDeletePost]{
+	MarshalOne: func(node *model.SoftDeletePost) any {
+		return conv.FromSoftDeletePostPtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SoftDeletePost, error) {
+		var raw *conv.SoftDeletePost
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToSoftDeletePostPtr(raw), nil
+	},
+}
+
 // SoftDeletePostRepo returns a new repository instance for the SoftDeletePost model.
 func (c *ClientImpl) SoftDeletePostRepo() SoftDeletePostRepo {
-	return &softDeletePost{repo: &repo[model.SoftDeletePost, conv.SoftDeletePost]{
-		db:       c.db,
-		name:     "soft_delete_post",
-		convTo:   conv.ToSoftDeletePostPtr,
-		convFrom: conv.FromSoftDeletePostPtr}}
+	return &softDeletePost{repo: &repo[model.SoftDeletePost]{
+		db:   c.db,
+		name: "soft_delete_post",
+		info: softDeletePostRepoInfo}}
 }
 
 type softDeletePost struct {
-	*repo[model.SoftDeletePost, conv.SoftDeletePost]
+	*repo[model.SoftDeletePost]
 }
 
 // Query returns a new query builder for the SoftDeletePost model.
-func (r *softDeletePost) Query() query.Builder[model.SoftDeletePost, conv.SoftDeletePost] {
+func (r *softDeletePost) Query() query.Builder[model.SoftDeletePost] {
 	return query.NewSoftDeletePost(r.db)
 }
 
@@ -141,11 +154,11 @@ func (r *softDeletePost) Restore(ctx context.Context, softDeletePost *model.Soft
 	if softDeletePost == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if !softDeletePost.SoftDelete.IsDeleted() {
-		return errors.New("record is not deleted, cannot restore")
-	}
 	if softDeletePost.ID() == nil {
 		return errors.New("cannot restore SoftDeletePost without existing record ID")
+	}
+	if !softDeletePost.SoftDelete.IsDeleted() {
+		return errors.New("record is not deleted, cannot restore")
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
 	vars := map[string]any{"id": softDeletePost.ID()}

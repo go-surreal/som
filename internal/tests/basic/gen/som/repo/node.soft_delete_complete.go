@@ -14,7 +14,7 @@ import (
 )
 
 type SoftDeleteCompleteRepo interface {
-	Query() query.Builder[model.SoftDeleteComplete, conv.SoftDeleteComplete]
+	Query() query.Builder[model.SoftDeleteComplete]
 	Create(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
 	CreateWithID(ctx context.Context, id string, softDeleteComplete *model.SoftDeleteComplete) error
 	Read(ctx context.Context, id *som.ID) (*model.SoftDeleteComplete, bool, error)
@@ -26,21 +26,34 @@ type SoftDeleteCompleteRepo interface {
 	Relate() *relate.SoftDeleteComplete
 }
 
+// softDeleteCompleteRepoInfo holds the model-specific conversion functions for SoftDeleteComplete.
+var softDeleteCompleteRepoInfo = RepoInfo[model.SoftDeleteComplete]{
+	MarshalOne: func(node *model.SoftDeleteComplete) any {
+		return conv.FromSoftDeleteCompletePtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SoftDeleteComplete, error) {
+		var raw *conv.SoftDeleteComplete
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToSoftDeleteCompletePtr(raw), nil
+	},
+}
+
 // SoftDeleteCompleteRepo returns a new repository instance for the SoftDeleteComplete model.
 func (c *ClientImpl) SoftDeleteCompleteRepo() SoftDeleteCompleteRepo {
-	return &softDeleteComplete{repo: &repo[model.SoftDeleteComplete, conv.SoftDeleteComplete]{
-		db:       c.db,
-		name:     "soft_delete_complete",
-		convTo:   conv.ToSoftDeleteCompletePtr,
-		convFrom: conv.FromSoftDeleteCompletePtr}}
+	return &softDeleteComplete{repo: &repo[model.SoftDeleteComplete]{
+		db:   c.db,
+		name: "soft_delete_complete",
+		info: softDeleteCompleteRepoInfo}}
 }
 
 type softDeleteComplete struct {
-	*repo[model.SoftDeleteComplete, conv.SoftDeleteComplete]
+	*repo[model.SoftDeleteComplete]
 }
 
 // Query returns a new query builder for the SoftDeleteComplete model.
-func (r *softDeleteComplete) Query() query.Builder[model.SoftDeleteComplete, conv.SoftDeleteComplete] {
+func (r *softDeleteComplete) Query() query.Builder[model.SoftDeleteComplete] {
 	return query.NewSoftDeleteComplete(r.db)
 }
 
@@ -141,11 +154,11 @@ func (r *softDeleteComplete) Restore(ctx context.Context, softDeleteComplete *mo
 	if softDeleteComplete == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if !softDeleteComplete.SoftDelete.IsDeleted() {
-		return errors.New("record is not deleted, cannot restore")
-	}
 	if softDeleteComplete.ID() == nil {
 		return errors.New("cannot restore SoftDeleteComplete without existing record ID")
+	}
+	if !softDeleteComplete.SoftDelete.IsDeleted() {
+		return errors.New("record is not deleted, cannot restore")
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
 	vars := map[string]any{"id": softDeleteComplete.ID()}
