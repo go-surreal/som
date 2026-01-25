@@ -171,13 +171,13 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 // -- LIVE
 //
 
-func live[C, M any](
+func liveWithInfo[M any](
 	ctx context.Context,
 	in <-chan []byte,
 	unmarshal func(buf []byte, val any) error,
-	convert func(C) M,
-) <-chan LiveResult[M] {
-	out := make(chan LiveResult[M], 1)
+	info ModelInfo[M],
+) <-chan LiveResult[*M] {
+	out := make(chan LiveResult[*M], 1)
 
 	go func() {
 		defer close(out)
@@ -193,7 +193,7 @@ func live[C, M any](
 					return
 				}
 
-				out <- toLiveResult[C, M](data, unmarshal, convert)
+				out <- toLiveResultWithInfo(data, unmarshal, info)
 			}
 		}
 	}()
@@ -201,15 +201,15 @@ func live[C, M any](
 	return out
 }
 
-func toLiveResult[C, M any](
+func toLiveResultWithInfo[M any](
 	in []byte,
 	unmarshal func(buf []byte, val any) error,
-	convert func(C) M,
-) LiveResult[M] {
+	info ModelInfo[M],
+) LiveResult[*M] {
 	var response liveResponse
 
 	if err := unmarshal(in, &response); err != nil {
-		return &liveResult[M]{
+		return &liveResult[*M]{
 			err: fmt.Errorf("could not unmarshal live response: %w", err),
 		}
 	}
@@ -217,58 +217,55 @@ func toLiveResult[C, M any](
 	switch strings.ToLower(response.Action) {
 
 	case "create":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalLive(unmarshal, response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
+			out.res = result
 		}
 
-		return &liveCreate[M]{
+		return &liveCreate[*M]{
 			liveResult: out,
 		}
 
 	case "update":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalLive(unmarshal, response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live update result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
+			out.res = result
 		}
 
-		return &liveUpdate[M]{
+		return &liveUpdate[*M]{
 			liveResult: out,
 		}
 
 	case "delete":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalLive(unmarshal, response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live delete result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
+			out.res = result
 		}
 
-		return &liveDelete[M]{
+		return &liveDelete[*M]{
 			liveResult: out,
 		}
 
 	default:
-		return &liveResult[M]{
+		return &liveResult[*M]{
 			err: fmt.Errorf("unknown action type %s", response.Action),
 		}
 	}

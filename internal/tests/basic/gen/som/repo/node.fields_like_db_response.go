@@ -13,7 +13,7 @@ import (
 )
 
 type FieldsLikeDBResponseRepo interface {
-	Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
+	Query() query.FieldsLikeDBResponseQuery
 	Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Read(ctx context.Context, id *som.ID) (*model.FieldsLikeDBResponse, bool, error)
@@ -23,21 +23,34 @@ type FieldsLikeDBResponseRepo interface {
 	Relate() *relate.FieldsLikeDBResponse
 }
 
+// fieldsLikeDbresponseRepoInfo holds the model-specific conversion functions for FieldsLikeDBResponse.
+var fieldsLikeDbresponseRepoInfo = RepoInfo[model.FieldsLikeDBResponse]{
+	MarshalOne: func(node *model.FieldsLikeDBResponse) any {
+		return conv.FromFieldsLikeDBResponsePtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.FieldsLikeDBResponse, error) {
+		var raw *conv.FieldsLikeDBResponse
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToFieldsLikeDBResponsePtr(raw), nil
+	},
+}
+
 // FieldsLikeDBResponseRepo returns a new repository instance for the FieldsLikeDBResponse model.
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
-	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
-		db:       c.db,
-		name:     "fields_like_db_response",
-		convTo:   conv.ToFieldsLikeDBResponsePtr,
-		convFrom: conv.FromFieldsLikeDBResponsePtr}}
+	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse]{
+		db:   c.db,
+		name: "fields_like_db_response",
+		info: fieldsLikeDbresponseRepoInfo}}
 }
 
 type fieldsLikeDbresponse struct {
-	*repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
+	*repo[model.FieldsLikeDBResponse]
 }
 
 // Query returns a new query builder for the FieldsLikeDBResponse model.
-func (r *fieldsLikeDbresponse) Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
+func (r *fieldsLikeDbresponse) Query() query.FieldsLikeDBResponseQuery {
 	return query.NewFieldsLikeDBResponse(r.db)
 }
 

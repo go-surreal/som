@@ -32,35 +32,404 @@ func (b *queryBuilder) build() error {
 
 func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	pkgLib := b.subPkg(def.PkgLib)
+	pkgWith := b.subPkg(def.PkgFetch)
+	pkgConv := b.subPkg(def.PkgConv)
 
 	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 
+	modelType := b.SourceQual(node.Name)
+	convType := jen.Qual(pkgConv, node.Name)
+
+	queryTypeName := node.NameGo() + "Query"
+	queryNoLiveTypeName := node.NameGo() + "QueryNoLive"
+	searchQueryTypeName := node.NameGo() + "SearchQuery"
+
+	modelInfoVarName := node.NameGoLower() + "ModelInfo"
+
 	f.Line()
+	f.Commentf("%s holds the model-specific unmarshal functions for %s.", modelInfoVarName, node.NameGo())
+	f.Var().Id(modelInfoVarName).Op("=").Id("ModelInfo").Types(modelType).Values(jen.Dict{
+		jen.Id("UnmarshalAll"): jen.Func().Params(
+			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Index().Op("*").Add(modelType), jen.Error()).Block(
+			jen.Var().Id("rawNodes").Index().Id("queryResult").Types(jen.Op("*").Add(convType)),
+			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawNodes")), jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal records: %w"), jen.Err())),
+			),
+			jen.If(jen.Len(jen.Id("rawNodes")).Op("<").Lit(1)).Block(
+				jen.Return(jen.Nil(), jen.Nil()),
+			),
+			jen.Id("results").Op(":=").Make(jen.Index().Op("*").Add(modelType), jen.Len(jen.Id("rawNodes").Index(jen.Lit(0)).Dot("Result"))),
+			jen.For(jen.List(jen.Id("i"), jen.Id("raw")).Op(":=").Range().Id("rawNodes").Index(jen.Lit(0)).Dot("Result")).Block(
+				jen.Id("results").Index(jen.Id("i")).Op("=").Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")),
+			),
+			jen.Return(jen.Id("results"), jen.Nil()),
+		),
+		jen.Id("UnmarshalOne"): jen.Func().Params(
+			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Op("*").Add(modelType), jen.Error()).Block(
+			jen.Var().Id("raw").Op("*").Add(convType),
+			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Err()),
+			),
+			jen.Return(jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")), jen.Nil()),
+		),
+		jen.Id("UnmarshalLive"): jen.Func().Params(
+			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Op("*").Add(modelType), jen.Error()).Block(
+			jen.Var().Id("raw").Op("*").Add(convType),
+			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Err()),
+			),
+			jen.Return(jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")), jen.Nil()),
+		),
+		jen.Id("UnmarshalSearchAll"): jen.Func().Params(
+			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
+			jen.Id("data").Index().Byte(),
+			jen.Id("clauses").Index().Qual(pkgLib, "SearchClause"),
+		).Params(jen.Index().Qual(pkgLib, "SearchResult").Types(jen.Op("*").Add(modelType)), jen.Error()).Block(
+			jen.Var().Id("rawNodes").Index().Id("queryResult").Types(jen.Id("searchRawResult").Types(jen.Op("*").Add(convType))),
+			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawNodes")), jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal search records: %w"), jen.Err())),
+			),
+			jen.If(jen.Len(jen.Id("rawNodes")).Op("<").Lit(1)).Block(
+				jen.Return(jen.Nil(), jen.Nil()),
+			),
+			jen.Var().Id("results").Index().Qual(pkgLib, "SearchResult").Types(jen.Op("*").Add(modelType)),
+			jen.For(jen.List(jen.Id("_"), jen.Id("raw")).Op(":=").Range().Id("rawNodes").Index(jen.Lit(0)).Dot("Result")).Block(
+				jen.Id("rec").Op(":=").Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw").Dot("Model")),
+				jen.Id("result").Op(":=").Qual(pkgLib, "SearchResult").Types(jen.Op("*").Add(modelType)).Values(jen.Dict{
+					jen.Id("Model"):      jen.Id("rec"),
+					jen.Id("Scores"):     jen.Id("raw").Dot("Scores"),
+					jen.Id("Highlights"): jen.Make(jen.Map(jen.Int()).String()),
+					jen.Id("Offsets"):    jen.Make(jen.Map(jen.Int()).Index().Qual(pkgLib, "Offset")),
+				}),
+				jen.For(jen.List(jen.Id("_"), jen.Id("clause")).Op(":=").Range().Id("clauses")).Block(
+					jen.If(jen.Id("clause").Dot("Highlights")).Block(
+						jen.If(jen.List(jen.Id("hl"), jen.Id("ok")).Op(":=").Id("raw").Dot("Highlights").Index(jen.Id("clause").Dot("Ref")), jen.Id("ok")).Block(
+							jen.Id("result").Dot("Highlights").Index(jen.Id("clause").Dot("Ref")).Op("=").Id("hl"),
+						),
+					),
+					jen.If(jen.Id("clause").Dot("Offsets")).Block(
+						jen.If(jen.List(jen.Id("offs"), jen.Id("ok")).Op(":=").Id("raw").Dot("Offsets").Index(jen.Id("clause").Dot("Ref")), jen.Id("ok")).Block(
+							jen.Id("libOffsets").Op(":=").Make(jen.Index().Qual(pkgLib, "Offset"), jen.Len(jen.Id("offs"))),
+							jen.For(jen.List(jen.Id("i"), jen.Id("off")).Op(":=").Range().Id("offs")).Block(
+								jen.Id("libOffsets").Index(jen.Id("i")).Op("=").Qual(pkgLib, "Offset").Values(jen.Dict{
+									jen.Id("Start"): jen.Id("off").Dot("Start"),
+									jen.Id("End"):   jen.Id("off").Dot("End"),
+								}),
+							),
+							jen.Id("result").Dot("Offsets").Index(jen.Id("clause").Dot("Ref")).Op("=").Id("libOffsets"),
+						),
+					),
+				),
+				jen.Id("results").Op("=").Append(jen.Id("results"), jen.Id("result")),
+			),
+			jen.Return(jen.Id("results"), jen.Nil()),
+		),
+	})
+
+	f.Line()
+	f.Commentf("%s is the query builder for %s models.", queryTypeName, node.NameGo())
+	f.Type().Id(queryTypeName).Struct(
+		jen.Id("Builder").Types(modelType),
+	)
+
+	f.Line()
+	f.Commentf("%s is returned after Order/Limit/Offset operations.", queryNoLiveTypeName)
+	f.Type().Id(queryNoLiveTypeName).Struct(
+		jen.Id("BuilderNoLive").Types(modelType),
+	)
+
+	f.Line()
+	f.Commentf("%s is returned after Search operations.", searchQueryTypeName)
+	f.Type().Id(searchQueryTypeName).Struct(
+		jen.Id("SearchBuilder").Types(modelType),
+	)
+
+	f.Line()
+	f.Commentf("New%s creates a new query builder for %s models.", node.NameGo(), node.NameGo())
 	f.Func().Id("New"+node.Name).
 		Params(
 			jen.Id("db").Id("Database"),
 		).
-		Id("Builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
+		Id(queryTypeName).
 		Block(
 			jen.Return(
-				jen.Id("Builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
-					Values(
-						jen.Id("builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
-							Values(jen.Dict{
-								jen.Id("db"):       jen.Id("db"),
-								jen.Id("query"):    jen.Qual(pkgLib, "NewQuery").Types(b.SourceQual(node.Name)).Call(jen.Lit(node.NameDatabase())),
-								jen.Id("convFrom"): jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()+"Ptr"),
-								jen.Id("convTo"):   jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()+"Ptr"),
-							}),
-					),
+				jen.Id(queryTypeName).Values(
+					jen.Id("Builder").Types(modelType).
+						Values(
+							jen.Id("builder").Types(modelType).
+								Values(jen.Dict{
+									jen.Id("db"):    jen.Id("db"),
+									jen.Id("query"): jen.Qual(pkgLib, "NewQuery").Types(modelType).Call(jen.Lit(node.NameDatabase())),
+									jen.Id("info"):  jen.Id(modelInfoVarName),
+								}),
+						),
+				),
 			),
 		)
+
+	b.generateQueryMethods(f, node, queryTypeName, queryNoLiveTypeName, searchQueryTypeName, modelType, pkgLib, pkgWith)
+	b.generateQueryNoLiveMethods(f, node, queryNoLiveTypeName, modelType)
+	b.generateSearchQueryMethods(f, node, searchQueryTypeName, modelType, pkgLib)
 
 	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (b *queryBuilder) generateQueryMethods(
+	f *jen.File,
+	node *field.NodeTable,
+	queryTypeName, queryNoLiveTypeName, searchQueryTypeName string,
+	modelType jen.Code,
+	pkgLib, pkgWith string,
+) {
+	f.Line()
+	f.Comment("Filter adds a where statement to the query.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Filter").
+		Params(jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(modelType)).
+		Id(queryTypeName).
+		Block(
+			jen.Return(jen.Id(queryTypeName).Values(jen.Id("q").Dot("Builder").Dot("Filter").Call(jen.Id("filters").Op("...")))),
+		)
+
+	f.Line()
+	f.Comment("Fetch can be used to return related records.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Fetch").
+		Params(jen.Id("fetch").Op("...").Qual(pkgWith, "Fetch_").Types(modelType)).
+		Id(queryTypeName).
+		Block(
+			jen.Return(jen.Id(queryTypeName).Values(jen.Id("q").Dot("Builder").Dot("Fetch").Call(jen.Id("fetch").Op("...")))),
+		)
+
+	f.Line()
+	f.Comment("Debug logs the query to the default debug logger.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Debug").
+		Params(jen.Id("prefix").Op("...").String()).
+		Id(queryTypeName).
+		Block(
+			jen.Return(jen.Id(queryTypeName).Values(jen.Id("q").Dot("Builder").Dot("Debug").Call(jen.Id("prefix").Op("...")))),
+		)
+
+	f.Line()
+	f.Comment("Order sorts the returned records based on the given conditions.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Order").
+		Params(jen.Id("by").Op("...").Op("*").Qual(pkgLib, "Sort").Types(modelType)).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("Builder").Dot("Order").Call(jen.Id("by").Op("...")))),
+		)
+
+	f.Line()
+	f.Comment("OrderRandom sorts the returned records in a random order.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("OrderRandom").
+		Params().
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("Builder").Dot("OrderRandom").Call())),
+		)
+
+	f.Line()
+	f.Comment("Offset skips the first x records for the result set.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Offset").
+		Params(jen.Id("offset").Int()).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("Builder").Dot("Offset").Call(jen.Id("offset")))),
+		)
+
+	f.Line()
+	f.Comment("Limit restricts the query to return at most x records.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Limit").
+		Params(jen.Id("limit").Int()).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("Builder").Dot("Limit").Call(jen.Id("limit")))),
+		)
+
+	f.Line()
+	f.Comment("Timeout adds an execution time limit to the query.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Timeout").
+		Params(jen.Id("timeout").Qual("time", "Duration")).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("Builder").Dot("Timeout").Call(jen.Id("timeout")))),
+		)
+
+	f.Line()
+	f.Comment("Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Parallel").
+		Params(jen.Id("parallel").Bool()).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("Builder").Dot("Parallel").Call(jen.Id("parallel")))),
+		)
+
+	f.Line()
+	f.Comment("TempFiles tells SurrealDB to process the query using temporary files.")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("TempFiles").
+		Params(jen.Id("tempFiles").Bool()).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("Builder").Dot("TempFiles").Call(jen.Id("tempFiles")))),
+		)
+
+	f.Line()
+	f.Comment("Search adds full-text search conditions to the query (OR behavior).")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("Search").
+		Params(jen.Id("searches").Op("...").Qual(pkgLib, "Search").Types(modelType)).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("Builder").Dot("Search").Call(jen.Id("searches").Op("...")))),
+		)
+
+	f.Line()
+	f.Comment("SearchAll adds full-text search conditions to the query (AND behavior).")
+	f.Func().Params(jen.Id("q").Id(queryTypeName)).Id("SearchAll").
+		Params(jen.Id("searches").Op("...").Qual(pkgLib, "Search").Types(modelType)).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("Builder").Dot("SearchAll").Call(jen.Id("searches").Op("...")))),
+		)
+}
+
+func (b *queryBuilder) generateQueryNoLiveMethods(
+	f *jen.File,
+	node *field.NodeTable,
+	queryNoLiveTypeName string,
+	modelType jen.Code,
+) {
+	f.Line()
+	f.Comment("Offset skips the first x records for the result set.")
+	f.Func().Params(jen.Id("q").Id(queryNoLiveTypeName)).Id("Offset").
+		Params(jen.Id("offset").Int()).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("BuilderNoLive").Dot("Offset").Call(jen.Id("offset")))),
+		)
+
+	f.Line()
+	f.Comment("Limit restricts the query to return at most x records.")
+	f.Func().Params(jen.Id("q").Id(queryNoLiveTypeName)).Id("Limit").
+		Params(jen.Id("limit").Int()).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("BuilderNoLive").Dot("Limit").Call(jen.Id("limit")))),
+		)
+
+	f.Line()
+	f.Comment("Timeout adds an execution time limit to the query.")
+	f.Func().Params(jen.Id("q").Id(queryNoLiveTypeName)).Id("Timeout").
+		Params(jen.Id("timeout").Qual("time", "Duration")).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("BuilderNoLive").Dot("Timeout").Call(jen.Id("timeout")))),
+		)
+
+	f.Line()
+	f.Comment("Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.")
+	f.Func().Params(jen.Id("q").Id(queryNoLiveTypeName)).Id("Parallel").
+		Params(jen.Id("parallel").Bool()).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("BuilderNoLive").Dot("Parallel").Call(jen.Id("parallel")))),
+		)
+
+	f.Line()
+	f.Comment("TempFiles tells SurrealDB to process the query using temporary files.")
+	f.Func().Params(jen.Id("q").Id(queryNoLiveTypeName)).Id("TempFiles").
+		Params(jen.Id("tempFiles").Bool()).
+		Id(queryNoLiveTypeName).
+		Block(
+			jen.Return(jen.Id(queryNoLiveTypeName).Values(jen.Id("q").Dot("BuilderNoLive").Dot("TempFiles").Call(jen.Id("tempFiles")))),
+		)
+}
+
+func (b *queryBuilder) generateSearchQueryMethods(
+	f *jen.File,
+	node *field.NodeTable,
+	searchQueryTypeName string,
+	modelType jen.Code,
+	pkgLib string,
+) {
+	f.Line()
+	f.Comment("Filter adds additional conditions to the search query.")
+	f.Func().Params(jen.Id("q").Id(searchQueryTypeName)).Id("Filter").
+		Params(jen.Id("filters").Op("...").Qual(pkgLib, "Filter").Types(modelType)).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("SearchBuilder").Dot("Filter").Call(jen.Id("filters").Op("...")))),
+		)
+
+	f.Line()
+	f.Comment("Order sorts the returned records based on the given conditions.")
+	f.Func().Params(jen.Id("q").Id(searchQueryTypeName)).Id("Order").
+		Params(jen.Id("by").Op("...").Qual(pkgLib, "SearchSort")).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("SearchBuilder").Dot("Order").Call(jen.Id("by").Op("...")))),
+		)
+
+	f.Line()
+	f.Comment("Offset skips the first x records for the result set.")
+	f.Func().Params(jen.Id("q").Id(searchQueryTypeName)).Id("Offset").
+		Params(jen.Id("offset").Int()).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("SearchBuilder").Dot("Offset").Call(jen.Id("offset")))),
+		)
+
+	f.Line()
+	f.Comment("Limit restricts the query to return at most x records.")
+	f.Func().Params(jen.Id("q").Id(searchQueryTypeName)).Id("Limit").
+		Params(jen.Id("limit").Int()).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("SearchBuilder").Dot("Limit").Call(jen.Id("limit")))),
+		)
+
+	f.Line()
+	f.Comment("Timeout adds an execution time limit to the query.")
+	f.Func().Params(jen.Id("q").Id(searchQueryTypeName)).Id("Timeout").
+		Params(jen.Id("timeout").Qual("time", "Duration")).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("SearchBuilder").Dot("Timeout").Call(jen.Id("timeout")))),
+		)
+
+	f.Line()
+	f.Comment("Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.")
+	f.Func().Params(jen.Id("q").Id(searchQueryTypeName)).Id("Parallel").
+		Params(jen.Id("parallel").Bool()).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("SearchBuilder").Dot("Parallel").Call(jen.Id("parallel")))),
+		)
+
+	f.Line()
+	f.Comment("TempFiles tells SurrealDB to process the query using temporary files.")
+	f.Func().Params(jen.Id("q").Id(searchQueryTypeName)).Id("TempFiles").
+		Params(jen.Id("tempFiles").Bool()).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("SearchBuilder").Dot("TempFiles").Call(jen.Id("tempFiles")))),
+		)
+
+	f.Line()
+	f.Comment("Debug logs the search query to the default debug logger.")
+	f.Func().Params(jen.Id("q").Id(searchQueryTypeName)).Id("Debug").
+		Params(jen.Id("prefix").Op("...").String()).
+		Id(searchQueryTypeName).
+		Block(
+			jen.Return(jen.Id(searchQueryTypeName).Values(jen.Id("q").Dot("SearchBuilder").Dot("Debug").Call(jen.Id("prefix").Op("...")))),
+		)
 }

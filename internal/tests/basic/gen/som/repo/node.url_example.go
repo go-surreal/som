@@ -13,7 +13,7 @@ import (
 )
 
 type URLExampleRepo interface {
-	Query() query.Builder[model.URLExample, conv.URLExample]
+	Query() query.URLExampleQuery
 	Create(ctx context.Context, urlexample *model.URLExample) error
 	CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error
 	Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error)
@@ -23,21 +23,34 @@ type URLExampleRepo interface {
 	Relate() *relate.URLExample
 }
 
+// urlexampleRepoInfo holds the model-specific conversion functions for URLExample.
+var urlexampleRepoInfo = RepoInfo[model.URLExample]{
+	MarshalOne: func(node *model.URLExample) any {
+		return conv.FromURLExamplePtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.URLExample, error) {
+		var raw *conv.URLExample
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToURLExamplePtr(raw), nil
+	},
+}
+
 // URLExampleRepo returns a new repository instance for the URLExample model.
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
-	return &urlexample{repo: &repo[model.URLExample, conv.URLExample]{
-		db:       c.db,
-		name:     "url_example",
-		convTo:   conv.ToURLExamplePtr,
-		convFrom: conv.FromURLExamplePtr}}
+	return &urlexample{repo: &repo[model.URLExample]{
+		db:   c.db,
+		name: "url_example",
+		info: urlexampleRepoInfo}}
 }
 
 type urlexample struct {
-	*repo[model.URLExample, conv.URLExample]
+	*repo[model.URLExample]
 }
 
 // Query returns a new query builder for the URLExample model.
-func (r *urlexample) Query() query.Builder[model.URLExample, conv.URLExample] {
+func (r *urlexample) Query() query.URLExampleQuery {
 	return query.NewURLExample(r.db)
 }
 
