@@ -13,7 +13,7 @@ import (
 )
 
 type GroupRepo interface {
-	Query() query.Builder[model.Group, conv.Group]
+	Query() query.Builder[model.Group]
 	Create(ctx context.Context, group *model.Group) error
 	CreateWithID(ctx context.Context, id string, group *model.Group) error
 	Read(ctx context.Context, id *som.ID) (*model.Group, bool, error)
@@ -23,21 +23,34 @@ type GroupRepo interface {
 	Relate() *relate.Group
 }
 
+// groupRepoInfo holds the model-specific conversion functions for Group.
+var groupRepoInfo = RepoInfo[model.Group]{
+	MarshalOne: func(node *model.Group) any {
+		return conv.FromGroupPtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Group, error) {
+		var raw *conv.Group
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToGroupPtr(raw), nil
+	},
+}
+
 // GroupRepo returns a new repository instance for the Group model.
 func (c *ClientImpl) GroupRepo() GroupRepo {
-	return &group{repo: &repo[model.Group, conv.Group]{
-		db:       c.db,
-		name:     "group",
-		convTo:   conv.ToGroupPtr,
-		convFrom: conv.FromGroupPtr}}
+	return &group{repo: &repo[model.Group]{
+		db:   c.db,
+		name: "group",
+		info: groupRepoInfo}}
 }
 
 type group struct {
-	*repo[model.Group, conv.Group]
+	*repo[model.Group]
 }
 
 // Query returns a new query builder for the Group model.
-func (r *group) Query() query.Builder[model.Group, conv.Group] {
+func (r *group) Query() query.Builder[model.Group] {
 	return query.NewGroup(r.db)
 }
 

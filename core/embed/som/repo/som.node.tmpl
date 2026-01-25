@@ -20,61 +20,65 @@ var cacheInitGroup singleflight.Group
 // cacheRefreshGroup deduplicates concurrent cache refresh requests.
 var cacheRefreshGroup singleflight.Group
 
-// N is a placeholder for the node type.
-// C is a placeholder for the conversion type.
-type repo[N any, C any] struct {
-	db Database
+// RepoInfo holds type-specific conversion functions for repository operations.
+type RepoInfo[N any] struct {
+	// UnmarshalOne unmarshals a single result into *N
+	UnmarshalOne func(unmarshal func([]byte, any) error, data []byte) (*N, error)
 
-	name     string
-	convFrom func(*N) *C
-	convTo   func(*C) *N
+	// MarshalOne marshals *N for database write operations and returns the raw data
+	MarshalOne func(node *N) any
 }
 
-func (r *repo[N, C]) create(ctx context.Context, node *N) error {
-	data := r.convFrom(node)
+// N is a placeholder for the node type.
+type repo[N any] struct {
+	db Database
+
+	name string
+	info RepoInfo[N]
+}
+
+func (r *repo[N]) create(ctx context.Context, node *N) error {
+	data := r.info.MarshalOne(node)
 	raw, err := r.db.Create(ctx, newULID(r.name), data) // TODO: make ID type configurable
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var conv *C
-	err = r.db.Unmarshal(raw, &conv)
+	result, err := r.info.UnmarshalOne(r.db.Unmarshal, raw)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
-	*node = *r.convTo(conv)
+	*node = *result
 	return nil
 }
 
-func (r *repo[N, C]) createWithID(ctx context.Context, id string, node *N) error {
-	data := r.convFrom(node)
+func (r *repo[N]) createWithID(ctx context.Context, id string, node *N) error {
+	data := r.info.MarshalOne(node)
 	res, err := r.db.Create(ctx, models.NewRecordID(r.name, id), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	var conv *C
-	err = r.db.Unmarshal(res, &conv)
+	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	*node = *r.convTo(conv)
+	*node = *result
 	return nil
 }
 
-func (r *repo[N, C]) read(ctx context.Context, id *ID) (*N, bool, error) {
+func (r *repo[N]) read(ctx context.Context, id *ID) (*N, bool, error) {
 	res, err := r.db.Select(ctx, id)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	var conv *C
-	err = r.db.Unmarshal(res, &conv)
+	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	return r.convTo(conv), true, nil
+	return result, true, nil
 }
 
-func (r *repo[N, C]) update(ctx context.Context, id *ID, node *N) error {
-	data := r.convFrom(node)
+func (r *repo[N]) update(ctx context.Context, id *ID, node *N) error {
+	data := r.info.MarshalOne(node)
 	res, err := r.db.Update(ctx, id, data)
 	if err != nil {
 		if strings.Contains(err.Error(), "optimistic_lock_failed") {
@@ -82,16 +86,15 @@ func (r *repo[N, C]) update(ctx context.Context, id *ID, node *N) error {
 		}
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	var conv *C
-	err = r.db.Unmarshal(res, &conv)
+	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
-	*node = *r.convTo(conv)
+	*node = *result
 	return nil
 }
 
-func (r *repo[N, C]) delete(ctx context.Context, id *ID, node *N) error {
+func (r *repo[N]) delete(ctx context.Context, id *ID, node *N) error {
 	_, err := r.db.Delete(ctx, id)
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
@@ -99,7 +102,7 @@ func (r *repo[N, C]) delete(ctx context.Context, id *ID, node *N) error {
 	return nil
 }
 
-func (r *repo[N, C]) refresh(ctx context.Context, id *models.RecordID, node *N) error {
+func (r *repo[N]) refresh(ctx context.Context, id *models.RecordID, node *N) error {
 	read, exists, err := r.read(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to read node: %w", err)
@@ -157,7 +160,7 @@ func loadEagerRecords[N any](
 // If cache is in eager mode and record not found, returns (nil, false, nil).
 // If cache is in lazy mode and record not found, queries DB and populates cache.
 // For eager mode with TTL, expired caches are automatically refreshed.
-func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
+func (r *repo[N]) readWithCache(ctx context.Context, id *ID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
 	if c == nil || id == nil {
 		return r.read(ctx, id)
 	}
@@ -193,7 +196,7 @@ func (r *repo[N, C]) readWithCache(ctx context.Context, id *ID, c *cache[N], ref
 
 // refreshEagerCache reloads all records for an expired eager cache.
 // Uses singleflight to prevent concurrent refresh operations.
-func (r *repo[N, C]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *eagerRefreshFuncs[N]) error {
+func (r *repo[N]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *eagerRefreshFuncs[N]) error {
 	_, err, _ := cacheRefreshGroup.Do(funcs.cacheID, func() (any, error) {
 		if !c.isExpired() {
 			return nil, nil

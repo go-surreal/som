@@ -13,7 +13,7 @@ import (
 )
 
 type AllFieldTypesRepo interface {
-	Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes]
+	Query() query.Builder[model.AllFieldTypes]
 	Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error
 	Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error)
@@ -23,21 +23,34 @@ type AllFieldTypesRepo interface {
 	Relate() *relate.AllFieldTypes
 }
 
+// allFieldTypesRepoInfo holds the model-specific conversion functions for AllFieldTypes.
+var allFieldTypesRepoInfo = RepoInfo[model.AllFieldTypes]{
+	MarshalOne: func(node *model.AllFieldTypes) any {
+		return conv.FromAllFieldTypesPtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.AllFieldTypes, error) {
+		var raw *conv.AllFieldTypes
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToAllFieldTypesPtr(raw), nil
+	},
+}
+
 // AllFieldTypesRepo returns a new repository instance for the AllFieldTypes model.
 func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
-	return &allFieldTypes{repo: &repo[model.AllFieldTypes, conv.AllFieldTypes]{
-		db:       c.db,
-		name:     "all_field_types",
-		convTo:   conv.ToAllFieldTypesPtr,
-		convFrom: conv.FromAllFieldTypesPtr}}
+	return &allFieldTypes{repo: &repo[model.AllFieldTypes]{
+		db:   c.db,
+		name: "all_field_types",
+		info: allFieldTypesRepoInfo}}
 }
 
 type allFieldTypes struct {
-	*repo[model.AllFieldTypes, conv.AllFieldTypes]
+	*repo[model.AllFieldTypes]
 }
 
 // Query returns a new query builder for the AllFieldTypes model.
-func (r *allFieldTypes) Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes] {
+func (r *allFieldTypes) Query() query.Builder[model.AllFieldTypes] {
 	return query.NewAllFieldTypes(r.db)
 }
 

@@ -7,11 +7,24 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
-	return Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
-		convFrom: conv.FromFieldsLikeDBResponsePtr,
-		convTo:   conv.ToFieldsLikeDBResponsePtr,
-		db:       db,
-		query:    lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
+// fieldsLikeDbresponseModelInfo holds the model-specific unmarshal functions for FieldsLikeDBResponse.
+var fieldsLikeDbresponseModelInfo = modelInfo[model.FieldsLikeDBResponse]{
+	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.FieldsLikeDBResponse, error) {
+		return unmarshalAll(unmarshal, data, conv.ToFieldsLikeDBResponsePtr)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.FieldsLikeDBResponse, error) {
+		return unmarshalOne(unmarshal, data, conv.ToFieldsLikeDBResponsePtr)
+	},
+	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.FieldsLikeDBResponse], error) {
+		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToFieldsLikeDBResponsePtr)
+	},
+}
+
+// NewFieldsLikeDBResponse creates a new query builder for FieldsLikeDBResponse models.
+func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse] {
+	return Builder[model.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse]{
+		db:    db,
+		info:  fieldsLikeDbresponseModelInfo,
+		query: lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
 	}}
 }
