@@ -13,7 +13,7 @@ import (
 )
 
 type URLExampleRepo interface {
-	Query() query.URLExampleQuery
+	Query() query.Builder[model.URLExample]
 	Create(ctx context.Context, urlexample *model.URLExample) error
 	CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error
 	Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error)
@@ -50,7 +50,7 @@ type urlexample struct {
 }
 
 // Query returns a new query builder for the URLExample model.
-func (r *urlexample) Query() query.URLExampleQuery {
+func (r *urlexample) Query() query.Builder[model.URLExample] {
 	return query.NewURLExample(r.db)
 }
 

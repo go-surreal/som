@@ -5,9 +5,7 @@ import (
 	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"time"
 )
 
 // urlexampleModelInfo holds the model-specific unmarshal functions for URLExample.
@@ -82,151 +80,11 @@ var urlexampleModelInfo = ModelInfo[model.URLExample]{
 	},
 }
 
-// URLExampleQuery is the query builder for URLExample models.
-type URLExampleQuery struct {
-	Builder[model.URLExample]
-}
-
-// URLExampleQueryNoLive is returned after Order/Limit/Offset operations.
-type URLExampleQueryNoLive struct {
-	BuilderNoLive[model.URLExample]
-}
-
-// URLExampleSearchQuery is returned after Search operations.
-type URLExampleSearchQuery struct {
-	SearchBuilder[model.URLExample]
-}
-
 // NewURLExample creates a new query builder for URLExample models.
-func NewURLExample(db Database) URLExampleQuery {
-	return URLExampleQuery{Builder[model.URLExample]{builder[model.URLExample]{
+func NewURLExample(db Database) Builder[model.URLExample] {
+	return Builder[model.URLExample]{builder[model.URLExample]{
 		db:    db,
 		info:  urlexampleModelInfo,
 		query: lib.NewQuery[model.URLExample]("url_example"),
-	}}}
-}
-
-// Filter adds a where statement to the query.
-func (q URLExampleQuery) Filter(filters ...lib.Filter[model.URLExample]) URLExampleQuery {
-	return URLExampleQuery{q.Builder.Filter(filters...)}
-}
-
-// Fetch can be used to return related records.
-func (q URLExampleQuery) Fetch(fetch ...with.Fetch_[model.URLExample]) URLExampleQuery {
-	return URLExampleQuery{q.Builder.Fetch(fetch...)}
-}
-
-// Debug logs the query to the default debug logger.
-func (q URLExampleQuery) Debug(prefix ...string) URLExampleQuery {
-	return URLExampleQuery{q.Builder.Debug(prefix...)}
-}
-
-// Order sorts the returned records based on the given conditions.
-func (q URLExampleQuery) Order(by ...*lib.Sort[model.URLExample]) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.Builder.Order(by...)}
-}
-
-// OrderRandom sorts the returned records in a random order.
-func (q URLExampleQuery) OrderRandom() URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.Builder.OrderRandom()}
-}
-
-// Offset skips the first x records for the result set.
-func (q URLExampleQuery) Offset(offset int) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.Builder.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q URLExampleQuery) Limit(limit int) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.Builder.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q URLExampleQuery) Timeout(timeout time.Duration) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.Builder.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q URLExampleQuery) Parallel(parallel bool) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.Builder.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q URLExampleQuery) TempFiles(tempFiles bool) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.Builder.TempFiles(tempFiles)}
-}
-
-// Search adds full-text search conditions to the query (OR behavior).
-func (q URLExampleQuery) Search(searches ...lib.Search[model.URLExample]) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.Builder.Search(searches...)}
-}
-
-// SearchAll adds full-text search conditions to the query (AND behavior).
-func (q URLExampleQuery) SearchAll(searches ...lib.Search[model.URLExample]) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.Builder.SearchAll(searches...)}
-}
-
-// Offset skips the first x records for the result set.
-func (q URLExampleQueryNoLive) Offset(offset int) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.BuilderNoLive.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q URLExampleQueryNoLive) Limit(limit int) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.BuilderNoLive.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q URLExampleQueryNoLive) Timeout(timeout time.Duration) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.BuilderNoLive.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q URLExampleQueryNoLive) Parallel(parallel bool) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.BuilderNoLive.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q URLExampleQueryNoLive) TempFiles(tempFiles bool) URLExampleQueryNoLive {
-	return URLExampleQueryNoLive{q.BuilderNoLive.TempFiles(tempFiles)}
-}
-
-// Filter adds additional conditions to the search query.
-func (q URLExampleSearchQuery) Filter(filters ...lib.Filter[model.URLExample]) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.SearchBuilder.Filter(filters...)}
-}
-
-// Order sorts the returned records based on the given conditions.
-func (q URLExampleSearchQuery) Order(by ...lib.SearchSort) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.SearchBuilder.Order(by...)}
-}
-
-// Offset skips the first x records for the result set.
-func (q URLExampleSearchQuery) Offset(offset int) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.SearchBuilder.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q URLExampleSearchQuery) Limit(limit int) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.SearchBuilder.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q URLExampleSearchQuery) Timeout(timeout time.Duration) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.SearchBuilder.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q URLExampleSearchQuery) Parallel(parallel bool) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.SearchBuilder.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q URLExampleSearchQuery) TempFiles(tempFiles bool) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.SearchBuilder.TempFiles(tempFiles)}
-}
-
-// Debug logs the search query to the default debug logger.
-func (q URLExampleSearchQuery) Debug(prefix ...string) URLExampleSearchQuery {
-	return URLExampleSearchQuery{q.SearchBuilder.Debug(prefix...)}
+	}}
 }

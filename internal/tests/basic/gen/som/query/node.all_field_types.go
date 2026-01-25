@@ -5,9 +5,7 @@ import (
 	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"time"
 )
 
 // allFieldTypesModelInfo holds the model-specific unmarshal functions for AllFieldTypes.
@@ -82,151 +80,11 @@ var allFieldTypesModelInfo = ModelInfo[model.AllFieldTypes]{
 	},
 }
 
-// AllFieldTypesQuery is the query builder for AllFieldTypes models.
-type AllFieldTypesQuery struct {
-	Builder[model.AllFieldTypes]
-}
-
-// AllFieldTypesQueryNoLive is returned after Order/Limit/Offset operations.
-type AllFieldTypesQueryNoLive struct {
-	BuilderNoLive[model.AllFieldTypes]
-}
-
-// AllFieldTypesSearchQuery is returned after Search operations.
-type AllFieldTypesSearchQuery struct {
-	SearchBuilder[model.AllFieldTypes]
-}
-
 // NewAllFieldTypes creates a new query builder for AllFieldTypes models.
-func NewAllFieldTypes(db Database) AllFieldTypesQuery {
-	return AllFieldTypesQuery{Builder[model.AllFieldTypes]{builder[model.AllFieldTypes]{
+func NewAllFieldTypes(db Database) Builder[model.AllFieldTypes] {
+	return Builder[model.AllFieldTypes]{builder[model.AllFieldTypes]{
 		db:    db,
 		info:  allFieldTypesModelInfo,
 		query: lib.NewQuery[model.AllFieldTypes]("all_field_types"),
-	}}}
-}
-
-// Filter adds a where statement to the query.
-func (q AllFieldTypesQuery) Filter(filters ...lib.Filter[model.AllFieldTypes]) AllFieldTypesQuery {
-	return AllFieldTypesQuery{q.Builder.Filter(filters...)}
-}
-
-// Fetch can be used to return related records.
-func (q AllFieldTypesQuery) Fetch(fetch ...with.Fetch_[model.AllFieldTypes]) AllFieldTypesQuery {
-	return AllFieldTypesQuery{q.Builder.Fetch(fetch...)}
-}
-
-// Debug logs the query to the default debug logger.
-func (q AllFieldTypesQuery) Debug(prefix ...string) AllFieldTypesQuery {
-	return AllFieldTypesQuery{q.Builder.Debug(prefix...)}
-}
-
-// Order sorts the returned records based on the given conditions.
-func (q AllFieldTypesQuery) Order(by ...*lib.Sort[model.AllFieldTypes]) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.Builder.Order(by...)}
-}
-
-// OrderRandom sorts the returned records in a random order.
-func (q AllFieldTypesQuery) OrderRandom() AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.Builder.OrderRandom()}
-}
-
-// Offset skips the first x records for the result set.
-func (q AllFieldTypesQuery) Offset(offset int) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.Builder.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q AllFieldTypesQuery) Limit(limit int) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.Builder.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q AllFieldTypesQuery) Timeout(timeout time.Duration) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.Builder.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q AllFieldTypesQuery) Parallel(parallel bool) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.Builder.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q AllFieldTypesQuery) TempFiles(tempFiles bool) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.Builder.TempFiles(tempFiles)}
-}
-
-// Search adds full-text search conditions to the query (OR behavior).
-func (q AllFieldTypesQuery) Search(searches ...lib.Search[model.AllFieldTypes]) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.Builder.Search(searches...)}
-}
-
-// SearchAll adds full-text search conditions to the query (AND behavior).
-func (q AllFieldTypesQuery) SearchAll(searches ...lib.Search[model.AllFieldTypes]) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.Builder.SearchAll(searches...)}
-}
-
-// Offset skips the first x records for the result set.
-func (q AllFieldTypesQueryNoLive) Offset(offset int) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.BuilderNoLive.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q AllFieldTypesQueryNoLive) Limit(limit int) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.BuilderNoLive.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q AllFieldTypesQueryNoLive) Timeout(timeout time.Duration) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.BuilderNoLive.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q AllFieldTypesQueryNoLive) Parallel(parallel bool) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.BuilderNoLive.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q AllFieldTypesQueryNoLive) TempFiles(tempFiles bool) AllFieldTypesQueryNoLive {
-	return AllFieldTypesQueryNoLive{q.BuilderNoLive.TempFiles(tempFiles)}
-}
-
-// Filter adds additional conditions to the search query.
-func (q AllFieldTypesSearchQuery) Filter(filters ...lib.Filter[model.AllFieldTypes]) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.SearchBuilder.Filter(filters...)}
-}
-
-// Order sorts the returned records based on the given conditions.
-func (q AllFieldTypesSearchQuery) Order(by ...lib.SearchSort) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.SearchBuilder.Order(by...)}
-}
-
-// Offset skips the first x records for the result set.
-func (q AllFieldTypesSearchQuery) Offset(offset int) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.SearchBuilder.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q AllFieldTypesSearchQuery) Limit(limit int) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.SearchBuilder.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q AllFieldTypesSearchQuery) Timeout(timeout time.Duration) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.SearchBuilder.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q AllFieldTypesSearchQuery) Parallel(parallel bool) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.SearchBuilder.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q AllFieldTypesSearchQuery) TempFiles(tempFiles bool) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.SearchBuilder.TempFiles(tempFiles)}
-}
-
-// Debug logs the search query to the default debug logger.
-func (q AllFieldTypesSearchQuery) Debug(prefix ...string) AllFieldTypesSearchQuery {
-	return AllFieldTypesSearchQuery{q.SearchBuilder.Debug(prefix...)}
+	}}
 }

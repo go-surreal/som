@@ -171,7 +171,7 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 // -- LIVE
 //
 
-func liveWithInfo[M any](
+func live[M any](
 	ctx context.Context,
 	in <-chan []byte,
 	unmarshal func(buf []byte, val any) error,
@@ -193,7 +193,7 @@ func liveWithInfo[M any](
 					return
 				}
 
-				out <- toLiveResultWithInfo(data, unmarshal, info)
+				out <- toLiveResult(data, unmarshal, info)
 			}
 		}
 	}()
@@ -201,7 +201,7 @@ func liveWithInfo[M any](
 	return out
 }
 
-func toLiveResultWithInfo[M any](
+func toLiveResult[M any](
 	in []byte,
 	unmarshal func(buf []byte, val any) error,
 	info ModelInfo[M],

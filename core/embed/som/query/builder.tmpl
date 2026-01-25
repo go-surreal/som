@@ -333,7 +333,7 @@ func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
-	return liveWithInfo(ctx, resChan, b.db.Unmarshal, b.info), nil
+	return live(ctx, resChan, b.db.Unmarshal, b.info), nil
 }
 
 // LiveCount is the live version of Count.

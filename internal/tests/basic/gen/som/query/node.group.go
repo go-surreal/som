@@ -5,9 +5,7 @@ import (
 	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"time"
 )
 
 // groupModelInfo holds the model-specific unmarshal functions for Group.
@@ -82,151 +80,11 @@ var groupModelInfo = ModelInfo[model.Group]{
 	},
 }
 
-// GroupQuery is the query builder for Group models.
-type GroupQuery struct {
-	Builder[model.Group]
-}
-
-// GroupQueryNoLive is returned after Order/Limit/Offset operations.
-type GroupQueryNoLive struct {
-	BuilderNoLive[model.Group]
-}
-
-// GroupSearchQuery is returned after Search operations.
-type GroupSearchQuery struct {
-	SearchBuilder[model.Group]
-}
-
 // NewGroup creates a new query builder for Group models.
-func NewGroup(db Database) GroupQuery {
-	return GroupQuery{Builder[model.Group]{builder[model.Group]{
+func NewGroup(db Database) Builder[model.Group] {
+	return Builder[model.Group]{builder[model.Group]{
 		db:    db,
 		info:  groupModelInfo,
 		query: lib.NewQuery[model.Group]("group"),
-	}}}
-}
-
-// Filter adds a where statement to the query.
-func (q GroupQuery) Filter(filters ...lib.Filter[model.Group]) GroupQuery {
-	return GroupQuery{q.Builder.Filter(filters...)}
-}
-
-// Fetch can be used to return related records.
-func (q GroupQuery) Fetch(fetch ...with.Fetch_[model.Group]) GroupQuery {
-	return GroupQuery{q.Builder.Fetch(fetch...)}
-}
-
-// Debug logs the query to the default debug logger.
-func (q GroupQuery) Debug(prefix ...string) GroupQuery {
-	return GroupQuery{q.Builder.Debug(prefix...)}
-}
-
-// Order sorts the returned records based on the given conditions.
-func (q GroupQuery) Order(by ...*lib.Sort[model.Group]) GroupQueryNoLive {
-	return GroupQueryNoLive{q.Builder.Order(by...)}
-}
-
-// OrderRandom sorts the returned records in a random order.
-func (q GroupQuery) OrderRandom() GroupQueryNoLive {
-	return GroupQueryNoLive{q.Builder.OrderRandom()}
-}
-
-// Offset skips the first x records for the result set.
-func (q GroupQuery) Offset(offset int) GroupQueryNoLive {
-	return GroupQueryNoLive{q.Builder.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q GroupQuery) Limit(limit int) GroupQueryNoLive {
-	return GroupQueryNoLive{q.Builder.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q GroupQuery) Timeout(timeout time.Duration) GroupQueryNoLive {
-	return GroupQueryNoLive{q.Builder.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q GroupQuery) Parallel(parallel bool) GroupQueryNoLive {
-	return GroupQueryNoLive{q.Builder.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q GroupQuery) TempFiles(tempFiles bool) GroupQueryNoLive {
-	return GroupQueryNoLive{q.Builder.TempFiles(tempFiles)}
-}
-
-// Search adds full-text search conditions to the query (OR behavior).
-func (q GroupQuery) Search(searches ...lib.Search[model.Group]) GroupSearchQuery {
-	return GroupSearchQuery{q.Builder.Search(searches...)}
-}
-
-// SearchAll adds full-text search conditions to the query (AND behavior).
-func (q GroupQuery) SearchAll(searches ...lib.Search[model.Group]) GroupSearchQuery {
-	return GroupSearchQuery{q.Builder.SearchAll(searches...)}
-}
-
-// Offset skips the first x records for the result set.
-func (q GroupQueryNoLive) Offset(offset int) GroupQueryNoLive {
-	return GroupQueryNoLive{q.BuilderNoLive.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q GroupQueryNoLive) Limit(limit int) GroupQueryNoLive {
-	return GroupQueryNoLive{q.BuilderNoLive.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q GroupQueryNoLive) Timeout(timeout time.Duration) GroupQueryNoLive {
-	return GroupQueryNoLive{q.BuilderNoLive.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q GroupQueryNoLive) Parallel(parallel bool) GroupQueryNoLive {
-	return GroupQueryNoLive{q.BuilderNoLive.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q GroupQueryNoLive) TempFiles(tempFiles bool) GroupQueryNoLive {
-	return GroupQueryNoLive{q.BuilderNoLive.TempFiles(tempFiles)}
-}
-
-// Filter adds additional conditions to the search query.
-func (q GroupSearchQuery) Filter(filters ...lib.Filter[model.Group]) GroupSearchQuery {
-	return GroupSearchQuery{q.SearchBuilder.Filter(filters...)}
-}
-
-// Order sorts the returned records based on the given conditions.
-func (q GroupSearchQuery) Order(by ...lib.SearchSort) GroupSearchQuery {
-	return GroupSearchQuery{q.SearchBuilder.Order(by...)}
-}
-
-// Offset skips the first x records for the result set.
-func (q GroupSearchQuery) Offset(offset int) GroupSearchQuery {
-	return GroupSearchQuery{q.SearchBuilder.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q GroupSearchQuery) Limit(limit int) GroupSearchQuery {
-	return GroupSearchQuery{q.SearchBuilder.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q GroupSearchQuery) Timeout(timeout time.Duration) GroupSearchQuery {
-	return GroupSearchQuery{q.SearchBuilder.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q GroupSearchQuery) Parallel(parallel bool) GroupSearchQuery {
-	return GroupSearchQuery{q.SearchBuilder.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q GroupSearchQuery) TempFiles(tempFiles bool) GroupSearchQuery {
-	return GroupSearchQuery{q.SearchBuilder.TempFiles(tempFiles)}
-}
-
-// Debug logs the search query to the default debug logger.
-func (q GroupSearchQuery) Debug(prefix ...string) GroupSearchQuery {
-	return GroupSearchQuery{q.SearchBuilder.Debug(prefix...)}
+	}}
 }

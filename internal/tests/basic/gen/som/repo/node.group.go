@@ -13,7 +13,7 @@ import (
 )
 
 type GroupRepo interface {
-	Query() query.GroupQuery
+	Query() query.Builder[model.Group]
 	Create(ctx context.Context, group *model.Group) error
 	CreateWithID(ctx context.Context, id string, group *model.Group) error
 	Read(ctx context.Context, id *som.ID) (*model.Group, bool, error)
@@ -50,7 +50,7 @@ type group struct {
 }
 
 // Query returns a new query builder for the Group model.
-func (r *group) Query() query.GroupQuery {
+func (r *group) Query() query.Builder[model.Group] {
 	return query.NewGroup(r.db)
 }
 

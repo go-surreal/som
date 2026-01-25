@@ -125,7 +125,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	// type {NodeName}Repo interface {...}
 	//
 	f.Line().Type().Id(node.NameGo()+"Repo").Interface(
-		jen.Id("Query").Call().Qual(pkgQuery, node.NameGo()+"Query"),
+		jen.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo())),
 
 		jen.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -231,7 +231,7 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
-		Qual(pkgQuery, node.NameGo()+"Query").
+		Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo())).
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
 				jen.Id("r").Dot("db"),

@@ -5,9 +5,7 @@ import (
 	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	with "github.com/go-surreal/som/tests/basic/gen/som/with"
 	model "github.com/go-surreal/som/tests/basic/model"
-	"time"
 )
 
 // fieldsLikeDbresponseModelInfo holds the model-specific unmarshal functions for FieldsLikeDBResponse.
@@ -82,151 +80,11 @@ var fieldsLikeDbresponseModelInfo = ModelInfo[model.FieldsLikeDBResponse]{
 	},
 }
 
-// FieldsLikeDBResponseQuery is the query builder for FieldsLikeDBResponse models.
-type FieldsLikeDBResponseQuery struct {
-	Builder[model.FieldsLikeDBResponse]
-}
-
-// FieldsLikeDBResponseQueryNoLive is returned after Order/Limit/Offset operations.
-type FieldsLikeDBResponseQueryNoLive struct {
-	BuilderNoLive[model.FieldsLikeDBResponse]
-}
-
-// FieldsLikeDBResponseSearchQuery is returned after Search operations.
-type FieldsLikeDBResponseSearchQuery struct {
-	SearchBuilder[model.FieldsLikeDBResponse]
-}
-
 // NewFieldsLikeDBResponse creates a new query builder for FieldsLikeDBResponse models.
-func NewFieldsLikeDBResponse(db Database) FieldsLikeDBResponseQuery {
-	return FieldsLikeDBResponseQuery{Builder[model.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse]{
+func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse] {
+	return Builder[model.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse]{
 		db:    db,
 		info:  fieldsLikeDbresponseModelInfo,
 		query: lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
-	}}}
-}
-
-// Filter adds a where statement to the query.
-func (q FieldsLikeDBResponseQuery) Filter(filters ...lib.Filter[model.FieldsLikeDBResponse]) FieldsLikeDBResponseQuery {
-	return FieldsLikeDBResponseQuery{q.Builder.Filter(filters...)}
-}
-
-// Fetch can be used to return related records.
-func (q FieldsLikeDBResponseQuery) Fetch(fetch ...with.Fetch_[model.FieldsLikeDBResponse]) FieldsLikeDBResponseQuery {
-	return FieldsLikeDBResponseQuery{q.Builder.Fetch(fetch...)}
-}
-
-// Debug logs the query to the default debug logger.
-func (q FieldsLikeDBResponseQuery) Debug(prefix ...string) FieldsLikeDBResponseQuery {
-	return FieldsLikeDBResponseQuery{q.Builder.Debug(prefix...)}
-}
-
-// Order sorts the returned records based on the given conditions.
-func (q FieldsLikeDBResponseQuery) Order(by ...*lib.Sort[model.FieldsLikeDBResponse]) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.Builder.Order(by...)}
-}
-
-// OrderRandom sorts the returned records in a random order.
-func (q FieldsLikeDBResponseQuery) OrderRandom() FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.Builder.OrderRandom()}
-}
-
-// Offset skips the first x records for the result set.
-func (q FieldsLikeDBResponseQuery) Offset(offset int) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.Builder.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q FieldsLikeDBResponseQuery) Limit(limit int) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.Builder.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q FieldsLikeDBResponseQuery) Timeout(timeout time.Duration) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.Builder.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q FieldsLikeDBResponseQuery) Parallel(parallel bool) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.Builder.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q FieldsLikeDBResponseQuery) TempFiles(tempFiles bool) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.Builder.TempFiles(tempFiles)}
-}
-
-// Search adds full-text search conditions to the query (OR behavior).
-func (q FieldsLikeDBResponseQuery) Search(searches ...lib.Search[model.FieldsLikeDBResponse]) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.Builder.Search(searches...)}
-}
-
-// SearchAll adds full-text search conditions to the query (AND behavior).
-func (q FieldsLikeDBResponseQuery) SearchAll(searches ...lib.Search[model.FieldsLikeDBResponse]) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.Builder.SearchAll(searches...)}
-}
-
-// Offset skips the first x records for the result set.
-func (q FieldsLikeDBResponseQueryNoLive) Offset(offset int) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.BuilderNoLive.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q FieldsLikeDBResponseQueryNoLive) Limit(limit int) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.BuilderNoLive.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q FieldsLikeDBResponseQueryNoLive) Timeout(timeout time.Duration) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.BuilderNoLive.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q FieldsLikeDBResponseQueryNoLive) Parallel(parallel bool) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.BuilderNoLive.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q FieldsLikeDBResponseQueryNoLive) TempFiles(tempFiles bool) FieldsLikeDBResponseQueryNoLive {
-	return FieldsLikeDBResponseQueryNoLive{q.BuilderNoLive.TempFiles(tempFiles)}
-}
-
-// Filter adds additional conditions to the search query.
-func (q FieldsLikeDBResponseSearchQuery) Filter(filters ...lib.Filter[model.FieldsLikeDBResponse]) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.SearchBuilder.Filter(filters...)}
-}
-
-// Order sorts the returned records based on the given conditions.
-func (q FieldsLikeDBResponseSearchQuery) Order(by ...lib.SearchSort) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.SearchBuilder.Order(by...)}
-}
-
-// Offset skips the first x records for the result set.
-func (q FieldsLikeDBResponseSearchQuery) Offset(offset int) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.SearchBuilder.Offset(offset)}
-}
-
-// Limit restricts the query to return at most x records.
-func (q FieldsLikeDBResponseSearchQuery) Limit(limit int) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.SearchBuilder.Limit(limit)}
-}
-
-// Timeout adds an execution time limit to the query.
-func (q FieldsLikeDBResponseSearchQuery) Timeout(timeout time.Duration) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.SearchBuilder.Timeout(timeout)}
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (q FieldsLikeDBResponseSearchQuery) Parallel(parallel bool) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.SearchBuilder.Parallel(parallel)}
-}
-
-// TempFiles tells SurrealDB to process the query using temporary files.
-func (q FieldsLikeDBResponseSearchQuery) TempFiles(tempFiles bool) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.SearchBuilder.TempFiles(tempFiles)}
-}
-
-// Debug logs the search query to the default debug logger.
-func (q FieldsLikeDBResponseSearchQuery) Debug(prefix ...string) FieldsLikeDBResponseSearchQuery {
-	return FieldsLikeDBResponseSearchQuery{q.SearchBuilder.Debug(prefix...)}
+	}}
 }

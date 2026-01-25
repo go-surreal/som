@@ -13,7 +13,7 @@ import (
 )
 
 type AllFieldTypesRepo interface {
-	Query() query.AllFieldTypesQuery
+	Query() query.Builder[model.AllFieldTypes]
 	Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error
 	Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error)
@@ -50,7 +50,7 @@ type allFieldTypes struct {
 }
 
 // Query returns a new query builder for the AllFieldTypes model.
-func (r *allFieldTypes) Query() query.AllFieldTypesQuery {
+func (r *allFieldTypes) Query() query.Builder[model.AllFieldTypes] {
 	return query.NewAllFieldTypes(r.db)
 }
 
