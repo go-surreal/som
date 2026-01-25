@@ -34,7 +34,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, edge := range source.Edges {
 		dbEdge := &EdgeTable{
-			Name: edge.Name,
+			Name:   edge.Name,
+			Source: edge,
 		}
 
 		inField, ok := Convert(source, buildConf, edge.In)
@@ -281,6 +282,7 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 					In:     in.(*Node),
 					Out:    out.(*Node),
 					Fields: fields,
+					Source: edge,
 				},
 			}, true
 		}

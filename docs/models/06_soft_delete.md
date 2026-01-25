@@ -300,7 +300,7 @@ fmt.Println(doc.Version())                // 4
 The soft delete field is defined in SurrealDB as:
 
 ```surql
-DEFINE FIELD deleted_at ON TABLE user TYPE option<datetime>;
+DEFINE FIELD deleted_at ON TABLE user TYPE option<datetime> DEFAULT NONE;
 ```
 
 ## Complete Example
