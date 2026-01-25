@@ -168,6 +168,33 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 }
 
 //
+// -- UNMARSHAL
+//
+
+func unmarshalAll[M, C any](unmarshal func([]byte, any) error, data []byte, convert func(*C) *M) ([]*M, error) {
+	var rawNodes []queryResult[*C]
+	if err := unmarshal(data, &rawNodes); err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, nil
+	}
+	results := make([]*M, len(rawNodes[0].Result))
+	for i, raw := range rawNodes[0].Result {
+		results[i] = convert(raw)
+	}
+	return results, nil
+}
+
+func unmarshalOne[M, C any](unmarshal func([]byte, any) error, data []byte, convert func(*C) *M) (*M, error) {
+	var raw *C
+	if err := unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	return convert(raw), nil
+}
+
+//
 // -- LIVE
 //
 
@@ -175,7 +202,7 @@ func live[M any](
 	ctx context.Context,
 	in <-chan []byte,
 	unmarshal func(buf []byte, val any) error,
-	info ModelInfo[M],
+	info modelInfo[M],
 ) <-chan LiveResult[*M] {
 	out := make(chan LiveResult[*M], 1)
 
@@ -204,7 +231,7 @@ func live[M any](
 func toLiveResult[M any](
 	in []byte,
 	unmarshal func(buf []byte, val any) error,
-	info ModelInfo[M],
+	info modelInfo[M],
 ) LiveResult[*M] {
 	var response liveResponse
 
@@ -219,7 +246,7 @@ func toLiveResult[M any](
 	case "create":
 		var out liveResult[*M]
 
-		result, err := info.UnmarshalLive(unmarshal, response.Result)
+		result, err := info.UnmarshalOne(unmarshal, response.Result)
 		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
 		}
@@ -235,7 +262,7 @@ func toLiveResult[M any](
 	case "update":
 		var out liveResult[*M]
 
-		result, err := info.UnmarshalLive(unmarshal, response.Result)
+		result, err := info.UnmarshalOne(unmarshal, response.Result)
 		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live update result: %w", err)
 		}
@@ -251,7 +278,7 @@ func toLiveResult[M any](
 	case "delete":
 		var out liveResult[*M]
 
-		result, err := info.UnmarshalLive(unmarshal, response.Result)
+		result, err := info.UnmarshalOne(unmarshal, response.Result)
 		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live delete result: %w", err)
 		}

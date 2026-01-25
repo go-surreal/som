@@ -2,81 +2,21 @@
 package query
 
 import (
-	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 // allFieldTypesModelInfo holds the model-specific unmarshal functions for AllFieldTypes.
-var allFieldTypesModelInfo = ModelInfo[model.AllFieldTypes]{
+var allFieldTypesModelInfo = modelInfo[model.AllFieldTypes]{
 	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.AllFieldTypes, error) {
-		var rawNodes []queryResult[*conv.AllFieldTypes]
-		if err := unmarshal(data, &rawNodes); err != nil {
-			return nil, fmt.Errorf("could not unmarshal records: %w", err)
-		}
-		if len(rawNodes) < 1 {
-			return nil, nil
-		}
-		results := make([]*model.AllFieldTypes, len(rawNodes[0].Result))
-		for i, raw := range rawNodes[0].Result {
-			results[i] = conv.ToAllFieldTypesPtr(raw)
-		}
-		return results, nil
-	},
-	UnmarshalLive: func(unmarshal func([]byte, any) error, data []byte) (*model.AllFieldTypes, error) {
-		var raw *conv.AllFieldTypes
-		if err := unmarshal(data, &raw); err != nil {
-			return nil, err
-		}
-		return conv.ToAllFieldTypesPtr(raw), nil
+		return unmarshalAll(unmarshal, data, conv.ToAllFieldTypesPtr)
 	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.AllFieldTypes, error) {
-		var raw *conv.AllFieldTypes
-		if err := unmarshal(data, &raw); err != nil {
-			return nil, err
-		}
-		return conv.ToAllFieldTypesPtr(raw), nil
+		return unmarshalOne(unmarshal, data, conv.ToAllFieldTypesPtr)
 	},
 	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.AllFieldTypes], error) {
-		var rawNodes []queryResult[searchRawResult[*conv.AllFieldTypes]]
-		if err := unmarshal(data, &rawNodes); err != nil {
-			return nil, fmt.Errorf("could not unmarshal search records: %w", err)
-		}
-		if len(rawNodes) < 1 {
-			return nil, nil
-		}
-		var results []lib.SearchResult[*model.AllFieldTypes]
-		for _, raw := range rawNodes[0].Result {
-			rec := conv.ToAllFieldTypesPtr(raw.Model)
-			result := lib.SearchResult[*model.AllFieldTypes]{
-				Highlights: make(map[int]string),
-				Model:      rec,
-				Offsets:    make(map[int][]lib.Offset),
-				Scores:     raw.Scores,
-			}
-			for _, clause := range clauses {
-				if clause.Highlights {
-					if hl, ok := raw.Highlights[clause.Ref]; ok {
-						result.Highlights[clause.Ref] = hl
-					}
-				}
-				if clause.Offsets {
-					if offs, ok := raw.Offsets[clause.Ref]; ok {
-						libOffsets := make([]lib.Offset, len(offs))
-						for i, off := range offs {
-							libOffsets[i] = lib.Offset{
-								End:   off.End,
-								Start: off.Start,
-							}
-						}
-						result.Offsets[clause.Ref] = libOffsets
-					}
-				}
-			}
-			results = append(results, result)
-		}
-		return results, nil
+		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToAllFieldTypesPtr)
 	},
 }
 

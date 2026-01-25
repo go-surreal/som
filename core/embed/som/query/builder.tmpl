@@ -15,17 +15,14 @@ import (
 	"{{.GenerateOutPath}}/with"
 )
 
-// ModelInfo holds type-specific conversion functions.
+// modelInfo holds type-specific conversion functions.
 // Passed directly to builder - no registry lookup needed.
-type ModelInfo[M any] struct {
+type modelInfo[M any] struct {
 	// UnmarshalAll unmarshals query results into []*M
 	UnmarshalAll func(unmarshal func([]byte, any) error, data []byte) ([]*M, error)
 
 	// UnmarshalOne unmarshals a single result into *M
 	UnmarshalOne func(unmarshal func([]byte, any) error, data []byte) (*M, error)
-
-	// UnmarshalLive unmarshals a live query result into *M
-	UnmarshalLive func(unmarshal func([]byte, any) error, data []byte) (*M, error)
 
 	// UnmarshalSearchAll unmarshals search query results into []SearchResult[*M]
 	UnmarshalSearchAll func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*M], error)
@@ -35,7 +32,7 @@ type ModelInfo[M any] struct {
 type builder[M any] struct {
 	db    Database
 	query lib.Query[M]
-	info  ModelInfo[M]
+	info  modelInfo[M]
 }
 
 type Builder[M any] struct {
@@ -590,3 +587,44 @@ func (b SearchBuilder[M]) Debug(prefix ...string) SearchBuilder[M] {
 // If multiple refs are provided, scores are summed.
 // Use with SearchBuilder.Order() to sort search results by relevance score.
 var Score = lib.Score
+
+func unmarshalSearchAll[M, C any](unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
+	var rawNodes []queryResult[searchRawResult[*C]]
+	if err := unmarshal(data, &rawNodes); err != nil {
+		return nil, fmt.Errorf("could not unmarshal search records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, nil
+	}
+	var results []lib.SearchResult[*M]
+	for _, raw := range rawNodes[0].Result {
+		rec := convert(raw.Model)
+		result := lib.SearchResult[*M]{
+			Highlights: make(map[int]string),
+			Model:      rec,
+			Offsets:    make(map[int][]lib.Offset),
+			Scores:     raw.Scores,
+		}
+		for _, clause := range clauses {
+			if clause.Highlights {
+				if hl, ok := raw.Highlights[clause.Ref]; ok {
+					result.Highlights[clause.Ref] = hl
+				}
+			}
+			if clause.Offsets {
+				if offs, ok := raw.Offsets[clause.Ref]; ok {
+					libOffsets := make([]lib.Offset, len(offs))
+					for i, off := range offs {
+						libOffsets[i] = lib.Offset{
+							Start: off.Start,
+							End:   off.End,
+						}
+					}
+					result.Offsets[clause.Ref] = libOffsets
+				}
+			}
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
