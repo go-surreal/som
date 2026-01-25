@@ -94,13 +94,18 @@ func (r *repo[N, C]) update(ctx context.Context, id *ID, node *N) error {
 
 func (r *repo[N, C]) delete(ctx context.Context, id *ID, node *N, softDelete bool) error {
 	if softDelete {
-		// Soft delete: set deleted_at timestamp
-		patch := map[string]any{"deleted_at": time.Now()}
-		_, err := r.db.Update(ctx, id, patch)
+		// Soft delete: use UPDATE SET to only set deleted_at without replacing the entire record
+		query := "UPDATE $id SET deleted_at = $time"
+		vars := map[string]any{
+			"id":   id,
+			"time": time.Now(),
+		}
+		_, err := r.db.Query(ctx, query, vars)
 		if err != nil {
 			return fmt.Errorf("could not soft delete entity: %w", err)
 		}
-		return nil
+		// Auto-refresh to update in-memory object with new deleted_at value
+		return r.refresh(ctx, id, node)
 	}
 
 	// Hard delete

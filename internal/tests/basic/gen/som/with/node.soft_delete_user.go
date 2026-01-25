@@ -3,30 +3,8 @@ package with
 
 import model "github.com/go-surreal/som/tests/basic/model"
 
-var SoftDeleteUser = softDeleteUser[model.SoftDeleteUser]{field: ""}
+var SoftDeleteUser = softDeleteUser[model.SoftDeleteUser]("")
 
-type softDeleteUser[M any] struct {
-	field       string
-	withDeleted bool
-}
+type softDeleteUser[M any] string
 
 func (n softDeleteUser[M]) fetch(M) {}
-
-func (n softDeleteUser[M]) String() string {
-	return n.field
-}
-
-func (n softDeleteUser[M]) IncludesDeleted() bool {
-	return n.withDeleted
-}
-
-func (n softDeleteUser[M]) FetchField() string {
-	return n.field
-}
-
-func (n softDeleteUser[M]) WithDeleted() softDeleteUser[M] {
-	return softDeleteUser[M]{
-		field:       n.field,
-		withDeleted: true,
-	}
-}

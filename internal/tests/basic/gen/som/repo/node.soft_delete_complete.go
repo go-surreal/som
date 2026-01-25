@@ -135,8 +135,12 @@ func (r *softDeleteComplete) Restore(ctx context.Context, softDeleteComplete *mo
 	if softDeleteComplete == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	patch := map[string]any{"deleted_at": nil}
-	_, err := r.db.Update(ctx, softDeleteComplete.ID(), patch)
+	if !softDeleteComplete.SoftDelete.IsDeleted() {
+		return errors.New("record is not deleted, cannot restore")
+	}
+	query := "UPDATE $id SET deleted_at = NONE"
+	vars := map[string]any{"id": softDeleteComplete.ID()}
+	_, err := r.db.Query(ctx, query, vars)
 	if err != nil {
 		return fmt.Errorf("could not restore entity: %w", err)
 	}

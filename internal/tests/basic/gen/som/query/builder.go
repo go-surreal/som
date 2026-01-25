@@ -85,33 +85,13 @@ func (b builder[M, C]) Limit(limit int) BuilderNoLive[M, C] {
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
-// For soft-delete enabled models, fetched records are automatically filtered
-// to exclude soft-deleted records. Use .WithDeleted() on the fetch
-// to include soft-deleted records in the relation.
+// Note: Soft-delete filtering does not apply to fetched relations.
+// All related records are returned regardless of their soft-delete status.
 func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) Builder[M, C] {
 	for _, f := range fetch {
 		field := fmt.Sprintf("%v", f)
 		if field != "" {
 			b.query.Fetch = append(b.query.Fetch, field)
-		}
-		// Check if this is a soft-delete model field
-		if wd, ok := f.(with.FetchWithDeleted); ok {
-			fetchField := wd.FetchField()
-			if fetchField == "" {
-				fetchField = field
-			}
-			// Track this as a soft-delete field (needs filtering by default)
-			if b.query.SoftDeleteFetchFields == nil {
-				b.query.SoftDeleteFetchFields = make(map[string]bool)
-			}
-			b.query.SoftDeleteFetchFields[fetchField] = true
-			// If WithDeleted() was called, also track that to skip filtering
-			if wd.IncludesDeleted() {
-				if b.query.FetchWithDeleted == nil {
-					b.query.FetchWithDeleted = make(map[string]bool)
-				}
-				b.query.FetchWithDeleted[fetchField] = true
-			}
 		}
 	}
 	return Builder[M, C]{b}
@@ -197,8 +177,7 @@ func (b builder[M, C]) All(ctx context.Context) ([]*M, error) {
 	}
 	var nodes []*M
 	for _, rawNode := range rawNodes[0].Result {
-		node := b.convTo(rawNode)
-		nodes = append(nodes, node)
+		nodes = append(nodes, b.convTo(rawNode))
 	}
 	return nodes, nil
 }

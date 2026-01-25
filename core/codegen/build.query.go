@@ -54,16 +54,18 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 					Qual(pkgFilter, node.Name).Dot("DeletedAt").Dot("Nil").Call(jen.Lit(true))
 			}
 
+			builderValues := jen.Dict{
+				jen.Id("db"):       jen.Id("db"),
+				jen.Id("query"):    jen.Id("q"),
+				jen.Id("convFrom"): jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()+"Ptr"),
+				jen.Id("convTo"):   jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()+"Ptr"),
+			}
+
 			g.Return(
 				jen.Id("Builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
 					Values(
 						jen.Id("builder").Types(b.SourceQual(node.Name), jen.Qual(b.subPkg(def.PkgConv), node.Name)).
-							Values(jen.Dict{
-								jen.Id("db"):       jen.Id("db"),
-								jen.Id("query"):    jen.Id("q"),
-								jen.Id("convFrom"): jen.Qual(b.subPkg(def.PkgConv), "From"+node.NameGo()+"Ptr"),
-								jen.Id("convTo"):   jen.Qual(b.subPkg(def.PkgConv), "To"+node.NameGo()+"Ptr"),
-							}),
+							Values(builderValues),
 					),
 			)
 		})

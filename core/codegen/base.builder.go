@@ -475,15 +475,22 @@ Sets deleted_at to NULL and refreshes the in-memory object.
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					),
 
-				jen.List(jen.Id("patch")).Op(":=").Map(jen.String()).Any().Values(
-					jen.Dict{jen.Lit("deleted_at"): jen.Nil()},
+				// Validate that the record is actually deleted
+				jen.If(jen.Op("!").Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("record is not deleted, cannot restore"))),
+				),
+
+				// Use raw query to only set deleted_at without replacing the entire record
+				jen.List(jen.Id("query")).Op(":=").Lit("UPDATE $id SET deleted_at = NONE"),
+				jen.List(jen.Id("vars")).Op(":=").Map(jen.String()).Any().Values(
+					jen.Dict{jen.Lit("id"): jen.Id(node.NameGoLower()).Dot("ID").Call()},
 				),
 
 				jen.List(jen.Id("_"), jen.Err()).Op(":=").
-					Id("r").Dot("db").Dot("Update").Call(
+					Id("r").Dot("db").Dot("Query").Call(
 						jen.Id("ctx"),
-						jen.Id(node.NameGoLower()).Dot("ID").Call(),
-						jen.Id("patch"),
+						jen.Id("query"),
+						jen.Id("vars"),
 					),
 
 				jen.If(jen.Err().Op("!=").Nil()).Block(

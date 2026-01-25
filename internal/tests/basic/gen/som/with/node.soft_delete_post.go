@@ -3,34 +3,15 @@ package with
 
 import model "github.com/go-surreal/som/tests/basic/model"
 
-var SoftDeletePost = softDeletePost[model.SoftDeletePost]{field: ""}
+var SoftDeletePost = softDeletePost[model.SoftDeletePost]("")
 
-type softDeletePost[M any] struct {
-	field       string
-	withDeleted bool
-}
+type softDeletePost[M any] string
 
 func (n softDeletePost[M]) fetch(M) {}
 
-func (n softDeletePost[M]) String() string {
-	return n.field
-}
-
-func (n softDeletePost[M]) IncludesDeleted() bool {
-	return n.withDeleted
-}
-
-func (n softDeletePost[M]) FetchField() string {
-	return n.field
-}
-
-func (n softDeletePost[M]) WithDeleted() softDeletePost[M] {
-	return softDeletePost[M]{
-		field:       n.field,
-		withDeleted: true,
-	}
-}
-
+// Author returns a fetch accessor for the author relation.
+// Note: Soft-delete filtering does not apply to fetched relations.
+// All related records are returned regardless of their soft-delete status.
 func (n softDeletePost[M]) Author() softDeleteUser[M] {
-	return softDeleteUser[M]{field: keyedStruct(n.field, "author")}
+	return softDeleteUser[M](keyed(n, "author"))
 }

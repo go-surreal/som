@@ -8,6 +8,7 @@ type Client interface {
 	SoftDeleteUserRepo() SoftDeleteUserRepo
 	SoftDeletePostRepo() SoftDeletePostRepo
 	SoftDeleteCompleteRepo() SoftDeleteCompleteRepo
+	SoftDeleteBlogPostRepo() SoftDeleteBlogPostRepo
 	GroupRepo() GroupRepo
 	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
 	AllFieldTypesRepo() AllFieldTypesRepo

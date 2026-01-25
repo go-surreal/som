@@ -53,11 +53,9 @@ type Query[T any] struct {
 	SearchClauses []SearchClause
 	SearchWhere   string
 
-	// Soft delete support
-	SoftDeleteFilter       Filter[T]       // Injected at initialization
-	IncludeDeleted         bool            // Flag to skip soft delete filter
-	SoftDeleteFetchFields  map[string]bool // Fields that are soft-delete models (need filtering by default)
-	FetchWithDeleted       map[string]bool // Fields to include soft-deleted records when fetching (override)
+	// Soft delete support for main queries (not fetched relations)
+	SoftDeleteFilter Filter[T] // Injected at initialization
+	IncludeDeleted   bool      // Flag to skip soft delete filter
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -237,17 +235,10 @@ func (q Query[T]) render() string {
 
 	if len(q.Fetch) > 0 {
 		out.WriteString(" FETCH ")
-		var fetchParts []string
-		for _, f := range q.Fetch {
-			// Apply soft-delete filtering if this is a soft-delete field
-			// and WithDeleted() was NOT called for it
-			if q.SoftDeleteFetchFields[f] && !q.FetchWithDeleted[f] {
-				fetchParts = append(fetchParts, f+"[WHERE deleted_at IS NONE]")
-			} else {
-				fetchParts = append(fetchParts, f)
-			}
-		}
-		out.WriteString(strings.Join(fetchParts, ", "))
+		// Note: FETCH clause filtering for soft-deleted relations is done
+		// in Go post-processing, not in the query. SurrealDB's FETCH clause
+		// doesn't support inline WHERE filtering for single record links.
+		out.WriteString(strings.Join(q.Fetch, ", "))
 	}
 
 	if !q.live && q.Timeout > 0 {

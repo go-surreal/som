@@ -1,12 +1,13 @@
 package codegen
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
 )
 
 type fetchBuilder struct {
@@ -36,105 +37,55 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	typeName := node.NameGoLower()
 
-	// Check if this node has soft-delete enabled
-	if node.Source != nil && node.Source.SoftDelete {
-		// Generate struct-based type with WithDeleted() method
-		f.Line()
-		f.Var().Id(node.Name).Op("=").Id(typeName).Types(b.SourceQual(node.NameGo())).Values(jen.Dict{
-			jen.Id("field"): jen.Lit(""),
-		})
+	f.Line()
+	f.Var().Id(node.Name).Op("=").Id(typeName).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 
-		f.Line()
-		f.Type().Id(typeName).Types(jen.Add(def.TypeModel).Any()).Struct(
-			jen.Id("field").String(),
-			jen.Id("withDeleted").Bool(),
-		)
+	f.Line()
+	f.Type().Id(typeName).
+		Types(jen.Add(def.TypeModel).Any()).
+		String()
 
-		// fetch() method for Fetch_ interface
-		f.Line()
-		f.Func().
-			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
-			Id("fetch").Params(def.TypeModel).Block()
+	f.Line()
+	f.Func().
+		Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+		Id("fetch").Params(def.TypeModel).Block()
 
-		// String() method for fmt.Sprintf
-		f.Line()
-		f.Func().
-			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
-			Id("String").Params().String().
-			Block(jen.Return(jen.Id("n").Dot("field")))
-
-		// IncludesDeleted() method for FetchWithDeleted interface
-		f.Line()
-		f.Func().
-			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
-			Id("IncludesDeleted").Params().Bool().
-			Block(jen.Return(jen.Id("n").Dot("withDeleted")))
-
-		// FetchField() method for FetchWithDeleted interface
-		f.Line()
-		f.Func().
-			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
-			Id("FetchField").Params().String().
-			Block(jen.Return(jen.Id("n").Dot("field")))
-
-		// WithDeleted() method to get a copy with withDeleted=true
-		f.Line()
-		f.Func().
-			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
-			Id("WithDeleted").Params().Id(typeName).Types(def.TypeModel).
-			Block(jen.Return(jen.Id(typeName).Types(def.TypeModel).Values(jen.Dict{
-				jen.Id("field"):       jen.Id("n").Dot("field"),
-				jen.Id("withDeleted"): jen.True(),
-			})))
-
-		// Generate sub-node accessors
-		for _, fld := range node.GetFields() {
-			if nodeField, ok := fld.(*field.Node); ok {
-				f.Line()
-				f.Func().
-					Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
-					Id(nodeField.NameGo()).Params().
-					Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
-					BlockFunc(func(g *jen.Group) {
-						// Check if the related table is also a soft-delete model
-						if nodeField.Table().Source != nil && nodeField.Table().Source.SoftDelete {
-							// Return struct literal for soft-delete models
-							g.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).Values(jen.Dict{
-								jen.Id("field"): jen.Id("keyedStruct").Call(jen.Id("n").Dot("field"), jen.Lit(nodeField.NameDatabase())),
-							}))
-						} else {
-							// Return string conversion for non-soft-delete models
-							g.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
-								Params(jen.Id("keyedStruct").Call(jen.Id("n").Dot("field"), jen.Lit(nodeField.NameDatabase()))))
-						}
-					})
+	for _, fld := range node.GetFields() {
+		if nodeField, ok := fld.(*field.Node); ok {
+			relatedTable := nodeField.Table()
+			f.Line()
+			// Add comment for soft-delete relations
+			if relatedTable.Source != nil && relatedTable.Source.SoftDelete {
+				f.Comment(nodeField.NameGo() + " returns a fetch accessor for the " + nodeField.NameDatabase() + " relation.")
+				f.Comment("Note: Soft-delete filtering does not apply to fetched relations.")
+				f.Comment("All related records are returned regardless of their soft-delete status.")
 			}
+			f.Func().
+				Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+				Id(nodeField.NameGo()).Params().
+				Id(relatedTable.NameGoLower()).Types(def.TypeModel).
+				Block(
+					jen.Return(jen.Id(relatedTable.NameGoLower()).Types(def.TypeModel).
+						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
 		}
-	} else {
-		// Generate string-based type (original behavior)
-		f.Line()
-		f.Var().Id(node.Name).Op("=").Id(typeName).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 
-		f.Line()
-		f.Type().Id(typeName).
-			Types(jen.Add(def.TypeModel).Any()).
-			String()
-
-		f.Line()
-		f.Func().
-			Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
-			Id("fetch").Params(def.TypeModel).Block()
-
-		for _, fld := range node.GetFields() {
-			if nodeField, ok := fld.(*field.Node); ok {
+		if sliceField, ok := fld.(*field.Slice); ok {
+			if nodeElement, ok := sliceField.Element().(*field.Node); ok {
+				relatedTable := nodeElement.Table()
 				f.Line()
+				// Add comment for soft-delete relations
+				if relatedTable.Source != nil && relatedTable.Source.SoftDelete {
+					f.Comment(sliceField.NameGo() + " returns a fetch accessor for the " + sliceField.NameDatabase() + " slice relation.")
+					f.Comment("Note: Soft-delete filtering does not apply to fetched relations.")
+					f.Comment("All related records are returned regardless of their soft-delete status.")
+				}
 				f.Func().
 					Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
-					Id(nodeField.NameGo()).Params().
-					Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
+					Id(sliceField.NameGo()).Params().
+					Id(relatedTable.NameGoLower()).Types(def.TypeModel).
 					Block(
-						jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
-							Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
+						jen.Return(jen.Id(relatedTable.NameGoLower()).Types(def.TypeModel).
+							Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(sliceField.NameDatabase())))))
 			}
 		}
 	}
