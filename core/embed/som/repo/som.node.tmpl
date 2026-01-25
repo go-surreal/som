@@ -98,7 +98,7 @@ func (r *repo[N, C]) delete(ctx context.Context, id *ID, node *N, softDelete boo
 		query := "UPDATE $id SET deleted_at = $time"
 		vars := map[string]any{
 			"id":   id,
-			"time": time.Now().UTC(),
+			"time": time.Now(),
 		}
 		_, err := r.db.Query(ctx, query, vars)
 		if err != nil {
