@@ -484,15 +484,14 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					),
 
-				// Validate that the record is actually deleted
-				jen.If(jen.Op("!").Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("record is not deleted, cannot restore"))),
-				),
-
 				jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot restore "+node.NameGo()+" without existing record ID"))),
 				),
 
+				// Validate that the record is actually deleted
+				jen.If(jen.Op("!").Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("record is not deleted, cannot restore"))),
+				),
 				// Use raw query to only set deleted_at without replacing the entire record
 				jen.List(jen.Id("query")).Op(":=").Lit("UPDATE $id SET deleted_at = NONE"),
 				jen.List(jen.Id("vars")).Op(":=").Map(jen.String()).Any().Values(
