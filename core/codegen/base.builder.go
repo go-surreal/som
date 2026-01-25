@@ -124,7 +124,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	//
 	// type {NodeName}Repo interface {...}
 	//
-	f.Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
+	f.Line().Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
 		g.Id("Query").Call().Qual(pkgQuery, "Builder").
 			Types(b.input.SourceQual(node.NameGo()), jen.Qual(b.subPkg(def.PkgConv), node.NameGo()))
 
@@ -307,6 +307,7 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 		Add(comment(`
 Read returns the record for the given id, if it exists.
 The returned bool indicates whether the record was found or not.
+If caching is enabled via som.WithCache, it will be used.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Read").
@@ -316,10 +317,47 @@ The returned bool indicates whether the record was found or not.
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
+			jen.If(jen.Op("!").Qual(b.subPkg("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
+				jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("id"))),
+			),
+			jen.Id("idFunc").Op(":=").Func().Params(jen.Id("n").Op("*").Add(b.input.SourceQual(node.NameGo()))).String().Block(
+				jen.If(jen.Id("n").Dot("ID").Call().Op("!=").Nil()).Block(
+					jen.Return(jen.Id("n").Dot("ID").Call().Dot("String").Call()),
+				),
+				jen.Return(jen.Lit("")),
+			),
+			jen.Id("queryAll").Op(":=").Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
+				jen.Return(jen.Id("r").Dot("Query").Call().Dot("All").Call(jen.Id("ctx"))),
+			),
+			jen.Id("countAll").Op(":=").Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Int(), jen.Error()).Block(
+				jen.Return(jen.Id("r").Dot("Query").Call().Dot("Count").Call(jen.Id("ctx"))),
+			),
+			jen.List(jen.Id("cache"), jen.Err()).Op(":=").Id("getOrCreateCache").
+				Types(b.input.SourceQual(node.NameGo())).
+				Call(
+					jen.Id("ctx"),
+					jen.Id("idFunc"),
+					jen.Id("queryAll"),
+					jen.Id("countAll"),
+				),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.False(), jen.Err()),
+			),
+			jen.Var().Id("refreshFuncs").Op("*").Id("eagerRefreshFuncs").Types(b.input.SourceQual(node.NameGo())),
+			jen.If(jen.Id("cache").Op("!=").Nil().Op("&&").Id("cache").Dot("isEager").Call()).Block(
+				jen.Id("refreshFuncs").Op("=").Op("&").Id("eagerRefreshFuncs").Types(b.input.SourceQual(node.NameGo())).Values(
+					jen.Id("cacheID").Op(":").Qual(b.subPkg("internal"), "GetCacheKey").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx")),
+					jen.Id("queryAll").Op(":").Id("queryAll"),
+					jen.Id("countAll").Op(":").Id("countAll"),
+					jen.Id("idFunc").Op(":").Id("idFunc"),
+				),
+			),
 			jen.Return(
-				jen.Id("r").Dot("read").Call(
+				jen.Id("r").Dot("readWithCache").Call(
 					jen.Id("ctx"),
 					jen.Id("id"),
+					jen.Id("cache"),
+					jen.Id("refreshFuncs"),
 				),
 			),
 		)

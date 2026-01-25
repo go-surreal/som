@@ -60,6 +60,7 @@
   * [Client](api_reference/01_client.md)
   * [Repository](api_reference/02_repository.md)
   * [Query Builder](api_reference/03_query_builder.md)
+  * [Caching](api_reference/04_caching.md)
 
 ## Examples
 

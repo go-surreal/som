@@ -13,6 +13,11 @@ import (
 // This indicates another process has modified the record since it was read.
 var ErrOptimisticLock = errors.New("optimistic lock: version mismatch")
 
+// Model is implemented by all generated model types (nodes and edges).
+type Model interface {
+	ID() *ID
+}
+
 type ID = models.RecordID
 
 // NewRecordID creates a new RecordID with the given table and ID.
