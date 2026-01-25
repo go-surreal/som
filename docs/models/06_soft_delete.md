@@ -139,7 +139,7 @@ if err != nil {
 
 // Record is completely gone
 user, exists, _ := client.UserRepo().Query().WithDeleted().
-    Filter(where.User.ID().Equal(userID)).
+    Filter(where.User.ID.Equal(userID)).
     First(ctx)
 // exists == false
 ```
@@ -178,7 +178,7 @@ Filter for records where `DeletedAt` is set:
 // Get only soft-deleted users
 deletedUsers, _ := client.UserRepo().Query().
     WithDeleted().
-    Filter(where.User.DeletedAt.IsNotNil()).
+    Filter(where.User.DeletedAt.Nil(false)).
     All(ctx)
 ```
 
@@ -274,7 +274,7 @@ All features work together:
 ```go
 // Create
 doc := &model.Document{Title: "Draft"}
-client.DocumentRepo().Create(ctx, &doc)
+client.DocumentRepo().Create(ctx, doc)
 fmt.Println(doc.Version())                // 1
 fmt.Println(doc.Timestamps.CreatedAt())   // 2024-01-15 10:30:00
 fmt.Println(doc.SoftDelete.IsDeleted())   // false

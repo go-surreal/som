@@ -132,7 +132,7 @@ func (r *softDeleteUser) Delete(ctx context.Context, softDeleteUser *model.SoftD
 	if softDeleteUser.SoftDelete.IsDeleted() {
 		return errors.New("record is already deleted")
 	}
-	return r.delete(ctx, softDeleteUser.ID(), softDeleteUser, true)
+	return r.delete(ctx, softDeleteUser.ID(), softDeleteUser, true, nil)
 }
 
 // Erase permanently deletes the record from the database.
@@ -145,7 +145,7 @@ func (r *softDeleteUser) Erase(ctx context.Context, softDeleteUser *model.SoftDe
 	if softDeleteUser.ID() == nil {
 		return errors.New("cannot erase SoftDeleteUser without existing record ID")
 	}
-	return r.delete(ctx, softDeleteUser.ID(), softDeleteUser, false)
+	return r.delete(ctx, softDeleteUser.ID(), softDeleteUser, false, nil)
 }
 
 // Restore un-deletes a soft-deleted record.

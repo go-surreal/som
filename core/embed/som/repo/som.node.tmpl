@@ -95,15 +95,22 @@ func (r *repo[N]) update(ctx context.Context, id *ID, node *N) error {
 	return nil
 }
 
-func (r *repo[N]) delete(ctx context.Context, id *ID, node *N, softDelete bool) error {
+func (r *repo[N]) delete(ctx context.Context, id *ID, node *N, softDelete bool, lockVersion *int) error {
 	if softDelete {
 		query := "UPDATE $id SET deleted_at = $time"
 		vars := map[string]any{
 			"id":   id,
 			"time": time.Now(),
 		}
+		if lockVersion != nil {
+			query += ", __som_lock_version = $lock_version"
+			vars["lock_version"] = *lockVersion
+		}
 		_, err := r.db.Query(ctx, query, vars)
 		if err != nil {
+			if lockVersion != nil && strings.Contains(err.Error(), "optimistic_lock_failed") {
+				return som.ErrOptimisticLock
+			}
 			return fmt.Errorf("could not soft delete entity: %w", err)
 		}
 		return r.refresh(ctx, id, node)

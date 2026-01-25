@@ -126,7 +126,7 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot delete FieldsLikeDBResponse without existing record ID")
 	}
-	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false)
+	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false, nil)
 }
 
 // Refresh refreshes the given model with the remote data.

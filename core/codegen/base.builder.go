@@ -433,14 +433,28 @@ Delete deletes the record for the given model.
 				)
 			}
 
-			g.Return(
-				jen.Id("r").Dot("delete").Call(
-					jen.Id("ctx"),
-					jen.Id(node.NameGoLower()).Dot("ID").Call(),
-					jen.Id(node.NameGoLower()),
-					jen.Lit(node.Source.SoftDelete), // Pass softDelete flag
-				),
-			)
+			if node.Source.SoftDelete && node.Source.OptimisticLock {
+				g.Id("version").Op(":=").Id(node.NameGoLower()).Dot("Version").Call()
+				g.Return(
+					jen.Id("r").Dot("delete").Call(
+						jen.Id("ctx"),
+						jen.Id(node.NameGoLower()).Dot("ID").Call(),
+						jen.Id(node.NameGoLower()),
+						jen.Lit(true),
+						jen.Op("&").Id("version"),
+					),
+				)
+			} else {
+				g.Return(
+					jen.Id("r").Dot("delete").Call(
+						jen.Id("ctx"),
+						jen.Id(node.NameGoLower()).Dot("ID").Call(),
+						jen.Id(node.NameGoLower()),
+						jen.Lit(node.Source.SoftDelete),
+						jen.Nil(),
+					),
+				)
+			}
 		})
 
 	// Add Erase method for soft delete models
@@ -473,6 +487,7 @@ Use this to permanently remove soft-deleted records.
 						jen.Id(node.NameGoLower()).Dot("ID").Call(),
 						jen.Id(node.NameGoLower()),
 						jen.Lit(false), // Hard delete
+						jen.Nil(),
 					),
 				),
 			)
@@ -489,44 +504,63 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 			).
 			Error().
-			Block(
-				jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+			BlockFunc(func(g *jen.Group) {
+				g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 					Block(
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
-					),
+					)
 
-				jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).Block(
+				g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot restore "+node.NameGo()+" without existing record ID"))),
-				),
+				)
 
-				// Validate that the record is actually deleted
-				jen.If(jen.Op("!").Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
+				g.If(jen.Op("!").Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("record is not deleted, cannot restore"))),
-				),
-				// Use raw query to only set deleted_at without replacing the entire record
-				jen.List(jen.Id("query")).Op(":=").Lit("UPDATE $id SET deleted_at = NONE"),
-				jen.List(jen.Id("vars")).Op(":=").Map(jen.String()).Any().Values(
-					jen.Dict{jen.Lit("id"): jen.Id(node.NameGoLower()).Dot("ID").Call()},
-				),
+				)
 
-				jen.List(jen.Id("_"), jen.Err()).Op(":=").
+				if node.Source.OptimisticLock {
+					g.Add(jen.Id("query").Op(":=").Lit("UPDATE $id SET deleted_at = NONE, __som_lock_version = $lock_version"))
+					g.Add(jen.Id("vars").Op(":=").Map(jen.String()).Any().Values(
+						jen.Dict{
+							jen.Lit("id"):           jen.Id(node.NameGoLower()).Dot("ID").Call(),
+							jen.Lit("lock_version"): jen.Id(node.NameGoLower()).Dot("Version").Call(),
+						},
+					))
+				} else {
+					g.Add(jen.Id("query").Op(":=").Lit("UPDATE $id SET deleted_at = NONE"))
+					g.Add(jen.Id("vars").Op(":=").Map(jen.String()).Any().Values(
+						jen.Dict{jen.Lit("id"): jen.Id(node.NameGoLower()).Dot("ID").Call()},
+					))
+				}
+
+				g.List(jen.Id("_"), jen.Err()).Op(":=").
 					Id("r").Dot("db").Dot("Query").Call(
 						jen.Id("ctx"),
 						jen.Id("query"),
 						jen.Id("vars"),
-					),
+					)
 
-				jen.If(jen.Err().Op("!=").Nil()).Block(
-					jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not restore entity: %w"), jen.Err())),
-				),
+				if node.Source.OptimisticLock {
+					g.If(jen.Err().Op("!=").Nil()).Block(
+						jen.If(jen.Qual("strings", "Contains").Call(
+							jen.Err().Dot("Error").Call(), jen.Lit("optimistic_lock_failed"),
+						)).Block(
+							jen.Return(jen.Qual(b.subPkg(""), "ErrOptimisticLock")),
+						),
+						jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not restore entity: %w"), jen.Err())),
+					)
+				} else {
+					g.If(jen.Err().Op("!=").Nil()).Block(
+						jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not restore entity: %w"), jen.Err())),
+					)
+				}
 
-				// Auto-refresh to update in-memory object
-				jen.Return(jen.Id("r").Dot("refresh").Call(
+				g.Return(jen.Id("r").Dot("refresh").Call(
 					jen.Id("ctx"),
 					jen.Id(node.NameGoLower()).Dot("ID").Call(),
 					jen.Id(node.NameGoLower()),
-				)),
-			)
+				))
+			})
 	}
 
 	f.Line().

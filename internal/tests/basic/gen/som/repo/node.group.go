@@ -126,7 +126,7 @@ func (r *group) Delete(ctx context.Context, group *model.Group) error {
 	if group.ID() == nil {
 		return errors.New("cannot delete Group without existing record ID")
 	}
-	return r.delete(ctx, group.ID(), group, false)
+	return r.delete(ctx, group.ID(), group, false, nil)
 }
 
 // Refresh refreshes the given model with the remote data.

@@ -126,7 +126,7 @@ func (r *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFiel
 	if allFieldTypes.ID() == nil {
 		return errors.New("cannot delete AllFieldTypes without existing record ID")
 	}
-	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes, false)
+	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes, false, nil)
 }
 
 // Refresh refreshes the given model with the remote data.

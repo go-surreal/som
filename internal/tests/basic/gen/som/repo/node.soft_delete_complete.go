@@ -11,6 +11,7 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"strings"
 )
 
 type SoftDeleteCompleteRepo interface {
@@ -132,7 +133,8 @@ func (r *softDeleteComplete) Delete(ctx context.Context, softDeleteComplete *mod
 	if softDeleteComplete.SoftDelete.IsDeleted() {
 		return errors.New("record is already deleted")
 	}
-	return r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, true)
+	version := softDeleteComplete.Version()
+	return r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, true, &version)
 }
 
 // Erase permanently deletes the record from the database.
@@ -145,7 +147,7 @@ func (r *softDeleteComplete) Erase(ctx context.Context, softDeleteComplete *mode
 	if softDeleteComplete.ID() == nil {
 		return errors.New("cannot erase SoftDeleteComplete without existing record ID")
 	}
-	return r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, false)
+	return r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, false, nil)
 }
 
 // Restore un-deletes a soft-deleted record.
@@ -160,10 +162,16 @@ func (r *softDeleteComplete) Restore(ctx context.Context, softDeleteComplete *mo
 	if !softDeleteComplete.SoftDelete.IsDeleted() {
 		return errors.New("record is not deleted, cannot restore")
 	}
-	query := "UPDATE $id SET deleted_at = NONE"
-	vars := map[string]any{"id": softDeleteComplete.ID()}
+	query := "UPDATE $id SET deleted_at = NONE, __som_lock_version = $lock_version"
+	vars := map[string]any{
+		"id":           softDeleteComplete.ID(),
+		"lock_version": softDeleteComplete.Version(),
+	}
 	_, err := r.db.Query(ctx, query, vars)
 	if err != nil {
+		if strings.Contains(err.Error(), "optimistic_lock_failed") {
+			return som.ErrOptimisticLock
+		}
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
 	return r.refresh(ctx, softDeleteComplete.ID(), softDeleteComplete)
