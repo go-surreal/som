@@ -15,3 +15,11 @@ type SoftDeleteComplete struct {
 	som.SoftDelete
 	Name string
 }
+
+// SoftDeletePost is used to test fetch filtering on soft-delete relations
+type SoftDeletePost struct {
+	som.Node
+	som.SoftDelete
+	Title  string
+	Author *SoftDeleteUser
+}

@@ -15,6 +15,12 @@ DEFINE FIELD id ON TABLE soft_delete_user TYPE string;
 DEFINE FIELD deleted_at ON TABLE soft_delete_user TYPE option<datetime> DEFAULT NONE;
 DEFINE FIELD name ON TABLE soft_delete_user TYPE string;
 
+DEFINE TABLE soft_delete_post SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE soft_delete_post TYPE string;
+DEFINE FIELD deleted_at ON TABLE soft_delete_post TYPE option<datetime> DEFAULT NONE;
+DEFINE FIELD title ON TABLE soft_delete_post TYPE string;
+DEFINE FIELD author ON TABLE soft_delete_post TYPE option<record<soft_delete_user>>;
+
 DEFINE TABLE soft_delete_complete SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE soft_delete_complete TYPE string;
 DEFINE FIELD created_at ON TABLE soft_delete_complete TYPE option<datetime> VALUE $before OR time::now() READONLY;
@@ -156,6 +162,7 @@ DEFINE FIELD meta.is_active ON TABLE group_member TYPE bool;
 
 DEFINE INDEX __som__url_example_unique_provider_account ON url_example FIELDS provider, account UNIQUE;
 DEFINE INDEX __som__soft_delete_user_index_deleted_at ON soft_delete_user FIELDS deleted_at CONCURRENTLY;
+DEFINE INDEX __som__soft_delete_post_index_deleted_at ON soft_delete_post FIELDS deleted_at CONCURRENTLY;
 DEFINE INDEX __som__soft_delete_complete_index_deleted_at ON soft_delete_complete FIELDS deleted_at CONCURRENTLY;
 DEFINE INDEX __som__group_unique_name ON group FIELDS name UNIQUE;
 DEFINE INDEX __som__all_field_types_search_string ON all_field_types FIELDS string SEARCH ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;

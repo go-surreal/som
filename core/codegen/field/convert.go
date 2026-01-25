@@ -224,12 +224,22 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 
 	case *parser.FieldNode:
 		{
+			// Find the source node to get its properties (like SoftDelete)
+			var sourceNode *parser.Node
+			for _, node := range source.Nodes {
+				if node.Name == f.Node {
+					sourceNode = node
+					break
+				}
+			}
+
 			return &Node{
 				baseField: base,
 				source:    f,
 				table: &NodeTable{
 					Name:   f.Node,
 					Fields: nil, // TODO: needed? -> node.Fields
+					Source: sourceNode,
 				},
 			}, true
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-surreal/som/tests/basic/gen/som/with"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 )
@@ -78,6 +79,51 @@ func TestSoftDelete(t *testing.T) {
 	allUsersAfterErase, err := client.SoftDeleteUserRepo().Query().WithDeleted().All(ctx)
 	assert.NilError(t, err)
 	assert.Equal(t, 0, len(allUsersAfterErase), "erased record should not appear even with WithDeleted()")
+}
+
+func TestSoftDeleteFetchWithDeleted(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	// Create a SoftDeleteUser (author)
+	author := model.SoftDeleteUser{
+		Name: "Author User",
+	}
+	err := client.SoftDeleteUserRepo().Create(ctx, &author)
+	assert.NilError(t, err)
+
+	// Create a SoftDeletePost with the author
+	post := model.SoftDeletePost{
+		Title:  "Test Post",
+		Author: &author,
+	}
+	err = client.SoftDeletePostRepo().Create(ctx, &post)
+	assert.NilError(t, err)
+
+	// Soft delete the author
+	err = client.SoftDeleteUserRepo().Delete(ctx, &author)
+	assert.NilError(t, err)
+
+	// Query the post with Fetch(Author) - should NOT include the deleted author by default
+	posts, err := client.SoftDeletePostRepo().Query().
+		Fetch(with.SoftDeletePost.Author()).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 1, len(posts))
+	// The author should be nil because it's soft-deleted and filtered out
+	assert.Assert(t, posts[0].Author == nil, "soft-deleted author should be filtered out by default")
+
+	// Query the post with Fetch(Author.WithDeleted()) - should include the deleted author
+	postsWithDeleted, err := client.SoftDeletePostRepo().Query().
+		Fetch(with.SoftDeletePost.Author().WithDeleted()).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 1, len(postsWithDeleted))
+	// The author should be present because WithDeleted() was called
+	assert.Assert(t, postsWithDeleted[0].Author != nil, "soft-deleted author should be included with WithDeleted()")
+	assert.Equal(t, "Author User", postsWithDeleted[0].Author.Name)
 }
 
 func TestSoftDeleteWithTimestamps(t *testing.T) {

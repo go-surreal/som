@@ -95,9 +95,19 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 					Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
 					Id(nodeField.NameGo()).Params().
 					Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
-					Block(
-						jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
-							Params(jen.Id("keyedStruct").Call(jen.Id("n").Dot("field"), jen.Lit(nodeField.NameDatabase())))))
+					BlockFunc(func(g *jen.Group) {
+						// Check if the related table is also a soft-delete model
+						if nodeField.Table().Source != nil && nodeField.Table().Source.SoftDelete {
+							// Return struct literal for soft-delete models
+							g.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).Values(jen.Dict{
+								jen.Id("field"): jen.Id("keyedStruct").Call(jen.Id("n").Dot("field"), jen.Lit(nodeField.NameDatabase())),
+							}))
+						} else {
+							// Return string conversion for non-soft-delete models
+							g.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
+								Params(jen.Id("keyedStruct").Call(jen.Id("n").Dot("field"), jen.Lit(nodeField.NameDatabase()))))
+						}
+					})
 			}
 		}
 	} else {

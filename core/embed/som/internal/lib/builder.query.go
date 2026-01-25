@@ -54,9 +54,10 @@ type Query[T any] struct {
 	SearchWhere   string
 
 	// Soft delete support
-	SoftDeleteFilter Filter[T]       // Injected at initialization
-	IncludeDeleted   bool            // Flag to skip soft delete filter
-	FetchWithDeleted map[string]bool // Fields to include soft-deleted records when fetching
+	SoftDeleteFilter       Filter[T]       // Injected at initialization
+	IncludeDeleted         bool            // Flag to skip soft delete filter
+	SoftDeleteFetchFields  map[string]bool // Fields that are soft-delete models (need filtering by default)
+	FetchWithDeleted       map[string]bool // Fields to include soft-deleted records when fetching (override)
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -236,7 +237,17 @@ func (q Query[T]) render() string {
 
 	if len(q.Fetch) > 0 {
 		out.WriteString(" FETCH ")
-		out.WriteString(strings.Join(q.Fetch, ", "))
+		var fetchParts []string
+		for _, f := range q.Fetch {
+			// Apply soft-delete filtering if this is a soft-delete field
+			// and WithDeleted() was NOT called for it
+			if q.SoftDeleteFetchFields[f] && !q.FetchWithDeleted[f] {
+				fetchParts = append(fetchParts, f+"[WHERE deleted_at IS NONE]")
+			} else {
+				fetchParts = append(fetchParts, f)
+			}
+		}
+		out.WriteString(strings.Join(fetchParts, ", "))
 	}
 
 	if !q.live && q.Timeout > 0 {

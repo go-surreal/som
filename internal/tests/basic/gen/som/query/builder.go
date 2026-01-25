@@ -85,7 +85,8 @@ func (b builder[M, C]) Limit(limit int) BuilderNoLive[M, C] {
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
-// For soft-delete enabled models, use .WithDeleted() on the fetch
+// For soft-delete enabled models, fetched records are automatically filtered
+// to exclude soft-deleted records. Use .WithDeleted() on the fetch
 // to include soft-deleted records in the relation.
 func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) Builder[M, C] {
 	for _, f := range fetch {
@@ -93,16 +94,24 @@ func (b builder[M, C]) Fetch(fetch ...with.Fetch_[M]) Builder[M, C] {
 		if field != "" {
 			b.query.Fetch = append(b.query.Fetch, field)
 		}
-		// Check if this fetch should include soft-deleted records
-		if wd, ok := f.(with.FetchWithDeleted); ok && wd.IncludesDeleted() {
+		// Check if this is a soft-delete model field
+		if wd, ok := f.(with.FetchWithDeleted); ok {
 			fetchField := wd.FetchField()
 			if fetchField == "" {
 				fetchField = field
 			}
-			if b.query.FetchWithDeleted == nil {
-				b.query.FetchWithDeleted = make(map[string]bool)
+			// Track this as a soft-delete field (needs filtering by default)
+			if b.query.SoftDeleteFetchFields == nil {
+				b.query.SoftDeleteFetchFields = make(map[string]bool)
 			}
-			b.query.FetchWithDeleted[fetchField] = true
+			b.query.SoftDeleteFetchFields[fetchField] = true
+			// If WithDeleted() was called, also track that to skip filtering
+			if wd.IncludesDeleted() {
+				if b.query.FetchWithDeleted == nil {
+					b.query.FetchWithDeleted = make(map[string]bool)
+				}
+				b.query.FetchWithDeleted[fetchField] = true
+			}
 		}
 	}
 	return Builder[M, C]{b}
