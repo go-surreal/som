@@ -11,7 +11,10 @@ import (
 
 // ErrOptimisticLock is returned when an update fails due to a version mismatch.
 // This indicates another process has modified the record since it was read.
-var ErrOptimisticLock = errors.New("optimistic lock: version mismatch")
+var ErrOptimisticLock = errors.New("optimistic lock has version mismatch")
+
+// ErrAlreadyDeleted is returned when a soft delete is attempted on a record that is already deleted.
+var ErrAlreadyDeleted = errors.New("soft delete record is already deleted")
 
 // Model is implemented by all generated model types (nodes and edges).
 type Model interface {

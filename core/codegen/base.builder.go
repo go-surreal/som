@@ -429,7 +429,7 @@ Delete deletes the record for the given model.
 			// Check if already deleted (for SoftDelete models)
 			if node.Source.SoftDelete {
 				g.If(jen.Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("record is already deleted"))),
+					jen.Return(jen.Qual(b.subPkg(""), "ErrAlreadyDeleted")),
 				)
 			}
 

@@ -131,7 +131,7 @@ func (r *softDeleteComplete) Delete(ctx context.Context, softDeleteComplete *mod
 		return errors.New("cannot delete SoftDeleteComplete without existing record ID")
 	}
 	if softDeleteComplete.SoftDelete.IsDeleted() {
-		return errors.New("record is already deleted")
+		return som.ErrAlreadyDeleted
 	}
 	version := softDeleteComplete.Version()
 	return r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, true, &version)

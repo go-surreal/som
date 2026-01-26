@@ -130,7 +130,7 @@ func (r *softDeletePost) Delete(ctx context.Context, softDeletePost *model.SoftD
 		return errors.New("cannot delete SoftDeletePost without existing record ID")
 	}
 	if softDeletePost.SoftDelete.IsDeleted() {
-		return errors.New("record is already deleted")
+		return som.ErrAlreadyDeleted
 	}
 	return r.delete(ctx, softDeletePost.ID(), softDeletePost, true, nil)
 }
