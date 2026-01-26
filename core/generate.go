@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func Generate(inPath, outPath string, verbose, dry, check bool) error {
+func Generate(inPath, outPath string, verbose, dry, check bool, wireOverride string) error {
 	absDir, err := filepath.Abs(outPath)
 	if err != nil {
 		return fmt.Errorf("could not find absolute path: %v", err)
@@ -53,6 +53,19 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 		fmt.Println("ⓘ ", info)
 	}
 
+	var wirePackage string
+
+	switch wireOverride {
+	case "no":
+		wirePackage = ""
+	case "google":
+		wirePackage = "github.com/google/wire"
+	case "goforj":
+		wirePackage = "github.com/goforj/wire"
+	default:
+		wirePackage = mod.WirePackage()
+	}
+
 	if err := mod.Save(); err != nil {
 		return err
 	}
@@ -77,7 +90,7 @@ func Generate(inPath, outPath string, verbose, dry, check bool) error {
 		return fmt.Errorf("could not write static files: %w", err)
 	}
 
-	err = codegen.Build(source, out, outPkg)
+	err = codegen.Build(source, out, outPkg, wirePackage)
 	if err != nil {
 		return fmt.Errorf("could not generate code: %w", err)
 	}

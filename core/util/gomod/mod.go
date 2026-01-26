@@ -18,6 +18,9 @@ const (
 	pkgSOM    = "github.com/go-surreal/som"
 	pkgDriver = "github.com/surrealdb/surrealdb.go"
 
+	pkgGoogleWire = "github.com/google/wire"
+	pkgGoforjWire = "github.com/goforj/wire"
+
 	requiredSOMVersion    = "v0.11.0"
 	requiredDriverVersion = "v1.0.0"
 )
@@ -182,6 +185,22 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 	}
 
 	return "", nil
+}
+
+func (m *GoMod) WirePackage() string {
+	for _, require := range m.file.Require {
+		if require.Mod.Path == pkgGoogleWire {
+			return pkgGoogleWire
+		}
+	}
+
+	for _, require := range m.file.Require {
+		if require.Mod.Path == pkgGoforjWire {
+			return pkgGoforjWire
+		}
+	}
+
+	return ""
 }
 
 func (m *GoMod) Save() error {

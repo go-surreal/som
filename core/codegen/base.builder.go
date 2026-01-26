@@ -17,9 +17,10 @@ import (
 const filenameInterfaces = "som.interfaces.go"
 
 type build struct {
-	input  *input
-	fs     *fs.FS
-	outPkg string
+	input       *input
+	fs          *fs.FS
+	outPkg      string
+	wirePackage string
 }
 
 func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error {
@@ -44,16 +45,17 @@ func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error 
 	return nil
 }
 
-func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
+func Build(source *parser.Output, fs *fs.FS, outPkg string, wirePackage string) error {
 	in, err := newInput(source, outPkg)
 	if err != nil {
 		return fmt.Errorf("error creating input: %v", err)
 	}
 
 	builder := &build{
-		input:  in,
-		fs:     fs,
-		outPkg: outPkg,
+		input:       in,
+		fs:          fs,
+		outPkg:      outPkg,
+		wirePackage: wirePackage,
 	}
 
 	return builder.build()
@@ -85,6 +87,12 @@ func (b *build) build() error {
 
 	for _, builder := range builders {
 		if err := builder.build(); err != nil {
+			return err
+		}
+	}
+
+	if b.wirePackage != "" {
+		if err := b.buildWireFile(); err != nil {
 			return err
 		}
 	}

@@ -9,6 +9,7 @@ const (
 	flagVerbose = "verbose"
 	flagDry     = "dry"
 	flagNoCheck = "no-check"
+	flagWire    = "wire"
 )
 
 func Gen() *cli.Command {
@@ -32,6 +33,10 @@ func Gen() *cli.Command {
 				Name:  flagNoCheck,
 				Usage: "Disable version checks for go and som",
 			},
+			&cli.StringFlag{
+				Name:  flagWire,
+				Usage: `Override wire generation: "no" to disable, "google" for github.com/google/wire, "goforj" for github.com/goforj/wire (default: auto-detect from go.mod)`,
+			},
 		},
 		Action: generate,
 	}
@@ -45,7 +50,7 @@ func generate(_ context.Context, cmd *cli.Command) error {
 	inPath := cmd.Args().Get(0)
 	outPath := cmd.Args().Get(1)
 
-	if err := Generate(inPath, outPath, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck)); err != nil {
+	if err := Generate(inPath, outPath, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck), cmd.String(flagWire)); err != nil {
 		return cli.Exit(err.Error(), 1)
 	}
 
