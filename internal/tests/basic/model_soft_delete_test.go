@@ -2,8 +2,11 @@ package basic
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/where"
 	"github.com/go-surreal/som/tests/basic/gen/som/with"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
@@ -238,4 +241,263 @@ func TestSoftDeleteWithTimestamps(t *testing.T) {
 	err = client.SoftDeleteCompleteRepo().Update(ctx, &record)
 	assert.NilError(t, err)
 	assert.Equal(t, 4, record.Version())
+}
+
+func TestSoftDeleteRead(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	user := model.SoftDeleteUser{
+		Name: "Read Test User",
+	}
+	err := client.SoftDeleteUserRepo().Create(ctx, &user)
+	assert.NilError(t, err)
+
+	id := user.ID()
+
+	// Soft delete the user
+	err = client.SoftDeleteUserRepo().Delete(ctx, &user)
+	assert.NilError(t, err)
+
+	// Read by ID should still return the soft-deleted record
+	readUser, exists, err := client.SoftDeleteUserRepo().Read(ctx, id)
+	assert.NilError(t, err)
+	assert.Assert(t, exists, "Read should find soft-deleted records")
+	assert.Assert(t, readUser != nil)
+	assert.Assert(t, readUser.SoftDelete.IsDeleted(), "Read result should show record as deleted")
+	assert.Equal(t, "Read Test User", readUser.Name)
+
+	// Erase the record
+	err = client.SoftDeleteUserRepo().Erase(ctx, &user)
+	assert.NilError(t, err)
+
+	// Verify via query that the record is gone
+	all, err := client.SoftDeleteUserRepo().Query().WithDeleted().All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 0, len(all), "erased record should not exist")
+}
+
+func TestSoftDeleteCount(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	user1 := model.SoftDeleteUser{Name: "User 1"}
+	user2 := model.SoftDeleteUser{Name: "User 2"}
+	user3 := model.SoftDeleteUser{Name: "User 3"}
+
+	err := client.SoftDeleteUserRepo().Create(ctx, &user1)
+	assert.NilError(t, err)
+	err = client.SoftDeleteUserRepo().Create(ctx, &user2)
+	assert.NilError(t, err)
+	err = client.SoftDeleteUserRepo().Create(ctx, &user3)
+	assert.NilError(t, err)
+
+	// Soft delete one user
+	err = client.SoftDeleteUserRepo().Delete(ctx, &user2)
+	assert.NilError(t, err)
+
+	// Count without WithDeleted should exclude soft-deleted
+	count, err := client.SoftDeleteUserRepo().Query().Count(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 2, count)
+
+	// Count with WithDeleted should include all
+	countAll, err := client.SoftDeleteUserRepo().Query().WithDeleted().Count(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 3, countAll)
+}
+
+func TestSoftDeleteFirstAndExists(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	user := model.SoftDeleteUser{Name: "Only User"}
+	err := client.SoftDeleteUserRepo().Create(ctx, &user)
+	assert.NilError(t, err)
+
+	// Exists should be true before deletion
+	exists, err := client.SoftDeleteUserRepo().Query().Exists(ctx)
+	assert.NilError(t, err)
+	assert.Assert(t, exists, "Exists should be true for non-deleted record")
+
+	// First should return the record
+	first, err := client.SoftDeleteUserRepo().Query().First(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, "Only User", first.Name)
+
+	// Soft delete
+	err = client.SoftDeleteUserRepo().Delete(ctx, &user)
+	assert.NilError(t, err)
+
+	// Exists should be false after soft delete
+	exists, err = client.SoftDeleteUserRepo().Query().Exists(ctx)
+	assert.NilError(t, err)
+	assert.Assert(t, !exists, "Exists should be false after soft delete")
+
+	// WithDeleted Exists should still be true
+	existsAll, err := client.SoftDeleteUserRepo().Query().WithDeleted().Exists(ctx)
+	assert.NilError(t, err)
+	assert.Assert(t, existsAll, "WithDeleted().Exists() should be true")
+
+	// First should return error after soft delete (empty result)
+	_, err = client.SoftDeleteUserRepo().Query().First(ctx)
+	assert.Assert(t, err != nil, "First should error when no non-deleted records exist")
+
+	// WithDeleted First should return the record
+	firstAll, err := client.SoftDeleteUserRepo().Query().WithDeleted().First(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, "Only User", firstAll.Name)
+}
+
+func TestSoftDeleteFilter(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	alice := model.SoftDeleteUser{Name: "Alice"}
+	bob := model.SoftDeleteUser{Name: "Bob"}
+	err := client.SoftDeleteUserRepo().Create(ctx, &alice)
+	assert.NilError(t, err)
+	err = client.SoftDeleteUserRepo().Create(ctx, &bob)
+	assert.NilError(t, err)
+
+	// Soft delete Alice
+	err = client.SoftDeleteUserRepo().Delete(ctx, &alice)
+	assert.NilError(t, err)
+
+	// Filter for Alice without WithDeleted - should be empty
+	results, err := client.SoftDeleteUserRepo().Query().
+		Filter(where.SoftDeleteUser.Name.Equal("Alice")).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 0, len(results), "soft-deleted Alice should not appear in filtered query")
+
+	// Filter for Alice with WithDeleted - should return Alice
+	resultsAll, err := client.SoftDeleteUserRepo().Query().
+		WithDeleted().
+		Filter(where.SoftDeleteUser.Name.Equal("Alice")).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 1, len(resultsAll))
+	assert.Equal(t, "Alice", resultsAll[0].Name)
+
+	// Filter for Bob without WithDeleted - should return Bob
+	resultsBob, err := client.SoftDeleteUserRepo().Query().
+		Filter(where.SoftDeleteUser.Name.Equal("Bob")).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 1, len(resultsBob))
+	assert.Equal(t, "Bob", resultsBob[0].Name)
+}
+
+func TestSoftDeleteErrorTypes(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	user := model.SoftDeleteUser{Name: "Error Test User"}
+	err := client.SoftDeleteUserRepo().Create(ctx, &user)
+	assert.NilError(t, err)
+
+	// Delete the user
+	err = client.SoftDeleteUserRepo().Delete(ctx, &user)
+	assert.NilError(t, err)
+
+	// Double delete should return ErrAlreadyDeleted
+	err = client.SoftDeleteUserRepo().Delete(ctx, &user)
+	assert.Assert(t, errors.Is(err, som.ErrAlreadyDeleted), "double delete should return ErrAlreadyDeleted, got: %v", err)
+
+	// Restore, then try restoring a non-deleted record
+	err = client.SoftDeleteUserRepo().Restore(ctx, &user)
+	assert.NilError(t, err)
+
+	err = client.SoftDeleteUserRepo().Restore(ctx, &user)
+	assert.Assert(t, err != nil, "restoring a non-deleted record should error")
+}
+
+func TestSoftDeleteEraseNonDeleted(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	user := model.SoftDeleteUser{Name: "Erase Direct User"}
+	err := client.SoftDeleteUserRepo().Create(ctx, &user)
+	assert.NilError(t, err)
+	assert.Assert(t, !user.SoftDelete.IsDeleted())
+
+	// Erase without soft-deleting first should succeed (hard delete)
+	err = client.SoftDeleteUserRepo().Erase(ctx, &user)
+	assert.NilError(t, err)
+
+	// Verify record is gone even with WithDeleted
+	all, err := client.SoftDeleteUserRepo().Query().WithDeleted().All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, 0, len(all), "erased record should not exist even with WithDeleted")
+}
+
+func TestSoftDeleteOptimisticLockConflict(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	// -- Delete conflict --
+
+	record := model.SoftDeleteComplete{Name: "Lock Test"}
+	err := client.SoftDeleteCompleteRepo().Create(ctx, &record)
+	assert.NilError(t, err)
+	assert.Equal(t, 1, record.Version())
+
+	// Take a stale copy at version 1
+	stale := record
+
+	// Update the original to bump version to 2
+	record.Name = "Lock Test Updated"
+	err = client.SoftDeleteCompleteRepo().Update(ctx, &record)
+	assert.NilError(t, err)
+	assert.Equal(t, 2, record.Version())
+
+	// Try to delete stale copy (sends version 1, DB has version 2)
+	err = client.SoftDeleteCompleteRepo().Delete(ctx, &stale)
+	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock),
+		"deleting with stale version should return ErrOptimisticLock, got: %v", err)
+
+	// -- Restore conflict --
+
+	// Delete the original (now at version 2 → becomes version 3 after delete)
+	err = client.SoftDeleteCompleteRepo().Delete(ctx, &record)
+	assert.NilError(t, err)
+	assert.Assert(t, record.SoftDelete.IsDeleted())
+
+	// Take a stale deleted copy
+	staleDeleted := record
+
+	// Restore the original
+	err = client.SoftDeleteCompleteRepo().Restore(ctx, &record)
+	assert.NilError(t, err)
+	assert.Assert(t, !record.SoftDelete.IsDeleted())
+
+	// Update the original to bump version further
+	record.Name = "Lock Test Updated Again"
+	err = client.SoftDeleteCompleteRepo().Update(ctx, &record)
+	assert.NilError(t, err)
+
+	// Delete the original again
+	err = client.SoftDeleteCompleteRepo().Delete(ctx, &record)
+	assert.NilError(t, err)
+	assert.Assert(t, record.SoftDelete.IsDeleted())
+
+	// Try to restore the stale deleted copy (old version, DB has newer version)
+	err = client.SoftDeleteCompleteRepo().Restore(ctx, &staleDeleted)
+	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock),
+		"restoring with stale version should return ErrOptimisticLock, got: %v", err)
 }
