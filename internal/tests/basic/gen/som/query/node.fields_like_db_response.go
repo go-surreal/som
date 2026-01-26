@@ -22,9 +22,10 @@ var fieldsLikeDbresponseModelInfo = modelInfo[model.FieldsLikeDBResponse]{
 
 // NewFieldsLikeDBResponse creates a new query builder for FieldsLikeDBResponse models.
 func NewFieldsLikeDBResponse(db Database) Builder[model.FieldsLikeDBResponse] {
+	q := lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response")
 	return Builder[model.FieldsLikeDBResponse]{builder[model.FieldsLikeDBResponse]{
 		db:    db,
 		info:  fieldsLikeDbresponseModelInfo,
-		query: lib.NewQuery[model.FieldsLikeDBResponse]("fields_like_db_response"),
+		query: q,
 	}}
 }

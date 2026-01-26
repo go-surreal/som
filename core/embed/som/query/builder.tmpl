@@ -55,6 +55,14 @@ func (b builder[M]) Filter(filters ...lib.Filter[M]) Builder[M] {
 	return Builder[M]{b}
 }
 
+// WithDeleted allows querying soft-deleted records.
+// By default, soft-deleted records are automatically filtered out.
+// This method only has an effect on models with SoftDelete enabled.
+func (b builder[M]) WithDeleted() Builder[M] {
+	b.query.IncludeDeleted = true
+	return Builder[M]{b}
+}
+
 // Order sorts the returned records based on the given conditions.
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
@@ -87,9 +95,12 @@ func (b builder[M]) Limit(limit int) BuilderNoLive[M] {
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
+// Note: Soft-delete filtering does not apply to fetched relations.
+// All related records are returned regardless of their soft-delete status.
 func (b builder[M]) Fetch(fetch ...with.Fetch_[M]) Builder[M] {
 	for _, f := range fetch {
-		if field := fmt.Sprintf("%v", f); field != "" {
+		field := fmt.Sprintf("%v", f)
+		if field != "" {
 			b.query.Fetch = append(b.query.Fetch, field)
 		}
 	}

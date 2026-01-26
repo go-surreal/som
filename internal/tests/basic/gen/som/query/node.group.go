@@ -22,9 +22,10 @@ var groupModelInfo = modelInfo[model.Group]{
 
 // NewGroup creates a new query builder for Group models.
 func NewGroup(db Database) Builder[model.Group] {
+	q := lib.NewQuery[model.Group]("group")
 	return Builder[model.Group]{builder[model.Group]{
 		db:    db,
 		info:  groupModelInfo,
-		query: lib.NewQuery[model.Group]("group"),
+		query: q,
 	}}
 }

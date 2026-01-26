@@ -94,7 +94,30 @@ func (r *repo[N]) update(ctx context.Context, id *ID, node *N) error {
 	return nil
 }
 
-func (r *repo[N]) delete(ctx context.Context, id *ID, node *N) error {
+func (r *repo[N]) delete(ctx context.Context, id *ID, node *N, softDelete bool, lockVersion *int) error {
+	if softDelete {
+		query := "LET $res = (UPDATE $id SET deleted_at = time::now()"
+		vars := map[string]any{
+			"id": id,
+		}
+		if lockVersion != nil {
+			query += ", __som_lock_version = $lock_version"
+			vars["lock_version"] = *lockVersion
+		}
+		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL); IF array::len($res) = 0 { THROW 'record_already_deleted' };"
+		_, err := r.db.Query(ctx, query, vars)
+		if err != nil {
+			if strings.Contains(err.Error(), "record_already_deleted") {
+				return som.ErrAlreadyDeleted
+			}
+			if lockVersion != nil && strings.Contains(err.Error(), "optimistic_lock_failed") {
+				return som.ErrOptimisticLock
+			}
+			return fmt.Errorf("could not soft delete entity: %w", err)
+		}
+		return r.refresh(ctx, id, node)
+	}
+
 	_, err := r.db.Delete(ctx, id)
 	if err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)

@@ -250,6 +250,17 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 				continue
 			}
 
+			if f.Elem().PkgPath() == internalPkg && f.Name() == "SoftDelete" {
+				node.SoftDelete = true
+				node.Fields = append(node.Fields,
+					&FieldTime{
+						fieldAtomic: &fieldAtomic{name: "DeletedAt", pointer: true},
+						IsDeletedAt: true,
+					},
+				)
+				continue
+			}
+
 			return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
 		}
 
@@ -315,6 +326,17 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 
 			if f.Elem().PkgPath() == internalPkg && f.Name() == "OptimisticLock" {
 				edge.OptimisticLock = true
+				continue
+			}
+
+			if f.Elem().PkgPath() == internalPkg && f.Name() == "SoftDelete" {
+				edge.SoftDelete = true
+				edge.Fields = append(edge.Fields,
+					&FieldTime{
+						fieldAtomic: &fieldAtomic{name: "DeletedAt", pointer: true},
+						IsDeletedAt: true,
+					},
+				)
 				continue
 			}
 
@@ -521,7 +543,7 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 			switch {
 			case t.Elem().PkgPath() == "time" && t.Elem().Name() == "Time":
 				{
-					return &FieldTime{atomic, false, false}, nil
+					return &FieldTime{atomic, false, false, false}, nil
 				}
 			case t.Elem().PkgPath() == "net/url" && t.Elem().Name() == "URL":
 				{

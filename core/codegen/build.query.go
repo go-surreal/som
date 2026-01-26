@@ -75,19 +75,28 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			jen.Id("db").Id("Database"),
 		).
 		Id("Builder").Types(modelType).
-		Block(
-			jen.Return(
+		BlockFunc(func(g *jen.Group) {
+			g.Id("q").Op(":=").Qual(pkgLib, "NewQuery").Types(modelType).Call(jen.Lit(node.NameDatabase()))
+
+			if node.Source.SoftDelete {
+				g.Comment("Automatically exclude soft-deleted records")
+				pkgFilter := path.Join(b.basePkg, def.PkgFilter)
+				g.Id("q").Dot("SoftDeleteFilter").Op("=").
+					Qual(pkgFilter, node.Name).Dot("DeletedAt").Dot("Nil").Call(jen.Lit(true))
+			}
+
+			g.Return(
 				jen.Id("Builder").Types(modelType).
 					Values(
 						jen.Id("builder").Types(modelType).
 							Values(jen.Dict{
 								jen.Id("db"):    jen.Id("db"),
-								jen.Id("query"): jen.Qual(pkgLib, "NewQuery").Types(modelType).Call(jen.Lit(node.NameDatabase())),
+								jen.Id("query"): jen.Id("q"),
 								jen.Id("info"):  jen.Id(modelInfoVarName),
 							}),
 					),
-			),
-		)
+			)
+		})
 
 	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err

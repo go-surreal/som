@@ -22,9 +22,10 @@ var urlexampleModelInfo = modelInfo[model.URLExample]{
 
 // NewURLExample creates a new query builder for URLExample models.
 func NewURLExample(db Database) Builder[model.URLExample] {
+	q := lib.NewQuery[model.URLExample]("url_example")
 	return Builder[model.URLExample]{builder[model.URLExample]{
 		db:    db,
 		info:  urlexampleModelInfo,
-		query: lib.NewQuery[model.URLExample]("url_example"),
+		query: q,
 	}}
 }

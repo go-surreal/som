@@ -17,7 +17,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, node := range source.Nodes {
 		dbNode := &NodeTable{
-			Name: node.Name,
+			Name:   node.Name,
+			Source: node,
 		}
 
 		for _, f := range node.Fields {
@@ -33,7 +34,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, edge := range source.Edges {
 		dbEdge := &EdgeTable{
-			Name: edge.Name,
+			Name:   edge.Name,
+			Source: edge,
 		}
 
 		inField, ok := Convert(source, buildConf, edge.In)
@@ -223,12 +225,22 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 
 	case *parser.FieldNode:
 		{
+			// Find the source node to get its properties (like SoftDelete)
+			var sourceNode *parser.Node
+			for _, node := range source.Nodes {
+				if node.Name == f.Node {
+					sourceNode = node
+					break
+				}
+			}
+
 			return &Node{
 				baseField: base,
 				source:    f,
 				table: &NodeTable{
 					Name:   f.Node,
 					Fields: nil, // TODO: needed? -> node.Fields
+					Source: sourceNode,
 				},
 			}, true
 		}
@@ -270,6 +282,7 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 					In:     in.(*Node),
 					Out:    out.(*Node),
 					Fields: fields,
+					Source: edge,
 				},
 			}, true
 		}

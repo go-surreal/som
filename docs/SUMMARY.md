@@ -24,6 +24,7 @@
   * [Structs](models/03_structs.md)
   * [Enums](models/04_enums.md)
   * [Optimistic Locking](models/05_optimistic_locking.md)
+  * [Soft Delete](models/06_soft_delete.md)
 
 ## Data Types
 

@@ -22,9 +22,10 @@ var allFieldTypesModelInfo = modelInfo[model.AllFieldTypes]{
 
 // NewAllFieldTypes creates a new query builder for AllFieldTypes models.
 func NewAllFieldTypes(db Database) Builder[model.AllFieldTypes] {
+	q := lib.NewQuery[model.AllFieldTypes]("all_field_types")
 	return Builder[model.AllFieldTypes]{builder[model.AllFieldTypes]{
 		db:    db,
 		info:  allFieldTypesModelInfo,
-		query: lib.NewQuery[model.AllFieldTypes]("all_field_types"),
+		query: q,
 	}}
 }

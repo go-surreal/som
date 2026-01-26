@@ -38,7 +38,7 @@ func (b *build) buildSchemaFile() error {
 		}
 
 		// Build indexes for this table (handles both simple and composite)
-		indexStatements = append(indexStatements, b.buildTableIndexStatements(node.NameDatabase(), node.GetFields())...)
+		indexStatements = append(indexStatements, b.buildTableIndexStatements(node.NameDatabase(), node.GetFields(), node.Source.SoftDelete)...)
 
 		statements = append(statements, "")
 	}
@@ -57,7 +57,7 @@ func (b *build) buildSchemaFile() error {
 		}
 
 		// Build indexes for this table (handles both simple and composite)
-		indexStatements = append(indexStatements, b.buildTableIndexStatements(edge.NameDatabase(), edge.GetFields())...)
+		indexStatements = append(indexStatements, b.buildTableIndexStatements(edge.NameDatabase(), edge.GetFields(), edge.Source.SoftDelete)...)
 
 		statements = append(statements, "")
 	}
@@ -118,7 +118,7 @@ func buildFilterString(filter parser.FilterDef) string {
 
 // buildTableIndexStatements builds all index statements for a table, handling both
 // simple indexes and composite unique indexes (fields grouped by UniqueName).
-func (b *build) buildTableIndexStatements(tableName string, fields []field.Field) []string {
+func (b *build) buildTableIndexStatements(tableName string, fields []field.Field, softDelete bool) []string {
 	var statements []string
 
 	// Collect composite unique index fields grouped by UniqueName
@@ -126,6 +126,12 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 
 	// Process all fields (including nested)
 	b.collectIndexes(tableName, "", fields, &statements, compositeUnique)
+
+	if softDelete {
+		indexName := fmt.Sprintf(def.IndexPrefix+"%s_index_deleted_at", tableName)
+		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
+		statements = append(statements, stmt)
+	}
 
 	// Generate composite unique index statements
 	for uniqueName, fieldPaths := range compositeUnique {

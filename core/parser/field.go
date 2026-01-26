@@ -122,6 +122,7 @@ type FieldTime struct {
 	*fieldAtomic
 	IsCreatedAt bool
 	IsUpdatedAt bool
+	IsDeletedAt bool
 }
 
 type UUIDPackage string

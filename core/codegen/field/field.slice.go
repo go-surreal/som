@@ -509,6 +509,39 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 		)
 	}
 
+	// For node slices, convert each element to a link (only ID, not full object)
+	if nodeElem, ok := f.element.(*Node); ok {
+		convFuncName := "to" + nodeElem.table.NameGo() + "Link"
+		if nodeElem.source.Pointer() {
+			convFuncName += "Ptr"
+		}
+
+		// Link type is always *nodeLink
+		sliceElemType := jen.Index().Op("*").Id(nodeElem.table.NameGoLower() + "Link")
+
+		// Handle pointer-to-slice case by dereferencing
+		srcSlice := jen.Id("c").Dot(f.NameGo())
+		if f.source.Pointer() {
+			srcSlice = jen.Op("*").Id("c").Dot(f.NameGo())
+		}
+
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("convSlice").Op(":=").Make(
+				sliceElemType,
+				jen.Lit(0),
+				jen.Len(srcSlice),
+			),
+			jen.For(
+				jen.Id("_").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
+			).Block(
+				jen.If(jen.Id("link").Op(":=").Id(convFuncName).Call(jen.Id("v")), jen.Id("link").Op("!=").Nil()).Block(
+					jen.Id("convSlice").Op("=").Append(jen.Id("convSlice"), jen.Id("link")),
+				),
+			),
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("convSlice"),
+		)
+	}
+
 	return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 		jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
 	)
@@ -536,7 +569,60 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		// Build the assignment statement - handle pointer-to-slice case
 		var assignStmt jen.Code
 		if f.source.Pointer() {
+			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+			).Else().Block(
+				jen.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("convSlice"))),
+				jen.For(
+					jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice"),
+				).Block(
+					jen.Id("result").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+				),
+				jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("result"),
+			)
+		} else {
 			assignStmt = jen.Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Make(
+					f.typeGo(),
+					jen.Len(jen.Id("convSlice")),
+				),
+				jen.For(
+					jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice"),
+				).Block(
+					jen.Id("c").Dot(f.NameGo()).Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+				),
+			)
+		}
+
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).BlockFunc(func(g *jen.Group) {
+			g.Var().Id("convSlice").Add(sliceElemType)
+			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convSlice"))
+			g.Add(assignStmt)
+		})
+	}
+
+	// For node slices, unmarshal through link and convert back to model
+	if nodeElem, ok := f.element.(*Node); ok {
+		convFuncName := "from" + nodeElem.table.NameGo() + "Link"
+		if nodeElem.source.Pointer() {
+			convFuncName += "Ptr"
+		}
+
+		// Link type is always *nodeLink
+		sliceElemType := jen.Index().Op("*").Id(nodeElem.table.NameGoLower() + "Link")
+
+		// Determine the inner slice type (the model slice type)
+		innerSliceType := jen.Index().Add(f.element.typeGo())
+
+		// Build the assignment statement - handle pointer-to-slice case
+		var assignStmt jen.Code
+		if f.source.Pointer() {
+			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+			).Else().Block(
 				jen.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("convSlice"))),
 				jen.For(
 					jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice"),
