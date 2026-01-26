@@ -104,7 +104,7 @@ func (r *repo[N]) delete(ctx context.Context, id *ID, node *N, softDelete bool, 
 			query += ", __som_lock_version = $lock_version"
 			vars["lock_version"] = *lockVersion
 		}
-		query += " WHERE (deleted_at IS NONE OR deleted_at IS NULL)); IF array::len($res) = 0 { THROW 'record_already_deleted' };"
+		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL); IF array::len($res) = 0 { THROW 'record_already_deleted' };"
 		_, err := r.db.Query(ctx, query, vars)
 		if err != nil {
 			if strings.Contains(err.Error(), "record_already_deleted") {
