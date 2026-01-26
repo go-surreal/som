@@ -14,28 +14,26 @@ func (b *build) buildWireFile() error {
 	f := jen.NewFile(def.PkgSomWire)
 	f.PackageComment(string(embed.CodegenComment))
 
-	// func Providers() wire.ProviderSet
-	f.Func().Id("Providers").Params().Qual(b.wirePackage, "ProviderSet").Block(
-		jen.Return(jen.Qual(b.wirePackage, "NewSet").CustomFunc(jen.Options{
-			Open:      "(",
-			Close:     ")",
-			Separator: ",",
-			Multi:     true,
-		}, func(g *jen.Group) {
-			g.Id("ProvideClient")
-			g.Qual(b.wirePackage, "Bind").Call(
-				jen.New(jen.Qual(pkgRepo, "Client")),
-				jen.New(jen.Op("*").Qual(pkgRepo, "ClientImpl")),
-			)
-			for i, node := range b.input.nodes {
-				if i == 0 {
-					g.Add(jen.Line(), jen.Id("Provide"+node.NameGo()+"Repo"))
-				} else {
-					g.Id("Provide" + node.NameGo() + "Repo")
-				}
+	// var Providers = wire.NewSet(...)
+	f.Var().Id("Providers").Op("=").Qual(b.wirePackage, "NewSet").CustomFunc(jen.Options{
+		Open:      "(",
+		Close:     ")",
+		Separator: ",",
+		Multi:     true,
+	}, func(g *jen.Group) {
+		g.Id("ProvideClient")
+		g.Qual(b.wirePackage, "Bind").Call(
+			jen.New(jen.Qual(pkgRepo, "Client")),
+			jen.New(jen.Op("*").Qual(pkgRepo, "ClientImpl")),
+		)
+		for i, node := range b.input.nodes {
+			if i == 0 {
+				g.Add(jen.Line(), jen.Id("Provide"+node.NameGo()+"Repo"))
+			} else {
+				g.Id("Provide" + node.NameGo() + "Repo")
 			}
-		})),
-	)
+		}
+	})
 
 	// func ProvideClient(ctx context.Context, conf repo.Config) (*repo.ClientImpl, func(), error)
 	f.Line()
