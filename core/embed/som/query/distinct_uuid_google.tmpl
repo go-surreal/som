@@ -1,0 +1,56 @@
+//go:build embed
+
+package query
+
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+
+	"{{.GenerateOutPath}}/internal/types"
+)
+
+// NewUUIDGoogleField creates a field descriptor for uuid.UUID fields (google/uuid).
+func NewUUIDGoogleField[M any](name string) Field[M, uuid.UUID] {
+	return Field[M, uuid.UUID]{
+		Name: name,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]uuid.UUID, error) {
+			var raw []queryResult[types.UUIDGoogle]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct UUID values: %w", err)
+			}
+			if len(raw) < 1 {
+				return nil, nil
+			}
+			result := make([]uuid.UUID, len(raw[0].Result))
+			for i, u := range raw[0].Result {
+				result[i] = uuid.UUID(u)
+			}
+			return result, nil
+		},
+	}
+}
+
+// NewUUIDGooglePtrField creates a field descriptor for optional uuid.UUID fields (*uuid.UUID, google/uuid).
+func NewUUIDGooglePtrField[M any](name string) Field[M, *uuid.UUID] {
+	return Field[M, *uuid.UUID]{
+		Name: name,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]*uuid.UUID, error) {
+			var raw []queryResult[*types.UUIDGoogle]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct UUID values: %w", err)
+			}
+			if len(raw) < 1 {
+				return nil, nil
+			}
+			result := make([]*uuid.UUID, len(raw[0].Result))
+			for i, u := range raw[0].Result {
+				if u != nil {
+					val := uuid.UUID(*u)
+					result[i] = &val
+				}
+			}
+			return result, nil
+		},
+	}
+}

@@ -35,11 +35,12 @@ func (c *context) asVar(val any) string {
 
 type Query[T any] struct {
 	context
-	node       string
-	live       bool
-	fields     []string
-	groupBy    string
-	groupAll   bool
+	node        string
+	live        bool
+	selectValue bool
+	fields      []string
+	groupBy     string
+	groupAll    bool
 	Where      []Filter[T]
 	Sort       []*SortBuilder
 	SortRandom bool
@@ -116,6 +117,17 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 	}
 }
 
+func (q Query[T]) BuildDistinct(field string) *Result {
+	q.selectValue = true
+	q.fields = []string{field}
+	q.groupBy = field
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
 func (q Query[T]) render() string {
 	var out strings.Builder
 
@@ -159,7 +171,11 @@ func (q Query[T]) render() string {
 		}
 	}
 
-	out.WriteString("SELECT " + strings.Join(fields, ", "))
+	if q.selectValue {
+		out.WriteString("SELECT VALUE " + strings.Join(fields, ", "))
+	} else {
+		out.WriteString("SELECT " + strings.Join(fields, ", "))
+	}
 
 	// TODO: not working, but more a optimisation than anything else
 	//if len(q.Sort) > 0 {

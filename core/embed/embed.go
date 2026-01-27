@@ -44,6 +44,8 @@ var fileConditions = map[string]FileCondition{
 	"internal/lib/filter.uuid_gofrs.go":    FileIfGofrsUUID,
 	"internal/cbor/helpers_uuid_google.go": FileIfGoogleUUID,
 	"internal/cbor/helpers_uuid_gofrs.go":  FileIfGofrsUUID,
+	"query/distinct_uuid_google.go":        FileIfGoogleUUID,
+	"query/distinct_uuid_gofrs.go":         FileIfGofrsUUID,
 }
 
 type File struct {

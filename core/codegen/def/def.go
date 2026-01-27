@@ -9,6 +9,7 @@ const (
 	PkgFetch  = "with"
 	PkgConv   = "conv"
 	PkgRelate = "relate"
+	PkgField  = "field"
 	PkgRepo    = "repo"
 	PkgSomWire = "somwire"
 
