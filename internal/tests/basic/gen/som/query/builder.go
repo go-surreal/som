@@ -4,13 +4,13 @@ package query
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"iter"
 	"log/slog"
 	"strings"
 	"time"
 
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	"github.com/go-surreal/som/tests/basic/gen/som/with"
 )
@@ -222,7 +222,7 @@ func (b builder[M]) First(ctx context.Context) (*M, error) {
 		return nil, err
 	}
 	if len(res) < 1 {
-		return nil, errors.New("empty result")
+		return nil, som.ErrNotFound
 	}
 	return res[0], nil
 }
@@ -242,7 +242,7 @@ func (b builder[M]) FirstID(ctx context.Context) (string, error) {
 		return "", err
 	}
 	if len(res) < 1 {
-		return "", errors.New("empty result")
+		return "", som.ErrNotFound
 	}
 	return res[0], nil
 }

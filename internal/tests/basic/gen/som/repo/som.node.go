@@ -4,7 +4,6 @@ package repo
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -132,7 +131,7 @@ func (r *repo[N]) refresh(ctx context.Context, id *models.RecordID, node *N) err
 	}
 
 	if !exists {
-		return errors.New("given node does not exist")
+		return som.ErrNotFound
 	}
 
 	*node = *read
