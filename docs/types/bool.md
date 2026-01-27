@@ -39,35 +39,35 @@ DEFINE FIELD is_verified ON user TYPE option<bool>;
 
 ```go
 // Check specific value
-where.User.IsActive.Is(true)
-where.User.IsAdmin.Is(false)
+filter.User.IsActive.Is(true)
+filter.User.IsAdmin.Is(false)
 ```
 
 ### Convenience Methods
 
 ```go
 // Check if true
-where.User.IsActive.True()
+filter.User.IsActive.True()
 
 // Check if false
-where.User.IsAdmin.False()
+filter.User.IsAdmin.False()
 ```
 
 ### Logical Inversion
 
 ```go
 // Invert the boolean
-where.User.IsActive.Invert().True()  // Same as Is(false)
+filter.User.IsActive.Invert().True()  // Same as Is(false)
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.User.IsVerified.IsNil()
+filter.User.IsVerified.IsNil()
 
 // Check if not nil
-where.User.IsVerified.IsNotNil()
+filter.User.IsVerified.IsNotNil()
 ```
 
 ## Sorting
@@ -94,11 +94,11 @@ Boolean filters can be inverted:
 
 ```go
 // Find inactive users
-where.User.IsActive.Invert().True()
+filter.User.IsActive.Invert().True()
 
 // Equivalent to
-where.User.IsActive.False()
-where.User.IsActive.Is(false)
+filter.User.IsActive.False()
+filter.User.IsActive.Is(false)
 ```
 
 ## Common Patterns
@@ -108,9 +108,9 @@ where.User.IsActive.Is(false)
 ```go
 // Active admin users
 users, _ := client.UserRepo().Query().
-    Filter(
-        where.User.IsActive.True(),
-        where.User.IsAdmin.True(),
+    Where(
+        filter.User.IsActive.True(),
+        filter.User.IsAdmin.True(),
     ).
     All(ctx)
 ```
@@ -120,10 +120,10 @@ users, _ := client.UserRepo().Query().
 ```go
 // Active OR admin users
 users, _ := client.UserRepo().Query().
-    Filter(
-        where.Any(
-            where.User.IsActive.True(),
-            where.User.IsAdmin.True(),
+    Where(
+        filter.Any(
+            filter.User.IsActive.True(),
+            filter.User.IsAdmin.True(),
         ),
     ).
     All(ctx)
@@ -134,23 +134,23 @@ users, _ := client.UserRepo().Query().
 ```go
 // Users with verified status set
 verifiedSet, _ := client.UserRepo().Query().
-    Filter(where.User.IsVerified.IsNotNil()).
+    Where(filter.User.IsVerified.IsNotNil()).
     All(ctx)
 
 // Users explicitly verified
 verified, _ := client.UserRepo().Query().
-    Filter(
-        where.User.IsVerified.IsNotNil(),
-        where.User.IsVerified.True(),
+    Where(
+        filter.User.IsVerified.IsNotNil(),
+        filter.User.IsVerified.True(),
     ).
     All(ctx)
 
 // Users not verified (either false or null)
 notVerified, _ := client.UserRepo().Query().
-    Filter(
-        where.Any(
-            where.User.IsVerified.IsNil(),
-            where.User.IsVerified.False(),
+    Where(
+        filter.Any(
+            filter.User.IsVerified.IsNil(),
+            filter.User.IsVerified.False(),
         ),
     ).
     All(ctx)
@@ -165,7 +165,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -174,28 +174,28 @@ func main() {
 
     // Find active users
     activeUsers, _ := client.UserRepo().Query().
-        Filter(where.User.IsActive.True()).
+        Where(filter.User.IsActive.True()).
         All(ctx)
 
     // Find inactive non-admin users
     inactiveNonAdmins, _ := client.UserRepo().Query().
-        Filter(
-            where.User.IsActive.False(),
-            where.User.IsAdmin.False(),
+        Where(
+            filter.User.IsActive.False(),
+            filter.User.IsAdmin.False(),
         ).
         All(ctx)
 
     // Count admins
     adminCount, _ := client.UserRepo().Query().
-        Filter(where.User.IsAdmin.True()).
+        Where(filter.User.IsAdmin.True()).
         Count(ctx)
 
     // Check if any unverified users exist
     hasUnverified, _ := client.UserRepo().Query().
-        Filter(
-            where.Any(
-                where.User.IsVerified.IsNil(),
-                where.User.IsVerified.False(),
+        Where(
+            filter.Any(
+                filter.User.IsVerified.IsNil(),
+                filter.User.IsVerified.False(),
             ),
         ).
         Exists(ctx)

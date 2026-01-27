@@ -52,6 +52,10 @@ type Query[T any] struct {
 
 	SearchClauses []SearchClause
 	SearchWhere   string
+
+	// Soft delete support for main queries (not fetched relations)
+	SoftDeleteFilter Filter[T] // Injected at initialization
+	IncludeDeleted   bool      // Flag to skip soft delete filter
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -169,15 +173,23 @@ func (q Query[T]) render() string {
 
 	out.WriteString(" FROM " + q.node)
 
-	// Build WHERE clause combining search and regular filters
+	// Build WHERE clause combining soft delete, search and regular filters
 	var whereParts []string
 
-	// Add search conditions first
+	// 1. Inject soft delete filter FIRST (if enabled and not disabled)
+	if !q.IncludeDeleted && q.SoftDeleteFilter != nil {
+		var t T
+		if sdFilter := q.SoftDeleteFilter.build(&q.context, t); sdFilter != "" {
+			whereParts = append(whereParts, sdFilter)
+		}
+	}
+
+	// 2. Add search conditions
 	if q.SearchWhere != "" {
 		whereParts = append(whereParts, q.SearchWhere)
 	}
 
-	// Add regular filters
+	// 3. Add regular filters
 	var t T
 	filterWhere := All[T](q.Where).build(&q.context, t)
 	if filterWhere != "" {
@@ -223,6 +235,9 @@ func (q Query[T]) render() string {
 
 	if len(q.Fetch) > 0 {
 		out.WriteString(" FETCH ")
+		// Note: Soft-delete filtering does NOT apply to fetched relations.
+		// All related records are returned regardless of their soft-delete status.
+		// Users should filter manually using IsDeleted() if needed.
 		out.WriteString(strings.Join(q.Fetch, ", "))
 	}
 

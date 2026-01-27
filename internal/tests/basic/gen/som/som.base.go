@@ -11,7 +11,24 @@ import (
 
 // ErrOptimisticLock is returned when an update fails due to a version mismatch.
 // This indicates another process has modified the record since it was read.
-var ErrOptimisticLock = errors.New("optimistic lock: version mismatch")
+var ErrOptimisticLock = errors.New("optimistic lock has version mismatch")
+
+// ErrAlreadyDeleted is returned when a soft delete is attempted on a record that is already deleted.
+var ErrAlreadyDeleted = errors.New("soft delete record is already deleted")
+
+// ErrNotFound is returned when a query or operation finds no matching record.
+var ErrNotFound = errors.New("not found")
+
+// ErrNilID is returned when a nil ID is passed to an operation that requires a valid ID.
+var ErrNilID = errors.New("id cannot be nil")
+
+// ErrEmptyResponse is returned when the database returns an unexpected empty response.
+var ErrEmptyResponse = errors.New("empty response")
+
+// Model is implemented by all generated model types (nodes and edges).
+type Model interface {
+	ID() *ID
+}
 
 type ID = models.RecordID
 
@@ -67,21 +84,7 @@ func (e Edge) ID() *ID {
 
 type Timestamps = internal.Timestamps
 type OptimisticLock = internal.OptimisticLock
-
-// TODO: implement soft delete feature
-// type SoftDelete struct {
-// 	deletedAt time.Time
-// }
-//
-// func NewSoftDelete(deletedAt time.Time) SoftDelete {
-// 	return SoftDelete{
-// 		deletedAt: deletedAt,
-// 	}
-// }
-//
-// func (t SoftDelete) DeletedAt() time.Time {
-// 	return t.deletedAt
-// }
+type SoftDelete = internal.SoftDelete
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string

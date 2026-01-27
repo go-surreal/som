@@ -7,11 +7,25 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewAllFieldTypes(db Database) Builder[model.AllFieldTypes, conv.AllFieldTypes] {
-	return Builder[model.AllFieldTypes, conv.AllFieldTypes]{builder[model.AllFieldTypes, conv.AllFieldTypes]{
-		convFrom: conv.FromAllFieldTypesPtr,
-		convTo:   conv.ToAllFieldTypesPtr,
-		db:       db,
-		query:    lib.NewQuery[model.AllFieldTypes]("all_field_types"),
+// allFieldTypesModelInfo holds the model-specific unmarshal functions for AllFieldTypes.
+var allFieldTypesModelInfo = modelInfo[model.AllFieldTypes]{
+	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.AllFieldTypes, error) {
+		return unmarshalAll(unmarshal, data, conv.ToAllFieldTypesPtr)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.AllFieldTypes, error) {
+		return unmarshalOne(unmarshal, data, conv.ToAllFieldTypesPtr)
+	},
+	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.AllFieldTypes], error) {
+		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToAllFieldTypesPtr)
+	},
+}
+
+// NewAllFieldTypes creates a new query builder for AllFieldTypes models.
+func NewAllFieldTypes(db Database) Builder[model.AllFieldTypes] {
+	q := lib.NewQuery[model.AllFieldTypes]("all_field_types")
+	return Builder[model.AllFieldTypes]{builder[model.AllFieldTypes]{
+		db:    db,
+		info:  allFieldTypesModelInfo,
+		query: q,
 	}}
 }

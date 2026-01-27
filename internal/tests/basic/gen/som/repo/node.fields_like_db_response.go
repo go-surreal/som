@@ -6,13 +6,14 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type FieldsLikeDBResponseRepo interface {
-	Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
+	Query() query.Builder[model.FieldsLikeDBResponse]
 	Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Read(ctx context.Context, id *som.ID) (*model.FieldsLikeDBResponse, bool, error)
@@ -22,21 +23,34 @@ type FieldsLikeDBResponseRepo interface {
 	Relate() *relate.FieldsLikeDBResponse
 }
 
+// fieldsLikeDbresponseRepoInfo holds the model-specific conversion functions for FieldsLikeDBResponse.
+var fieldsLikeDbresponseRepoInfo = RepoInfo[model.FieldsLikeDBResponse]{
+	MarshalOne: func(node *model.FieldsLikeDBResponse) any {
+		return conv.FromFieldsLikeDBResponsePtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.FieldsLikeDBResponse, error) {
+		var raw *conv.FieldsLikeDBResponse
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToFieldsLikeDBResponsePtr(raw), nil
+	},
+}
+
 // FieldsLikeDBResponseRepo returns a new repository instance for the FieldsLikeDBResponse model.
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
-	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]{
-		db:       c.db,
-		name:     "fields_like_db_response",
-		convTo:   conv.ToFieldsLikeDBResponsePtr,
-		convFrom: conv.FromFieldsLikeDBResponsePtr}}
+	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse]{
+		db:   c.db,
+		name: "fields_like_db_response",
+		info: fieldsLikeDbresponseRepoInfo}}
 }
 
 type fieldsLikeDbresponse struct {
-	*repo[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse]
+	*repo[model.FieldsLikeDBResponse]
 }
 
 // Query returns a new query builder for the FieldsLikeDBResponse model.
-func (r *fieldsLikeDbresponse) Query() query.Builder[model.FieldsLikeDBResponse, conv.FieldsLikeDBResponse] {
+func (r *fieldsLikeDbresponse) Query() query.Builder[model.FieldsLikeDBResponse] {
 	return query.NewFieldsLikeDBResponse(r.db)
 }
 
@@ -65,8 +79,32 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
+// If caching is enabled via som.WithCache, it will be used.
 func (r *fieldsLikeDbresponse) Read(ctx context.Context, id *som.ID) (*model.FieldsLikeDBResponse, bool, error) {
-	return r.read(ctx, id)
+	if !internal.CacheEnabled[model.FieldsLikeDBResponse](ctx) {
+		return r.read(ctx, id)
+	}
+	idFunc := func(n *model.FieldsLikeDBResponse) string {
+		if n.ID() != nil {
+			return n.ID().String()
+		}
+		return ""
+	}
+	queryAll := func(ctx context.Context) ([]*model.FieldsLikeDBResponse, error) {
+		return r.Query().All(ctx)
+	}
+	countAll := func(ctx context.Context) (int, error) {
+		return r.Query().Count(ctx)
+	}
+	cache, err := getOrCreateCache[model.FieldsLikeDBResponse](ctx, idFunc, queryAll, countAll)
+	if err != nil {
+		return nil, false, err
+	}
+	var refreshFuncs *eagerRefreshFuncs[model.FieldsLikeDBResponse]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.FieldsLikeDBResponse]{cacheID: internal.GetCacheKey[model.FieldsLikeDBResponse](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.
@@ -85,7 +123,10 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
+	if fieldsLikeDbresponse.ID() == nil {
+		return errors.New("cannot delete FieldsLikeDBResponse without existing record ID")
+	}
+	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false, nil)
 }
 
 // Refresh refreshes the given model with the remote data.

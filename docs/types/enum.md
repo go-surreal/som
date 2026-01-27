@@ -69,20 +69,20 @@ DEFINE FIELD role ON user TYPE option<"admin" | "guest" | "moderator" | "user">;
 
 ```go
 // Exact match
-where.User.Status.Equal(model.StatusActive)
+filter.User.Status.Equal(model.StatusActive)
 
 // Not equal
-where.User.Status.NotEqual(model.StatusPending)
+filter.User.Status.NotEqual(model.StatusPending)
 ```
 
 ### Set Membership
 
 ```go
 // Value in set
-where.User.Role.In(model.RoleAdmin, model.RoleModerator)
+filter.User.Role.In(model.RoleAdmin, model.RoleModerator)
 
 // Value not in set
-where.User.Role.NotIn(model.RoleGuest)
+filter.User.Role.NotIn(model.RoleGuest)
 ```
 
 ### Comparison Operations
@@ -91,28 +91,28 @@ Enums can be compared lexicographically:
 
 ```go
 // Lexicographic comparison (alphabetic)
-where.User.Status.LessThan(model.StatusPending)
-where.User.Status.GreaterThan(model.StatusActive)
+filter.User.Status.LessThan(model.StatusPending)
+filter.User.Status.GreaterThan(model.StatusActive)
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.User.Role.IsNil()
+filter.User.Role.IsNil()
 
 // Check if not nil
-where.User.Role.IsNotNil()
+filter.User.Role.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Is empty string (zero value)
-where.User.Status.Zero(true)
+filter.User.Status.Zero(true)
 
 // Is not empty
-where.User.Status.Zero(false)
+filter.User.Status.Zero(false)
 ```
 
 ## Sorting
@@ -132,7 +132,7 @@ query.Order(by.User.Status.Desc())
 ```go
 // Active users only
 activeUsers, _ := client.UserRepo().Query().
-    Filter(where.User.Status.Equal(model.StatusActive)).
+    Where(filter.User.Status.Equal(model.StatusActive)).
     All(ctx)
 ```
 
@@ -141,8 +141,8 @@ activeUsers, _ := client.UserRepo().Query().
 ```go
 // Admins or moderators
 privilegedUsers, _ := client.UserRepo().Query().
-    Filter(
-        where.User.Role.In(model.RoleAdmin, model.RoleModerator),
+    Where(
+        filter.User.Role.In(model.RoleAdmin, model.RoleModerator),
     ).
     All(ctx)
 ```
@@ -152,7 +152,7 @@ privilegedUsers, _ := client.UserRepo().Query().
 ```go
 // Everyone except guests
 nonGuests, _ := client.UserRepo().Query().
-    Filter(where.User.Role.NotEqual(model.RoleGuest)).
+    Where(filter.User.Role.NotEqual(model.RoleGuest)).
     All(ctx)
 ```
 
@@ -161,7 +161,7 @@ nonGuests, _ := client.UserRepo().Query().
 ```go
 // Users with role set, or default to user
 usersWithRole, _ := client.UserRepo().Query().
-    Filter(where.User.Role.IsNotNil()).
+    Where(filter.User.Role.IsNotNil()).
     All(ctx)
 ```
 
@@ -169,11 +169,11 @@ usersWithRole, _ := client.UserRepo().Query().
 
 ```go
 activeCount, _ := client.UserRepo().Query().
-    Filter(where.User.Status.Equal(model.StatusActive)).
+    Where(filter.User.Status.Equal(model.StatusActive)).
     Count(ctx)
 
 pendingCount, _ := client.UserRepo().Query().
-    Filter(where.User.Status.Equal(model.StatusPending)).
+    Where(filter.User.Status.Equal(model.StatusPending)).
     Count(ctx)
 ```
 
@@ -195,13 +195,13 @@ Query enum slices:
 ```go
 // Users with admin role
 admins, _ := client.UserRepo().Query().
-    Filter(where.User.Roles.Contains(model.RoleAdmin)).
+    Where(filter.User.Roles.Contains(model.RoleAdmin)).
     All(ctx)
 
 // Users with any privileged role
 privileged, _ := client.UserRepo().Query().
-    Filter(
-        where.User.Roles.ContainsAny(model.RoleAdmin, model.RoleModerator),
+    Where(
+        filter.User.Roles.ContainsAny(model.RoleAdmin, model.RoleModerator),
     ).
     All(ctx)
 ```
@@ -215,7 +215,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/model"
 )
 
@@ -234,33 +234,33 @@ func main() {
 
     // Find active users
     active, _ := client.UserRepo().Query().
-        Filter(where.User.Status.Equal(model.StatusActive)).
+        Where(filter.User.Status.Equal(model.StatusActive)).
         All(ctx)
 
     // Find admins and moderators
     privileged, _ := client.UserRepo().Query().
-        Filter(
-            where.User.Role.In(model.RoleAdmin, model.RoleModerator),
+        Where(
+            filter.User.Role.In(model.RoleAdmin, model.RoleModerator),
         ).
         All(ctx)
 
     // Find users without role assigned
     noRole, _ := client.UserRepo().Query().
-        Filter(where.User.Role.IsNil()).
+        Where(filter.User.Role.IsNil()).
         All(ctx)
 
     // Exclude pending users
     notPending, _ := client.UserRepo().Query().
-        Filter(where.User.Status.NotEqual(model.StatusPending)).
+        Where(filter.User.Status.NotEqual(model.StatusPending)).
         All(ctx)
 
     // Count by status
     activeCount, _ := client.UserRepo().Query().
-        Filter(where.User.Status.Equal(model.StatusActive)).
+        Where(filter.User.Status.Equal(model.StatusActive)).
         Count(ctx)
 
     inactiveCount, _ := client.UserRepo().Query().
-        Filter(where.User.Status.Equal(model.StatusInactive)).
+        Where(filter.User.Status.Equal(model.StatusInactive)).
         Count(ctx)
 
     // Sort by status, then name

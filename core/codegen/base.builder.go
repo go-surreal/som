@@ -17,9 +17,10 @@ import (
 const filenameInterfaces = "som.interfaces.go"
 
 type build struct {
-	input  *input
-	fs     *fs.FS
-	outPkg string
+	input       *input
+	fs          *fs.FS
+	outPkg      string
+	wirePackage string
 }
 
 func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error {
@@ -44,16 +45,17 @@ func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error 
 	return nil
 }
 
-func Build(source *parser.Output, fs *fs.FS, outPkg string) error {
+func Build(source *parser.Output, fs *fs.FS, outPkg string, wirePackage string) error {
 	in, err := newInput(source, outPkg)
 	if err != nil {
 		return fmt.Errorf("error creating input: %v", err)
 	}
 
 	builder := &build{
-		input:  in,
-		fs:     fs,
-		outPkg: outPkg,
+		input:       in,
+		fs:          fs,
+		outPkg:      outPkg,
+		wirePackage: wirePackage,
 	}
 
 	return builder.build()
@@ -85,6 +87,12 @@ func (b *build) build() error {
 
 	for _, builder := range builders {
 		if err := builder.build(); err != nil {
+			return err
+		}
+	}
+
+	if b.wirePackage != "" {
+		if err := b.buildWireFile(); err != nil {
 			return err
 		}
 	}
@@ -124,47 +132,81 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	//
 	// type {NodeName}Repo interface {...}
 	//
-	f.Type().Id(node.NameGo()+"Repo").Interface(
-		jen.Id("Query").Call().Qual(pkgQuery, "Builder").
-			Types(b.input.SourceQual(node.NameGo()), jen.Qual(b.subPkg(def.PkgConv), node.NameGo())),
+	f.Line().Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
+		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
 
-		jen.Id("Create").Call(
+		g.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).Error(),
+		).Error()
 
-		jen.Id("CreateWithID").Call(
+		g.Id("CreateWithID").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("id").String(),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).Error(),
+		).Error()
 
-		jen.Id("Read").Call(
+		g.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
 		).Parens(jen.List(
 			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Bool(),
 			jen.Error(),
-		)),
+		))
 
-		jen.Id("Update").Call(
+		g.Id("Update").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).Error(),
+		).Error()
 
-		jen.Id("Delete").Call(
+		g.Id("Delete").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).Error(),
+		).Error()
 
-		jen.Id("Refresh").Call(
+		// Add Erase and Restore for soft delete models
+		if node.Source.SoftDelete {
+			g.Id("Erase").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			).Error()
+
+			g.Id("Restore").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			).Error()
+		}
+
+		g.Id("Refresh").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).Error(),
+		).Error()
 
-		jen.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()),
-	)
+		g.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo())
+	})
+
+	repoInfoVarName := node.NameGoLower() + "RepoInfo"
+
+	f.Line()
+	f.Commentf("%s holds the model-specific conversion functions for %s.", repoInfoVarName, node.NameGo())
+	f.Var().Id(repoInfoVarName).Op("=").Id("RepoInfo").Types(b.input.SourceQual(node.NameGo())).Values(jen.Dict{
+		jen.Id("UnmarshalOne"): jen.Func().Params(
+			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
+			jen.Var().Id("raw").Op("*").Qual(pkgConv, node.NameGo()),
+			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Err()),
+			),
+			jen.Return(jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")), jen.Nil()),
+		),
+		jen.Id("MarshalOne"): jen.Func().Params(
+			jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Any().Block(
+			jen.Return(jen.Qual(pkgConv, "From"+node.NameGo()+"Ptr").Call(jen.Id("node"))),
+		),
+	})
 
 	f.Line().
 		Add(comment(`
@@ -178,7 +220,6 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 					jen.Id("repo").Op(":").Op("&").Id("repo").
 						Types(
 							b.input.SourceQual(node.NameGo()),
-							jen.Id("conv."+node.NameGo()),
 						).
 						Values(
 							jen.Add(
@@ -191,11 +232,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("convTo").Op(":").Qual(pkgConv, "To"+node.NameGo()+"Ptr"),
-							),
-							jen.Add(
-								jen.Line(),
-								jen.Id("convFrom").Op(":").Qual(pkgConv, "From"+node.NameGo()+"Ptr"),
+								jen.Id("info").Op(":").Id(repoInfoVarName),
 							),
 						),
 				),
@@ -206,7 +243,6 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	f.Type().Id(node.NameGoLower()).Struct(
 		jen.Op("*").Id("repo").Types(
 			b.input.SourceQual(node.NameGo()),
-			jen.Id("conv."+node.NameGo()),
 		),
 	)
 
@@ -216,11 +252,7 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
-		Qual(pkgQuery, "Builder").
-		Types(
-			b.input.SourceQual(node.NameGo()),
-			jen.Qual(b.subPkg(def.PkgConv), node.NameGo()),
-		).
+		Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo())).
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
 				jen.Id("r").Dot("db"),
@@ -294,6 +326,7 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 		Add(comment(`
 Read returns the record for the given id, if it exists.
 The returned bool indicates whether the record was found or not.
+If caching is enabled via som.WithCache, it will be used.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Read").
@@ -303,10 +336,47 @@ The returned bool indicates whether the record was found or not.
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
+			jen.If(jen.Op("!").Qual(b.subPkg("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
+				jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("id"))),
+			),
+			jen.Id("idFunc").Op(":=").Func().Params(jen.Id("n").Op("*").Add(b.input.SourceQual(node.NameGo()))).String().Block(
+				jen.If(jen.Id("n").Dot("ID").Call().Op("!=").Nil()).Block(
+					jen.Return(jen.Id("n").Dot("ID").Call().Dot("String").Call()),
+				),
+				jen.Return(jen.Lit("")),
+			),
+			jen.Id("queryAll").Op(":=").Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
+				jen.Return(jen.Id("r").Dot("Query").Call().Dot("All").Call(jen.Id("ctx"))),
+			),
+			jen.Id("countAll").Op(":=").Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Int(), jen.Error()).Block(
+				jen.Return(jen.Id("r").Dot("Query").Call().Dot("Count").Call(jen.Id("ctx"))),
+			),
+			jen.List(jen.Id("cache"), jen.Err()).Op(":=").Id("getOrCreateCache").
+				Types(b.input.SourceQual(node.NameGo())).
+				Call(
+					jen.Id("ctx"),
+					jen.Id("idFunc"),
+					jen.Id("queryAll"),
+					jen.Id("countAll"),
+				),
+			jen.If(jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.False(), jen.Err()),
+			),
+			jen.Var().Id("refreshFuncs").Op("*").Id("eagerRefreshFuncs").Types(b.input.SourceQual(node.NameGo())),
+			jen.If(jen.Id("cache").Op("!=").Nil().Op("&&").Id("cache").Dot("isEager").Call()).Block(
+				jen.Id("refreshFuncs").Op("=").Op("&").Id("eagerRefreshFuncs").Types(b.input.SourceQual(node.NameGo())).Values(
+					jen.Id("cacheID").Op(":").Qual(b.subPkg("internal"), "GetCacheKey").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx")),
+					jen.Id("queryAll").Op(":").Id("queryAll"),
+					jen.Id("countAll").Op(":").Id("countAll"),
+					jen.Id("idFunc").Op(":").Id("idFunc"),
+				),
+			),
 			jen.Return(
-				jen.Id("r").Dot("read").Call(
+				jen.Id("r").Dot("readWithCache").Call(
 					jen.Id("ctx"),
 					jen.Id("id"),
+					jen.Id("cache"),
+					jen.Id("refreshFuncs"),
 				),
 			),
 		)
@@ -353,20 +423,153 @@ Delete deletes the record for the given model.
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
-		Block(
-			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+		BlockFunc(func(g *jen.Group) {
+			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
-				),
+				)
 
-			jen.Return(
-				jen.Id("r").Dot("delete").Call(
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+				Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot delete "+node.NameGo()+" without existing record ID"))),
+				)
+
+			// Check if already deleted (for SoftDelete models)
+			if node.Source.SoftDelete {
+				g.If(jen.Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
+					jen.Return(jen.Qual(b.subPkg(""), "ErrAlreadyDeleted")),
+				)
+			}
+
+			if node.Source.SoftDelete && node.Source.OptimisticLock {
+				g.Id("version").Op(":=").Id(node.NameGoLower()).Dot("Version").Call()
+				g.Return(
+					jen.Id("r").Dot("delete").Call(
+						jen.Id("ctx"),
+						jen.Id(node.NameGoLower()).Dot("ID").Call(),
+						jen.Id(node.NameGoLower()),
+						jen.Lit(true),
+						jen.Op("&").Id("version"),
+					),
+				)
+			} else {
+				g.Return(
+					jen.Id("r").Dot("delete").Call(
+						jen.Id("ctx"),
+						jen.Id(node.NameGoLower()).Dot("ID").Call(),
+						jen.Id(node.NameGoLower()),
+						jen.Lit(node.Source.SoftDelete),
+						jen.Nil(),
+					),
+				)
+			}
+		})
+
+	// Add Erase method for soft delete models
+	if node.Source.SoftDelete {
+		f.Line().
+			Add(comment(`
+Erase permanently deletes the record from the database.
+This performs a hard delete and cannot be undone.
+Use this to permanently remove soft-deleted records.
+			`)).
+			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+			Id("Erase").
+			Params(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			).
+			Error().
+			Block(
+				jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+					Block(
+						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+					),
+				jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+					Block(
+						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot erase "+node.NameGo()+" without existing record ID"))),
+					),
+				jen.Return(
+					jen.Id("r").Dot("delete").Call(
+						jen.Id("ctx"),
+						jen.Id(node.NameGoLower()).Dot("ID").Call(),
+						jen.Id(node.NameGoLower()),
+						jen.Lit(false), // Hard delete
+						jen.Nil(),
+					),
+				),
+			)
+
+		f.Line().
+			Add(comment(`
+Restore un-deletes a soft-deleted record.
+Sets deleted_at to NONE and refreshes the in-memory object.
+			`)).
+			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+			Id("Restore").
+			Params(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
+			).
+			Error().
+			BlockFunc(func(g *jen.Group) {
+				g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+					Block(
+						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
+					)
+
+				g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot restore "+node.NameGo()+" without existing record ID"))),
+				)
+
+				g.If(jen.Op("!").Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("record is not deleted, cannot restore"))),
+				)
+
+				if node.Source.OptimisticLock {
+					g.Add(jen.Id("query").Op(":=").Lit("UPDATE $id SET deleted_at = NONE, __som_lock_version = $lock_version"))
+					g.Add(jen.Id("vars").Op(":=").Map(jen.String()).Any().Values(
+						jen.Dict{
+							jen.Lit("id"):           jen.Id(node.NameGoLower()).Dot("ID").Call(),
+							jen.Lit("lock_version"): jen.Id(node.NameGoLower()).Dot("Version").Call(),
+						},
+					))
+				} else {
+					g.Add(jen.Id("query").Op(":=").Lit("UPDATE $id SET deleted_at = NONE"))
+					g.Add(jen.Id("vars").Op(":=").Map(jen.String()).Any().Values(
+						jen.Dict{jen.Lit("id"): jen.Id(node.NameGoLower()).Dot("ID").Call()},
+					))
+				}
+
+				g.List(jen.Id("_"), jen.Err()).Op(":=").
+					Id("r").Dot("db").Dot("Query").Call(
+						jen.Id("ctx"),
+						jen.Id("query"),
+						jen.Id("vars"),
+					)
+
+				if node.Source.OptimisticLock {
+					g.If(jen.Err().Op("!=").Nil()).Block(
+						jen.If(jen.Qual("strings", "Contains").Call(
+							jen.Err().Dot("Error").Call(), jen.Lit("optimistic_lock_failed"),
+						)).Block(
+							jen.Return(jen.Qual(b.subPkg(""), "ErrOptimisticLock")),
+						),
+						jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not restore entity: %w"), jen.Err())),
+					)
+				} else {
+					g.If(jen.Err().Op("!=").Nil()).Block(
+						jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not restore entity: %w"), jen.Err())),
+					)
+				}
+
+				g.Return(jen.Id("r").Dot("refresh").Call(
 					jen.Id("ctx"),
 					jen.Id(node.NameGoLower()).Dot("ID").Call(),
 					jen.Id(node.NameGoLower()),
-				),
-			),
-		)
+				))
+			})
+	}
 
 	f.Line().
 		Add(comment(`

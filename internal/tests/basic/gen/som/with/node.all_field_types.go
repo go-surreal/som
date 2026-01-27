@@ -16,3 +16,15 @@ func (n allFieldTypes[M]) MainGroup() group[M] {
 func (n allFieldTypes[M]) MainGroupPtr() group[M] {
 	return group[M](keyed(n, "main_group_ptr"))
 }
+
+func (n allFieldTypes[M]) Groups() group[M] {
+	return group[M](keyed(n, "groups"))
+}
+
+func (n allFieldTypes[M]) NodePtrSlice() group[M] {
+	return group[M](keyed(n, "node_ptr_slice"))
+}
+
+func (n allFieldTypes[M]) NodePtrSlicePtr() group[M] {
+	return group[M](keyed(n, "node_ptr_slice_ptr"))
+}

@@ -140,7 +140,7 @@ query := client.UserRepo().Query()
 
 // Chain methods
 users, err := query.
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Order(by.User.Name.Asc()).
     Limit(10).
     All(ctx)
@@ -212,7 +212,7 @@ func UserService(ctx context.Context, client *som.Client) error {
 
     // Query
     activeUsers, err := repo.Query().
-        Filter(where.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.IsTrue()).
         All(ctx)
     if err != nil {
         return fmt.Errorf("query: %w", err)

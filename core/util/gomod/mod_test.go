@@ -171,6 +171,54 @@ func TestGoModMissingSurrealDBPackage(t *testing.T) {
 	assert.Assert(t, exists)
 }
 
+func TestWirePackageGoogle(t *testing.T) {
+	t.Parallel()
+
+	data, err := os.ReadFile("testdata/go.wire_google.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mod, err := NewGoMod("go.mod", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, pkgGoogleWire, mod.WirePackage())
+}
+
+func TestWirePackageGoforj(t *testing.T) {
+	t.Parallel()
+
+	data, err := os.ReadFile("testdata/go.wire_goforj.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mod, err := NewGoMod("go.mod", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, pkgGoforjWire, mod.WirePackage())
+}
+
+func TestWirePackageNone(t *testing.T) {
+	t.Parallel()
+
+	data, err := os.ReadFile("testdata/go.valid.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mod, err := NewGoMod("go.mod", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "", mod.WirePackage())
+}
+
 func TestGoModWrongSurrealDBVersion(t *testing.T) {
 	t.Parallel()
 

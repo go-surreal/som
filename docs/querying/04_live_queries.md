@@ -8,7 +8,7 @@ Subscribe to changes on a query:
 
 ```go
 updates, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Live(ctx)
 if err != nil {
     return err
@@ -58,9 +58,9 @@ Live queries respect filters - you only receive updates for records that match:
 ```go
 // Only receive updates for premium users
 updates, err := client.UserRepo().Query().
-    Filter(
-        where.User.IsPremium.IsTrue(),
-        where.User.IsActive.IsTrue(),
+    Where(
+        filter.User.IsPremium.IsTrue(),
+        filter.User.IsActive.IsTrue(),
     ).
     Live(ctx)
 ```
@@ -72,7 +72,7 @@ Since SurrealDB 2.2, live queries support the `Fetch()` clause to include relate
 ```go
 // Receive updates with related organization data included
 updates, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Fetch(with.User.Organization()).
     Live(ctx)
 if err != nil {
@@ -120,7 +120,7 @@ Start a live query without blocking:
 
 ```go
 result := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     LiveAsync(ctx)
 
 // Do setup work...
@@ -161,7 +161,7 @@ for update := range updates {
 ```go
 func SubscribeToMessages(ctx context.Context, roomID string) {
     updates, err := client.MessageRepo().Query().
-        Filter(where.Message.RoomID.Equal(roomID)).
+        Where(filter.Message.RoomID.Equal(roomID)).
         Live(ctx)
     if err != nil {
         log.Fatal(err)
@@ -231,7 +231,7 @@ Narrow your subscription to relevant records only:
 ```go
 // Good - specific filter
 updates, _ := client.UserRepo().Query().
-    Filter(where.User.TeamID.Equal(currentTeamID)).
+    Where(filter.User.TeamID.Equal(currentTeamID)).
     Live(ctx)
 
 // Avoid - subscribing to all records

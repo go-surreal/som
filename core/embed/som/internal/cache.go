@@ -1,0 +1,160 @@
+//go:build embed
+
+package internal
+
+import (
+	"context"
+	"errors"
+	"strconv"
+	"sync"
+	"sync/atomic"
+	"time"
+)
+
+// ErrCacheSizeLimitExceeded is returned when eager cache would exceed the max size.
+var ErrCacheSizeLimitExceeded = errors.New("cache size limit exceeded")
+
+// ErrCacheAlreadyCleaned is returned when attempting to use a cache that has
+// already been cleaned up via the cleanup function returned by WithCache.
+var ErrCacheAlreadyCleaned = errors.New("cache has already been cleaned up")
+
+// CacheMode specifies the caching strategy.
+type CacheMode int
+
+const (
+	// CacheModeLazy loads records on-demand as they are requested.
+	CacheModeLazy CacheMode = iota
+	// CacheModeEager loads all records on first Read() call.
+	CacheModeEager
+)
+
+// CacheOptions configures cache behavior.
+type CacheOptions struct {
+	Mode    CacheMode
+	TTL     time.Duration
+	MaxSize int
+}
+
+// DefaultMaxSize is the default maximum number of records for eager cache.
+const DefaultMaxSize = 1000
+
+// CacheOption is a functional option for configuring cache behavior.
+type CacheOption func(*CacheOptions)
+
+// Lazy sets the cache to lazy loading mode (default).
+// Records are fetched from the database on first access and cached.
+func Lazy() CacheOption {
+	return func(o *CacheOptions) {
+		o.Mode = CacheModeLazy
+	}
+}
+
+// Eager sets the cache to eager loading mode.
+// All records are loaded on first Read() call.
+func Eager() CacheOption {
+	return func(o *CacheOptions) {
+		o.Mode = CacheModeEager
+	}
+}
+
+// WithTTL sets the time-to-live for cached data.
+// In lazy mode, each entry expires individually after the given duration.
+// In eager mode, the entire cache is refreshed after the given duration.
+func WithTTL(d time.Duration) CacheOption {
+	return func(o *CacheOptions) {
+		o.TTL = d
+	}
+}
+
+// WithMaxSize sets the maximum number of records for eager cache.
+// Default is 1000. If the table has more records than maxSize,
+// ErrCacheSizeLimitExceeded is returned.
+// Non-positive values are clamped to DefaultMaxSize.
+func WithMaxSize(n int) CacheOption {
+	return func(o *CacheOptions) {
+		if n <= 0 {
+			n = DefaultMaxSize
+		}
+		o.MaxSize = n
+	}
+}
+
+type cacheKey[T any] struct{}
+
+type cacheOptionsKey[T any] struct{}
+
+// SetCacheContext adds cache configuration to the context for the given type.
+// Returns the updated context with cache ID and options set.
+func SetCacheContext[T any](ctx context.Context, id string, opts *CacheOptions) context.Context {
+	ctx = context.WithValue(ctx, cacheKey[T]{}, id)
+	ctx = context.WithValue(ctx, cacheOptionsKey[T]{}, opts)
+	return ctx
+}
+
+// CacheEnabled returns true if caching is enabled for the specified model type.
+func CacheEnabled[T any](ctx context.Context) bool {
+	return GetCacheKey[T](ctx) != ""
+}
+
+// GetCacheOptions retrieves cache options for the specified model type from context.
+func GetCacheOptions[T any](ctx context.Context) *CacheOptions {
+	if opts, ok := ctx.Value(cacheOptionsKey[T]{}).(*CacheOptions); ok {
+		return opts
+	}
+	return nil
+}
+
+// GetCacheKey returns the cache instance ID for the model type, if set.
+func GetCacheKey[T any](ctx context.Context) string {
+	if id, ok := ctx.Value(cacheKey[T]{}).(string); ok {
+		return id
+	}
+	return ""
+}
+
+var (
+	cacheStoreMu sync.RWMutex
+	cacheStores  = make(map[string]any) // keyed by cacheID directly
+	cacheCounter atomic.Uint64
+)
+
+// NextCacheID generates a unique cache instance ID.
+func NextCacheID() string {
+	return strconv.FormatUint(cacheCounter.Add(1), 36)
+}
+
+// InitCache creates a new cache entry with the given cacheID.
+// Used by WithCache to initialize the placeholder entry.
+func InitCache(cacheID string, cache any) {
+	cacheStoreMu.Lock()
+	defer cacheStoreMu.Unlock()
+	cacheStores[cacheID] = cache
+}
+
+// GetCache retrieves the cache for the given cacheID.
+func GetCache(cacheID string) (any, bool) {
+	cacheStoreMu.RLock()
+	defer cacheStoreMu.RUnlock()
+	c, ok := cacheStores[cacheID]
+	return c, ok
+}
+
+// SetCache stores the cache for the given cacheID.
+// Returns true if the cache was stored, false if the cacheID was not found
+// (e.g., already cleaned up).
+func SetCache(cacheID string, cache any) bool {
+	cacheStoreMu.Lock()
+	defer cacheStoreMu.Unlock()
+	if _, exists := cacheStores[cacheID]; !exists {
+		return false
+	}
+	cacheStores[cacheID] = cache
+	return true
+}
+
+// DropCacheByID drops the cache for the given cache ID.
+func DropCacheByID(cacheID string) {
+	cacheStoreMu.Lock()
+	defer cacheStoreMu.Unlock()
+	delete(cacheStores, cacheID)
+}

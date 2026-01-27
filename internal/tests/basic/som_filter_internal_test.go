@@ -3,7 +3,7 @@ package basic
 import (
 	"context"
 	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/where"
+	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
@@ -40,9 +40,9 @@ func TestFilterCompareFields(t *testing.T) {
 	}
 
 	modelOut, err := client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.StringPtr.Equal_(where.AllFieldTypes.String),
-			where.AllFieldTypes.TimePtr.After_(where.AllFieldTypes.Time),
+		Where(
+			filter.AllFieldTypes.StringPtr.Equal_(filter.AllFieldTypes.String),
+			filter.AllFieldTypes.TimePtr.After_(filter.AllFieldTypes.Time),
 		).
 		First(ctx)
 

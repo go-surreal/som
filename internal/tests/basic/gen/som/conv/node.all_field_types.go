@@ -4,6 +4,7 @@ package conv
 import (
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -233,16 +234,34 @@ func (c *AllFieldTypes) MarshalCBOR() ([]byte, error) {
 		data["main_group_ptr"] = toGroupLinkPtr(c.MainGroupPtr)
 	}
 	if c.Groups != nil {
-		data["groups"] = c.Groups
+		convSlice := make([]*groupLink, 0, len(c.Groups))
+		for _, v := range c.Groups {
+			if link := toGroupLink(v); link != nil {
+				convSlice = append(convSlice, link)
+			}
+		}
+		data["groups"] = convSlice
 	}
 	if c.GroupsSlice != nil {
 		data["groups_slice"] = c.GroupsSlice
 	}
 	if c.NodePtrSlice != nil {
-		data["node_ptr_slice"] = c.NodePtrSlice
+		convSlice := make([]*groupLink, 0, len(c.NodePtrSlice))
+		for _, v := range c.NodePtrSlice {
+			if link := toGroupLinkPtr(v); link != nil {
+				convSlice = append(convSlice, link)
+			}
+		}
+		data["node_ptr_slice"] = convSlice
 	}
 	if c.NodePtrSlicePtr != nil {
-		data["node_ptr_slice_ptr"] = c.NodePtrSlicePtr
+		convSlice := make([]*groupLink, 0, len(*c.NodePtrSlicePtr))
+		for _, v := range *c.NodePtrSlicePtr {
+			if link := toGroupLinkPtr(v); link != nil {
+				convSlice = append(convSlice, link)
+			}
+		}
+		data["node_ptr_slice_ptr"] = convSlice
 	}
 	if c.MemberOf != nil {
 		data["member_of"] = c.MemberOf
@@ -285,11 +304,11 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 
 	if raw, ok := rawMap["created_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
-		c.Timestamps.SetCreatedAt(tm)
+		internal.SetCreatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["updated_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
-		c.Timestamps.SetUpdatedAt(tm)
+		internal.SetUpdatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["string"]; ok {
 		cbor.Unmarshal(raw, &c.String)
@@ -537,7 +556,9 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 	if raw, ok := rawMap["struct_ptr_slice_ptr"]; ok {
 		var convSlice []*someStruct
 		cbor.Unmarshal(raw, &convSlice)
-		{
+		if convSlice == nil {
+			c.StructPtrSlicePtr = nil
+		} else {
 			result := make([]*model.SomeStruct, len(convSlice))
 			for i, v := range convSlice {
 				result[i] = toSomeStructPtr(v)
@@ -556,16 +577,40 @@ func (c *AllFieldTypes) UnmarshalCBOR(data []byte) error {
 		c.MainGroupPtr = fromGroupLinkPtr(convVal)
 	}
 	if raw, ok := rawMap["groups"]; ok {
-		cbor.Unmarshal(raw, &c.Groups)
+		var convSlice []*groupLink
+		cbor.Unmarshal(raw, &convSlice)
+		{
+			c.Groups = make([]model.Group, len(convSlice))
+			for i, v := range convSlice {
+				c.Groups[i] = fromGroupLink(v)
+			}
+		}
 	}
 	if raw, ok := rawMap["groups_slice"]; ok {
 		cbor.Unmarshal(raw, &c.GroupsSlice)
 	}
 	if raw, ok := rawMap["node_ptr_slice"]; ok {
-		cbor.Unmarshal(raw, &c.NodePtrSlice)
+		var convSlice []*groupLink
+		cbor.Unmarshal(raw, &convSlice)
+		{
+			c.NodePtrSlice = make([]*model.Group, len(convSlice))
+			for i, v := range convSlice {
+				c.NodePtrSlice[i] = fromGroupLinkPtr(v)
+			}
+		}
 	}
 	if raw, ok := rawMap["node_ptr_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.NodePtrSlicePtr)
+		var convSlice []*groupLink
+		cbor.Unmarshal(raw, &convSlice)
+		if convSlice == nil {
+			c.NodePtrSlicePtr = nil
+		} else {
+			result := make([]*model.Group, len(convSlice))
+			for i, v := range convSlice {
+				result[i] = fromGroupLinkPtr(v)
+			}
+			c.NodePtrSlicePtr = &result
+		}
 	}
 	if raw, ok := rawMap["member_of"]; ok {
 		cbor.Unmarshal(raw, &c.MemberOf)

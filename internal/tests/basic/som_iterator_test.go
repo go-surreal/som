@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/where"
+	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 )
@@ -36,7 +36,7 @@ func TestIterate(t *testing.T) {
 
 		count := 0
 		for _, err := range client.GroupRepo().Query().
-			Filter(where.Group.Name.Contains("single-batch-").True()).
+			Where(filter.Group.Name.Contains("single-batch-").True()).
 			Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -56,7 +56,7 @@ func TestIterate(t *testing.T) {
 
 		count := 0
 		for _, err := range client.GroupRepo().Query().
-			Filter(where.Group.Name.Contains("multi-batch-").True()).
+			Where(filter.Group.Name.Contains("multi-batch-").True()).
 			Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -76,7 +76,7 @@ func TestIterate(t *testing.T) {
 
 		count := 0
 		for _, err := range client.GroupRepo().Query().
-			Filter(where.Group.Name.Contains("exact-batch-").True()).
+			Where(filter.Group.Name.Contains("exact-batch-").True()).
 			Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -96,7 +96,7 @@ func TestIterate(t *testing.T) {
 
 		count := 0
 		for _, err := range client.GroupRepo().Query().
-			Filter(where.Group.Name.Contains("early-term-").True()).
+			Where(filter.Group.Name.Contains("early-term-").True()).
 			Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -135,7 +135,7 @@ func TestIterateID(t *testing.T) {
 
 		count := 0
 		for id, err := range client.GroupRepo().Query().
-			Filter(where.Group.Name.Contains("id-single-batch-").True()).
+			Where(filter.Group.Name.Contains("id-single-batch-").True()).
 			IterateID(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -155,7 +155,7 @@ func TestIterateID(t *testing.T) {
 
 		count := 0
 		for id, err := range client.GroupRepo().Query().
-			Filter(where.Group.Name.Contains("id-multi-batch-").True()).
+			Where(filter.Group.Name.Contains("id-multi-batch-").True()).
 			IterateID(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -172,7 +172,7 @@ func TestIterateID(t *testing.T) {
 		assert.NilError(t, err)
 
 		for id, err := range client.GroupRepo().Query().
-			Filter(where.Group.Name.Contains("id-format-check").True()).
+			Where(filter.Group.Name.Contains("id-format-check").True()).
 			IterateID(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)

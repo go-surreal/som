@@ -41,7 +41,7 @@ type User struct {
 
 // 3. Use the generated client
 users, _ := client.UserRepo().Query().
-    Filter(where.User.Email.Contains("@example.com")).
+    Where(filter.User.Email.Contains("@example.com")).
     All(ctx)
 ```
 

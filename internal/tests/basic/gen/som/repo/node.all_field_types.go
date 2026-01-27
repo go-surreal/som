@@ -6,13 +6,14 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type AllFieldTypesRepo interface {
-	Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes]
+	Query() query.Builder[model.AllFieldTypes]
 	Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error
 	Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error)
@@ -22,21 +23,34 @@ type AllFieldTypesRepo interface {
 	Relate() *relate.AllFieldTypes
 }
 
+// allFieldTypesRepoInfo holds the model-specific conversion functions for AllFieldTypes.
+var allFieldTypesRepoInfo = RepoInfo[model.AllFieldTypes]{
+	MarshalOne: func(node *model.AllFieldTypes) any {
+		return conv.FromAllFieldTypesPtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.AllFieldTypes, error) {
+		var raw *conv.AllFieldTypes
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToAllFieldTypesPtr(raw), nil
+	},
+}
+
 // AllFieldTypesRepo returns a new repository instance for the AllFieldTypes model.
 func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
-	return &allFieldTypes{repo: &repo[model.AllFieldTypes, conv.AllFieldTypes]{
-		db:       c.db,
-		name:     "all_field_types",
-		convTo:   conv.ToAllFieldTypesPtr,
-		convFrom: conv.FromAllFieldTypesPtr}}
+	return &allFieldTypes{repo: &repo[model.AllFieldTypes]{
+		db:   c.db,
+		name: "all_field_types",
+		info: allFieldTypesRepoInfo}}
 }
 
 type allFieldTypes struct {
-	*repo[model.AllFieldTypes, conv.AllFieldTypes]
+	*repo[model.AllFieldTypes]
 }
 
 // Query returns a new query builder for the AllFieldTypes model.
-func (r *allFieldTypes) Query() query.Builder[model.AllFieldTypes, conv.AllFieldTypes] {
+func (r *allFieldTypes) Query() query.Builder[model.AllFieldTypes] {
 	return query.NewAllFieldTypes(r.db)
 }
 
@@ -65,8 +79,32 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
+// If caching is enabled via som.WithCache, it will be used.
 func (r *allFieldTypes) Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error) {
-	return r.read(ctx, id)
+	if !internal.CacheEnabled[model.AllFieldTypes](ctx) {
+		return r.read(ctx, id)
+	}
+	idFunc := func(n *model.AllFieldTypes) string {
+		if n.ID() != nil {
+			return n.ID().String()
+		}
+		return ""
+	}
+	queryAll := func(ctx context.Context) ([]*model.AllFieldTypes, error) {
+		return r.Query().All(ctx)
+	}
+	countAll := func(ctx context.Context) (int, error) {
+		return r.Query().Count(ctx)
+	}
+	cache, err := getOrCreateCache[model.AllFieldTypes](ctx, idFunc, queryAll, countAll)
+	if err != nil {
+		return nil, false, err
+	}
+	var refreshFuncs *eagerRefreshFuncs[model.AllFieldTypes]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.AllFieldTypes]{cacheID: internal.GetCacheKey[model.AllFieldTypes](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.
@@ -85,7 +123,10 @@ func (r *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFiel
 	if allFieldTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes)
+	if allFieldTypes.ID() == nil {
+		return errors.New("cannot delete AllFieldTypes without existing record ID")
+	}
+	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes, false, nil)
 }
 
 // Refresh refreshes the given model with the remote data.

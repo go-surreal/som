@@ -7,11 +7,25 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewGroup(db Database) Builder[model.Group, conv.Group] {
-	return Builder[model.Group, conv.Group]{builder[model.Group, conv.Group]{
-		convFrom: conv.FromGroupPtr,
-		convTo:   conv.ToGroupPtr,
-		db:       db,
-		query:    lib.NewQuery[model.Group]("group"),
+// groupModelInfo holds the model-specific unmarshal functions for Group.
+var groupModelInfo = modelInfo[model.Group]{
+	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Group, error) {
+		return unmarshalAll(unmarshal, data, conv.ToGroupPtr)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Group, error) {
+		return unmarshalOne(unmarshal, data, conv.ToGroupPtr)
+	},
+	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Group], error) {
+		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToGroupPtr)
+	},
+}
+
+// NewGroup creates a new query builder for Group models.
+func NewGroup(db Database) Builder[model.Group] {
+	q := lib.NewQuery[model.Group]("group")
+	return Builder[model.Group]{builder[model.Group]{
+		db:    db,
+		info:  groupModelInfo,
+		query: q,
 	}}
 }

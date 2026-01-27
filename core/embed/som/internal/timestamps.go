@@ -24,10 +24,10 @@ func (t Timestamps) UpdatedAt() time.Time {
 	return t.updatedAt
 }
 
-func (t *Timestamps) SetCreatedAt(tm time.Time) {
-	t.createdAt = tm
+func SetCreatedAt(t *Timestamps, at time.Time) {
+	t.createdAt = at
 }
 
-func (t *Timestamps) SetUpdatedAt(tm time.Time) {
-	t.updatedAt = tm
+func SetUpdatedAt(t *Timestamps, at time.Time) {
+	t.updatedAt = at
 }

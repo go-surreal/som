@@ -11,7 +11,7 @@ import (
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/by"
 	"github.com/go-surreal/som/tests/basic/gen/som/repo"
-	"github.com/go-surreal/som/tests/basic/gen/som/where"
+	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
 	gofrsuuid "github.com/gofrs/uuid"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -23,18 +23,18 @@ func TestQuery(t *testing.T) {
 	client := &repo.ClientImpl{}
 
 	query := client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.
+		Where(
+			filter.AllFieldTypes.
 				MemberOf(
-					where.GroupMember.CreatedAt.Before(time.Now()),
+					filter.GroupMember.CreatedAt.Before(time.Now()),
 				).
 				Group(
-					where.Group.ID.Equal(som.MakeID("all_field_types", "some_id")),
+					filter.Group.ID.Equal(som.MakeID("all_field_types", "some_id")),
 				),
 
-			where.AllFieldTypes.Duration.Days().LessThan(4),
+			filter.AllFieldTypes.Duration.Days().LessThan(4),
 
-			//where.AllFieldTypes.Float64.Equal_(constant.E[model.AllFieldTypes]()),
+			//filter.AllFieldTypes.Float64.Equal_(constant.E[model.AllFieldTypes]()),
 			//
 			//constant.String[model.AllFieldTypes]("A").Equal_(constant.String[model.AllFieldTypes]("A")),
 		)
@@ -46,9 +46,9 @@ func TestQuery(t *testing.T) {
 	)
 
 	query = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().
-				Equal_(where.AllFieldTypes.String.Base64Decode().Base64Encode()),
+		Where(
+			filter.AllFieldTypes.StringPtr.Base64Decode().Base64Encode().
+				Equal_(filter.AllFieldTypes.String.Base64Decode().Base64Encode()),
 		)
 
 	assert.Equal(t,
@@ -83,9 +83,9 @@ func TestWithDatabase(t *testing.T) {
 	}
 
 	userOut, err := client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.ID.Equal(userIn.ID()),
-			where.AllFieldTypes.String.Equal(str),
+		Where(
+			filter.AllFieldTypes.ID.Equal(userIn.ID()),
+			filter.AllFieldTypes.String.Equal(str),
 		).
 		First(ctx)
 
@@ -141,8 +141,8 @@ func TestNumerics(t *testing.T) {
 	}
 
 	userOut, err := client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.ID.Equal(userIn.ID()),
+		Where(
+			filter.AllFieldTypes.ID.Equal(userIn.ID()),
 		).
 		First(ctx)
 	if err != nil {
@@ -183,8 +183,8 @@ func TestNumerics(t *testing.T) {
 	}
 
 	userOut, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.ID.Equal(userIn.ID()),
+		Where(
+			filter.AllFieldTypes.ID.Equal(userIn.ID()),
 		).
 		First(ctx)
 	if err != nil {
@@ -216,8 +216,8 @@ func TestSlice(t *testing.T) {
 	assert.Check(t, user.StructSlice == nil)
 
 	user, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.StructSlice.IsEmpty(),
+		Where(
+			filter.AllFieldTypes.StructSlice.IsEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -238,8 +238,8 @@ func TestSlice(t *testing.T) {
 	}
 
 	user, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.StructSlice.Empty(true),
+		Where(
+			filter.AllFieldTypes.StructSlice.Empty(true),
 		).
 		First(ctx)
 	if err != nil {
@@ -268,8 +268,8 @@ func TestSlice(t *testing.T) {
 	}
 
 	user, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.StructSlice.NotEmpty(),
+		Where(
+			filter.AllFieldTypes.StructSlice.NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -298,8 +298,8 @@ func TestSlice(t *testing.T) {
 	}
 
 	user, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.StructSlice.NotEmpty(),
+		Where(
+			filter.AllFieldTypes.StructSlice.NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -325,8 +325,8 @@ func TestSlice(t *testing.T) {
 	}
 
 	user, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.StructPtrSlice.NotEmpty(),
+		Where(
+			filter.AllFieldTypes.StructPtrSlice.NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -350,8 +350,8 @@ func TestSlice(t *testing.T) {
 	}
 
 	user, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.StructPtrSlicePtr.NotEmpty(),
+		Where(
+			filter.AllFieldTypes.StructPtrSlicePtr.NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -465,8 +465,8 @@ func TestURLTypes(t *testing.T) {
 	assert.Equal(t, someURL.String(), readModel.SomeOtherURL.String())
 
 	queryModel, err := client.URLExampleRepo().Query().
-		Filter(
-			where.URLExample.SomeURL.Equal(*someURL),
+		Where(
+			filter.URLExample.SomeURL.Equal(*someURL),
 		).
 		First(ctx)
 
@@ -518,10 +518,10 @@ func TestDuration(t *testing.T) {
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.Duration.Equal(time.Minute),
-			where.AllFieldTypes.DurationPtr.GreaterThan(time.Minute),
-			where.AllFieldTypes.DurationNil.Nil(true),
+		Where(
+			filter.AllFieldTypes.Duration.Equal(time.Minute),
+			filter.AllFieldTypes.DurationPtr.GreaterThan(time.Minute),
+			filter.AllFieldTypes.DurationNil.Nil(true),
 		).
 		First(ctx)
 
@@ -571,10 +571,10 @@ func TestUUID(t *testing.T) {
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.UUID.Equal(modelIn.UUID),
-			where.AllFieldTypes.UUIDPtr.Equal(*modelIn.UUIDPtr),
-			where.AllFieldTypes.UUIDNil.Nil(true),
+		Where(
+			filter.AllFieldTypes.UUID.Equal(modelIn.UUID),
+			filter.AllFieldTypes.UUIDPtr.Equal(*modelIn.UUIDPtr),
+			filter.AllFieldTypes.UUIDNil.Nil(true),
 		).
 		First(ctx)
 
@@ -624,10 +624,10 @@ func TestUUIDGofrs(t *testing.T) {
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.UUIDGofrs.Equal(modelIn.UUIDGofrs),
-			where.AllFieldTypes.UUIDGofrsPtr.Equal(*modelIn.UUIDGofrsPtr),
-			where.AllFieldTypes.UUIDGofrsNil.Nil(true),
+		Where(
+			filter.AllFieldTypes.UUIDGofrs.Equal(modelIn.UUIDGofrs),
+			filter.AllFieldTypes.UUIDGofrsPtr.Equal(*modelIn.UUIDGofrsPtr),
+			filter.AllFieldTypes.UUIDGofrsNil.Nil(true),
 		).
 		First(ctx)
 
@@ -686,9 +686,9 @@ func TestPassword(t *testing.T) {
 
 	// Step 3: Verify password comparison works
 	modelFound, err := client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.ID.Equal(modelIn.ID()),
-			where.AllFieldTypes.Login().Password.Verify(plainPassword),
+		Where(
+			filter.AllFieldTypes.ID.Equal(modelIn.ID()),
+			filter.AllFieldTypes.Login().Password.Verify(plainPassword),
 		).
 		First(ctx)
 
@@ -710,9 +710,9 @@ func TestPassword(t *testing.T) {
 	// Step 5: Verify password comparison STILL works after update
 	// This will FAIL if double-hashing occurs
 	modelFoundAfterUpdate, err := client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.ID.Equal(modelIn.ID()),
-			where.AllFieldTypes.Login().Password.Verify(plainPassword),
+		Where(
+			filter.AllFieldTypes.ID.Equal(modelIn.ID()),
+			filter.AllFieldTypes.Login().Password.Verify(plainPassword),
 		).
 		First(ctx)
 
@@ -763,10 +763,10 @@ func TestEmail(t *testing.T) {
 	)
 
 	modelOut, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.Email.Equal(emailValue),
-			where.AllFieldTypes.EmailPtr.Equal(emailPtr),
-			where.AllFieldTypes.EmailNil.Nil(true),
+		Where(
+			filter.AllFieldTypes.Email.Equal(emailValue),
+			filter.AllFieldTypes.EmailPtr.Equal(emailPtr),
+			filter.AllFieldTypes.EmailNil.Nil(true),
 		).
 		First(ctx)
 
@@ -781,9 +781,9 @@ func TestEmail(t *testing.T) {
 
 	// Test email-specific filter methods
 	modelOut, err = client.AllFieldTypesRepo().Query().
-		Filter(
-			where.AllFieldTypes.Email.User().Equal("testuser"),
-			where.AllFieldTypes.Email.Host().Equal("example.com"),
+		Where(
+			filter.AllFieldTypes.Email.User().Equal("testuser"),
+			filter.AllFieldTypes.Email.Host().Equal("example.com"),
 		).
 		First(ctx)
 
@@ -817,8 +817,8 @@ func FuzzWithDatabase(f *testing.F) {
 		}
 
 		userOut, err := client.AllFieldTypesRepo().Query().
-			Filter(
-				where.AllFieldTypes.ID.Equal(userIn.ID()),
+			Where(
+				filter.AllFieldTypes.ID.Equal(userIn.ID()),
 			).
 			First(ctx)
 
@@ -915,8 +915,8 @@ func BenchmarkWithDatabase(b *testing.B) {
 		}
 
 		userOut, err := client.AllFieldTypesRepo().Query().
-			Filter(
-				where.AllFieldTypes.ID.Equal(userIn.ID()),
+			Where(
+				filter.AllFieldTypes.ID.Equal(userIn.ID()),
 			).
 			First(ctx)
 
@@ -940,7 +940,7 @@ func TestAsync(t *testing.T) {
 	}
 
 	resCh := client.AllFieldTypesRepo().Query().
-		Filter().
+		Where().
 		CountAsync(ctx)
 
 	assert.NilError(t, <-resCh.Err())
@@ -952,7 +952,7 @@ func TestAsync(t *testing.T) {
 	}
 
 	resCh = client.AllFieldTypesRepo().Query().
-		Filter().
+		Where().
 		CountAsync(ctx)
 
 	assert.NilError(t, <-resCh.Err())

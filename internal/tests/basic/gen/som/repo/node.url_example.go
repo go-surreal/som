@@ -6,13 +6,14 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type URLExampleRepo interface {
-	Query() query.Builder[model.URLExample, conv.URLExample]
+	Query() query.Builder[model.URLExample]
 	Create(ctx context.Context, urlexample *model.URLExample) error
 	CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error
 	Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error)
@@ -22,21 +23,34 @@ type URLExampleRepo interface {
 	Relate() *relate.URLExample
 }
 
+// urlexampleRepoInfo holds the model-specific conversion functions for URLExample.
+var urlexampleRepoInfo = RepoInfo[model.URLExample]{
+	MarshalOne: func(node *model.URLExample) any {
+		return conv.FromURLExamplePtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.URLExample, error) {
+		var raw *conv.URLExample
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToURLExamplePtr(raw), nil
+	},
+}
+
 // URLExampleRepo returns a new repository instance for the URLExample model.
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
-	return &urlexample{repo: &repo[model.URLExample, conv.URLExample]{
-		db:       c.db,
-		name:     "url_example",
-		convTo:   conv.ToURLExamplePtr,
-		convFrom: conv.FromURLExamplePtr}}
+	return &urlexample{repo: &repo[model.URLExample]{
+		db:   c.db,
+		name: "url_example",
+		info: urlexampleRepoInfo}}
 }
 
 type urlexample struct {
-	*repo[model.URLExample, conv.URLExample]
+	*repo[model.URLExample]
 }
 
 // Query returns a new query builder for the URLExample model.
-func (r *urlexample) Query() query.Builder[model.URLExample, conv.URLExample] {
+func (r *urlexample) Query() query.Builder[model.URLExample] {
 	return query.NewURLExample(r.db)
 }
 
@@ -65,8 +79,32 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
+// If caching is enabled via som.WithCache, it will be used.
 func (r *urlexample) Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error) {
-	return r.read(ctx, id)
+	if !internal.CacheEnabled[model.URLExample](ctx) {
+		return r.read(ctx, id)
+	}
+	idFunc := func(n *model.URLExample) string {
+		if n.ID() != nil {
+			return n.ID().String()
+		}
+		return ""
+	}
+	queryAll := func(ctx context.Context) ([]*model.URLExample, error) {
+		return r.Query().All(ctx)
+	}
+	countAll := func(ctx context.Context) (int, error) {
+		return r.Query().Count(ctx)
+	}
+	cache, err := getOrCreateCache[model.URLExample](ctx, idFunc, queryAll, countAll)
+	if err != nil {
+		return nil, false, err
+	}
+	var refreshFuncs *eagerRefreshFuncs[model.URLExample]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.URLExample]{cacheID: internal.GetCacheKey[model.URLExample](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.
@@ -85,7 +123,10 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, urlexample.ID(), urlexample)
+	if urlexample.ID() == nil {
+		return errors.New("cannot delete URLExample without existing record ID")
+	}
+	return r.delete(ctx, urlexample.ID(), urlexample, false, nil)
 }
 
 // Refresh refreshes the given model with the remote data.

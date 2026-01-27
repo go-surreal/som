@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/query"
-	"github.com/go-surreal/som/tests/basic/gen/som/where"
+	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 )
@@ -23,7 +23,7 @@ func TestFullTextSearchBasic(t *testing.T) {
 	}
 
 	results, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("quick fox")).
+		Search(filter.AllFieldTypes.String.Matches("quick fox")).
 		AllMatches(ctx)
 
 	if err != nil {
@@ -48,7 +48,7 @@ func TestFullTextSearchNoMatch(t *testing.T) {
 	}
 
 	results, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("nonexistent terms")).
+		Search(filter.AllFieldTypes.String.Matches("nonexistent terms")).
 		AllMatches(ctx)
 
 	if err != nil {
@@ -80,7 +80,7 @@ func TestFullTextSearchMultipleResults(t *testing.T) {
 	}
 
 	results, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("programming")).
+		Search(filter.AllFieldTypes.String.Matches("programming")).
 		AllMatches(ctx)
 
 	if err != nil {
@@ -113,8 +113,8 @@ func TestFullTextSearchWithFilter(t *testing.T) {
 	}
 
 	results, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("searchable")).
-		Filter(where.AllFieldTypes.Int.Equal(42)).
+		Search(filter.AllFieldTypes.String.Matches("searchable")).
+		Where(filter.AllFieldTypes.Int.Equal(42)).
 		AllMatches(ctx)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func TestFullTextSearchQueryDescribe(t *testing.T) {
 	defer cleanup()
 
 	query := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("test query"))
+		Search(filter.AllFieldTypes.String.Matches("test query"))
 
 	desc := query.Describe()
 	t.Logf("Query: %s", desc)
@@ -152,7 +152,7 @@ func TestFullTextSearchWithRef(t *testing.T) {
 	}
 
 	results, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("explicit").Ref(5)).
+		Search(filter.AllFieldTypes.String.Matches("explicit").Ref(5)).
 		AllMatches(ctx)
 
 	if err != nil {
@@ -176,7 +176,7 @@ func TestFullTextSearchWithHighlights(t *testing.T) {
 	}
 
 	results, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("highlight").WithHighlights("<mark>", "</mark>")).
+		Search(filter.AllFieldTypes.String.Matches("highlight").WithHighlights("<mark>", "</mark>")).
 		AllMatches(ctx)
 
 	if err != nil {
@@ -218,8 +218,8 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 	// Search() now uses OR by default - matches documents with "apple" OR "orange"
 	results, err := client.AllFieldTypesRepo().Query().
 		Search(
-			where.AllFieldTypes.String.Matches("apple"),
-			where.AllFieldTypes.String.Matches("orange"),
+			filter.AllFieldTypes.String.Matches("apple"),
+			filter.AllFieldTypes.String.Matches("orange"),
 		).
 		AllMatches(ctx)
 
@@ -262,8 +262,8 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 	// SearchAll() uses AND - only matches documents with BOTH "apple" AND "delicious"
 	results, err := client.AllFieldTypesRepo().Query().
 		SearchAll(
-			where.AllFieldTypes.String.Matches("apple"),
-			where.AllFieldTypes.String.Matches("delicious"),
+			filter.AllFieldTypes.String.Matches("apple"),
+			filter.AllFieldTypes.String.Matches("delicious"),
 		).
 		AllMatches(ctx)
 
@@ -297,7 +297,7 @@ func TestFullTextSearchFirstMatch(t *testing.T) {
 	}
 
 	result, ok, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("result")).
+		Search(filter.AllFieldTypes.String.Matches("result")).
 		FirstMatch(ctx)
 
 	if err != nil {
@@ -315,7 +315,7 @@ func TestFullTextSearchFirstMatchNoResult(t *testing.T) {
 	defer cleanup()
 
 	_, ok, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("nonexistent")).
+		Search(filter.AllFieldTypes.String.Matches("nonexistent")).
 		FirstMatch(ctx)
 
 	if err != nil {
@@ -339,7 +339,7 @@ func TestFullTextSearchAll(t *testing.T) {
 	}
 
 	models, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("metadata")).
+		Search(filter.AllFieldTypes.String.Matches("metadata")).
 		All(ctx)
 
 	if err != nil {
@@ -364,7 +364,7 @@ func TestFullTextSearchScore(t *testing.T) {
 	}
 
 	results, err := client.AllFieldTypesRepo().Query().
-		Search(where.AllFieldTypes.String.Matches("test")).
+		Search(filter.AllFieldTypes.String.Matches("test")).
 		AllMatches(ctx)
 
 	if err != nil {
@@ -397,8 +397,8 @@ func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
 	// Then sort by Score(0) and Score(1) to get two different score aliases
 	results, err := client.AllFieldTypesRepo().Query().
 		Search(
-			where.AllFieldTypes.String.Matches("test"),
-			where.AllFieldTypes.StringPtr.Matches("test"),
+			filter.AllFieldTypes.String.Matches("test"),
+			filter.AllFieldTypes.StringPtr.Matches("test"),
 		).
 		Order(query.Score(0).Desc(), query.Score(1).Asc()).
 		AllMatches(ctx)

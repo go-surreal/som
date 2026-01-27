@@ -8,7 +8,7 @@
 <hr />
 
 <p align="center">
-    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.24.10-informational" alt="Go 1.24.10"></a>
+    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.24.12-informational" alt="Go 1.24.12"></a>
     &nbsp;
     <a href="https://goreportcard.com/report/github.com/go-surreal/som"><img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card"></a>
     &nbsp;
@@ -145,7 +145,7 @@ import (
     "log"
     
     "<root>/gen/som"
-    "<root>/gen/som/where"
+    "<root>/gen/som/filter"
     "<root>/model"
 )
 
@@ -180,8 +180,8 @@ func main() {
 		
     // query the user by email
     read, err := client.UserRepo().Query().
-        Filter(
-            where.User.Email.Equal("test@example.com"),
+        Where(
+            filter.User.Email.Equal("test@example.com"),
         ).
         First(ctx)
 

@@ -6,13 +6,14 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
 type GroupRepo interface {
-	Query() query.Builder[model.Group, conv.Group]
+	Query() query.Builder[model.Group]
 	Create(ctx context.Context, group *model.Group) error
 	CreateWithID(ctx context.Context, id string, group *model.Group) error
 	Read(ctx context.Context, id *som.ID) (*model.Group, bool, error)
@@ -22,21 +23,34 @@ type GroupRepo interface {
 	Relate() *relate.Group
 }
 
+// groupRepoInfo holds the model-specific conversion functions for Group.
+var groupRepoInfo = RepoInfo[model.Group]{
+	MarshalOne: func(node *model.Group) any {
+		return conv.FromGroupPtr(node)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Group, error) {
+		var raw *conv.Group
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		return conv.ToGroupPtr(raw), nil
+	},
+}
+
 // GroupRepo returns a new repository instance for the Group model.
 func (c *ClientImpl) GroupRepo() GroupRepo {
-	return &group{repo: &repo[model.Group, conv.Group]{
-		db:       c.db,
-		name:     "group",
-		convTo:   conv.ToGroupPtr,
-		convFrom: conv.FromGroupPtr}}
+	return &group{repo: &repo[model.Group]{
+		db:   c.db,
+		name: "group",
+		info: groupRepoInfo}}
 }
 
 type group struct {
-	*repo[model.Group, conv.Group]
+	*repo[model.Group]
 }
 
 // Query returns a new query builder for the Group model.
-func (r *group) Query() query.Builder[model.Group, conv.Group] {
+func (r *group) Query() query.Builder[model.Group] {
 	return query.NewGroup(r.db)
 }
 
@@ -65,8 +79,32 @@ func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
+// If caching is enabled via som.WithCache, it will be used.
 func (r *group) Read(ctx context.Context, id *som.ID) (*model.Group, bool, error) {
-	return r.read(ctx, id)
+	if !internal.CacheEnabled[model.Group](ctx) {
+		return r.read(ctx, id)
+	}
+	idFunc := func(n *model.Group) string {
+		if n.ID() != nil {
+			return n.ID().String()
+		}
+		return ""
+	}
+	queryAll := func(ctx context.Context) ([]*model.Group, error) {
+		return r.Query().All(ctx)
+	}
+	countAll := func(ctx context.Context) (int, error) {
+		return r.Query().Count(ctx)
+	}
+	cache, err := getOrCreateCache[model.Group](ctx, idFunc, queryAll, countAll)
+	if err != nil {
+		return nil, false, err
+	}
+	var refreshFuncs *eagerRefreshFuncs[model.Group]
+	if cache != nil && cache.isEager() {
+		refreshFuncs = &eagerRefreshFuncs[model.Group]{cacheID: internal.GetCacheKey[model.Group](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
+	}
+	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.
@@ -85,7 +123,10 @@ func (r *group) Delete(ctx context.Context, group *model.Group) error {
 	if group == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	return r.delete(ctx, group.ID(), group)
+	if group.ID() == nil {
+		return errors.New("cannot delete Group without existing record ID")
+	}
+	return r.delete(ctx, group.ID(), group, false, nil)
 }
 
 // Refresh refreshes the given model with the remote data.

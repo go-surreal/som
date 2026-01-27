@@ -159,16 +159,16 @@ type Follows struct {
 1. Check filter logic - multiple filters are ANDed:
    ```go
    // This is AND (both must be true)
-   query.Filter(
-       where.User.IsActive.IsTrue(),
-       where.User.Age.GreaterThan(18),
+   query.Where(
+       filter.User.IsActive.IsTrue(),
+       filter.User.Age.GreaterThan(18),
    )
 
-   // Use where.Any for OR
-   query.Filter(
-       where.Any(
-           where.User.Role.Equal("admin"),
-           where.User.Role.Equal("moderator"),
+   // Use filter.Any for OR
+   query.Where(
+       filter.Any(
+           filter.User.Role.Equal("admin"),
+           filter.User.Role.Equal("moderator"),
        ),
    )
    ```
@@ -176,13 +176,13 @@ type Follows struct {
 2. Check comparison direction:
    ```go
    // "Age greater than 18" not "18 greater than age"
-   where.User.Age.GreaterThan(18)
+   filter.User.Age.GreaterThan(18)
    ```
 
 3. Check nil handling for optional fields:
    ```go
    // Optional fields might be nil
-   where.User.DeletedAt.IsNil()  // Not deleted
+   filter.User.DeletedAt.IsNil()  // Not deleted
    ```
 
 ### Live query not receiving updates
@@ -222,7 +222,7 @@ type Follows struct {
 
    // Good - fetches only what you need
    users, _ := client.UserRepo().Query().
-       Filter(where.User.IsActive.IsTrue()).
+       Where(filter.User.IsActive.IsTrue()).
        Limit(100).
        All(ctx)
    ```
@@ -230,7 +230,7 @@ type Follows struct {
 2. Use `Count` or `Exists` when you don't need full records:
    ```go
    count, _ := client.UserRepo().Query().
-       Filter(where.User.IsActive.IsTrue()).
+       Where(filter.User.IsActive.IsTrue()).
        Count(ctx)
    ```
 

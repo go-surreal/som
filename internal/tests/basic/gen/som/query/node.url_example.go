@@ -7,11 +7,25 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-func NewURLExample(db Database) Builder[model.URLExample, conv.URLExample] {
-	return Builder[model.URLExample, conv.URLExample]{builder[model.URLExample, conv.URLExample]{
-		convFrom: conv.FromURLExamplePtr,
-		convTo:   conv.ToURLExamplePtr,
-		db:       db,
-		query:    lib.NewQuery[model.URLExample]("url_example"),
+// urlexampleModelInfo holds the model-specific unmarshal functions for URLExample.
+var urlexampleModelInfo = modelInfo[model.URLExample]{
+	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.URLExample, error) {
+		return unmarshalAll(unmarshal, data, conv.ToURLExamplePtr)
+	},
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.URLExample, error) {
+		return unmarshalOne(unmarshal, data, conv.ToURLExamplePtr)
+	},
+	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.URLExample], error) {
+		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToURLExamplePtr)
+	},
+}
+
+// NewURLExample creates a new query builder for URLExample models.
+func NewURLExample(db Database) Builder[model.URLExample] {
+	q := lib.NewQuery[model.URLExample]("url_example")
+	return Builder[model.URLExample]{builder[model.URLExample]{
+		db:    db,
+		info:  urlexampleModelInfo,
+		query: q,
 	}}
 }
