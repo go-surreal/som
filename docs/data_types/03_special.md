@@ -39,7 +39,7 @@ doc := &model.Document{
 
 ```go
 doc, exists, err := client.DocumentRepo().Query().
-    Filter(where.Document.ExternalID.Equal(targetUUID)).
+    Where(filter.Document.ExternalID.Equal(targetUUID)).
     First(ctx)
 ```
 
@@ -54,10 +54,10 @@ doc, exists, err := client.DocumentRepo().Query().
 
 ```go
 // Find specific document
-where.Document.ExternalID.Equal(targetUUID)
+filter.Document.ExternalID.Equal(targetUUID)
 
 // Find multiple documents
-where.Document.TrackingID.In(uuid1, uuid2, uuid3)
+filter.Document.TrackingID.In(uuid1, uuid2, uuid3)
 ```
 
 ## URL
@@ -91,10 +91,10 @@ URLs support string-like filter operations:
 
 ```go
 // Find bookmarks with specific host
-where.Bookmark.Link.Host.Equal("example.com")
+filter.Bookmark.Link.Host.Equal("example.com")
 
 // Find HTTPS links
-where.Bookmark.Link.Scheme.Equal("https")
+filter.Bookmark.Link.Scheme.Equal("https")
 ```
 
 ## Optional Special Types
@@ -114,10 +114,10 @@ Query optional fields:
 
 ```go
 // Find users with a profile
-where.User.ProfileID.IsNotNil()
+filter.User.ProfileID.IsNotNil()
 
 // Find users without a website
-where.User.Website.IsNil()
+filter.User.Website.IsNil()
 ```
 
 ## Record IDs

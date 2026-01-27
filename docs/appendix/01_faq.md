@@ -70,8 +70,8 @@ type User struct {
 Query with `IsNil()` and `IsNotNil()`:
 
 ```go
-where.User.Nickname.IsNotNil()  // Has a nickname
-where.User.Age.IsNil()          // Age not set
+filter.User.Nickname.IsNotNil()  // Has a nickname
+filter.User.Age.IsNil()          // Age not set
 ```
 
 ### How do automatic timestamps work?

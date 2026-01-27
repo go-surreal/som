@@ -32,14 +32,14 @@ This ensures nanosecond precision and proper round-tripping with SurrealDB.
 ```go
 // Find events starting after a specific time
 events, err := client.EventRepo().Query().
-    Filter(where.Event.StartTime.GreaterThan(time.Now())).
+    Where(filter.Event.StartTime.GreaterThan(time.Now())).
     All(ctx)
 
 // Find events within a range
 events, err := client.EventRepo().Query().
-    Filter(
-        where.Event.StartTime.GreaterThanOrEqual(startDate),
-        where.Event.EndTime.LessThanOrEqual(endDate),
+    Where(
+        filter.Event.StartTime.GreaterThanOrEqual(startDate),
+        filter.Event.EndTime.LessThanOrEqual(endDate),
     ).
     All(ctx)
 ```
@@ -60,10 +60,10 @@ events, err := client.EventRepo().Query().
 
 ```go
 // Created in last 7 days
-where.User.CreatedAt.After(time.Now().AddDate(0, 0, -7))
+filter.User.CreatedAt.After(time.Now().AddDate(0, 0, -7))
 
 // Compare with date math
-where.Event.StartTime.Add(2 * time.Hour).Before(deadline)
+filter.Event.StartTime.Add(2 * time.Hour).Before(deadline)
 ```
 
 ## time.Duration
@@ -110,10 +110,10 @@ task := &model.Task{
 
 ```go
 // Sessions longer than 1 hour
-where.Session.Duration.After(time.Hour)
+filter.Session.Duration.After(time.Hour)
 
 // Timeouts under 5 minutes
-where.Task.Timeout.Before(5 * time.Minute)
+filter.Task.Timeout.Before(5 * time.Minute)
 ```
 
 ## Optional Time Fields
@@ -134,10 +134,10 @@ Query optional time fields:
 
 ```go
 // Find soft-deleted users
-where.User.DeletedAt.IsNotNil()
+filter.User.DeletedAt.IsNotNil()
 
 // Find users who have never logged in
-where.User.LastLogin.IsNil()
+filter.User.LastLogin.IsNil()
 ```
 
 ## Automatic Timestamps
@@ -177,9 +177,9 @@ Best practice: always work with UTC internally and convert for display only.
 // Find upcoming events in the next week
 nextWeek := time.Now().AddDate(0, 0, 7)
 events, err := client.EventRepo().Query().
-    Filter(
-        where.Event.StartTime.After(time.Now()),
-        where.Event.StartTime.Before(nextWeek),
+    Where(
+        filter.Event.StartTime.After(time.Now()),
+        filter.Event.StartTime.Before(nextWeek),
     ).
     Order(by.Event.StartTime.Asc()).
     All(ctx)
@@ -191,6 +191,6 @@ events, err := client.EventRepo().Query().
 // Find expired sessions (created more than 24 hours ago)
 cutoff := time.Now().Add(-24 * time.Hour)
 expired, err := client.SessionRepo().Query().
-    Filter(where.Session.CreatedAt.Before(cutoff)).
+    Where(filter.Session.CreatedAt.Before(cutoff)).
     All(ctx)
 ```

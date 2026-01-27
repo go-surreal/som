@@ -182,25 +182,25 @@ type UserRepo interface {
 
 ## Generated Filters
 
-Each field generates type-safe filters in the `where` package:
+Each field generates type-safe filters in the `filter` package:
 
 ```go
 // String fields
-where.User.Username.Equal("john")
-where.User.Username.Contains("oh")
-where.User.Email.EndsWith("@gmail.com")
+filter.User.Username.Equal("john")
+filter.User.Username.Contains("oh")
+filter.User.Email.EndsWith("@gmail.com")
 
 // Numeric fields
-where.User.Age.GreaterThan(18)
-where.User.Age.LessThanOrEqual(65)
+filter.User.Age.GreaterThan(18)
+filter.User.Age.LessThanOrEqual(65)
 
 // Boolean fields
-where.User.Active.IsTrue()
-where.User.Active.IsFalse()
+filter.User.Active.IsTrue()
+filter.User.Active.IsFalse()
 
 // Optional fields
-where.User.DeletedAt.IsNil()
-where.User.DeletedAt.IsNotNil()
+filter.User.DeletedAt.IsNil()
+filter.User.DeletedAt.IsNotNil()
 ```
 
 ## Generated Sorts

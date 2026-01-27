@@ -126,7 +126,7 @@ Find all relationships originating from a node:
 ```go
 // Everyone Alice follows
 following, err := client.FollowsRepo().Query().
-    Filter(where.Follows.In.Equal(alice.ID())).
+    Where(filter.Follows.In.Equal(alice.ID())).
     All(ctx)
 ```
 
@@ -137,7 +137,7 @@ Find all relationships pointing to a node:
 ```go
 // Everyone following Bob
 followers, err := client.FollowsRepo().Query().
-    Filter(where.Follows.Out.Equal(bob.ID())).
+    Where(filter.Follows.Out.Equal(bob.ID())).
     All(ctx)
 ```
 
@@ -146,8 +146,8 @@ followers, err := client.FollowsRepo().Query().
 ```go
 // Find relationships created this month
 recentFollows, err := client.FollowsRepo().Query().
-    Filter(
-        where.Follows.Since.After(startOfMonth),
+    Where(
+        filter.Follows.Since.After(startOfMonth),
     ).
     All(ctx)
 ```

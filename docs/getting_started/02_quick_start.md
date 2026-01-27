@@ -41,7 +41,7 @@ go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
 
 This creates:
 - `gen/som/` - Client and repository code
-- `gen/som/where/` - Type-safe filters
+- `gen/som/filter/` - Type-safe filters
 - `gen/som/by/` - Sorting helpers
 
 ## Step 3: Connect and Use
@@ -55,7 +55,7 @@ import (
     "log"
 
     "yourproject/gen/som"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/gen/som/by"
     "yourproject/model"
 )
@@ -105,8 +105,8 @@ func main() {
 
     // QUERY with filters
     users, err := client.UserRepo().Query().
-        Filter(where.User.IsActive.IsTrue()).
-        Filter(where.User.Age.GreaterThan(18)).
+        Where(filter.User.IsActive.IsTrue()).
+        Where(filter.User.Age.GreaterThan(18)).
         Order(by.User.Username.Asc()).
         Limit(10).
         All(ctx)
@@ -128,7 +128,7 @@ func main() {
 
 ```go
 user, exists, err := client.UserRepo().Query().
-    Filter(where.User.Email.Equal("john@example.com")).
+    Where(filter.User.Email.Equal("john@example.com")).
     First(ctx)
 
 if exists {
@@ -140,7 +140,7 @@ if exists {
 
 ```go
 exists, err := client.UserRepo().Query().
-    Filter(where.User.Email.Equal("john@example.com")).
+    Where(filter.User.Email.Equal("john@example.com")).
     Exists(ctx)
 ```
 
@@ -148,7 +148,7 @@ exists, err := client.UserRepo().Query().
 
 ```go
 count, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Count(ctx)
 ```
 
@@ -157,7 +157,7 @@ count, err := client.UserRepo().Query().
 ```go
 // Start query in background
 result := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     AllAsync(ctx)
 
 // Do other work...
@@ -181,7 +181,7 @@ import (
     "time"
 
     "yourproject/gen/som"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/model"
 )
 
@@ -210,9 +210,9 @@ func main() {
 
     // Query active users over 21
     users, _ := client.UserRepo().Query().
-        Filter(
-            where.User.IsActive.IsTrue(),
-            where.User.Age.GreaterThan(21),
+        Where(
+            filter.User.IsActive.IsTrue(),
+            filter.User.Age.GreaterThan(21),
         ).
         All(ctx)
 

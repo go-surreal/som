@@ -74,20 +74,20 @@ DEFINE FIELD updated_at ON user TYPE datetime
 
 ```go
 // Exact match
-where.Event.StartTime.Equal(targetTime)
+filter.Event.StartTime.Equal(targetTime)
 
 // Not equal
-where.Event.StartTime.NotEqual(excludeTime)
+filter.Event.StartTime.NotEqual(excludeTime)
 ```
 
 ### Set Membership
 
 ```go
 // Value in set
-where.Event.StartTime.In(time1, time2, time3)
+filter.Event.StartTime.In(time1, time2, time3)
 
 // Value not in set
-where.Event.StartTime.NotIn(excludedTimes...)
+filter.Event.StartTime.NotIn(excludedTimes...)
 ```
 
 ### Comparison Operations
@@ -96,30 +96,30 @@ Time provides intuitive comparison aliases:
 
 ```go
 // Before (less than)
-where.Event.StartTime.Before(deadline)
+filter.Event.StartTime.Before(deadline)
 
 // Before or equal
-where.Event.StartTime.BeforeOrEqual(deadline)
+filter.Event.StartTime.BeforeOrEqual(deadline)
 
 // After (greater than)
-where.Event.StartTime.After(startDate)
+filter.Event.StartTime.After(startDate)
 
 // After or equal
-where.Event.StartTime.AfterOrEqual(startDate)
+filter.Event.StartTime.AfterOrEqual(startDate)
 
 // Standard comparison also works:
-where.Event.StartTime.LessThan(deadline)
-where.Event.StartTime.GreaterThan(startDate)
+filter.Event.StartTime.LessThan(deadline)
+filter.Event.StartTime.GreaterThan(startDate)
 ```
 
 ### Arithmetic Operations
 
 ```go
 // Add duration
-where.Event.StartTime.Add(2 * time.Hour).Before(deadline)
+filter.Event.StartTime.Add(2 * time.Hour).Before(deadline)
 
 // Subtract duration
-where.Event.EndTime.Sub(30 * time.Minute).After(now)
+filter.Event.EndTime.Sub(30 * time.Minute).After(now)
 ```
 
 ### Component Extraction
@@ -128,43 +128,43 @@ Extract individual time components as numeric filters:
 
 ```go
 // Year
-where.Event.StartTime.Year().Equal(2024)
+filter.Event.StartTime.Year().Equal(2024)
 
 // Month (1-12)
-where.Event.StartTime.Month().Equal(12)
+filter.Event.StartTime.Month().Equal(12)
 
 // Day of month (1-31)
-where.Event.StartTime.Day().Equal(25)
+filter.Event.StartTime.Day().Equal(25)
 
 // Hour (0-23)
-where.Event.StartTime.Hour().GreaterThanEqual(9)
+filter.Event.StartTime.Hour().GreaterThanEqual(9)
 
 // Minute (0-59)
-where.Event.StartTime.Minute().Equal(0)
+filter.Event.StartTime.Minute().Equal(0)
 
 // Second (0-59)
-where.Event.StartTime.Second().Equal(0)
+filter.Event.StartTime.Second().Equal(0)
 
 // Nanosecond
-where.Event.StartTime.Nano().Equal(0)
+filter.Event.StartTime.Nano().Equal(0)
 
 // Microseconds since epoch
-where.Event.StartTime.Micros().GreaterThan(0)
+filter.Event.StartTime.Micros().GreaterThan(0)
 
 // Milliseconds since epoch
-where.Event.StartTime.Millis().GreaterThan(0)
+filter.Event.StartTime.Millis().GreaterThan(0)
 
 // Unix timestamp (seconds)
-where.Event.StartTime.Unix().GreaterThan(0)
+filter.Event.StartTime.Unix().GreaterThan(0)
 
 // Day of week (0=Sunday, 6=Saturday)
-where.Event.StartTime.Weekday().Equal(1)  // Monday
+filter.Event.StartTime.Weekday().Equal(1)  // Monday
 
 // Week of year (1-53)
-where.Event.StartTime.Week().Equal(52)
+filter.Event.StartTime.Week().Equal(52)
 
 // Day of year (1-366)
-where.Event.StartTime.YearDay().LessThan(100)
+filter.Event.StartTime.YearDay().LessThan(100)
 ```
 
 ### Grouping
@@ -173,35 +173,35 @@ Group times by unit:
 
 ```go
 // Group by year
-where.Event.StartTime.Group(time.Year).Equal(groupedTime)
+filter.Event.StartTime.Group(time.Year).Equal(groupedTime)
 
 // Group by month
-where.Event.StartTime.Group(time.Month)
+filter.Event.StartTime.Group(time.Month)
 
 // Group by day
-where.Event.StartTime.Group(time.Day)
+filter.Event.StartTime.Group(time.Day)
 
 // Group by hour
-where.Event.StartTime.Group(time.Hour)
+filter.Event.StartTime.Group(time.Hour)
 
 // Group by minute
-where.Event.StartTime.Group(time.Minute)
+filter.Event.StartTime.Group(time.Minute)
 
 // Group by second
-where.Event.StartTime.Group(time.Second)
+filter.Event.StartTime.Group(time.Second)
 ```
 
 ### Rounding Operations
 
 ```go
 // Floor to hour boundary
-where.Event.StartTime.Floor(time.Hour).Equal(hourStart)
+filter.Event.StartTime.Floor(time.Hour).Equal(hourStart)
 
 // Round to nearest hour
-where.Event.StartTime.Round(time.Hour).Equal(nearestHour)
+filter.Event.StartTime.Round(time.Hour).Equal(nearestHour)
 
 // Floor to day
-where.Event.StartTime.Floor(24 * time.Hour).Equal(dayStart)
+filter.Event.StartTime.Floor(24 * time.Hour).Equal(dayStart)
 ```
 
 ### Formatting
@@ -210,7 +210,7 @@ Format time as string for comparison:
 
 ```go
 // Format and compare
-where.Event.StartTime.Format("%Y-%m-%d").Equal("2024-12-25")
+filter.Event.StartTime.Format("%Y-%m-%d").Equal("2024-12-25")
 
 // SurrealDB format specifiers:
 // %Y - 4-digit year
@@ -225,27 +225,27 @@ where.Event.StartTime.Format("%Y-%m-%d").Equal("2024-12-25")
 
 ```go
 // Check if leap year
-where.Event.StartTime.IsLeapYear().True()
+filter.Event.StartTime.IsLeapYear().True()
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.Event.CancelledAt.IsNil()
+filter.Event.CancelledAt.IsNil()
 
 // Check if not nil
-where.Event.CancelledAt.IsNotNil()
+filter.Event.CancelledAt.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Is zero time
-where.Event.StartTime.Zero(true)
+filter.Event.StartTime.Zero(true)
 
 // Is not zero time
-where.Event.StartTime.Zero(false)
+filter.Event.StartTime.Zero(false)
 ```
 
 ## Sorting
@@ -270,15 +270,15 @@ Time filters support powerful chaining:
 
 ```go
 // Events starting in morning hours
-where.Event.StartTime.Hour().GreaterThanEqual(6)
-where.Event.StartTime.Hour().LessThan(12)
+filter.Event.StartTime.Hour().GreaterThanEqual(6)
+filter.Event.StartTime.Hour().LessThan(12)
 
 // Events in Q4 2024
-where.Event.StartTime.Year().Equal(2024)
-where.Event.StartTime.Month().GreaterThanEqual(10)
+filter.Event.StartTime.Year().Equal(2024)
+filter.Event.StartTime.Month().GreaterThanEqual(10)
 
 // Events 2 hours from now
-where.Event.StartTime.Add(2 * time.Hour).Before(time.Now())
+filter.Event.StartTime.Add(2 * time.Hour).Before(time.Now())
 ```
 
 ## Common Patterns
@@ -290,9 +290,9 @@ startOfDay := time.Date(2024, 12, 25, 0, 0, 0, 0, time.UTC)
 endOfDay := startOfDay.Add(24 * time.Hour)
 
 events, _ := client.EventRepo().Query().
-    Filter(
-        where.Event.StartTime.AfterOrEqual(startOfDay),
-        where.Event.StartTime.Before(endOfDay),
+    Where(
+        filter.Event.StartTime.AfterOrEqual(startOfDay),
+        filter.Event.StartTime.Before(endOfDay),
     ).
     All(ctx)
 ```
@@ -303,7 +303,7 @@ events, _ := client.EventRepo().Query().
 oneWeekAgo := time.Now().AddDate(0, 0, -7)
 
 recentEvents, _ := client.EventRepo().Query().
-    Filter(where.Event.CreatedAt.After(oneWeekAgo)).
+    Where(filter.Event.CreatedAt.After(oneWeekAgo)).
     Order(by.Event.CreatedAt.Desc()).
     All(ctx)
 ```
@@ -315,9 +315,9 @@ now := time.Now()
 nextMonth := now.AddDate(0, 1, 0)
 
 upcoming, _ := client.EventRepo().Query().
-    Filter(
-        where.Event.StartTime.After(now),
-        where.Event.StartTime.Before(nextMonth),
+    Where(
+        filter.Event.StartTime.After(now),
+        filter.Event.StartTime.Before(nextMonth),
     ).
     Order(by.Event.StartTime.Asc()).
     All(ctx)
@@ -333,7 +333,7 @@ import (
     "time"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -344,39 +344,39 @@ func main() {
     // Events starting today
     startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
     todayEvents, _ := client.EventRepo().Query().
-        Filter(
-            where.Event.StartTime.AfterOrEqual(startOfToday),
-            where.Event.StartTime.Before(startOfToday.Add(24*time.Hour)),
+        Where(
+            filter.Event.StartTime.AfterOrEqual(startOfToday),
+            filter.Event.StartTime.Before(startOfToday.Add(24*time.Hour)),
         ).
         Order(by.Event.StartTime.Asc()).
         All(ctx)
 
     // Cancelled events
     cancelled, _ := client.EventRepo().Query().
-        Filter(where.Event.CancelledAt.IsNotNil()).
+        Where(filter.Event.CancelledAt.IsNotNil()).
         All(ctx)
 
     // Morning events (9 AM - 12 PM)
     morningEvents, _ := client.EventRepo().Query().
-        Filter(
-            where.Event.StartTime.Hour().GreaterThanEqual(9),
-            where.Event.StartTime.Hour().LessThan(12),
+        Where(
+            filter.Event.StartTime.Hour().GreaterThanEqual(9),
+            filter.Event.StartTime.Hour().LessThan(12),
         ).
         All(ctx)
 
     // Events in December 2024
     december2024, _ := client.EventRepo().Query().
-        Filter(
-            where.Event.StartTime.Year().Equal(2024),
-            where.Event.StartTime.Month().Equal(12),
+        Where(
+            filter.Event.StartTime.Year().Equal(2024),
+            filter.Event.StartTime.Month().Equal(12),
         ).
         All(ctx)
 
     // Events ending within 2 hours
     endingSoon, _ := client.EventRepo().Query().
-        Filter(
-            where.Event.EndTime.After(now),
-            where.Event.EndTime.Before(now.Add(2*time.Hour)),
+        Where(
+            filter.Event.EndTime.After(now),
+            filter.Event.EndTime.Before(now.Add(2*time.Hour)),
         ).
         All(ctx)
 }

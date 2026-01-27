@@ -69,8 +69,8 @@ gen/som/
 │   ├── query.go          # Query execution, async, live
 │   └── node.{model}.go   # Per-model query factory
 │
-├── where/                # Filter definitions
-│   ├── where.go          # Initialization
+├── filter/               # Filter definitions
+│   ├── filter.go          # Initialization
 │   ├── node.{model}.go   # Per-model field filters
 │   └── object.{struct}.go # Nested struct filters
 │
@@ -145,7 +145,7 @@ Fluent API with method chaining:
 
 ```go
 Builder[M, C]
-├── Filter(filters...)     // WHERE conditions
+├── Where(filters...)     // WHERE conditions
 ├── Order(sorts...)        // ORDER BY
 ├── OrderRandom()          // ORDER RAND()
 ├── Offset(n)              // OFFSET

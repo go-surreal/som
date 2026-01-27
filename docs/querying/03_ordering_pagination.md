@@ -80,7 +80,7 @@ func GetUsersPage(ctx context.Context, page, pageSize int) ([]*model.User, error
 
 ```go
 users, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.Equal(true)).
+    Where(filter.User.IsActive.Equal(true)).
     OrderBy(order.User.Name.Asc()).
     Limit(20).
     All(ctx)
@@ -92,7 +92,7 @@ For pagination UI, get the total count alongside results:
 
 ```go
 query := client.UserRepo().Query().
-    Filter(where.User.IsActive.Equal(true))
+    Where(filter.User.IsActive.Equal(true))
 
 total, _ := query.Count(ctx)
 users, _ := query.Limit(10).Offset(0).All(ctx)
@@ -108,7 +108,7 @@ Stream records in batches:
 
 ```go
 for user, err := range client.UserRepo().Query().
-    Filter(where.User.IsActive.Equal(true)).
+    Where(filter.User.IsActive.Equal(true)).
     Order(by.User.CreatedAt.Desc()).
     Iterate(ctx, 100) {  // Batch size of 100
 

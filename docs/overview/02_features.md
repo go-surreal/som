@@ -18,8 +18,8 @@ Fluent API for building complex queries with compile-time type checking:
 
 ```go
 users, _ := client.UserRepo().Query().
-    Filter(where.User.Email.Contains("@example.com")).
-    Filter(where.User.CreatedAt.After(lastMonth)).
+    Where(filter.User.Email.Contains("@example.com")).
+    Where(filter.User.CreatedAt.After(lastMonth)).
     Order(by.User.Name.Asc()).
     Limit(10).
     All(ctx)
@@ -31,7 +31,7 @@ Subscribe to database changes with type-safe live queries:
 
 ```go
 updates, _ := client.UserRepo().Query().
-    Filter(where.User.Status.Equal("active")).
+    Where(filter.User.Status.Equal("active")).
     Live(ctx)
 
 for update := range updates {
@@ -163,7 +163,7 @@ type User struct {
 }
 
 // Filter on nested fields
-where.User.Address.City.Equal("Berlin")
+filter.User.Address.City.Equal("Berlin")
 ```
 
 ## Query Features
@@ -183,7 +183,7 @@ where.User.Address.City.Equal("Berlin")
 
 | Method | Description |
 |--------|-------------|
-| `Filter(...)` | Add WHERE conditions (AND) |
+| `Where(...)` | Add WHERE conditions (AND) |
 | `Order(...)` | Sort results |
 | `OrderRandom()` | Random ordering |
 | `Limit(n)` | Max results |
@@ -212,15 +212,15 @@ where.User.Address.City.Equal("Berlin")
 
 ```go
 // All conditions (AND)
-where.All(
-    where.User.Status.Equal("active"),
-    where.User.Age.GreaterThan(18),
+filter.All(
+    filter.User.Status.Equal("active"),
+    filter.User.Age.GreaterThan(18),
 )
 
 // Any condition (OR)
-where.Any(
-    where.User.Role.Equal("admin"),
-    where.User.Premium.IsTrue(),
+filter.Any(
+    filter.User.Role.Equal("admin"),
+    filter.User.Premium.IsTrue(),
 )
 ```
 

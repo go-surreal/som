@@ -39,7 +39,7 @@ client.UserRepo().Create(ctx, &model.User{Name: "Bob"})
 
 // Delete Alice (soft delete)
 alice, _, _ := client.UserRepo().Query().
-    Filter(where.User.Name.Equal("Alice")).
+    Where(filter.User.Name.Equal("Alice")).
     First(ctx)
 client.UserRepo().Delete(ctx, alice)
 
@@ -139,7 +139,7 @@ if err != nil {
 
 // Record is completely gone
 user, exists, _ := client.UserRepo().Query().WithDeleted().
-    Filter(where.User.ID.Equal(userID)).
+    Where(filter.User.ID.Equal(userID)).
     First(ctx)
 // exists == false
 ```
@@ -178,7 +178,7 @@ Filter for records where `DeletedAt` is set:
 // Get only soft-deleted users
 deletedUsers, _ := client.UserRepo().Query().
     WithDeleted().
-    Filter(where.User.DeletedAt.Nil(false)).
+    Where(filter.User.DeletedAt.Nil(false)).
     All(ctx)
 ```
 
@@ -312,7 +312,7 @@ import (
     "context"
     "fmt"
     "yourproject/gen/som"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/model"
 )
 
@@ -407,7 +407,7 @@ All users: 0
    cutoff := time.Now().AddDate(0, 0, -30)
    oldDeleted, _ := client.UserRepo().Query().
        WithDeleted().
-       Filter(where.User.DeletedAt.LessThan(cutoff)).
+       Where(filter.User.DeletedAt.LessThan(cutoff)).
        All(ctx)
 
    // Permanently remove them

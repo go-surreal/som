@@ -145,7 +145,7 @@ import (
     "log"
     
     "<root>/gen/som"
-    "<root>/gen/som/where"
+    "<root>/gen/som/filter"
     "<root>/model"
 )
 
@@ -180,8 +180,8 @@ func main() {
 		
     // query the user by email
     read, err := client.UserRepo().Query().
-        Filter(
-            where.User.Email.Equal("test@example.com"),
+        Where(
+            filter.User.Email.Equal("test@example.com"),
         ).
         First(ctx)
 

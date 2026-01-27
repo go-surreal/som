@@ -42,7 +42,7 @@ Query methods return the query builder for chaining:
 
 ```go
 users, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.Equal(true)).
+    Where(filter.User.IsActive.Equal(true)).
     OrderBy(order.User.CreatedAt.Desc()).
     Limit(10).
     All(ctx)
@@ -72,7 +72,7 @@ Build queries incrementally:
 
 ```go
 baseQuery := client.UserRepo().Query().
-    Filter(where.User.IsActive.Equal(true))
+    Where(filter.User.IsActive.Equal(true))
 
 // Reuse for different operations
 count, _ := baseQuery.Count(ctx)

@@ -68,7 +68,7 @@ import (
 
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/model"
 )
 
@@ -162,7 +162,7 @@ func main() {
 
     // Query: Who does Alice follow?
     following, err := client.FollowsRepo().Query().
-        Filter(where.Follows.In.Equal(alice.ID())).
+        Where(filter.Follows.In.Equal(alice.ID())).
         All(ctx)
     if err != nil {
         log.Fatal(err)
@@ -174,7 +174,7 @@ func main() {
 
     // Query: Who follows Alice?
     followers, err := client.FollowsRepo().Query().
-        Filter(where.Follows.Out.Equal(alice.ID())).
+        Where(filter.Follows.Out.Equal(alice.ID())).
         All(ctx)
     if err != nil {
         log.Fatal(err)
@@ -186,7 +186,7 @@ func main() {
 
     // Query: How many likes does the post have?
     likeCount, err := client.LikesRepo().Query().
-        Filter(where.Likes.Out.Equal(post.ID())).
+        Where(filter.Likes.Out.Equal(post.ID())).
         Count(ctx)
     if err != nil {
         log.Fatal(err)
@@ -195,7 +195,7 @@ func main() {
 
     // Query: Recent posts with most active authors
     activePosts, err := client.PostRepo().Query().
-        Filter(where.Post.Author.IsActive.IsTrue()).
+        Where(filter.Post.Author.IsActive.IsTrue()).
         Order(by.Post.CreatedAt.Desc()).
         Limit(10).
         All(ctx)
@@ -214,7 +214,7 @@ Build a simple chronological feed:
 func GetFeed(ctx context.Context, client *som.Client, user *model.User, limit int) ([]*model.Post, error) {
     // Get who the user follows
     following, err := client.FollowsRepo().Query().
-        Filter(where.Follows.In.Equal(user.ID())).
+        Where(filter.Follows.In.Equal(user.ID())).
         All(ctx)
     if err != nil {
         return nil, err
@@ -233,7 +233,7 @@ func GetFeed(ctx context.Context, client *som.Client, user *model.User, limit in
 
     // Get posts from followed users
     posts, err := client.PostRepo().Query().
-        Filter(where.Post.Author.ID().In(followedIDs...)).
+        Where(filter.Post.Author.ID().In(followedIDs...)).
         Order(by.Post.CreatedAt.Desc()).
         Limit(limit).
         All(ctx)
@@ -250,7 +250,7 @@ Find mutual connections:
 func GetMutualFollowers(ctx context.Context, client *som.Client, userA, userB *model.User) ([]*model.User, error) {
     // Get userA's followers
     followersA, err := client.FollowsRepo().Query().
-        Filter(where.Follows.Out.Equal(userA.ID())).
+        Where(filter.Follows.Out.Equal(userA.ID())).
         All(ctx)
     if err != nil {
         return nil, err
@@ -260,9 +260,9 @@ func GetMutualFollowers(ctx context.Context, client *som.Client, userA, userB *m
     var mutuals []*model.User
     for _, f := range followersA {
         followsB, err := client.FollowsRepo().Query().
-            Filter(
-                where.Follows.In.Equal(f.In.ID()),
-                where.Follows.Out.Equal(userB.ID()),
+            Where(
+                filter.Follows.In.Equal(f.In.ID()),
+                filter.Follows.Out.Equal(userB.ID()),
             ).
             Exists(ctx)
         if err != nil {
@@ -284,7 +284,7 @@ Subscribe to new followers:
 ```go
 func WatchFollowers(ctx context.Context, client *som.Client, user *model.User) {
     updates, err := client.FollowsRepo().Query().
-        Filter(where.Follows.Out.Equal(user.ID())).
+        Where(filter.Follows.Out.Equal(user.ID())).
         Live(ctx)
     if err != nil {
         log.Fatal(err)

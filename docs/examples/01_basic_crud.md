@@ -44,7 +44,7 @@ import (
 
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/model"
 )
 
@@ -99,7 +99,7 @@ func main() {
 
     // QUERY
     activeUsers, err := client.UserRepo().Query().
-        Filter(where.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.IsTrue()).
         Order(by.User.Name.Asc()).
         All(ctx)
     if err != nil {
@@ -165,7 +165,7 @@ Deleted user
 ### Query
 
 - Use the fluent builder pattern
-- Filter with type-safe conditions from `where` package
+- Filter with type-safe conditions from `filter` package
 - Order with helpers from `by` package
 - Execute with `All()`, `First()`, `One()`, `Count()`, or `Exists()`
 

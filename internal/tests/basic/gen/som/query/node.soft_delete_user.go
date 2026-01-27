@@ -3,8 +3,8 @@ package query
 
 import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	filter "github.com/go-surreal/som/tests/basic/gen/som/filter"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	where "github.com/go-surreal/som/tests/basic/gen/som/where"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -25,7 +25,7 @@ var softDeleteUserModelInfo = modelInfo[model.SoftDeleteUser]{
 func NewSoftDeleteUser(db Database) Builder[model.SoftDeleteUser] {
 	q := lib.NewQuery[model.SoftDeleteUser]("soft_delete_user")
 	// Automatically exclude soft-deleted records
-	q.SoftDeleteFilter = where.SoftDeleteUser.DeletedAt.Nil(true)
+	q.SoftDeleteFilter = filter.SoftDeleteUser.DeletedAt.Nil(true)
 	return Builder[model.SoftDeleteUser]{builder[model.SoftDeleteUser]{
 		db:    db,
 		info:  softDeleteUserModelInfo,
