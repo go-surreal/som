@@ -73,6 +73,9 @@ func (r *repo[N]) read(ctx context.Context, id *ID) (*N, bool, error) {
 	if err != nil {
 		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
+	if result == nil {
+		return nil, false, nil
+	}
 	return result, true, nil
 }
 
