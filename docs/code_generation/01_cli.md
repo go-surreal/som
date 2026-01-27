@@ -56,7 +56,7 @@ gen/som/
 │   └── <edge>.go       # Per-edge relate builder
 ├── repo/               # Repository implementations
 │   └── <model>.go      # Per-model repository
-├── where/              # Filter condition builders
+├── filter/             # Filter condition builders
 │   └── <model>.go      # Per-model filters
 └── with/               # Fetch/eager loading helpers
     └── <model>.go      # Per-model fetch paths
@@ -97,20 +97,20 @@ Fluent query builders:
 
 ```go
 client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Order(by.User.Name.Asc()).
     Limit(10).
     All(ctx)
 ```
 
-### `where`
+### `filter`
 
 Type-safe filter conditions:
 
 ```go
-where.User.Email.Contains("@example.com")
-where.User.Age.GreaterThan(18)
-where.User.CreatedAt.After(lastWeek)
+filter.User.Email.Contains("@example.com")
+filter.User.Age.GreaterThan(18)
+filter.User.CreatedAt.After(lastWeek)
 ```
 
 ### `by`

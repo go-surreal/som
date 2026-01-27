@@ -40,26 +40,26 @@ Single byte fields support base filter operations:
 
 ```go
 // Equality
-where.Packet.Header.Equal(0xFF)
-where.Packet.Header.NotEqual(0x00)
+filter.Packet.Header.Equal(0xFF)
+filter.Packet.Header.NotEqual(0x00)
 
 // Set membership
-where.Packet.Header.In([]byte{0x01, 0x02, 0x03})
-where.Packet.Header.NotIn([]byte{0x00})
+filter.Packet.Header.In([]byte{0x01, 0x02, 0x03})
+filter.Packet.Header.NotIn([]byte{0x00})
 
 // Zero check
-where.Packet.Header.Zero(true)   // Is 0x00
-where.Packet.Header.Zero(false)  // Is not 0x00
+filter.Packet.Header.Zero(true)   // Is 0x00
+filter.Packet.Header.Zero(false)  // Is not 0x00
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.Packet.TypeFlag.IsNil()
+filter.Packet.TypeFlag.IsNil()
 
 // Check if not nil
-where.Packet.TypeFlag.IsNotNil()
+filter.Packet.TypeFlag.IsNotNil()
 ```
 
 ### Sorting
@@ -100,16 +100,16 @@ DEFINE FIELD checksum ON document TYPE option<bytes>;
 
 ```go
 // Equality
-where.Document.Data.Equal([]byte{0x01, 0x02, 0x03})
-where.Document.Data.NotEqual([]byte{})
+filter.Document.Data.Equal([]byte{0x01, 0x02, 0x03})
+filter.Document.Data.NotEqual([]byte{})
 
 // Set membership
-where.Document.Data.In([][]byte{data1, data2})
-where.Document.Data.NotIn([][]byte{invalidData})
+filter.Document.Data.In([][]byte{data1, data2})
+filter.Document.Data.NotIn([][]byte{invalidData})
 
 // Zero check
-where.Document.Data.Zero(true)   // Is empty/nil
-where.Document.Data.Zero(false)  // Has data
+filter.Document.Data.Zero(true)   // Is empty/nil
+filter.Document.Data.Zero(false)  // Has data
 ```
 
 #### Base64 Encoding
@@ -118,21 +118,21 @@ Convert byte slice to base64 string for string operations:
 
 ```go
 // Encode to base64 and compare
-where.Document.Data.Base64Encode().Equal("SGVsbG8gV29ybGQ=")
+filter.Document.Data.Base64Encode().Equal("SGVsbG8gV29ybGQ=")
 
 // Base64 with string operations
-where.Document.Data.Base64Encode().StartsWith("SGVs")
-where.Document.Data.Base64Encode().Contains("bG8=")
+filter.Document.Data.Base64Encode().StartsWith("SGVs")
+filter.Document.Data.Base64Encode().Contains("bG8=")
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.Document.Checksum.IsNil()
+filter.Document.Checksum.IsNil()
 
 // Check if not nil
-where.Document.Checksum.IsNotNil()
+filter.Document.Checksum.IsNotNil()
 ```
 
 ## Creating Byte Values
@@ -164,7 +164,7 @@ document.Data = data
 ```go
 // Packets with specific header
 packets, _ := client.PacketRepo().Query().
-    Filter(where.Packet.Header.Equal(0x01)).
+    Where(filter.Packet.Header.Equal(0x01)).
     All(ctx)
 ```
 
@@ -173,7 +173,7 @@ packets, _ := client.PacketRepo().Query().
 ```go
 // Documents with specific data
 docs, _ := client.DocumentRepo().Query().
-    Filter(where.Document.Data.Equal(expectedData)).
+    Where(filter.Document.Data.Equal(expectedData)).
     All(ctx)
 ```
 
@@ -182,7 +182,7 @@ docs, _ := client.DocumentRepo().Query().
 ```go
 // Find by base64 prefix
 docs, _ := client.DocumentRepo().Query().
-    Filter(where.Document.Data.Base64Encode().StartsWith("SGVs")).
+    Where(filter.Document.Data.Base64Encode().StartsWith("SGVs")).
     All(ctx)
 ```
 
@@ -191,7 +191,7 @@ docs, _ := client.DocumentRepo().Query().
 ```go
 // Documents that have a checksum
 withChecksum, _ := client.DocumentRepo().Query().
-    Filter(where.Document.Checksum.IsNotNil()).
+    Where(filter.Document.Checksum.IsNotNil()).
     All(ctx)
 ```
 
@@ -204,7 +204,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -219,17 +219,17 @@ func main() {
 
     // Find by exact data
     found, exists, _ := client.DocumentRepo().Query().
-        Filter(where.Document.Data.Equal([]byte("Hello World"))).
+        Where(filter.Document.Data.Equal([]byte("Hello World"))).
         First(ctx)
 
     // Find by base64 encoding
     base64Docs, _ := client.DocumentRepo().Query().
-        Filter(where.Document.Data.Base64Encode().Equal("SGVsbG8gV29ybGQ=")).
+        Where(filter.Document.Data.Base64Encode().Equal("SGVsbG8gV29ybGQ=")).
         All(ctx)
 
     // Find documents with checksum
     withChecksum, _ := client.DocumentRepo().Query().
-        Filter(where.Document.Checksum.IsNotNil()).
+        Where(filter.Document.Checksum.IsNotNil()).
         All(ctx)
 
     // Create packet with single byte
@@ -240,7 +240,7 @@ func main() {
 
     // Filter by header value
     packets, _ := client.PacketRepo().Query().
-        Filter(where.Packet.Header.Equal(0x01)).
+        Where(filter.Packet.Header.Equal(0x01)).
         Order(by.Packet.Header.Asc()).
         All(ctx)
 }

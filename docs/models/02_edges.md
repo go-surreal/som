@@ -113,7 +113,7 @@ err := client.GroupMemberRepo().Create(ctx, membership)
 ```go
 // Find all groups a user belongs to
 memberships, err := client.GroupMemberRepo().Query().
-    Filter(where.GroupMember.In.Equal(user.ID)).
+    Where(filter.GroupMember.In.Equal(user.ID)).
     All(ctx)
 ```
 
@@ -122,7 +122,7 @@ memberships, err := client.GroupMemberRepo().Query().
 ```go
 // Find all members of a group
 memberships, err := client.GroupMemberRepo().Query().
-    Filter(where.GroupMember.Out.Equal(group.ID)).
+    Where(filter.GroupMember.Out.Equal(group.ID)).
     All(ctx)
 ```
 
@@ -131,9 +131,9 @@ memberships, err := client.GroupMemberRepo().Query().
 ```go
 // Find admin memberships
 admins, err := client.GroupMemberRepo().Query().
-    Filter(
-        where.GroupMember.Out.Equal(group.ID),
-        where.GroupMember.Role.Equal("admin"),
+    Where(
+        filter.GroupMember.Out.Equal(group.ID),
+        filter.GroupMember.Role.Equal("admin"),
     ).
     All(ctx)
 ```

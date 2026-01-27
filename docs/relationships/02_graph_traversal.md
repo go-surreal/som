@@ -20,7 +20,7 @@ Find relationships from a specific node:
 ```go
 // Find everyone a user follows
 following, err := client.FollowsRepo().Query().
-    Filter(where.Follows.In.Equal(user.ID())).
+    Where(filter.Follows.In.Equal(user.ID())).
     All(ctx)
 
 // Get the followed users
@@ -36,7 +36,7 @@ Find relationships to a specific node:
 ```go
 // Find everyone who follows a user
 followers, err := client.FollowsRepo().Query().
-    Filter(where.Follows.Out.Equal(user.ID())).
+    Where(filter.Follows.Out.Equal(user.ID())).
     All(ctx)
 
 // Get the follower users
@@ -52,14 +52,14 @@ Query edges by their properties:
 ```go
 // Find recent follows (last 30 days)
 recentFollows, err := client.FollowsRepo().Query().
-    Filter(
-        where.Follows.Since.After(time.Now().AddDate(0, 0, -30)),
+    Where(
+        filter.Follows.Since.After(time.Now().AddDate(0, 0, -30)),
     ).
     All(ctx)
 
 // Find mutual follows
 mutualFollows, err := client.FollowsRepo().Query().
-    Filter(where.Follows.IsMutual.IsTrue()).
+    Where(filter.Follows.IsMutual.IsTrue()).
     All(ctx)
 ```
 
@@ -68,10 +68,10 @@ mutualFollows, err := client.FollowsRepo().Query().
 ```go
 // Find mutual follows from a specific user created this year
 follows, err := client.FollowsRepo().Query().
-    Filter(
-        where.Follows.In.Equal(user.ID()),
-        where.Follows.IsMutual.IsTrue(),
-        where.Follows.Since.After(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+    Where(
+        filter.Follows.In.Equal(user.ID()),
+        filter.Follows.IsMutual.IsTrue(),
+        filter.Follows.Since.After(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
     ).
     All(ctx)
 ```
@@ -122,12 +122,12 @@ err := client.FollowsRepo().Delete(ctx, follows)
 ```go
 // Count followers
 followerCount, err := client.FollowsRepo().Query().
-    Filter(where.Follows.Out.Equal(user.ID())).
+    Where(filter.Follows.Out.Equal(user.ID())).
     Count(ctx)
 
 // Count following
 followingCount, err := client.FollowsRepo().Query().
-    Filter(where.Follows.In.Equal(user.ID())).
+    Where(filter.Follows.In.Equal(user.ID())).
     Count(ctx)
 
 fmt.Printf("%d followers, following %d\n", followerCount, followingCount)
@@ -138,9 +138,9 @@ fmt.Printf("%d followers, following %d\n", followerCount, followingCount)
 ```go
 // Check if Alice follows Bob
 isFollowing, err := client.FollowsRepo().Query().
-    Filter(
-        where.Follows.In.Equal(alice.ID()),
-        where.Follows.Out.Equal(bob.ID()),
+    Where(
+        filter.Follows.In.Equal(alice.ID()),
+        filter.Follows.Out.Equal(bob.ID()),
     ).
     Exists(ctx)
 
@@ -155,7 +155,7 @@ Subscribe to relationship changes in real-time:
 
 ```go
 updates, err := client.FollowsRepo().Query().
-    Filter(where.Follows.Out.Equal(user.ID())).
+    Where(filter.Follows.Out.Equal(user.ID())).
     Live(ctx)
 
 for update := range updates {
@@ -184,15 +184,15 @@ for update := range updates {
 ```go
 // Find who Alice follows that also follows Bob
 aliceFollows, _ := client.FollowsRepo().Query().
-    Filter(where.Follows.In.Equal(alice.ID())).
+    Where(filter.Follows.In.Equal(alice.ID())).
     All(ctx)
 
 for _, f := range aliceFollows {
     // Check if this person follows Bob
     follows, _ := client.FollowsRepo().Query().
-        Filter(
-            where.Follows.In.Equal(f.Out.ID()),
-            where.Follows.Out.Equal(bob.ID()),
+        Where(
+            filter.Follows.In.Equal(f.Out.ID()),
+            filter.Follows.Out.Equal(bob.ID()),
         ).
         Exists(ctx)
 
@@ -211,18 +211,18 @@ for _, f := range aliceFollows {
 ```go
 // Check if user is member of group
 isMember, err := client.MemberOfRepo().Query().
-    Filter(
-        where.MemberOf.In.Equal(user.ID()),
-        where.MemberOf.Out.Equal(group.ID()),
+    Where(
+        filter.MemberOf.In.Equal(user.ID()),
+        filter.MemberOf.Out.Equal(group.ID()),
     ).
     Exists(ctx)
 
 // Check if user is admin of group
 isAdmin, err := client.MemberOfRepo().Query().
-    Filter(
-        where.MemberOf.In.Equal(user.ID()),
-        where.MemberOf.Out.Equal(group.ID()),
-        where.MemberOf.Role.Equal("admin"),
+    Where(
+        filter.MemberOf.In.Equal(user.ID()),
+        filter.MemberOf.Out.Equal(group.ID()),
+        filter.MemberOf.Role.Equal("admin"),
     ).
     Exists(ctx)
 ```
@@ -236,7 +236,7 @@ isAdmin, err := client.MemberOfRepo().Query().
 ```go
 // Find all posts liked by a user
 likes, err := client.LikesRepo().Query().
-    Filter(where.Likes.In.Equal(user.ID())).
+    Where(filter.Likes.In.Equal(user.ID())).
     All(ctx)
 
 for _, like := range likes {
@@ -249,7 +249,7 @@ for _, like := range likes {
 ```go
 // Most recent followers first
 followers, err := client.FollowsRepo().Query().
-    Filter(where.Follows.Out.Equal(user.ID())).
+    Where(filter.Follows.Out.Equal(user.ID())).
     Order(by.Follows.Since.Desc()).
     Limit(10).
     All(ctx)

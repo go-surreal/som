@@ -43,14 +43,14 @@ type BuilderNoLive[M any] struct {
 	builder[M]
 }
 
-// Filter adds a where statement to the query to
+// Where adds a where statement to the query to
 // select records based on the given conditions.
 //
-// Use where.All to chain multiple conditions
+// Use filter.All to chain multiple conditions
 // together that all need to match.
-// Use where.Any to chain multiple conditions
+// Use filter.Any to chain multiple conditions
 // together where at least one needs to match.
-func (b builder[M]) Filter(filters ...lib.Filter[M]) Builder[M] {
+func (b builder[M]) Where(filters ...lib.Filter[M]) Builder[M] {
 	b.query.Where = append(b.query.Where, filters...)
 	return Builder[M]{b}
 }
@@ -460,9 +460,9 @@ type SearchBuilder[M any] struct {
 	builder[M]
 }
 
-// Filter adds additional conditions to the search query.
+// Where adds additional conditions to the search query.
 // These are AND'd with the search conditions.
-func (b SearchBuilder[M]) Filter(filters ...lib.Filter[M]) SearchBuilder[M] {
+func (b SearchBuilder[M]) Where(filters ...lib.Filter[M]) SearchBuilder[M] {
 	b.query.Where = append(b.query.Where, filters...)
 	return b
 }

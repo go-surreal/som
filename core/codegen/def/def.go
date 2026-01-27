@@ -4,7 +4,7 @@ import "github.com/dave/jennifer/jen"
 
 const (
 	PkgQuery  = "query"
-	PkgFilter = "where"
+	PkgFilter = "filter"
 	PkgSort   = "by"
 	PkgFetch  = "with"
 	PkgConv   = "conv"

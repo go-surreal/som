@@ -68,12 +68,12 @@ Enum fields get type-safe filter operations:
 ```go
 // Filter by enum value
 users, err := client.UserRepo().Query().
-    Filter(where.User.Status.Equal(model.StatusActive)).
+    Where(filter.User.Status.Equal(model.StatusActive)).
     All(ctx)
 
 // Filter with In (multiple values)
 users, err := client.UserRepo().Query().
-    Filter(where.User.Status.In(
+    Where(filter.User.Status.In(
         model.StatusActive,
         model.StatusPending,
     )).
@@ -81,7 +81,7 @@ users, err := client.UserRepo().Query().
 
 // Filter with NotEqual
 users, err := client.UserRepo().Query().
-    Filter(where.User.Status.NotEqual(model.StatusInactive)).
+    Where(filter.User.Status.NotEqual(model.StatusInactive)).
     All(ctx)
 ```
 
@@ -124,12 +124,12 @@ Query with slice operations:
 ```go
 // Find users with admin role
 users, err := client.UserRepo().Query().
-    Filter(where.User.Roles.Contains(model.RoleAdmin)).
+    Where(filter.User.Roles.Contains(model.RoleAdmin)).
     All(ctx)
 
 // Find users with any of these roles
 users, err := client.UserRepo().Query().
-    Filter(where.User.Roles.ContainsAny(
+    Where(filter.User.Roles.ContainsAny(
         model.RoleAdmin,
         model.RoleEditor,
     )).
@@ -155,12 +155,12 @@ Filter optional enums:
 ```go
 // Find users with priority set
 users, err := client.UserRepo().Query().
-    Filter(where.User.Priority.IsNotNil()).
+    Where(filter.User.Priority.IsNotNil()).
     All(ctx)
 
 // Find high priority users
 users, err := client.UserRepo().Query().
-    Filter(where.User.Priority.Equal(model.PriorityHigh)).
+    Where(filter.User.Priority.Equal(model.PriorityHigh)).
     All(ctx)
 ```
 

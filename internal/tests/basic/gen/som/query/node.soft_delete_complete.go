@@ -3,8 +3,8 @@ package query
 
 import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	filter "github.com/go-surreal/som/tests/basic/gen/som/filter"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	where "github.com/go-surreal/som/tests/basic/gen/som/where"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -25,7 +25,7 @@ var softDeleteCompleteModelInfo = modelInfo[model.SoftDeleteComplete]{
 func NewSoftDeleteComplete(db Database) Builder[model.SoftDeleteComplete] {
 	q := lib.NewQuery[model.SoftDeleteComplete]("soft_delete_complete")
 	// Automatically exclude soft-deleted records
-	q.SoftDeleteFilter = where.SoftDeleteComplete.DeletedAt.Nil(true)
+	q.SoftDeleteFilter = filter.SoftDeleteComplete.DeletedAt.Nil(true)
 	return Builder[model.SoftDeleteComplete]{builder[model.SoftDeleteComplete]{
 		db:    db,
 		info:  softDeleteCompleteModelInfo,

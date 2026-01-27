@@ -86,7 +86,7 @@ The generated code is a self-contained Go module. Import it in your application:
 ```go
 import (
     "yourproject/gen/som"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/gen/som/by"
 )
 ```

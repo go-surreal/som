@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/where"
+	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/gen/som/with"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
@@ -374,7 +374,7 @@ func TestSoftDeleteFilter(t *testing.T) {
 
 	// Filter for Alice without WithDeleted - should be empty
 	results, err := client.SoftDeleteUserRepo().Query().
-		Filter(where.SoftDeleteUser.Name.Equal("Alice")).
+		Where(filter.SoftDeleteUser.Name.Equal("Alice")).
 		All(ctx)
 	assert.NilError(t, err)
 	assert.Equal(t, 0, len(results), "soft-deleted Alice should not appear in filtered query")
@@ -382,7 +382,7 @@ func TestSoftDeleteFilter(t *testing.T) {
 	// Filter for Alice with WithDeleted - should return Alice
 	resultsAll, err := client.SoftDeleteUserRepo().Query().
 		WithDeleted().
-		Filter(where.SoftDeleteUser.Name.Equal("Alice")).
+		Where(filter.SoftDeleteUser.Name.Equal("Alice")).
 		All(ctx)
 	assert.NilError(t, err)
 	assert.Equal(t, 1, len(resultsAll))
@@ -390,7 +390,7 @@ func TestSoftDeleteFilter(t *testing.T) {
 
 	// Filter for Bob without WithDeleted - should return Bob
 	resultsBob, err := client.SoftDeleteUserRepo().Query().
-		Filter(where.SoftDeleteUser.Name.Equal("Bob")).
+		Where(filter.SoftDeleteUser.Name.Equal("Bob")).
 		All(ctx)
 	assert.NilError(t, err)
 	assert.Equal(t, 1, len(resultsBob))
