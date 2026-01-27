@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"strings"
 
+	som "{{.GenerateOutPath}}"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
@@ -61,14 +62,14 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 			return nil, fmt.Errorf("failed to execute: %w", err)
 		}
 		if queryResult == nil || len(*queryResult) == 0 {
-			return nil, fmt.Errorf("empty response from create")
+			return nil, som.ErrEmptyResponse
 		}
 		if (*queryResult)[0].Error != nil {
 			return nil, fmt.Errorf("create failed: %w", (*queryResult)[0].Error)
 		}
 		resultArray := (*queryResult)[0].Result
 		if len(resultArray) == 0 {
-			return nil, fmt.Errorf("empty result array from create")
+			return nil, som.ErrEmptyResponse
 		}
 		return cbor.Marshal(resultArray[0])
 	case string:
@@ -94,7 +95,7 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 
 func (w *surrealDBWrapper) Select(ctx context.Context, id *ID) ([]byte, error) {
 	if id == nil {
-		return nil, fmt.Errorf("id cannot be nil")
+		return nil, som.ErrNilID
 	}
 
 	result, err := surrealdb.Select[any](ctx, w.db, *id)
@@ -168,7 +169,7 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 	// The last result contains the live query UUID.
 	queryIndex := len(params)
 	if result == nil || len(*result) <= queryIndex {
-		return nil, fmt.Errorf("empty response from live query")
+		return nil, som.ErrEmptyResponse
 	}
 
 	lastResult := (*result)[queryIndex]
@@ -214,7 +215,7 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 
 func (w *surrealDBWrapper) Update(ctx context.Context, id *ID, data any) ([]byte, error) {
 	if id == nil {
-		return nil, fmt.Errorf("id cannot be nil")
+		return nil, som.ErrNilID
 	}
 
 	result, err := surrealdb.Update[any](ctx, w.db, *id, data)
@@ -226,7 +227,7 @@ func (w *surrealDBWrapper) Update(ctx context.Context, id *ID, data any) ([]byte
 
 func (w *surrealDBWrapper) Delete(ctx context.Context, id *ID) ([]byte, error) {
 	if id == nil {
-		return nil, fmt.Errorf("id cannot be nil")
+		return nil, som.ErrNilID
 	}
 
 	result, err := surrealdb.Delete[any](ctx, w.db, *id)
