@@ -261,7 +261,7 @@ Best for:
 
 3. **Per-Model Isolation**: Each model type has its own cache. Caching `Group` records has no effect on `User` reads.
 
-4. **Context Carries ID, Not Data**: The context stores a cache ID and options. The actual cache data is stored in a global map, enabling cleanup from anyfilter.
+4. **Context Carries ID, Not Data**: The context stores a cache ID and options. The actual cache data is stored in a global map, enabling cleanup from anywhere.
 
 5. **Thread Safety**: The cache uses `sync.RWMutex` and is safe for concurrent reads and writes.
 
