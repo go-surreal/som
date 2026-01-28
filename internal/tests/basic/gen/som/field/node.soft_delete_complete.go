@@ -2,7 +2,7 @@
 package field
 
 import (
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	model "github.com/go-surreal/som/tests/basic/model"
 	"time"
 )
@@ -11,18 +11,18 @@ var SoftDeleteComplete = newSoftDeleteComplete[model.SoftDeleteComplete]("")
 
 func newSoftDeleteComplete[M any](key string) softDeleteComplete[M] {
 	return softDeleteComplete[M]{
-		CreatedAt: query.NewTimeField[M](keyed(key, "created_at")),
-		DeletedAt: query.NewTimePtrField[M](keyed(key, "deleted_at")),
-		Name:      query.NewField[M, string](keyed(key, "name")),
-		UpdatedAt: query.NewTimeField[M](keyed(key, "updated_at")),
+		CreatedAt: distinct.NewTimeField[M](keyed(key, "created_at")),
+		DeletedAt: distinct.NewTimePtrField[M](keyed(key, "deleted_at")),
+		Name:      distinct.NewField[M, string](keyed(key, "name")),
+		UpdatedAt: distinct.NewTimeField[M](keyed(key, "updated_at")),
 		key:       key,
 	}
 }
 
 type softDeleteComplete[M any] struct {
 	key       string
-	CreatedAt query.Field[M, time.Time]
-	UpdatedAt query.Field[M, time.Time]
-	DeletedAt query.Field[M, time.Time]
-	Name      query.Field[M, string]
+	CreatedAt distinct.Field[M, time.Time]
+	UpdatedAt distinct.Field[M, time.Time]
+	DeletedAt distinct.Field[M, time.Time]
+	Name      distinct.Field[M, string]
 }

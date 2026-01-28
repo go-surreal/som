@@ -104,11 +104,11 @@ func (f *Enum) sortInit(ctx Context) jen.Code {
 }
 
 func (f *Enum) fieldDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ))
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ))
 }
 
 func (f *Enum) fieldInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgQuery(), "NewField").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ)).
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ)).
 		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

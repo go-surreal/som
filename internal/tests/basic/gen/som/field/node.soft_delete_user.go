@@ -2,7 +2,7 @@
 package field
 
 import (
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	model "github.com/go-surreal/som/tests/basic/model"
 	"time"
 )
@@ -11,14 +11,14 @@ var SoftDeleteUser = newSoftDeleteUser[model.SoftDeleteUser]("")
 
 func newSoftDeleteUser[M any](key string) softDeleteUser[M] {
 	return softDeleteUser[M]{
-		DeletedAt: query.NewTimePtrField[M](keyed(key, "deleted_at")),
-		Name:      query.NewField[M, string](keyed(key, "name")),
+		DeletedAt: distinct.NewTimePtrField[M](keyed(key, "deleted_at")),
+		Name:      distinct.NewField[M, string](keyed(key, "name")),
 		key:       key,
 	}
 }
 
 type softDeleteUser[M any] struct {
 	key       string
-	DeletedAt query.Field[M, time.Time]
-	Name      query.Field[M, string]
+	DeletedAt distinct.Field[M, time.Time]
+	Name      distinct.Field[M, string]
 }

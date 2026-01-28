@@ -234,11 +234,11 @@ func (f *Numeric) typeGoBase() jen.Code {
 }
 
 func (f *Numeric) fieldDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, f.typeGoBase())
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, f.typeGoBase())
 }
 
 func (f *Numeric) fieldInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgQuery(), "NewField").Types(def.TypeModel, f.typeGoBase()).
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, f.typeGoBase()).
 		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

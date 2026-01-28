@@ -97,7 +97,7 @@ func (f *Time) sortInit(ctx Context) jen.Code {
 }
 
 func (f *Time) fieldDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.Qual("time", "Time"))
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual("time", "Time"))
 }
 
 func (f *Time) fieldInit(ctx Context) jen.Code {
@@ -105,7 +105,7 @@ func (f *Time) fieldInit(ctx Context) jen.Code {
 	if f.source.Pointer() {
 		factory = "NewTimePtrField"
 	}
-	return jen.Qual(ctx.pkgQuery(), factory).Types(def.TypeModel).
+	return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).
 		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

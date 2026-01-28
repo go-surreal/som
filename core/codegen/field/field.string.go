@@ -145,11 +145,11 @@ func (f *String) sortInit(ctx Context) jen.Code {
 }
 
 func (f *String) fieldDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.String())
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.String())
 }
 
 func (f *String) fieldInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgQuery(), "NewField").Types(def.TypeModel, jen.String()).
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.String()).
 		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

@@ -2,7 +2,7 @@
 package field
 
 import (
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	model "github.com/go-surreal/som/tests/basic/model"
 	"time"
 )
@@ -11,14 +11,14 @@ var SoftDeletePost = newSoftDeletePost[model.SoftDeletePost]("")
 
 func newSoftDeletePost[M any](key string) softDeletePost[M] {
 	return softDeletePost[M]{
-		DeletedAt: query.NewTimePtrField[M](keyed(key, "deleted_at")),
-		Title:     query.NewField[M, string](keyed(key, "title")),
+		DeletedAt: distinct.NewTimePtrField[M](keyed(key, "deleted_at")),
+		Title:     distinct.NewField[M, string](keyed(key, "title")),
 		key:       key,
 	}
 }
 
 type softDeletePost[M any] struct {
 	key       string
-	DeletedAt query.Field[M, time.Time]
-	Title     query.Field[M, string]
+	DeletedAt distinct.Field[M, time.Time]
+	Title     distinct.Field[M, string]
 }

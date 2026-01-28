@@ -5,93 +5,17 @@ package query
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"{{.GenerateOutPath}}/internal/types"
+	"{{.GenerateOutPath}}/internal/distinct"
 )
 
-type Field[M any, T any] struct {
-	key    string
-	decode func(unmarshal func([]byte, any) error, data []byte) ([]T, error)
-}
-
-type distinctResult[T any] struct {
-	Values []T `cbor:"values"`
-}
-
-func Distinct[M any, T any](ctx context.Context, b Builder[M], f Field[M, T]) ([]T, error) {
-	req := b.query.BuildDistinct(f.key)
+func Distinct[M any, T any](ctx context.Context, b Builder[M], f distinct.Field[M, T]) ([]T, error) {
+	req := b.query.BuildDistinct(f.Key)
 
 	raw, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not execute distinct query: %w", err)
 	}
 
-	return f.decode(b.db.Unmarshal, raw)
-}
-
-func NewField[M any, T any](key string) Field[M, T] {
-	return Field[M, T]{
-		key: key,
-		decode: func(unmarshal func([]byte, any) error, data []byte) ([]T, error) {
-			var raw []queryResult[distinctResult[T]]
-			if err := unmarshal(data, &raw); err != nil {
-				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
-			}
-			if len(raw) < 1 || len(raw[0].Result) < 1 {
-				return nil, nil
-			}
-			return raw[0].Result[0].Values, nil
-		},
-	}
-}
-
-func NewTimeField[M any](key string) Field[M, time.Time] {
-	return Field[M, time.Time]{
-		key: key,
-		decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Time, error) {
-			var raw []queryResult[distinctResult[types.DateTime]]
-			if err := unmarshal(data, &raw); err != nil {
-				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
-			}
-			if len(raw) < 1 || len(raw[0].Result) < 1 {
-				return nil, nil
-			}
-			vals := raw[0].Result[0].Values
-			result := make([]time.Time, len(vals))
-			for i, v := range vals {
-				result[i] = v.Time
-			}
-			return result, nil
-		},
-	}
-}
-
-func NewTimePtrField[M any](key string) Field[M, time.Time] {
-	return NewTimeField[M](key)
-}
-
-func NewDurationField[M any](key string) Field[M, time.Duration] {
-	return Field[M, time.Duration]{
-		key: key,
-		decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Duration, error) {
-			var raw []queryResult[distinctResult[types.Duration]]
-			if err := unmarshal(data, &raw); err != nil {
-				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
-			}
-			if len(raw) < 1 || len(raw[0].Result) < 1 {
-				return nil, nil
-			}
-			vals := raw[0].Result[0].Values
-			result := make([]time.Duration, len(vals))
-			for i, v := range vals {
-				result[i] = v.Duration
-			}
-			return result, nil
-		},
-	}
-}
-
-func NewDurationPtrField[M any](key string) Field[M, time.Duration] {
-	return NewDurationField[M](key)
+	return f.Decode(b.db.Unmarshal, raw)
 }

@@ -2,7 +2,7 @@
 package field
 
 import (
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -10,16 +10,16 @@ var FieldsLikeDBResponse = newFieldsLikeDBResponse[model.FieldsLikeDBResponse]("
 
 func newFieldsLikeDBResponse[M any](key string) fieldsLikeDbresponse[M] {
 	return fieldsLikeDbresponse[M]{
-		Detail: query.NewField[M, string](keyed(key, "detail")),
-		Status: query.NewField[M, string](keyed(key, "status")),
-		Time:   query.NewField[M, string](keyed(key, "time")),
+		Detail: distinct.NewField[M, string](keyed(key, "detail")),
+		Status: distinct.NewField[M, string](keyed(key, "status")),
+		Time:   distinct.NewField[M, string](keyed(key, "time")),
 		key:    key,
 	}
 }
 
 type fieldsLikeDbresponse[M any] struct {
 	key    string
-	Time   query.Field[M, string]
-	Status query.Field[M, string]
-	Detail query.Field[M, string]
+	Time   distinct.Field[M, string]
+	Status distinct.Field[M, string]
+	Detail distinct.Field[M, string]
 }

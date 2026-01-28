@@ -2,7 +2,7 @@
 package field
 
 import (
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	model "github.com/go-surreal/som/tests/basic/model"
 	uuid1 "github.com/gofrs/uuid"
 	uuid "github.com/google/uuid"
@@ -13,90 +13,90 @@ var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes]("")
 
 func newAllFieldTypes[M any](key string) allFieldTypes[M] {
 	return allFieldTypes[M]{
-		Bool:         query.NewField[M, bool](keyed(key, "bool")),
-		BoolPtr:      query.NewField[M, bool](keyed(key, "bool_ptr")),
-		CreatedAt:    query.NewTimeField[M](keyed(key, "created_at")),
-		Duration:     query.NewDurationField[M](keyed(key, "duration")),
-		DurationNil:  query.NewDurationPtrField[M](keyed(key, "duration_nil")),
-		DurationPtr:  query.NewDurationPtrField[M](keyed(key, "duration_ptr")),
-		EnumPtr:      query.NewField[M, model.Role](keyed(key, "enum_ptr")),
-		Float32:      query.NewField[M, float32](keyed(key, "float_32")),
-		Float64:      query.NewField[M, float64](keyed(key, "float_64")),
-		Int:          query.NewField[M, int](keyed(key, "int")),
-		Int16:        query.NewField[M, int16](keyed(key, "int_16")),
-		Int16Ptr:     query.NewField[M, int16](keyed(key, "int_16_ptr")),
-		Int32:        query.NewField[M, int32](keyed(key, "int_32")),
-		Int32Ptr:     query.NewField[M, int32](keyed(key, "int_32_ptr")),
-		Int64:        query.NewField[M, int64](keyed(key, "int_64")),
-		Int64Ptr:     query.NewField[M, int64](keyed(key, "int_64_ptr")),
-		Int8:         query.NewField[M, int8](keyed(key, "int_8")),
-		Int8Ptr:      query.NewField[M, int8](keyed(key, "int_8_ptr")),
-		IntPtr:       query.NewField[M, int](keyed(key, "int_ptr")),
-		Role:         query.NewField[M, model.Role](keyed(key, "role")),
-		Rune:         query.NewField[M, rune](keyed(key, "rune")),
-		String:       query.NewField[M, string](keyed(key, "string")),
-		StringPtr:    query.NewField[M, string](keyed(key, "string_ptr")),
-		Time:         query.NewTimeField[M](keyed(key, "time")),
-		TimeNil:      query.NewTimePtrField[M](keyed(key, "time_nil")),
-		TimePtr:      query.NewTimePtrField[M](keyed(key, "time_ptr")),
-		UUID:         query.NewUUIDGoogleField[M](keyed(key, "uuid")),
-		UUIDGofrs:    query.NewUUIDGofrsField[M](keyed(key, "uuid_gofrs")),
-		UUIDGofrsNil: query.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_nil")),
-		UUIDGofrsPtr: query.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_ptr")),
-		UUIDNil:      query.NewUUIDGooglePtrField[M](keyed(key, "uuid_nil")),
-		UUIDPtr:      query.NewUUIDGooglePtrField[M](keyed(key, "uuid_ptr")),
-		Uint16:       query.NewField[M, uint16](keyed(key, "uint_16")),
-		Uint16Ptr:    query.NewField[M, uint16](keyed(key, "uint_16_ptr")),
-		Uint32:       query.NewField[M, uint32](keyed(key, "uint_32")),
-		Uint32Ptr:    query.NewField[M, uint32](keyed(key, "uint_32_ptr")),
-		Uint8:        query.NewField[M, uint8](keyed(key, "uint_8")),
-		Uint8Ptr:     query.NewField[M, uint8](keyed(key, "uint_8_ptr")),
-		UpdatedAt:    query.NewTimeField[M](keyed(key, "updated_at")),
+		Bool:         distinct.NewField[M, bool](keyed(key, "bool")),
+		BoolPtr:      distinct.NewField[M, bool](keyed(key, "bool_ptr")),
+		CreatedAt:    distinct.NewTimeField[M](keyed(key, "created_at")),
+		Duration:     distinct.NewDurationField[M](keyed(key, "duration")),
+		DurationNil:  distinct.NewDurationPtrField[M](keyed(key, "duration_nil")),
+		DurationPtr:  distinct.NewDurationPtrField[M](keyed(key, "duration_ptr")),
+		EnumPtr:      distinct.NewField[M, model.Role](keyed(key, "enum_ptr")),
+		Float32:      distinct.NewField[M, float32](keyed(key, "float_32")),
+		Float64:      distinct.NewField[M, float64](keyed(key, "float_64")),
+		Int:          distinct.NewField[M, int](keyed(key, "int")),
+		Int16:        distinct.NewField[M, int16](keyed(key, "int_16")),
+		Int16Ptr:     distinct.NewField[M, int16](keyed(key, "int_16_ptr")),
+		Int32:        distinct.NewField[M, int32](keyed(key, "int_32")),
+		Int32Ptr:     distinct.NewField[M, int32](keyed(key, "int_32_ptr")),
+		Int64:        distinct.NewField[M, int64](keyed(key, "int_64")),
+		Int64Ptr:     distinct.NewField[M, int64](keyed(key, "int_64_ptr")),
+		Int8:         distinct.NewField[M, int8](keyed(key, "int_8")),
+		Int8Ptr:      distinct.NewField[M, int8](keyed(key, "int_8_ptr")),
+		IntPtr:       distinct.NewField[M, int](keyed(key, "int_ptr")),
+		Role:         distinct.NewField[M, model.Role](keyed(key, "role")),
+		Rune:         distinct.NewField[M, rune](keyed(key, "rune")),
+		String:       distinct.NewField[M, string](keyed(key, "string")),
+		StringPtr:    distinct.NewField[M, string](keyed(key, "string_ptr")),
+		Time:         distinct.NewTimeField[M](keyed(key, "time")),
+		TimeNil:      distinct.NewTimePtrField[M](keyed(key, "time_nil")),
+		TimePtr:      distinct.NewTimePtrField[M](keyed(key, "time_ptr")),
+		UUID:         distinct.NewUUIDGoogleField[M](keyed(key, "uuid")),
+		UUIDGofrs:    distinct.NewUUIDGofrsField[M](keyed(key, "uuid_gofrs")),
+		UUIDGofrsNil: distinct.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_nil")),
+		UUIDGofrsPtr: distinct.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_ptr")),
+		UUIDNil:      distinct.NewUUIDGooglePtrField[M](keyed(key, "uuid_nil")),
+		UUIDPtr:      distinct.NewUUIDGooglePtrField[M](keyed(key, "uuid_ptr")),
+		Uint16:       distinct.NewField[M, uint16](keyed(key, "uint_16")),
+		Uint16Ptr:    distinct.NewField[M, uint16](keyed(key, "uint_16_ptr")),
+		Uint32:       distinct.NewField[M, uint32](keyed(key, "uint_32")),
+		Uint32Ptr:    distinct.NewField[M, uint32](keyed(key, "uint_32_ptr")),
+		Uint8:        distinct.NewField[M, uint8](keyed(key, "uint_8")),
+		Uint8Ptr:     distinct.NewField[M, uint8](keyed(key, "uint_8_ptr")),
+		UpdatedAt:    distinct.NewTimeField[M](keyed(key, "updated_at")),
 		key:          key,
 	}
 }
 
 type allFieldTypes[M any] struct {
 	key          string
-	CreatedAt    query.Field[M, time.Time]
-	UpdatedAt    query.Field[M, time.Time]
-	String       query.Field[M, string]
-	StringPtr    query.Field[M, string]
-	Int          query.Field[M, int]
-	IntPtr       query.Field[M, int]
-	Int8         query.Field[M, int8]
-	Int8Ptr      query.Field[M, int8]
-	Int16        query.Field[M, int16]
-	Int16Ptr     query.Field[M, int16]
-	Int32        query.Field[M, int32]
-	Int32Ptr     query.Field[M, int32]
-	Int64        query.Field[M, int64]
-	Int64Ptr     query.Field[M, int64]
-	Uint8        query.Field[M, uint8]
-	Uint8Ptr     query.Field[M, uint8]
-	Uint16       query.Field[M, uint16]
-	Uint16Ptr    query.Field[M, uint16]
-	Uint32       query.Field[M, uint32]
-	Uint32Ptr    query.Field[M, uint32]
-	Float32      query.Field[M, float32]
-	Float64      query.Field[M, float64]
-	Rune         query.Field[M, rune]
-	Bool         query.Field[M, bool]
-	BoolPtr      query.Field[M, bool]
-	Time         query.Field[M, time.Time]
-	TimePtr      query.Field[M, time.Time]
-	TimeNil      query.Field[M, time.Time]
-	Duration     query.Field[M, time.Duration]
-	DurationPtr  query.Field[M, time.Duration]
-	DurationNil  query.Field[M, time.Duration]
-	UUID         query.Field[M, uuid.UUID]
-	UUIDPtr      query.Field[M, uuid.UUID]
-	UUIDNil      query.Field[M, uuid.UUID]
-	UUIDGofrs    query.Field[M, uuid1.UUID]
-	UUIDGofrsPtr query.Field[M, uuid1.UUID]
-	UUIDGofrsNil query.Field[M, uuid1.UUID]
-	Role         query.Field[M, model.Role]
-	EnumPtr      query.Field[M, model.Role]
+	CreatedAt    distinct.Field[M, time.Time]
+	UpdatedAt    distinct.Field[M, time.Time]
+	String       distinct.Field[M, string]
+	StringPtr    distinct.Field[M, string]
+	Int          distinct.Field[M, int]
+	IntPtr       distinct.Field[M, int]
+	Int8         distinct.Field[M, int8]
+	Int8Ptr      distinct.Field[M, int8]
+	Int16        distinct.Field[M, int16]
+	Int16Ptr     distinct.Field[M, int16]
+	Int32        distinct.Field[M, int32]
+	Int32Ptr     distinct.Field[M, int32]
+	Int64        distinct.Field[M, int64]
+	Int64Ptr     distinct.Field[M, int64]
+	Uint8        distinct.Field[M, uint8]
+	Uint8Ptr     distinct.Field[M, uint8]
+	Uint16       distinct.Field[M, uint16]
+	Uint16Ptr    distinct.Field[M, uint16]
+	Uint32       distinct.Field[M, uint32]
+	Uint32Ptr    distinct.Field[M, uint32]
+	Float32      distinct.Field[M, float32]
+	Float64      distinct.Field[M, float64]
+	Rune         distinct.Field[M, rune]
+	Bool         distinct.Field[M, bool]
+	BoolPtr      distinct.Field[M, bool]
+	Time         distinct.Field[M, time.Time]
+	TimePtr      distinct.Field[M, time.Time]
+	TimeNil      distinct.Field[M, time.Time]
+	Duration     distinct.Field[M, time.Duration]
+	DurationPtr  distinct.Field[M, time.Duration]
+	DurationNil  distinct.Field[M, time.Duration]
+	UUID         distinct.Field[M, uuid.UUID]
+	UUIDPtr      distinct.Field[M, uuid.UUID]
+	UUIDNil      distinct.Field[M, uuid.UUID]
+	UUIDGofrs    distinct.Field[M, uuid1.UUID]
+	UUIDGofrsPtr distinct.Field[M, uuid1.UUID]
+	UUIDGofrsNil distinct.Field[M, uuid1.UUID]
+	Role         distinct.Field[M, model.Role]
+	EnumPtr      distinct.Field[M, model.Role]
 }
 
 func (n allFieldTypes[M]) Login() login[M] {

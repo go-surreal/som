@@ -82,11 +82,11 @@ func (f *Bool) sortInit(ctx Context) jen.Code {
 }
 
 func (f *Bool) fieldDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.Bool())
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Bool())
 }
 
 func (f *Bool) fieldInit(ctx Context) jen.Code {
-	return jen.Qual(ctx.pkgQuery(), "NewField").Types(def.TypeModel, jen.Bool()).
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Bool()).
 		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

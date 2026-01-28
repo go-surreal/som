@@ -2,25 +2,25 @@
 package field
 
 import (
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	uuid "github.com/google/uuid"
 	"time"
 )
 
 func newSomeStruct[M any](key string) someStruct[M] {
 	return someStruct[M]{
-		IntPtr:    query.NewField[M, int](keyed(key, "int_ptr")),
-		StringPtr: query.NewField[M, string](keyed(key, "string_ptr")),
-		TimePtr:   query.NewTimePtrField[M](keyed(key, "time_ptr")),
-		UuidPtr:   query.NewUUIDGooglePtrField[M](keyed(key, "uuid_ptr")),
+		IntPtr:    distinct.NewField[M, int](keyed(key, "int_ptr")),
+		StringPtr: distinct.NewField[M, string](keyed(key, "string_ptr")),
+		TimePtr:   distinct.NewTimePtrField[M](keyed(key, "time_ptr")),
+		UuidPtr:   distinct.NewUUIDGooglePtrField[M](keyed(key, "uuid_ptr")),
 		key:       key,
 	}
 }
 
 type someStruct[M any] struct {
 	key       string
-	StringPtr query.Field[M, string]
-	IntPtr    query.Field[M, int]
-	TimePtr   query.Field[M, time.Time]
-	UuidPtr   query.Field[M, uuid.UUID]
+	StringPtr distinct.Field[M, string]
+	IntPtr    distinct.Field[M, int]
+	TimePtr   distinct.Field[M, time.Time]
+	UuidPtr   distinct.Field[M, uuid.UUID]
 }

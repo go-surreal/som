@@ -106,7 +106,7 @@ func (f *UUID) sortInit(ctx Context) jen.Code {
 }
 
 func (f *UUID) fieldDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.Qual(f.uuidPkg(), "UUID"))
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual(f.uuidPkg(), "UUID"))
 }
 
 func (f *UUID) fieldInit(ctx Context) jen.Code {
@@ -114,7 +114,7 @@ func (f *UUID) fieldInit(ctx Context) jen.Code {
 	if f.source.Pointer() {
 		factory = "New" + f.uuidTypeName() + "PtrField"
 	}
-	return jen.Qual(ctx.pkgQuery(), factory).Types(def.TypeModel).
+	return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).
 		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

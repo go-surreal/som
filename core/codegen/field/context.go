@@ -28,6 +28,10 @@ func (c Context) pkgQuery() string {
 	return path.Join(c.TargetPkg, def.PkgQuery)
 }
 
+func (c Context) pkgDistinct() string {
+	return path.Join(c.TargetPkg, def.PkgDistinct)
+}
+
 func (c Context) pkgCBOR() string {
 	return path.Join(c.TargetPkg, def.PkgCBORHelpers)
 }

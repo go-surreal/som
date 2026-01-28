@@ -2,7 +2,7 @@
 package field
 
 import (
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	model "github.com/go-surreal/som/tests/basic/model"
 	"time"
 )
@@ -11,16 +11,16 @@ var Group = newGroup[model.Group]("")
 
 func newGroup[M any](key string) group[M] {
 	return group[M]{
-		CreatedAt: query.NewTimeField[M](keyed(key, "created_at")),
-		Name:      query.NewField[M, string](keyed(key, "name")),
-		UpdatedAt: query.NewTimeField[M](keyed(key, "updated_at")),
+		CreatedAt: distinct.NewTimeField[M](keyed(key, "created_at")),
+		Name:      distinct.NewField[M, string](keyed(key, "name")),
+		UpdatedAt: distinct.NewTimeField[M](keyed(key, "updated_at")),
 		key:       key,
 	}
 }
 
 type group[M any] struct {
 	key       string
-	CreatedAt query.Field[M, time.Time]
-	UpdatedAt query.Field[M, time.Time]
-	Name      query.Field[M, string]
+	CreatedAt distinct.Field[M, time.Time]
+	UpdatedAt distinct.Field[M, time.Time]
+	Name      distinct.Field[M, string]
 }

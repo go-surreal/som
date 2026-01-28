@@ -2,7 +2,7 @@
 package field
 
 import (
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
+	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -10,14 +10,14 @@ var URLExample = newURLExample[model.URLExample]("")
 
 func newURLExample[M any](key string) urlexample[M] {
 	return urlexample[M]{
-		Account:  query.NewField[M, string](keyed(key, "account")),
-		Provider: query.NewField[M, string](keyed(key, "provider")),
+		Account:  distinct.NewField[M, string](keyed(key, "account")),
+		Provider: distinct.NewField[M, string](keyed(key, "provider")),
 		key:      key,
 	}
 }
 
 type urlexample[M any] struct {
 	key      string
-	Provider query.Field[M, string]
-	Account  query.Field[M, string]
+	Provider distinct.Field[M, string]
+	Account  distinct.Field[M, string]
 }

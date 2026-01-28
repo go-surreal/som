@@ -17,6 +17,7 @@ const (
 	PkgLib         = "internal/lib"
 	PkgTypes       = "internal/types"
 	PkgCBORHelpers = "internal/cbor"
+	PkgDistinct    = "internal/distinct"
 
 	IndexPrefix = "__som__"
 )
