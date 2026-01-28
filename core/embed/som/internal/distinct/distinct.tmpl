@@ -1,0 +1,118 @@
+//go:build embed
+
+package distinct
+
+import (
+	"fmt"
+	"net/url"
+	"time"
+
+	"{{.GenerateOutPath}}/internal"
+	"{{.GenerateOutPath}}/internal/types"
+)
+
+type Field[M any, T any] struct {
+	Key    string
+	Decode func(unmarshal func([]byte, any) error, data []byte) ([]T, error)
+}
+
+type DistinctResult[T any] struct {
+	Values []T `cbor:"values"`
+}
+
+func NewField[M any, T any](key string) Field[M, T] {
+	return Field[M, T]{
+		Key: key,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]T, error) {
+			var raw []internal.QueryResult[DistinctResult[T]]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+			}
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
+				return nil, nil
+			}
+			return raw[0].Result[0].Values, nil
+		},
+	}
+}
+
+func NewTimeField[M any](key string) Field[M, time.Time] {
+	return Field[M, time.Time]{
+		Key: key,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Time, error) {
+			var raw []internal.QueryResult[DistinctResult[types.DateTime]]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+			}
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
+				return nil, nil
+			}
+			vals := raw[0].Result[0].Values
+			result := make([]time.Time, len(vals))
+			for i, v := range vals {
+				result[i] = v.Time
+			}
+			return result, nil
+		},
+	}
+}
+
+func NewTimePtrField[M any](key string) Field[M, time.Time] {
+	return NewTimeField[M](key)
+}
+
+func NewDurationField[M any](key string) Field[M, time.Duration] {
+	return Field[M, time.Duration]{
+		Key: key,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Duration, error) {
+			var raw []internal.QueryResult[DistinctResult[types.Duration]]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+			}
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
+				return nil, nil
+			}
+			vals := raw[0].Result[0].Values
+			result := make([]time.Duration, len(vals))
+			for i, v := range vals {
+				result[i] = v.Duration
+			}
+			return result, nil
+		},
+	}
+}
+
+func NewDurationPtrField[M any](key string) Field[M, time.Duration] {
+	return NewDurationField[M](key)
+}
+
+func NewURLField[M any](key string) Field[M, url.URL] {
+	return Field[M, url.URL]{
+		Key: key,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]url.URL, error) {
+			var raw []internal.QueryResult[DistinctResult[string]]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+			}
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
+				return nil, nil
+			}
+			vals := raw[0].Result[0].Values
+			result := make([]url.URL, 0, len(vals))
+			for _, v := range vals {
+				u, err := url.Parse(v)
+				if err != nil {
+					return nil, fmt.Errorf("could not parse URL %q: %w", v, err)
+				}
+				if u != nil {
+					result = append(result, *u)
+				}
+			}
+			return result, nil
+		},
+	}
+}
+
+func NewURLPtrField[M any](key string) Field[M, url.URL] {
+	return NewURLField[M](key)
+}

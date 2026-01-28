@@ -5,8 +5,11 @@ package query
 import (
 	"context"
 	"fmt"
-	"github.com/fxamacker/cbor/v2"
 	"strings"
+
+	"github.com/fxamacker/cbor/v2"
+
+	"github.com/go-surreal/som/tests/basic/gen/som/internal"
 )
 
 type Database interface {
@@ -49,12 +52,6 @@ type idNode struct {
 
 type countResult struct {
 	Count int
-}
-
-type queryResult[M any] struct {
-	Result []M    `json:"result"`
-	Status string `json:"status"`
-	Time   string `json:"time"`
 }
 
 // searchOffset represents a position offset for a matched search term.
@@ -172,7 +169,7 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 //
 
 func unmarshalAll[M, C any](unmarshal func([]byte, any) error, data []byte, convert func(*C) *M) ([]*M, error) {
-	var rawNodes []queryResult[*C]
+	var rawNodes []internal.QueryResult[*C]
 	if err := unmarshal(data, &rawNodes); err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}

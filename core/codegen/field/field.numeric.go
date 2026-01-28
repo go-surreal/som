@@ -138,6 +138,9 @@ func (f *Numeric) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 	}
@@ -199,6 +202,44 @@ func (f *Numeric) sortDefine(ctx Context) jen.Code {
 func (f *Numeric) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+}
+
+func (f *Numeric) typeGoBase() jen.Code {
+	switch f.source.Type {
+	case parser.NumberInt:
+		return jen.Int()
+	case parser.NumberInt8:
+		return jen.Int8()
+	case parser.NumberInt16:
+		return jen.Int16()
+	case parser.NumberInt32:
+		return jen.Int32()
+	case parser.NumberInt64:
+		return jen.Int64()
+	case parser.NumberUint8:
+		return jen.Uint8()
+	case parser.NumberUint16:
+		return jen.Uint16()
+	case parser.NumberUint32:
+		return jen.Uint32()
+	case parser.NumberFloat32:
+		return jen.Float32()
+	case parser.NumberFloat64:
+		return jen.Float64()
+	case parser.NumberRune:
+		return jen.Rune()
+	default:
+		panic(fmt.Sprintf("unmapped numeric type: %d", f.source.Type))
+	}
+}
+
+func (f *Numeric) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, f.typeGoBase())
+}
+
+func (f *Numeric) fieldInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, f.typeGoBase()).
+		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Numeric) cborMarshal(_ Context) jen.Code {

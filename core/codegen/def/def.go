@@ -9,6 +9,7 @@ const (
 	PkgFetch  = "with"
 	PkgConv   = "conv"
 	PkgRelate = "relate"
+	PkgField  = "field"
 	PkgRepo    = "repo"
 	PkgSomWire = "somwire"
 
@@ -16,6 +17,7 @@ const (
 	PkgLib         = "internal/lib"
 	PkgTypes       = "internal/types"
 	PkgCBORHelpers = "internal/cbor"
+	PkgDistinct    = "internal/distinct"
 
 	IndexPrefix = "__som__"
 )

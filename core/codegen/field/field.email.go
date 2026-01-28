@@ -56,9 +56,21 @@ func (f *Email) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 	}
+}
+
+func (f *Email) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email"))
+}
+
+func (f *Email) fieldInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email")).
+		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Email) filterDefine(ctx Context) jen.Code {

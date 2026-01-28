@@ -11,6 +11,7 @@ import (
 	"time"
 
 	som "github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	"github.com/go-surreal/som/tests/basic/gen/som/with"
 )
@@ -138,7 +139,7 @@ func (b builder[M]) Count(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	var rawCount []queryResult[countResult]
+	var rawCount []internal.QueryResult[countResult]
 	err = b.db.Unmarshal(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
@@ -192,7 +193,7 @@ func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	var rawNodes []queryResult[idNode]
+	var rawNodes []internal.QueryResult[idNode]
 	err = b.db.Unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
@@ -600,7 +601,7 @@ func (b SearchBuilder[M]) Debug(prefix ...string) SearchBuilder[M] {
 var Score = lib.Score
 
 func unmarshalSearchAll[M, C any](unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
-	var rawNodes []queryResult[searchRawResult[*C]]
+	var rawNodes []internal.QueryResult[searchRawResult[*C]]
 	if err := unmarshal(data, &rawNodes); err != nil {
 		return nil, fmt.Errorf("could not unmarshal search records: %w", err)
 	}

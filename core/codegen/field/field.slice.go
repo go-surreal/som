@@ -76,7 +76,10 @@ func (f *Slice) CodeGen() *CodeGen {
 
 		sortDefine: nil,
 		sortInit:   nil,
-		sortFunc:   nil, // sorting by slices has no real use case
+		sortFunc:   nil,
+
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
@@ -467,6 +470,80 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 			return nil
 		}
 
+	default:
+		return nil
+	}
+}
+
+func (f *Slice) fieldDefine(ctx Context) jen.Code {
+	if _, ok := f.element.(*Byte); ok {
+		return nil
+	}
+	elemType := f.distinctElemType(ctx)
+	if elemType == nil {
+		return nil
+	}
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, elemType)
+}
+
+func (f *Slice) fieldInit(ctx Context) jen.Code {
+	if _, ok := f.element.(*Byte); ok {
+		return nil
+	}
+	factoryCode := f.distinctElemInit(ctx)
+	if factoryCode == nil {
+		return nil
+	}
+	return factoryCode
+}
+
+func (f *Slice) distinctElemType(ctx Context) jen.Code {
+	switch elem := f.element.(type) {
+	case *String:
+		return jen.String()
+	case *Bool:
+		return jen.Bool()
+	case *Numeric:
+		return elem.typeGoBase()
+	case *Enum:
+		return jen.Qual(ctx.SourcePkg, elem.model.NameGo())
+	case *Time:
+		return jen.Qual("time", "Time")
+	case *Duration:
+		return jen.Qual("time", "Duration")
+	case *UUID:
+		return jen.Qual(elem.uuidPkg(), "UUID")
+	case *URL:
+		return jen.Qual(def.PkgURL, "URL")
+	case *Email:
+		return jen.Qual(f.TargetPkg, "Email")
+	default:
+		return nil
+	}
+}
+
+func (f *Slice) distinctElemInit(ctx Context) jen.Code {
+	key := jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase()))
+	switch elem := f.element.(type) {
+	case *String:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.String()).Call(key)
+	case *Bool:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Bool()).Call(key)
+	case *Numeric:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, elem.typeGoBase()).Call(key)
+	case *Enum:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, elem.model.NameGo())).Call(key)
+	case *Time:
+		return jen.Qual(ctx.pkgDistinct(), "NewTimeField").Types(def.TypeModel).Call(key)
+	case *Duration:
+		return jen.Qual(ctx.pkgDistinct(), "NewDurationField").Types(def.TypeModel).Call(key)
+	case *UUID:
+		factory := "New" + elem.uuidTypeName() + "Field"
+		return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).Call(key)
+	case *URL:
+		return jen.Qual(ctx.pkgDistinct(), "NewURLField").Types(def.TypeModel).Call(key)
+	case *Email:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email")).Call(key)
 	default:
 		return nil
 	}
