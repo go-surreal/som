@@ -33,9 +33,5 @@ func NewUUIDGofrsField[M any](key string) Field[M, uuid.UUID] {
 }
 
 func NewUUIDGofrsPtrField[M any](key string) Field[M, uuid.UUID] {
-	return Field[M, uuid.UUID]{
-		Key:         key,
-		ExcludeNone: true,
-		Decode:      NewUUIDGofrsField[M](key).Decode,
-	}
+	return NewUUIDGofrsField[M](key)
 }

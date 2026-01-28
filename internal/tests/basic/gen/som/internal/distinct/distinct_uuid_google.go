@@ -33,9 +33,5 @@ func NewUUIDGoogleField[M any](key string) Field[M, uuid.UUID] {
 }
 
 func NewUUIDGooglePtrField[M any](key string) Field[M, uuid.UUID] {
-	return Field[M, uuid.UUID]{
-		Key:         key,
-		ExcludeNone: true,
-		Decode:      NewUUIDGoogleField[M](key).Decode,
-	}
+	return NewUUIDGoogleField[M](key)
 }

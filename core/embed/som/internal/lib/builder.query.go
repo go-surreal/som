@@ -35,11 +35,11 @@ func (c *context) asVar(val any) string {
 
 type Query[T any] struct {
 	context
-	node    string
-	live    bool
-	fields  []string
-	groupBy     string
-	groupAll    bool
+	node       string
+	live       bool
+	fields     []string
+	groupBy    string
+	groupAll   bool
 	Where      []Filter[T]
 	Sort       []*SortBuilder
 	SortRandom bool
@@ -116,15 +116,13 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 	}
 }
 
-func (q Query[T]) BuildDistinct(field string, excludeNone bool) *Result {
+func (q Query[T]) BuildDistinct(field string) *Result {
 	q.fields = []string{"array::group(" + field + ") AS values"}
 	q.groupAll = true
 
-	if excludeNone {
-		q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
-			return field + " != NONE"
-		}))
-	}
+	q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
+		return "(" + field + " != NONE AND " + field + " != NULL)"
+	}))
 
 	return &Result{
 		Statement: q.render(),
