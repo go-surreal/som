@@ -10,89 +10,92 @@ import (
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 )
 
-// Field is a descriptor for a model field, carrying the database field name
-// and a decode function for unmarshaling distinct values.
-// M is the model type, T is the Go type of the field value.
 type Field[M any, T any] struct {
-	Name   string
-	Decode func(unmarshal func([]byte, any) error, data []byte) ([]T, error)
+	key    string
+	decode func(unmarshal func([]byte, any) error, data []byte) ([]T, error)
 }
 
-// Distinct executes a query that returns the distinct values of a specific field.
-// The model type M and value type T are inferred from the builder and field arguments.
-// If a field from the wrong model is passed, the code will not compile.
-func Distinct[M any, T any](ctx context.Context, b Builder[M], f Field[M, T]) ([]T, error) {
-	result := b.query.BuildDistinct(f.Name)
+func (f Field[M, T]) Key() string {
+	return f.key
+}
 
-	raw, err := b.db.Query(ctx, result.Statement, result.Variables)
+type distinctResult[T any] struct {
+	Values []T `cbor:"values"`
+}
+
+func Distinct[M any, T any](ctx context.Context, b Builder[M], f Field[M, T]) ([]T, error) {
+	req := b.query.BuildDistinct(f.key)
+
+	raw, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not execute distinct query: %w", err)
 	}
 
-	return f.Decode(b.db.Unmarshal, raw)
+	return f.decode(b.db.Unmarshal, raw)
 }
 
-// NewField creates a field descriptor for simple types (string, int, float, bool, enum).
-// The decode function directly unmarshals the CBOR response into the target type.
-func NewField[M, T any](name string) Field[M, T] {
+func NewField[M any, T any](key string) Field[M, T] {
 	return Field[M, T]{
-		Name: name,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]T, error) {
-			var raw []queryResult[T]
+		key: key,
+		decode: func(unmarshal func([]byte, any) error, data []byte) ([]T, error) {
+			var raw []queryResult[distinctResult[T]]
 			if err := unmarshal(data, &raw); err != nil {
 				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
-			if len(raw) < 1 {
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
 				return nil, nil
 			}
-			return raw[0].Result, nil
+			return raw[0].Result[0].Values, nil
 		},
 	}
 }
 
-// NewTimeField creates a field descriptor for time.Time fields.
-// It handles the conversion from the internal DateTime CBOR type to time.Time.
-func NewTimeField[M any](name string) Field[M, time.Time] {
+func NewTimeField[M any](key string) Field[M, time.Time] {
 	return Field[M, time.Time]{
-		Name: name,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Time, error) {
-			var raw []queryResult[types.DateTime]
+		key: key,
+		decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Time, error) {
+			var raw []queryResult[distinctResult[types.DateTime]]
 			if err := unmarshal(data, &raw); err != nil {
-				return nil, fmt.Errorf("could not unmarshal distinct time values: %w", err)
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
-			if len(raw) < 1 {
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
 				return nil, nil
 			}
-			result := make([]time.Time, len(raw[0].Result))
-			for i, dt := range raw[0].Result {
-				result[i] = dt.Time
+			vals := raw[0].Result[0].Values
+			result := make([]time.Time, len(vals))
+			for i, v := range vals {
+				result[i] = v.Time
 			}
 			return result, nil
 		},
 	}
 }
 
-// NewTimePtrField creates a field descriptor for optional time.Time fields (*time.Time).
-// It handles the conversion from the internal DateTime CBOR type to *time.Time.
-func NewTimePtrField[M any](name string) Field[M, *time.Time] {
-	return Field[M, *time.Time]{
-		Name: name,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]*time.Time, error) {
-			var raw []queryResult[*types.DateTime]
+func NewTimePtrField[M any](key string) Field[M, time.Time] {
+	return NewTimeField[M](key)
+}
+
+func NewDurationField[M any](key string) Field[M, time.Duration] {
+	return Field[M, time.Duration]{
+		key: key,
+		decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Duration, error) {
+			var raw []queryResult[distinctResult[types.Duration]]
 			if err := unmarshal(data, &raw); err != nil {
-				return nil, fmt.Errorf("could not unmarshal distinct time values: %w", err)
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
-			if len(raw) < 1 {
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
 				return nil, nil
 			}
-			result := make([]*time.Time, len(raw[0].Result))
-			for i, dt := range raw[0].Result {
-				if dt != nil {
-					t := dt.Time
-					result[i] = &t
-				}
+			vals := raw[0].Result[0].Values
+			result := make([]time.Duration, len(vals))
+			for i, v := range vals {
+				result[i] = v.Duration
 			}
 			return result, nil
 		},
 	}
+}
+
+func NewDurationPtrField[M any](key string) Field[M, time.Duration] {
+	return NewDurationField[M](key)
 }

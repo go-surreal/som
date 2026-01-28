@@ -39,11 +39,14 @@ func (f *Bool) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
-		filterFunc:   nil, // Bool does not need a filter function.
+		filterFunc:   nil,
 
 		sortDefine: f.sortDefine,
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
+
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
@@ -76,6 +79,15 @@ func (f *Bool) sortDefine(ctx Context) jen.Code {
 func (f *Bool) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+}
+
+func (f *Bool) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.Bool())
+}
+
+func (f *Bool) fieldInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgQuery(), "NewField").Types(def.TypeModel, jen.Bool()).
+		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Bool) cborMarshal(_ Context) jen.Code {

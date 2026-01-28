@@ -24,6 +24,10 @@ func (c Context) pkgTypes() string {
 	return path.Join(c.TargetPkg, def.PkgTypes)
 }
 
+func (c Context) pkgQuery() string {
+	return path.Join(c.TargetPkg, def.PkgQuery)
+}
+
 func (c Context) pkgCBOR() string {
 	return path.Join(c.TargetPkg, def.PkgCBORHelpers)
 }

@@ -6,10 +6,18 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-var URLExample = struct {
-	Provider query.Field[model.URLExample, string]
-	Account  query.Field[model.URLExample, string]
-}{
-	Account:  query.NewField[model.URLExample, string]("account"),
-	Provider: query.NewField[model.URLExample, string]("provider"),
+var URLExample = newURLExample[model.URLExample]("")
+
+func newURLExample[M any](key string) urlexample[M] {
+	return urlexample[M]{
+		Account:  query.NewField[M, string](keyed(key, "account")),
+		Provider: query.NewField[M, string](keyed(key, "provider")),
+		key:      key,
+	}
+}
+
+type urlexample[M any] struct {
+	key      string
+	Provider query.Field[M, string]
+	Account  query.Field[M, string]
 }

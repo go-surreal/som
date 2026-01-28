@@ -7,10 +7,18 @@ import (
 	"time"
 )
 
-var SoftDeleteUser = struct {
-	DeletedAt query.Field[model.SoftDeleteUser, *time.Time]
-	Name      query.Field[model.SoftDeleteUser, string]
-}{
-	DeletedAt: query.NewTimePtrField[model.SoftDeleteUser]("deleted_at"),
-	Name:      query.NewField[model.SoftDeleteUser, string]("name"),
+var SoftDeleteUser = newSoftDeleteUser[model.SoftDeleteUser]("")
+
+func newSoftDeleteUser[M any](key string) softDeleteUser[M] {
+	return softDeleteUser[M]{
+		DeletedAt: query.NewTimePtrField[M](keyed(key, "deleted_at")),
+		Name:      query.NewField[M, string](keyed(key, "name")),
+		key:       key,
+	}
+}
+
+type softDeleteUser[M any] struct {
+	key       string
+	DeletedAt query.Field[M, time.Time]
+	Name      query.Field[M, string]
 }

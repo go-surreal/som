@@ -67,6 +67,9 @@ func (f *Enum) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 	}
@@ -98,6 +101,15 @@ func (f *Enum) sortDefine(ctx Context) jen.Code {
 func (f *Enum) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+}
+
+func (f *Enum) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ))
+}
+
+func (f *Enum) fieldInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgQuery(), "NewField").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, f.source.Typ)).
+		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Enum) cborMarshal(_ Context) jen.Code {

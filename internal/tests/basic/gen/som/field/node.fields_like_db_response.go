@@ -6,12 +6,20 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
-var FieldsLikeDBResponse = struct {
-	Time   query.Field[model.FieldsLikeDBResponse, string]
-	Status query.Field[model.FieldsLikeDBResponse, string]
-	Detail query.Field[model.FieldsLikeDBResponse, string]
-}{
-	Detail: query.NewField[model.FieldsLikeDBResponse, string]("detail"),
-	Status: query.NewField[model.FieldsLikeDBResponse, string]("status"),
-	Time:   query.NewField[model.FieldsLikeDBResponse, string]("time"),
+var FieldsLikeDBResponse = newFieldsLikeDBResponse[model.FieldsLikeDBResponse]("")
+
+func newFieldsLikeDBResponse[M any](key string) fieldsLikeDbresponse[M] {
+	return fieldsLikeDbresponse[M]{
+		Detail: query.NewField[M, string](keyed(key, "detail")),
+		Status: query.NewField[M, string](keyed(key, "status")),
+		Time:   query.NewField[M, string](keyed(key, "time")),
+		key:    key,
+	}
+}
+
+type fieldsLikeDbresponse[M any] struct {
+	key    string
+	Time   query.Field[M, string]
+	Status query.Field[M, string]
+	Detail query.Field[M, string]
 }

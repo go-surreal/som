@@ -7,10 +7,18 @@ import (
 	"time"
 )
 
-var SoftDeletePost = struct {
-	DeletedAt query.Field[model.SoftDeletePost, *time.Time]
-	Title     query.Field[model.SoftDeletePost, string]
-}{
-	DeletedAt: query.NewTimePtrField[model.SoftDeletePost]("deleted_at"),
-	Title:     query.NewField[model.SoftDeletePost, string]("title"),
+var SoftDeletePost = newSoftDeletePost[model.SoftDeletePost]("")
+
+func newSoftDeletePost[M any](key string) softDeletePost[M] {
+	return softDeletePost[M]{
+		DeletedAt: query.NewTimePtrField[M](keyed(key, "deleted_at")),
+		Title:     query.NewField[M, string](keyed(key, "title")),
+		key:       key,
+	}
+}
+
+type softDeletePost[M any] struct {
+	key       string
+	DeletedAt query.Field[M, time.Time]
+	Title     query.Field[M, string]
 }

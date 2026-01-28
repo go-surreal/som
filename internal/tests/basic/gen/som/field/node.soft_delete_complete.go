@@ -7,14 +7,22 @@ import (
 	"time"
 )
 
-var SoftDeleteComplete = struct {
-	CreatedAt query.Field[model.SoftDeleteComplete, time.Time]
-	UpdatedAt query.Field[model.SoftDeleteComplete, time.Time]
-	DeletedAt query.Field[model.SoftDeleteComplete, *time.Time]
-	Name      query.Field[model.SoftDeleteComplete, string]
-}{
-	CreatedAt: query.NewTimeField[model.SoftDeleteComplete]("created_at"),
-	DeletedAt: query.NewTimePtrField[model.SoftDeleteComplete]("deleted_at"),
-	Name:      query.NewField[model.SoftDeleteComplete, string]("name"),
-	UpdatedAt: query.NewTimeField[model.SoftDeleteComplete]("updated_at"),
+var SoftDeleteComplete = newSoftDeleteComplete[model.SoftDeleteComplete]("")
+
+func newSoftDeleteComplete[M any](key string) softDeleteComplete[M] {
+	return softDeleteComplete[M]{
+		CreatedAt: query.NewTimeField[M](keyed(key, "created_at")),
+		DeletedAt: query.NewTimePtrField[M](keyed(key, "deleted_at")),
+		Name:      query.NewField[M, string](keyed(key, "name")),
+		UpdatedAt: query.NewTimeField[M](keyed(key, "updated_at")),
+		key:       key,
+	}
+}
+
+type softDeleteComplete[M any] struct {
+	key       string
+	CreatedAt query.Field[M, time.Time]
+	UpdatedAt query.Field[M, time.Time]
+	DeletedAt query.Field[M, time.Time]
+	Name      query.Field[M, string]
 }

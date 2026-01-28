@@ -46,6 +46,9 @@ func (f *String) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 	}
@@ -139,6 +142,15 @@ func (f *String) sortDefine(ctx Context) jen.Code {
 func (f *String) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewStringSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+}
+
+func (f *String) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.String())
+}
+
+func (f *String) fieldInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgQuery(), "NewField").Types(def.TypeModel, jen.String()).
+		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *String) cborMarshal(_ Context) jen.Code {

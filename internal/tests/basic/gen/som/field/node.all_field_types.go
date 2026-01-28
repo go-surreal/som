@@ -9,78 +9,100 @@ import (
 	"time"
 )
 
-var AllFieldTypes = struct {
-	CreatedAt    query.Field[model.AllFieldTypes, time.Time]
-	UpdatedAt    query.Field[model.AllFieldTypes, time.Time]
-	String       query.Field[model.AllFieldTypes, string]
-	StringPtr    query.Field[model.AllFieldTypes, *string]
-	Int          query.Field[model.AllFieldTypes, int]
-	IntPtr       query.Field[model.AllFieldTypes, *int]
-	Int8         query.Field[model.AllFieldTypes, int8]
-	Int8Ptr      query.Field[model.AllFieldTypes, *int8]
-	Int16        query.Field[model.AllFieldTypes, int16]
-	Int16Ptr     query.Field[model.AllFieldTypes, *int16]
-	Int32        query.Field[model.AllFieldTypes, int32]
-	Int32Ptr     query.Field[model.AllFieldTypes, *int32]
-	Int64        query.Field[model.AllFieldTypes, int64]
-	Int64Ptr     query.Field[model.AllFieldTypes, *int64]
-	Uint8        query.Field[model.AllFieldTypes, uint8]
-	Uint8Ptr     query.Field[model.AllFieldTypes, *uint8]
-	Uint16       query.Field[model.AllFieldTypes, uint16]
-	Uint16Ptr    query.Field[model.AllFieldTypes, *uint16]
-	Uint32       query.Field[model.AllFieldTypes, uint32]
-	Uint32Ptr    query.Field[model.AllFieldTypes, *uint32]
-	Float32      query.Field[model.AllFieldTypes, float32]
-	Float64      query.Field[model.AllFieldTypes, float64]
-	Rune         query.Field[model.AllFieldTypes, rune]
-	Bool         query.Field[model.AllFieldTypes, bool]
-	BoolPtr      query.Field[model.AllFieldTypes, *bool]
-	Time         query.Field[model.AllFieldTypes, time.Time]
-	TimePtr      query.Field[model.AllFieldTypes, *time.Time]
-	TimeNil      query.Field[model.AllFieldTypes, *time.Time]
-	UUID         query.Field[model.AllFieldTypes, uuid.UUID]
-	UUIDPtr      query.Field[model.AllFieldTypes, *uuid.UUID]
-	UUIDNil      query.Field[model.AllFieldTypes, *uuid.UUID]
-	UUIDGofrs    query.Field[model.AllFieldTypes, uuid1.UUID]
-	UUIDGofrsPtr query.Field[model.AllFieldTypes, *uuid1.UUID]
-	UUIDGofrsNil query.Field[model.AllFieldTypes, *uuid1.UUID]
-	Role         query.Field[model.AllFieldTypes, model.Role]
-	EnumPtr      query.Field[model.AllFieldTypes, *model.Role]
-}{
-	Bool:         query.NewField[model.AllFieldTypes, bool]("bool"),
-	BoolPtr:      query.NewField[model.AllFieldTypes, *bool]("bool_ptr"),
-	CreatedAt:    query.NewTimeField[model.AllFieldTypes]("created_at"),
-	EnumPtr:      query.NewField[model.AllFieldTypes, *model.Role]("enum_ptr"),
-	Float32:      query.NewField[model.AllFieldTypes, float32]("float_32"),
-	Float64:      query.NewField[model.AllFieldTypes, float64]("float_64"),
-	Int:          query.NewField[model.AllFieldTypes, int]("int"),
-	Int16:        query.NewField[model.AllFieldTypes, int16]("int_16"),
-	Int16Ptr:     query.NewField[model.AllFieldTypes, *int16]("int_16_ptr"),
-	Int32:        query.NewField[model.AllFieldTypes, int32]("int_32"),
-	Int32Ptr:     query.NewField[model.AllFieldTypes, *int32]("int_32_ptr"),
-	Int64:        query.NewField[model.AllFieldTypes, int64]("int_64"),
-	Int64Ptr:     query.NewField[model.AllFieldTypes, *int64]("int_64_ptr"),
-	Int8:         query.NewField[model.AllFieldTypes, int8]("int_8"),
-	Int8Ptr:      query.NewField[model.AllFieldTypes, *int8]("int_8_ptr"),
-	IntPtr:       query.NewField[model.AllFieldTypes, *int]("int_ptr"),
-	Role:         query.NewField[model.AllFieldTypes, model.Role]("role"),
-	Rune:         query.NewField[model.AllFieldTypes, rune]("rune"),
-	String:       query.NewField[model.AllFieldTypes, string]("string"),
-	StringPtr:    query.NewField[model.AllFieldTypes, *string]("string_ptr"),
-	Time:         query.NewTimeField[model.AllFieldTypes]("time"),
-	TimeNil:      query.NewTimePtrField[model.AllFieldTypes]("time_nil"),
-	TimePtr:      query.NewTimePtrField[model.AllFieldTypes]("time_ptr"),
-	UUID:         query.NewUUIDGoogleField[model.AllFieldTypes]("uuid"),
-	UUIDGofrs:    query.NewUUIDGofrsField[model.AllFieldTypes]("uuid_gofrs"),
-	UUIDGofrsNil: query.NewUUIDGofrsPtrField[model.AllFieldTypes]("uuid_gofrs_nil"),
-	UUIDGofrsPtr: query.NewUUIDGofrsPtrField[model.AllFieldTypes]("uuid_gofrs_ptr"),
-	UUIDNil:      query.NewUUIDGooglePtrField[model.AllFieldTypes]("uuid_nil"),
-	UUIDPtr:      query.NewUUIDGooglePtrField[model.AllFieldTypes]("uuid_ptr"),
-	Uint16:       query.NewField[model.AllFieldTypes, uint16]("uint_16"),
-	Uint16Ptr:    query.NewField[model.AllFieldTypes, *uint16]("uint_16_ptr"),
-	Uint32:       query.NewField[model.AllFieldTypes, uint32]("uint_32"),
-	Uint32Ptr:    query.NewField[model.AllFieldTypes, *uint32]("uint_32_ptr"),
-	Uint8:        query.NewField[model.AllFieldTypes, uint8]("uint_8"),
-	Uint8Ptr:     query.NewField[model.AllFieldTypes, *uint8]("uint_8_ptr"),
-	UpdatedAt:    query.NewTimeField[model.AllFieldTypes]("updated_at"),
+var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes]("")
+
+func newAllFieldTypes[M any](key string) allFieldTypes[M] {
+	return allFieldTypes[M]{
+		Bool:         query.NewField[M, bool](keyed(key, "bool")),
+		BoolPtr:      query.NewField[M, bool](keyed(key, "bool_ptr")),
+		CreatedAt:    query.NewTimeField[M](keyed(key, "created_at")),
+		Duration:     query.NewDurationField[M](keyed(key, "duration")),
+		DurationNil:  query.NewDurationPtrField[M](keyed(key, "duration_nil")),
+		DurationPtr:  query.NewDurationPtrField[M](keyed(key, "duration_ptr")),
+		EnumPtr:      query.NewField[M, model.Role](keyed(key, "enum_ptr")),
+		Float32:      query.NewField[M, float32](keyed(key, "float_32")),
+		Float64:      query.NewField[M, float64](keyed(key, "float_64")),
+		Int:          query.NewField[M, int](keyed(key, "int")),
+		Int16:        query.NewField[M, int16](keyed(key, "int_16")),
+		Int16Ptr:     query.NewField[M, int16](keyed(key, "int_16_ptr")),
+		Int32:        query.NewField[M, int32](keyed(key, "int_32")),
+		Int32Ptr:     query.NewField[M, int32](keyed(key, "int_32_ptr")),
+		Int64:        query.NewField[M, int64](keyed(key, "int_64")),
+		Int64Ptr:     query.NewField[M, int64](keyed(key, "int_64_ptr")),
+		Int8:         query.NewField[M, int8](keyed(key, "int_8")),
+		Int8Ptr:      query.NewField[M, int8](keyed(key, "int_8_ptr")),
+		IntPtr:       query.NewField[M, int](keyed(key, "int_ptr")),
+		Role:         query.NewField[M, model.Role](keyed(key, "role")),
+		Rune:         query.NewField[M, rune](keyed(key, "rune")),
+		String:       query.NewField[M, string](keyed(key, "string")),
+		StringPtr:    query.NewField[M, string](keyed(key, "string_ptr")),
+		Time:         query.NewTimeField[M](keyed(key, "time")),
+		TimeNil:      query.NewTimePtrField[M](keyed(key, "time_nil")),
+		TimePtr:      query.NewTimePtrField[M](keyed(key, "time_ptr")),
+		UUID:         query.NewUUIDGoogleField[M](keyed(key, "uuid")),
+		UUIDGofrs:    query.NewUUIDGofrsField[M](keyed(key, "uuid_gofrs")),
+		UUIDGofrsNil: query.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_nil")),
+		UUIDGofrsPtr: query.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_ptr")),
+		UUIDNil:      query.NewUUIDGooglePtrField[M](keyed(key, "uuid_nil")),
+		UUIDPtr:      query.NewUUIDGooglePtrField[M](keyed(key, "uuid_ptr")),
+		Uint16:       query.NewField[M, uint16](keyed(key, "uint_16")),
+		Uint16Ptr:    query.NewField[M, uint16](keyed(key, "uint_16_ptr")),
+		Uint32:       query.NewField[M, uint32](keyed(key, "uint_32")),
+		Uint32Ptr:    query.NewField[M, uint32](keyed(key, "uint_32_ptr")),
+		Uint8:        query.NewField[M, uint8](keyed(key, "uint_8")),
+		Uint8Ptr:     query.NewField[M, uint8](keyed(key, "uint_8_ptr")),
+		UpdatedAt:    query.NewTimeField[M](keyed(key, "updated_at")),
+		key:          key,
+	}
+}
+
+type allFieldTypes[M any] struct {
+	key          string
+	CreatedAt    query.Field[M, time.Time]
+	UpdatedAt    query.Field[M, time.Time]
+	String       query.Field[M, string]
+	StringPtr    query.Field[M, string]
+	Int          query.Field[M, int]
+	IntPtr       query.Field[M, int]
+	Int8         query.Field[M, int8]
+	Int8Ptr      query.Field[M, int8]
+	Int16        query.Field[M, int16]
+	Int16Ptr     query.Field[M, int16]
+	Int32        query.Field[M, int32]
+	Int32Ptr     query.Field[M, int32]
+	Int64        query.Field[M, int64]
+	Int64Ptr     query.Field[M, int64]
+	Uint8        query.Field[M, uint8]
+	Uint8Ptr     query.Field[M, uint8]
+	Uint16       query.Field[M, uint16]
+	Uint16Ptr    query.Field[M, uint16]
+	Uint32       query.Field[M, uint32]
+	Uint32Ptr    query.Field[M, uint32]
+	Float32      query.Field[M, float32]
+	Float64      query.Field[M, float64]
+	Rune         query.Field[M, rune]
+	Bool         query.Field[M, bool]
+	BoolPtr      query.Field[M, bool]
+	Time         query.Field[M, time.Time]
+	TimePtr      query.Field[M, time.Time]
+	TimeNil      query.Field[M, time.Time]
+	Duration     query.Field[M, time.Duration]
+	DurationPtr  query.Field[M, time.Duration]
+	DurationNil  query.Field[M, time.Duration]
+	UUID         query.Field[M, uuid.UUID]
+	UUIDPtr      query.Field[M, uuid.UUID]
+	UUIDNil      query.Field[M, uuid.UUID]
+	UUIDGofrs    query.Field[M, uuid1.UUID]
+	UUIDGofrsPtr query.Field[M, uuid1.UUID]
+	UUIDGofrsNil query.Field[M, uuid1.UUID]
+	Role         query.Field[M, model.Role]
+	EnumPtr      query.Field[M, model.Role]
+}
+
+func (n allFieldTypes[M]) Login() login[M] {
+	return newLogin[M](keyed(n.key, "login"))
+}
+
+func (n allFieldTypes[M]) StructPtr() someStruct[M] {
+	return newSomeStruct[M](keyed(n.key, "struct_ptr"))
 }

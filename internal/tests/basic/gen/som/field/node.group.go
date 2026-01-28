@@ -7,12 +7,20 @@ import (
 	"time"
 )
 
-var Group = struct {
-	CreatedAt query.Field[model.Group, time.Time]
-	UpdatedAt query.Field[model.Group, time.Time]
-	Name      query.Field[model.Group, string]
-}{
-	CreatedAt: query.NewTimeField[model.Group]("created_at"),
-	Name:      query.NewField[model.Group, string]("name"),
-	UpdatedAt: query.NewTimeField[model.Group]("updated_at"),
+var Group = newGroup[model.Group]("")
+
+func newGroup[M any](key string) group[M] {
+	return group[M]{
+		CreatedAt: query.NewTimeField[M](keyed(key, "created_at")),
+		Name:      query.NewField[M, string](keyed(key, "name")),
+		UpdatedAt: query.NewTimeField[M](keyed(key, "updated_at")),
+		key:       key,
+	}
+}
+
+type group[M any] struct {
+	key       string
+	CreatedAt query.Field[M, time.Time]
+	UpdatedAt query.Field[M, time.Time]
+	Name      query.Field[M, string]
 }

@@ -60,6 +60,9 @@ func (f *Time) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 	}
@@ -91,6 +94,19 @@ func (f *Time) sortDefine(ctx Context) jen.Code {
 func (f *Time) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+}
+
+func (f *Time) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgQuery(), "Field").Types(def.TypeModel, jen.Qual("time", "Time"))
+}
+
+func (f *Time) fieldInit(ctx Context) jen.Code {
+	factory := "NewTimeField"
+	if f.source.Pointer() {
+		factory = "NewTimePtrField"
+	}
+	return jen.Qual(ctx.pkgQuery(), factory).Types(def.TypeModel).
+		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Time) cborMarshal(ctx Context) jen.Code {

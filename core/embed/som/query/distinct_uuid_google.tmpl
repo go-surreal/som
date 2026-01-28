@@ -10,47 +10,27 @@ import (
 	"{{.GenerateOutPath}}/internal/types"
 )
 
-// NewUUIDGoogleField creates a field descriptor for uuid.UUID fields (google/uuid).
-func NewUUIDGoogleField[M any](name string) Field[M, uuid.UUID] {
+func NewUUIDGoogleField[M any](key string) Field[M, uuid.UUID] {
 	return Field[M, uuid.UUID]{
-		Name: name,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]uuid.UUID, error) {
-			var raw []queryResult[types.UUIDGoogle]
+		key: key,
+		decode: func(unmarshal func([]byte, any) error, data []byte) ([]uuid.UUID, error) {
+			var raw []queryResult[distinctResult[types.UUIDGoogle]]
 			if err := unmarshal(data, &raw); err != nil {
-				return nil, fmt.Errorf("could not unmarshal distinct UUID values: %w", err)
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
-			if len(raw) < 1 {
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
 				return nil, nil
 			}
-			result := make([]uuid.UUID, len(raw[0].Result))
-			for i, u := range raw[0].Result {
-				result[i] = uuid.UUID(u)
+			vals := raw[0].Result[0].Values
+			result := make([]uuid.UUID, len(vals))
+			for i, v := range vals {
+				result[i] = uuid.UUID(v)
 			}
 			return result, nil
 		},
 	}
 }
 
-// NewUUIDGooglePtrField creates a field descriptor for optional uuid.UUID fields (*uuid.UUID, google/uuid).
-func NewUUIDGooglePtrField[M any](name string) Field[M, *uuid.UUID] {
-	return Field[M, *uuid.UUID]{
-		Name: name,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]*uuid.UUID, error) {
-			var raw []queryResult[*types.UUIDGoogle]
-			if err := unmarshal(data, &raw); err != nil {
-				return nil, fmt.Errorf("could not unmarshal distinct UUID values: %w", err)
-			}
-			if len(raw) < 1 {
-				return nil, nil
-			}
-			result := make([]*uuid.UUID, len(raw[0].Result))
-			for i, u := range raw[0].Result {
-				if u != nil {
-					val := uuid.UUID(*u)
-					result[i] = &val
-				}
-			}
-			return result, nil
-		},
-	}
+func NewUUIDGooglePtrField[M any](key string) Field[M, uuid.UUID] {
+	return NewUUIDGoogleField[M](key)
 }

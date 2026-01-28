@@ -35,10 +35,9 @@ func (c *context) asVar(val any) string {
 
 type Query[T any] struct {
 	context
-	node        string
-	live        bool
-	selectValue bool
-	fields      []string
+	node    string
+	live    bool
+	fields  []string
 	groupBy     string
 	groupAll    bool
 	Where      []Filter[T]
@@ -118,9 +117,8 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 }
 
 func (q Query[T]) BuildDistinct(field string) *Result {
-	q.selectValue = true
-	q.fields = []string{field}
-	q.groupBy = field
+	q.fields = []string{"array::group(" + field + ") AS values"}
+	q.groupAll = true
 
 	return &Result{
 		Statement: q.render(),
@@ -171,11 +169,7 @@ func (q Query[T]) render() string {
 		}
 	}
 
-	if q.selectValue {
-		out.WriteString("SELECT VALUE " + strings.Join(fields, ", "))
-	} else {
-		out.WriteString("SELECT " + strings.Join(fields, ", "))
-	}
+	out.WriteString("SELECT " + strings.Join(fields, ", "))
 
 	// TODO: not working, but more a optimisation than anything else
 	//if len(q.Sort) > 0 {
