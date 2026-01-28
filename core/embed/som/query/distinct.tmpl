@@ -17,5 +17,9 @@ func Distinct[M any, T any](ctx context.Context, b Builder[M], f distinct.Field[
 		return nil, fmt.Errorf("could not execute distinct query: %w", err)
 	}
 
+	if f.Decode == nil {
+		return nil, fmt.Errorf("distinct field has no decode function")
+	}
+
 	return f.Decode(b.db.Unmarshal, raw)
 }
