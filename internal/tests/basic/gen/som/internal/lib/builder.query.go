@@ -35,12 +35,12 @@ func (c *context) asVar(val any) string {
 
 type Query[T any] struct {
 	context
-	node     string
-	live     bool
-	fields   []string
-	groupBy  string
-	groupAll bool
-	Where    []Filter[T]
+	node       string
+	live       bool
+	fields     []string
+	groupBy    string
+	groupAll   bool
+	Where      []Filter[T]
 	Sort       []*SortBuilder
 	SortRandom bool
 	Fetch      []string

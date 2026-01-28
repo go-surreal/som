@@ -2,10 +2,12 @@
 package field
 
 import (
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
 	model "github.com/go-surreal/som/tests/basic/model"
 	uuid1 "github.com/gofrs/uuid"
 	uuid "github.com/google/uuid"
+	"net/url"
 	"time"
 )
 
@@ -13,90 +15,152 @@ var AllFieldTypes = newAllFieldTypes[model.AllFieldTypes]("")
 
 func newAllFieldTypes[M any](key string) allFieldTypes[M] {
 	return allFieldTypes[M]{
-		Bool:         distinct.NewField[M, bool](keyed(key, "bool")),
-		BoolPtr:      distinct.NewField[M, bool](keyed(key, "bool_ptr")),
-		CreatedAt:    distinct.NewTimeField[M](keyed(key, "created_at")),
-		Duration:     distinct.NewDurationField[M](keyed(key, "duration")),
-		DurationNil:  distinct.NewDurationPtrField[M](keyed(key, "duration_nil")),
-		DurationPtr:  distinct.NewDurationPtrField[M](keyed(key, "duration_ptr")),
-		EnumPtr:      distinct.NewField[M, model.Role](keyed(key, "enum_ptr")),
-		Float32:      distinct.NewField[M, float32](keyed(key, "float_32")),
-		Float64:      distinct.NewField[M, float64](keyed(key, "float_64")),
-		Int:          distinct.NewField[M, int](keyed(key, "int")),
-		Int16:        distinct.NewField[M, int16](keyed(key, "int_16")),
-		Int16Ptr:     distinct.NewField[M, int16](keyed(key, "int_16_ptr")),
-		Int32:        distinct.NewField[M, int32](keyed(key, "int_32")),
-		Int32Ptr:     distinct.NewField[M, int32](keyed(key, "int_32_ptr")),
-		Int64:        distinct.NewField[M, int64](keyed(key, "int_64")),
-		Int64Ptr:     distinct.NewField[M, int64](keyed(key, "int_64_ptr")),
-		Int8:         distinct.NewField[M, int8](keyed(key, "int_8")),
-		Int8Ptr:      distinct.NewField[M, int8](keyed(key, "int_8_ptr")),
-		IntPtr:       distinct.NewField[M, int](keyed(key, "int_ptr")),
-		Role:         distinct.NewField[M, model.Role](keyed(key, "role")),
-		Rune:         distinct.NewField[M, rune](keyed(key, "rune")),
-		String:       distinct.NewField[M, string](keyed(key, "string")),
-		StringPtr:    distinct.NewField[M, string](keyed(key, "string_ptr")),
-		Time:         distinct.NewTimeField[M](keyed(key, "time")),
-		TimeNil:      distinct.NewTimePtrField[M](keyed(key, "time_nil")),
-		TimePtr:      distinct.NewTimePtrField[M](keyed(key, "time_ptr")),
-		UUID:         distinct.NewUUIDGoogleField[M](keyed(key, "uuid")),
-		UUIDGofrs:    distinct.NewUUIDGofrsField[M](keyed(key, "uuid_gofrs")),
-		UUIDGofrsNil: distinct.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_nil")),
-		UUIDGofrsPtr: distinct.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_ptr")),
-		UUIDNil:      distinct.NewUUIDGooglePtrField[M](keyed(key, "uuid_nil")),
-		UUIDPtr:      distinct.NewUUIDGooglePtrField[M](keyed(key, "uuid_ptr")),
-		Uint16:       distinct.NewField[M, uint16](keyed(key, "uint_16")),
-		Uint16Ptr:    distinct.NewField[M, uint16](keyed(key, "uint_16_ptr")),
-		Uint32:       distinct.NewField[M, uint32](keyed(key, "uint_32")),
-		Uint32Ptr:    distinct.NewField[M, uint32](keyed(key, "uint_32_ptr")),
-		Uint8:        distinct.NewField[M, uint8](keyed(key, "uint_8")),
-		Uint8Ptr:     distinct.NewField[M, uint8](keyed(key, "uint_8_ptr")),
-		UpdatedAt:    distinct.NewTimeField[M](keyed(key, "updated_at")),
-		key:          key,
+		Bool:               distinct.NewField[M, bool](keyed(key, "bool")),
+		BoolPtr:            distinct.NewField[M, bool](keyed(key, "bool_ptr")),
+		BoolSlice:          distinct.NewField[M, bool](keyed(key, "bool_slice")),
+		Byte:               distinct.NewField[M, byte](keyed(key, "byte")),
+		BytePtr:            distinct.NewField[M, byte](keyed(key, "byte_ptr")),
+		CreatedAt:          distinct.NewTimeField[M](keyed(key, "created_at")),
+		Duration:           distinct.NewDurationField[M](keyed(key, "duration")),
+		DurationNil:        distinct.NewDurationPtrField[M](keyed(key, "duration_nil")),
+		DurationPtr:        distinct.NewDurationPtrField[M](keyed(key, "duration_ptr")),
+		DurationSlice:      distinct.NewDurationField[M](keyed(key, "duration_slice")),
+		Email:              distinct.NewField[M, som.Email](keyed(key, "email")),
+		EmailNil:           distinct.NewField[M, som.Email](keyed(key, "email_nil")),
+		EmailPtr:           distinct.NewField[M, som.Email](keyed(key, "email_ptr")),
+		EmailSlice:         distinct.NewField[M, som.Email](keyed(key, "email_slice")),
+		EnumPtr:            distinct.NewField[M, model.Role](keyed(key, "enum_ptr")),
+		EnumPtrSlice:       distinct.NewField[M, model.Role](keyed(key, "enum_ptr_slice")),
+		EnumPtrSlicePtr:    distinct.NewField[M, model.Role](keyed(key, "enum_ptr_slice_ptr")),
+		Float32:            distinct.NewField[M, float32](keyed(key, "float_32")),
+		Float32PtrSlice:    distinct.NewField[M, float32](keyed(key, "float_32_ptr_slice")),
+		Float32PtrSlicePtr: distinct.NewField[M, float32](keyed(key, "float_32_ptr_slice_ptr")),
+		Float32Slice:       distinct.NewField[M, float32](keyed(key, "float_32_slice")),
+		Float32SlicePtr:    distinct.NewField[M, float32](keyed(key, "float_32_slice_ptr")),
+		Float64:            distinct.NewField[M, float64](keyed(key, "float_64")),
+		Int:                distinct.NewField[M, int](keyed(key, "int")),
+		Int16:              distinct.NewField[M, int16](keyed(key, "int_16")),
+		Int16Ptr:           distinct.NewField[M, int16](keyed(key, "int_16_ptr")),
+		Int32:              distinct.NewField[M, int32](keyed(key, "int_32")),
+		Int32Ptr:           distinct.NewField[M, int32](keyed(key, "int_32_ptr")),
+		Int64:              distinct.NewField[M, int64](keyed(key, "int_64")),
+		Int64Ptr:           distinct.NewField[M, int64](keyed(key, "int_64_ptr")),
+		Int8:               distinct.NewField[M, int8](keyed(key, "int_8")),
+		Int8Ptr:            distinct.NewField[M, int8](keyed(key, "int_8_ptr")),
+		IntPtr:             distinct.NewField[M, int](keyed(key, "int_ptr")),
+		IntPtrSlice:        distinct.NewField[M, int](keyed(key, "int_ptr_slice")),
+		IntPtrSlicePtr:     distinct.NewField[M, int](keyed(key, "int_ptr_slice_ptr")),
+		IntSlice:           distinct.NewField[M, int](keyed(key, "int_slice")),
+		IntSlicePtr:        distinct.NewField[M, int](keyed(key, "int_slice_ptr")),
+		Other:              distinct.NewField[M, string](keyed(key, "other")),
+		Role:               distinct.NewField[M, model.Role](keyed(key, "role")),
+		Roles:              distinct.NewField[M, model.Role](keyed(key, "roles")),
+		Rune:               distinct.NewField[M, rune](keyed(key, "rune")),
+		RuneSlice:          distinct.NewField[M, rune](keyed(key, "rune_slice")),
+		String:             distinct.NewField[M, string](keyed(key, "string")),
+		StringPtr:          distinct.NewField[M, string](keyed(key, "string_ptr")),
+		StringPtrSlice:     distinct.NewField[M, string](keyed(key, "string_ptr_slice")),
+		StringPtrSlicePtr:  distinct.NewField[M, string](keyed(key, "string_ptr_slice_ptr")),
+		StringSlicePtr:     distinct.NewField[M, string](keyed(key, "string_slice_ptr")),
+		Time:               distinct.NewTimeField[M](keyed(key, "time")),
+		TimeNil:            distinct.NewTimePtrField[M](keyed(key, "time_nil")),
+		TimePtr:            distinct.NewTimePtrField[M](keyed(key, "time_ptr")),
+		TimeSlice:          distinct.NewTimeField[M](keyed(key, "time_slice")),
+		URL:                distinct.NewURLField[M](keyed(key, "url")),
+		URLNil:             distinct.NewURLPtrField[M](keyed(key, "url_nil")),
+		URLPtr:             distinct.NewURLPtrField[M](keyed(key, "url_ptr")),
+		URLSlice:           distinct.NewURLField[M](keyed(key, "url_slice")),
+		UUID:               distinct.NewUUIDGoogleField[M](keyed(key, "uuid")),
+		UUIDGofrs:          distinct.NewUUIDGofrsField[M](keyed(key, "uuid_gofrs")),
+		UUIDGofrsNil:       distinct.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_nil")),
+		UUIDGofrsPtr:       distinct.NewUUIDGofrsPtrField[M](keyed(key, "uuid_gofrs_ptr")),
+		UUIDGofrsSlice:     distinct.NewUUIDGofrsField[M](keyed(key, "uuid_gofrs_slice")),
+		UUIDNil:            distinct.NewUUIDGooglePtrField[M](keyed(key, "uuid_nil")),
+		UUIDPtr:            distinct.NewUUIDGooglePtrField[M](keyed(key, "uuid_ptr")),
+		UUIDSlice:          distinct.NewUUIDGoogleField[M](keyed(key, "uuid_slice")),
+		Uint16:             distinct.NewField[M, uint16](keyed(key, "uint_16")),
+		Uint16Ptr:          distinct.NewField[M, uint16](keyed(key, "uint_16_ptr")),
+		Uint32:             distinct.NewField[M, uint32](keyed(key, "uint_32")),
+		Uint32Ptr:          distinct.NewField[M, uint32](keyed(key, "uint_32_ptr")),
+		Uint8:              distinct.NewField[M, uint8](keyed(key, "uint_8")),
+		Uint8Ptr:           distinct.NewField[M, uint8](keyed(key, "uint_8_ptr")),
+		UpdatedAt:          distinct.NewTimeField[M](keyed(key, "updated_at")),
+		key:                key,
 	}
 }
 
 type allFieldTypes[M any] struct {
-	key          string
-	CreatedAt    distinct.Field[M, time.Time]
-	UpdatedAt    distinct.Field[M, time.Time]
-	String       distinct.Field[M, string]
-	StringPtr    distinct.Field[M, string]
-	Int          distinct.Field[M, int]
-	IntPtr       distinct.Field[M, int]
-	Int8         distinct.Field[M, int8]
-	Int8Ptr      distinct.Field[M, int8]
-	Int16        distinct.Field[M, int16]
-	Int16Ptr     distinct.Field[M, int16]
-	Int32        distinct.Field[M, int32]
-	Int32Ptr     distinct.Field[M, int32]
-	Int64        distinct.Field[M, int64]
-	Int64Ptr     distinct.Field[M, int64]
-	Uint8        distinct.Field[M, uint8]
-	Uint8Ptr     distinct.Field[M, uint8]
-	Uint16       distinct.Field[M, uint16]
-	Uint16Ptr    distinct.Field[M, uint16]
-	Uint32       distinct.Field[M, uint32]
-	Uint32Ptr    distinct.Field[M, uint32]
-	Float32      distinct.Field[M, float32]
-	Float64      distinct.Field[M, float64]
-	Rune         distinct.Field[M, rune]
-	Bool         distinct.Field[M, bool]
-	BoolPtr      distinct.Field[M, bool]
-	Time         distinct.Field[M, time.Time]
-	TimePtr      distinct.Field[M, time.Time]
-	TimeNil      distinct.Field[M, time.Time]
-	Duration     distinct.Field[M, time.Duration]
-	DurationPtr  distinct.Field[M, time.Duration]
-	DurationNil  distinct.Field[M, time.Duration]
-	UUID         distinct.Field[M, uuid.UUID]
-	UUIDPtr      distinct.Field[M, uuid.UUID]
-	UUIDNil      distinct.Field[M, uuid.UUID]
-	UUIDGofrs    distinct.Field[M, uuid1.UUID]
-	UUIDGofrsPtr distinct.Field[M, uuid1.UUID]
-	UUIDGofrsNil distinct.Field[M, uuid1.UUID]
-	Role         distinct.Field[M, model.Role]
-	EnumPtr      distinct.Field[M, model.Role]
+	key                string
+	CreatedAt          distinct.Field[M, time.Time]
+	UpdatedAt          distinct.Field[M, time.Time]
+	String             distinct.Field[M, string]
+	StringPtr          distinct.Field[M, string]
+	Other              distinct.Field[M, string]
+	StringPtrSlice     distinct.Field[M, string]
+	StringSlicePtr     distinct.Field[M, string]
+	StringPtrSlicePtr  distinct.Field[M, string]
+	Int                distinct.Field[M, int]
+	IntPtr             distinct.Field[M, int]
+	IntSlice           distinct.Field[M, int]
+	IntPtrSlice        distinct.Field[M, int]
+	IntSlicePtr        distinct.Field[M, int]
+	IntPtrSlicePtr     distinct.Field[M, int]
+	Int8               distinct.Field[M, int8]
+	Int8Ptr            distinct.Field[M, int8]
+	Int16              distinct.Field[M, int16]
+	Int16Ptr           distinct.Field[M, int16]
+	Int32              distinct.Field[M, int32]
+	Int32Ptr           distinct.Field[M, int32]
+	Int64              distinct.Field[M, int64]
+	Int64Ptr           distinct.Field[M, int64]
+	Uint8              distinct.Field[M, uint8]
+	Uint8Ptr           distinct.Field[M, uint8]
+	Uint16             distinct.Field[M, uint16]
+	Uint16Ptr          distinct.Field[M, uint16]
+	Uint32             distinct.Field[M, uint32]
+	Uint32Ptr          distinct.Field[M, uint32]
+	Float32            distinct.Field[M, float32]
+	Float32Slice       distinct.Field[M, float32]
+	Float32SlicePtr    distinct.Field[M, float32]
+	Float32PtrSlice    distinct.Field[M, float32]
+	Float32PtrSlicePtr distinct.Field[M, float32]
+	Float64            distinct.Field[M, float64]
+	Rune               distinct.Field[M, rune]
+	RuneSlice          distinct.Field[M, rune]
+	Bool               distinct.Field[M, bool]
+	BoolPtr            distinct.Field[M, bool]
+	BoolSlice          distinct.Field[M, bool]
+	Time               distinct.Field[M, time.Time]
+	TimePtr            distinct.Field[M, time.Time]
+	TimeNil            distinct.Field[M, time.Time]
+	TimeSlice          distinct.Field[M, time.Time]
+	Duration           distinct.Field[M, time.Duration]
+	DurationPtr        distinct.Field[M, time.Duration]
+	DurationNil        distinct.Field[M, time.Duration]
+	DurationSlice      distinct.Field[M, time.Duration]
+	UUID               distinct.Field[M, uuid.UUID]
+	UUIDPtr            distinct.Field[M, uuid.UUID]
+	UUIDNil            distinct.Field[M, uuid.UUID]
+	UUIDSlice          distinct.Field[M, uuid.UUID]
+	UUIDGofrs          distinct.Field[M, uuid1.UUID]
+	UUIDGofrsPtr       distinct.Field[M, uuid1.UUID]
+	UUIDGofrsNil       distinct.Field[M, uuid1.UUID]
+	UUIDGofrsSlice     distinct.Field[M, uuid1.UUID]
+	URL                distinct.Field[M, url.URL]
+	URLPtr             distinct.Field[M, url.URL]
+	URLNil             distinct.Field[M, url.URL]
+	URLSlice           distinct.Field[M, url.URL]
+	Email              distinct.Field[M, som.Email]
+	EmailPtr           distinct.Field[M, som.Email]
+	EmailNil           distinct.Field[M, som.Email]
+	EmailSlice         distinct.Field[M, som.Email]
+	Role               distinct.Field[M, model.Role]
+	EnumPtr            distinct.Field[M, model.Role]
+	Roles              distinct.Field[M, model.Role]
+	EnumPtrSlice       distinct.Field[M, model.Role]
+	EnumPtrSlicePtr    distinct.Field[M, model.Role]
+	Byte               distinct.Field[M, byte]
+	BytePtr            distinct.Field[M, byte]
 }
 
 func (n allFieldTypes[M]) Login() login[M] {
@@ -105,4 +169,12 @@ func (n allFieldTypes[M]) Login() login[M] {
 
 func (n allFieldTypes[M]) StructPtr() someStruct[M] {
 	return newSomeStruct[M](keyed(n.key, "struct_ptr"))
+}
+
+func (n allFieldTypes[M]) MainGroup() group[M] {
+	return newGroup[M](keyed(n.key, "main_group"))
+}
+
+func (n allFieldTypes[M]) MainGroupPtr() group[M] {
+	return newGroup[M](keyed(n.key, "main_group_ptr"))
 }

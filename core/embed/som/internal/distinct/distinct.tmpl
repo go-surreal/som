@@ -4,6 +4,7 @@ package distinct
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	"{{.GenerateOutPath}}/internal"
@@ -83,4 +84,31 @@ func NewDurationField[M any](key string) Field[M, time.Duration] {
 
 func NewDurationPtrField[M any](key string) Field[M, time.Duration] {
 	return NewDurationField[M](key)
+}
+
+func NewURLField[M any](key string) Field[M, url.URL] {
+	return Field[M, url.URL]{
+		Key: key,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]url.URL, error) {
+			var raw []internal.QueryResult[DistinctResult[string]]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+			}
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
+				return nil, nil
+			}
+			vals := raw[0].Result[0].Values
+			result := make([]url.URL, len(vals))
+			for i, v := range vals {
+				if u, err := url.Parse(v); err == nil && u != nil {
+					result[i] = *u
+				}
+			}
+			return result, nil
+		},
+	}
+}
+
+func NewURLPtrField[M any](key string) Field[M, url.URL] {
+	return NewURLField[M](key)
 }

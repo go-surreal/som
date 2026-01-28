@@ -22,3 +22,7 @@ type softDeletePost[M any] struct {
 	DeletedAt distinct.Field[M, time.Time]
 	Title     distinct.Field[M, string]
 }
+
+func (n softDeletePost[M]) Author() softDeleteUser[M] {
+	return newSoftDeleteUser[M](keyed(n.key, "author"))
+}

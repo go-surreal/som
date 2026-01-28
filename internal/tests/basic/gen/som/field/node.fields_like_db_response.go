@@ -11,6 +11,7 @@ var FieldsLikeDBResponse = newFieldsLikeDBResponse[model.FieldsLikeDBResponse]("
 func newFieldsLikeDBResponse[M any](key string) fieldsLikeDbresponse[M] {
 	return fieldsLikeDbresponse[M]{
 		Detail: distinct.NewField[M, string](keyed(key, "detail")),
+		Result: distinct.NewField[M, string](keyed(key, "result")),
 		Status: distinct.NewField[M, string](keyed(key, "status")),
 		Time:   distinct.NewField[M, string](keyed(key, "time")),
 		key:    key,
@@ -22,4 +23,5 @@ type fieldsLikeDbresponse[M any] struct {
 	Time   distinct.Field[M, string]
 	Status distinct.Field[M, string]
 	Detail distinct.Field[M, string]
+	Result distinct.Field[M, string]
 }
