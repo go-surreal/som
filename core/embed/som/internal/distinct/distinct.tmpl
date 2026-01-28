@@ -98,10 +98,14 @@ func NewURLField[M any](key string) Field[M, url.URL] {
 				return nil, nil
 			}
 			vals := raw[0].Result[0].Values
-			result := make([]url.URL, len(vals))
-			for i, v := range vals {
-				if u, err := url.Parse(v); err == nil && u != nil {
-					result[i] = *u
+			result := make([]url.URL, 0, len(vals))
+			for _, v := range vals {
+				u, err := url.Parse(v)
+				if err != nil {
+					return nil, fmt.Errorf("could not parse URL %q: %w", v, err)
+				}
+				if u != nil {
+					result = append(result, *u)
 				}
 			}
 			return result, nil

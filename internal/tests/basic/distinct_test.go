@@ -2,6 +2,7 @@ package basic
 
 import (
 	"context"
+	"net/url"
 	"sort"
 	"testing"
 	"time"
@@ -39,6 +40,10 @@ func TestDistinct(t *testing.T) {
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 
+	url1, _ := url.Parse("https://example.com/alpha")
+	url2, _ := url.Parse("https://example.com/bravo")
+	url3, _ := url.Parse("https://example.com/charlie")
+
 	record1 := &model.AllFieldTypes{
 		String:   "alpha",
 		Int:      10,
@@ -46,6 +51,7 @@ func TestDistinct(t *testing.T) {
 		Time:     time1,
 		Duration: dur1,
 		UUID:     uuid1,
+		URL:      *url1,
 		Role:     model.RoleAdmin,
 		Login:    model.Login{Username: "alice", Password: "pass1"},
 	}
@@ -57,6 +63,7 @@ func TestDistinct(t *testing.T) {
 		Time:     time2,
 		Duration: dur2,
 		UUID:     uuid2,
+		URL:      *url2,
 		Role:     model.RoleUser,
 		Login:    model.Login{Username: "bob", Password: "pass2"},
 	}
@@ -68,6 +75,7 @@ func TestDistinct(t *testing.T) {
 		Time:     time3,
 		Duration: dur3,
 		UUID:     uuid3,
+		URL:      *url3,
 		Role:     model.RoleUser,
 		Login:    model.Login{Username: "charlie", Password: "pass3"},
 	}
@@ -124,6 +132,13 @@ func TestDistinct(t *testing.T) {
 		assert.NilError(t, err)
 		sort.Slice(vals, func(i, j int) bool { return vals[i].String() < vals[j].String() })
 		assert.DeepEqual(t, []uuid.UUID{uuid1, uuid2, uuid3}, vals)
+	})
+
+	t.Run("URL", func(t *testing.T) {
+		vals, err := query.Distinct(ctx, client.AllFieldTypesRepo().Query(), field.AllFieldTypes.URL)
+		assert.NilError(t, err)
+		sort.Slice(vals, func(i, j int) bool { return vals[i].String() < vals[j].String() })
+		assert.DeepEqual(t, []url.URL{*url1, *url2, *url3}, vals)
 	})
 
 	t.Run("NestedField", func(t *testing.T) {
