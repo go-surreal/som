@@ -15,10 +15,6 @@ type Field[M any, T any] struct {
 	decode func(unmarshal func([]byte, any) error, data []byte) ([]T, error)
 }
 
-func (f Field[M, T]) Key() string {
-	return f.key
-}
-
 type distinctResult[T any] struct {
 	Values []T `cbor:"values"`
 }
