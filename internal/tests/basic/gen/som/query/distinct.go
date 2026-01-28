@@ -10,7 +10,7 @@ import (
 )
 
 func Distinct[M any, T any](ctx context.Context, b Builder[M], f distinct.Field[M, T]) ([]T, error) {
-	req := b.query.BuildDistinct(f.Key)
+	req := b.query.BuildDistinct(f.Key, f.ExcludeNone)
 
 	raw, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {

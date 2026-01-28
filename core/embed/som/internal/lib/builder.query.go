@@ -116,9 +116,15 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 	}
 }
 
-func (q Query[T]) BuildDistinct(field string) *Result {
+func (q Query[T]) BuildDistinct(field string, excludeNone bool) *Result {
 	q.fields = []string{"array::group(" + field + ") AS values"}
 	q.groupAll = true
+
+	if excludeNone {
+		q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
+			return field + " != NONE"
+		}))
+	}
 
 	return &Result{
 		Statement: q.render(),

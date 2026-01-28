@@ -11,8 +11,9 @@ import (
 )
 
 type Field[M any, T any] struct {
-	Key    string
-	Decode func(unmarshal func([]byte, any) error, data []byte) ([]T, error)
+	Key         string
+	ExcludeNone bool
+	Decode      func(unmarshal func([]byte, any) error, data []byte) ([]T, error)
 }
 
 type DistinctResult[T any] struct {
@@ -57,7 +58,11 @@ func NewTimeField[M any](key string) Field[M, time.Time] {
 }
 
 func NewTimePtrField[M any](key string) Field[M, time.Time] {
-	return NewTimeField[M](key)
+	return Field[M, time.Time]{
+		Key:         key,
+		ExcludeNone: true,
+		Decode:      NewTimeField[M](key).Decode,
+	}
 }
 
 func NewDurationField[M any](key string) Field[M, time.Duration] {
@@ -82,5 +87,9 @@ func NewDurationField[M any](key string) Field[M, time.Duration] {
 }
 
 func NewDurationPtrField[M any](key string) Field[M, time.Duration] {
-	return NewDurationField[M](key)
+	return Field[M, time.Duration]{
+		Key:         key,
+		ExcludeNone: true,
+		Decode:      NewDurationField[M](key).Decode,
+	}
 }
