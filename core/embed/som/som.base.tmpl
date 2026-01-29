@@ -158,64 +158,64 @@ type SemVer string
 // 	Message string
 // }
 
-// BeforeCreateHook can be implemented by model structs to run logic
+// OnBeforeCreateHook can be implemented by model structs to run logic
 // before a new record is created. If the hook returns an error,
 // the create operation is aborted.
 //
 // Note: This hook only applies to the current application instance.
 // It is not distributed across multiple instances of the application.
-type BeforeCreateHook interface {
-	BeforeCreate(ctx context.Context) error
+type OnBeforeCreateHook interface {
+	OnBeforeCreate(ctx context.Context) error
 }
 
-// AfterCreateHook can be implemented by model structs to run logic
+// OnAfterCreateHook can be implemented by model structs to run logic
 // after a new record has been created. If the hook returns an error,
 // the error is returned to the caller.
 //
 // Note: This hook only applies to the current application instance.
 // It is not distributed across multiple instances of the application.
-type AfterCreateHook interface {
-	AfterCreate(ctx context.Context) error
+type OnAfterCreateHook interface {
+	OnAfterCreate(ctx context.Context) error
 }
 
-// BeforeUpdateHook can be implemented by model structs to run logic
+// OnBeforeUpdateHook can be implemented by model structs to run logic
 // before an existing record is updated. If the hook returns an error,
 // the update operation is aborted.
 //
 // Note: This hook only applies to the current application instance.
 // It is not distributed across multiple instances of the application.
-type BeforeUpdateHook interface {
-	BeforeUpdate(ctx context.Context) error
+type OnBeforeUpdateHook interface {
+	OnBeforeUpdate(ctx context.Context) error
 }
 
-// AfterUpdateHook can be implemented by model structs to run logic
+// OnAfterUpdateHook can be implemented by model structs to run logic
 // after an existing record has been updated. If the hook returns an error,
 // the error is returned to the caller.
 //
 // Note: This hook only applies to the current application instance.
 // It is not distributed across multiple instances of the application.
-type AfterUpdateHook interface {
-	AfterUpdate(ctx context.Context) error
+type OnAfterUpdateHook interface {
+	OnAfterUpdate(ctx context.Context) error
 }
 
-// BeforeDeleteHook can be implemented by model structs to run logic
+// OnBeforeDeleteHook can be implemented by model structs to run logic
 // before a record is deleted. If the hook returns an error,
 // the delete operation is aborted.
 //
 // Note: This hook only applies to the current application instance.
 // It is not distributed across multiple instances of the application.
-type BeforeDeleteHook interface {
-	BeforeDelete(ctx context.Context) error
+type OnBeforeDeleteHook interface {
+	OnBeforeDelete(ctx context.Context) error
 }
 
-// AfterDeleteHook can be implemented by model structs to run logic
+// OnAfterDeleteHook can be implemented by model structs to run logic
 // after a record has been deleted. If the hook returns an error,
 // the error is returned to the caller.
 //
 // Note: This hook only applies to the current application instance.
 // It is not distributed across multiple instances of the application.
-type AfterDeleteHook interface {
-	AfterDelete(ctx context.Context) error
+type OnAfterDeleteHook interface {
+	OnAfterDelete(ctx context.Context) error
 }
 
 // TODO: below needed?

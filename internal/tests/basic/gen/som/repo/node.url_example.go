@@ -290,8 +290,8 @@ func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(urlexample).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(urlexample).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -307,8 +307,8 @@ func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) e
 	if err := r.create(ctx, urlexample); err != nil {
 		return err
 	}
-	if h, ok := any(urlexample).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(urlexample).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -332,8 +332,8 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 	if urlexample.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(urlexample).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(urlexample).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -349,8 +349,8 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 	if err := r.createWithID(ctx, id, urlexample); err != nil {
 		return err
 	}
-	if h, ok := any(urlexample).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(urlexample).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -404,8 +404,8 @@ func (r *urlexample) Update(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() == nil {
 		return errors.New("cannot update URLExample without existing record ID")
 	}
-	if h, ok := any(urlexample).(som.BeforeUpdateHook); ok {
-		if err := h.BeforeUpdate(ctx); err != nil {
+	if h, ok := any(urlexample).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -421,8 +421,8 @@ func (r *urlexample) Update(ctx context.Context, urlexample *model.URLExample) e
 	if err := r.update(ctx, urlexample.ID(), urlexample); err != nil {
 		return err
 	}
-	if h, ok := any(urlexample).(som.AfterUpdateHook); ok {
-		if err := h.AfterUpdate(ctx); err != nil {
+	if h, ok := any(urlexample).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -446,8 +446,8 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() == nil {
 		return errors.New("cannot delete URLExample without existing record ID")
 	}
-	if h, ok := any(urlexample).(som.BeforeDeleteHook); ok {
-		if err := h.BeforeDelete(ctx); err != nil {
+	if h, ok := any(urlexample).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
 			return err
 		}
 	}
@@ -463,8 +463,8 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 	if err := r.delete(ctx, urlexample.ID(), urlexample, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(urlexample).(som.AfterDeleteHook); ok {
-		if err := h.AfterDelete(ctx); err != nil {
+	if h, ok := any(urlexample).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
 			return err
 		}
 	}

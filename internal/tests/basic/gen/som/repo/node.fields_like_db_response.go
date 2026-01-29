@@ -290,8 +290,8 @@ func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(fieldsLikeDbresponse).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(fieldsLikeDbresponse).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -307,8 +307,8 @@ func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse 
 	if err := r.create(ctx, fieldsLikeDbresponse); err != nil {
 		return err
 	}
-	if h, ok := any(fieldsLikeDbresponse).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(fieldsLikeDbresponse).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -332,8 +332,8 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 	if fieldsLikeDbresponse.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(fieldsLikeDbresponse).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(fieldsLikeDbresponse).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -349,8 +349,8 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 	if err := r.createWithID(ctx, id, fieldsLikeDbresponse); err != nil {
 		return err
 	}
-	if h, ok := any(fieldsLikeDbresponse).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(fieldsLikeDbresponse).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -404,8 +404,8 @@ func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot update FieldsLikeDBResponse without existing record ID")
 	}
-	if h, ok := any(fieldsLikeDbresponse).(som.BeforeUpdateHook); ok {
-		if err := h.BeforeUpdate(ctx); err != nil {
+	if h, ok := any(fieldsLikeDbresponse).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -421,8 +421,8 @@ func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse 
 	if err := r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse); err != nil {
 		return err
 	}
-	if h, ok := any(fieldsLikeDbresponse).(som.AfterUpdateHook); ok {
-		if err := h.AfterUpdate(ctx); err != nil {
+	if h, ok := any(fieldsLikeDbresponse).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -446,8 +446,8 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot delete FieldsLikeDBResponse without existing record ID")
 	}
-	if h, ok := any(fieldsLikeDbresponse).(som.BeforeDeleteHook); ok {
-		if err := h.BeforeDelete(ctx); err != nil {
+	if h, ok := any(fieldsLikeDbresponse).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
 			return err
 		}
 	}
@@ -463,8 +463,8 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	if err := r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(fieldsLikeDbresponse).(som.AfterDeleteHook); ok {
-		if err := h.AfterDelete(ctx); err != nil {
+	if h, ok := any(fieldsLikeDbresponse).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
 			return err
 		}
 	}

@@ -290,8 +290,8 @@ func (r *group) Create(ctx context.Context, group *model.Group) error {
 	if group.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(group).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(group).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -307,8 +307,8 @@ func (r *group) Create(ctx context.Context, group *model.Group) error {
 	if err := r.create(ctx, group); err != nil {
 		return err
 	}
-	if h, ok := any(group).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(group).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -332,8 +332,8 @@ func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	if group.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(group).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(group).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -349,8 +349,8 @@ func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	if err := r.createWithID(ctx, id, group); err != nil {
 		return err
 	}
-	if h, ok := any(group).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(group).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -404,8 +404,8 @@ func (r *group) Update(ctx context.Context, group *model.Group) error {
 	if group.ID() == nil {
 		return errors.New("cannot update Group without existing record ID")
 	}
-	if h, ok := any(group).(som.BeforeUpdateHook); ok {
-		if err := h.BeforeUpdate(ctx); err != nil {
+	if h, ok := any(group).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -421,8 +421,8 @@ func (r *group) Update(ctx context.Context, group *model.Group) error {
 	if err := r.update(ctx, group.ID(), group); err != nil {
 		return err
 	}
-	if h, ok := any(group).(som.AfterUpdateHook); ok {
-		if err := h.AfterUpdate(ctx); err != nil {
+	if h, ok := any(group).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -446,8 +446,8 @@ func (r *group) Delete(ctx context.Context, group *model.Group) error {
 	if group.ID() == nil {
 		return errors.New("cannot delete Group without existing record ID")
 	}
-	if h, ok := any(group).(som.BeforeDeleteHook); ok {
-		if err := h.BeforeDelete(ctx); err != nil {
+	if h, ok := any(group).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
 			return err
 		}
 	}
@@ -463,8 +463,8 @@ func (r *group) Delete(ctx context.Context, group *model.Group) error {
 	if err := r.delete(ctx, group.ID(), group, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(group).(som.AfterDeleteHook); ok {
-		if err := h.AfterDelete(ctx); err != nil {
+	if h, ok := any(group).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
 			return err
 		}
 	}

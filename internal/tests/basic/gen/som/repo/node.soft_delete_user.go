@@ -293,8 +293,8 @@ func (r *softDeleteUser) Create(ctx context.Context, softDeleteUser *model.SoftD
 	if softDeleteUser.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(softDeleteUser).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(softDeleteUser).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -310,8 +310,8 @@ func (r *softDeleteUser) Create(ctx context.Context, softDeleteUser *model.SoftD
 	if err := r.create(ctx, softDeleteUser); err != nil {
 		return err
 	}
-	if h, ok := any(softDeleteUser).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(softDeleteUser).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -335,8 +335,8 @@ func (r *softDeleteUser) CreateWithID(ctx context.Context, id string, softDelete
 	if softDeleteUser.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(softDeleteUser).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(softDeleteUser).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -352,8 +352,8 @@ func (r *softDeleteUser) CreateWithID(ctx context.Context, id string, softDelete
 	if err := r.createWithID(ctx, id, softDeleteUser); err != nil {
 		return err
 	}
-	if h, ok := any(softDeleteUser).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(softDeleteUser).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -407,8 +407,8 @@ func (r *softDeleteUser) Update(ctx context.Context, softDeleteUser *model.SoftD
 	if softDeleteUser.ID() == nil {
 		return errors.New("cannot update SoftDeleteUser without existing record ID")
 	}
-	if h, ok := any(softDeleteUser).(som.BeforeUpdateHook); ok {
-		if err := h.BeforeUpdate(ctx); err != nil {
+	if h, ok := any(softDeleteUser).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -424,8 +424,8 @@ func (r *softDeleteUser) Update(ctx context.Context, softDeleteUser *model.SoftD
 	if err := r.update(ctx, softDeleteUser.ID(), softDeleteUser); err != nil {
 		return err
 	}
-	if h, ok := any(softDeleteUser).(som.AfterUpdateHook); ok {
-		if err := h.AfterUpdate(ctx); err != nil {
+	if h, ok := any(softDeleteUser).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -452,8 +452,8 @@ func (r *softDeleteUser) Delete(ctx context.Context, softDeleteUser *model.SoftD
 	if softDeleteUser.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
-	if h, ok := any(softDeleteUser).(som.BeforeDeleteHook); ok {
-		if err := h.BeforeDelete(ctx); err != nil {
+	if h, ok := any(softDeleteUser).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
 			return err
 		}
 	}
@@ -469,8 +469,8 @@ func (r *softDeleteUser) Delete(ctx context.Context, softDeleteUser *model.SoftD
 	if err := r.delete(ctx, softDeleteUser.ID(), softDeleteUser, true, nil); err != nil {
 		return err
 	}
-	if h, ok := any(softDeleteUser).(som.AfterDeleteHook); ok {
-		if err := h.AfterDelete(ctx); err != nil {
+	if h, ok := any(softDeleteUser).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
 			return err
 		}
 	}

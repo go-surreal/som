@@ -785,14 +785,14 @@ func (b *build) subPkg(pkg string) string {
 
 func (b *build) addBeforeHooks(g *jen.Group, node *field.NodeTable, event string) {
 	somPkg := b.subPkg("")
-	hookIface := "Before" + event + "Hook"
+	hookIface := "OnBefore" + event + "Hook"
 	fieldName := "before" + event
 
 	g.If(
 		jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id(node.NameGoLower())).Assert(jen.Qual(somPkg, hookIface)),
 		jen.Id("ok"),
 	).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("Before"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
+		jen.If(jen.Err().Op(":=").Id("h").Dot("OnBefore"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
 			jen.Return(jen.Err()),
 		),
 	)
@@ -810,14 +810,14 @@ func (b *build) addBeforeHooks(g *jen.Group, node *field.NodeTable, event string
 
 func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string) {
 	somPkg := b.subPkg("")
-	hookIface := "After" + event + "Hook"
+	hookIface := "OnAfter" + event + "Hook"
 	fieldName := "after" + event
 
 	g.If(
 		jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id(node.NameGoLower())).Assert(jen.Qual(somPkg, hookIface)),
 		jen.Id("ok"),
 	).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("After"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
+		jen.If(jen.Err().Op(":=").Id("h").Dot("OnAfter"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
 			jen.Return(jen.Err()),
 		),
 	)

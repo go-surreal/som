@@ -293,8 +293,8 @@ func (r *softDeletePost) Create(ctx context.Context, softDeletePost *model.SoftD
 	if softDeletePost.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(softDeletePost).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(softDeletePost).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -310,8 +310,8 @@ func (r *softDeletePost) Create(ctx context.Context, softDeletePost *model.SoftD
 	if err := r.create(ctx, softDeletePost); err != nil {
 		return err
 	}
-	if h, ok := any(softDeletePost).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(softDeletePost).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -335,8 +335,8 @@ func (r *softDeletePost) CreateWithID(ctx context.Context, id string, softDelete
 	if softDeletePost.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(softDeletePost).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(softDeletePost).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -352,8 +352,8 @@ func (r *softDeletePost) CreateWithID(ctx context.Context, id string, softDelete
 	if err := r.createWithID(ctx, id, softDeletePost); err != nil {
 		return err
 	}
-	if h, ok := any(softDeletePost).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(softDeletePost).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -407,8 +407,8 @@ func (r *softDeletePost) Update(ctx context.Context, softDeletePost *model.SoftD
 	if softDeletePost.ID() == nil {
 		return errors.New("cannot update SoftDeletePost without existing record ID")
 	}
-	if h, ok := any(softDeletePost).(som.BeforeUpdateHook); ok {
-		if err := h.BeforeUpdate(ctx); err != nil {
+	if h, ok := any(softDeletePost).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -424,8 +424,8 @@ func (r *softDeletePost) Update(ctx context.Context, softDeletePost *model.SoftD
 	if err := r.update(ctx, softDeletePost.ID(), softDeletePost); err != nil {
 		return err
 	}
-	if h, ok := any(softDeletePost).(som.AfterUpdateHook); ok {
-		if err := h.AfterUpdate(ctx); err != nil {
+	if h, ok := any(softDeletePost).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -452,8 +452,8 @@ func (r *softDeletePost) Delete(ctx context.Context, softDeletePost *model.SoftD
 	if softDeletePost.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
-	if h, ok := any(softDeletePost).(som.BeforeDeleteHook); ok {
-		if err := h.BeforeDelete(ctx); err != nil {
+	if h, ok := any(softDeletePost).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
 			return err
 		}
 	}
@@ -469,8 +469,8 @@ func (r *softDeletePost) Delete(ctx context.Context, softDeletePost *model.SoftD
 	if err := r.delete(ctx, softDeletePost.ID(), softDeletePost, true, nil); err != nil {
 		return err
 	}
-	if h, ok := any(softDeletePost).(som.AfterDeleteHook); ok {
-		if err := h.AfterDelete(ctx); err != nil {
+	if h, ok := any(softDeletePost).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
 			return err
 		}
 	}

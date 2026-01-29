@@ -293,8 +293,8 @@ func (r *softDeleteBlogPost) Create(ctx context.Context, softDeleteBlogPost *mod
 	if softDeleteBlogPost.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(softDeleteBlogPost).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(softDeleteBlogPost).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -310,8 +310,8 @@ func (r *softDeleteBlogPost) Create(ctx context.Context, softDeleteBlogPost *mod
 	if err := r.create(ctx, softDeleteBlogPost); err != nil {
 		return err
 	}
-	if h, ok := any(softDeleteBlogPost).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(softDeleteBlogPost).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -335,8 +335,8 @@ func (r *softDeleteBlogPost) CreateWithID(ctx context.Context, id string, softDe
 	if softDeleteBlogPost.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(softDeleteBlogPost).(som.BeforeCreateHook); ok {
-		if err := h.BeforeCreate(ctx); err != nil {
+	if h, ok := any(softDeleteBlogPost).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -352,8 +352,8 @@ func (r *softDeleteBlogPost) CreateWithID(ctx context.Context, id string, softDe
 	if err := r.createWithID(ctx, id, softDeleteBlogPost); err != nil {
 		return err
 	}
-	if h, ok := any(softDeleteBlogPost).(som.AfterCreateHook); ok {
-		if err := h.AfterCreate(ctx); err != nil {
+	if h, ok := any(softDeleteBlogPost).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
@@ -407,8 +407,8 @@ func (r *softDeleteBlogPost) Update(ctx context.Context, softDeleteBlogPost *mod
 	if softDeleteBlogPost.ID() == nil {
 		return errors.New("cannot update SoftDeleteBlogPost without existing record ID")
 	}
-	if h, ok := any(softDeleteBlogPost).(som.BeforeUpdateHook); ok {
-		if err := h.BeforeUpdate(ctx); err != nil {
+	if h, ok := any(softDeleteBlogPost).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -424,8 +424,8 @@ func (r *softDeleteBlogPost) Update(ctx context.Context, softDeleteBlogPost *mod
 	if err := r.update(ctx, softDeleteBlogPost.ID(), softDeleteBlogPost); err != nil {
 		return err
 	}
-	if h, ok := any(softDeleteBlogPost).(som.AfterUpdateHook); ok {
-		if err := h.AfterUpdate(ctx); err != nil {
+	if h, ok := any(softDeleteBlogPost).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
 			return err
 		}
 	}
@@ -452,8 +452,8 @@ func (r *softDeleteBlogPost) Delete(ctx context.Context, softDeleteBlogPost *mod
 	if softDeleteBlogPost.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
-	if h, ok := any(softDeleteBlogPost).(som.BeforeDeleteHook); ok {
-		if err := h.BeforeDelete(ctx); err != nil {
+	if h, ok := any(softDeleteBlogPost).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
 			return err
 		}
 	}
@@ -469,8 +469,8 @@ func (r *softDeleteBlogPost) Delete(ctx context.Context, softDeleteBlogPost *mod
 	if err := r.delete(ctx, softDeleteBlogPost.ID(), softDeleteBlogPost, true, nil); err != nil {
 		return err
 	}
-	if h, ok := any(softDeleteBlogPost).(som.AfterDeleteHook); ok {
-		if err := h.AfterDelete(ctx); err != nil {
+	if h, ok := any(softDeleteBlogPost).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
 			return err
 		}
 	}
