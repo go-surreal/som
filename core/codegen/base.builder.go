@@ -196,7 +196,28 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		for _, event := range []string{"Create", "Update", "Delete"} {
 			for _, timing := range []string{"Before", "After"} {
-				g.Id("On"+timing+event).Call(
+				methodName := "On" + timing + event
+
+				var hookComment string
+				switch {
+				case timing == "Before":
+					hookComment = methodName + " registers a hook that runs before a record is " + strings.ToLower(event) + "d.\n" +
+						"If the hook returns an error, the " + strings.ToLower(event) + " operation is aborted.\n" +
+						"Returns a function that, when called, removes this hook.\n" +
+						"\n" +
+						"Note: Hooks are local to this application instance and are not\n" +
+						"distributed across multiple instances of the application."
+				case timing == "After":
+					hookComment = methodName + " registers a hook that runs after a record has been " + strings.ToLower(event) + "d.\n" +
+						"If the hook returns an error, the error is returned to the caller.\n" +
+						"Returns a function that, when called, removes this hook.\n" +
+						"\n" +
+						"Note: Hooks are local to this application instance and are not\n" +
+						"distributed across multiple instances of the application."
+				}
+
+				g.Add(comment(hookComment))
+				g.Id(methodName).Call(
 					jen.Id("fn").Func().Params(
 						jen.Id("ctx").Qual("context", "Context"),
 						jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
@@ -292,7 +313,26 @@ The instance is cached as a singleton on the client.
 			methodName := "On" + timing + event
 			fieldName := strings.ToLower(timing) + event
 
+			var hookComment string
+			switch {
+			case timing == "Before":
+				hookComment = methodName + " registers a hook that runs before a record is " + strings.ToLower(event) + "d.\n" +
+					"If the hook returns an error, the " + strings.ToLower(event) + " operation is aborted.\n" +
+					"Returns a function that, when called, removes this hook.\n" +
+					"\n" +
+					"Note: Hooks are local to this application instance and are not\n" +
+					"distributed across multiple instances of the application."
+			case timing == "After":
+				hookComment = methodName + " registers a hook that runs after a record has been " + strings.ToLower(event) + "d.\n" +
+					"If the hook returns an error, the error is returned to the caller.\n" +
+					"Returns a function that, when called, removes this hook.\n" +
+					"\n" +
+					"Note: Hooks are local to this application instance and are not\n" +
+					"distributed across multiple instances of the application."
+			}
+
 			f.Line().
+				Add(comment(hookComment)).
 				Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 				Id(methodName).
 				Params(jen.Id("fn").Func().Params(

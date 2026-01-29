@@ -27,11 +27,53 @@ type SoftDeleteBlogPostRepo interface {
 	Restore(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
 	Refresh(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
 	Relate() *relate.SoftDeleteBlogPost
+	// OnBeforeCreate registers a hook that runs before a record is created.
+	// If the hook returns an error, the create operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	// OnAfterCreate registers a hook that runs after a record has been created.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	// OnBeforeUpdate registers a hook that runs before a record is updated.
+	// If the hook returns an error, the update operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	// OnAfterUpdate registers a hook that runs after a record has been updated.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	// OnBeforeDelete registers a hook that runs before a record is deleted.
+	// If the hook returns an error, the delete operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	// OnAfterDelete registers a hook that runs after a record has been deleted.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
 }
 
@@ -79,6 +121,12 @@ type softDeleteBlogPostHook struct {
 
 var softDeleteBlogPostHookCounter atomic.Uint64
 
+// OnBeforeCreate registers a hook that runs before a record is created.
+// If the hook returns an error, the create operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *softDeleteBlogPost) OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
 	id := softDeleteBlogPostHookCounter.Add(1)
 	r.mu.Lock()
@@ -99,6 +147,12 @@ func (r *softDeleteBlogPost) OnBeforeCreate(fn func(ctx context.Context, node *m
 	}
 }
 
+// OnAfterCreate registers a hook that runs after a record has been created.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *softDeleteBlogPost) OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
 	id := softDeleteBlogPostHookCounter.Add(1)
 	r.mu.Lock()
@@ -119,6 +173,12 @@ func (r *softDeleteBlogPost) OnAfterCreate(fn func(ctx context.Context, node *mo
 	}
 }
 
+// OnBeforeUpdate registers a hook that runs before a record is updated.
+// If the hook returns an error, the update operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *softDeleteBlogPost) OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
 	id := softDeleteBlogPostHookCounter.Add(1)
 	r.mu.Lock()
@@ -139,6 +199,12 @@ func (r *softDeleteBlogPost) OnBeforeUpdate(fn func(ctx context.Context, node *m
 	}
 }
 
+// OnAfterUpdate registers a hook that runs after a record has been updated.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *softDeleteBlogPost) OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
 	id := softDeleteBlogPostHookCounter.Add(1)
 	r.mu.Lock()
@@ -159,6 +225,12 @@ func (r *softDeleteBlogPost) OnAfterUpdate(fn func(ctx context.Context, node *mo
 	}
 }
 
+// OnBeforeDelete registers a hook that runs before a record is deleted.
+// If the hook returns an error, the delete operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *softDeleteBlogPost) OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
 	id := softDeleteBlogPostHookCounter.Add(1)
 	r.mu.Lock()
@@ -179,6 +251,12 @@ func (r *softDeleteBlogPost) OnBeforeDelete(fn func(ctx context.Context, node *m
 	}
 }
 
+// OnAfterDelete registers a hook that runs after a record has been deleted.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *softDeleteBlogPost) OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
 	id := softDeleteBlogPostHookCounter.Add(1)
 	r.mu.Lock()

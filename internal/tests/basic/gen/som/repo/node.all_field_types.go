@@ -24,11 +24,53 @@ type AllFieldTypesRepo interface {
 	Delete(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	Refresh(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
 	Relate() *relate.AllFieldTypes
+	// OnBeforeCreate registers a hook that runs before a record is created.
+	// If the hook returns an error, the create operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeCreate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnAfterCreate registers a hook that runs after a record has been created.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterCreate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnBeforeUpdate registers a hook that runs before a record is updated.
+	// If the hook returns an error, the update operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnAfterUpdate registers a hook that runs after a record has been updated.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterUpdate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnBeforeDelete registers a hook that runs before a record is deleted.
+	// If the hook returns an error, the delete operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeDelete(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnAfterDelete registers a hook that runs after a record has been deleted.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterDelete(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
 }
 
@@ -76,6 +118,12 @@ type allFieldTypesHook struct {
 
 var allFieldTypesHookCounter atomic.Uint64
 
+// OnBeforeCreate registers a hook that runs before a record is created.
+// If the hook returns an error, the create operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *allFieldTypes) OnBeforeCreate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
 	id := allFieldTypesHookCounter.Add(1)
 	r.mu.Lock()
@@ -96,6 +144,12 @@ func (r *allFieldTypes) OnBeforeCreate(fn func(ctx context.Context, node *model.
 	}
 }
 
+// OnAfterCreate registers a hook that runs after a record has been created.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *allFieldTypes) OnAfterCreate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
 	id := allFieldTypesHookCounter.Add(1)
 	r.mu.Lock()
@@ -116,6 +170,12 @@ func (r *allFieldTypes) OnAfterCreate(fn func(ctx context.Context, node *model.A
 	}
 }
 
+// OnBeforeUpdate registers a hook that runs before a record is updated.
+// If the hook returns an error, the update operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *allFieldTypes) OnBeforeUpdate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
 	id := allFieldTypesHookCounter.Add(1)
 	r.mu.Lock()
@@ -136,6 +196,12 @@ func (r *allFieldTypes) OnBeforeUpdate(fn func(ctx context.Context, node *model.
 	}
 }
 
+// OnAfterUpdate registers a hook that runs after a record has been updated.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *allFieldTypes) OnAfterUpdate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
 	id := allFieldTypesHookCounter.Add(1)
 	r.mu.Lock()
@@ -156,6 +222,12 @@ func (r *allFieldTypes) OnAfterUpdate(fn func(ctx context.Context, node *model.A
 	}
 }
 
+// OnBeforeDelete registers a hook that runs before a record is deleted.
+// If the hook returns an error, the delete operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *allFieldTypes) OnBeforeDelete(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
 	id := allFieldTypesHookCounter.Add(1)
 	r.mu.Lock()
@@ -176,6 +248,12 @@ func (r *allFieldTypes) OnBeforeDelete(fn func(ctx context.Context, node *model.
 	}
 }
 
+// OnAfterDelete registers a hook that runs after a record has been deleted.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *allFieldTypes) OnAfterDelete(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
 	id := allFieldTypesHookCounter.Add(1)
 	r.mu.Lock()

@@ -158,32 +158,62 @@ type SemVer string
 // 	Message string
 // }
 
-// BeforeCreateHook is implemented by models that need to run logic before creation.
+// BeforeCreateHook can be implemented by model structs to run logic
+// before a new record is created. If the hook returns an error,
+// the create operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
 type BeforeCreateHook interface {
 	BeforeCreate(ctx context.Context) error
 }
 
-// AfterCreateHook is implemented by models that need to run logic after creation.
+// AfterCreateHook can be implemented by model structs to run logic
+// after a new record has been created. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
 type AfterCreateHook interface {
 	AfterCreate(ctx context.Context) error
 }
 
-// BeforeUpdateHook is implemented by models that need to run logic before an update.
+// BeforeUpdateHook can be implemented by model structs to run logic
+// before an existing record is updated. If the hook returns an error,
+// the update operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
 type BeforeUpdateHook interface {
 	BeforeUpdate(ctx context.Context) error
 }
 
-// AfterUpdateHook is implemented by models that need to run logic after an update.
+// AfterUpdateHook can be implemented by model structs to run logic
+// after an existing record has been updated. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
 type AfterUpdateHook interface {
 	AfterUpdate(ctx context.Context) error
 }
 
-// BeforeDeleteHook is implemented by models that need to run logic before deletion.
+// BeforeDeleteHook can be implemented by model structs to run logic
+// before a record is deleted. If the hook returns an error,
+// the delete operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
 type BeforeDeleteHook interface {
 	BeforeDelete(ctx context.Context) error
 }
 
-// AfterDeleteHook is implemented by models that need to run logic after deletion.
+// AfterDeleteHook can be implemented by model structs to run logic
+// after a record has been deleted. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
 type AfterDeleteHook interface {
 	AfterDelete(ctx context.Context) error
 }

@@ -24,11 +24,53 @@ type GroupRepo interface {
 	Delete(ctx context.Context, group *model.Group) error
 	Refresh(ctx context.Context, group *model.Group) error
 	Relate() *relate.Group
+	// OnBeforeCreate registers a hook that runs before a record is created.
+	// If the hook returns an error, the create operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeCreate(fn func(ctx context.Context, node *model.Group) error) func()
+	// OnAfterCreate registers a hook that runs after a record has been created.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterCreate(fn func(ctx context.Context, node *model.Group) error) func()
+	// OnBeforeUpdate registers a hook that runs before a record is updated.
+	// If the hook returns an error, the update operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.Group) error) func()
+	// OnAfterUpdate registers a hook that runs after a record has been updated.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterUpdate(fn func(ctx context.Context, node *model.Group) error) func()
+	// OnBeforeDelete registers a hook that runs before a record is deleted.
+	// If the hook returns an error, the delete operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeDelete(fn func(ctx context.Context, node *model.Group) error) func()
+	// OnAfterDelete registers a hook that runs after a record has been deleted.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterDelete(fn func(ctx context.Context, node *model.Group) error) func()
 }
 
@@ -76,6 +118,12 @@ type groupHook struct {
 
 var groupHookCounter atomic.Uint64
 
+// OnBeforeCreate registers a hook that runs before a record is created.
+// If the hook returns an error, the create operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *group) OnBeforeCreate(fn func(ctx context.Context, node *model.Group) error) func() {
 	id := groupHookCounter.Add(1)
 	r.mu.Lock()
@@ -96,6 +144,12 @@ func (r *group) OnBeforeCreate(fn func(ctx context.Context, node *model.Group) e
 	}
 }
 
+// OnAfterCreate registers a hook that runs after a record has been created.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *group) OnAfterCreate(fn func(ctx context.Context, node *model.Group) error) func() {
 	id := groupHookCounter.Add(1)
 	r.mu.Lock()
@@ -116,6 +170,12 @@ func (r *group) OnAfterCreate(fn func(ctx context.Context, node *model.Group) er
 	}
 }
 
+// OnBeforeUpdate registers a hook that runs before a record is updated.
+// If the hook returns an error, the update operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *group) OnBeforeUpdate(fn func(ctx context.Context, node *model.Group) error) func() {
 	id := groupHookCounter.Add(1)
 	r.mu.Lock()
@@ -136,6 +196,12 @@ func (r *group) OnBeforeUpdate(fn func(ctx context.Context, node *model.Group) e
 	}
 }
 
+// OnAfterUpdate registers a hook that runs after a record has been updated.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *group) OnAfterUpdate(fn func(ctx context.Context, node *model.Group) error) func() {
 	id := groupHookCounter.Add(1)
 	r.mu.Lock()
@@ -156,6 +222,12 @@ func (r *group) OnAfterUpdate(fn func(ctx context.Context, node *model.Group) er
 	}
 }
 
+// OnBeforeDelete registers a hook that runs before a record is deleted.
+// If the hook returns an error, the delete operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *group) OnBeforeDelete(fn func(ctx context.Context, node *model.Group) error) func() {
 	id := groupHookCounter.Add(1)
 	r.mu.Lock()
@@ -176,6 +248,12 @@ func (r *group) OnBeforeDelete(fn func(ctx context.Context, node *model.Group) e
 	}
 }
 
+// OnAfterDelete registers a hook that runs after a record has been deleted.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *group) OnAfterDelete(fn func(ctx context.Context, node *model.Group) error) func() {
 	id := groupHookCounter.Add(1)
 	r.mu.Lock()

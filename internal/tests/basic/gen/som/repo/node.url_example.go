@@ -24,11 +24,53 @@ type URLExampleRepo interface {
 	Delete(ctx context.Context, urlexample *model.URLExample) error
 	Refresh(ctx context.Context, urlexample *model.URLExample) error
 	Relate() *relate.URLExample
+	// OnBeforeCreate registers a hook that runs before a record is created.
+	// If the hook returns an error, the create operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeCreate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnAfterCreate registers a hook that runs after a record has been created.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterCreate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnBeforeUpdate registers a hook that runs before a record is updated.
+	// If the hook returns an error, the update operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnAfterUpdate registers a hook that runs after a record has been updated.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterUpdate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnBeforeDelete registers a hook that runs before a record is deleted.
+	// If the hook returns an error, the delete operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnBeforeDelete(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnAfterDelete registers a hook that runs after a record has been deleted.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
 	OnAfterDelete(fn func(ctx context.Context, node *model.URLExample) error) func()
 }
 
@@ -76,6 +118,12 @@ type urlexampleHook struct {
 
 var urlexampleHookCounter atomic.Uint64
 
+// OnBeforeCreate registers a hook that runs before a record is created.
+// If the hook returns an error, the create operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *urlexample) OnBeforeCreate(fn func(ctx context.Context, node *model.URLExample) error) func() {
 	id := urlexampleHookCounter.Add(1)
 	r.mu.Lock()
@@ -96,6 +144,12 @@ func (r *urlexample) OnBeforeCreate(fn func(ctx context.Context, node *model.URL
 	}
 }
 
+// OnAfterCreate registers a hook that runs after a record has been created.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *urlexample) OnAfterCreate(fn func(ctx context.Context, node *model.URLExample) error) func() {
 	id := urlexampleHookCounter.Add(1)
 	r.mu.Lock()
@@ -116,6 +170,12 @@ func (r *urlexample) OnAfterCreate(fn func(ctx context.Context, node *model.URLE
 	}
 }
 
+// OnBeforeUpdate registers a hook that runs before a record is updated.
+// If the hook returns an error, the update operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *urlexample) OnBeforeUpdate(fn func(ctx context.Context, node *model.URLExample) error) func() {
 	id := urlexampleHookCounter.Add(1)
 	r.mu.Lock()
@@ -136,6 +196,12 @@ func (r *urlexample) OnBeforeUpdate(fn func(ctx context.Context, node *model.URL
 	}
 }
 
+// OnAfterUpdate registers a hook that runs after a record has been updated.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *urlexample) OnAfterUpdate(fn func(ctx context.Context, node *model.URLExample) error) func() {
 	id := urlexampleHookCounter.Add(1)
 	r.mu.Lock()
@@ -156,6 +222,12 @@ func (r *urlexample) OnAfterUpdate(fn func(ctx context.Context, node *model.URLE
 	}
 }
 
+// OnBeforeDelete registers a hook that runs before a record is deleted.
+// If the hook returns an error, the delete operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *urlexample) OnBeforeDelete(fn func(ctx context.Context, node *model.URLExample) error) func() {
 	id := urlexampleHookCounter.Add(1)
 	r.mu.Lock()
@@ -176,6 +248,12 @@ func (r *urlexample) OnBeforeDelete(fn func(ctx context.Context, node *model.URL
 	}
 }
 
+// OnAfterDelete registers a hook that runs after a record has been deleted.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
 func (r *urlexample) OnAfterDelete(fn func(ctx context.Context, node *model.URLExample) error) func() {
 	id := urlexampleHookCounter.Add(1)
 	r.mu.Lock()
