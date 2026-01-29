@@ -16,14 +16,31 @@ import (
 )
 
 type GroupRepo interface {
+	// Query returns a new query builder for the Group model.
+
 	Query() query.Builder[model.Group]
+	// Create creates a new record for the Group model.
+
 	Create(ctx context.Context, group *model.Group) error
+	// CreateWithID creates a new record with the given ID for the Group model.
+
 	CreateWithID(ctx context.Context, id string, group *model.Group) error
+	// Read returns the record for the given ID, if it exists.
+
 	Read(ctx context.Context, id *som.ID) (*model.Group, bool, error)
+	// Update updates the record for the given Group model.
+
 	Update(ctx context.Context, group *model.Group) error
+	// Delete deletes the record for the given Group model.
+
 	Delete(ctx context.Context, group *model.Group) error
+	// Refresh refreshes the given model with the current database state.
+
 	Refresh(ctx context.Context, group *model.Group) error
+	// Relate returns a new relate builder for the Group model.
+
 	Relate() *relate.Group
+
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
 	// Returns a function that, when called, removes this hook.

@@ -17,16 +17,37 @@ import (
 )
 
 type SoftDeleteBlogPostRepo interface {
+	// Query returns a new query builder for the SoftDeleteBlogPost model.
+
 	Query() query.Builder[model.SoftDeleteBlogPost]
+	// Create creates a new record for the SoftDeleteBlogPost model.
+
 	Create(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
+	// CreateWithID creates a new record with the given ID for the SoftDeleteBlogPost model.
+
 	CreateWithID(ctx context.Context, id string, softDeleteBlogPost *model.SoftDeleteBlogPost) error
+	// Read returns the record for the given ID, if it exists.
+
 	Read(ctx context.Context, id *som.ID) (*model.SoftDeleteBlogPost, bool, error)
+	// Update updates the record for the given SoftDeleteBlogPost model.
+
 	Update(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
+	// Delete deletes the record for the given SoftDeleteBlogPost model.
+
 	Delete(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
+	// Erase permanently deletes the record from the database.
+
 	Erase(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
+	// Restore un-deletes a soft-deleted record.
+
 	Restore(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
+	// Refresh refreshes the given model with the current database state.
+
 	Refresh(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
+	// Relate returns a new relate builder for the SoftDeleteBlogPost model.
+
 	Relate() *relate.SoftDeleteBlogPost
+
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
 	// Returns a function that, when called, removes this hook.

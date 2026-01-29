@@ -16,14 +16,31 @@ import (
 )
 
 type URLExampleRepo interface {
+	// Query returns a new query builder for the URLExample model.
+
 	Query() query.Builder[model.URLExample]
+	// Create creates a new record for the URLExample model.
+
 	Create(ctx context.Context, urlexample *model.URLExample) error
+	// CreateWithID creates a new record with the given ID for the URLExample model.
+
 	CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error
+	// Read returns the record for the given ID, if it exists.
+
 	Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error)
+	// Update updates the record for the given URLExample model.
+
 	Update(ctx context.Context, urlexample *model.URLExample) error
+	// Delete deletes the record for the given URLExample model.
+
 	Delete(ctx context.Context, urlexample *model.URLExample) error
+	// Refresh refreshes the given model with the current database state.
+
 	Refresh(ctx context.Context, urlexample *model.URLExample) error
+	// Relate returns a new relate builder for the URLExample model.
+
 	Relate() *relate.URLExample
+
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
 	// Returns a function that, when called, removes this hook.

@@ -143,19 +143,23 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	// type {NodeName}Repo interface {...}
 	//
 	f.Line().Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
+		g.Add(comment("Query returns a new query builder for the " + node.NameGo() + " model."))
 		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
 
+		g.Add(comment("Create creates a new record for the " + node.NameGo() + " model."))
 		g.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error()
 
+		g.Add(comment("CreateWithID creates a new record with the given ID for the " + node.NameGo() + " model."))
 		g.Id("CreateWithID").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("id").String(),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error()
 
+		g.Add(comment("Read returns the record for the given ID, if it exists."))
 		g.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
@@ -165,11 +169,13 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Error(),
 		))
 
+		g.Add(comment("Update updates the record for the given " + node.NameGo() + " model."))
 		g.Id("Update").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error()
 
+		g.Add(comment("Delete deletes the record for the given " + node.NameGo() + " model."))
 		g.Id("Delete").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
@@ -177,23 +183,29 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		// Add Erase and Restore for soft delete models
 		if node.Source.SoftDelete {
+			g.Add(comment("Erase permanently deletes the record from the database."))
 			g.Id("Erase").Call(
 				jen.Id("ctx").Qual("context", "Context"),
 				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 			).Error()
 
+			g.Add(comment("Restore un-deletes a soft-deleted record."))
 			g.Id("Restore").Call(
 				jen.Id("ctx").Qual("context", "Context"),
 				jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 			).Error()
 		}
 
+		g.Add(comment("Refresh refreshes the given model with the current database state."))
 		g.Id("Refresh").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Error()
 
+		g.Add(comment("Relate returns a new relate builder for the " + node.NameGo() + " model."))
 		g.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo())
+
+		g.Line()
 
 		for _, event := range []string{"Create", "Update", "Delete"} {
 			for _, timing := range []string{"Before", "After"} {
