@@ -57,5 +57,6 @@ func TestFilterCompareFields(t *testing.T) {
 		modelNew, *modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
+		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus"),
 	)
 }

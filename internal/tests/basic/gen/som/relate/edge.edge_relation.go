@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -29,17 +30,21 @@ func (e edgeRelation) Create(ctx context.Context, edge *model.EdgeRelation) erro
 	if edge.SpecialTypes.ID() == nil {
 		return errors.New("ID of the outgoing node 'SpecialTypes' must not be empty")
 	}
-	query := "RELATE " + "all_types:" + edge.AllTypes.ID().String() + "->edge_relation->" + "special_types:" + edge.SpecialTypes.ID().String() + " CONTENT $data"
+	query := "RELATE " + edge.AllTypes.ID().String() + "->edge_relation->" + edge.SpecialTypes.ID().String() + " CONTENT $data"
 	data := conv.FromEdgeRelation(*edge)
 	res, err := e.db.Query(ctx, query, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
 	}
-	var convEdge *conv.EdgeRelation
-	err = e.db.Unmarshal(res, &convEdge)
+	var rawResult []internal.QueryResult[conv.EdgeRelation]
+	err = e.db.Unmarshal(res, &rawResult)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return errors.New("no result returned for relation")
+	}
+	convEdge := &rawResult[0].Result[0]
 	*edge = conv.ToEdgeRelation(convEdge)
 	return nil
 }

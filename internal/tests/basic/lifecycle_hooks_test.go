@@ -180,9 +180,10 @@ func TestHookAfterDelete(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, called.Load())
 
-	_, exists, err := client.SpecialTypesRepo().Read(ctx, id)
+	read, exists, err := client.SpecialTypesRepo().Read(ctx, id)
 	assert.NilError(t, err)
-	assert.Assert(t, !exists)
+	assert.Assert(t, exists)
+	assert.Assert(t, read.SoftDelete.IsDeleted())
 }
 
 func TestHookCleanup(t *testing.T) {
