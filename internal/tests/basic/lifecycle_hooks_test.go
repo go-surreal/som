@@ -18,17 +18,17 @@ func TestHookBeforeCreate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	unregister := client.GroupRepo().OnBeforeCreate(func(ctx context.Context, group *model.Group) error {
+	unregister := client.SpecialTypesRepo().OnBeforeCreate(func(ctx context.Context, group *model.SpecialTypes) error {
 		group.Name = "modified-by-hook"
 		return nil
 	})
 	defer unregister()
 
-	group := model.Group{Name: "original"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "original"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 
-	read, exists, err := client.GroupRepo().Read(ctx, group.ID())
+	read, exists, err := client.SpecialTypesRepo().Read(ctx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Equal(t, "modified-by-hook", read.Name)
@@ -42,18 +42,18 @@ func TestHookAfterCreate(t *testing.T) {
 
 	var called atomic.Bool
 
-	unregister := client.GroupRepo().OnAfterCreate(func(ctx context.Context, group *model.Group) error {
+	unregister := client.SpecialTypesRepo().OnAfterCreate(func(ctx context.Context, group *model.SpecialTypes) error {
 		called.Store(true)
 		return nil
 	})
 	defer unregister()
 
-	group := model.Group{Name: "test"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "test"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 	assert.Assert(t, called.Load())
 
-	_, exists, err := client.GroupRepo().Read(ctx, group.ID())
+	_, exists, err := client.SpecialTypesRepo().Read(ctx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 }
@@ -66,17 +66,17 @@ func TestHookBeforeCreateAbort(t *testing.T) {
 
 	hookErr := errors.New("abort create")
 
-	unregister := client.GroupRepo().OnBeforeCreate(func(ctx context.Context, group *model.Group) error {
+	unregister := client.SpecialTypesRepo().OnBeforeCreate(func(ctx context.Context, group *model.SpecialTypes) error {
 		return hookErr
 	})
 	defer unregister()
 
-	group := model.Group{Name: "should-not-exist"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "should-not-exist"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.Assert(t, errors.Is(err, hookErr))
 
-	results, err := client.GroupRepo().Query().Where(
-		filter.Group.Name.Equal("should-not-exist"),
+	results, err := client.SpecialTypesRepo().Query().Where(
+		filter.SpecialTypes.Name.Equal("should-not-exist"),
 	).All(ctx)
 	assert.NilError(t, err)
 	assert.Equal(t, 0, len(results))
@@ -88,21 +88,21 @@ func TestHookBeforeUpdate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group := model.Group{Name: "original"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "original"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 
-	unregister := client.GroupRepo().OnBeforeUpdate(func(ctx context.Context, group *model.Group) error {
+	unregister := client.SpecialTypesRepo().OnBeforeUpdate(func(ctx context.Context, group *model.SpecialTypes) error {
 		group.Name = "modified-by-update-hook"
 		return nil
 	})
 	defer unregister()
 
 	group.Name = "updated"
-	err = client.GroupRepo().Update(ctx, &group)
+	err = client.SpecialTypesRepo().Update(ctx, &group)
 	assert.NilError(t, err)
 
-	read, exists, err := client.GroupRepo().Read(ctx, group.ID())
+	read, exists, err := client.SpecialTypesRepo().Read(ctx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Equal(t, "modified-by-update-hook", read.Name)
@@ -116,18 +116,18 @@ func TestHookAfterUpdate(t *testing.T) {
 
 	var called atomic.Bool
 
-	group := model.Group{Name: "test"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "test"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 
-	unregister := client.GroupRepo().OnAfterUpdate(func(ctx context.Context, group *model.Group) error {
+	unregister := client.SpecialTypesRepo().OnAfterUpdate(func(ctx context.Context, group *model.SpecialTypes) error {
 		called.Store(true)
 		return nil
 	})
 	defer unregister()
 
 	group.Name = "updated"
-	err = client.GroupRepo().Update(ctx, &group)
+	err = client.SpecialTypesRepo().Update(ctx, &group)
 	assert.NilError(t, err)
 	assert.Assert(t, called.Load())
 }
@@ -138,21 +138,21 @@ func TestHookBeforeDelete(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group := model.Group{Name: "test"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "test"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 
 	hookErr := errors.New("abort delete")
 
-	unregister := client.GroupRepo().OnBeforeDelete(func(ctx context.Context, group *model.Group) error {
+	unregister := client.SpecialTypesRepo().OnBeforeDelete(func(ctx context.Context, group *model.SpecialTypes) error {
 		return hookErr
 	})
 	defer unregister()
 
-	err = client.GroupRepo().Delete(ctx, &group)
+	err = client.SpecialTypesRepo().Delete(ctx, &group)
 	assert.Assert(t, errors.Is(err, hookErr))
 
-	_, exists, err := client.GroupRepo().Read(ctx, group.ID())
+	_, exists, err := client.SpecialTypesRepo().Read(ctx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 }
@@ -165,24 +165,25 @@ func TestHookAfterDelete(t *testing.T) {
 
 	var called atomic.Bool
 
-	group := model.Group{Name: "test"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "test"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 	id := group.ID()
 
-	unregister := client.GroupRepo().OnAfterDelete(func(ctx context.Context, group *model.Group) error {
+	unregister := client.SpecialTypesRepo().OnAfterDelete(func(ctx context.Context, group *model.SpecialTypes) error {
 		called.Store(true)
 		return nil
 	})
 	defer unregister()
 
-	err = client.GroupRepo().Delete(ctx, &group)
+	err = client.SpecialTypesRepo().Delete(ctx, &group)
 	assert.NilError(t, err)
 	assert.Assert(t, called.Load())
 
-	_, exists, err := client.GroupRepo().Read(ctx, id)
+	read, exists, err := client.SpecialTypesRepo().Read(ctx, id)
 	assert.NilError(t, err)
-	assert.Assert(t, !exists)
+	assert.Assert(t, exists)
+	assert.Assert(t, read.SoftDelete.IsDeleted())
 }
 
 func TestHookCleanup(t *testing.T) {
@@ -193,15 +194,15 @@ func TestHookCleanup(t *testing.T) {
 
 	var called atomic.Bool
 
-	unregister := client.GroupRepo().OnBeforeCreate(func(ctx context.Context, group *model.Group) error {
+	unregister := client.SpecialTypesRepo().OnBeforeCreate(func(ctx context.Context, group *model.SpecialTypes) error {
 		called.Store(true)
 		return nil
 	})
 
 	unregister()
 
-	group := model.Group{Name: "test"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "test"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 	assert.Assert(t, !called.Load())
 }
@@ -214,20 +215,20 @@ func TestHookMultiple(t *testing.T) {
 
 	var order []int
 
-	unregister1 := client.GroupRepo().OnBeforeCreate(func(ctx context.Context, group *model.Group) error {
+	unregister1 := client.SpecialTypesRepo().OnBeforeCreate(func(ctx context.Context, group *model.SpecialTypes) error {
 		order = append(order, 1)
 		return nil
 	})
 	defer unregister1()
 
-	unregister2 := client.GroupRepo().OnBeforeCreate(func(ctx context.Context, group *model.Group) error {
+	unregister2 := client.SpecialTypesRepo().OnBeforeCreate(func(ctx context.Context, group *model.SpecialTypes) error {
 		order = append(order, 2)
 		return nil
 	})
 	defer unregister2()
 
-	group := model.Group{Name: "test"}
-	err := client.GroupRepo().Create(ctx, &group)
+	group := model.SpecialTypes{Name: "test"}
+	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 	assert.Equal(t, 2, len(order))
 	assert.Equal(t, 1, order[0])
@@ -240,14 +241,14 @@ func TestModelHookBeforeCreate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Status: "active"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "active"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	read, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	read, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
-	assert.Equal(t, "[created]active", read.Status)
+	assert.Equal(t, "[created]active", read.FieldHookStatus)
 }
 
 func TestModelHookAfterCreate(t *testing.T) {
@@ -256,11 +257,11 @@ func TestModelHookAfterCreate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Detail: "info"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookDetail: "info"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	assert.Assert(t, strings.HasSuffix(rec.Detail, "[after-create]"))
+	assert.Assert(t, strings.HasSuffix(rec.FieldHookDetail, "[after-create]"))
 }
 
 func TestModelHookBeforeUpdate(t *testing.T) {
@@ -269,18 +270,18 @@ func TestModelHookBeforeUpdate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Status: "init"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "init"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	rec.Status = "changed"
-	err = client.FieldsLikeDBResponseRepo().Update(ctx, &rec)
+	rec.FieldHookStatus = "changed"
+	err = client.AllTypesRepo().Update(ctx, &rec)
 	assert.NilError(t, err)
 
-	read, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	read, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
-	assert.Equal(t, "[updated]changed", read.Status)
+	assert.Equal(t, "[updated]changed", read.FieldHookStatus)
 }
 
 func TestModelHookAfterUpdate(t *testing.T) {
@@ -289,14 +290,14 @@ func TestModelHookAfterUpdate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Detail: "info"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookDetail: "info"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	err = client.FieldsLikeDBResponseRepo().Update(ctx, &rec)
+	err = client.AllTypesRepo().Update(ctx, &rec)
 	assert.NilError(t, err)
 
-	assert.Assert(t, strings.HasSuffix(rec.Detail, "[after-update]"))
+	assert.Assert(t, strings.HasSuffix(rec.FieldHookDetail, "[after-update]"))
 }
 
 func TestModelHookBeforeDeleteAbort(t *testing.T) {
@@ -305,17 +306,17 @@ func TestModelHookBeforeDeleteAbort(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Status: "keep"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "keep"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
 	abort := true
 	deleteCtx := context.WithValue(ctx, model.AbortDeleteKey, &abort)
 
-	err = client.FieldsLikeDBResponseRepo().Delete(deleteCtx, &rec)
+	err = client.AllTypesRepo().Delete(deleteCtx, &rec)
 	assert.Assert(t, err != nil)
 
-	_, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	_, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 }
@@ -326,19 +327,19 @@ func TestModelHookAfterDelete(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Status: "remove"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "remove"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 	id := rec.ID()
 
 	called := false
 	deleteCtx := context.WithValue(ctx, model.AfterDeleteCalledKey, &called)
 
-	err = client.FieldsLikeDBResponseRepo().Delete(deleteCtx, &rec)
+	err = client.AllTypesRepo().Delete(deleteCtx, &rec)
 	assert.NilError(t, err)
 	assert.Assert(t, called)
 
-	_, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, id)
+	_, exists, err := client.AllTypesRepo().Read(ctx, id)
 	assert.NilError(t, err)
 	assert.Assert(t, !exists)
 }
@@ -350,14 +351,14 @@ func TestModelHookAndRepoHookOrder(t *testing.T) {
 	defer cleanup()
 
 	var repoSawStatus string
-	unregister := client.FieldsLikeDBResponseRepo().OnBeforeCreate(func(_ context.Context, rec *model.FieldsLikeDBResponse) error {
-		repoSawStatus = rec.Status
+	unregister := client.AllTypesRepo().OnBeforeCreate(func(_ context.Context, rec *model.AllTypes) error {
+		repoSawStatus = rec.FieldHookStatus
 		return nil
 	})
 	defer unregister()
 
-	rec := model.FieldsLikeDBResponse{Status: "orig"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "orig"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
 	assert.Equal(t, "[created]orig", repoSawStatus)

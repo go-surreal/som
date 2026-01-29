@@ -117,9 +117,9 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 				),
 
 			jen.Id("query").Op(":=").Lit("RELATE ").Op("+").
-				Lit(edge.In.NameDatabase()+":").Op("+").Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
+				Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
 				Lit("->"+edge.NameDatabase()+"->").Op("+").
-				Lit(edge.Out.NameDatabase()+":").Op("+").Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
+				Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
 				Lit(" CONTENT $data"),
 
 			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
@@ -133,11 +133,16 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create relation: %w"), jen.Err())),
 			),
 
-			jen.Var().Id("convEdge").Op("*").Qual(b.subPkg(def.PkgConv), edge.NameGo()),
-			jen.Err().Op("=").Id("e").Dot("db").Dot("Unmarshal").Call(jen.Id("res"), jen.Op("&").Id("convEdge")),
+			jen.Var().Id("rawResult").Index().Qual(b.subPkg(def.PkgInternal), "QueryResult").Types(jen.Qual(b.subPkg(def.PkgConv), edge.NameGo())),
+			jen.Err().Op("=").Id("e").Dot("db").Dot("Unmarshal").Call(jen.Id("res"), jen.Op("&").Id("rawResult")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal relation: %w"), jen.Err())),
 			),
+			jen.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
+				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("no result returned for relation"))),
+			),
+
+			jen.Id("convEdge").Op(":=").Op("&").Id("rawResult").Index(jen.Lit(0)).Dot("Result").Index(jen.Lit(0)),
 
 			jen.Op("*").Id("edge").Op("=").
 				Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),

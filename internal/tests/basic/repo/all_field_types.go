@@ -12,64 +12,64 @@ import (
 	"github.com/go-surreal/som/tests/basic/model"
 )
 
-type AllFieldTypesRepo interface {
-	repo.AllFieldTypesRepo
+type AllTypesRepo interface {
+	repo.AllTypesRepo
 
-	FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error)
-	List(ctx context.Context) ([]*model.AllFieldTypes, error)
+	FindByID(ctx context.Context, id *som.ID) (*model.AllTypes, error)
+	List(ctx context.Context) ([]*model.AllTypes, error)
 }
 
-type allFieldTypesRepo struct {
-	repo.AllFieldTypesRepo
+type allTypesRepo struct {
+	repo.AllTypesRepo
 }
 
-func NewAllFieldTypesRepo(db repo.Client) AllFieldTypesRepo {
-	return &allFieldTypesRepo{
-		AllFieldTypesRepo: db.AllFieldTypesRepo(),
+func NewAllTypesRepo(db repo.Client) AllTypesRepo {
+	return &allTypesRepo{
+		AllTypesRepo: db.AllTypesRepo(),
 	}
 }
 
-func (r *allFieldTypesRepo) FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error) {
-	return r.AllFieldTypesRepo.Query().Where(filter.AllFieldTypes.ID.Equal(id)).First(ctx)
+func (r *allTypesRepo) FindByID(ctx context.Context, id *som.ID) (*model.AllTypes, error) {
+	return r.AllTypesRepo.Query().Where(filter.AllTypes.ID.Equal(id)).First(ctx)
 }
 
-func (r *allFieldTypesRepo) FetchByID(
+func (r *allTypesRepo) FetchByID(
 	ctx context.Context,
 	id *som.ID,
-	fetch ...with.Fetch_[model.AllFieldTypes],
+	fetch ...with.Fetch_[model.AllTypes],
 ) (
-	[]*model.AllFieldTypes,
+	[]*model.AllTypes,
 	error,
 ) {
-	return r.AllFieldTypesRepo.Query().
-		Where(filter.AllFieldTypes.ID.Equal(id)).
+	return r.AllTypesRepo.Query().
+		Where(filter.AllTypes.ID.Equal(id)).
 		Fetch(fetch...).
 		All(ctx)
 }
 
 var b byte
 
-func (r *allFieldTypesRepo) List(ctx context.Context) ([]*model.AllFieldTypes, error) {
-	return r.AllFieldTypesRepo.Query().
+func (r *allTypesRepo) List(ctx context.Context) ([]*model.AllTypes, error) {
+	return r.AllTypesRepo.Query().
 		Where(
-			//filter.Any[model.AllFieldTypes](
+			//filter.Any[model.AllTypes](
 			//	filter.User.ID.Equal("9rb97n04ggwmekxats5a"),
 			//	filter.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
 			//	filter.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
 			//	filter.User.MyGroups().Since.Before(time.Now()), // ->(member_of where since < $)
 			//	filter.User.MyGroups().Group().ID.Equal(""),     // ->member_of->(group where id = $)
 			//
-			//	filter.AllFieldTypes.MemberOf().Group().Members().User(
-			//		filter.AllFieldTypes.ID.Equal("klkl4w6i9z8u0uyo5w7f"),
+			//	filter.AllTypes.FieldMemberOf().Group().Members().User(
+			//		filter.AllTypes.ID.Equal("klkl4w6i9z8u0uyo5w7f"),
 			//	),
 			//
-			//	filter.AllFieldTypes.Byte.Equal(b),
+			//	filter.AllTypes.FieldByte.Equal(b),
 			//
-			//	filter.AllFieldTypes.BytePtr.Equal(b),
+			//	filter.AllTypes.FieldBytePtr.Equal(b),
 			//
-			//	filter.AllFieldTypes.ByteSlice().Equal([]byte("omr4f")),
+			//	filter.AllTypes.FieldByteSlice().Equal([]byte("omr4f")),
 			//
-			//	filter.AllFieldTypes.ByteSlicePtr().Equal([]byte("")),
+			//	filter.AllTypes.FieldByteSlicePtr().Equal([]byte("")),
 			//
 			//	filter.User.Groups().ID.In(nil),
 			//	filter.User.Groups().Name.In(nil),
@@ -79,33 +79,33 @@ func (r *allFieldTypesRepo) List(ctx context.Context) ([]*model.AllFieldTypes, e
 			//		filter.Group.Name.Equal(""),
 			//	),
 			//),
-			// filter.User.String.FuzzyMatch("my fuzzy value"),
-			// filter.User.UUID.Equal(uuid.UUID{}),
+			// filter.User.FieldString.FuzzyMatch("my fuzzy value"),
+			// filter.User.FieldUUID.Equal(uuid.UUID{}),
 			// filter.Any(
-			// 	filter.User.Role.Equal(""),
+			// 	filter.User.FieldRole.Equal(""),
 			// 	filter.User.CreatedAt.Before(time.Now()),
 			// ),
 			// filter.All(
-			// 	filter.User.Role.Equal(""),
+			// 	filter.User.FieldRole.Equal(""),
 			// 	filter.User.Groups().Name.FuzzyMatch("some group"),
 			// 	filter.User.Groups().Contains(model.Group{}),
 			// ),
 			// filter.User.ID.Equal(""),
-			// filter.User.Login().Username.Equal(""),
-			// filter.User.Role.Equal(""),
+			// filter.User.FieldCredentials().Username.Equal(""),
+			// filter.User.FieldRole.Equal(""),
 			// filter.User.Groups().Count().GreaterThan(5),
 			// //
-			// filter.User.Other().Contains(""),
-			// filter.User.Other().ContainsAll([]string{"", ""}),
-			// filter.User.Roles().ContainsNot(model.RoleAdmin),
+			// filter.User.FieldOther().Contains(""),
+			// filter.User.FieldOther().ContainsAll([]string{"", ""}),
+			// filter.User.FieldRoles().ContainsNot(model.RoleAdmin),
 		).
 		Order(
-			by.AllFieldTypes.CreatedAt.Asc(),
-			by.AllFieldTypes.MainGroup().Name.Asc(),
+			by.AllTypes.CreatedAt.Asc(),
+			by.AllTypes.FieldNode().Name.Asc(),
 		).
 		Fetch(
-			with.AllFieldTypes, // this is implicit
-			with.AllFieldTypes.MainGroup(),
+			with.AllTypes, // this is implicit
+			with.AllTypes.FieldNode(),
 		).
 		// FetchRecordsWithDepth(3).
 		// FetchEdgesWithDepth3().
