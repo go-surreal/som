@@ -199,15 +199,15 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 				methodName := "On" + timing + event
 
 				var hookComment string
-				switch {
-				case timing == "Before":
+				switch timing {
+				case "Before":
 					hookComment = methodName + " registers a hook that runs before a record is " + strings.ToLower(event) + "d.\n" +
 						"If the hook returns an error, the " + strings.ToLower(event) + " operation is aborted.\n" +
 						"Returns a function that, when called, removes this hook.\n" +
 						"\n" +
 						"Note: Hooks are local to this application instance and are not\n" +
 						"distributed across multiple instances of the application."
-				case timing == "After":
+				case "After":
 					hookComment = methodName + " registers a hook that runs after a record has been " + strings.ToLower(event) + "d.\n" +
 						"If the hook returns an error, the error is returned to the caller.\n" +
 						"Returns a function that, when called, removes this hook.\n" +
@@ -314,15 +314,15 @@ The instance is cached as a singleton on the client.
 			fieldName := strings.ToLower(timing) + event
 
 			var hookComment string
-			switch {
-			case timing == "Before":
+			switch timing {
+			case "Before":
 				hookComment = methodName + " registers a hook that runs before a record is " + strings.ToLower(event) + "d.\n" +
 					"If the hook returns an error, the " + strings.ToLower(event) + " operation is aborted.\n" +
 					"Returns a function that, when called, removes this hook.\n" +
 					"\n" +
 					"Note: Hooks are local to this application instance and are not\n" +
 					"distributed across multiple instances of the application."
-			case timing == "After":
+			case "After":
 				hookComment = methodName + " registers a hook that runs after a record has been " + strings.ToLower(event) + "d.\n" +
 					"If the hook returns an error, the error is returned to the caller.\n" +
 					"Returns a function that, when called, removes this hook.\n" +
