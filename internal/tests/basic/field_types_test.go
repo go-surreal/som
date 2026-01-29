@@ -320,7 +320,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack, err := client.AllTypesRepo().Read(ctx, user.ID())
+	readBack, _, err := client.AllTypesRepo().Read(ctx, user.ID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,7 +348,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack2, err := client.AllTypesRepo().Read(ctx, user2.ID())
+	readBack2, _, err := client.AllTypesRepo().Read(ctx, user2.ID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +370,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack3, err := client.AllTypesRepo().Read(ctx, user3.ID())
+	readBack3, _, err := client.AllTypesRepo().Read(ctx, user3.ID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,7 +391,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack4, err := client.AllTypesRepo().Read(ctx, user4.ID())
+	readBack4, _, err := client.AllTypesRepo().Read(ctx, user4.ID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,9 +424,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack5, err := client.AllTypesRepo().Read(ctx, user5.ID(),
-		som.With[model.AllTypes]().FieldNodePtrSlice(),
-	)
+	readBack5, _, err := client.AllTypesRepo().Read(ctx, user5.ID())
 	if err != nil {
 		t.Fatal(err)
 	}
