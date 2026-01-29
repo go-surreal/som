@@ -433,6 +433,9 @@ func TestSliceNilElements(t *testing.T) {
 	assert.Check(t, readBack5.FieldNodePtrSlice[0] != nil && readBack5.FieldNodePtrSlice[0].Name == "node1")
 	assert.Check(t, readBack5.FieldNodePtrSlice[1] == nil)
 	assert.Check(t, readBack5.FieldNodePtrSlice[2] != nil && readBack5.FieldNodePtrSlice[2].Name == "node2")
+
+	assert.Check(t, readBack5.FieldNodePtrSlice[0].ID().String() == node1.ID().String())
+	assert.Check(t, readBack5.FieldNodePtrSlice[2].ID().String() == node2.ID().String())
 }
 
 func TestTimestamps(t *testing.T) {
