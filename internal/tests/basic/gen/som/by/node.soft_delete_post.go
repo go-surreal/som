@@ -24,6 +24,6 @@ type softDeletePost[M any] struct {
 	Title     *lib.StringSort[M]
 }
 
-func (n softDeletePost[M]) Author() softDeleteUser[M] {
-	return newSoftDeleteUser[M](keyed(n.key, "author"))
+func (n softDeletePost[M]) Author() softDeleteNode[M] {
+	return newSoftDeleteNode[M](keyed(n.key, "author"))
 }

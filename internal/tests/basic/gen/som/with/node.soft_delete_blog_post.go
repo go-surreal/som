@@ -12,6 +12,6 @@ func (n softDeleteBlogPost[M]) fetch(M) {}
 // Authors returns a fetch accessor for the authors slice relation.
 // Note: Soft-delete filtering does not apply to fetched relations.
 // All related records are returned regardless of their soft-delete status.
-func (n softDeleteBlogPost[M]) Authors() softDeleteUser[M] {
-	return softDeleteUser[M](keyed(n, "authors"))
+func (n softDeleteBlogPost[M]) Authors() softDeleteNode[M] {
+	return softDeleteNode[M](keyed(n, "authors"))
 }

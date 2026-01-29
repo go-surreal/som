@@ -30,7 +30,7 @@ func (c *SoftDeletePost) MarshalCBOR() ([]byte, error) {
 	}
 	data["title"] = c.Title
 	if c.Author != nil {
-		data["author"] = toSoftDeleteUserLinkPtr(c.Author)
+		data["author"] = toSoftDeleteNodeLinkPtr(c.Author)
 	}
 
 	return cbor.Marshal(data)
@@ -57,9 +57,9 @@ func (c *SoftDeletePost) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.Title)
 	}
 	if raw, ok := rawMap["author"]; ok {
-		var convVal *softDeleteUserLink
+		var convVal *softDeleteNodeLink
 		cbor.Unmarshal(raw, &convVal)
-		c.Author = fromSoftDeleteUserLinkPtr(convVal)
+		c.Author = fromSoftDeleteNodeLinkPtr(convVal)
 	}
 
 	return nil

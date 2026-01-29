@@ -30,9 +30,9 @@ func (c *SoftDeleteBlogPost) MarshalCBOR() ([]byte, error) {
 	}
 	data["title"] = c.Title
 	if c.Authors != nil {
-		convSlice := make([]*softDeleteUserLink, 0, len(c.Authors))
+		convSlice := make([]*softDeleteNodeLink, 0, len(c.Authors))
 		for _, v := range c.Authors {
-			if link := toSoftDeleteUserLinkPtr(v); link != nil {
+			if link := toSoftDeleteNodeLinkPtr(v); link != nil {
 				convSlice = append(convSlice, link)
 			}
 		}
@@ -63,12 +63,12 @@ func (c *SoftDeleteBlogPost) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.Title)
 	}
 	if raw, ok := rawMap["authors"]; ok {
-		var convSlice []*softDeleteUserLink
+		var convSlice []*softDeleteNodeLink
 		cbor.Unmarshal(raw, &convSlice)
 		{
-			c.Authors = make([]*model.SoftDeleteUser, len(convSlice))
+			c.Authors = make([]*model.SoftDeleteNode, len(convSlice))
 			for i, v := range convSlice {
-				c.Authors[i] = fromSoftDeleteUserLinkPtr(v)
+				c.Authors[i] = fromSoftDeleteNodeLinkPtr(v)
 			}
 		}
 	}

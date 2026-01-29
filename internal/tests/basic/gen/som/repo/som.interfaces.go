@@ -7,27 +7,21 @@ import (
 )
 
 type Client interface {
-	URLExampleRepo() URLExampleRepo
-	SoftDeleteUserRepo() SoftDeleteUserRepo
 	SoftDeletePostRepo() SoftDeletePostRepo
-	SoftDeleteCompleteRepo() SoftDeleteCompleteRepo
+	SoftDeleteNodeRepo() SoftDeleteNodeRepo
 	SoftDeleteBlogPostRepo() SoftDeleteBlogPostRepo
 	GroupRepo() GroupRepo
-	FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo
-	AllFieldTypesRepo() AllFieldTypesRepo
+	AllTypesRepo() AllTypesRepo
 	ApplySchema(ctx context.Context) error
 	Close()
 }
 
 type ClientImpl struct {
-	db                       Database
-	mu                       sync.Mutex
-	urlexampleRepo           *urlexample
-	softDeleteUserRepo       *softDeleteUser
-	softDeletePostRepo       *softDeletePost
-	softDeleteCompleteRepo   *softDeleteComplete
-	softDeleteBlogPostRepo   *softDeleteBlogPost
-	groupRepo                *group
-	fieldsLikeDbresponseRepo *fieldsLikeDbresponse
-	allFieldTypesRepo        *allFieldTypes
+	db                     Database
+	mu                     sync.Mutex
+	softDeletePostRepo     *softDeletePost
+	softDeleteNodeRepo     *softDeleteNode
+	softDeleteBlogPostRepo *softDeleteBlogPost
+	groupRepo              *group
+	allTypesRepo           *allTypes
 }

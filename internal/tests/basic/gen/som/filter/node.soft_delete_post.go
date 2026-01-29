@@ -24,8 +24,8 @@ type softDeletePost[M any] struct {
 	Title     *lib.String[M]
 }
 
-func (n softDeletePost[M]) Author() softDeleteUser[M] {
-	return newSoftDeleteUser[M](lib.Field(n.Key, "author"))
+func (n softDeletePost[M]) Author() softDeleteNode[M] {
+	return newSoftDeleteNode[M](lib.Field(n.Key, "author"))
 }
 
 type softDeletePostEdges[M any] struct {

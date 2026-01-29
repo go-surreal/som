@@ -14,39 +14,39 @@ import (
 	is "gotest.tools/v3/assert/cmp"
 )
 
-func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
+func TestCreateWithAllTypes(t *testing.T) {
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	newModel := &model.FieldsLikeDBResponse{
-		Status: "some value",
+	newModel := &model.AllTypes{
+		FieldHookStatus: "some value",
 	}
 
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, newModel)
+	err := client.AllTypesRepo().Create(ctx, newModel)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	readModel, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, newModel.ID())
+	readModel, exists, err := client.AllTypesRepo().Read(ctx, newModel.ID())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	assert.Equal(t, true, exists)
-	assert.Equal(t, "[created]some value", readModel.Status)
+	assert.Equal(t, "[created]some value", readModel.FieldHookStatus)
 
-	readModel.Status = "some other value"
+	readModel.FieldHookStatus = "some other value"
 
-	err = client.FieldsLikeDBResponseRepo().Update(ctx, readModel)
+	err = client.AllTypesRepo().Update(ctx, readModel)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, "[updated]some other value", readModel.Status)
+	assert.Equal(t, "[updated]some other value", readModel.FieldHookStatus)
 
-	err = client.FieldsLikeDBResponseRepo().Delete(ctx, readModel)
+	err = client.AllTypesRepo().Delete(ctx, readModel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,34 +61,34 @@ func TestLiveQueries(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	newModel := &model.FieldsLikeDBResponse{
-		Status: "some value",
+	newModel := &model.AllTypes{
+		FieldHookStatus: "some value",
 	}
 
-	liveChan, err := client.FieldsLikeDBResponseRepo().Query().Live(ctx)
+	liveChan, err := client.AllTypesRepo().Query().Live(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.FieldsLikeDBResponseRepo().Create(ctx, newModel)
+	err = client.AllTypesRepo().Create(ctx, newModel)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	newModel.Status = "some other value"
-	err = client.FieldsLikeDBResponseRepo().Update(ctx, newModel)
+	newModel.FieldHookStatus = "some other value"
+	err = client.AllTypesRepo().Update(ctx, newModel)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.FieldsLikeDBResponseRepo().Delete(ctx, newModel)
+	err = client.AllTypesRepo().Delete(ctx, newModel)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// LIVE CREATE
 
-	var liveRes query.LiveResult[*model.FieldsLikeDBResponse]
+	var liveRes query.LiveResult[*model.AllTypes]
 	var more bool
 
 	select {
@@ -100,7 +100,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal("timeout waiting for CREATE event")
 	}
 
-	liveCreate, ok := liveRes.(query.LiveCreate[*model.FieldsLikeDBResponse])
+	liveCreate, ok := liveRes.(query.LiveCreate[*model.AllTypes])
 	if !ok {
 		t.Fatalf("expected LiveCreate event, got %T", liveRes)
 	}
@@ -123,7 +123,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal("timeout waiting for UPDATE event")
 	}
 
-	liveUpdate, ok := liveRes.(query.LiveUpdate[*model.FieldsLikeDBResponse])
+	liveUpdate, ok := liveRes.(query.LiveUpdate[*model.AllTypes])
 	if !ok {
 		t.Fatalf("expected LiveUpdate event, got %T", liveRes)
 	}
@@ -146,7 +146,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal("timeout waiting for DELETE event")
 	}
 
-	liveDelete, ok := liveRes.(query.LiveDelete[*model.FieldsLikeDBResponse])
+	liveDelete, ok := liveRes.(query.LiveDelete[*model.AllTypes])
 	if !ok {
 		t.Fatalf("expected LiveDelete event, got %T", liveRes)
 	}
@@ -180,38 +180,38 @@ func TestLiveQueriesFilter(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	liveChan, err := client.FieldsLikeDBResponseRepo().Query().
+	liveChan, err := client.AllTypesRepo().Query().
 		Where(
-			filter.FieldsLikeDBResponse.Status.In([]string{"[created]some value", "[created]some other value"}),
+			filter.AllTypes.FieldHookStatus.In([]string{"[created]some value", "[created]some other value"}),
 		).
 		Live(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	newModel1 := &model.FieldsLikeDBResponse{
-		Status: "some value",
+	newModel1 := &model.AllTypes{
+		FieldHookStatus: "some value",
 	}
 
-	err = client.FieldsLikeDBResponseRepo().Create(ctx, newModel1)
+	err = client.AllTypesRepo().Create(ctx, newModel1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	newModel2 := &model.FieldsLikeDBResponse{
-		Status: "some unsupported value",
+	newModel2 := &model.AllTypes{
+		FieldHookStatus: "some unsupported value",
 	}
 
-	err = client.FieldsLikeDBResponseRepo().Create(ctx, newModel2)
+	err = client.AllTypesRepo().Create(ctx, newModel2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	newModel3 := &model.FieldsLikeDBResponse{
-		Status: "some other value",
+	newModel3 := &model.AllTypes{
+		FieldHookStatus: "some other value",
 	}
 
-	err = client.FieldsLikeDBResponseRepo().Create(ctx, newModel3)
+	err = client.AllTypesRepo().Create(ctx, newModel3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +231,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 					t.Fatal("liveChan closed unexpectedly")
 				}
 
-				liveCreate, ok := liveRes.(query.LiveCreate[*model.FieldsLikeDBResponse])
+				liveCreate, ok := liveRes.(query.LiveCreate[*model.AllTypes])
 				if !ok {
 					t.Fatal("liveChan did not receive a create event")
 				}
@@ -241,7 +241,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				assert.Check(t, is.Equal(status, created.Status))
+				assert.Check(t, is.Equal(status, created.FieldHookStatus))
 			}
 
 		case <-time.After(10 * time.Second):
@@ -259,22 +259,22 @@ func TestLiveQueryCount(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	liveCount, err := client.AllFieldTypesRepo().Query().LiveCount(ctx)
+	liveCount, err := client.AllTypesRepo().Query().LiveCount(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	count := rand.Intn(randMax-randMin) + randMin
 
-	var models []*model.AllFieldTypes
+	var models []*model.AllTypes
 
 	for i := 0; i < count; i++ {
-		newModel := &model.AllFieldTypes{
-			Time:     time.Now(),
-			Duration: time.Second,
+		newModel := &model.AllTypes{
+			FieldTime:     time.Now(),
+			FieldDuration: time.Second,
 		}
 
-		if err := client.AllFieldTypesRepo().Create(ctx, newModel); err != nil {
+		if err := client.AllTypesRepo().Create(ctx, newModel); err != nil {
 			t.Fatal(err)
 		}
 
@@ -286,7 +286,7 @@ func TestLiveQueryCount(t *testing.T) {
 	}
 
 	for _, delModel := range models {
-		if err := client.AllFieldTypesRepo().Delete(ctx, delModel); err != nil {
+		if err := client.AllTypesRepo().Delete(ctx, delModel); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -338,21 +338,21 @@ func TestLiveQueryWithFetch(t *testing.T) {
 	}
 
 	// Start live query with Fetch
-	liveChan, err := client.AllFieldTypesRepo().Query().
-		Fetch(with.AllFieldTypes.MainGroup()).
+	liveChan, err := client.AllTypesRepo().Query().
+		Fetch(with.AllTypes.FieldMainGroup()).
 		Live(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Create a record with MainGroup set
-	newModel := &model.AllFieldTypes{
-		Time:      time.Now(),
-		Duration:  time.Second,
-		MainGroup: *group,
+	newModel := &model.AllTypes{
+		FieldTime:      time.Now(),
+		FieldDuration:  time.Second,
+		FieldMainGroup: *group,
 	}
 
-	err = client.AllFieldTypesRepo().Create(ctx, newModel)
+	err = client.AllTypesRepo().Create(ctx, newModel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -364,7 +364,7 @@ func TestLiveQueryWithFetch(t *testing.T) {
 			t.Fatal("liveChan closed unexpectedly")
 		}
 
-		liveCreate, ok := liveRes.(query.LiveCreate[*model.AllFieldTypes])
+		liveCreate, ok := liveRes.(query.LiveCreate[*model.AllTypes])
 		if !ok {
 			t.Fatalf("expected LiveCreate event, got %T", liveRes)
 		}
@@ -376,7 +376,7 @@ func TestLiveQueryWithFetch(t *testing.T) {
 
 		assert.Check(t, is.Equal(newModel.ID().String(), created.ID().String()))
 		// Verify that the fetched MainGroup has data populated
-		assert.Check(t, is.Equal(group.Name, created.MainGroup.Name))
+		assert.Check(t, is.Equal(group.Name, created.FieldMainGroup.Name))
 
 	case <-time.After(10 * time.Second):
 		t.Fatal("timeout waiting for CREATE event")

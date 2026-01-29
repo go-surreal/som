@@ -240,14 +240,14 @@ func TestModelHookBeforeCreate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Status: "active"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "active"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	read, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	read, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
-	assert.Equal(t, "[created]active", read.Status)
+	assert.Equal(t, "[created]active", read.FieldHookStatus)
 }
 
 func TestModelHookAfterCreate(t *testing.T) {
@@ -256,11 +256,11 @@ func TestModelHookAfterCreate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Detail: "info"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookDetail: "info"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	assert.Assert(t, strings.HasSuffix(rec.Detail, "[after-create]"))
+	assert.Assert(t, strings.HasSuffix(rec.FieldHookDetail, "[after-create]"))
 }
 
 func TestModelHookBeforeUpdate(t *testing.T) {
@@ -269,18 +269,18 @@ func TestModelHookBeforeUpdate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Status: "init"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "init"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	rec.Status = "changed"
-	err = client.FieldsLikeDBResponseRepo().Update(ctx, &rec)
+	rec.FieldHookStatus = "changed"
+	err = client.AllTypesRepo().Update(ctx, &rec)
 	assert.NilError(t, err)
 
-	read, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	read, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
-	assert.Equal(t, "[updated]changed", read.Status)
+	assert.Equal(t, "[updated]changed", read.FieldHookStatus)
 }
 
 func TestModelHookAfterUpdate(t *testing.T) {
@@ -289,14 +289,14 @@ func TestModelHookAfterUpdate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Detail: "info"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookDetail: "info"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	err = client.FieldsLikeDBResponseRepo().Update(ctx, &rec)
+	err = client.AllTypesRepo().Update(ctx, &rec)
 	assert.NilError(t, err)
 
-	assert.Assert(t, strings.HasSuffix(rec.Detail, "[after-update]"))
+	assert.Assert(t, strings.HasSuffix(rec.FieldHookDetail, "[after-update]"))
 }
 
 func TestModelHookBeforeDeleteAbort(t *testing.T) {
@@ -305,17 +305,17 @@ func TestModelHookBeforeDeleteAbort(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Status: "keep"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "keep"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
 	abort := true
 	deleteCtx := context.WithValue(ctx, model.AbortDeleteKey, &abort)
 
-	err = client.FieldsLikeDBResponseRepo().Delete(deleteCtx, &rec)
+	err = client.AllTypesRepo().Delete(deleteCtx, &rec)
 	assert.Assert(t, err != nil)
 
-	_, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	_, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 }
@@ -326,19 +326,19 @@ func TestModelHookAfterDelete(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.FieldsLikeDBResponse{Status: "remove"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "remove"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 	id := rec.ID()
 
 	called := false
 	deleteCtx := context.WithValue(ctx, model.AfterDeleteCalledKey, &called)
 
-	err = client.FieldsLikeDBResponseRepo().Delete(deleteCtx, &rec)
+	err = client.AllTypesRepo().Delete(deleteCtx, &rec)
 	assert.NilError(t, err)
 	assert.Assert(t, called)
 
-	_, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, id)
+	_, exists, err := client.AllTypesRepo().Read(ctx, id)
 	assert.NilError(t, err)
 	assert.Assert(t, !exists)
 }
@@ -350,14 +350,14 @@ func TestModelHookAndRepoHookOrder(t *testing.T) {
 	defer cleanup()
 
 	var repoSawStatus string
-	unregister := client.FieldsLikeDBResponseRepo().OnBeforeCreate(func(_ context.Context, rec *model.FieldsLikeDBResponse) error {
-		repoSawStatus = rec.Status
+	unregister := client.AllTypesRepo().OnBeforeCreate(func(_ context.Context, rec *model.AllTypes) error {
+		repoSawStatus = rec.FieldHookStatus
 		return nil
 	})
 	defer unregister()
 
-	rec := model.FieldsLikeDBResponse{Status: "orig"}
-	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	rec := model.AllTypes{FieldHookStatus: "orig"}
+	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
 	assert.Equal(t, "[created]orig", repoSawStatus)

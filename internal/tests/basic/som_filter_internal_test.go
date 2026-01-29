@@ -22,27 +22,27 @@ func TestFilterCompareFields(t *testing.T) {
 	str := "Some Value"
 	date := time.Now()
 
-	modelNew := model.AllFieldTypes{
-		String:    str,
-		StringPtr: &str,
+	modelNew := model.AllTypes{
+		FieldString:    str,
+		FieldStringPtr: &str,
 
-		Time:    date.Add(-time.Hour),
-		TimePtr: &date,
+		FieldTime:    date.Add(-time.Hour),
+		FieldTimePtr: &date,
 
-		Duration: time.Hour,
+		FieldDuration: time.Hour,
 	}
 
 	modelIn := modelNew
 
-	err := client.AllFieldTypesRepo().Create(ctx, &modelIn)
+	err := client.AllTypesRepo().Create(ctx, &modelIn)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	modelOut, err := client.AllFieldTypesRepo().Query().
+	modelOut, err := client.AllTypesRepo().Query().
 		Where(
-			filter.AllFieldTypes.StringPtr.Equal_(filter.AllFieldTypes.String),
-			filter.AllFieldTypes.TimePtr.After_(filter.AllFieldTypes.Time),
+			filter.AllTypes.FieldStringPtr.Equal_(filter.AllTypes.FieldString),
+			filter.AllTypes.FieldTimePtr.After_(filter.AllTypes.FieldTime),
 		).
 		First(ctx)
 
@@ -50,12 +50,12 @@ func TestFilterCompareFields(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, str, modelOut.String)
-	assert.Equal(t, str, *modelOut.StringPtr)
+	assert.Equal(t, str, modelOut.FieldString)
+	assert.Equal(t, str, *modelOut.FieldStringPtr)
 
 	assert.DeepEqual(t,
 		modelNew, *modelOut,
 		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}),
-		cmpopts.IgnoreFields(model.Login{}, "Password", "PasswordPtr"),
+		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 }

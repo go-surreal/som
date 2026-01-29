@@ -14,16 +14,16 @@ import (
 func BenchmarkConvMarshal(b *testing.B) {
 	now := time.Now()
 
-	c := conv.AllFieldTypes{
-		AllFieldTypes: model.AllFieldTypes{
-			Node:     som.NewNode(som.MakeID("all_field_types", uuid.New())),
-			String:   "test string",
-			Int:      42,
-			Float64:  3.14,
-			Bool:     true,
-			Time:     now,
-			Duration: 5 * time.Hour,
-			UUID:     uuid.New(),
+	c := conv.AllTypes{
+		AllTypes: model.AllTypes{
+			Node:     som.NewNode(som.MakeID("all_types", uuid.New())),
+			FieldString:   "test string",
+			FieldInt:      42,
+			FieldFloat64:  3.14,
+			FieldBool:     true,
+			FieldTime:     now,
+			FieldDuration: 5 * time.Hour,
+			FieldUUID:     uuid.New(),
 		},
 	}
 
@@ -41,16 +41,16 @@ func BenchmarkConvMarshal(b *testing.B) {
 func BenchmarkConvUnmarshal(b *testing.B) {
 	now := time.Now()
 
-	c := conv.AllFieldTypes{
-		AllFieldTypes: model.AllFieldTypes{
-			Node:     som.NewNode(som.MakeID("all_field_types", uuid.New())),
-			String:   "test string",
-			Int:      42,
-			Float64:  3.14,
-			Bool:     true,
-			Time:     now,
-			Duration: 5 * time.Hour,
-			UUID:     uuid.New(),
+	c := conv.AllTypes{
+		AllTypes: model.AllTypes{
+			Node:     som.NewNode(som.MakeID("all_types", uuid.New())),
+			FieldString:   "test string",
+			FieldInt:      42,
+			FieldFloat64:  3.14,
+			FieldBool:     true,
+			FieldTime:     now,
+			FieldDuration: 5 * time.Hour,
+			FieldUUID:     uuid.New(),
 		},
 	}
 
@@ -62,7 +62,7 @@ func BenchmarkConvUnmarshal(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		var result conv.AllFieldTypes
+		var result conv.AllTypes
 		err := result.UnmarshalCBOR(data)
 		if err != nil {
 			b.Fatal(err)
@@ -74,16 +74,16 @@ func BenchmarkConvUnmarshal(b *testing.B) {
 func BenchmarkConvRoundTrip(b *testing.B) {
 	now := time.Now()
 
-	c := conv.AllFieldTypes{
-		AllFieldTypes: model.AllFieldTypes{
-			Node:     som.NewNode(som.MakeID("all_field_types", uuid.New())),
-			String:   "test string",
-			Int:      42,
-			Float64:  3.14,
-			Bool:     true,
-			Time:     now,
-			Duration: 5 * time.Hour,
-			UUID:     uuid.New(),
+	c := conv.AllTypes{
+		AllTypes: model.AllTypes{
+			Node:     som.NewNode(som.MakeID("all_types", uuid.New())),
+			FieldString:   "test string",
+			FieldInt:      42,
+			FieldFloat64:  3.14,
+			FieldBool:     true,
+			FieldTime:     now,
+			FieldDuration: 5 * time.Hour,
+			FieldUUID:     uuid.New(),
 		},
 	}
 
@@ -95,7 +95,7 @@ func BenchmarkConvRoundTrip(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		var result conv.AllFieldTypes
+		var result conv.AllTypes
 		err = result.UnmarshalCBOR(data)
 		if err != nil {
 			b.Fatal(err)

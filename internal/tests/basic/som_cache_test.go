@@ -193,8 +193,8 @@ func TestCacheIsolation(t *testing.T) {
 	err := client.GroupRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	allFieldTypes := &model.AllFieldTypes{String: "Test"}
-	err = client.AllFieldTypesRepo().Create(ctx, allFieldTypes)
+	allFieldTypes := &model.AllTypes{FieldString: "Test"}
+	err = client.AllTypesRepo().Create(ctx, allFieldTypes)
 	assert.NilError(t, err)
 
 	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx)
@@ -205,19 +205,19 @@ func TestCacheIsolation(t *testing.T) {
 	assert.Assert(t, existsGroup)
 	assert.Equal(t, "Test Group", readGroup.Name)
 
-	readAFT, existsAFT, err := client.AllFieldTypesRepo().Read(cachedCtx, allFieldTypes.ID())
+	readAFT, existsAFT, err := client.AllTypesRepo().Read(cachedCtx, allFieldTypes.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, existsAFT)
-	assert.Equal(t, "Test", readAFT.String)
+	assert.Equal(t, "Test", readAFT.FieldString)
 
-	allFieldTypes.String = "Updated"
-	err = client.AllFieldTypesRepo().Update(ctx, allFieldTypes)
+	allFieldTypes.FieldString = "Updated"
+	err = client.AllTypesRepo().Update(ctx, allFieldTypes)
 	assert.NilError(t, err)
 
-	readAFT2, existsAFT2, err := client.AllFieldTypesRepo().Read(cachedCtx, allFieldTypes.ID())
+	readAFT2, existsAFT2, err := client.AllTypesRepo().Read(cachedCtx, allFieldTypes.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, existsAFT2)
-	assert.Equal(t, "Updated", readAFT2.String, "AllFieldTypes should not be affected by Group cache")
+	assert.Equal(t, "Updated", readAFT2.FieldString, "AllTypes should not be affected by Group cache")
 
 	readGroup2, existsGroup2, err := client.GroupRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)

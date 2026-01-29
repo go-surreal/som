@@ -51,7 +51,7 @@ func newGroupMemberOut[M any](key lib.Key[M]) groupMemberOut[M] {
 	return groupMemberOut[M]{lib.KeyFilter(key), key}
 }
 
-func (o groupMemberOut[M]) User(filters ...lib.Filter[model.AllFieldTypes]) allFieldTypesEdges[M] {
+func (o groupMemberOut[M]) User(filters ...lib.Filter[model.AllTypes]) allTypesEdges[M] {
 	key := lib.EdgeOut(o.key, "user", filters)
-	return allFieldTypesEdges[M]{lib.KeyFilter(key), key}
+	return allTypesEdges[M]{lib.KeyFilter(key), key}
 }

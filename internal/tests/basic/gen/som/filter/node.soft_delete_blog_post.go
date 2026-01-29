@@ -24,9 +24,9 @@ type softDeleteBlogPost[M any] struct {
 	Title     *lib.String[M]
 }
 
-func (n softDeleteBlogPost[M]) Authors(filters ...lib.Filter[model.SoftDeleteUser]) *lib.Slice[M, model.SoftDeleteUser, softDeleteUser[M]] {
+func (n softDeleteBlogPost[M]) Authors(filters ...lib.Filter[model.SoftDeleteNode]) *lib.Slice[M, model.SoftDeleteNode, softDeleteNode[M]] {
 	key := lib.Node(n.Key, "authors", filters)
-	return lib.NewSlice[M, model.SoftDeleteUser, softDeleteUser[M]](key, newSoftDeleteUser[M])
+	return lib.NewSlice[M, model.SoftDeleteNode, softDeleteNode[M]](key, newSoftDeleteNode[M])
 }
 
 type softDeleteBlogPostEdges[M any] struct {
