@@ -35,7 +35,7 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 	}
 
 	assert.Equal(t, true, exists)
-	assert.Equal(t, "some value", readModel.Status)
+	assert.Equal(t, "[created]some value", readModel.Status)
 
 	readModel.Status = "some other value"
 
@@ -44,7 +44,7 @@ func TestCreateWithFieldsLikeDBResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, "some other value", readModel.Status)
+	assert.Equal(t, "[updated]some other value", readModel.Status)
 
 	err = client.FieldsLikeDBResponseRepo().Delete(ctx, readModel)
 	if err != nil {
@@ -182,7 +182,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	liveChan, err := client.FieldsLikeDBResponseRepo().Query().
 		Where(
-			filter.FieldsLikeDBResponse.Status.In([]string{"some value", "some other value"}),
+			filter.FieldsLikeDBResponse.Status.In([]string{"[created]some value", "[created]some other value"}),
 		).
 		Live(ctx)
 	if err != nil {
@@ -217,9 +217,9 @@ func TestLiveQueriesFilter(t *testing.T) {
 	}
 
 	expected := []string{
-		"some value",
+		"[created]some value",
 		//"some unsupported value", // this one should be filtered out
-		"some other value",
+		"[created]some other value",
 	}
 
 	for _, status := range expected {
