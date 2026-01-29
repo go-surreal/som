@@ -10,17 +10,85 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
+	"sync"
+	"sync/atomic"
 )
 
 type URLExampleRepo interface {
+	// Query returns a new query builder for the URLExample model.
+
 	Query() query.Builder[model.URLExample]
+	// Create creates a new record for the URLExample model.
+
 	Create(ctx context.Context, urlexample *model.URLExample) error
+	// CreateWithID creates a new record with the given ID for the URLExample model.
+
 	CreateWithID(ctx context.Context, id string, urlexample *model.URLExample) error
+	// Read returns the record for the given ID, if it exists.
+
 	Read(ctx context.Context, id *som.ID) (*model.URLExample, bool, error)
+	// Update updates the record for the given URLExample model.
+
 	Update(ctx context.Context, urlexample *model.URLExample) error
+	// Delete deletes the record for the given URLExample model.
+
 	Delete(ctx context.Context, urlexample *model.URLExample) error
+	// Refresh refreshes the given model with the current database state.
+
 	Refresh(ctx context.Context, urlexample *model.URLExample) error
+	// Relate returns a new relate builder for the URLExample model.
+
 	Relate() *relate.URLExample
+
+	// OnBeforeCreate registers a hook that runs before a record is created.
+	// If the hook returns an error, the create operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeCreate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnAfterCreate registers a hook that runs after a record has been created.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterCreate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnBeforeUpdate registers a hook that runs before a record is updated.
+	// If the hook returns an error, the update operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnAfterUpdate registers a hook that runs after a record has been updated.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterUpdate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnBeforeDelete registers a hook that runs before a record is deleted.
+	// If the hook returns an error, the delete operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeDelete(fn func(ctx context.Context, node *model.URLExample) error) func()
+	// OnAfterDelete registers a hook that runs after a record has been deleted.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterDelete(fn func(ctx context.Context, node *model.URLExample) error) func()
 }
 
 // urlexampleRepoInfo holds the model-specific conversion functions for URLExample.
@@ -37,16 +105,192 @@ var urlexampleRepoInfo = RepoInfo[model.URLExample]{
 	},
 }
 
-// URLExampleRepo returns a new repository instance for the URLExample model.
+// URLExampleRepo returns the repository instance for the URLExample model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
-	return &urlexample{repo: &repo[model.URLExample]{
-		db:   c.db,
-		name: "url_example",
-		info: urlexampleRepoInfo}}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.urlexampleRepo == nil {
+		c.urlexampleRepo = &urlexample{repo: &repo[model.URLExample]{
+			db:   c.db,
+			name: "url_example",
+			info: urlexampleRepoInfo}}
+	}
+	return c.urlexampleRepo
 }
 
 type urlexample struct {
 	*repo[model.URLExample]
+	mu           sync.RWMutex
+	beforeCreate []urlexampleHook
+	afterCreate  []urlexampleHook
+	beforeUpdate []urlexampleHook
+	afterUpdate  []urlexampleHook
+	beforeDelete []urlexampleHook
+	afterDelete  []urlexampleHook
+}
+
+type urlexampleHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.URLExample) error
+}
+
+var urlexampleHookCounter atomic.Uint64
+
+// OnBeforeCreate registers a hook that runs before a record is created.
+// If the hook returns an error, the create operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *urlexample) OnBeforeCreate(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterCreate registers a hook that runs after a record has been created.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *urlexample) OnAfterCreate(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnBeforeUpdate registers a hook that runs before a record is updated.
+// If the hook returns an error, the update operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *urlexample) OnBeforeUpdate(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterUpdate registers a hook that runs after a record has been updated.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *urlexample) OnAfterUpdate(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnBeforeDelete registers a hook that runs before a record is deleted.
+// If the hook returns an error, the delete operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *urlexample) OnBeforeDelete(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterDelete registers a hook that runs after a record has been deleted.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *urlexample) OnAfterDelete(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the URLExample model.
@@ -63,7 +307,38 @@ func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, urlexample)
+	if h, ok := any(urlexample).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]urlexampleHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, urlexample); err != nil {
+		return err
+	}
+	if h, ok := any(urlexample).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]urlexampleHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the URLExample model with the given id.
@@ -74,7 +349,38 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 	if urlexample.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, urlexample)
+	if h, ok := any(urlexample).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]urlexampleHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, urlexample); err != nil {
+		return err
+	}
+	if h, ok := any(urlexample).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]urlexampleHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -115,7 +421,38 @@ func (r *urlexample) Update(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() == nil {
 		return errors.New("cannot update URLExample without existing record ID")
 	}
-	return r.update(ctx, urlexample.ID(), urlexample)
+	if h, ok := any(urlexample).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]urlexampleHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, urlexample.ID(), urlexample); err != nil {
+		return err
+	}
+	if h, ok := any(urlexample).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]urlexampleHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -126,7 +463,38 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() == nil {
 		return errors.New("cannot delete URLExample without existing record ID")
 	}
-	return r.delete(ctx, urlexample.ID(), urlexample, false, nil)
+	if h, ok := any(urlexample).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]urlexampleHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	if err := r.delete(ctx, urlexample.ID(), urlexample, false, nil); err != nil {
+		return err
+	}
+	if h, ok := any(urlexample).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]urlexampleHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

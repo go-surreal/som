@@ -41,10 +41,6 @@ type Config struct {
 	Password  string
 }
 
-type ClientImpl struct {
-	db Database
-}
-
 // surrealDBWrapper wraps the official surrealdb.go client to implement the Database interface.
 type surrealDBWrapper struct {
 	db *surrealdb.DB

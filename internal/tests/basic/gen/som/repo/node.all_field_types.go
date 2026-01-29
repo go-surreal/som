@@ -10,17 +10,85 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
+	"sync"
+	"sync/atomic"
 )
 
 type AllFieldTypesRepo interface {
+	// Query returns a new query builder for the AllFieldTypes model.
+
 	Query() query.Builder[model.AllFieldTypes]
+	// Create creates a new record for the AllFieldTypes model.
+
 	Create(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
+	// CreateWithID creates a new record with the given ID for the AllFieldTypes model.
+
 	CreateWithID(ctx context.Context, id string, allFieldTypes *model.AllFieldTypes) error
+	// Read returns the record for the given ID, if it exists.
+
 	Read(ctx context.Context, id *som.ID) (*model.AllFieldTypes, bool, error)
+	// Update updates the record for the given AllFieldTypes model.
+
 	Update(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
+	// Delete deletes the record for the given AllFieldTypes model.
+
 	Delete(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
+	// Refresh refreshes the given model with the current database state.
+
 	Refresh(ctx context.Context, allFieldTypes *model.AllFieldTypes) error
+	// Relate returns a new relate builder for the AllFieldTypes model.
+
 	Relate() *relate.AllFieldTypes
+
+	// OnBeforeCreate registers a hook that runs before a record is created.
+	// If the hook returns an error, the create operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeCreate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnAfterCreate registers a hook that runs after a record has been created.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterCreate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnBeforeUpdate registers a hook that runs before a record is updated.
+	// If the hook returns an error, the update operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnAfterUpdate registers a hook that runs after a record has been updated.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterUpdate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnBeforeDelete registers a hook that runs before a record is deleted.
+	// If the hook returns an error, the delete operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeDelete(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
+	// OnAfterDelete registers a hook that runs after a record has been deleted.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterDelete(fn func(ctx context.Context, node *model.AllFieldTypes) error) func()
 }
 
 // allFieldTypesRepoInfo holds the model-specific conversion functions for AllFieldTypes.
@@ -37,16 +105,192 @@ var allFieldTypesRepoInfo = RepoInfo[model.AllFieldTypes]{
 	},
 }
 
-// AllFieldTypesRepo returns a new repository instance for the AllFieldTypes model.
+// AllFieldTypesRepo returns the repository instance for the AllFieldTypes model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
-	return &allFieldTypes{repo: &repo[model.AllFieldTypes]{
-		db:   c.db,
-		name: "all_field_types",
-		info: allFieldTypesRepoInfo}}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.allFieldTypesRepo == nil {
+		c.allFieldTypesRepo = &allFieldTypes{repo: &repo[model.AllFieldTypes]{
+			db:   c.db,
+			name: "all_field_types",
+			info: allFieldTypesRepoInfo}}
+	}
+	return c.allFieldTypesRepo
 }
 
 type allFieldTypes struct {
 	*repo[model.AllFieldTypes]
+	mu           sync.RWMutex
+	beforeCreate []allFieldTypesHook
+	afterCreate  []allFieldTypesHook
+	beforeUpdate []allFieldTypesHook
+	afterUpdate  []allFieldTypesHook
+	beforeDelete []allFieldTypesHook
+	afterDelete  []allFieldTypesHook
+}
+
+type allFieldTypesHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.AllFieldTypes) error
+}
+
+var allFieldTypesHookCounter atomic.Uint64
+
+// OnBeforeCreate registers a hook that runs before a record is created.
+// If the hook returns an error, the create operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *allFieldTypes) OnBeforeCreate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
+	id := allFieldTypesHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, allFieldTypesHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterCreate registers a hook that runs after a record has been created.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *allFieldTypes) OnAfterCreate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
+	id := allFieldTypesHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, allFieldTypesHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnBeforeUpdate registers a hook that runs before a record is updated.
+// If the hook returns an error, the update operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *allFieldTypes) OnBeforeUpdate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
+	id := allFieldTypesHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, allFieldTypesHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterUpdate registers a hook that runs after a record has been updated.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *allFieldTypes) OnAfterUpdate(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
+	id := allFieldTypesHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, allFieldTypesHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnBeforeDelete registers a hook that runs before a record is deleted.
+// If the hook returns an error, the delete operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *allFieldTypes) OnBeforeDelete(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
+	id := allFieldTypesHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, allFieldTypesHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterDelete registers a hook that runs after a record has been deleted.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *allFieldTypes) OnAfterDelete(fn func(ctx context.Context, node *model.AllFieldTypes) error) func() {
+	id := allFieldTypesHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, allFieldTypesHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the AllFieldTypes model.
@@ -63,7 +307,38 @@ func (r *allFieldTypes) Create(ctx context.Context, allFieldTypes *model.AllFiel
 	if allFieldTypes.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, allFieldTypes)
+	if h, ok := any(allFieldTypes).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]allFieldTypesHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, allFieldTypes); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, allFieldTypes); err != nil {
+		return err
+	}
+	if h, ok := any(allFieldTypes).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]allFieldTypesHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, allFieldTypes); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the AllFieldTypes model with the given id.
@@ -74,7 +349,38 @@ func (r *allFieldTypes) CreateWithID(ctx context.Context, id string, allFieldTyp
 	if allFieldTypes.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, allFieldTypes)
+	if h, ok := any(allFieldTypes).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]allFieldTypesHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, allFieldTypes); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, allFieldTypes); err != nil {
+		return err
+	}
+	if h, ok := any(allFieldTypes).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]allFieldTypesHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, allFieldTypes); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -115,7 +421,38 @@ func (r *allFieldTypes) Update(ctx context.Context, allFieldTypes *model.AllFiel
 	if allFieldTypes.ID() == nil {
 		return errors.New("cannot update AllFieldTypes without existing record ID")
 	}
-	return r.update(ctx, allFieldTypes.ID(), allFieldTypes)
+	if h, ok := any(allFieldTypes).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]allFieldTypesHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, allFieldTypes); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, allFieldTypes.ID(), allFieldTypes); err != nil {
+		return err
+	}
+	if h, ok := any(allFieldTypes).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]allFieldTypesHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, allFieldTypes); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -126,7 +463,38 @@ func (r *allFieldTypes) Delete(ctx context.Context, allFieldTypes *model.AllFiel
 	if allFieldTypes.ID() == nil {
 		return errors.New("cannot delete AllFieldTypes without existing record ID")
 	}
-	return r.delete(ctx, allFieldTypes.ID(), allFieldTypes, false, nil)
+	if h, ok := any(allFieldTypes).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]allFieldTypesHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, allFieldTypes); err != nil {
+			return err
+		}
+	}
+	if err := r.delete(ctx, allFieldTypes.ID(), allFieldTypes, false, nil); err != nil {
+		return err
+	}
+	if h, ok := any(allFieldTypes).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]allFieldTypesHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, allFieldTypes); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

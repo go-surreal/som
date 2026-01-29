@@ -11,20 +11,92 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
 	"strings"
+	"sync"
+	"sync/atomic"
 )
 
 type SoftDeleteCompleteRepo interface {
+	// Query returns a new query builder for the SoftDeleteComplete model.
+
 	Query() query.Builder[model.SoftDeleteComplete]
+	// Create creates a new record for the SoftDeleteComplete model.
+
 	Create(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
+	// CreateWithID creates a new record with the given ID for the SoftDeleteComplete model.
+
 	CreateWithID(ctx context.Context, id string, softDeleteComplete *model.SoftDeleteComplete) error
+	// Read returns the record for the given ID, if it exists.
+
 	Read(ctx context.Context, id *som.ID) (*model.SoftDeleteComplete, bool, error)
+	// Update updates the record for the given SoftDeleteComplete model.
+
 	Update(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
+	// Delete deletes the record for the given SoftDeleteComplete model.
+
 	Delete(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
+	// Erase permanently deletes the record from the database.
+
 	Erase(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
+	// Restore un-deletes a soft-deleted record.
+
 	Restore(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
+	// Refresh refreshes the given model with the current database state.
+
 	Refresh(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
+	// Relate returns a new relate builder for the SoftDeleteComplete model.
+
 	Relate() *relate.SoftDeleteComplete
+
+	// OnBeforeCreate registers a hook that runs before a record is created.
+	// If the hook returns an error, the create operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	// OnAfterCreate registers a hook that runs after a record has been created.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	// OnBeforeUpdate registers a hook that runs before a record is updated.
+	// If the hook returns an error, the update operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	// OnAfterUpdate registers a hook that runs after a record has been updated.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	// OnBeforeDelete registers a hook that runs before a record is deleted.
+	// If the hook returns an error, the delete operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	// OnAfterDelete registers a hook that runs after a record has been deleted.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
 }
 
 // softDeleteCompleteRepoInfo holds the model-specific conversion functions for SoftDeleteComplete.
@@ -41,16 +113,192 @@ var softDeleteCompleteRepoInfo = RepoInfo[model.SoftDeleteComplete]{
 	},
 }
 
-// SoftDeleteCompleteRepo returns a new repository instance for the SoftDeleteComplete model.
+// SoftDeleteCompleteRepo returns the repository instance for the SoftDeleteComplete model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) SoftDeleteCompleteRepo() SoftDeleteCompleteRepo {
-	return &softDeleteComplete{repo: &repo[model.SoftDeleteComplete]{
-		db:   c.db,
-		name: "soft_delete_complete",
-		info: softDeleteCompleteRepoInfo}}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.softDeleteCompleteRepo == nil {
+		c.softDeleteCompleteRepo = &softDeleteComplete{repo: &repo[model.SoftDeleteComplete]{
+			db:   c.db,
+			name: "soft_delete_complete",
+			info: softDeleteCompleteRepoInfo}}
+	}
+	return c.softDeleteCompleteRepo
 }
 
 type softDeleteComplete struct {
 	*repo[model.SoftDeleteComplete]
+	mu           sync.RWMutex
+	beforeCreate []softDeleteCompleteHook
+	afterCreate  []softDeleteCompleteHook
+	beforeUpdate []softDeleteCompleteHook
+	afterUpdate  []softDeleteCompleteHook
+	beforeDelete []softDeleteCompleteHook
+	afterDelete  []softDeleteCompleteHook
+}
+
+type softDeleteCompleteHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.SoftDeleteComplete) error
+}
+
+var softDeleteCompleteHookCounter atomic.Uint64
+
+// OnBeforeCreate registers a hook that runs before a record is created.
+// If the hook returns an error, the create operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *softDeleteComplete) OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterCreate registers a hook that runs after a record has been created.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *softDeleteComplete) OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnBeforeUpdate registers a hook that runs before a record is updated.
+// If the hook returns an error, the update operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *softDeleteComplete) OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterUpdate registers a hook that runs after a record has been updated.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *softDeleteComplete) OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnBeforeDelete registers a hook that runs before a record is deleted.
+// If the hook returns an error, the delete operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *softDeleteComplete) OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterDelete registers a hook that runs after a record has been deleted.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *softDeleteComplete) OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the SoftDeleteComplete model.
@@ -67,7 +315,38 @@ func (r *softDeleteComplete) Create(ctx context.Context, softDeleteComplete *mod
 	if softDeleteComplete.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, softDeleteComplete)
+	if h, ok := any(softDeleteComplete).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]softDeleteCompleteHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, softDeleteComplete); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteComplete).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]softDeleteCompleteHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the SoftDeleteComplete model with the given id.
@@ -78,7 +357,38 @@ func (r *softDeleteComplete) CreateWithID(ctx context.Context, id string, softDe
 	if softDeleteComplete.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, softDeleteComplete)
+	if h, ok := any(softDeleteComplete).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]softDeleteCompleteHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, softDeleteComplete); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteComplete).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]softDeleteCompleteHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -119,7 +429,38 @@ func (r *softDeleteComplete) Update(ctx context.Context, softDeleteComplete *mod
 	if softDeleteComplete.ID() == nil {
 		return errors.New("cannot update SoftDeleteComplete without existing record ID")
 	}
-	return r.update(ctx, softDeleteComplete.ID(), softDeleteComplete)
+	if h, ok := any(softDeleteComplete).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]softDeleteCompleteHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, softDeleteComplete.ID(), softDeleteComplete); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteComplete).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]softDeleteCompleteHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -133,8 +474,39 @@ func (r *softDeleteComplete) Delete(ctx context.Context, softDeleteComplete *mod
 	if softDeleteComplete.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
+	if h, ok := any(softDeleteComplete).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]softDeleteCompleteHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
 	version := softDeleteComplete.Version()
-	return r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, true, &version)
+	if err := r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, true, &version); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteComplete).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]softDeleteCompleteHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Erase permanently deletes the record from the database.

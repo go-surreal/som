@@ -3,6 +3,7 @@
 package som
 
 import (
+	"context"
 	"errors"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
@@ -156,6 +157,66 @@ type SemVer string
 // 	Status  string
 // 	Message string
 // }
+
+// OnBeforeCreateHook can be implemented by model structs to run logic
+// before a new record is created. If the hook returns an error,
+// the create operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeCreateHook interface {
+	OnBeforeCreate(ctx context.Context) error
+}
+
+// OnAfterCreateHook can be implemented by model structs to run logic
+// after a new record has been created. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterCreateHook interface {
+	OnAfterCreate(ctx context.Context) error
+}
+
+// OnBeforeUpdateHook can be implemented by model structs to run logic
+// before an existing record is updated. If the hook returns an error,
+// the update operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeUpdateHook interface {
+	OnBeforeUpdate(ctx context.Context) error
+}
+
+// OnAfterUpdateHook can be implemented by model structs to run logic
+// after an existing record has been updated. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterUpdateHook interface {
+	OnAfterUpdate(ctx context.Context) error
+}
+
+// OnBeforeDeleteHook can be implemented by model structs to run logic
+// before a record is deleted. If the hook returns an error,
+// the delete operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeDeleteHook interface {
+	OnBeforeDelete(ctx context.Context) error
+}
+
+// OnAfterDeleteHook can be implemented by model structs to run logic
+// after a record has been deleted. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterDeleteHook interface {
+	OnAfterDelete(ctx context.Context) error
+}
 
 // TODO: below needed?
 // type Entity interface {

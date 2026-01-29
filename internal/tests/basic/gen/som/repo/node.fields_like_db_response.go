@@ -10,17 +10,85 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
+	"sync"
+	"sync/atomic"
 )
 
 type FieldsLikeDBResponseRepo interface {
+	// Query returns a new query builder for the FieldsLikeDBResponse model.
+
 	Query() query.Builder[model.FieldsLikeDBResponse]
+	// Create creates a new record for the FieldsLikeDBResponse model.
+
 	Create(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	// CreateWithID creates a new record with the given ID for the FieldsLikeDBResponse model.
+
 	CreateWithID(ctx context.Context, id string, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	// Read returns the record for the given ID, if it exists.
+
 	Read(ctx context.Context, id *som.ID) (*model.FieldsLikeDBResponse, bool, error)
+	// Update updates the record for the given FieldsLikeDBResponse model.
+
 	Update(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	// Delete deletes the record for the given FieldsLikeDBResponse model.
+
 	Delete(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	// Refresh refreshes the given model with the current database state.
+
 	Refresh(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
+	// Relate returns a new relate builder for the FieldsLikeDBResponse model.
+
 	Relate() *relate.FieldsLikeDBResponse
+
+	// OnBeforeCreate registers a hook that runs before a record is created.
+	// If the hook returns an error, the create operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeCreate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	// OnAfterCreate registers a hook that runs after a record has been created.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterCreate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	// OnBeforeUpdate registers a hook that runs before a record is updated.
+	// If the hook returns an error, the update operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	// OnAfterUpdate registers a hook that runs after a record has been updated.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterUpdate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	// OnBeforeDelete registers a hook that runs before a record is deleted.
+	// If the hook returns an error, the delete operation is aborted.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnBeforeDelete(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	// OnAfterDelete registers a hook that runs after a record has been deleted.
+	// If the hook returns an error, the error is returned to the caller.
+	// Returns a function that, when called, removes this hook.
+	//
+	// Note: Hooks are local to this application instance and are not
+	// distributed across multiple instances of the application.
+
+	OnAfterDelete(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
 }
 
 // fieldsLikeDbresponseRepoInfo holds the model-specific conversion functions for FieldsLikeDBResponse.
@@ -37,16 +105,192 @@ var fieldsLikeDbresponseRepoInfo = RepoInfo[model.FieldsLikeDBResponse]{
 	},
 }
 
-// FieldsLikeDBResponseRepo returns a new repository instance for the FieldsLikeDBResponse model.
+// FieldsLikeDBResponseRepo returns the repository instance for the FieldsLikeDBResponse model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
-	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse]{
-		db:   c.db,
-		name: "fields_like_db_response",
-		info: fieldsLikeDbresponseRepoInfo}}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.fieldsLikeDbresponseRepo == nil {
+		c.fieldsLikeDbresponseRepo = &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse]{
+			db:   c.db,
+			name: "fields_like_db_response",
+			info: fieldsLikeDbresponseRepoInfo}}
+	}
+	return c.fieldsLikeDbresponseRepo
 }
 
 type fieldsLikeDbresponse struct {
 	*repo[model.FieldsLikeDBResponse]
+	mu           sync.RWMutex
+	beforeCreate []fieldsLikeDbresponseHook
+	afterCreate  []fieldsLikeDbresponseHook
+	beforeUpdate []fieldsLikeDbresponseHook
+	afterUpdate  []fieldsLikeDbresponseHook
+	beforeDelete []fieldsLikeDbresponseHook
+	afterDelete  []fieldsLikeDbresponseHook
+}
+
+type fieldsLikeDbresponseHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error
+}
+
+var fieldsLikeDbresponseHookCounter atomic.Uint64
+
+// OnBeforeCreate registers a hook that runs before a record is created.
+// If the hook returns an error, the create operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *fieldsLikeDbresponse) OnBeforeCreate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterCreate registers a hook that runs after a record has been created.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *fieldsLikeDbresponse) OnAfterCreate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnBeforeUpdate registers a hook that runs before a record is updated.
+// If the hook returns an error, the update operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *fieldsLikeDbresponse) OnBeforeUpdate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterUpdate registers a hook that runs after a record has been updated.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *fieldsLikeDbresponse) OnAfterUpdate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnBeforeDelete registers a hook that runs before a record is deleted.
+// If the hook returns an error, the delete operation is aborted.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *fieldsLikeDbresponse) OnBeforeDelete(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// OnAfterDelete registers a hook that runs after a record has been deleted.
+// If the hook returns an error, the error is returned to the caller.
+// Returns a function that, when called, removes this hook.
+//
+// Note: Hooks are local to this application instance and are not
+// distributed across multiple instances of the application.
+func (r *fieldsLikeDbresponse) OnAfterDelete(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the FieldsLikeDBResponse model.
@@ -63,7 +307,38 @@ func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, fieldsLikeDbresponse)
+	if h, ok := any(fieldsLikeDbresponse).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]fieldsLikeDbresponseHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, fieldsLikeDbresponse); err != nil {
+		return err
+	}
+	if h, ok := any(fieldsLikeDbresponse).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]fieldsLikeDbresponseHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the FieldsLikeDBResponse model with the given id.
@@ -74,7 +349,38 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 	if fieldsLikeDbresponse.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, fieldsLikeDbresponse)
+	if h, ok := any(fieldsLikeDbresponse).(som.OnBeforeCreateHook); ok {
+		if err := h.OnBeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]fieldsLikeDbresponseHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, fieldsLikeDbresponse); err != nil {
+		return err
+	}
+	if h, ok := any(fieldsLikeDbresponse).(som.OnAfterCreateHook); ok {
+		if err := h.OnAfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]fieldsLikeDbresponseHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -115,7 +421,38 @@ func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot update FieldsLikeDBResponse without existing record ID")
 	}
-	return r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
+	if h, ok := any(fieldsLikeDbresponse).(som.OnBeforeUpdateHook); ok {
+		if err := h.OnBeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]fieldsLikeDbresponseHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse); err != nil {
+		return err
+	}
+	if h, ok := any(fieldsLikeDbresponse).(som.OnAfterUpdateHook); ok {
+		if err := h.OnAfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]fieldsLikeDbresponseHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -126,7 +463,38 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot delete FieldsLikeDBResponse without existing record ID")
 	}
-	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false, nil)
+	if h, ok := any(fieldsLikeDbresponse).(som.OnBeforeDeleteHook); ok {
+		if err := h.OnBeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]fieldsLikeDbresponseHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	if err := r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false, nil); err != nil {
+		return err
+	}
+	if h, ok := any(fieldsLikeDbresponse).(som.OnAfterDeleteHook); ok {
+		if err := h.OnAfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]fieldsLikeDbresponseHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.
