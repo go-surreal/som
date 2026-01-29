@@ -94,6 +94,8 @@ var softDeletePostRepoInfo = RepoInfo[model.SoftDeletePost]{
 // SoftDeletePostRepo returns the repository instance for the SoftDeletePost model.
 // The instance is cached as a singleton on the client.
 func (c *ClientImpl) SoftDeletePostRepo() SoftDeletePostRepo {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.softDeletePostRepo == nil {
 		c.softDeletePostRepo = &softDeletePost{repo: &repo[model.SoftDeletePost]{
 			db:   c.db,

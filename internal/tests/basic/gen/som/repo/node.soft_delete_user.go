@@ -94,6 +94,8 @@ var softDeleteUserRepoInfo = RepoInfo[model.SoftDeleteUser]{
 // SoftDeleteUserRepo returns the repository instance for the SoftDeleteUser model.
 // The instance is cached as a singleton on the client.
 func (c *ClientImpl) SoftDeleteUserRepo() SoftDeleteUserRepo {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.softDeleteUserRepo == nil {
 		c.softDeleteUserRepo = &softDeleteUser{repo: &repo[model.SoftDeleteUser]{
 			db:   c.db,

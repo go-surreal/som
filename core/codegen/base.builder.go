@@ -118,6 +118,7 @@ func (b *build) buildInterfaceFile() error {
 	// Generate ClientImpl with per-node cached repo fields.
 	f.Line().Type().Id("ClientImpl").StructFunc(func(g *jen.Group) {
 		g.Id("db").Id("Database")
+		g.Id("mu").Qual("sync", "Mutex")
 		for _, node := range b.input.nodes {
 			g.Id(node.NameGoLower() + "Repo").Op("*").Id(node.NameGoLower())
 		}
@@ -257,6 +258,8 @@ The instance is cached as a singleton on the client.
 		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
 		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
 		Block(
+			jen.Id("c").Dot("mu").Dot("Lock").Call(),
+			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
 			jen.If(jen.Id("c").Dot(node.NameGoLower()+"Repo").Op("==").Nil()).Block(
 				jen.Id("c").Dot(node.NameGoLower()+"Repo").Op("=").
 					Op("&").Id(node.NameGoLower()).Values(

@@ -91,6 +91,8 @@ var allFieldTypesRepoInfo = RepoInfo[model.AllFieldTypes]{
 // AllFieldTypesRepo returns the repository instance for the AllFieldTypes model.
 // The instance is cached as a singleton on the client.
 func (c *ClientImpl) AllFieldTypesRepo() AllFieldTypesRepo {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.allFieldTypesRepo == nil {
 		c.allFieldTypesRepo = &allFieldTypes{repo: &repo[model.AllFieldTypes]{
 			db:   c.db,

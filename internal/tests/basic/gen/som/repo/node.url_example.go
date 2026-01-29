@@ -91,6 +91,8 @@ var urlexampleRepoInfo = RepoInfo[model.URLExample]{
 // URLExampleRepo returns the repository instance for the URLExample model.
 // The instance is cached as a singleton on the client.
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.urlexampleRepo == nil {
 		c.urlexampleRepo = &urlexample{repo: &repo[model.URLExample]{
 			db:   c.db,

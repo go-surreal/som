@@ -91,6 +91,8 @@ var groupRepoInfo = RepoInfo[model.Group]{
 // GroupRepo returns the repository instance for the Group model.
 // The instance is cached as a singleton on the client.
 func (c *ClientImpl) GroupRepo() GroupRepo {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.groupRepo == nil {
 		c.groupRepo = &group{repo: &repo[model.Group]{
 			db:   c.db,

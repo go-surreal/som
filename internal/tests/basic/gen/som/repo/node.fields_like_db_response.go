@@ -91,6 +91,8 @@ var fieldsLikeDbresponseRepoInfo = RepoInfo[model.FieldsLikeDBResponse]{
 // FieldsLikeDBResponseRepo returns the repository instance for the FieldsLikeDBResponse model.
 // The instance is cached as a singleton on the client.
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.fieldsLikeDbresponseRepo == nil {
 		c.fieldsLikeDbresponseRepo = &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse]{
 			db:   c.db,
