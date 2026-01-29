@@ -246,20 +246,16 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		data["field_node_slice_slice"] = c.FieldNodeSliceSlice
 	}
 	if c.FieldNodePtrSlice != nil {
-		convSlice := make([]*specialTypesLink, 0, len(c.FieldNodePtrSlice))
-		for _, v := range c.FieldNodePtrSlice {
-			if link := toSpecialTypesLinkPtr(v); link != nil {
-				convSlice = append(convSlice, link)
-			}
+		convSlice := make([]*specialTypesLink, len(c.FieldNodePtrSlice))
+		for i, v := range c.FieldNodePtrSlice {
+			convSlice[i] = toSpecialTypesLinkPtr(v)
 		}
 		data["field_node_ptr_slice"] = convSlice
 	}
 	if c.FieldNodePtrSlicePtr != nil {
-		convSlice := make([]*specialTypesLink, 0, len(*c.FieldNodePtrSlicePtr))
-		for _, v := range *c.FieldNodePtrSlicePtr {
-			if link := toSpecialTypesLinkPtr(v); link != nil {
-				convSlice = append(convSlice, link)
-			}
+		convSlice := make([]*specialTypesLink, len(*c.FieldNodePtrSlicePtr))
+		for i, v := range *c.FieldNodePtrSlicePtr {
+			convSlice[i] = toSpecialTypesLinkPtr(v)
 		}
 		data["field_node_ptr_slice_ptr"] = convSlice
 	}

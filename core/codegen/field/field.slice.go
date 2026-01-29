@@ -602,6 +602,21 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 			srcSlice = jen.Op("*").Id("c").Dot(f.NameGo())
 		}
 
+		if nodeElem.source.Pointer() {
+			return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+				jen.Id("convSlice").Op(":=").Make(
+					sliceElemType,
+					jen.Len(srcSlice),
+				),
+				jen.For(
+					jen.Id("i").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
+				).Block(
+					jen.Id("convSlice").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+				),
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("convSlice"),
+			)
+		}
+
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("convSlice").Op(":=").Make(
 				sliceElemType,

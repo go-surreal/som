@@ -33,11 +33,9 @@ func (c *SpecialRelation) MarshalCBOR() ([]byte, error) {
 		data["author"] = toSpecialTypesLinkPtr(c.Author)
 	}
 	if c.Authors != nil {
-		convSlice := make([]*specialTypesLink, 0, len(c.Authors))
-		for _, v := range c.Authors {
-			if link := toSpecialTypesLinkPtr(v); link != nil {
-				convSlice = append(convSlice, link)
-			}
+		convSlice := make([]*specialTypesLink, len(c.Authors))
+		for i, v := range c.Authors {
+			convSlice[i] = toSpecialTypesLinkPtr(v)
 		}
 		data["authors"] = convSlice
 	}
