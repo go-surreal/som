@@ -299,6 +299,144 @@ func TestSlice(t *testing.T) {
 	assert.Check(t, *user.FieldNestedDataSlice[0].StringPtr == str3)
 }
 
+func TestSliceNilElements(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	s1 := "hello"
+	s2 := "world"
+	n1 := 10
+	n2 := 20
+
+	user := &model.AllTypes{
+		FieldStringPtrSlice: []*string{&s1, nil, &s2},
+		FieldIntPtrSlice:    []*int{&n1, nil, &n2},
+	}
+
+	err := client.AllTypesRepo().Create(ctx, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readBack, err := client.AllTypesRepo().Read(ctx, user.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// []*string with nil elements
+	assert.Check(t, len(readBack.FieldStringPtrSlice) == 3)
+	assert.Check(t, readBack.FieldStringPtrSlice[0] != nil && *readBack.FieldStringPtrSlice[0] == s1)
+	assert.Check(t, readBack.FieldStringPtrSlice[1] == nil)
+	assert.Check(t, readBack.FieldStringPtrSlice[2] != nil && *readBack.FieldStringPtrSlice[2] == s2)
+
+	// []*int with nil elements
+	assert.Check(t, len(readBack.FieldIntPtrSlice) == 3)
+	assert.Check(t, readBack.FieldIntPtrSlice[0] != nil && *readBack.FieldIntPtrSlice[0] == n1)
+	assert.Check(t, readBack.FieldIntPtrSlice[1] == nil)
+	assert.Check(t, readBack.FieldIntPtrSlice[2] != nil && *readBack.FieldIntPtrSlice[2] == n2)
+
+	// *[]*string with nil elements
+	ptrSlice := []*string{&s1, nil, &s2}
+	user2 := &model.AllTypes{
+		FieldStringPtrSlicePtr: &ptrSlice,
+	}
+
+	err = client.AllTypesRepo().Create(ctx, user2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readBack2, err := client.AllTypesRepo().Read(ctx, user2.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, readBack2.FieldStringPtrSlicePtr != nil)
+	assert.Check(t, len(*readBack2.FieldStringPtrSlicePtr) == 3)
+	assert.Check(t, (*readBack2.FieldStringPtrSlicePtr)[0] != nil && *(*readBack2.FieldStringPtrSlicePtr)[0] == s1)
+	assert.Check(t, (*readBack2.FieldStringPtrSlicePtr)[1] == nil)
+	assert.Check(t, (*readBack2.FieldStringPtrSlicePtr)[2] != nil && *(*readBack2.FieldStringPtrSlicePtr)[2] == s2)
+
+	// []*NestedData with nil elements
+	nested := model.NestedData{StringPtr: &s1}
+	user3 := &model.AllTypes{
+		FieldNestedDataPtrSlice: []*model.NestedData{&nested, nil},
+	}
+
+	err = client.AllTypesRepo().Create(ctx, user3)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readBack3, err := client.AllTypesRepo().Read(ctx, user3.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(readBack3.FieldNestedDataPtrSlice) == 2)
+	assert.Check(t, readBack3.FieldNestedDataPtrSlice[0] != nil && *readBack3.FieldNestedDataPtrSlice[0].StringPtr == s1)
+	assert.Check(t, readBack3.FieldNestedDataPtrSlice[1] == nil)
+
+	// []*Role with nil elements
+	r1 := model.RoleUser
+	r2 := model.RoleAdmin
+	user4 := &model.AllTypes{
+		FieldEnumPtrSlice: []*model.Role{&r1, nil, &r2},
+	}
+
+	err = client.AllTypesRepo().Create(ctx, user4)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readBack4, err := client.AllTypesRepo().Read(ctx, user4.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(readBack4.FieldEnumPtrSlice) == 3)
+	assert.Check(t, readBack4.FieldEnumPtrSlice[0] != nil && *readBack4.FieldEnumPtrSlice[0] == model.RoleUser)
+	assert.Check(t, readBack4.FieldEnumPtrSlice[1] == nil)
+	assert.Check(t, readBack4.FieldEnumPtrSlice[2] != nil && *readBack4.FieldEnumPtrSlice[2] == model.RoleAdmin)
+
+	// []*SpecialTypes with nil elements
+	node1 := &model.SpecialTypes{Name: "node1"}
+	node2 := &model.SpecialTypes{Name: "node2"}
+
+	err = client.SpecialTypesRepo().Create(ctx, node1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.SpecialTypesRepo().Create(ctx, node2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user5 := &model.AllTypes{
+		FieldNodePtrSlice: []*model.SpecialTypes{node1, nil, node2},
+	}
+
+	err = client.AllTypesRepo().Create(ctx, user5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readBack5, err := client.AllTypesRepo().Read(ctx, user5.ID(),
+		som.With[model.AllTypes]().FieldNodePtrSlice(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(readBack5.FieldNodePtrSlice) == 3)
+	assert.Check(t, readBack5.FieldNodePtrSlice[0] != nil && readBack5.FieldNodePtrSlice[0].Name == "node1")
+	assert.Check(t, readBack5.FieldNodePtrSlice[1] == nil)
+	assert.Check(t, readBack5.FieldNodePtrSlice[2] != nil && readBack5.FieldNodePtrSlice[2].Name == "node2")
+}
+
 func TestTimestamps(t *testing.T) {
 	ctx := context.Background()
 
