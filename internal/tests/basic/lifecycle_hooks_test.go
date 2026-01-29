@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 )
@@ -73,8 +74,8 @@ func TestHookBeforeCreateAbort(t *testing.T) {
 	err := client.GroupRepo().Create(ctx, &group)
 	assert.Assert(t, errors.Is(err, hookErr))
 
-	results, err := client.GroupRepo().Query().Filter(
-		client.GroupRepo().Query().Name().Equal("should-not-exist"),
+	results, err := client.GroupRepo().Query().Where(
+		filter.Group.Name.Equal("should-not-exist"),
 	).All(ctx)
 	assert.NilError(t, err)
 	assert.Equal(t, 0, len(results))
