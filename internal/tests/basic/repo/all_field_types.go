@@ -101,11 +101,11 @@ func (r *allTypesRepo) List(ctx context.Context) ([]*model.AllTypes, error) {
 		).
 		Order(
 			by.AllTypes.CreatedAt.Asc(),
-			by.AllTypes.FieldMainGroup().Name.Asc(),
+			by.AllTypes.FieldNode().Name.Asc(),
 		).
 		Fetch(
 			with.AllTypes, // this is implicit
-			with.AllTypes.FieldMainGroup(),
+			with.AllTypes.FieldNode(),
 		).
 		// FetchRecordsWithDepth(3).
 		// FetchEdgesWithDepth3().

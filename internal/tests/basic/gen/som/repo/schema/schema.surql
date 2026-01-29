@@ -3,36 +3,18 @@
 DEFINE ANALYZER english TOKENIZERS blank, punct FILTERS lowercase, snowball(english);
 DEFINE ANALYZER autocomplete TOKENIZERS class FILTERS lowercase, edgengram(1, 10);
 
-DEFINE TABLE soft_delete_post SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE soft_delete_post TYPE string;
-DEFINE FIELD deleted_at ON TABLE soft_delete_post TYPE option<datetime> DEFAULT NONE;
-DEFINE FIELD title ON TABLE soft_delete_post TYPE string;
-DEFINE FIELD author ON TABLE soft_delete_post TYPE option<record<soft_delete_node>>;
+DEFINE TABLE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE special_types TYPE string;
+DEFINE FIELD deleted_at ON TABLE special_types TYPE option<datetime> DEFAULT NONE;
+DEFINE FIELD name ON TABLE special_types TYPE string;
+DEFINE FIELD __som_lock_version ON TABLE special_types TYPE int VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };
 
-DEFINE TABLE soft_delete_node SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE soft_delete_node TYPE string;
-DEFINE FIELD created_at ON TABLE soft_delete_node TYPE option<datetime> VALUE $before OR time::now() READONLY;
-DEFINE FIELD updated_at ON TABLE soft_delete_node TYPE option<datetime> VALUE time::now();
-DEFINE FIELD deleted_at ON TABLE soft_delete_node TYPE option<datetime> DEFAULT NONE;
-DEFINE FIELD provider ON TABLE soft_delete_node TYPE string;
-DEFINE FIELD account ON TABLE soft_delete_node TYPE string;
-DEFINE FIELD name ON TABLE soft_delete_node TYPE string;
-DEFINE FIELD some_url ON TABLE soft_delete_node TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is::url($value);
-DEFINE FIELD some_other_url ON TABLE soft_delete_node TYPE string ASSERT $value == "" OR string::is::url($value);
-DEFINE FIELD __som_lock_version ON TABLE soft_delete_node TYPE int VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };
-
-DEFINE TABLE soft_delete_blog_post SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE soft_delete_blog_post TYPE string;
-DEFINE FIELD deleted_at ON TABLE soft_delete_blog_post TYPE option<datetime> DEFAULT NONE;
-DEFINE FIELD title ON TABLE soft_delete_blog_post TYPE string;
-DEFINE FIELD authors ON TABLE soft_delete_blog_post TYPE option<array<option<record<soft_delete_node>>>>;
-
-DEFINE TABLE group SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE group TYPE string;
-DEFINE FIELD created_at ON TABLE group TYPE option<datetime> VALUE $before OR time::now() READONLY;
-DEFINE FIELD updated_at ON TABLE group TYPE option<datetime> VALUE time::now();
-DEFINE FIELD name ON TABLE group TYPE string;
-DEFINE FIELD __som_lock_version ON TABLE group TYPE int VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };
+DEFINE TABLE special_relation SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE special_relation TYPE string;
+DEFINE FIELD deleted_at ON TABLE special_relation TYPE option<datetime> DEFAULT NONE;
+DEFINE FIELD title ON TABLE special_relation TYPE string;
+DEFINE FIELD author ON TABLE special_relation TYPE option<record<special_types>>;
+DEFINE FIELD authors ON TABLE special_relation TYPE option<array<option<record<special_types>>>>;
 
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_types TYPE string;
@@ -129,12 +111,12 @@ DEFINE FIELD field_nested_data_ptr_slice_ptr.*.string_ptr ON TABLE all_types TYP
 DEFINE FIELD field_nested_data_ptr_slice_ptr.*.int_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 DEFINE FIELD field_nested_data_ptr_slice_ptr.*.time_ptr ON TABLE all_types TYPE option<datetime> ;
 DEFINE FIELD field_nested_data_ptr_slice_ptr.*.uuid_ptr ON TABLE all_types TYPE option<uuid>;
-DEFINE FIELD field_main_group ON TABLE all_types TYPE option<record<group>>;
-DEFINE FIELD field_main_group_ptr ON TABLE all_types TYPE option<record<group>>;
-DEFINE FIELD field_groups ON TABLE all_types TYPE option<array<option<record<group>>>>;
-DEFINE FIELD field_groups_slice ON TABLE all_types TYPE option<array<option<array<option<record<group>>>>>>;
-DEFINE FIELD field_node_ptr_slice ON TABLE all_types TYPE option<array<option<record<group>>>>;
-DEFINE FIELD field_node_ptr_slice_ptr ON TABLE all_types TYPE option<array<option<record<group>>>>;
+DEFINE FIELD field_node ON TABLE all_types TYPE option<record<special_types>>;
+DEFINE FIELD field_node_ptr ON TABLE all_types TYPE option<record<special_types>>;
+DEFINE FIELD field_node_slice ON TABLE all_types TYPE option<array<option<record<special_types>>>>;
+DEFINE FIELD field_node_slice_slice ON TABLE all_types TYPE option<array<option<array<option<record<special_types>>>>>>;
+DEFINE FIELD field_node_ptr_slice ON TABLE all_types TYPE option<array<option<record<special_types>>>>;
+DEFINE FIELD field_node_ptr_slice_ptr ON TABLE all_types TYPE option<array<option<record<special_types>>>>;
 DEFINE FIELD field_slice_slice ON TABLE all_types TYPE option<array<option<array<string>>>>;
 DEFINE FIELD field_slice_slice_slice ON TABLE all_types TYPE option<array<option<array<option<array<string>>>>>>;
 DEFINE FIELD field_slice_slice_slice_2 ON TABLE all_types TYPE option<array<option<array<option<array<object>>>>>>;
@@ -145,19 +127,16 @@ DEFINE FIELD field_byte_slice_ptr ON TABLE all_types TYPE option<bytes>;
 DEFINE FIELD field_hook_status ON TABLE all_types TYPE string;
 DEFINE FIELD field_hook_detail ON TABLE all_types TYPE string;
 
-DEFINE TABLE group_member SCHEMAFULL TYPE RELATION IN user OUT group ENFORCED PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE group_member TYPE string;
-DEFINE FIELD created_at ON TABLE group_member TYPE option<datetime> VALUE $before OR time::now() READONLY;
-DEFINE FIELD updated_at ON TABLE group_member TYPE option<datetime> VALUE time::now();
-DEFINE FIELD meta ON TABLE group_member TYPE object;
-DEFINE FIELD meta.is_admin ON TABLE group_member TYPE bool;
-DEFINE FIELD meta.is_active ON TABLE group_member TYPE bool;
+DEFINE TABLE edge_relation SCHEMAFULL TYPE RELATION IN all_types OUT special_types ENFORCED PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE edge_relation TYPE string;
+DEFINE FIELD created_at ON TABLE edge_relation TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE edge_relation TYPE option<datetime> VALUE time::now();
+DEFINE FIELD meta ON TABLE edge_relation TYPE object;
+DEFINE FIELD meta.is_admin ON TABLE edge_relation TYPE bool;
+DEFINE FIELD meta.is_active ON TABLE edge_relation TYPE bool;
 
-DEFINE INDEX __som__soft_delete_post_index_deleted_at ON soft_delete_post FIELDS deleted_at CONCURRENTLY;
-DEFINE INDEX __som__soft_delete_node_index_deleted_at ON soft_delete_node FIELDS deleted_at CONCURRENTLY;
-DEFINE INDEX __som__soft_delete_node_unique_provider_account ON soft_delete_node FIELDS provider, account UNIQUE;
-DEFINE INDEX __som__soft_delete_blog_post_index_deleted_at ON soft_delete_blog_post FIELDS deleted_at CONCURRENTLY;
-DEFINE INDEX __som__group_unique_name ON group FIELDS name UNIQUE;
+DEFINE INDEX __som__special_types_index_deleted_at ON special_types FIELDS deleted_at CONCURRENTLY;
+DEFINE INDEX __som__special_relation_index_deleted_at ON special_relation FIELDS deleted_at CONCURRENTLY;
 DEFINE INDEX __som__all_types_search_field_string ON all_types FIELDS field_string SEARCH ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_string_ptr ON all_types FIELDS field_string_ptr SEARCH ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_other ON all_types FIELDS field_other SEARCH ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;

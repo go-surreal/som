@@ -18,19 +18,19 @@ func TestCacheLazy(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group := &model.Group{Name: "Test Group"}
-	err := client.GroupRepo().Create(ctx, group)
+	group := &model.SpecialTypes{Name: "Test Group"}
+	err := client.SpecialTypesRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx)
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx)
 	defer cacheCleanup()
 
-	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read1, exists1, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1)
 	assert.Equal(t, "Test Group", read1.Name)
 
-	read2, exists2, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read2, exists2, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists2)
 	assert.Equal(t, "Test Group", read2.Name)
@@ -44,19 +44,19 @@ func TestCacheLazyExplicit(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group := &model.Group{Name: "Test Group"}
-	err := client.GroupRepo().Create(ctx, group)
+	group := &model.SpecialTypes{Name: "Test Group"}
+	err := client.SpecialTypesRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx, som.Lazy())
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx, som.Lazy())
 	defer cacheCleanup()
 
-	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read1, exists1, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1)
 	assert.Equal(t, "Test Group", read1.Name)
 
-	read2, exists2, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read2, exists2, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists2)
 	assert.Equal(t, "Test Group", read2.Name)
@@ -70,38 +70,38 @@ func TestCacheEager(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group1 := &model.Group{Name: "Group 1"}
-	group2 := &model.Group{Name: "Group 2"}
-	group3 := &model.Group{Name: "Group 3"}
+	group1 := &model.SpecialTypes{Name: "Group 1"}
+	group2 := &model.SpecialTypes{Name: "Group 2"}
+	group3 := &model.SpecialTypes{Name: "Group 3"}
 
-	for _, g := range []*model.Group{group1, group2, group3} {
-		err := client.GroupRepo().Create(ctx, g)
+	for _, g := range []*model.SpecialTypes{group1, group2, group3} {
+		err := client.SpecialTypesRepo().Create(ctx, g)
 		assert.NilError(t, err)
 	}
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx, som.Eager())
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx, som.Eager())
 	defer cacheCleanup()
 
-	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group1.ID())
+	read1, exists1, err := client.SpecialTypesRepo().Read(cachedCtx, group1.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1)
 	assert.Equal(t, "Group 1", read1.Name)
 
-	read2, exists2, err := client.GroupRepo().Read(cachedCtx, group2.ID())
+	read2, exists2, err := client.SpecialTypesRepo().Read(cachedCtx, group2.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists2)
 	assert.Equal(t, "Group 2", read2.Name)
 
-	read3, exists3, err := client.GroupRepo().Read(cachedCtx, group3.ID())
+	read3, exists3, err := client.SpecialTypesRepo().Read(cachedCtx, group3.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists3)
 	assert.Equal(t, "Group 3", read3.Name)
 
-	group4 := &model.Group{Name: "Group 4"}
-	err = client.GroupRepo().Create(ctx, group4)
+	group4 := &model.SpecialTypes{Name: "Group 4"}
+	err = client.SpecialTypesRepo().Create(ctx, group4)
 	assert.NilError(t, err)
 
-	read4, exists4, err := client.GroupRepo().Read(cachedCtx, group4.ID())
+	read4, exists4, err := client.SpecialTypesRepo().Read(cachedCtx, group4.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, !exists4, "eager cache should return false for record created after cache load")
 	assert.Assert(t, read4 == nil, "eager cache should return nil for missing record")
@@ -114,15 +114,15 @@ func TestCacheEagerWithMaxSize(t *testing.T) {
 	defer cleanup()
 
 	for i := 0; i < 5; i++ {
-		group := &model.Group{Name: fmt.Sprintf("Group %d", i)}
-		err := client.GroupRepo().Create(ctx, group)
+		group := &model.SpecialTypes{Name: fmt.Sprintf("Group %d", i)}
+		err := client.SpecialTypesRepo().Create(ctx, group)
 		assert.NilError(t, err)
 	}
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(3))
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx, som.Eager(), som.WithMaxSize(3))
 	defer cacheCleanup()
 
-	_, _, err := client.GroupRepo().Read(cachedCtx, som.MakeID("group", "test"))
+	_, _, err := client.SpecialTypesRepo().Read(cachedCtx, som.MakeID("special_types", "test"))
 	assert.ErrorIs(t, err, som.ErrCacheSizeLimitExceeded)
 }
 
@@ -132,20 +132,20 @@ func TestCacheCleanup(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group := &model.Group{Name: "Test Group"}
-	err := client.GroupRepo().Create(ctx, group)
+	group := &model.SpecialTypes{Name: "Test Group"}
+	err := client.SpecialTypesRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx)
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx)
 
-	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read1, exists1, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1)
 	assert.Equal(t, "Test Group", read1.Name)
 
 	cacheCleanup()
 
-	_, _, err = client.GroupRepo().Read(cachedCtx, group.ID())
+	_, _, err = client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.ErrorIs(t, err, som.ErrCacheAlreadyCleaned)
 }
 
@@ -155,13 +155,13 @@ func TestCacheCleanupThenNewCache(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group := &model.Group{Name: "Test Group"}
-	err := client.GroupRepo().Create(ctx, group)
+	group := &model.SpecialTypes{Name: "Test Group"}
+	err := client.SpecialTypesRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx)
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx)
 
-	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read1, exists1, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1)
 	assert.Equal(t, "Test Group", read1.Name)
@@ -169,13 +169,13 @@ func TestCacheCleanupThenNewCache(t *testing.T) {
 	cacheCleanup()
 
 	group.Name = "Updated Group"
-	err = client.GroupRepo().Update(ctx, group)
+	err = client.SpecialTypesRepo().Update(ctx, group)
 	assert.NilError(t, err)
 
-	newCachedCtx, newCacheCleanup := som.WithCache[model.Group](ctx)
+	newCachedCtx, newCacheCleanup := som.WithCache[model.SpecialTypes](ctx)
 	defer newCacheCleanup()
 
-	read2, exists2, err := client.GroupRepo().Read(newCachedCtx, group.ID())
+	read2, exists2, err := client.SpecialTypesRepo().Read(newCachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists2)
 	assert.Equal(t, "Updated Group", read2.Name, "should get fresh data with new cache")
@@ -189,18 +189,18 @@ func TestCacheIsolation(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group := &model.Group{Name: "Test Group"}
-	err := client.GroupRepo().Create(ctx, group)
+	group := &model.SpecialTypes{Name: "Test Group"}
+	err := client.SpecialTypesRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
 	allFieldTypes := &model.AllTypes{FieldString: "Test"}
 	err = client.AllTypesRepo().Create(ctx, allFieldTypes)
 	assert.NilError(t, err)
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx)
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx)
 	defer cacheCleanup()
 
-	readGroup, existsGroup, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	readGroup, existsGroup, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, existsGroup)
 	assert.Equal(t, "Test Group", readGroup.Name)
@@ -219,7 +219,7 @@ func TestCacheIsolation(t *testing.T) {
 	assert.Assert(t, existsAFT2)
 	assert.Equal(t, "Updated", readAFT2.FieldString, "AllTypes should not be affected by Group cache")
 
-	readGroup2, existsGroup2, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	readGroup2, existsGroup2, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, existsGroup2)
 	assert.Assert(t, readGroup == readGroup2, "Group cache should still return cached pointer")
@@ -232,14 +232,14 @@ func TestCacheConcurrent(t *testing.T) {
 	defer cleanup()
 
 	const numGroups = 10
-	groups := make([]*model.Group, numGroups)
+	groups := make([]*model.SpecialTypes, numGroups)
 	for i := 0; i < numGroups; i++ {
-		groups[i] = &model.Group{Name: "Group " + string(rune('A'+i))}
-		err := client.GroupRepo().Create(ctx, groups[i])
+		groups[i] = &model.SpecialTypes{Name: "Group " + string(rune('A'+i))}
+		err := client.SpecialTypesRepo().Create(ctx, groups[i])
 		assert.NilError(t, err)
 	}
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx, som.Eager())
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx, som.Eager())
 	defer cacheCleanup()
 
 	const numGoroutines = 50
@@ -255,7 +255,7 @@ func TestCacheConcurrent(t *testing.T) {
 			defer wg.Done()
 			for j := 0; j < readsPerGoroutine; j++ {
 				groupIdx := (workerID + j) % numGroups
-				read, exists, err := client.GroupRepo().Read(cachedCtx, groups[groupIdx].ID())
+				read, exists, err := client.SpecialTypesRepo().Read(cachedCtx, groups[groupIdx].ID())
 				if err != nil {
 					errCh <- err
 					return
@@ -283,30 +283,30 @@ func TestCacheLazyPopulation(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group1 := &model.Group{Name: "Group 1"}
-	group2 := &model.Group{Name: "Group 2"}
-	err := client.GroupRepo().Create(ctx, group1)
+	group1 := &model.SpecialTypes{Name: "Group 1"}
+	group2 := &model.SpecialTypes{Name: "Group 2"}
+	err := client.SpecialTypesRepo().Create(ctx, group1)
 	assert.NilError(t, err)
-	err = client.GroupRepo().Create(ctx, group2)
+	err = client.SpecialTypesRepo().Create(ctx, group2)
 	assert.NilError(t, err)
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx)
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx)
 	defer cacheCleanup()
 
-	read1a, exists1a, err := client.GroupRepo().Read(cachedCtx, group1.ID())
+	read1a, exists1a, err := client.SpecialTypesRepo().Read(cachedCtx, group1.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1a)
-	read1b, exists1b, err := client.GroupRepo().Read(cachedCtx, group1.ID())
+	read1b, exists1b, err := client.SpecialTypesRepo().Read(cachedCtx, group1.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1b)
 	assert.Assert(t, read1a == read1b, "same ID should return same cached pointer")
 
-	read2a, exists2a, err := client.GroupRepo().Read(cachedCtx, group2.ID())
+	read2a, exists2a, err := client.SpecialTypesRepo().Read(cachedCtx, group2.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists2a)
 	assert.Assert(t, read1a != read2a, "different IDs should return different pointers")
 
-	read2b, exists2b, err := client.GroupRepo().Read(cachedCtx, group2.ID())
+	read2b, exists2b, err := client.SpecialTypesRepo().Read(cachedCtx, group2.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists2b)
 	assert.Assert(t, read2a == read2b, "same ID should return same cached pointer")
@@ -318,26 +318,26 @@ func TestCacheWithTTL(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group := &model.Group{Name: "Test Group"}
-	err := client.GroupRepo().Create(ctx, group)
+	group := &model.SpecialTypes{Name: "Test Group"}
+	err := client.SpecialTypesRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx, som.WithTTL(100*time.Millisecond))
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx, som.WithTTL(100*time.Millisecond))
 	defer cacheCleanup()
 
-	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read1, exists1, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1)
 	assert.Equal(t, "Test Group", read1.Name)
 
-	read2, exists2, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read2, exists2, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists2)
 	assert.Assert(t, read1 == read2, "should return cached pointer before TTL expires")
 
 	time.Sleep(300 * time.Millisecond)
 
-	read3, exists3, err := client.GroupRepo().Read(cachedCtx, group.ID())
+	read3, exists3, err := client.SpecialTypesRepo().Read(cachedCtx, group.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists3)
 	assert.Assert(t, read1 != read3, "should return fresh data after TTL expires")
@@ -349,43 +349,43 @@ func TestCacheEagerWithTTLRefresh(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	group1 := &model.Group{Name: "Group 1"}
-	group2 := &model.Group{Name: "Group 2"}
-	err := client.GroupRepo().Create(ctx, group1)
+	group1 := &model.SpecialTypes{Name: "Group 1"}
+	group2 := &model.SpecialTypes{Name: "Group 2"}
+	err := client.SpecialTypesRepo().Create(ctx, group1)
 	assert.NilError(t, err)
-	err = client.GroupRepo().Create(ctx, group2)
+	err = client.SpecialTypesRepo().Create(ctx, group2)
 	assert.NilError(t, err)
 
-	cachedCtx, cacheCleanup := som.WithCache[model.Group](ctx, som.Eager(), som.WithTTL(100*time.Millisecond))
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx, som.Eager(), som.WithTTL(100*time.Millisecond))
 	defer cacheCleanup()
 
-	read1, exists1, err := client.GroupRepo().Read(cachedCtx, group1.ID())
+	read1, exists1, err := client.SpecialTypesRepo().Read(cachedCtx, group1.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1)
 	assert.Equal(t, "Group 1", read1.Name)
 
-	read2, exists2, err := client.GroupRepo().Read(cachedCtx, group2.ID())
+	read2, exists2, err := client.SpecialTypesRepo().Read(cachedCtx, group2.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists2)
 	assert.Equal(t, "Group 2", read2.Name)
 
-	group3 := &model.Group{Name: "Group 3"}
-	err = client.GroupRepo().Create(ctx, group3)
+	group3 := &model.SpecialTypes{Name: "Group 3"}
+	err = client.SpecialTypesRepo().Create(ctx, group3)
 	assert.NilError(t, err)
 
-	read3before, exists3before, err := client.GroupRepo().Read(cachedCtx, group3.ID())
+	read3before, exists3before, err := client.SpecialTypesRepo().Read(cachedCtx, group3.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, !exists3before, "new group should not be visible in eager cache before TTL expires")
 	assert.Assert(t, read3before == nil)
 
 	time.Sleep(300 * time.Millisecond)
 
-	read1after, exists1after, err := client.GroupRepo().Read(cachedCtx, group1.ID())
+	read1after, exists1after, err := client.SpecialTypesRepo().Read(cachedCtx, group1.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists1after)
 	assert.Assert(t, read1 != read1after, "eager cache should refresh after TTL expires")
 
-	read3after, exists3after, err := client.GroupRepo().Read(cachedCtx, group3.ID())
+	read3after, exists3after, err := client.SpecialTypesRepo().Read(cachedCtx, group3.ID())
 	assert.NilError(t, err)
 	assert.Assert(t, exists3after, "new group should be visible after eager cache refresh")
 	assert.Equal(t, "Group 3", read3after.Name)

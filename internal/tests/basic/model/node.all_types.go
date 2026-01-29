@@ -130,16 +130,16 @@ type AllTypes struct {
 
 	// nodes
 
-	FieldMainGroup       Group   // node
-	FieldMainGroupPtr    *Group  // node pointer
-	FieldGroups          []Group // slice of Nodes
-	FieldGroupsSlice     [][]Group
-	FieldNodePtrSlice    []*Group
-	FieldNodePtrSlicePtr *[]*Group
+	FieldNode       SpecialTypes   // node
+	FieldNodePtr    *SpecialTypes  // node pointer
+	FieldNodeSlice      []SpecialTypes // slice of Nodes
+	FieldNodeSliceSlice [][]SpecialTypes
+	FieldNodePtrSlice    []*SpecialTypes
+	FieldNodePtrSlicePtr *[]*SpecialTypes
 
 	// edges
 
-	FieldMemberOf []GroupMember // slice of edges
+	FieldEdgeRelations []EdgeRelation // slice of edges
 
 	// other
 
@@ -162,14 +162,6 @@ type AllTypes struct {
 	// hook fields
 	FieldHookStatus string
 	FieldHookDetail string
-}
-
-func (u *AllTypes) GetGroups() []Group {
-	var nodes []Group
-	for _, edge := range u.FieldMemberOf {
-		nodes = append(nodes, edge.Group)
-	}
-	return nodes
 }
 
 type contextKey string
@@ -232,35 +224,17 @@ const (
 	RoleAdmin Role = "admin"
 )
 
-type Group struct {
-	som.Node
-	som.Timestamps
-	som.OptimisticLock
-
-	Name string `som:"unique"`
-
-	Members []GroupMember
-}
-
-func (g *Group) GetMembers() []AllTypes {
-	var nodes []AllTypes
-	for _, edge := range g.Members {
-		nodes = append(nodes, edge.User)
-	}
-	return nodes
-}
-
-type GroupMember struct {
+type EdgeRelation struct {
 	som.Edge
 	som.Timestamps
 
-	User  AllTypes `som:"in"`
-	Group Group    `som:"out"`
+	AllTypes     AllTypes      `som:"in"`
+	SpecialTypes SpecialTypes  `som:"out"`
 
-	Meta GroupMemberMeta
+	Meta EdgeMeta
 }
 
-type GroupMemberMeta struct {
+type EdgeMeta struct {
 	IsAdmin  bool
 	IsActive bool
 }

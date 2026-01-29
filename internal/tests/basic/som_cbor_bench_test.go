@@ -105,9 +105,9 @@ func BenchmarkConvRoundTrip(b *testing.B) {
 
 // BenchmarkConvMarshalSimple benchmarks marshaling of a simple model
 func BenchmarkConvMarshalSimple(b *testing.B) {
-	c := conv.Group{
-		Group: model.Group{
-			Node: som.NewNode(som.MakeID("group", uuid.New())),
+	c := conv.SpecialTypes{
+		SpecialTypes: model.SpecialTypes{
+			Node: som.NewNode(som.MakeID("special_types", uuid.New())),
 			Name: "Test Group",
 		},
 	}
@@ -124,9 +124,9 @@ func BenchmarkConvMarshalSimple(b *testing.B) {
 
 // BenchmarkConvUnmarshalSimple benchmarks unmarshaling of a simple model
 func BenchmarkConvUnmarshalSimple(b *testing.B) {
-	c := conv.Group{
-		Group: model.Group{
-			Node: som.NewNode(som.MakeID("group", uuid.New())),
+	c := conv.SpecialTypes{
+		SpecialTypes: model.SpecialTypes{
+			Node: som.NewNode(som.MakeID("special_types", uuid.New())),
 			Name: "Test Group",
 		},
 	}
@@ -139,7 +139,7 @@ func BenchmarkConvUnmarshalSimple(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		var result conv.Group
+		var result conv.SpecialTypes
 		err := result.UnmarshalCBOR(data)
 		if err != nil {
 			b.Fatal(err)

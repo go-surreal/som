@@ -227,44 +227,44 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		}
 		data["field_nested_data_ptr_slice_ptr"] = convSlice
 	}
-	if link := toGroupLink(c.FieldMainGroup); link != nil {
-		data["field_main_group"] = link
+	if link := toSpecialTypesLink(c.FieldNode); link != nil {
+		data["field_node"] = link
 	}
-	if c.FieldMainGroupPtr != nil {
-		data["field_main_group_ptr"] = toGroupLinkPtr(c.FieldMainGroupPtr)
+	if c.FieldNodePtr != nil {
+		data["field_node_ptr"] = toSpecialTypesLinkPtr(c.FieldNodePtr)
 	}
-	if c.FieldGroups != nil {
-		convSlice := make([]*groupLink, 0, len(c.FieldGroups))
-		for _, v := range c.FieldGroups {
-			if link := toGroupLink(v); link != nil {
+	if c.FieldNodeSlice != nil {
+		convSlice := make([]*specialTypesLink, 0, len(c.FieldNodeSlice))
+		for _, v := range c.FieldNodeSlice {
+			if link := toSpecialTypesLink(v); link != nil {
 				convSlice = append(convSlice, link)
 			}
 		}
-		data["field_groups"] = convSlice
+		data["field_node_slice"] = convSlice
 	}
-	if c.FieldGroupsSlice != nil {
-		data["field_groups_slice"] = c.FieldGroupsSlice
+	if c.FieldNodeSliceSlice != nil {
+		data["field_node_slice_slice"] = c.FieldNodeSliceSlice
 	}
 	if c.FieldNodePtrSlice != nil {
-		convSlice := make([]*groupLink, 0, len(c.FieldNodePtrSlice))
+		convSlice := make([]*specialTypesLink, 0, len(c.FieldNodePtrSlice))
 		for _, v := range c.FieldNodePtrSlice {
-			if link := toGroupLinkPtr(v); link != nil {
+			if link := toSpecialTypesLinkPtr(v); link != nil {
 				convSlice = append(convSlice, link)
 			}
 		}
 		data["field_node_ptr_slice"] = convSlice
 	}
 	if c.FieldNodePtrSlicePtr != nil {
-		convSlice := make([]*groupLink, 0, len(*c.FieldNodePtrSlicePtr))
+		convSlice := make([]*specialTypesLink, 0, len(*c.FieldNodePtrSlicePtr))
 		for _, v := range *c.FieldNodePtrSlicePtr {
-			if link := toGroupLinkPtr(v); link != nil {
+			if link := toSpecialTypesLinkPtr(v); link != nil {
 				convSlice = append(convSlice, link)
 			}
 		}
 		data["field_node_ptr_slice_ptr"] = convSlice
 	}
-	if c.FieldMemberOf != nil {
-		data["field_member_of"] = c.FieldMemberOf
+	if c.FieldEdgeRelations != nil {
+		data["field_edge_relations"] = c.FieldEdgeRelations
 	}
 	if c.FieldSliceSlice != nil {
 		data["field_slice_slice"] = c.FieldSliceSlice
@@ -568,54 +568,54 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 			c.FieldNestedDataPtrSlicePtr = &result
 		}
 	}
-	if raw, ok := rawMap["field_main_group"]; ok {
-		var convVal *groupLink
+	if raw, ok := rawMap["field_node"]; ok {
+		var convVal *specialTypesLink
 		cbor.Unmarshal(raw, &convVal)
-		c.FieldMainGroup = fromGroupLink(convVal)
+		c.FieldNode = fromSpecialTypesLink(convVal)
 	}
-	if raw, ok := rawMap["field_main_group_ptr"]; ok {
-		var convVal *groupLink
+	if raw, ok := rawMap["field_node_ptr"]; ok {
+		var convVal *specialTypesLink
 		cbor.Unmarshal(raw, &convVal)
-		c.FieldMainGroupPtr = fromGroupLinkPtr(convVal)
+		c.FieldNodePtr = fromSpecialTypesLinkPtr(convVal)
 	}
-	if raw, ok := rawMap["field_groups"]; ok {
-		var convSlice []*groupLink
+	if raw, ok := rawMap["field_node_slice"]; ok {
+		var convSlice []*specialTypesLink
 		cbor.Unmarshal(raw, &convSlice)
 		{
-			c.FieldGroups = make([]model.Group, len(convSlice))
+			c.FieldNodeSlice = make([]model.SpecialTypes, len(convSlice))
 			for i, v := range convSlice {
-				c.FieldGroups[i] = fromGroupLink(v)
+				c.FieldNodeSlice[i] = fromSpecialTypesLink(v)
 			}
 		}
 	}
-	if raw, ok := rawMap["field_groups_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldGroupsSlice)
+	if raw, ok := rawMap["field_node_slice_slice"]; ok {
+		cbor.Unmarshal(raw, &c.FieldNodeSliceSlice)
 	}
 	if raw, ok := rawMap["field_node_ptr_slice"]; ok {
-		var convSlice []*groupLink
+		var convSlice []*specialTypesLink
 		cbor.Unmarshal(raw, &convSlice)
 		{
-			c.FieldNodePtrSlice = make([]*model.Group, len(convSlice))
+			c.FieldNodePtrSlice = make([]*model.SpecialTypes, len(convSlice))
 			for i, v := range convSlice {
-				c.FieldNodePtrSlice[i] = fromGroupLinkPtr(v)
+				c.FieldNodePtrSlice[i] = fromSpecialTypesLinkPtr(v)
 			}
 		}
 	}
 	if raw, ok := rawMap["field_node_ptr_slice_ptr"]; ok {
-		var convSlice []*groupLink
+		var convSlice []*specialTypesLink
 		cbor.Unmarshal(raw, &convSlice)
 		if convSlice == nil {
 			c.FieldNodePtrSlicePtr = nil
 		} else {
-			result := make([]*model.Group, len(convSlice))
+			result := make([]*model.SpecialTypes, len(convSlice))
 			for i, v := range convSlice {
-				result[i] = fromGroupLinkPtr(v)
+				result[i] = fromSpecialTypesLinkPtr(v)
 			}
 			c.FieldNodePtrSlicePtr = &result
 		}
 	}
-	if raw, ok := rawMap["field_member_of"]; ok {
-		cbor.Unmarshal(raw, &c.FieldMemberOf)
+	if raw, ok := rawMap["field_edge_relations"]; ok {
+		cbor.Unmarshal(raw, &c.FieldEdgeRelations)
 	}
 	if raw, ok := rawMap["field_slice_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldSliceSlice)

@@ -42,7 +42,6 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldFloat32Slice:          lib.NewFloatSlice[M, float32](lib.Field(key, "field_float_32_slice")),
 		FieldFloat32SlicePtr:       lib.NewFloatSlicePtr[M, float32](lib.Field(key, "field_float_32_slice_ptr")),
 		FieldFloat64:               lib.NewFloat[M, float64](lib.Field(key, "field_float_64")),
-		FieldGroupsSlice:           lib.NewSliceMaker[M, []model.Group, *lib.Slice[M, model.Group, group[M]]](lib.NewSliceMaker[M, model.Group, group[M]](newGroup[M]))(lib.Field(key, "field_groups_slice")),
 		FieldHookDetail:            lib.NewString[M](lib.Field(key, "field_hook_detail")),
 		FieldHookStatus:            lib.NewString[M](lib.Field(key, "field_hook_status")),
 		FieldInt:                   lib.NewInt[M, int](lib.Field(key, "field_int")),
@@ -62,6 +61,7 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldNestedDataPtrSlice:    lib.NewSliceMaker[M, *model.NestedData, nestedData[M]](newNestedData[M])(lib.Field(key, "field_nested_data_ptr_slice")),
 		FieldNestedDataPtrSlicePtr: lib.NewSliceMakerPtr[M, *model.NestedData, nestedData[M]](newNestedData[M])(lib.Field(key, "field_nested_data_ptr_slice_ptr")),
 		FieldNestedDataSlice:       lib.NewSliceMaker[M, model.NestedData, nestedData[M]](newNestedData[M])(lib.Field(key, "field_nested_data_slice")),
+		FieldNodeSliceSlice:        lib.NewSliceMaker[M, []model.SpecialTypes, *lib.Slice[M, model.SpecialTypes, specialTypes[M]]](lib.NewSliceMaker[M, model.SpecialTypes, specialTypes[M]](newSpecialTypes[M]))(lib.Field(key, "field_node_slice_slice")),
 		FieldOther:                 allTypesFieldOther[M]{lib.NewStringSlice[M](lib.Field(key, "field_other"))},
 		FieldRune:                  lib.NewInt[M, rune](lib.Field(key, "field_rune")),
 		FieldRuneSlice:             lib.NewIntSlice[M, rune](lib.Field(key, "field_rune_slice")),
@@ -177,7 +177,7 @@ type allTypes[M any] struct {
 	FieldNestedDataSlice       *lib.Slice[M, model.NestedData, nestedData[M]]
 	FieldNestedDataPtrSlice    *lib.Slice[M, *model.NestedData, nestedData[M]]
 	FieldNestedDataPtrSlicePtr *lib.SlicePtr[M, *model.NestedData, nestedData[M]]
-	FieldGroupsSlice           *lib.Slice[M, []model.Group, *lib.Slice[M, model.Group, group[M]]]
+	FieldNodeSliceSlice        *lib.Slice[M, []model.SpecialTypes, *lib.Slice[M, model.SpecialTypes, specialTypes[M]]]
 	FieldSliceSlice            *lib.Slice[M, []string, *lib.StringSlice[M]]
 	FieldSliceSliceSlice       *lib.Slice[M, [][]string, *lib.Slice[M, []string, *lib.StringSlice[M]]]
 	FieldSliceSliceSlice2      *lib.Slice[M, [][]model.NestedData, *lib.Slice[M, []model.NestedData, *lib.Slice[M, model.NestedData, nestedData[M]]]]
@@ -197,31 +197,31 @@ func (n allTypes[M]) FieldNestedDataPtr() nestedData[M] {
 	return newNestedData[M](lib.Field(n.Key, "field_nested_data_ptr"))
 }
 
-func (n allTypes[M]) FieldMainGroup() group[M] {
-	return newGroup[M](lib.Field(n.Key, "field_main_group"))
+func (n allTypes[M]) FieldNode() specialTypes[M] {
+	return newSpecialTypes[M](lib.Field(n.Key, "field_node"))
 }
 
-func (n allTypes[M]) FieldMainGroupPtr() group[M] {
-	return newGroup[M](lib.Field(n.Key, "field_main_group_ptr"))
+func (n allTypes[M]) FieldNodePtr() specialTypes[M] {
+	return newSpecialTypes[M](lib.Field(n.Key, "field_node_ptr"))
 }
 
-func (n allTypes[M]) FieldGroups(filters ...lib.Filter[model.Group]) *lib.Slice[M, model.Group, group[M]] {
-	key := lib.Node(n.Key, "field_groups", filters)
-	return lib.NewSlice[M, model.Group, group[M]](key, newGroup[M])
+func (n allTypes[M]) FieldNodeSlice(filters ...lib.Filter[model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
+	key := lib.Node(n.Key, "field_node_slice", filters)
+	return lib.NewSlice[M, model.SpecialTypes, specialTypes[M]](key, newSpecialTypes[M])
 }
 
-func (n allTypes[M]) FieldNodePtrSlice(filters ...lib.Filter[model.Group]) *lib.Slice[M, model.Group, group[M]] {
+func (n allTypes[M]) FieldNodePtrSlice(filters ...lib.Filter[model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
 	key := lib.Node(n.Key, "field_node_ptr_slice", filters)
-	return lib.NewSlice[M, model.Group, group[M]](key, newGroup[M])
+	return lib.NewSlice[M, model.SpecialTypes, specialTypes[M]](key, newSpecialTypes[M])
 }
 
-func (n allTypes[M]) FieldNodePtrSlicePtr(filters ...lib.Filter[model.Group]) *lib.Slice[M, model.Group, group[M]] {
+func (n allTypes[M]) FieldNodePtrSlicePtr(filters ...lib.Filter[model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
 	key := lib.Node(n.Key, "field_node_ptr_slice_ptr", filters)
-	return lib.NewSlice[M, model.Group, group[M]](key, newGroup[M])
+	return lib.NewSlice[M, model.SpecialTypes, specialTypes[M]](key, newSpecialTypes[M])
 }
 
-func (n allTypes[M]) FieldMemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[M] {
-	return newGroupMemberIn[M](lib.EdgeIn(n.Key, "group_member", filters))
+func (n allTypes[M]) FieldEdgeRelations(filters ...lib.Filter[model.EdgeRelation]) edgeRelationIn[M] {
+	return newEdgeRelationIn[M](lib.EdgeIn(n.Key, "edge_relation", filters))
 }
 
 type allTypesFieldString[M any] struct {
@@ -295,6 +295,6 @@ type allTypesEdges[M any] struct {
 	lib.Key[M]
 }
 
-func (n allTypesEdges[M]) FieldMemberOf(filters ...lib.Filter[model.GroupMember]) groupMemberIn[M] {
-	return newGroupMemberIn[M](lib.EdgeIn(n.Key, "group_member", filters))
+func (n allTypesEdges[M]) FieldEdgeRelations(filters ...lib.Filter[model.EdgeRelation]) edgeRelationIn[M] {
+	return newEdgeRelationIn[M](lib.EdgeIn(n.Key, "edge_relation", filters))
 }

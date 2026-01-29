@@ -25,11 +25,11 @@ func TestQuery(t *testing.T) {
 	query := client.AllTypesRepo().Query().
 		Where(
 			filter.AllTypes.
-				FieldMemberOf(
-					filter.GroupMember.CreatedAt.Before(time.Now()),
+				FieldEdgeRelations(
+					filter.EdgeRelation.CreatedAt.Before(time.Now()),
 				).
-				Group(
-					filter.Group.ID.Equal(som.MakeID("all_types", "some_id")),
+				SpecialTypes(
+					filter.SpecialTypes.ID.Equal(som.MakeID("all_types", "some_id")),
 				),
 
 			filter.AllTypes.FieldDuration.Days().LessThan(4),
@@ -40,7 +40,7 @@ func TestQuery(t *testing.T) {
 		)
 
 	assert.Equal(t,
-		"SELECT * FROM all_types WHERE (->group_member[WHERE (created_at < $A)]->group[WHERE (id = $B)] "+
+		"SELECT * FROM all_types WHERE (->edge_relation[WHERE (created_at < $A)]->special_types[WHERE (id = $B)] "+
 			"AND duration::days(field_duration) < $C)",
 		query.Describe(),
 	)
@@ -100,7 +100,7 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 }
@@ -151,7 +151,7 @@ func TestNumerics(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userMax, *userOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 
@@ -193,7 +193,7 @@ func TestNumerics(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userMin, *userOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 }

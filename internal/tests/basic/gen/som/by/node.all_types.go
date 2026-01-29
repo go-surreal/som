@@ -126,10 +126,10 @@ func (n allTypes[M]) FieldNestedDataPtr() nestedData[M] {
 	return newNestedData[M](keyed(n.key, "field_nested_data_ptr"))
 }
 
-func (n allTypes[M]) FieldMainGroup() group[M] {
-	return newGroup[M](keyed(n.key, "field_main_group"))
+func (n allTypes[M]) FieldNode() specialTypes[M] {
+	return newSpecialTypes[M](keyed(n.key, "field_node"))
 }
 
-func (n allTypes[M]) FieldMainGroupPtr() group[M] {
-	return newGroup[M](keyed(n.key, "field_main_group_ptr"))
+func (n allTypes[M]) FieldNodePtr() specialTypes[M] {
+	return newSpecialTypes[M](keyed(n.key, "field_node_ptr"))
 }

@@ -329,17 +329,17 @@ func TestLiveQueryWithFetch(t *testing.T) {
 	defer cancel()
 
 	// Create a group first
-	group := &model.Group{
+	group := &model.SpecialTypes{
 		Name: "Test Group",
 	}
-	err := client.GroupRepo().Create(ctx, group)
+	err := client.SpecialTypesRepo().Create(ctx, group)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Start live query with Fetch
 	liveChan, err := client.AllTypesRepo().Query().
-		Fetch(with.AllTypes.FieldMainGroup()).
+		Fetch(with.AllTypes.FieldNode()).
 		Live(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -349,7 +349,7 @@ func TestLiveQueryWithFetch(t *testing.T) {
 	newModel := &model.AllTypes{
 		FieldTime:      time.Now(),
 		FieldDuration:  time.Second,
-		FieldMainGroup: *group,
+		FieldNode: *group,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel)
@@ -376,7 +376,7 @@ func TestLiveQueryWithFetch(t *testing.T) {
 
 		assert.Check(t, is.Equal(newModel.ID().String(), created.ID().String()))
 		// Verify that the fetched MainGroup has data populated
-		assert.Check(t, is.Equal(group.Name, created.FieldMainGroup.Name))
+		assert.Check(t, is.Equal(group.Name, created.FieldNode.Name))
 
 	case <-time.After(10 * time.Second):
 		t.Fatal("timeout waiting for CREATE event")

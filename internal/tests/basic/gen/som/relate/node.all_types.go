@@ -9,6 +9,6 @@ type AllTypes struct {
 	db Database
 }
 
-func (n AllTypes) FieldMemberOf() groupMember {
-	return groupMember(n)
+func (n AllTypes) FieldEdgeRelations() edgeRelation {
+	return edgeRelation(n)
 }

@@ -17,7 +17,7 @@ func TestIterate(t *testing.T) {
 
 	t.Run("empty result set", func(t *testing.T) {
 		count := 0
-		for _, err := range client.GroupRepo().Query().Iterate(ctx, 10) {
+		for _, err := range client.SpecialTypesRepo().Query().Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -29,14 +29,14 @@ func TestIterate(t *testing.T) {
 	t.Run("single batch", func(t *testing.T) {
 		// Create 3 records, batch size 10
 		for i := 0; i < 3; i++ {
-			g := &model.Group{Name: fmt.Sprintf("single-batch-%d", i)}
-			err := client.GroupRepo().Create(ctx, g)
+			g := &model.SpecialTypes{Name: fmt.Sprintf("single-batch-%d", i)}
+			err := client.SpecialTypesRepo().Create(ctx, g)
 			assert.NilError(t, err)
 		}
 
 		count := 0
-		for _, err := range client.GroupRepo().Query().
-			Where(filter.Group.Name.Contains("single-batch-").True()).
+		for _, err := range client.SpecialTypesRepo().Query().
+			Where(filter.SpecialTypes.Name.Contains("single-batch-").True()).
 			Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -49,14 +49,14 @@ func TestIterate(t *testing.T) {
 	t.Run("multiple batches", func(t *testing.T) {
 		// Create 25 records, batch size 10 -> 3 batches
 		for i := 0; i < 25; i++ {
-			g := &model.Group{Name: fmt.Sprintf("multi-batch-%d", i)}
-			err := client.GroupRepo().Create(ctx, g)
+			g := &model.SpecialTypes{Name: fmt.Sprintf("multi-batch-%d", i)}
+			err := client.SpecialTypesRepo().Create(ctx, g)
 			assert.NilError(t, err)
 		}
 
 		count := 0
-		for _, err := range client.GroupRepo().Query().
-			Where(filter.Group.Name.Contains("multi-batch-").True()).
+		for _, err := range client.SpecialTypesRepo().Query().
+			Where(filter.SpecialTypes.Name.Contains("multi-batch-").True()).
 			Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -69,14 +69,14 @@ func TestIterate(t *testing.T) {
 	t.Run("exact batch boundary", func(t *testing.T) {
 		// Create exactly 20 records, batch size 10 -> 2 full batches
 		for i := 0; i < 20; i++ {
-			g := &model.Group{Name: fmt.Sprintf("exact-batch-%d", i)}
-			err := client.GroupRepo().Create(ctx, g)
+			g := &model.SpecialTypes{Name: fmt.Sprintf("exact-batch-%d", i)}
+			err := client.SpecialTypesRepo().Create(ctx, g)
 			assert.NilError(t, err)
 		}
 
 		count := 0
-		for _, err := range client.GroupRepo().Query().
-			Where(filter.Group.Name.Contains("exact-batch-").True()).
+		for _, err := range client.SpecialTypesRepo().Query().
+			Where(filter.SpecialTypes.Name.Contains("exact-batch-").True()).
 			Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -89,14 +89,14 @@ func TestIterate(t *testing.T) {
 	t.Run("early termination", func(t *testing.T) {
 		// Create 15 records
 		for i := 0; i < 15; i++ {
-			g := &model.Group{Name: fmt.Sprintf("early-term-%d", i)}
-			err := client.GroupRepo().Create(ctx, g)
+			g := &model.SpecialTypes{Name: fmt.Sprintf("early-term-%d", i)}
+			err := client.SpecialTypesRepo().Create(ctx, g)
 			assert.NilError(t, err)
 		}
 
 		count := 0
-		for _, err := range client.GroupRepo().Query().
-			Where(filter.Group.Name.Contains("early-term-").True()).
+		for _, err := range client.SpecialTypesRepo().Query().
+			Where(filter.SpecialTypes.Name.Contains("early-term-").True()).
 			Iterate(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -117,7 +117,7 @@ func TestIterateID(t *testing.T) {
 
 	t.Run("empty result set", func(t *testing.T) {
 		count := 0
-		for _, err := range client.GroupRepo().Query().IterateID(ctx, 10) {
+		for _, err := range client.SpecialTypesRepo().Query().IterateID(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -128,14 +128,14 @@ func TestIterateID(t *testing.T) {
 
 	t.Run("single batch", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			g := &model.Group{Name: fmt.Sprintf("id-single-batch-%d", i)}
-			err := client.GroupRepo().Create(ctx, g)
+			g := &model.SpecialTypes{Name: fmt.Sprintf("id-single-batch-%d", i)}
+			err := client.SpecialTypesRepo().Create(ctx, g)
 			assert.NilError(t, err)
 		}
 
 		count := 0
-		for id, err := range client.GroupRepo().Query().
-			Where(filter.Group.Name.Contains("id-single-batch-").True()).
+		for id, err := range client.SpecialTypesRepo().Query().
+			Where(filter.SpecialTypes.Name.Contains("id-single-batch-").True()).
 			IterateID(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -148,14 +148,14 @@ func TestIterateID(t *testing.T) {
 
 	t.Run("multiple batches", func(t *testing.T) {
 		for i := 0; i < 25; i++ {
-			g := &model.Group{Name: fmt.Sprintf("id-multi-batch-%d", i)}
-			err := client.GroupRepo().Create(ctx, g)
+			g := &model.SpecialTypes{Name: fmt.Sprintf("id-multi-batch-%d", i)}
+			err := client.SpecialTypesRepo().Create(ctx, g)
 			assert.NilError(t, err)
 		}
 
 		count := 0
-		for id, err := range client.GroupRepo().Query().
-			Where(filter.Group.Name.Contains("id-multi-batch-").True()).
+		for id, err := range client.SpecialTypesRepo().Query().
+			Where(filter.SpecialTypes.Name.Contains("id-multi-batch-").True()).
 			IterateID(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
@@ -167,18 +167,18 @@ func TestIterateID(t *testing.T) {
 	})
 
 	t.Run("ID format check", func(t *testing.T) {
-		g := &model.Group{Name: "id-format-check"}
-		err := client.GroupRepo().Create(ctx, g)
+		g := &model.SpecialTypes{Name: "id-format-check"}
+		err := client.SpecialTypesRepo().Create(ctx, g)
 		assert.NilError(t, err)
 
-		for id, err := range client.GroupRepo().Query().
-			Where(filter.Group.Name.Contains("id-format-check").True()).
+		for id, err := range client.SpecialTypesRepo().Query().
+			Where(filter.SpecialTypes.Name.Contains("id-format-check").True()).
 			IterateID(ctx, 10) {
 			if err != nil {
 				t.Fatal(err)
 			}
 			assert.Assert(t, len(id) > 0, "ID should not be empty")
-			assert.Assert(t, id[:6] == "group:", "ID should start with 'group:', got: %s", id)
+			assert.Assert(t, id[:14] == "special_types:", "ID should start with 'special_types:', got: %s", id)
 		}
 	})
 }

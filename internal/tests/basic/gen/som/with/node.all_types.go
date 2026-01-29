@@ -9,22 +9,37 @@ type allTypes[M any] string
 
 func (n allTypes[M]) fetch(M) {}
 
-func (n allTypes[M]) FieldMainGroup() group[M] {
-	return group[M](keyed(n, "field_main_group"))
+// FieldNode returns a fetch accessor for the field_node relation.
+// Note: Soft-delete filtering does not apply to fetched relations.
+// All related records are returned regardless of their soft-delete status.
+func (n allTypes[M]) FieldNode() specialTypes[M] {
+	return specialTypes[M](keyed(n, "field_node"))
 }
 
-func (n allTypes[M]) FieldMainGroupPtr() group[M] {
-	return group[M](keyed(n, "field_main_group_ptr"))
+// FieldNodePtr returns a fetch accessor for the field_node_ptr relation.
+// Note: Soft-delete filtering does not apply to fetched relations.
+// All related records are returned regardless of their soft-delete status.
+func (n allTypes[M]) FieldNodePtr() specialTypes[M] {
+	return specialTypes[M](keyed(n, "field_node_ptr"))
 }
 
-func (n allTypes[M]) FieldGroups() group[M] {
-	return group[M](keyed(n, "field_groups"))
+// FieldNodeSlice returns a fetch accessor for the field_node_slice slice relation.
+// Note: Soft-delete filtering does not apply to fetched relations.
+// All related records are returned regardless of their soft-delete status.
+func (n allTypes[M]) FieldNodeSlice() specialTypes[M] {
+	return specialTypes[M](keyed(n, "field_node_slice"))
 }
 
-func (n allTypes[M]) FieldNodePtrSlice() group[M] {
-	return group[M](keyed(n, "field_node_ptr_slice"))
+// FieldNodePtrSlice returns a fetch accessor for the field_node_ptr_slice slice relation.
+// Note: Soft-delete filtering does not apply to fetched relations.
+// All related records are returned regardless of their soft-delete status.
+func (n allTypes[M]) FieldNodePtrSlice() specialTypes[M] {
+	return specialTypes[M](keyed(n, "field_node_ptr_slice"))
 }
 
-func (n allTypes[M]) FieldNodePtrSlicePtr() group[M] {
-	return group[M](keyed(n, "field_node_ptr_slice_ptr"))
+// FieldNodePtrSlicePtr returns a fetch accessor for the field_node_ptr_slice_ptr slice relation.
+// Note: Soft-delete filtering does not apply to fetched relations.
+// All related records are returned regardless of their soft-delete status.
+func (n allTypes[M]) FieldNodePtrSlicePtr() specialTypes[M] {
+	return specialTypes[M](keyed(n, "field_node_ptr_slice_ptr"))
 }
