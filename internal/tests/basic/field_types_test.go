@@ -62,7 +62,7 @@ func TestNumerics(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userMax, *userOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 
@@ -104,7 +104,7 @@ func TestNumerics(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userMin, *userOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 }
@@ -424,7 +424,7 @@ func TestDuration(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 
@@ -441,7 +441,7 @@ func TestDuration(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 }
@@ -477,7 +477,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 
@@ -494,7 +494,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 }
@@ -530,7 +530,7 @@ func TestUUIDGofrs(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 
@@ -547,7 +547,7 @@ func TestUUIDGofrs(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 }
@@ -669,7 +669,7 @@ func TestEmail(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 
@@ -686,7 +686,7 @@ func TestEmail(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 

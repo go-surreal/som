@@ -23,7 +23,7 @@ func TestQuery(t *testing.T) {
 					filter.EdgeRelation.CreatedAt.Before(time.Now()),
 				).
 				SpecialTypes(
-					filter.SpecialTypes.ID.Equal(som.MakeID("all_types", "some_id")),
+					filter.SpecialTypes.ID.Equal(som.MakeID("special_types", "some_id")),
 				),
 
 			filter.AllTypes.FieldDuration.Days().LessThan(4),

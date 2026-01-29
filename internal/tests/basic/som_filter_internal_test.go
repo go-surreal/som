@@ -55,7 +55,7 @@ func TestFilterCompareFields(t *testing.T) {
 
 	assert.DeepEqual(t,
 		modelNew, *modelOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 	)
 }
