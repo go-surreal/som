@@ -3,6 +3,7 @@ package basic
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -231,4 +232,133 @@ func TestHookMultiple(t *testing.T) {
 	assert.Equal(t, 2, len(order))
 	assert.Equal(t, 1, order[0])
 	assert.Equal(t, 2, order[1])
+}
+
+func TestModelHookBeforeCreate(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	rec := model.FieldsLikeDBResponse{Status: "active"}
+	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	assert.NilError(t, err)
+
+	read, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	assert.NilError(t, err)
+	assert.Assert(t, exists)
+	assert.Equal(t, "[created]active", read.Status)
+}
+
+func TestModelHookAfterCreate(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	rec := model.FieldsLikeDBResponse{Detail: "info"}
+	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	assert.NilError(t, err)
+
+	assert.Assert(t, strings.HasSuffix(rec.Detail, "[after-create]"))
+}
+
+func TestModelHookBeforeUpdate(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	rec := model.FieldsLikeDBResponse{Status: "init"}
+	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	assert.NilError(t, err)
+
+	rec.Status = "changed"
+	err = client.FieldsLikeDBResponseRepo().Update(ctx, &rec)
+	assert.NilError(t, err)
+
+	read, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	assert.NilError(t, err)
+	assert.Assert(t, exists)
+	assert.Equal(t, "[updated]changed", read.Status)
+}
+
+func TestModelHookAfterUpdate(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	rec := model.FieldsLikeDBResponse{Detail: "info"}
+	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	assert.NilError(t, err)
+
+	err = client.FieldsLikeDBResponseRepo().Update(ctx, &rec)
+	assert.NilError(t, err)
+
+	assert.Assert(t, strings.HasSuffix(rec.Detail, "[after-update]"))
+}
+
+func TestModelHookBeforeDeleteAbort(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	rec := model.FieldsLikeDBResponse{Status: "keep"}
+	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	assert.NilError(t, err)
+
+	abort := true
+	deleteCtx := context.WithValue(ctx, model.AbortDeleteKey, &abort)
+
+	err = client.FieldsLikeDBResponseRepo().Delete(deleteCtx, &rec)
+	assert.Assert(t, err != nil)
+
+	_, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, rec.ID())
+	assert.NilError(t, err)
+	assert.Assert(t, exists)
+}
+
+func TestModelHookAfterDelete(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	rec := model.FieldsLikeDBResponse{Status: "remove"}
+	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	assert.NilError(t, err)
+	id := rec.ID()
+
+	called := false
+	deleteCtx := context.WithValue(ctx, model.AfterDeleteCalledKey, &called)
+
+	err = client.FieldsLikeDBResponseRepo().Delete(deleteCtx, &rec)
+	assert.NilError(t, err)
+	assert.Assert(t, called)
+
+	_, exists, err := client.FieldsLikeDBResponseRepo().Read(ctx, id)
+	assert.NilError(t, err)
+	assert.Assert(t, !exists)
+}
+
+func TestModelHookAndRepoHookOrder(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	var repoSawStatus string
+	unregister := client.FieldsLikeDBResponseRepo().OnBeforeCreate(func(_ context.Context, rec *model.FieldsLikeDBResponse) error {
+		repoSawStatus = rec.Status
+		return nil
+	})
+	defer unregister()
+
+	rec := model.FieldsLikeDBResponse{Status: "orig"}
+	err := client.FieldsLikeDBResponseRepo().Create(ctx, &rec)
+	assert.NilError(t, err)
+
+	assert.Equal(t, "[created]orig", repoSawStatus)
 }
