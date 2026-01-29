@@ -10,6 +10,9 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
+	"sync"
+	"sync/atomic"
 )
 
 type GroupRepo interface {
@@ -21,6 +24,12 @@ type GroupRepo interface {
 	Delete(ctx context.Context, group *model.Group) error
 	Refresh(ctx context.Context, group *model.Group) error
 	Relate() *relate.Group
+	OnBeforeCreate(fn func(ctx context.Context, node *model.Group) error) func()
+	OnAfterCreate(fn func(ctx context.Context, node *model.Group) error) func()
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.Group) error) func()
+	OnAfterUpdate(fn func(ctx context.Context, node *model.Group) error) func()
+	OnBeforeDelete(fn func(ctx context.Context, node *model.Group) error) func()
+	OnAfterDelete(fn func(ctx context.Context, node *model.Group) error) func()
 }
 
 // groupRepoInfo holds the model-specific conversion functions for Group.
@@ -37,16 +46,154 @@ var groupRepoInfo = RepoInfo[model.Group]{
 	},
 }
 
-// GroupRepo returns a new repository instance for the Group model.
+// GroupRepo returns the repository instance for the Group model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) GroupRepo() GroupRepo {
-	return &group{repo: &repo[model.Group]{
-		db:   c.db,
-		name: "group",
-		info: groupRepoInfo}}
+	if c.groupRepo == nil {
+		c.groupRepo = &group{repo: &repo[model.Group]{
+			db:   c.db,
+			name: "group",
+			info: groupRepoInfo}}
+	}
+	return c.groupRepo
 }
 
 type group struct {
 	*repo[model.Group]
+	mu           sync.RWMutex
+	beforeCreate []groupHook
+	afterCreate  []groupHook
+	beforeUpdate []groupHook
+	afterUpdate  []groupHook
+	beforeDelete []groupHook
+	afterDelete  []groupHook
+}
+
+type groupHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.Group) error
+}
+
+var groupHookCounter atomic.Uint64
+
+func (r *group) OnBeforeCreate(fn func(ctx context.Context, node *model.Group) error) func() {
+	id := groupHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, groupHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *group) OnAfterCreate(fn func(ctx context.Context, node *model.Group) error) func() {
+	id := groupHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, groupHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *group) OnBeforeUpdate(fn func(ctx context.Context, node *model.Group) error) func() {
+	id := groupHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, groupHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *group) OnAfterUpdate(fn func(ctx context.Context, node *model.Group) error) func() {
+	id := groupHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, groupHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *group) OnBeforeDelete(fn func(ctx context.Context, node *model.Group) error) func() {
+	id := groupHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, groupHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *group) OnAfterDelete(fn func(ctx context.Context, node *model.Group) error) func() {
+	id := groupHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, groupHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the Group model.
@@ -63,7 +210,38 @@ func (r *group) Create(ctx context.Context, group *model.Group) error {
 	if group.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, group)
+	if h, ok := any(group).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]groupHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, group); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, group); err != nil {
+		return err
+	}
+	if h, ok := any(group).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]groupHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, group); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the Group model with the given id.
@@ -74,7 +252,38 @@ func (r *group) CreateWithID(ctx context.Context, id string, group *model.Group)
 	if group.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, group)
+	if h, ok := any(group).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]groupHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, group); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, group); err != nil {
+		return err
+	}
+	if h, ok := any(group).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]groupHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, group); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -115,7 +324,38 @@ func (r *group) Update(ctx context.Context, group *model.Group) error {
 	if group.ID() == nil {
 		return errors.New("cannot update Group without existing record ID")
 	}
-	return r.update(ctx, group.ID(), group)
+	if h, ok := any(group).(som.BeforeUpdateHook); ok {
+		if err := h.BeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]groupHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, group); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, group.ID(), group); err != nil {
+		return err
+	}
+	if h, ok := any(group).(som.AfterUpdateHook); ok {
+		if err := h.AfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]groupHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, group); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -126,7 +366,38 @@ func (r *group) Delete(ctx context.Context, group *model.Group) error {
 	if group.ID() == nil {
 		return errors.New("cannot delete Group without existing record ID")
 	}
-	return r.delete(ctx, group.ID(), group, false, nil)
+	if h, ok := any(group).(som.BeforeDeleteHook); ok {
+		if err := h.BeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]groupHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, group); err != nil {
+			return err
+		}
+	}
+	if err := r.delete(ctx, group.ID(), group, false, nil); err != nil {
+		return err
+	}
+	if h, ok := any(group).(som.AfterDeleteHook); ok {
+		if err := h.AfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]groupHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, group); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

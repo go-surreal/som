@@ -10,6 +10,9 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
+	"sync"
+	"sync/atomic"
 )
 
 type URLExampleRepo interface {
@@ -21,6 +24,12 @@ type URLExampleRepo interface {
 	Delete(ctx context.Context, urlexample *model.URLExample) error
 	Refresh(ctx context.Context, urlexample *model.URLExample) error
 	Relate() *relate.URLExample
+	OnBeforeCreate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	OnAfterCreate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	OnAfterUpdate(fn func(ctx context.Context, node *model.URLExample) error) func()
+	OnBeforeDelete(fn func(ctx context.Context, node *model.URLExample) error) func()
+	OnAfterDelete(fn func(ctx context.Context, node *model.URLExample) error) func()
 }
 
 // urlexampleRepoInfo holds the model-specific conversion functions for URLExample.
@@ -37,16 +46,154 @@ var urlexampleRepoInfo = RepoInfo[model.URLExample]{
 	},
 }
 
-// URLExampleRepo returns a new repository instance for the URLExample model.
+// URLExampleRepo returns the repository instance for the URLExample model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) URLExampleRepo() URLExampleRepo {
-	return &urlexample{repo: &repo[model.URLExample]{
-		db:   c.db,
-		name: "url_example",
-		info: urlexampleRepoInfo}}
+	if c.urlexampleRepo == nil {
+		c.urlexampleRepo = &urlexample{repo: &repo[model.URLExample]{
+			db:   c.db,
+			name: "url_example",
+			info: urlexampleRepoInfo}}
+	}
+	return c.urlexampleRepo
 }
 
 type urlexample struct {
 	*repo[model.URLExample]
+	mu           sync.RWMutex
+	beforeCreate []urlexampleHook
+	afterCreate  []urlexampleHook
+	beforeUpdate []urlexampleHook
+	afterUpdate  []urlexampleHook
+	beforeDelete []urlexampleHook
+	afterDelete  []urlexampleHook
+}
+
+type urlexampleHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.URLExample) error
+}
+
+var urlexampleHookCounter atomic.Uint64
+
+func (r *urlexample) OnBeforeCreate(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *urlexample) OnAfterCreate(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *urlexample) OnBeforeUpdate(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *urlexample) OnAfterUpdate(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *urlexample) OnBeforeDelete(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *urlexample) OnAfterDelete(fn func(ctx context.Context, node *model.URLExample) error) func() {
+	id := urlexampleHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, urlexampleHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the URLExample model.
@@ -63,7 +210,38 @@ func (r *urlexample) Create(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, urlexample)
+	if h, ok := any(urlexample).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]urlexampleHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, urlexample); err != nil {
+		return err
+	}
+	if h, ok := any(urlexample).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]urlexampleHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the URLExample model with the given id.
@@ -74,7 +252,38 @@ func (r *urlexample) CreateWithID(ctx context.Context, id string, urlexample *mo
 	if urlexample.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, urlexample)
+	if h, ok := any(urlexample).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]urlexampleHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, urlexample); err != nil {
+		return err
+	}
+	if h, ok := any(urlexample).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]urlexampleHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -115,7 +324,38 @@ func (r *urlexample) Update(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() == nil {
 		return errors.New("cannot update URLExample without existing record ID")
 	}
-	return r.update(ctx, urlexample.ID(), urlexample)
+	if h, ok := any(urlexample).(som.BeforeUpdateHook); ok {
+		if err := h.BeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]urlexampleHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, urlexample.ID(), urlexample); err != nil {
+		return err
+	}
+	if h, ok := any(urlexample).(som.AfterUpdateHook); ok {
+		if err := h.AfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]urlexampleHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -126,7 +366,38 @@ func (r *urlexample) Delete(ctx context.Context, urlexample *model.URLExample) e
 	if urlexample.ID() == nil {
 		return errors.New("cannot delete URLExample without existing record ID")
 	}
-	return r.delete(ctx, urlexample.ID(), urlexample, false, nil)
+	if h, ok := any(urlexample).(som.BeforeDeleteHook); ok {
+		if err := h.BeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]urlexampleHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	if err := r.delete(ctx, urlexample.ID(), urlexample, false, nil); err != nil {
+		return err
+	}
+	if h, ok := any(urlexample).(som.AfterDeleteHook); ok {
+		if err := h.AfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]urlexampleHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, urlexample); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

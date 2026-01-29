@@ -115,6 +115,14 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("Close").Call()
 	})
 
+	// Generate ClientImpl with per-node cached repo fields.
+	f.Line().Type().Id("ClientImpl").StructFunc(func(g *jen.Group) {
+		g.Id("db").Id("Database")
+		for _, node := range b.input.nodes {
+			g.Id(node.NameGoLower() + "Repo").Op("*").Id(node.NameGoLower())
+		}
+	})
+
 	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, filenameInterfaces))); err != nil {
 		return err
 	}
@@ -185,6 +193,17 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		).Error()
 
 		g.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo())
+
+		for _, event := range []string{"Create", "Update", "Delete"} {
+			for _, timing := range []string{"Before", "After"} {
+				g.Id("On"+timing+event).Call(
+					jen.Id("fn").Func().Params(
+						jen.Id("ctx").Qual("context", "Context"),
+						jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
+					).Error(),
+				).Func().Params()
+			}
+		}
 	})
 
 	repoInfoVarName := node.NameGoLower() + "RepoInfo"
@@ -211,13 +230,15 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 	f.Line().
 		Add(comment(`
-` + node.NameGo() + `Repo returns a new repository instance for the ` + node.NameGo() + ` model.
+` + node.NameGo() + `Repo returns the repository instance for the ` + node.NameGo() + ` model.
+The instance is cached as a singleton on the client.
 		`)).
 		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
 		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
 		Block(
-			jen.Return(
-				jen.Op("&").Id(node.NameGoLower()).Values(
+			jen.If(jen.Id("c").Dot(node.NameGoLower()+"Repo").Op("==").Nil()).Block(
+				jen.Id("c").Dot(node.NameGoLower()+"Repo").Op("=").
+					Op("&").Id(node.NameGoLower()).Values(
 					jen.Id("repo").Op(":").Op("&").Id("repo").
 						Types(
 							b.input.SourceQual(node.NameGo()),
@@ -238,14 +259,75 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 						),
 				),
 			),
+			jen.Return(jen.Id("c").Dot(node.NameGoLower()+"Repo")),
 		)
 
+	hookEvents := []string{"Create", "Update", "Delete"}
+
 	f.Line()
-	f.Type().Id(node.NameGoLower()).Struct(
-		jen.Op("*").Id("repo").Types(
-			b.input.SourceQual(node.NameGo()),
-		),
+	f.Type().Id(node.NameGoLower()).StructFunc(func(g *jen.Group) {
+		g.Op("*").Id("repo").Types(b.input.SourceQual(node.NameGo()))
+		g.Id("mu").Qual("sync", "RWMutex")
+		for _, event := range hookEvents {
+			for _, timing := range []string{"before", "after"} {
+				g.Id(timing + event).Index().Id(node.NameGoLower() + "Hook")
+			}
+		}
+	})
+
+	f.Line()
+	f.Type().Id(node.NameGoLower() + "Hook").Struct(
+		jen.Id("id").Uint64(),
+		jen.Id("fn").Func().Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
+		).Error(),
 	)
+
+	f.Line()
+	f.Var().Id(node.NameGoLower() + "HookCounter").Qual("sync/atomic", "Uint64")
+
+	for _, event := range hookEvents {
+		for _, timing := range []string{"Before", "After"} {
+			methodName := "On" + timing + event
+			fieldName := strings.ToLower(timing) + event
+
+			f.Line().
+				Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+				Id(methodName).
+				Params(jen.Id("fn").Func().Params(
+					jen.Id("ctx").Qual("context", "Context"),
+					jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
+				).Error()).
+				Func().Params().
+				Block(
+					jen.Id("id").Op(":=").Id(node.NameGoLower()+"HookCounter").Dot("Add").Call(jen.Lit(1)),
+					jen.Id("r").Dot("mu").Dot("Lock").Call(),
+					jen.Id("r").Dot(fieldName).Op("=").Append(
+						jen.Id("r").Dot(fieldName),
+						jen.Id(node.NameGoLower()+"Hook").Values(jen.Dict{
+							jen.Id("id"): jen.Id("id"),
+							jen.Id("fn"): jen.Id("fn"),
+						}),
+					),
+					jen.Id("r").Dot("mu").Dot("Unlock").Call(),
+					jen.Return(jen.Func().Params().Block(
+						jen.Id("r").Dot("mu").Dot("Lock").Call(),
+						jen.Defer().Id("r").Dot("mu").Dot("Unlock").Call(),
+						jen.For(jen.Id("i").Op(",").Id("h").Op(":=").Range().Id("r").Dot(fieldName)).Block(
+							jen.If(jen.Id("h").Dot("id").Op("==").Id("id")).Block(
+								jen.Id("r").Dot(fieldName).Op("=").Qual("slices", "Delete").Call(
+									jen.Id("r").Dot(fieldName),
+									jen.Id("i"),
+									jen.Id("i").Op("+").Lit(1),
+								),
+								jen.Return(),
+							),
+						),
+					)),
+				)
+		}
+	}
 
 	f.Line().
 		Add(comment(`
@@ -272,24 +354,22 @@ The ID will be generated automatically as a ULID.
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
-		Block(
-			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
-				),
+		BlockFunc(func(g *jen.Group) {
+			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))))
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
-				),
+			b.addBeforeHooks(g, node, "Create")
 
-			jen.Return(
-				jen.Id("r").Dot("create").Call(
-					jen.Id("ctx"),
-					jen.Id(node.NameGoLower()),
-				),
-			),
-		)
+			g.If(jen.Err().Op(":=").Id("r").Dot("create").Call(
+				jen.Id("ctx"), jen.Id(node.NameGoLower()),
+			), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
+
+			b.addAfterHooks(g, node, "Create")
+
+			g.Return(jen.Nil())
+		})
 
 	f.Line().
 		Add(comment(`
@@ -303,25 +383,22 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
-		Block(
-			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
-				),
+		BlockFunc(func(g *jen.Group) {
+			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))))
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))),
-				),
+			b.addBeforeHooks(g, node, "Create")
 
-			jen.Return(
-				jen.Id("r").Dot("createWithID").Call(
-					jen.Id("ctx"),
-					jen.Id("id"),
-					jen.Id(node.NameGoLower()),
-				),
-			),
-		)
+			g.If(jen.Err().Op(":=").Id("r").Dot("createWithID").Call(
+				jen.Id("ctx"), jen.Id("id"), jen.Id(node.NameGoLower()),
+			), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
+
+			b.addAfterHooks(g, node, "Create")
+
+			g.Return(jen.Nil())
+		})
 
 	f.Line().
 		Add(comment(`
@@ -393,25 +470,22 @@ Update updates the record for the given model.
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).
 		Error().
-		Block(
-			jen.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
-				),
+		BlockFunc(func(g *jen.Group) {
+			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))))
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))),
-				),
+			b.addBeforeHooks(g, node, "Update")
 
-			jen.Return(
-				jen.Id("r").Dot("update").Call(
-					jen.Id("ctx"),
-					jen.Id(node.NameGoLower()).Dot("ID").Call(),
-					jen.Id(node.NameGoLower()),
-				),
-			),
-		)
+			g.If(jen.Err().Op(":=").Id("r").Dot("update").Call(
+				jen.Id("ctx"), jen.Id(node.NameGoLower()).Dot("ID").Call(), jen.Id(node.NameGoLower()),
+			), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
+
+			b.addAfterHooks(g, node, "Update")
+
+			g.Return(jen.Nil())
+		})
 
 	f.Line().
 		Add(comment(`
@@ -435,35 +509,36 @@ Delete deletes the record for the given model.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot delete "+node.NameGo()+" without existing record ID"))),
 				)
 
-			// Check if already deleted (for SoftDelete models)
 			if node.Source.SoftDelete {
 				g.If(jen.Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
 					jen.Return(jen.Qual(b.subPkg(""), "ErrAlreadyDeleted")),
 				)
 			}
 
+			b.addBeforeHooks(g, node, "Delete")
+
 			if node.Source.SoftDelete && node.Source.OptimisticLock {
 				g.Id("version").Op(":=").Id(node.NameGoLower()).Dot("Version").Call()
-				g.Return(
-					jen.Id("r").Dot("delete").Call(
-						jen.Id("ctx"),
-						jen.Id(node.NameGoLower()).Dot("ID").Call(),
-						jen.Id(node.NameGoLower()),
-						jen.Lit(true),
-						jen.Op("&").Id("version"),
-					),
-				)
+				g.If(jen.Err().Op(":=").Id("r").Dot("delete").Call(
+					jen.Id("ctx"),
+					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id(node.NameGoLower()),
+					jen.Lit(true),
+					jen.Op("&").Id("version"),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 			} else {
-				g.Return(
-					jen.Id("r").Dot("delete").Call(
-						jen.Id("ctx"),
-						jen.Id(node.NameGoLower()).Dot("ID").Call(),
-						jen.Id(node.NameGoLower()),
-						jen.Lit(node.Source.SoftDelete),
-						jen.Nil(),
-					),
-				)
+				g.If(jen.Err().Op(":=").Id("r").Dot("delete").Call(
+					jen.Id("ctx"),
+					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id(node.NameGoLower()),
+					jen.Lit(node.Source.SoftDelete),
+					jen.Nil(),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 			}
+
+			b.addAfterHooks(g, node, "Delete")
+
+			g.Return(jen.Nil())
 		})
 
 	// Add Erase method for soft delete models
@@ -664,6 +739,56 @@ func (b *build) subPkg(pkg string) string {
 //
 // -- HELPER
 //
+
+func (b *build) addBeforeHooks(g *jen.Group, node *field.NodeTable, event string) {
+	somPkg := b.subPkg("")
+	hookIface := "Before" + event + "Hook"
+	fieldName := "before" + event
+
+	g.If(
+		jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id(node.NameGoLower())).Assert(jen.Qual(somPkg, hookIface)),
+		jen.Id("ok"),
+	).Block(
+		jen.If(jen.Err().Op(":=").Id("h").Dot("Before"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
+			jen.Return(jen.Err()),
+		),
+	)
+
+	g.Id("r").Dot("mu").Dot("RLock").Call()
+	g.Id(fieldName+"Hooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot(fieldName)))
+	g.Copy(jen.Id(fieldName+"Hooks"), jen.Id("r").Dot(fieldName))
+	g.Id("r").Dot("mu").Dot("RUnlock").Call()
+	g.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id(fieldName + "Hooks")).Block(
+		jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id(node.NameGoLower())), jen.Err().Op("!=").Nil()).Block(
+			jen.Return(jen.Err()),
+		),
+	)
+}
+
+func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string) {
+	somPkg := b.subPkg("")
+	hookIface := "After" + event + "Hook"
+	fieldName := "after" + event
+
+	g.If(
+		jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id(node.NameGoLower())).Assert(jen.Qual(somPkg, hookIface)),
+		jen.Id("ok"),
+	).Block(
+		jen.If(jen.Err().Op(":=").Id("h").Dot("After"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
+			jen.Return(jen.Err()),
+		),
+	)
+
+	g.Id("r").Dot("mu").Dot("RLock").Call()
+	g.Id(fieldName+"Hooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot(fieldName)))
+	g.Copy(jen.Id(fieldName+"Hooks"), jen.Id("r").Dot(fieldName))
+	g.Id("r").Dot("mu").Dot("RUnlock").Call()
+	g.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id(fieldName + "Hooks")).Block(
+		jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id(node.NameGoLower())), jen.Err().Op("!=").Nil()).Block(
+			jen.Return(jen.Err()),
+		),
+	)
+}
 
 func comment(text string) jen.Code {
 	var code jen.Statement

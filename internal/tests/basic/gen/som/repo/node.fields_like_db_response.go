@@ -10,6 +10,9 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
+	"sync"
+	"sync/atomic"
 )
 
 type FieldsLikeDBResponseRepo interface {
@@ -21,6 +24,12 @@ type FieldsLikeDBResponseRepo interface {
 	Delete(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Refresh(ctx context.Context, fieldsLikeDbresponse *model.FieldsLikeDBResponse) error
 	Relate() *relate.FieldsLikeDBResponse
+	OnBeforeCreate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	OnAfterCreate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	OnAfterUpdate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	OnBeforeDelete(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
+	OnAfterDelete(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func()
 }
 
 // fieldsLikeDbresponseRepoInfo holds the model-specific conversion functions for FieldsLikeDBResponse.
@@ -37,16 +46,154 @@ var fieldsLikeDbresponseRepoInfo = RepoInfo[model.FieldsLikeDBResponse]{
 	},
 }
 
-// FieldsLikeDBResponseRepo returns a new repository instance for the FieldsLikeDBResponse model.
+// FieldsLikeDBResponseRepo returns the repository instance for the FieldsLikeDBResponse model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) FieldsLikeDBResponseRepo() FieldsLikeDBResponseRepo {
-	return &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse]{
-		db:   c.db,
-		name: "fields_like_db_response",
-		info: fieldsLikeDbresponseRepoInfo}}
+	if c.fieldsLikeDbresponseRepo == nil {
+		c.fieldsLikeDbresponseRepo = &fieldsLikeDbresponse{repo: &repo[model.FieldsLikeDBResponse]{
+			db:   c.db,
+			name: "fields_like_db_response",
+			info: fieldsLikeDbresponseRepoInfo}}
+	}
+	return c.fieldsLikeDbresponseRepo
 }
 
 type fieldsLikeDbresponse struct {
 	*repo[model.FieldsLikeDBResponse]
+	mu           sync.RWMutex
+	beforeCreate []fieldsLikeDbresponseHook
+	afterCreate  []fieldsLikeDbresponseHook
+	beforeUpdate []fieldsLikeDbresponseHook
+	afterUpdate  []fieldsLikeDbresponseHook
+	beforeDelete []fieldsLikeDbresponseHook
+	afterDelete  []fieldsLikeDbresponseHook
+}
+
+type fieldsLikeDbresponseHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error
+}
+
+var fieldsLikeDbresponseHookCounter atomic.Uint64
+
+func (r *fieldsLikeDbresponse) OnBeforeCreate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *fieldsLikeDbresponse) OnAfterCreate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *fieldsLikeDbresponse) OnBeforeUpdate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *fieldsLikeDbresponse) OnAfterUpdate(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *fieldsLikeDbresponse) OnBeforeDelete(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *fieldsLikeDbresponse) OnAfterDelete(fn func(ctx context.Context, node *model.FieldsLikeDBResponse) error) func() {
+	id := fieldsLikeDbresponseHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, fieldsLikeDbresponseHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the FieldsLikeDBResponse model.
@@ -63,7 +210,38 @@ func (r *fieldsLikeDbresponse) Create(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, fieldsLikeDbresponse)
+	if h, ok := any(fieldsLikeDbresponse).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]fieldsLikeDbresponseHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, fieldsLikeDbresponse); err != nil {
+		return err
+	}
+	if h, ok := any(fieldsLikeDbresponse).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]fieldsLikeDbresponseHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the FieldsLikeDBResponse model with the given id.
@@ -74,7 +252,38 @@ func (r *fieldsLikeDbresponse) CreateWithID(ctx context.Context, id string, fiel
 	if fieldsLikeDbresponse.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, fieldsLikeDbresponse)
+	if h, ok := any(fieldsLikeDbresponse).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]fieldsLikeDbresponseHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, fieldsLikeDbresponse); err != nil {
+		return err
+	}
+	if h, ok := any(fieldsLikeDbresponse).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]fieldsLikeDbresponseHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -115,7 +324,38 @@ func (r *fieldsLikeDbresponse) Update(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot update FieldsLikeDBResponse without existing record ID")
 	}
-	return r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse)
+	if h, ok := any(fieldsLikeDbresponse).(som.BeforeUpdateHook); ok {
+		if err := h.BeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]fieldsLikeDbresponseHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse); err != nil {
+		return err
+	}
+	if h, ok := any(fieldsLikeDbresponse).(som.AfterUpdateHook); ok {
+		if err := h.AfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]fieldsLikeDbresponseHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -126,7 +366,38 @@ func (r *fieldsLikeDbresponse) Delete(ctx context.Context, fieldsLikeDbresponse 
 	if fieldsLikeDbresponse.ID() == nil {
 		return errors.New("cannot delete FieldsLikeDBResponse without existing record ID")
 	}
-	return r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false, nil)
+	if h, ok := any(fieldsLikeDbresponse).(som.BeforeDeleteHook); ok {
+		if err := h.BeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]fieldsLikeDbresponseHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	if err := r.delete(ctx, fieldsLikeDbresponse.ID(), fieldsLikeDbresponse, false, nil); err != nil {
+		return err
+	}
+	if h, ok := any(fieldsLikeDbresponse).(som.AfterDeleteHook); ok {
+		if err := h.AfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]fieldsLikeDbresponseHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, fieldsLikeDbresponse); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

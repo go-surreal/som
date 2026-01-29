@@ -11,6 +11,9 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
+	"sync"
+	"sync/atomic"
 )
 
 type SoftDeleteBlogPostRepo interface {
@@ -24,6 +27,12 @@ type SoftDeleteBlogPostRepo interface {
 	Restore(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
 	Refresh(ctx context.Context, softDeleteBlogPost *model.SoftDeleteBlogPost) error
 	Relate() *relate.SoftDeleteBlogPost
+	OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
+	OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func()
 }
 
 // softDeleteBlogPostRepoInfo holds the model-specific conversion functions for SoftDeleteBlogPost.
@@ -40,16 +49,154 @@ var softDeleteBlogPostRepoInfo = RepoInfo[model.SoftDeleteBlogPost]{
 	},
 }
 
-// SoftDeleteBlogPostRepo returns a new repository instance for the SoftDeleteBlogPost model.
+// SoftDeleteBlogPostRepo returns the repository instance for the SoftDeleteBlogPost model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) SoftDeleteBlogPostRepo() SoftDeleteBlogPostRepo {
-	return &softDeleteBlogPost{repo: &repo[model.SoftDeleteBlogPost]{
-		db:   c.db,
-		name: "soft_delete_blog_post",
-		info: softDeleteBlogPostRepoInfo}}
+	if c.softDeleteBlogPostRepo == nil {
+		c.softDeleteBlogPostRepo = &softDeleteBlogPost{repo: &repo[model.SoftDeleteBlogPost]{
+			db:   c.db,
+			name: "soft_delete_blog_post",
+			info: softDeleteBlogPostRepoInfo}}
+	}
+	return c.softDeleteBlogPostRepo
 }
 
 type softDeleteBlogPost struct {
 	*repo[model.SoftDeleteBlogPost]
+	mu           sync.RWMutex
+	beforeCreate []softDeleteBlogPostHook
+	afterCreate  []softDeleteBlogPostHook
+	beforeUpdate []softDeleteBlogPostHook
+	afterUpdate  []softDeleteBlogPostHook
+	beforeDelete []softDeleteBlogPostHook
+	afterDelete  []softDeleteBlogPostHook
+}
+
+type softDeleteBlogPostHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error
+}
+
+var softDeleteBlogPostHookCounter atomic.Uint64
+
+func (r *softDeleteBlogPost) OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
+	id := softDeleteBlogPostHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, softDeleteBlogPostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteBlogPost) OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
+	id := softDeleteBlogPostHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, softDeleteBlogPostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteBlogPost) OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
+	id := softDeleteBlogPostHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, softDeleteBlogPostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteBlogPost) OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
+	id := softDeleteBlogPostHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, softDeleteBlogPostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteBlogPost) OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
+	id := softDeleteBlogPostHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, softDeleteBlogPostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteBlogPost) OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeleteBlogPost) error) func() {
+	id := softDeleteBlogPostHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, softDeleteBlogPostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the SoftDeleteBlogPost model.
@@ -66,7 +213,38 @@ func (r *softDeleteBlogPost) Create(ctx context.Context, softDeleteBlogPost *mod
 	if softDeleteBlogPost.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, softDeleteBlogPost)
+	if h, ok := any(softDeleteBlogPost).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]softDeleteBlogPostHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, softDeleteBlogPost); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, softDeleteBlogPost); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteBlogPost).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]softDeleteBlogPostHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, softDeleteBlogPost); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the SoftDeleteBlogPost model with the given id.
@@ -77,7 +255,38 @@ func (r *softDeleteBlogPost) CreateWithID(ctx context.Context, id string, softDe
 	if softDeleteBlogPost.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, softDeleteBlogPost)
+	if h, ok := any(softDeleteBlogPost).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]softDeleteBlogPostHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, softDeleteBlogPost); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, softDeleteBlogPost); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteBlogPost).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]softDeleteBlogPostHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, softDeleteBlogPost); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -118,7 +327,38 @@ func (r *softDeleteBlogPost) Update(ctx context.Context, softDeleteBlogPost *mod
 	if softDeleteBlogPost.ID() == nil {
 		return errors.New("cannot update SoftDeleteBlogPost without existing record ID")
 	}
-	return r.update(ctx, softDeleteBlogPost.ID(), softDeleteBlogPost)
+	if h, ok := any(softDeleteBlogPost).(som.BeforeUpdateHook); ok {
+		if err := h.BeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]softDeleteBlogPostHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, softDeleteBlogPost); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, softDeleteBlogPost.ID(), softDeleteBlogPost); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteBlogPost).(som.AfterUpdateHook); ok {
+		if err := h.AfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]softDeleteBlogPostHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, softDeleteBlogPost); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -132,7 +372,38 @@ func (r *softDeleteBlogPost) Delete(ctx context.Context, softDeleteBlogPost *mod
 	if softDeleteBlogPost.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
-	return r.delete(ctx, softDeleteBlogPost.ID(), softDeleteBlogPost, true, nil)
+	if h, ok := any(softDeleteBlogPost).(som.BeforeDeleteHook); ok {
+		if err := h.BeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]softDeleteBlogPostHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, softDeleteBlogPost); err != nil {
+			return err
+		}
+	}
+	if err := r.delete(ctx, softDeleteBlogPost.ID(), softDeleteBlogPost, true, nil); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteBlogPost).(som.AfterDeleteHook); ok {
+		if err := h.AfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]softDeleteBlogPostHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, softDeleteBlogPost); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Erase permanently deletes the record from the database.

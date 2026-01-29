@@ -11,7 +11,10 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
 	"strings"
+	"sync"
+	"sync/atomic"
 )
 
 type SoftDeleteCompleteRepo interface {
@@ -25,6 +28,12 @@ type SoftDeleteCompleteRepo interface {
 	Restore(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
 	Refresh(ctx context.Context, softDeleteComplete *model.SoftDeleteComplete) error
 	Relate() *relate.SoftDeleteComplete
+	OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
+	OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func()
 }
 
 // softDeleteCompleteRepoInfo holds the model-specific conversion functions for SoftDeleteComplete.
@@ -41,16 +50,154 @@ var softDeleteCompleteRepoInfo = RepoInfo[model.SoftDeleteComplete]{
 	},
 }
 
-// SoftDeleteCompleteRepo returns a new repository instance for the SoftDeleteComplete model.
+// SoftDeleteCompleteRepo returns the repository instance for the SoftDeleteComplete model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) SoftDeleteCompleteRepo() SoftDeleteCompleteRepo {
-	return &softDeleteComplete{repo: &repo[model.SoftDeleteComplete]{
-		db:   c.db,
-		name: "soft_delete_complete",
-		info: softDeleteCompleteRepoInfo}}
+	if c.softDeleteCompleteRepo == nil {
+		c.softDeleteCompleteRepo = &softDeleteComplete{repo: &repo[model.SoftDeleteComplete]{
+			db:   c.db,
+			name: "soft_delete_complete",
+			info: softDeleteCompleteRepoInfo}}
+	}
+	return c.softDeleteCompleteRepo
 }
 
 type softDeleteComplete struct {
 	*repo[model.SoftDeleteComplete]
+	mu           sync.RWMutex
+	beforeCreate []softDeleteCompleteHook
+	afterCreate  []softDeleteCompleteHook
+	beforeUpdate []softDeleteCompleteHook
+	afterUpdate  []softDeleteCompleteHook
+	beforeDelete []softDeleteCompleteHook
+	afterDelete  []softDeleteCompleteHook
+}
+
+type softDeleteCompleteHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.SoftDeleteComplete) error
+}
+
+var softDeleteCompleteHookCounter atomic.Uint64
+
+func (r *softDeleteComplete) OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteComplete) OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteComplete) OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteComplete) OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteComplete) OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeleteComplete) OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeleteComplete) error) func() {
+	id := softDeleteCompleteHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, softDeleteCompleteHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the SoftDeleteComplete model.
@@ -67,7 +214,38 @@ func (r *softDeleteComplete) Create(ctx context.Context, softDeleteComplete *mod
 	if softDeleteComplete.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, softDeleteComplete)
+	if h, ok := any(softDeleteComplete).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]softDeleteCompleteHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, softDeleteComplete); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteComplete).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]softDeleteCompleteHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the SoftDeleteComplete model with the given id.
@@ -78,7 +256,38 @@ func (r *softDeleteComplete) CreateWithID(ctx context.Context, id string, softDe
 	if softDeleteComplete.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, softDeleteComplete)
+	if h, ok := any(softDeleteComplete).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]softDeleteCompleteHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, softDeleteComplete); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteComplete).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]softDeleteCompleteHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -119,7 +328,38 @@ func (r *softDeleteComplete) Update(ctx context.Context, softDeleteComplete *mod
 	if softDeleteComplete.ID() == nil {
 		return errors.New("cannot update SoftDeleteComplete without existing record ID")
 	}
-	return r.update(ctx, softDeleteComplete.ID(), softDeleteComplete)
+	if h, ok := any(softDeleteComplete).(som.BeforeUpdateHook); ok {
+		if err := h.BeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]softDeleteCompleteHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, softDeleteComplete.ID(), softDeleteComplete); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteComplete).(som.AfterUpdateHook); ok {
+		if err := h.AfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]softDeleteCompleteHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -133,8 +373,39 @@ func (r *softDeleteComplete) Delete(ctx context.Context, softDeleteComplete *mod
 	if softDeleteComplete.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
+	if h, ok := any(softDeleteComplete).(som.BeforeDeleteHook); ok {
+		if err := h.BeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]softDeleteCompleteHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
 	version := softDeleteComplete.Version()
-	return r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, true, &version)
+	if err := r.delete(ctx, softDeleteComplete.ID(), softDeleteComplete, true, &version); err != nil {
+		return err
+	}
+	if h, ok := any(softDeleteComplete).(som.AfterDeleteHook); ok {
+		if err := h.AfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]softDeleteCompleteHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, softDeleteComplete); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Erase permanently deletes the record from the database.

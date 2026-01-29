@@ -11,6 +11,9 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	"slices"
+	"sync"
+	"sync/atomic"
 )
 
 type SoftDeletePostRepo interface {
@@ -24,6 +27,12 @@ type SoftDeletePostRepo interface {
 	Restore(ctx context.Context, softDeletePost *model.SoftDeletePost) error
 	Refresh(ctx context.Context, softDeletePost *model.SoftDeletePost) error
 	Relate() *relate.SoftDeletePost
+	OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeletePost) error) func()
+	OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeletePost) error) func()
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeletePost) error) func()
+	OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeletePost) error) func()
+	OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeletePost) error) func()
+	OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeletePost) error) func()
 }
 
 // softDeletePostRepoInfo holds the model-specific conversion functions for SoftDeletePost.
@@ -40,16 +49,154 @@ var softDeletePostRepoInfo = RepoInfo[model.SoftDeletePost]{
 	},
 }
 
-// SoftDeletePostRepo returns a new repository instance for the SoftDeletePost model.
+// SoftDeletePostRepo returns the repository instance for the SoftDeletePost model.
+// The instance is cached as a singleton on the client.
 func (c *ClientImpl) SoftDeletePostRepo() SoftDeletePostRepo {
-	return &softDeletePost{repo: &repo[model.SoftDeletePost]{
-		db:   c.db,
-		name: "soft_delete_post",
-		info: softDeletePostRepoInfo}}
+	if c.softDeletePostRepo == nil {
+		c.softDeletePostRepo = &softDeletePost{repo: &repo[model.SoftDeletePost]{
+			db:   c.db,
+			name: "soft_delete_post",
+			info: softDeletePostRepoInfo}}
+	}
+	return c.softDeletePostRepo
 }
 
 type softDeletePost struct {
 	*repo[model.SoftDeletePost]
+	mu           sync.RWMutex
+	beforeCreate []softDeletePostHook
+	afterCreate  []softDeletePostHook
+	beforeUpdate []softDeletePostHook
+	afterUpdate  []softDeletePostHook
+	beforeDelete []softDeletePostHook
+	afterDelete  []softDeletePostHook
+}
+
+type softDeletePostHook struct {
+	id uint64
+	fn func(ctx context.Context, node *model.SoftDeletePost) error
+}
+
+var softDeletePostHookCounter atomic.Uint64
+
+func (r *softDeletePost) OnBeforeCreate(fn func(ctx context.Context, node *model.SoftDeletePost) error) func() {
+	id := softDeletePostHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeCreate = append(r.beforeCreate, softDeletePostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeCreate {
+			if h.id == id {
+				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeletePost) OnAfterCreate(fn func(ctx context.Context, node *model.SoftDeletePost) error) func() {
+	id := softDeletePostHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterCreate = append(r.afterCreate, softDeletePostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterCreate {
+			if h.id == id {
+				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeletePost) OnBeforeUpdate(fn func(ctx context.Context, node *model.SoftDeletePost) error) func() {
+	id := softDeletePostHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeUpdate = append(r.beforeUpdate, softDeletePostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeUpdate {
+			if h.id == id {
+				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeletePost) OnAfterUpdate(fn func(ctx context.Context, node *model.SoftDeletePost) error) func() {
+	id := softDeletePostHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterUpdate = append(r.afterUpdate, softDeletePostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterUpdate {
+			if h.id == id {
+				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeletePost) OnBeforeDelete(fn func(ctx context.Context, node *model.SoftDeletePost) error) func() {
+	id := softDeletePostHookCounter.Add(1)
+	r.mu.Lock()
+	r.beforeDelete = append(r.beforeDelete, softDeletePostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.beforeDelete {
+			if h.id == id {
+				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
+				return
+			}
+		}
+	}
+}
+
+func (r *softDeletePost) OnAfterDelete(fn func(ctx context.Context, node *model.SoftDeletePost) error) func() {
+	id := softDeletePostHookCounter.Add(1)
+	r.mu.Lock()
+	r.afterDelete = append(r.afterDelete, softDeletePostHook{
+		fn: fn,
+		id: id,
+	})
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		for i, h := range r.afterDelete {
+			if h.id == id {
+				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
+				return
+			}
+		}
+	}
 }
 
 // Query returns a new query builder for the SoftDeletePost model.
@@ -66,7 +213,38 @@ func (r *softDeletePost) Create(ctx context.Context, softDeletePost *model.SoftD
 	if softDeletePost.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.create(ctx, softDeletePost)
+	if h, ok := any(softDeletePost).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]softDeletePostHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, softDeletePost); err != nil {
+			return err
+		}
+	}
+	if err := r.create(ctx, softDeletePost); err != nil {
+		return err
+	}
+	if h, ok := any(softDeletePost).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]softDeletePostHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, softDeletePost); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CreateWithID creates a new record for the SoftDeletePost model with the given id.
@@ -77,7 +255,38 @@ func (r *softDeletePost) CreateWithID(ctx context.Context, id string, softDelete
 	if softDeletePost.ID() != nil {
 		return errors.New("given node already has an id")
 	}
-	return r.createWithID(ctx, id, softDeletePost)
+	if h, ok := any(softDeletePost).(som.BeforeCreateHook); ok {
+		if err := h.BeforeCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]softDeletePostHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, h := range beforeCreateHooks {
+		if err := h.fn(ctx, softDeletePost); err != nil {
+			return err
+		}
+	}
+	if err := r.createWithID(ctx, id, softDeletePost); err != nil {
+		return err
+	}
+	if h, ok := any(softDeletePost).(som.AfterCreateHook); ok {
+		if err := h.AfterCreate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]softDeletePostHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, h := range afterCreateHooks {
+		if err := h.fn(ctx, softDeletePost); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Read returns the record for the given id, if it exists.
@@ -118,7 +327,38 @@ func (r *softDeletePost) Update(ctx context.Context, softDeletePost *model.SoftD
 	if softDeletePost.ID() == nil {
 		return errors.New("cannot update SoftDeletePost without existing record ID")
 	}
-	return r.update(ctx, softDeletePost.ID(), softDeletePost)
+	if h, ok := any(softDeletePost).(som.BeforeUpdateHook); ok {
+		if err := h.BeforeUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeUpdateHooks := make([]softDeletePostHook, len(r.beforeUpdate))
+	copy(beforeUpdateHooks, r.beforeUpdate)
+	r.mu.RUnlock()
+	for _, h := range beforeUpdateHooks {
+		if err := h.fn(ctx, softDeletePost); err != nil {
+			return err
+		}
+	}
+	if err := r.update(ctx, softDeletePost.ID(), softDeletePost); err != nil {
+		return err
+	}
+	if h, ok := any(softDeletePost).(som.AfterUpdateHook); ok {
+		if err := h.AfterUpdate(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterUpdateHooks := make([]softDeletePostHook, len(r.afterUpdate))
+	copy(afterUpdateHooks, r.afterUpdate)
+	r.mu.RUnlock()
+	for _, h := range afterUpdateHooks {
+		if err := h.fn(ctx, softDeletePost); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Delete deletes the record for the given model.
@@ -132,7 +372,38 @@ func (r *softDeletePost) Delete(ctx context.Context, softDeletePost *model.SoftD
 	if softDeletePost.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
-	return r.delete(ctx, softDeletePost.ID(), softDeletePost, true, nil)
+	if h, ok := any(softDeletePost).(som.BeforeDeleteHook); ok {
+		if err := h.BeforeDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	beforeDeleteHooks := make([]softDeletePostHook, len(r.beforeDelete))
+	copy(beforeDeleteHooks, r.beforeDelete)
+	r.mu.RUnlock()
+	for _, h := range beforeDeleteHooks {
+		if err := h.fn(ctx, softDeletePost); err != nil {
+			return err
+		}
+	}
+	if err := r.delete(ctx, softDeletePost.ID(), softDeletePost, true, nil); err != nil {
+		return err
+	}
+	if h, ok := any(softDeletePost).(som.AfterDeleteHook); ok {
+		if err := h.AfterDelete(ctx); err != nil {
+			return err
+		}
+	}
+	r.mu.RLock()
+	afterDeleteHooks := make([]softDeletePostHook, len(r.afterDelete))
+	copy(afterDeleteHooks, r.afterDelete)
+	r.mu.RUnlock()
+	for _, h := range afterDeleteHooks {
+		if err := h.fn(ctx, softDeletePost); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Erase permanently deletes the record from the database.

@@ -15,3 +15,15 @@ type Client interface {
 	ApplySchema(ctx context.Context) error
 	Close()
 }
+
+type ClientImpl struct {
+	db                       Database
+	urlexampleRepo           *urlexample
+	softDeleteUserRepo       *softDeleteUser
+	softDeletePostRepo       *softDeletePost
+	softDeleteCompleteRepo   *softDeleteComplete
+	softDeleteBlogPostRepo   *softDeleteBlogPost
+	groupRepo                *group
+	fieldsLikeDbresponseRepo *fieldsLikeDbresponse
+	allFieldTypesRepo        *allFieldTypes
+}
