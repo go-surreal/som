@@ -1452,3 +1452,206 @@ func TestSort(t *testing.T) {
 		assert.Equal(t, "alpha", results[0].FieldString)
 	})
 }
+
+func TestEdgeRelation(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	allTypesNode := &model.AllTypes{
+		FieldString: "edge_source",
+	}
+	err := client.AllTypesRepo().Create(ctx, allTypesNode)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	specialTypesNode := &model.SpecialTypes{
+		Name: "edge_target",
+	}
+	err = client.SpecialTypesRepo().Create(ctx, specialTypesNode)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	edge := &model.EdgeRelation{
+		AllTypes:     *allTypesNode,
+		SpecialTypes: *specialTypesNode,
+		Meta: model.EdgeMeta{
+			IsAdmin:  true,
+			IsActive: true,
+		},
+	}
+
+	err = client.AllTypesRepo().Relate().FieldEdgeRelations().Create(ctx, edge)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if edge.ID() == nil {
+		t.Fatal("edge ID must not be nil after create")
+	}
+
+	assert.Check(t, edge.Meta.IsAdmin)
+	assert.Check(t, edge.Meta.IsActive)
+
+	results, err := client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.
+				FieldEdgeRelations(
+					filter.EdgeRelation.CreatedAt.Before(time.Now().Add(time.Minute)),
+				).
+				SpecialTypes(
+					filter.SpecialTypes.Name.Equal("edge_target"),
+				),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, "edge_source", results[0].FieldString)
+}
+
+func TestQueryLimitOffset(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	for i := 0; i < 5; i++ {
+		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
+			FieldInt: i,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	results, err := client.AllTypesRepo().Query().
+		Order(by.AllTypes.FieldInt.Asc()).
+		Limit(2).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 2, len(results))
+	assert.Equal(t, 0, results[0].FieldInt)
+	assert.Equal(t, 1, results[1].FieldInt)
+
+	results, err = client.AllTypesRepo().Query().
+		Order(by.AllTypes.FieldInt.Asc()).
+		Offset(2).
+		Limit(2).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 2, len(results))
+	assert.Equal(t, 2, results[0].FieldInt)
+	assert.Equal(t, 3, results[1].FieldInt)
+
+	results, err = client.AllTypesRepo().Query().
+		Order(by.AllTypes.FieldInt.Asc()).
+		Offset(4).
+		Limit(10).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, 4, results[0].FieldInt)
+}
+
+func TestQueryIDs(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	for i := 0; i < 3; i++ {
+		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
+			FieldInt: i,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	ids, err := client.AllTypesRepo().Query().AllIDs(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 3, len(ids))
+	for _, id := range ids {
+		assert.Check(t, id != "")
+	}
+
+	id, err := client.AllTypesRepo().Query().FirstID(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Check(t, id != "")
+}
+
+func TestAsyncQueries(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
+		FieldString: "async_test",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	existsRes := client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldString.Equal("async_test")).
+		ExistsAsync(ctx)
+	assert.NilError(t, <-existsRes.Err())
+	assert.Equal(t, true, <-existsRes.Val())
+
+	firstRes := client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldString.Equal("async_test")).
+		FirstAsync(ctx)
+	assert.NilError(t, <-firstRes.Err())
+	first := <-firstRes.Val()
+	assert.Check(t, first != nil)
+	assert.Equal(t, "async_test", first.FieldString)
+
+	allRes := client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldString.Equal("async_test")).
+		AllAsync(ctx)
+	assert.NilError(t, <-allRes.Err())
+	all := <-allRes.Val()
+	assert.Equal(t, 1, len(all))
+	assert.Equal(t, "async_test", all[0].FieldString)
+}
+
+func TestOrderRandom(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	for i := 0; i < 3; i++ {
+		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
+			FieldInt: i,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	results, err := client.AllTypesRepo().Query().
+		OrderRandom().
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 3, len(results))
+}
