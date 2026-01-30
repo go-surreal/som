@@ -2,7 +2,6 @@
 package cbor
 
 import (
-	"net/url"
 	"time"
 )
 
@@ -100,34 +99,3 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 	return &d, nil
 }
 
-// URL marshaling helpers
-func MarshalURL(u url.URL) string {
-	return u.String()
-}
-
-func MarshalURLPtr(u *url.URL) *string {
-	if u == nil {
-		return nil
-	}
-	s := u.String()
-	return &s
-}
-
-func UnmarshalURL(s string) (url.URL, error) {
-	u, err := url.Parse(s)
-	if err != nil {
-		return url.URL{}, err
-	}
-	return *u, nil
-}
-
-func UnmarshalURLPtr(s *string) (*url.URL, error) {
-	if s == nil {
-		return nil, nil
-	}
-	u, err := url.Parse(*s)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
-}

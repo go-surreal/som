@@ -22,5 +22,6 @@ ignore:
   - "core/**"
   - "cmd/**"
   - "internal/tests/basic/model/**"
+  - "internal/tests/basic/gen/som/define/**"
   - "internal/tests/basic/repo/**"
   - "**/*_test.go"
