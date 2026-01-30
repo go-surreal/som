@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -32,9 +33,16 @@ func (f *Slice) TypeDatabase() string {
 		return "option<bytes>"
 	}
 
-	// Go treats empty slices as nil, but the custom marshaling
-	// ensures that they are stored as NONE in the database.
-	return fmt.Sprintf("option<array<%s>>", f.element.TypeDatabase())
+	elemType := f.element.TypeDatabase()
+
+	// Inside arrays, pointer elements produce NULL (not NONE) via CBOR.
+	// SurrealDB's option<T> only allows NONE, so use "T | null" instead.
+	if strings.HasPrefix(elemType, "option<") && strings.HasSuffix(elemType, ">") {
+		inner := elemType[len("option<") : len(elemType)-1]
+		elemType = inner + " | null"
+	}
+
+	return fmt.Sprintf("option<array<%s>>", elemType)
 }
 
 func (f *Slice) SchemaStatements(table, prefix string) []string {
@@ -43,17 +51,25 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 		return nil
 	}
 
+	structElem, isStruct := f.element.(*Struct)
+
+	// For pointer struct element slices, use FLEXIBLE TYPE and skip nested
+	// DEFINE FIELD recursion. SurrealDB rejects NULL object elements when
+	// strict TYPE + nested DEFINE FIELDs are used.
+	typeKeyword := "TYPE"
+	if isStruct && structElem.source.Pointer() {
+		typeKeyword = "FLEXIBLE TYPE"
+	}
+
 	// Generate own DEFINE FIELD statement.
 	statements := []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+			"DEFINE FIELD %s ON TABLE %s %s %s;",
+			prefix+f.NameDatabase(), table, typeKeyword, f.TypeDatabase(),
 		),
 	}
 
-	// Only recurse into struct elements, because for primitive
-	// elements the type is already part of the array definition.
-	if structElem, ok := f.element.(*Struct); ok {
+	if isStruct && !structElem.source.Pointer() {
 		nestedPrefix := prefix + f.NameDatabase() + ".*."
 		for _, field := range structElem.Table().GetFields() {
 			statements = append(statements, field.SchemaStatements(table, nestedPrefix)...)
@@ -558,19 +574,31 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 			convFuncName += "Ptr"
 		}
 
-		// Determine the slice element type based on whether the struct element is a pointer
-		var sliceElemType jen.Code
-		if structElem.source.Pointer() {
-			sliceElemType = jen.Index().Op("*").Id(structElem.element.NameGoLower())
-		} else {
-			sliceElemType = jen.Index().Id(structElem.element.NameGoLower())
-		}
-
 		// Handle pointer-to-slice case by dereferencing
 		srcSlice := jen.Id("c").Dot(f.NameGo())
 		if f.source.Pointer() {
 			srcSlice = jen.Op("*").Id("c").Dot(f.NameGo())
 		}
+
+		if structElem.source.Pointer() {
+			sliceElemType := jen.Index().Op("*").Id(structElem.element.NameGoLower())
+
+			return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+				jen.Id("convSlice").Op(":=").Make(
+					sliceElemType,
+					jen.Len(srcSlice),
+				),
+				jen.For(
+					jen.Id("i").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
+				).Block(
+					jen.Id("convSlice").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+				),
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("convSlice"),
+			)
+		}
+
+		// Determine the slice element type for non-pointer struct elements
+		sliceElemType := jen.Index().Id(structElem.element.NameGoLower())
 
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("convSlice").Op(":=").Make(
