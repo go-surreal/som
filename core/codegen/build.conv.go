@@ -276,7 +276,18 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 					)
 
 					if isNode {
-						bg.Id("c").Dot("Node").Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr"))
+						node := elem.(*field.NodeTable)
+						fieldName := node.Source.IDEmbed
+						if fieldName == "" {
+							fieldName = "Node"
+						}
+						if fieldName == "Node" {
+							bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr"))
+						} else {
+							bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewCustomNode").Types(
+								jen.Qual(b.subPkg(""), string(node.Source.IDType)),
+							).Call(jen.Id("idStr"))
+						}
 					} else {
 						bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("idStr"))
 					}

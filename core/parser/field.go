@@ -70,8 +70,17 @@ func (f *fieldAtomic) Validate() error {
 	return nil
 }
 
+type IDType string
+
+const (
+	IDTypeULID IDType = "ULID"
+	IDTypeUUID IDType = "UUID"
+	IDTypeRand IDType = "Rand"
+)
+
 type FieldID struct {
 	*fieldAtomic
+	Type IDType
 }
 
 type FieldString struct {

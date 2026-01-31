@@ -292,6 +292,10 @@ The instance is cached as a singleton on the client.
 								jen.Line(),
 								jen.Id("info").Op(":").Id(repoInfoVarName),
 							),
+							jen.Add(
+								jen.Line(),
+								jen.Id("newID").Op(":").Id(idFuncName(node)),
+							),
 						),
 				),
 			),
@@ -845,6 +849,17 @@ func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string)
 			jen.Return(jen.Err()),
 		),
 	)
+}
+
+func idFuncName(node *field.NodeTable) string {
+	switch node.Source.IDType {
+	case parser.IDTypeUUID:
+		return "newUUID"
+	case parser.IDTypeRand:
+		return "newID"
+	default:
+		return "newULID"
+	}
 }
 
 func comment(text string) jen.Code {

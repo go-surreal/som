@@ -67,7 +67,7 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 			}
 			idStr = s
 		}
-		c.Node = som.NewNode(idStr)
+		c.CustomNode = som.NewCustomNode[som.Rand](idStr)
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {
