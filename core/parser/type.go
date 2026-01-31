@@ -1,13 +1,13 @@
 package parser
 
 type Node struct {
-	Name              string
-	Fields            []Field
-	IDType            IDType
-	IDEmbed string
-	Timestamps        bool
-	OptimisticLock    bool
-	SoftDelete        bool
+	Name           string
+	Fields         []Field
+	IDType         IDType
+	IDEmbed        string
+	Timestamps     bool
+	OptimisticLock bool
+	SoftDelete     bool
 }
 
 type Edge struct {
