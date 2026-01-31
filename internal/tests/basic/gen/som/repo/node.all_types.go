@@ -27,7 +27,7 @@ type AllTypesRepo interface {
 	CreateWithID(ctx context.Context, id string, allTypes *model.AllTypes) error
 	// Read returns the record for the given ID, if it exists.
 
-	Read(ctx context.Context, id *som.ID) (*model.AllTypes, bool, error)
+	Read(ctx context.Context, id string) (*model.AllTypes, bool, error)
 	// Update updates the record for the given AllTypes model.
 
 	Update(ctx context.Context, allTypes *model.AllTypes) error
@@ -304,7 +304,7 @@ func (r *allTypes) Create(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() != nil {
+	if allTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
 	if h, ok := any(allTypes).(som.OnBeforeCreateHook); ok {
@@ -346,7 +346,7 @@ func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() != nil {
+	if allTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
 	if h, ok := any(allTypes).(som.OnBeforeCreateHook); ok {
@@ -386,15 +386,12 @@ func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
-func (r *allTypes) Read(ctx context.Context, id *som.ID) (*model.AllTypes, bool, error) {
+func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, error) {
 	if !internal.CacheEnabled[model.AllTypes](ctx) {
-		return r.read(ctx, id)
+		return r.read(ctx, r.recordID(id))
 	}
 	idFunc := func(n *model.AllTypes) string {
-		if n.ID() != nil {
-			return n.ID().String()
-		}
-		return ""
+		return n.ID()
 	}
 	queryAll := func(ctx context.Context) ([]*model.AllTypes, error) {
 		return r.Query().All(ctx)
@@ -418,7 +415,7 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() == nil {
+	if allTypes.ID() == "" {
 		return errors.New("cannot update AllTypes without existing record ID")
 	}
 	if h, ok := any(allTypes).(som.OnBeforeUpdateHook); ok {
@@ -435,7 +432,7 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 			return err
 		}
 	}
-	if err := r.update(ctx, allTypes.ID(), allTypes); err != nil {
+	if err := r.update(ctx, r.recordID(allTypes.ID()), allTypes); err != nil {
 		return err
 	}
 	if h, ok := any(allTypes).(som.OnAfterUpdateHook); ok {
@@ -460,7 +457,7 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() == nil {
+	if allTypes.ID() == "" {
 		return errors.New("cannot delete AllTypes without existing record ID")
 	}
 	if h, ok := any(allTypes).(som.OnBeforeDeleteHook); ok {
@@ -477,7 +474,7 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 			return err
 		}
 	}
-	if err := r.delete(ctx, allTypes.ID(), allTypes, false, nil); err != nil {
+	if err := r.delete(ctx, r.recordID(allTypes.ID()), allTypes, false, nil); err != nil {
 		return err
 	}
 	if h, ok := any(allTypes).(som.OnAfterDeleteHook); ok {
@@ -502,10 +499,10 @@ func (r *allTypes) Refresh(ctx context.Context, allTypes *model.AllTypes) error 
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() == nil {
+	if allTypes.ID() == "" {
 		return errors.New("cannot refresh AllTypes without existing record ID")
 	}
-	return r.refresh(ctx, allTypes.ID(), allTypes)
+	return r.refresh(ctx, r.recordID(allTypes.ID()), allTypes)
 }
 
 // Relate returns a new relate instance for the AllTypes model.

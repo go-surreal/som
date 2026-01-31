@@ -2,12 +2,14 @@
 package conv
 
 import (
+	"fmt"
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type SpecialTypes struct {
@@ -21,8 +23,8 @@ func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 	data := make(map[string]any, 4)
 
 	// Embedded som.Node/Edge ID field
-	if c.ID() != nil {
-		data["id"] = c.ID()
+	if c.ID() != "" {
+		data["id"] = models.NewRecordID("special_types", c.ID())
 	}
 
 	if c.SoftDelete.IsDeleted() {
@@ -42,9 +44,13 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var id *som.ID
-		cbor.Unmarshal(raw, &id)
-		c.Node = som.NewNode(id)
+		var recordID *som.ID
+		cbor.Unmarshal(raw, &recordID)
+		var idStr string
+		if recordID != nil {
+			idStr = fmt.Sprintf("%v", recordID.ID)
+		}
+		c.Node = som.NewNode(idStr)
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {
@@ -127,17 +133,19 @@ func fromSpecialTypesLinkPtr(link *specialTypesLink) *model.SpecialTypes {
 }
 
 func toSpecialTypesLink(node model.SpecialTypes) *specialTypesLink {
-	if node.ID() == nil {
+	if node.ID() == "" {
 		return nil
 	}
-	link := specialTypesLink{SpecialTypes: FromSpecialTypes(node), ID: node.ID()}
+	rid := models.NewRecordID("special_types", node.ID())
+	link := specialTypesLink{SpecialTypes: FromSpecialTypes(node), ID: &rid}
 	return &link
 }
 
 func toSpecialTypesLinkPtr(node *model.SpecialTypes) *specialTypesLink {
-	if node == nil || node.ID() == nil {
+	if node == nil || node.ID() == "" {
 		return nil
 	}
-	link := specialTypesLink{SpecialTypes: FromSpecialTypes(*node), ID: node.ID()}
+	rid := models.NewRecordID("special_types", node.ID())
+	link := specialTypesLink{SpecialTypes: FromSpecialTypes(*node), ID: &rid}
 	return &link
 }

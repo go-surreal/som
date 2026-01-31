@@ -28,7 +28,7 @@ type SpecialRelationRepo interface {
 	CreateWithID(ctx context.Context, id string, specialRelation *model.SpecialRelation) error
 	// Read returns the record for the given ID, if it exists.
 
-	Read(ctx context.Context, id *som.ID) (*model.SpecialRelation, bool, error)
+	Read(ctx context.Context, id string) (*model.SpecialRelation, bool, error)
 	// Update updates the record for the given SpecialRelation model.
 
 	Update(ctx context.Context, specialRelation *model.SpecialRelation) error
@@ -311,7 +311,7 @@ func (r *specialRelation) Create(ctx context.Context, specialRelation *model.Spe
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialRelation.ID() != nil {
+	if specialRelation.ID() != "" {
 		return errors.New("given node already has an id")
 	}
 	if h, ok := any(specialRelation).(som.OnBeforeCreateHook); ok {
@@ -353,7 +353,7 @@ func (r *specialRelation) CreateWithID(ctx context.Context, id string, specialRe
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialRelation.ID() != nil {
+	if specialRelation.ID() != "" {
 		return errors.New("given node already has an id")
 	}
 	if h, ok := any(specialRelation).(som.OnBeforeCreateHook); ok {
@@ -393,15 +393,12 @@ func (r *specialRelation) CreateWithID(ctx context.Context, id string, specialRe
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
-func (r *specialRelation) Read(ctx context.Context, id *som.ID) (*model.SpecialRelation, bool, error) {
+func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRelation, bool, error) {
 	if !internal.CacheEnabled[model.SpecialRelation](ctx) {
-		return r.read(ctx, id)
+		return r.read(ctx, r.recordID(id))
 	}
 	idFunc := func(n *model.SpecialRelation) string {
-		if n.ID() != nil {
-			return n.ID().String()
-		}
-		return ""
+		return n.ID()
 	}
 	queryAll := func(ctx context.Context) ([]*model.SpecialRelation, error) {
 		return r.Query().All(ctx)
@@ -425,7 +422,7 @@ func (r *specialRelation) Update(ctx context.Context, specialRelation *model.Spe
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialRelation.ID() == nil {
+	if specialRelation.ID() == "" {
 		return errors.New("cannot update SpecialRelation without existing record ID")
 	}
 	if h, ok := any(specialRelation).(som.OnBeforeUpdateHook); ok {
@@ -442,7 +439,7 @@ func (r *specialRelation) Update(ctx context.Context, specialRelation *model.Spe
 			return err
 		}
 	}
-	if err := r.update(ctx, specialRelation.ID(), specialRelation); err != nil {
+	if err := r.update(ctx, r.recordID(specialRelation.ID()), specialRelation); err != nil {
 		return err
 	}
 	if h, ok := any(specialRelation).(som.OnAfterUpdateHook); ok {
@@ -467,7 +464,7 @@ func (r *specialRelation) Delete(ctx context.Context, specialRelation *model.Spe
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialRelation.ID() == nil {
+	if specialRelation.ID() == "" {
 		return errors.New("cannot delete SpecialRelation without existing record ID")
 	}
 	if specialRelation.SoftDelete.IsDeleted() {
@@ -487,7 +484,7 @@ func (r *specialRelation) Delete(ctx context.Context, specialRelation *model.Spe
 			return err
 		}
 	}
-	if err := r.delete(ctx, specialRelation.ID(), specialRelation, true, nil); err != nil {
+	if err := r.delete(ctx, r.recordID(specialRelation.ID()), specialRelation, true, nil); err != nil {
 		return err
 	}
 	if h, ok := any(specialRelation).(som.OnAfterDeleteHook); ok {
@@ -514,10 +511,10 @@ func (r *specialRelation) Erase(ctx context.Context, specialRelation *model.Spec
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialRelation.ID() == nil {
+	if specialRelation.ID() == "" {
 		return errors.New("cannot erase SpecialRelation without existing record ID")
 	}
-	return r.delete(ctx, specialRelation.ID(), specialRelation, false, nil)
+	return r.delete(ctx, r.recordID(specialRelation.ID()), specialRelation, false, nil)
 }
 
 // Restore un-deletes a soft-deleted record.
@@ -526,19 +523,19 @@ func (r *specialRelation) Restore(ctx context.Context, specialRelation *model.Sp
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialRelation.ID() == nil {
+	if specialRelation.ID() == "" {
 		return errors.New("cannot restore SpecialRelation without existing record ID")
 	}
 	if !specialRelation.SoftDelete.IsDeleted() {
 		return errors.New("record is not deleted, cannot restore")
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
-	vars := map[string]any{"id": specialRelation.ID()}
+	vars := map[string]any{"id": r.recordID(specialRelation.ID())}
 	_, err := r.db.Query(ctx, query, vars)
 	if err != nil {
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
-	return r.refresh(ctx, specialRelation.ID(), specialRelation)
+	return r.refresh(ctx, r.recordID(specialRelation.ID()), specialRelation)
 }
 
 // Refresh refreshes the given model with the remote data.
@@ -546,10 +543,10 @@ func (r *specialRelation) Refresh(ctx context.Context, specialRelation *model.Sp
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialRelation.ID() == nil {
+	if specialRelation.ID() == "" {
 		return errors.New("cannot refresh SpecialRelation without existing record ID")
 	}
-	return r.refresh(ctx, specialRelation.ID(), specialRelation)
+	return r.refresh(ctx, r.recordID(specialRelation.ID()), specialRelation)
 }
 
 // Relate returns a new relate instance for the SpecialRelation model.

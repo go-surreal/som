@@ -110,7 +110,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, is.Equal(newModel.ID().String(), created.ID().String()))
+	assert.Check(t, is.Equal(newModel.ID(), created.ID()))
 
 	// LIVE UPDATE
 
@@ -133,7 +133,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, is.Equal(newModel.ID().String(), updated.ID().String()))
+	assert.Check(t, is.Equal(newModel.ID(), updated.ID()))
 
 	// LIVE DELETE
 
@@ -156,7 +156,7 @@ func TestLiveQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Check(t, is.Equal(newModel.ID().String(), deleted.ID().String()))
+	assert.Check(t, is.Equal(newModel.ID(), deleted.ID()))
 
 	// Test the automatic closing of the live channel when the context is canceled:
 
@@ -374,7 +374,7 @@ func TestLiveQueryWithFetch(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		assert.Check(t, is.Equal(newModel.ID().String(), created.ID().String()))
+		assert.Check(t, is.Equal(newModel.ID(), created.ID()))
 		// Verify that the fetched MainGroup has data populated
 		assert.Check(t, is.Equal(group.Name, created.FieldNode.Name))
 

@@ -28,22 +28,10 @@ var ErrEmptyResponse = errors.New("empty response")
 
 // Model is implemented by all generated model types (nodes and edges).
 type Model interface {
-	ID() *ID
+	ID() string
 }
 
 type ID = models.RecordID
-
-// NewRecordID creates a new RecordID with the given table and ID.
-// This is a convenience wrapper to avoid importing surrealdb.go directly.
-func NewRecordID(table string, id any) ID {
-	return models.NewRecordID(table, id)
-}
-
-// MakeID creates a pointer to a RecordID with the given table and ID.
-func MakeID(table string, id any) *ID {
-	recordID := NewRecordID(table, id)
-	return &recordID
-}
 
 // Table creates a RecordID representing a table (for server-generated IDs).
 // This is a convenience wrapper to avoid importing surrealdb.go directly.
@@ -51,35 +39,33 @@ func Table(name string) models.Table {
 	return models.Table(name)
 }
 
-// type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
-
 type Node struct {
-	id *ID
+	id string
 }
 
-func NewNode(id *ID) Node {
+func NewNode(id string) Node {
 	return Node{
 		id: id,
 	}
 }
 
-func (n Node) ID() *ID {
+func (n Node) ID() string {
 	return n.id
 }
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
-	id *ID
+	id string
 }
 
-func NewEdge(id *ID) Edge {
+func NewEdge(id string) Edge {
 	return Edge{
 		id: id,
 	}
 }
 
-func (e Edge) ID() *ID {
+func (e Edge) ID() string {
 	return e.id
 }
 

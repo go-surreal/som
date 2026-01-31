@@ -54,7 +54,7 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, som.ID{}),
+		cmpopts.IgnoreUnexported(som.Node{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus"),
 	)
@@ -103,7 +103,7 @@ func FuzzWithDatabase(f *testing.F) {
 			t.Fatal(err)
 		}
 
-		if userIn.ID() == nil {
+		if userIn.ID() == "" {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
@@ -150,7 +150,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatal(err)
 		}
 
-		if userIn.ID() == nil {
+		if userIn.ID() == "" {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
@@ -164,7 +164,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatalf("user with ID '%s' not found", userIn.ID())
 		}
 
-		assert.Equal(t, userIn.ID().String(), userOut.ID().String())
+		assert.Equal(t, userIn.ID(), userOut.ID())
 		assert.Equal(t, "1", userOut.FieldString)
 
 		userOut.FieldString = "2"
@@ -201,7 +201,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		if userIn.ID() == nil {
+		if userIn.ID() == "" {
 			b.Fatal("user ID must not be empty after create call")
 		}
 

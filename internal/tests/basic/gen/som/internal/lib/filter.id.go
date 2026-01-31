@@ -3,32 +3,38 @@
 package lib
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type ID[M any] struct {
 	key  Key[M]
-	node string // TODO!
+	node string
 }
 
 func NewID[M any](key Key[M], node string) *ID[M] {
 	return &ID[M]{key: key, node: node}
 }
 
-func (b *ID[M]) Equal(val *som.ID) Filter[M] {
-	// val = b.node + ":" + val
-	return b.key.op(OpEqual, val)
+func (b *ID[M]) Equal(val string) Filter[M] {
+	return b.key.op(OpEqual, models.NewRecordID(b.node, val))
 }
 
-func (b *ID[M]) NotEqual(val *som.ID) Filter[M] {
-	// val = b.node + ":" + val
-	return b.key.op(OpNotEqual, val)
+func (b *ID[M]) NotEqual(val string) Filter[M] {
+	return b.key.op(OpNotEqual, models.NewRecordID(b.node, val))
 }
 
-func (b *ID[M]) In(vals []*som.ID) Filter[M] {
-	return b.key.op(OpIn, vals)
+func (b *ID[M]) In(vals []string) Filter[M] {
+	ids := make([]models.RecordID, len(vals))
+	for i, v := range vals {
+		ids[i] = models.NewRecordID(b.node, v)
+	}
+	return b.key.op(OpIn, ids)
 }
 
-func (b *ID[M]) NotIn(vals []*som.ID) Filter[M] {
-	return b.key.op(OpNotIn, vals)
+func (b *ID[M]) NotIn(vals []string) Filter[M] {
+	ids := make([]models.RecordID, len(vals))
+	for i, v := range vals {
+		ids[i] = models.NewRecordID(b.node, v)
+	}
+	return b.key.op(OpNotIn, ids)
 }

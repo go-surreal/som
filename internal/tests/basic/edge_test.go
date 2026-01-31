@@ -46,7 +46,7 @@ func TestEdgeRelation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if edge.ID() == nil {
+	if edge.ID() == "" {
 		t.Fatal("edge ID must not be nil after create")
 	}
 

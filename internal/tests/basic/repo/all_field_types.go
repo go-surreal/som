@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/by"
 	"github.com/go-surreal/som/tests/basic/gen/som/repo"
 	"github.com/go-surreal/som/tests/basic/gen/som/filter"
@@ -15,7 +14,7 @@ import (
 type AllTypesRepo interface {
 	repo.AllTypesRepo
 
-	FindByID(ctx context.Context, id *som.ID) (*model.AllTypes, error)
+	FindByID(ctx context.Context, id string) (*model.AllTypes, error)
 	List(ctx context.Context) ([]*model.AllTypes, error)
 }
 
@@ -29,13 +28,13 @@ func NewAllTypesRepo(db repo.Client) AllTypesRepo {
 	}
 }
 
-func (r *allTypesRepo) FindByID(ctx context.Context, id *som.ID) (*model.AllTypes, error) {
+func (r *allTypesRepo) FindByID(ctx context.Context, id string) (*model.AllTypes, error) {
 	return r.AllTypesRepo.Query().Where(filter.AllTypes.ID.Equal(id)).First(ctx)
 }
 
 func (r *allTypesRepo) FetchByID(
 	ctx context.Context,
-	id *som.ID,
+	id string,
 	fetch ...with.Fetch_[model.AllTypes],
 ) (
 	[]*model.AllTypes,
