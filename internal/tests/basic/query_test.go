@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/by"
 	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/gen/som/repo"
@@ -23,7 +22,7 @@ func TestQuery(t *testing.T) {
 					filter.EdgeRelation.CreatedAt.Before(time.Now()),
 				).
 				SpecialTypes(
-					filter.SpecialTypes.ID.Equal(som.MakeID("special_types", "some_id")),
+					filter.SpecialTypes.ID.Equal("some_id"),
 				),
 
 			filter.AllTypes.FieldDuration.Days().LessThan(4),

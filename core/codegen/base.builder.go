@@ -162,7 +162,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		g.Add(comment("Read returns the record for the given ID, if it exists."))
 		g.Id("Read").Call(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
+			jen.Id("id").String(),
 		).Parens(jen.List(
 			jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Bool(),
@@ -412,7 +412,7 @@ The ID will be generated automatically as a ULID.
 		BlockFunc(func(g *jen.Group) {
 			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
-			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))))
 
 			b.addBeforeHooks(g, node, "Create")
@@ -441,7 +441,9 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 		BlockFunc(func(g *jen.Group) {
 			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
-			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Nil()).
+			g.If(jen.Id("id").Op("==").Lit("")).
+				Block(jen.Return(jen.Qual(b.subPkg(""), "ErrEmptyID")))
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))))
 
 			b.addBeforeHooks(g, node, "Create")
@@ -465,18 +467,18 @@ If caching is enabled via som.WithCache, it will be used.
 		Id("Read").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("id").Op("*").Qual(b.subPkg(""), "ID"),
+			jen.Id("id").String(),
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
+			jen.If(jen.Id("id").Op("==").Lit("")).Block(
+				jen.Return(jen.Nil(), jen.False(), jen.Qual(b.subPkg(""), "ErrEmptyID")),
+			),
 			jen.If(jen.Op("!").Qual(b.subPkg("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
-				jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("id"))),
+				jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.Id("id")))),
 			),
 			jen.Id("idFunc").Op(":=").Func().Params(jen.Id("n").Op("*").Add(b.input.SourceQual(node.NameGo()))).String().Block(
-				jen.If(jen.Id("n").Dot("ID").Call().Op("!=").Nil()).Block(
-					jen.Return(jen.Id("n").Dot("ID").Call().Dot("String").Call()),
-				),
-				jen.Return(jen.Lit("")),
+				jen.Return(jen.Id("n").Dot("ID").Call()),
 			),
 			jen.Id("queryAll").Op(":=").Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
 				jen.Return(jen.Id("r").Dot("Query").Call().Dot("All").Call(jen.Id("ctx"))),
@@ -528,13 +530,13 @@ Update updates the record for the given model.
 		BlockFunc(func(g *jen.Group) {
 			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
-			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot update "+node.NameGo()+" without existing record ID"))))
 
 			b.addBeforeHooks(g, node, "Update")
 
 			g.If(jen.Err().Op(":=").Id("r").Dot("update").Call(
-				jen.Id("ctx"), jen.Id(node.NameGoLower()).Dot("ID").Call(), jen.Id(node.NameGoLower()),
+				jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()), jen.Id(node.NameGoLower()),
 			), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 			b.addAfterHooks(g, node, "Update")
@@ -559,7 +561,7 @@ Delete deletes the record for the given model.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				)
 
-			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot delete "+node.NameGo()+" without existing record ID"))),
 				)
@@ -576,7 +578,7 @@ Delete deletes the record for the given model.
 				g.Id("version").Op(":=").Id(node.NameGoLower()).Dot("Version").Call()
 				g.If(jen.Err().Op(":=").Id("r").Dot("delete").Call(
 					jen.Id("ctx"),
-					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
 					jen.Id(node.NameGoLower()),
 					jen.Lit(true),
 					jen.Op("&").Id("version"),
@@ -584,7 +586,7 @@ Delete deletes the record for the given model.
 			} else {
 				g.If(jen.Err().Op(":=").Id("r").Dot("delete").Call(
 					jen.Id("ctx"),
-					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
 					jen.Id(node.NameGoLower()),
 					jen.Lit(node.Source.SoftDelete),
 					jen.Nil(),
@@ -616,14 +618,14 @@ Use this to permanently remove soft-deleted records.
 					Block(
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					),
-				jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+				jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
 					Block(
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot erase "+node.NameGo()+" without existing record ID"))),
 					),
 				jen.Return(
 					jen.Id("r").Dot("delete").Call(
 						jen.Id("ctx"),
-						jen.Id(node.NameGoLower()).Dot("ID").Call(),
+						jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
 						jen.Id(node.NameGoLower()),
 						jen.Lit(false), // Hard delete
 						jen.Nil(),
@@ -649,7 +651,7 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					)
 
-				g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).Block(
+				g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot restore "+node.NameGo()+" without existing record ID"))),
 				)
 
@@ -661,14 +663,14 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 					g.Add(jen.Id("query").Op(":=").Lit("UPDATE $id SET deleted_at = NONE, __som_lock_version = $lock_version"))
 					g.Add(jen.Id("vars").Op(":=").Map(jen.String()).Any().Values(
 						jen.Dict{
-							jen.Lit("id"):           jen.Id(node.NameGoLower()).Dot("ID").Call(),
+							jen.Lit("id"):           jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
 							jen.Lit("lock_version"): jen.Id(node.NameGoLower()).Dot("Version").Call(),
 						},
 					))
 				} else {
 					g.Add(jen.Id("query").Op(":=").Lit("UPDATE $id SET deleted_at = NONE"))
 					g.Add(jen.Id("vars").Op(":=").Map(jen.String()).Any().Values(
-						jen.Dict{jen.Lit("id"): jen.Id(node.NameGoLower()).Dot("ID").Call()},
+						jen.Dict{jen.Lit("id"): jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call())},
 					))
 				}
 
@@ -696,7 +698,7 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 
 				g.Return(jen.Id("r").Dot("refresh").Call(
 					jen.Id("ctx"),
-					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
 					jen.Id(node.NameGoLower()),
 				))
 			})
@@ -719,7 +721,7 @@ Refresh refreshes the given model with the remote data.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				),
 
-			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Nil()).
+			jen.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("cannot refresh "+node.NameGo()+" without existing record ID"))),
 				),
@@ -727,7 +729,7 @@ Refresh refreshes the given model with the remote data.
 			jen.Return(
 				jen.Id("r").Dot("refresh").Call(
 					jen.Id("ctx"),
-					jen.Id(node.NameGoLower()).Dot("ID").Call(),
+					jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
 					jen.Id(node.NameGoLower()),
 				),
 			),

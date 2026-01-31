@@ -22,7 +22,7 @@ func TestOptimisticLock(t *testing.T) {
 
 	err := client.SpecialTypesRepo().Create(ctx, &record)
 	assert.NilError(t, err)
-	assert.Assert(t, record.ID() != nil)
+	assert.Assert(t, record.ID() != "")
 
 	assert.Equal(t, 1, record.Version())
 

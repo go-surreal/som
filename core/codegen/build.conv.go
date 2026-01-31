@@ -207,10 +207,13 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 
 			// Marshal ID field for nodes and edges
 			if isNode || isEdge {
+				tableName := elem.NameDatabase()
 				g.Line()
 				g.Comment("Embedded som.Node/Edge ID field")
-				g.If(jen.Id("c").Dot("ID").Call().Op("!=").Nil()).Block(
-					jen.Id("data").Index(jen.Lit("id")).Op("=").Id("c").Dot("ID").Call(),
+				g.If(jen.Id("c").Dot("ID").Call().Op("!=").Lit("")).Block(
+					jen.Id("data").Index(jen.Lit("id")).Op("=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
+						jen.Lit(tableName), jen.Id("c").Dot("ID").Call(),
+					),
 				)
 			}
 
@@ -258,13 +261,24 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 					jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
 					jen.Id("ok"),
 				).BlockFunc(func(bg *jen.Group) {
-					bg.Var().Id("id").Op("*").Qual(b.subPkg(""), "ID")
-					bg.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("id"))
+					bg.Var().Id("recordID").Op("*").Qual(b.subPkg(""), "ID")
+					bg.If(
+					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
+					jen.Err().Op("!=").Nil(),
+				).Block(jen.Return(jen.Err()))
+					bg.Var().Id("idStr").String()
+					bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
+						jen.List(jen.Id("s"), jen.Id("ok")).Op(":=").Id("recordID").Dot("ID").Assert(jen.String()),
+						jen.If(jen.Op("!").Id("ok")).Block(
+							jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("expected string ID, got %T"), jen.Id("recordID").Dot("ID"))),
+						),
+						jen.Id("idStr").Op("=").Id("s"),
+					)
 
 					if isNode {
-						bg.Id("c").Dot("Node").Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("id"))
+						bg.Id("c").Dot("Node").Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr"))
 					} else {
-						bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("id"))
+						bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("idStr"))
 					}
 				})
 			}
@@ -363,23 +377,28 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 }
 
 func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
+	tableName := node.NameDatabase()
 	return jen.Func().
 		Id("to"+node.NameGo()+"Link").
 		Params(jen.Id("node").Add(b.SourceQual(node.NameGo()))).
 		Op("*").Id(node.NameGoLower()+"Link").
 		Block(
-			jen.If(jen.Id("node").Dot("ID").Call().Op("==").Nil()).Block(
+			jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
 				jen.Return(jen.Nil()),
+			),
+			jen.Id("rid").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
+				jen.Lit(tableName), jen.Id("node").Dot("ID").Call(),
 			),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
 				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Id("node")),
-				jen.Id("ID").Op(":").Id("node").Dot("ID").Call(),
+				jen.Id("ID").Op(":").Op("&").Id("rid"),
 			),
 			jen.Return(jen.Op("&").Id("link")),
 		)
 }
 
 func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
+	tableName := node.NameDatabase()
 	return jen.Func().
 		Id("to"+node.NameGo()+"LinkPtr").
 		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).
@@ -388,14 +407,17 @@ func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 			jen.
 				If(
 					jen.Id("node").Op("==").Nil().Op("||").
-						Id("node").Dot("ID").Call().Op("==").Nil(),
+						Id("node").Dot("ID").Call().Op("==").Lit(""),
 				).
 				Block(
 					jen.Return(jen.Nil()),
 				),
+			jen.Id("rid").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
+				jen.Lit(tableName), jen.Id("node").Dot("ID").Call(),
+			),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
 				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Op("*").Id("node")),
-				jen.Id("ID").Op(":").Id("node").Dot("ID").Call(),
+				jen.Id("ID").Op(":").Op("&").Id("rid"),
 			),
 			jen.Return(jen.Op("&").Id("link")),
 		)

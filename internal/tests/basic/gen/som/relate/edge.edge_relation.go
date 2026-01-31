@@ -8,6 +8,7 @@ import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type edgeRelation struct {
@@ -21,16 +22,18 @@ func (e edgeRelation) Create(ctx context.Context, edge *model.EdgeRelation) erro
 	if edge == nil {
 		return errors.New("the given edge must not be nil")
 	}
-	if edge.ID() != nil {
+	if edge.ID() != "" {
 		return errors.New("ID must not be set for an edge to be created")
 	}
-	if edge.AllTypes.ID() == nil {
+	if edge.AllTypes.ID() == "" {
 		return errors.New("ID of the incoming node 'AllTypes' must not be empty")
 	}
-	if edge.SpecialTypes.ID() == nil {
+	if edge.SpecialTypes.ID() == "" {
 		return errors.New("ID of the outgoing node 'SpecialTypes' must not be empty")
 	}
-	query := "RELATE " + edge.AllTypes.ID().String() + "->edge_relation->" + edge.SpecialTypes.ID().String() + " CONTENT $data"
+	inID := models.NewRecordID("all_types", edge.AllTypes.ID())
+	outID := models.NewRecordID("special_types", edge.SpecialTypes.ID())
+	query := "RELATE " + inID.String() + "->edge_relation->" + outID.String() + " CONTENT $data"
 	data := conv.FromEdgeRelation(*edge)
 	res, err := e.db.Query(ctx, query, map[string]any{"data": data})
 	if err != nil {

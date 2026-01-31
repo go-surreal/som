@@ -29,7 +29,7 @@ type SpecialTypesRepo interface {
 	CreateWithID(ctx context.Context, id string, specialTypes *model.SpecialTypes) error
 	// Read returns the record for the given ID, if it exists.
 
-	Read(ctx context.Context, id *som.ID) (*model.SpecialTypes, bool, error)
+	Read(ctx context.Context, id string) (*model.SpecialTypes, bool, error)
 	// Update updates the record for the given SpecialTypes model.
 
 	Update(ctx context.Context, specialTypes *model.SpecialTypes) error
@@ -312,7 +312,7 @@ func (r *specialTypes) Create(ctx context.Context, specialTypes *model.SpecialTy
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialTypes.ID() != nil {
+	if specialTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
 	if h, ok := any(specialTypes).(som.OnBeforeCreateHook); ok {
@@ -354,7 +354,10 @@ func (r *specialTypes) CreateWithID(ctx context.Context, id string, specialTypes
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialTypes.ID() != nil {
+	if id == "" {
+		return som.ErrEmptyID
+	}
+	if specialTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
 	if h, ok := any(specialTypes).(som.OnBeforeCreateHook); ok {
@@ -394,15 +397,15 @@ func (r *specialTypes) CreateWithID(ctx context.Context, id string, specialTypes
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
-func (r *specialTypes) Read(ctx context.Context, id *som.ID) (*model.SpecialTypes, bool, error) {
+func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes, bool, error) {
+	if id == "" {
+		return nil, false, som.ErrEmptyID
+	}
 	if !internal.CacheEnabled[model.SpecialTypes](ctx) {
-		return r.read(ctx, id)
+		return r.read(ctx, r.recordID(id))
 	}
 	idFunc := func(n *model.SpecialTypes) string {
-		if n.ID() != nil {
-			return n.ID().String()
-		}
-		return ""
+		return n.ID()
 	}
 	queryAll := func(ctx context.Context) ([]*model.SpecialTypes, error) {
 		return r.Query().All(ctx)
@@ -426,7 +429,7 @@ func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTy
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialTypes.ID() == nil {
+	if specialTypes.ID() == "" {
 		return errors.New("cannot update SpecialTypes without existing record ID")
 	}
 	if h, ok := any(specialTypes).(som.OnBeforeUpdateHook); ok {
@@ -443,7 +446,7 @@ func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTy
 			return err
 		}
 	}
-	if err := r.update(ctx, specialTypes.ID(), specialTypes); err != nil {
+	if err := r.update(ctx, r.recordID(specialTypes.ID()), specialTypes); err != nil {
 		return err
 	}
 	if h, ok := any(specialTypes).(som.OnAfterUpdateHook); ok {
@@ -468,7 +471,7 @@ func (r *specialTypes) Delete(ctx context.Context, specialTypes *model.SpecialTy
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialTypes.ID() == nil {
+	if specialTypes.ID() == "" {
 		return errors.New("cannot delete SpecialTypes without existing record ID")
 	}
 	if specialTypes.SoftDelete.IsDeleted() {
@@ -489,7 +492,7 @@ func (r *specialTypes) Delete(ctx context.Context, specialTypes *model.SpecialTy
 		}
 	}
 	version := specialTypes.Version()
-	if err := r.delete(ctx, specialTypes.ID(), specialTypes, true, &version); err != nil {
+	if err := r.delete(ctx, r.recordID(specialTypes.ID()), specialTypes, true, &version); err != nil {
 		return err
 	}
 	if h, ok := any(specialTypes).(som.OnAfterDeleteHook); ok {
@@ -516,10 +519,10 @@ func (r *specialTypes) Erase(ctx context.Context, specialTypes *model.SpecialTyp
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialTypes.ID() == nil {
+	if specialTypes.ID() == "" {
 		return errors.New("cannot erase SpecialTypes without existing record ID")
 	}
-	return r.delete(ctx, specialTypes.ID(), specialTypes, false, nil)
+	return r.delete(ctx, r.recordID(specialTypes.ID()), specialTypes, false, nil)
 }
 
 // Restore un-deletes a soft-deleted record.
@@ -528,7 +531,7 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialTypes.ID() == nil {
+	if specialTypes.ID() == "" {
 		return errors.New("cannot restore SpecialTypes without existing record ID")
 	}
 	if !specialTypes.SoftDelete.IsDeleted() {
@@ -536,7 +539,7 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 	}
 	query := "UPDATE $id SET deleted_at = NONE, __som_lock_version = $lock_version"
 	vars := map[string]any{
-		"id":           specialTypes.ID(),
+		"id":           r.recordID(specialTypes.ID()),
 		"lock_version": specialTypes.Version(),
 	}
 	_, err := r.db.Query(ctx, query, vars)
@@ -546,7 +549,7 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 		}
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
-	return r.refresh(ctx, specialTypes.ID(), specialTypes)
+	return r.refresh(ctx, r.recordID(specialTypes.ID()), specialTypes)
 }
 
 // Refresh refreshes the given model with the remote data.
@@ -554,10 +557,10 @@ func (r *specialTypes) Refresh(ctx context.Context, specialTypes *model.SpecialT
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if specialTypes.ID() == nil {
+	if specialTypes.ID() == "" {
 		return errors.New("cannot refresh SpecialTypes without existing record ID")
 	}
-	return r.refresh(ctx, specialTypes.ID(), specialTypes)
+	return r.refresh(ctx, r.recordID(specialTypes.ID()), specialTypes)
 }
 
 // Relate returns a new relate instance for the SpecialTypes model.

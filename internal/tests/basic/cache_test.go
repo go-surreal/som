@@ -122,7 +122,7 @@ func TestCacheEagerWithMaxSize(t *testing.T) {
 	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx, som.Eager(), som.WithMaxSize(3))
 	defer cacheCleanup()
 
-	_, _, err := client.SpecialTypesRepo().Read(cachedCtx, som.MakeID("special_types", "test"))
+	_, _, err := client.SpecialTypesRepo().Read(cachedCtx, "test")
 	assert.ErrorIs(t, err, som.ErrCacheSizeLimitExceeded)
 }
 

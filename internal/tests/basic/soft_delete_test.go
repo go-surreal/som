@@ -24,7 +24,7 @@ func TestSoftDelete(t *testing.T) {
 
 	err := client.SpecialTypesRepo().Create(ctx, &record)
 	assert.NilError(t, err)
-	assert.Assert(t, record.ID() != nil)
+	assert.Assert(t, record.ID() != "")
 
 	assert.Assert(t, !record.SoftDelete.IsDeleted(), "newly created record should not be deleted")
 	assert.Assert(t, record.SoftDelete.DeletedAt().IsZero(), "DeletedAt should be zero for non-deleted record")

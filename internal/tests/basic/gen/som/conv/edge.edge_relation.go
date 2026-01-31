@@ -2,12 +2,14 @@
 package conv
 
 import (
+	"fmt"
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type EdgeRelation struct {
@@ -21,8 +23,8 @@ func (c *EdgeRelation) MarshalCBOR() ([]byte, error) {
 	data := make(map[string]any, 4)
 
 	// Embedded som.Node/Edge ID field
-	if c.ID() != nil {
-		data["id"] = c.ID()
+	if c.ID() != "" {
+		data["id"] = models.NewRecordID("edge_relation", c.ID())
 	}
 
 	if !c.CreatedAt().IsZero() {
@@ -44,9 +46,19 @@ func (c *EdgeRelation) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var id *som.ID
-		cbor.Unmarshal(raw, &id)
-		c.Edge = som.NewEdge(id)
+		var recordID *som.ID
+		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+			return err
+		}
+		var idStr string
+		if recordID != nil {
+			s, ok := recordID.ID.(string)
+			if !ok {
+				return fmt.Errorf("expected string ID, got %T", recordID.ID)
+			}
+			idStr = s
+		}
+		c.Edge = som.NewEdge(idStr)
 	}
 
 	if raw, ok := rawMap["created_at"]; ok {

@@ -64,6 +64,11 @@ func (r *repo[N]) createWithID(ctx context.Context, id string, node *N) error {
 	return nil
 }
 
+func (r *repo[N]) recordID(id string) *ID {
+	rid := models.NewRecordID(r.name, id)
+	return &rid
+}
+
 func (r *repo[N]) read(ctx context.Context, id *ID) (*N, bool, error) {
 	res, err := r.db.Select(ctx, id)
 	if err != nil {
@@ -185,9 +190,12 @@ func loadEagerRecords[N any](
 // If cache is in eager mode and record not found, returns (nil, false, nil).
 // If cache is in lazy mode and record not found, queries DB and populates cache.
 // For eager mode with TTL, expired caches are automatically refreshed.
-func (r *repo[N]) readWithCache(ctx context.Context, id *ID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
-	if c == nil || id == nil {
-		return r.read(ctx, id)
+func (r *repo[N]) readWithCache(ctx context.Context, id string, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
+	if id == "" {
+		return nil, false, som.ErrEmptyID
+	}
+	if c == nil {
+		return r.read(ctx, r.recordID(id))
 	}
 
 	// Check if eager cache needs refresh due to TTL expiration
@@ -197,9 +205,7 @@ func (r *repo[N]) readWithCache(ctx context.Context, id *ID, c *cache[N], refres
 		}
 	}
 
-	idStr := id.String()
-
-	if record, found := c.get(idStr); found {
+	if record, found := c.get(id); found {
 		return record, true, nil
 	}
 
@@ -207,13 +213,13 @@ func (r *repo[N]) readWithCache(ctx context.Context, id *ID, c *cache[N], refres
 		return nil, false, nil
 	}
 
-	record, exists, err := r.read(ctx, id)
+	record, exists, err := r.read(ctx, r.recordID(id))
 	if err != nil {
 		return nil, false, err
 	}
 
 	if exists && record != nil {
-		c.set(idStr, record)
+		c.set(id, record)
 	}
 
 	return record, exists, nil

@@ -2,12 +2,14 @@
 package conv
 
 import (
+	"fmt"
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type AllTypes struct {
@@ -21,8 +23,8 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	data := make(map[string]any, 91)
 
 	// Embedded som.Node/Edge ID field
-	if c.ID() != nil {
-		data["id"] = c.ID()
+	if c.ID() != "" {
+		data["id"] = models.NewRecordID("all_types", c.ID())
 	}
 
 	if !c.CreatedAt().IsZero() {
@@ -299,9 +301,19 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var id *som.ID
-		cbor.Unmarshal(raw, &id)
-		c.Node = som.NewNode(id)
+		var recordID *som.ID
+		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+			return err
+		}
+		var idStr string
+		if recordID != nil {
+			s, ok := recordID.ID.(string)
+			if !ok {
+				return fmt.Errorf("expected string ID, got %T", recordID.ID)
+			}
+			idStr = s
+		}
+		c.Node = som.NewNode(idStr)
 	}
 
 	if raw, ok := rawMap["created_at"]; ok {
@@ -712,17 +724,19 @@ func fromAllTypesLinkPtr(link *allTypesLink) *model.AllTypes {
 }
 
 func toAllTypesLink(node model.AllTypes) *allTypesLink {
-	if node.ID() == nil {
+	if node.ID() == "" {
 		return nil
 	}
-	link := allTypesLink{AllTypes: FromAllTypes(node), ID: node.ID()}
+	rid := models.NewRecordID("all_types", node.ID())
+	link := allTypesLink{AllTypes: FromAllTypes(node), ID: &rid}
 	return &link
 }
 
 func toAllTypesLinkPtr(node *model.AllTypes) *allTypesLink {
-	if node == nil || node.ID() == nil {
+	if node == nil || node.ID() == "" {
 		return nil
 	}
-	link := allTypesLink{AllTypes: FromAllTypes(*node), ID: node.ID()}
+	rid := models.NewRecordID("all_types", node.ID())
+	link := allTypesLink{AllTypes: FromAllTypes(*node), ID: &rid}
 	return &link
 }

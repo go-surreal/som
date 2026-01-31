@@ -101,25 +101,32 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the given edge must not be nil"))),
 				),
 
-			jen.If(jen.Id("edge").Dot("ID").Call().Op("!=").Nil()).
+			jen.If(jen.Id("edge").Dot("ID").Call().Op("!=").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for an edge to be created"))),
 				),
 
-			jen.If(jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Op("==").Nil()).
+			jen.If(jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the incoming node '"+edge.In.NameGo()+"' must not be empty"))),
 				),
 
-			jen.If(jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("==").Nil()).
+			jen.If(jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("==").Lit("")).
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the outgoing node '"+edge.Out.NameGo()+"' must not be empty"))),
 				),
 
+			jen.Id("inID").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
+				jen.Lit(edge.In.NameDatabase()), jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call(),
+			),
+			jen.Id("outID").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
+				jen.Lit(edge.Out.NameDatabase()), jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call(),
+			),
+
 			jen.Id("query").Op(":=").Lit("RELATE ").Op("+").
-				Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
+				Id("inID").Dot("String").Call().Op("+").
 				Lit("->"+edge.NameDatabase()+"->").Op("+").
-				Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Dot("String").Call().Op("+").
+				Id("outID").Dot("String").Call().Op("+").
 				Lit(" CONTENT $data"),
 
 			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
