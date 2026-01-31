@@ -469,6 +469,9 @@ If caching is enabled via som.WithCache, it will be used.
 		).
 		Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 		Block(
+			jen.If(jen.Id("id").Op("==").Lit("")).Block(
+				jen.Return(jen.Nil(), jen.False(), jen.Qual(b.subPkg(""), "ErrEmptyID")),
+			),
 			jen.If(jen.Op("!").Qual(b.subPkg("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
 				jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.Id("id")))),
 			),

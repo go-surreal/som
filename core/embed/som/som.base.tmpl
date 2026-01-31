@@ -23,6 +23,9 @@ var ErrNotFound = errors.New("not found")
 // ErrNilID is returned when a nil ID is passed to an operation that requires a valid ID.
 var ErrNilID = errors.New("id cannot be nil")
 
+// ErrEmptyID is returned when an empty ID string is passed to an operation that requires a valid ID.
+var ErrEmptyID = errors.New("id cannot be empty")
+
 // ErrEmptyResponse is returned when the database returns an unexpected empty response.
 var ErrEmptyResponse = errors.New("empty response")
 

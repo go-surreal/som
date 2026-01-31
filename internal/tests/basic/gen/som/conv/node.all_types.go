@@ -302,7 +302,9 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *som.ID
-		cbor.Unmarshal(raw, &recordID)
+		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+			return err
+		}
 		var idStr string
 		if recordID != nil {
 			idStr = fmt.Sprintf("%v", recordID.ID)

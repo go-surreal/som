@@ -387,6 +387,9 @@ func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
 func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, error) {
+	if id == "" {
+		return nil, false, som.ErrEmptyID
+	}
 	if !internal.CacheEnabled[model.AllTypes](ctx) {
 		return r.read(ctx, r.recordID(id))
 	}

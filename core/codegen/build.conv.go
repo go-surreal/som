@@ -262,7 +262,10 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 					jen.Id("ok"),
 				).BlockFunc(func(bg *jen.Group) {
 					bg.Var().Id("recordID").Op("*").Qual(b.subPkg(""), "ID")
-					bg.Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID"))
+					bg.If(
+					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
+					jen.Err().Op("!=").Nil(),
+				).Block(jen.Return(jen.Err()))
 					bg.Var().Id("idStr").String()
 					bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
 						jen.Id("idStr").Op("=").Qual("fmt", "Sprintf").Call(jen.Lit("%v"), jen.Id("recordID").Dot("ID")),

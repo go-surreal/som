@@ -394,6 +394,9 @@ func (r *specialRelation) CreateWithID(ctx context.Context, id string, specialRe
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
 func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRelation, bool, error) {
+	if id == "" {
+		return nil, false, som.ErrEmptyID
+	}
 	if !internal.CacheEnabled[model.SpecialRelation](ctx) {
 		return r.read(ctx, r.recordID(id))
 	}
