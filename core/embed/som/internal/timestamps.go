@@ -9,13 +9,6 @@ type Timestamps struct {
 	updatedAt time.Time
 }
 
-func NewTimestamps(createdAt time.Time, updatedAt time.Time) Timestamps {
-	return Timestamps{
-		createdAt: createdAt,
-		updatedAt: updatedAt,
-	}
-}
-
 func (t Timestamps) CreatedAt() time.Time {
 	return t.createdAt
 }
