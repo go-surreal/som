@@ -277,7 +277,7 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 
 					if isNode {
 						node := elem.(*field.NodeTable)
-						fieldName := node.Source.EmbeddedFieldName
+						fieldName := node.Source.IDEmbed
 						if fieldName == "" {
 							fieldName = "Node"
 						}

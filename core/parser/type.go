@@ -4,7 +4,7 @@ type Node struct {
 	Name              string
 	Fields            []Field
 	IDType            IDType
-	EmbeddedFieldName string
+	IDEmbed string
 	Timestamps        bool
 	OptimisticLock    bool
 	SoftDelete        bool

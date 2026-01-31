@@ -269,7 +269,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 				(f.Name() == "CustomNode" && isCustomNodeFromSom(f.Elem())) {
 				gen := parseIDType(f.Elem())
 				node.IDType = gen
-				node.EmbeddedFieldName = f.Name()
+				node.IDEmbed = f.Name()
 				node.Fields = append(node.Fields,
 					&FieldID{&fieldAtomic{name: "ID"}, gen},
 				)
