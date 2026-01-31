@@ -42,21 +42,21 @@ func Table(name string) models.Table {
 	return models.Table(name)
 }
 
-type IDGeneration interface{ isIDGeneration() }
+type IDType interface{ isIDType() }
 
 type ULID struct{}
 type UUID struct{}
 type Rand struct{}
 
-func (ULID) isIDGeneration() {}
-func (UUID) isIDGeneration() {}
-func (Rand) isIDGeneration() {}
+func (ULID) isIDType() {}
+func (UUID) isIDType() {}
+func (Rand) isIDType() {}
 
-type CustomNode[T IDGeneration] struct {
+type CustomNode[T IDType] struct {
 	id string
 }
 
-func NewCustomNode[T IDGeneration](id string) CustomNode[T] {
+func NewCustomNode[T IDType](id string) CustomNode[T] {
 	return CustomNode[T]{id: id}
 }
 

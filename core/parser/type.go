@@ -3,7 +3,7 @@ package parser
 type Node struct {
 	Name              string
 	Fields            []Field
-	IDGeneration      IDGeneration
+	IDGeneration      IDType
 	EmbeddedFieldName string
 	Timestamps        bool
 	OptimisticLock    bool

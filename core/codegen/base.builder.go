@@ -853,9 +853,9 @@ func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string)
 
 func idFuncName(node *field.NodeTable) string {
 	switch node.Source.IDGeneration {
-	case parser.IDGenerationUUID:
+	case parser.IDTypeUUID:
 		return "newUUID"
-	case parser.IDGenerationRand:
+	case parser.IDTypeRand:
 		return "newID"
 	default:
 		return "newULID"

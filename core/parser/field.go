@@ -70,17 +70,17 @@ func (f *fieldAtomic) Validate() error {
 	return nil
 }
 
-type IDGeneration string
+type IDType string
 
 const (
-	IDGenerationULID IDGeneration = "ULID"
-	IDGenerationUUID IDGeneration = "UUID"
-	IDGenerationRand IDGeneration = "Rand"
+	IDTypeULID IDType = "ULID"
+	IDTypeUUID IDType = "UUID"
+	IDTypeRand IDType = "Rand"
 )
 
 type FieldID struct {
 	*fieldAtomic
-	Generation IDGeneration
+	Generation IDType
 }
 
 type FieldString struct {
