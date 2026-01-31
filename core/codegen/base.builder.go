@@ -441,6 +441,8 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 		BlockFunc(func(g *jen.Group) {
 			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
+			g.If(jen.Id("id").Op("==").Lit("")).
+				Block(jen.Return(jen.Qual(b.subPkg(""), "ErrEmptyID")))
 			g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))))
 

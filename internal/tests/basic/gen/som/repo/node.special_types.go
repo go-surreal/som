@@ -354,6 +354,9 @@ func (r *specialTypes) CreateWithID(ctx context.Context, id string, specialTypes
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if id == "" {
+		return som.ErrEmptyID
+	}
 	if specialTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}

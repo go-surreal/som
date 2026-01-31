@@ -346,6 +346,9 @@ func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if id == "" {
+		return som.ErrEmptyID
+	}
 	if allTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}

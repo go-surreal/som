@@ -353,6 +353,9 @@ func (r *specialRelation) CreateWithID(ctx context.Context, id string, specialRe
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if id == "" {
+		return som.ErrEmptyID
+	}
 	if specialRelation.ID() != "" {
 		return errors.New("given node already has an id")
 	}
