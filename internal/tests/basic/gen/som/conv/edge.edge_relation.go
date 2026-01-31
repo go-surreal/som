@@ -52,7 +52,11 @@ func (c *EdgeRelation) UnmarshalCBOR(data []byte) error {
 		}
 		var idStr string
 		if recordID != nil {
-			idStr = fmt.Sprintf("%v", recordID.ID)
+			s, ok := recordID.ID.(string)
+			if !ok {
+				return fmt.Errorf("expected string ID, got %T", recordID.ID)
+			}
+			idStr = s
 		}
 		c.Edge = som.NewEdge(idStr)
 	}

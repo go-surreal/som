@@ -268,7 +268,11 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 				).Block(jen.Return(jen.Err()))
 					bg.Var().Id("idStr").String()
 					bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
-						jen.Id("idStr").Op("=").Qual("fmt", "Sprintf").Call(jen.Lit("%v"), jen.Id("recordID").Dot("ID")),
+						jen.List(jen.Id("s"), jen.Id("ok")).Op(":=").Id("recordID").Dot("ID").Assert(jen.String()),
+						jen.If(jen.Op("!").Id("ok")).Block(
+							jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("expected string ID, got %T"), jen.Id("recordID").Dot("ID"))),
+						),
+						jen.Id("idStr").Op("=").Id("s"),
 					)
 
 					if isNode {

@@ -191,7 +191,10 @@ func loadEagerRecords[N any](
 // If cache is in lazy mode and record not found, queries DB and populates cache.
 // For eager mode with TTL, expired caches are automatically refreshed.
 func (r *repo[N]) readWithCache(ctx context.Context, id string, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
-	if c == nil || id == "" {
+	if id == "" {
+		return nil, false, som.ErrEmptyID
+	}
+	if c == nil {
 		return r.read(ctx, r.recordID(id))
 	}
 
