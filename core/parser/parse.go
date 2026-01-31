@@ -140,9 +140,31 @@ func isNode(t gotype.Type, outPkg string) bool {
 			f.Elem().PkgPath() == outPkg {
 			return true
 		}
+
+		if f.Name() == "CustomNode" {
+			if isCustomNodeFromSom(f.Elem()) {
+				return true
+			}
+		}
 	}
 
 	return false
+}
+
+func isCustomNodeFromSom(t gotype.Type) bool {
+	origin := t.Origin()
+	if origin == nil {
+		return false
+	}
+	indexExpr, ok := origin.(*ast.IndexExpr)
+	if !ok {
+		return false
+	}
+	selExpr, ok := indexExpr.X.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	return selExpr.Sel.Name == "CustomNode"
 }
 
 func isEdge(t gotype.Type, outPkg string) bool {
@@ -206,6 +228,28 @@ func parsePasswordAlgorithm(t gotype.Type) PasswordAlgorithm {
 	return PasswordBcrypt
 }
 
+func parseIDGeneration(t gotype.Type) IDGeneration {
+	origin := t.Origin()
+	if origin == nil {
+		return IDGenerationULID
+	}
+
+	if indexExpr, ok := origin.(*ast.IndexExpr); ok {
+		if selExpr, ok := indexExpr.Index.(*ast.SelectorExpr); ok {
+			switch selExpr.Sel.Name {
+			case "UUID":
+				return IDGenerationUUID
+			case "Rand":
+				return IDGenerationRand
+			case "ULID":
+				return IDGenerationULID
+			}
+		}
+	}
+
+	return IDGenerationULID
+}
+
 func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 	internalPkg := path.Join(outPkg, "internal")
 
@@ -221,9 +265,13 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 		}
 
 		if f.IsAnonymous() {
-			if f.Elem().PkgPath() == outPkg && f.Name() == "Node" {
+			if (f.Name() == "Node" && f.Elem().PkgPath() == outPkg) ||
+				(f.Name() == "CustomNode" && isCustomNodeFromSom(f.Elem())) {
+				gen := parseIDGeneration(f.Elem())
+				node.IDGeneration = gen
+				node.EmbeddedFieldName = f.Name()
 				node.Fields = append(node.Fields,
-					&FieldID{&fieldAtomic{name: "ID"}},
+					&FieldID{&fieldAtomic{name: "ID"}, gen},
 				)
 				continue
 			}
@@ -302,7 +350,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 		if f.IsAnonymous() {
 			if f.Elem().PkgPath() == outPkg && f.Name() == "Edge" {
 				edge.Fields = append(edge.Fields,
-					&FieldID{&fieldAtomic{name: "ID"}},
+					&FieldID{&fieldAtomic{name: "ID"}, IDGenerationULID},
 				)
 				continue
 			}

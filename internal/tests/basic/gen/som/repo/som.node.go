@@ -32,13 +32,14 @@ type RepoInfo[N any] struct {
 type repo[N any] struct {
 	db Database
 
-	name string
-	info RepoInfo[N]
+	name  string
+	info  RepoInfo[N]
+	newID func(string) RecordID
 }
 
 func (r *repo[N]) create(ctx context.Context, node *N) error {
 	data := r.info.MarshalOne(node)
-	raw, err := r.db.Create(ctx, newULID(r.name), data) // TODO: make ID type configurable
+	raw, err := r.db.Create(ctx, r.newID(r.name), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}

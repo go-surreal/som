@@ -1,11 +1,13 @@
 package parser
 
 type Node struct {
-	Name           string
-	Fields         []Field
-	Timestamps     bool
-	OptimisticLock bool
-	SoftDelete     bool
+	Name              string
+	Fields            []Field
+	IDGeneration      IDGeneration
+	EmbeddedFieldName string
+	Timestamps        bool
+	OptimisticLock    bool
+	SoftDelete        bool
 }
 
 type Edge struct {

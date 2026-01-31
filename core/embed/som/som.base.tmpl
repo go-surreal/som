@@ -42,18 +42,30 @@ func Table(name string) models.Table {
 	return models.Table(name)
 }
 
-type Node struct {
+type IDGeneration interface{ isIDGeneration() }
+
+type ULID struct{}
+type UUID struct{}
+type Rand struct{}
+
+func (ULID) isIDGeneration() {}
+func (UUID) isIDGeneration() {}
+func (Rand) isIDGeneration() {}
+
+type CustomNode[T IDGeneration] struct {
 	id string
 }
 
-func NewNode(id string) Node {
-	return Node{
-		id: id,
-	}
+func NewCustomNode[T IDGeneration](id string) CustomNode[T] {
+	return CustomNode[T]{id: id}
 }
 
-func (n Node) ID() string {
-	return n.id
+func (n CustomNode[T]) ID() string { return n.id }
+
+type Node = CustomNode[ULID]
+
+func NewNode(id string) Node {
+	return NewCustomNode[ULID](id)
 }
 
 // Edge describes an edge between two Node elements.

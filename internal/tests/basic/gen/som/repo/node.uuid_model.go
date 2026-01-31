@@ -15,31 +15,31 @@ import (
 	"sync/atomic"
 )
 
-type AllTypesRepo interface {
-	// Query returns a new query builder for the AllTypes model.
+type UUIDModelRepo interface {
+	// Query returns a new query builder for the UUIDModel model.
 
-	Query() query.Builder[model.AllTypes]
-	// Create creates a new record for the AllTypes model.
+	Query() query.Builder[model.UUIDModel]
+	// Create creates a new record for the UUIDModel model.
 
-	Create(ctx context.Context, allTypes *model.AllTypes) error
-	// CreateWithID creates a new record with the given ID for the AllTypes model.
+	Create(ctx context.Context, uuidmodel *model.UUIDModel) error
+	// CreateWithID creates a new record with the given ID for the UUIDModel model.
 
-	CreateWithID(ctx context.Context, id string, allTypes *model.AllTypes) error
+	CreateWithID(ctx context.Context, id string, uuidmodel *model.UUIDModel) error
 	// Read returns the record for the given ID, if it exists.
 
-	Read(ctx context.Context, id string) (*model.AllTypes, bool, error)
-	// Update updates the record for the given AllTypes model.
+	Read(ctx context.Context, id string) (*model.UUIDModel, bool, error)
+	// Update updates the record for the given UUIDModel model.
 
-	Update(ctx context.Context, allTypes *model.AllTypes) error
-	// Delete deletes the record for the given AllTypes model.
+	Update(ctx context.Context, uuidmodel *model.UUIDModel) error
+	// Delete deletes the record for the given UUIDModel model.
 
-	Delete(ctx context.Context, allTypes *model.AllTypes) error
+	Delete(ctx context.Context, uuidmodel *model.UUIDModel) error
 	// Refresh refreshes the given model with the current database state.
 
-	Refresh(ctx context.Context, allTypes *model.AllTypes) error
-	// Relate returns a new relate builder for the AllTypes model.
+	Refresh(ctx context.Context, uuidmodel *model.UUIDModel) error
+	// Relate returns a new relate builder for the UUIDModel model.
 
-	Relate() *relate.AllTypes
+	Relate() *relate.UUIDModel
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -48,7 +48,7 @@ type AllTypesRepo interface {
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
 
-	OnBeforeCreate(fn func(ctx context.Context, node *model.AllTypes) error) func()
+	OnBeforeCreate(fn func(ctx context.Context, node *model.UUIDModel) error) func()
 	// OnAfterCreate registers a hook that runs after a record has been created.
 	// If the hook returns an error, the error is returned to the caller.
 	// Returns a function that, when called, removes this hook.
@@ -56,7 +56,7 @@ type AllTypesRepo interface {
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
 
-	OnAfterCreate(fn func(ctx context.Context, node *model.AllTypes) error) func()
+	OnAfterCreate(fn func(ctx context.Context, node *model.UUIDModel) error) func()
 	// OnBeforeUpdate registers a hook that runs before a record is updated.
 	// If the hook returns an error, the update operation is aborted.
 	// Returns a function that, when called, removes this hook.
@@ -64,7 +64,7 @@ type AllTypesRepo interface {
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
 
-	OnBeforeUpdate(fn func(ctx context.Context, node *model.AllTypes) error) func()
+	OnBeforeUpdate(fn func(ctx context.Context, node *model.UUIDModel) error) func()
 	// OnAfterUpdate registers a hook that runs after a record has been updated.
 	// If the hook returns an error, the error is returned to the caller.
 	// Returns a function that, when called, removes this hook.
@@ -72,7 +72,7 @@ type AllTypesRepo interface {
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
 
-	OnAfterUpdate(fn func(ctx context.Context, node *model.AllTypes) error) func()
+	OnAfterUpdate(fn func(ctx context.Context, node *model.UUIDModel) error) func()
 	// OnBeforeDelete registers a hook that runs before a record is deleted.
 	// If the hook returns an error, the delete operation is aborted.
 	// Returns a function that, when called, removes this hook.
@@ -80,7 +80,7 @@ type AllTypesRepo interface {
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
 
-	OnBeforeDelete(fn func(ctx context.Context, node *model.AllTypes) error) func()
+	OnBeforeDelete(fn func(ctx context.Context, node *model.UUIDModel) error) func()
 	// OnAfterDelete registers a hook that runs after a record has been deleted.
 	// If the hook returns an error, the error is returned to the caller.
 	// Returns a function that, when called, removes this hook.
@@ -88,55 +88,55 @@ type AllTypesRepo interface {
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
 
-	OnAfterDelete(fn func(ctx context.Context, node *model.AllTypes) error) func()
+	OnAfterDelete(fn func(ctx context.Context, node *model.UUIDModel) error) func()
 }
 
-// allTypesRepoInfo holds the model-specific conversion functions for AllTypes.
-var allTypesRepoInfo = RepoInfo[model.AllTypes]{
-	MarshalOne: func(node *model.AllTypes) any {
-		return conv.FromAllTypesPtr(node)
+// uuidmodelRepoInfo holds the model-specific conversion functions for UUIDModel.
+var uuidmodelRepoInfo = RepoInfo[model.UUIDModel]{
+	MarshalOne: func(node *model.UUIDModel) any {
+		return conv.FromUUIDModelPtr(node)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.AllTypes, error) {
-		var raw *conv.AllTypes
+	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.UUIDModel, error) {
+		var raw *conv.UUIDModel
 		if err := unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
-		return conv.ToAllTypesPtr(raw), nil
+		return conv.ToUUIDModelPtr(raw), nil
 	},
 }
 
-// AllTypesRepo returns the repository instance for the AllTypes model.
+// UUIDModelRepo returns the repository instance for the UUIDModel model.
 // The instance is cached as a singleton on the client.
-func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
+func (c *ClientImpl) UUIDModelRepo() UUIDModelRepo {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.allTypesRepo == nil {
-		c.allTypesRepo = &allTypes{repo: &repo[model.AllTypes]{
+	if c.uuidmodelRepo == nil {
+		c.uuidmodelRepo = &uuidmodel{repo: &repo[model.UUIDModel]{
 			db:    c.db,
-			name:  "all_types",
-			info:  allTypesRepoInfo,
-			newID: newULID}}
+			name:  "uuid_model",
+			info:  uuidmodelRepoInfo,
+			newID: newUUID}}
 	}
-	return c.allTypesRepo
+	return c.uuidmodelRepo
 }
 
-type allTypes struct {
-	*repo[model.AllTypes]
+type uuidmodel struct {
+	*repo[model.UUIDModel]
 	mu           sync.RWMutex
-	beforeCreate []allTypesHook
-	afterCreate  []allTypesHook
-	beforeUpdate []allTypesHook
-	afterUpdate  []allTypesHook
-	beforeDelete []allTypesHook
-	afterDelete  []allTypesHook
+	beforeCreate []uuidmodelHook
+	afterCreate  []uuidmodelHook
+	beforeUpdate []uuidmodelHook
+	afterUpdate  []uuidmodelHook
+	beforeDelete []uuidmodelHook
+	afterDelete  []uuidmodelHook
 }
 
-type allTypesHook struct {
+type uuidmodelHook struct {
 	id uint64
-	fn func(ctx context.Context, node *model.AllTypes) error
+	fn func(ctx context.Context, node *model.UUIDModel) error
 }
 
-var allTypesHookCounter atomic.Uint64
+var uuidmodelHookCounter atomic.Uint64
 
 // OnBeforeCreate registers a hook that runs before a record is created.
 // If the hook returns an error, the create operation is aborted.
@@ -144,10 +144,10 @@ var allTypesHookCounter atomic.Uint64
 //
 // Note: Hooks are local to this application instance and are not
 // distributed across multiple instances of the application.
-func (r *allTypes) OnBeforeCreate(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
+func (r *uuidmodel) OnBeforeCreate(fn func(ctx context.Context, node *model.UUIDModel) error) func() {
+	id := uuidmodelHookCounter.Add(1)
 	r.mu.Lock()
-	r.beforeCreate = append(r.beforeCreate, allTypesHook{
+	r.beforeCreate = append(r.beforeCreate, uuidmodelHook{
 		fn: fn,
 		id: id,
 	})
@@ -170,10 +170,10 @@ func (r *allTypes) OnBeforeCreate(fn func(ctx context.Context, node *model.AllTy
 //
 // Note: Hooks are local to this application instance and are not
 // distributed across multiple instances of the application.
-func (r *allTypes) OnAfterCreate(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
+func (r *uuidmodel) OnAfterCreate(fn func(ctx context.Context, node *model.UUIDModel) error) func() {
+	id := uuidmodelHookCounter.Add(1)
 	r.mu.Lock()
-	r.afterCreate = append(r.afterCreate, allTypesHook{
+	r.afterCreate = append(r.afterCreate, uuidmodelHook{
 		fn: fn,
 		id: id,
 	})
@@ -196,10 +196,10 @@ func (r *allTypes) OnAfterCreate(fn func(ctx context.Context, node *model.AllTyp
 //
 // Note: Hooks are local to this application instance and are not
 // distributed across multiple instances of the application.
-func (r *allTypes) OnBeforeUpdate(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
+func (r *uuidmodel) OnBeforeUpdate(fn func(ctx context.Context, node *model.UUIDModel) error) func() {
+	id := uuidmodelHookCounter.Add(1)
 	r.mu.Lock()
-	r.beforeUpdate = append(r.beforeUpdate, allTypesHook{
+	r.beforeUpdate = append(r.beforeUpdate, uuidmodelHook{
 		fn: fn,
 		id: id,
 	})
@@ -222,10 +222,10 @@ func (r *allTypes) OnBeforeUpdate(fn func(ctx context.Context, node *model.AllTy
 //
 // Note: Hooks are local to this application instance and are not
 // distributed across multiple instances of the application.
-func (r *allTypes) OnAfterUpdate(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
+func (r *uuidmodel) OnAfterUpdate(fn func(ctx context.Context, node *model.UUIDModel) error) func() {
+	id := uuidmodelHookCounter.Add(1)
 	r.mu.Lock()
-	r.afterUpdate = append(r.afterUpdate, allTypesHook{
+	r.afterUpdate = append(r.afterUpdate, uuidmodelHook{
 		fn: fn,
 		id: id,
 	})
@@ -248,10 +248,10 @@ func (r *allTypes) OnAfterUpdate(fn func(ctx context.Context, node *model.AllTyp
 //
 // Note: Hooks are local to this application instance and are not
 // distributed across multiple instances of the application.
-func (r *allTypes) OnBeforeDelete(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
+func (r *uuidmodel) OnBeforeDelete(fn func(ctx context.Context, node *model.UUIDModel) error) func() {
+	id := uuidmodelHookCounter.Add(1)
 	r.mu.Lock()
-	r.beforeDelete = append(r.beforeDelete, allTypesHook{
+	r.beforeDelete = append(r.beforeDelete, uuidmodelHook{
 		fn: fn,
 		id: id,
 	})
@@ -274,10 +274,10 @@ func (r *allTypes) OnBeforeDelete(fn func(ctx context.Context, node *model.AllTy
 //
 // Note: Hooks are local to this application instance and are not
 // distributed across multiple instances of the application.
-func (r *allTypes) OnAfterDelete(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
+func (r *uuidmodel) OnAfterDelete(fn func(ctx context.Context, node *model.UUIDModel) error) func() {
+	id := uuidmodelHookCounter.Add(1)
 	r.mu.Lock()
-	r.afterDelete = append(r.afterDelete, allTypesHook{
+	r.afterDelete = append(r.afterDelete, uuidmodelHook{
 		fn: fn,
 		id: id,
 	})
@@ -294,93 +294,93 @@ func (r *allTypes) OnAfterDelete(fn func(ctx context.Context, node *model.AllTyp
 	}
 }
 
-// Query returns a new query builder for the AllTypes model.
-func (r *allTypes) Query() query.Builder[model.AllTypes] {
-	return query.NewAllTypes(r.db)
+// Query returns a new query builder for the UUIDModel model.
+func (r *uuidmodel) Query() query.Builder[model.UUIDModel] {
+	return query.NewUUIDModel(r.db)
 }
 
-// Create creates a new record for the AllTypes model.
+// Create creates a new record for the UUIDModel model.
 // The ID will be generated automatically as a ULID.
-func (r *allTypes) Create(ctx context.Context, allTypes *model.AllTypes) error {
-	if allTypes == nil {
+func (r *uuidmodel) Create(ctx context.Context, uuidmodel *model.UUIDModel) error {
+	if uuidmodel == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() != "" {
+	if uuidmodel.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(allTypes).(som.OnBeforeCreateHook); ok {
+	if h, ok := any(uuidmodel).(som.OnBeforeCreateHook); ok {
 		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
 	r.mu.RLock()
-	beforeCreateHooks := make([]allTypesHook, len(r.beforeCreate))
+	beforeCreateHooks := make([]uuidmodelHook, len(r.beforeCreate))
 	copy(beforeCreateHooks, r.beforeCreate)
 	r.mu.RUnlock()
 	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
+		if err := h.fn(ctx, uuidmodel); err != nil {
 			return err
 		}
 	}
-	if err := r.create(ctx, allTypes); err != nil {
+	if err := r.create(ctx, uuidmodel); err != nil {
 		return err
 	}
-	if h, ok := any(allTypes).(som.OnAfterCreateHook); ok {
+	if h, ok := any(uuidmodel).(som.OnAfterCreateHook); ok {
 		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
 	r.mu.RLock()
-	afterCreateHooks := make([]allTypesHook, len(r.afterCreate))
+	afterCreateHooks := make([]uuidmodelHook, len(r.afterCreate))
 	copy(afterCreateHooks, r.afterCreate)
 	r.mu.RUnlock()
 	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
+		if err := h.fn(ctx, uuidmodel); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// CreateWithID creates a new record for the AllTypes model with the given id.
-func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.AllTypes) error {
-	if allTypes == nil {
+// CreateWithID creates a new record for the UUIDModel model with the given id.
+func (r *uuidmodel) CreateWithID(ctx context.Context, id string, uuidmodel *model.UUIDModel) error {
+	if uuidmodel == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if id == "" {
 		return som.ErrEmptyID
 	}
-	if allTypes.ID() != "" {
+	if uuidmodel.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(allTypes).(som.OnBeforeCreateHook); ok {
+	if h, ok := any(uuidmodel).(som.OnBeforeCreateHook); ok {
 		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
 		}
 	}
 	r.mu.RLock()
-	beforeCreateHooks := make([]allTypesHook, len(r.beforeCreate))
+	beforeCreateHooks := make([]uuidmodelHook, len(r.beforeCreate))
 	copy(beforeCreateHooks, r.beforeCreate)
 	r.mu.RUnlock()
 	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
+		if err := h.fn(ctx, uuidmodel); err != nil {
 			return err
 		}
 	}
-	if err := r.createWithID(ctx, id, allTypes); err != nil {
+	if err := r.createWithID(ctx, id, uuidmodel); err != nil {
 		return err
 	}
-	if h, ok := any(allTypes).(som.OnAfterCreateHook); ok {
+	if h, ok := any(uuidmodel).(som.OnAfterCreateHook); ok {
 		if err := h.OnAfterCreate(ctx); err != nil {
 			return err
 		}
 	}
 	r.mu.RLock()
-	afterCreateHooks := make([]allTypesHook, len(r.afterCreate))
+	afterCreateHooks := make([]uuidmodelHook, len(r.afterCreate))
 	copy(afterCreateHooks, r.afterCreate)
 	r.mu.RUnlock()
 	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
+		if err := h.fn(ctx, uuidmodel); err != nil {
 			return err
 		}
 	}
@@ -390,69 +390,69 @@ func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
-func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, error) {
+func (r *uuidmodel) Read(ctx context.Context, id string) (*model.UUIDModel, bool, error) {
 	if id == "" {
 		return nil, false, som.ErrEmptyID
 	}
-	if !internal.CacheEnabled[model.AllTypes](ctx) {
+	if !internal.CacheEnabled[model.UUIDModel](ctx) {
 		return r.read(ctx, r.recordID(id))
 	}
-	idFunc := func(n *model.AllTypes) string {
+	idFunc := func(n *model.UUIDModel) string {
 		return n.ID()
 	}
-	queryAll := func(ctx context.Context) ([]*model.AllTypes, error) {
+	queryAll := func(ctx context.Context) ([]*model.UUIDModel, error) {
 		return r.Query().All(ctx)
 	}
 	countAll := func(ctx context.Context) (int, error) {
 		return r.Query().Count(ctx)
 	}
-	cache, err := getOrCreateCache[model.AllTypes](ctx, idFunc, queryAll, countAll)
+	cache, err := getOrCreateCache[model.UUIDModel](ctx, idFunc, queryAll, countAll)
 	if err != nil {
 		return nil, false, err
 	}
-	var refreshFuncs *eagerRefreshFuncs[model.AllTypes]
+	var refreshFuncs *eagerRefreshFuncs[model.UUIDModel]
 	if cache != nil && cache.isEager() {
-		refreshFuncs = &eagerRefreshFuncs[model.AllTypes]{cacheID: internal.GetCacheKey[model.AllTypes](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
+		refreshFuncs = &eagerRefreshFuncs[model.UUIDModel]{cacheID: internal.GetCacheKey[model.UUIDModel](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.
-func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
-	if allTypes == nil {
+func (r *uuidmodel) Update(ctx context.Context, uuidmodel *model.UUIDModel) error {
+	if uuidmodel == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() == "" {
-		return errors.New("cannot update AllTypes without existing record ID")
+	if uuidmodel.ID() == "" {
+		return errors.New("cannot update UUIDModel without existing record ID")
 	}
-	if h, ok := any(allTypes).(som.OnBeforeUpdateHook); ok {
+	if h, ok := any(uuidmodel).(som.OnBeforeUpdateHook); ok {
 		if err := h.OnBeforeUpdate(ctx); err != nil {
 			return err
 		}
 	}
 	r.mu.RLock()
-	beforeUpdateHooks := make([]allTypesHook, len(r.beforeUpdate))
+	beforeUpdateHooks := make([]uuidmodelHook, len(r.beforeUpdate))
 	copy(beforeUpdateHooks, r.beforeUpdate)
 	r.mu.RUnlock()
 	for _, h := range beforeUpdateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
+		if err := h.fn(ctx, uuidmodel); err != nil {
 			return err
 		}
 	}
-	if err := r.update(ctx, r.recordID(allTypes.ID()), allTypes); err != nil {
+	if err := r.update(ctx, r.recordID(uuidmodel.ID()), uuidmodel); err != nil {
 		return err
 	}
-	if h, ok := any(allTypes).(som.OnAfterUpdateHook); ok {
+	if h, ok := any(uuidmodel).(som.OnAfterUpdateHook); ok {
 		if err := h.OnAfterUpdate(ctx); err != nil {
 			return err
 		}
 	}
 	r.mu.RLock()
-	afterUpdateHooks := make([]allTypesHook, len(r.afterUpdate))
+	afterUpdateHooks := make([]uuidmodelHook, len(r.afterUpdate))
 	copy(afterUpdateHooks, r.afterUpdate)
 	r.mu.RUnlock()
 	for _, h := range afterUpdateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
+		if err := h.fn(ctx, uuidmodel); err != nil {
 			return err
 		}
 	}
@@ -460,41 +460,41 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 }
 
 // Delete deletes the record for the given model.
-func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
-	if allTypes == nil {
+func (r *uuidmodel) Delete(ctx context.Context, uuidmodel *model.UUIDModel) error {
+	if uuidmodel == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() == "" {
-		return errors.New("cannot delete AllTypes without existing record ID")
+	if uuidmodel.ID() == "" {
+		return errors.New("cannot delete UUIDModel without existing record ID")
 	}
-	if h, ok := any(allTypes).(som.OnBeforeDeleteHook); ok {
+	if h, ok := any(uuidmodel).(som.OnBeforeDeleteHook); ok {
 		if err := h.OnBeforeDelete(ctx); err != nil {
 			return err
 		}
 	}
 	r.mu.RLock()
-	beforeDeleteHooks := make([]allTypesHook, len(r.beforeDelete))
+	beforeDeleteHooks := make([]uuidmodelHook, len(r.beforeDelete))
 	copy(beforeDeleteHooks, r.beforeDelete)
 	r.mu.RUnlock()
 	for _, h := range beforeDeleteHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
+		if err := h.fn(ctx, uuidmodel); err != nil {
 			return err
 		}
 	}
-	if err := r.delete(ctx, r.recordID(allTypes.ID()), allTypes, false, nil); err != nil {
+	if err := r.delete(ctx, r.recordID(uuidmodel.ID()), uuidmodel, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(allTypes).(som.OnAfterDeleteHook); ok {
+	if h, ok := any(uuidmodel).(som.OnAfterDeleteHook); ok {
 		if err := h.OnAfterDelete(ctx); err != nil {
 			return err
 		}
 	}
 	r.mu.RLock()
-	afterDeleteHooks := make([]allTypesHook, len(r.afterDelete))
+	afterDeleteHooks := make([]uuidmodelHook, len(r.afterDelete))
 	copy(afterDeleteHooks, r.afterDelete)
 	r.mu.RUnlock()
 	for _, h := range afterDeleteHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
+		if err := h.fn(ctx, uuidmodel); err != nil {
 			return err
 		}
 	}
@@ -502,17 +502,17 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 }
 
 // Refresh refreshes the given model with the remote data.
-func (r *allTypes) Refresh(ctx context.Context, allTypes *model.AllTypes) error {
-	if allTypes == nil {
+func (r *uuidmodel) Refresh(ctx context.Context, uuidmodel *model.UUIDModel) error {
+	if uuidmodel == nil {
 		return errors.New("the passed node must not be nil")
 	}
-	if allTypes.ID() == "" {
-		return errors.New("cannot refresh AllTypes without existing record ID")
+	if uuidmodel.ID() == "" {
+		return errors.New("cannot refresh UUIDModel without existing record ID")
 	}
-	return r.refresh(ctx, r.recordID(allTypes.ID()), allTypes)
+	return r.refresh(ctx, r.recordID(uuidmodel.ID()), uuidmodel)
 }
 
-// Relate returns a new relate instance for the AllTypes model.
-func (r *allTypes) Relate() *relate.AllTypes {
-	return relate.NewAllTypes(r.db)
+// Relate returns a new relate instance for the UUIDModel model.
+func (r *uuidmodel) Relate() *relate.UUIDModel {
+	return relate.NewUUIDModel(r.db)
 }
