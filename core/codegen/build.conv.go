@@ -285,7 +285,7 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 							bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr"))
 						} else {
 							bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewCustomNode").Types(
-								jen.Qual(b.subPkg(""), string(node.Source.IDGeneration)),
+								jen.Qual(b.subPkg(""), string(node.Source.IDType)),
 							).Call(jen.Id("idStr"))
 						}
 					} else {

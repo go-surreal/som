@@ -80,7 +80,7 @@ const (
 
 type FieldID struct {
 	*fieldAtomic
-	Generation IDType
+	Type IDType
 }
 
 type FieldString struct {
