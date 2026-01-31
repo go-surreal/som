@@ -3,10 +3,6 @@
 DEFINE ANALYZER english TOKENIZERS blank, punct FILTERS lowercase, snowball(english);
 DEFINE ANALYZER autocomplete TOKENIZERS class FILTERS lowercase, edgengram(1, 10);
 
-DEFINE TABLE uuid_model SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE uuid_model TYPE string;
-DEFINE FIELD label ON TABLE uuid_model TYPE string;
-
 DEFINE TABLE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE special_types TYPE string;
 DEFINE FIELD deleted_at ON TABLE special_types TYPE option<datetime> DEFAULT NONE;
@@ -19,10 +15,6 @@ DEFINE FIELD deleted_at ON TABLE special_relation TYPE option<datetime> DEFAULT 
 DEFINE FIELD title ON TABLE special_relation TYPE string;
 DEFINE FIELD author ON TABLE special_relation TYPE option<record<special_types>>;
 DEFINE FIELD authors ON TABLE special_relation TYPE option<array<record<special_types> | null>>;
-
-DEFINE TABLE rand_model SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE rand_model TYPE string;
-DEFINE FIELD value ON TABLE rand_model TYPE int ASSERT $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_types TYPE string;

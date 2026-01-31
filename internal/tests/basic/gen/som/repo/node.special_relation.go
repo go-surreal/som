@@ -122,7 +122,7 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 			db:    c.db,
 			name:  "special_relation",
 			info:  specialRelationRepoInfo,
-			newID: newULID}}
+			newID: newID}}
 	}
 	return c.specialRelationRepo
 }

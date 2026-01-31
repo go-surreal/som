@@ -7,10 +7,8 @@ import (
 )
 
 type Client interface {
-	UUIDModelRepo() UUIDModelRepo
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
-	RandModelRepo() RandModelRepo
 	AllTypesRepo() AllTypesRepo
 	ApplySchema(ctx context.Context) error
 	Close()
@@ -19,9 +17,7 @@ type Client interface {
 type ClientImpl struct {
 	db                  Database
 	mu                  sync.Mutex
-	uuidmodelRepo       *uuidmodel
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
-	randModelRepo       *randModel
 	allTypesRepo        *allTypes
 }

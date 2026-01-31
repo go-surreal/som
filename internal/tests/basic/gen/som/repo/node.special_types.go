@@ -123,7 +123,7 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 			db:    c.db,
 			name:  "special_types",
 			info:  specialTypesRepoInfo,
-			newID: newULID}}
+			newID: newUUID}}
 	}
 	return c.specialTypesRepo
 }
