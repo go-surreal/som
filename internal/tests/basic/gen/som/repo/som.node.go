@@ -32,9 +32,10 @@ type RepoInfo[N any] struct {
 type repo[N any] struct {
 	db Database
 
-	name  string
-	info  RepoInfo[N]
-	newID func(string) RecordID
+	name    string
+	info    RepoInfo[N]
+	newID   func(string) RecordID
+	parseID func(string) any
 }
 
 func (r *repo[N]) create(ctx context.Context, node *N) error {
@@ -53,7 +54,7 @@ func (r *repo[N]) create(ctx context.Context, node *N) error {
 
 func (r *repo[N]) createWithID(ctx context.Context, id string, node *N) error {
 	data := r.info.MarshalOne(node)
-	res, err := r.db.Create(ctx, models.NewRecordID(r.name, id), data)
+	res, err := r.db.Create(ctx, models.NewRecordID(r.name, r.parseID(id)), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -66,7 +67,7 @@ func (r *repo[N]) createWithID(ctx context.Context, id string, node *N) error {
 }
 
 func (r *repo[N]) recordID(id string) *ID {
-	rid := models.NewRecordID(r.name, id)
+	rid := models.NewRecordID(r.name, r.parseID(id))
 	return &rid
 }
 

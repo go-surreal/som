@@ -296,6 +296,10 @@ The instance is cached as a singleton on the client.
 								jen.Line(),
 								jen.Id("newID").Op(":").Id(idFuncName(node)),
 							),
+							jen.Add(
+								jen.Line(),
+								jen.Id("parseID").Op(":").Add(parseIDFunc(node, b.subPkg(""))),
+							),
 						),
 				),
 			),
@@ -849,6 +853,19 @@ func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string)
 			jen.Return(jen.Err()),
 		),
 	)
+}
+
+func parseIDFunc(node *field.NodeTable, somPkg string) jen.Code {
+	switch node.Source.IDType {
+	case parser.IDTypeUUID:
+		return jen.Func().Params(jen.Id("id").String()).Any().Block(
+			jen.Return(jen.Qual(somPkg, "UUID").Call(jen.Id("id"))),
+		)
+	default:
+		return jen.Func().Params(jen.Id("id").String()).Any().Block(
+			jen.Return(jen.Id("id")),
+		)
+	}
 }
 
 func idFuncName(node *field.NodeTable) string {

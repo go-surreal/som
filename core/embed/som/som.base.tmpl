@@ -4,9 +4,13 @@ package som
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"fmt"
+	"strings"
 
 	"{{.GenerateOutPath}}/internal"
+	"{{.GenerateOutPath}}/internal/cbor"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -42,25 +46,44 @@ func Table(name string) models.Table {
 	return models.Table(name)
 }
 
-type IDType interface{ isIDType() }
+type IDType interface {
+	~string
+	isIDType()
+}
 
-type ULID struct{}
-type UUID struct{}
-type Rand struct{}
+type ULID string
+type UUID string
+type Rand string
 
 func (ULID) isIDType() {}
 func (UUID) isIDType() {}
 func (Rand) isIDType() {}
 
+func (u UUID) MarshalCBOR() ([]byte, error) {
+	s := strings.ReplaceAll(string(u), "-", "")
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID hex: %w", err)
+	}
+	if len(b) != 16 {
+		return nil, fmt.Errorf("UUID must be 16 bytes, got %d", len(b))
+	}
+	content, err := cbor.Marshal(b)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(cbor.RawTag{Number: 37, Content: content})
+}
+
 type CustomNode[T IDType] struct {
-	id string
+	id T
 }
 
 func NewCustomNode[T IDType](id string) CustomNode[T] {
-	return CustomNode[T]{id: id}
+	return CustomNode[T]{id: T(id)}
 }
 
-func (n CustomNode[T]) ID() string { return n.id }
+func (n CustomNode[T]) ID() string { return string(n.id) }
 
 type Node = CustomNode[ULID]
 

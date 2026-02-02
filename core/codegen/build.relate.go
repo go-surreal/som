@@ -1,12 +1,14 @@
 package codegen
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
+	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
 )
 
 type relateBuilder struct {
@@ -117,24 +119,24 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 				),
 
 			jen.Id("inID").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
-				jen.Lit(edge.In.NameDatabase()), jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call(),
+				jen.Lit(edge.In.NameDatabase()), b.edgeNodeIDValue(edge.In),
 			),
 			jen.Id("outID").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
-				jen.Lit(edge.Out.NameDatabase()), jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call(),
+				jen.Lit(edge.Out.NameDatabase()), b.edgeNodeIDValue(edge.Out),
 			),
 
-			jen.Id("query").Op(":=").Lit("RELATE ").Op("+").
-				Id("inID").Dot("String").Call().Op("+").
-				Lit("->"+edge.NameDatabase()+"->").Op("+").
-				Id("outID").Dot("String").Call().Op("+").
-				Lit(" CONTENT $data"),
+			jen.Id("query").Op(":=").Lit("RELATE $inID->"+edge.NameDatabase()+"->$outID CONTENT $data"),
 
 			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
 
 			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("e").Dot("db").Dot("Query").Call(
 				jen.Id("ctx"),
 				jen.Id("query"),
-				jen.Map(jen.String()).Any().Values(jen.Lit("data").Op(":").Id("data")),
+				jen.Map(jen.String()).Any().Values(
+					jen.Lit("inID").Op(":").Id("inID"),
+					jen.Lit("outID").Op(":").Id("outID"),
+					jen.Lit("data").Op(":").Id("data"),
+				),
 			),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create relation: %w"), jen.Err())),
@@ -181,6 +183,14 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 	}
 
 	return nil
+}
+
+func (b *relateBuilder) edgeNodeIDValue(node *field.Node) jen.Code {
+	idExpr := jen.Id("edge").Dot(node.Table().NameGo()).Dot("ID").Call()
+	if node.Table().Source.IDType == parser.IDTypeUUID {
+		return jen.Qual(b.subPkg(""), "UUID").Call(idExpr)
+	}
+	return idExpr
 }
 
 func (b *relateBuilder) byNew(node field.Element) jen.Code {

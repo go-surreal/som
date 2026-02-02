@@ -7,6 +7,7 @@ import (
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
+	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
 )
 
@@ -139,6 +140,13 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	return nil
 }
 
+func (b *convBuilder) nodeIDValue(node *field.NodeTable) jen.Code {
+	if node.Source.IDType == parser.IDTypeUUID {
+		return jen.Qual(b.subPkg(""), "UUID").Call(jen.Id("node").Dot("ID").Call())
+	}
+	return jen.Id("node").Dot("ID").Call()
+}
+
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	localName := elem.NameGoLower()
 	methodPrefix := "from"
@@ -210,9 +218,17 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				tableName := elem.NameDatabase()
 				g.Line()
 				g.Comment("Embedded som.Node/Edge ID field")
+
+				var idValue jen.Code
+				if node, ok := elem.(*field.NodeTable); ok && node.Source.IDType == parser.IDTypeUUID {
+					idValue = jen.Qual(b.subPkg(""), "UUID").Call(jen.Id("c").Dot("ID").Call())
+				} else {
+					idValue = jen.Id("c").Dot("ID").Call()
+				}
+
 				g.If(jen.Id("c").Dot("ID").Call().Op("!=").Lit("")).Block(
 					jen.Id("data").Index(jen.Lit("id")).Op("=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
-						jen.Lit(tableName), jen.Id("c").Dot("ID").Call(),
+						jen.Lit(tableName), idValue,
 					),
 				)
 			}
@@ -268,9 +284,9 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 				).Block(jen.Return(jen.Err()))
 					bg.Var().Id("idStr").String()
 					bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
-						jen.List(jen.Id("s"), jen.Id("ok")).Op(":=").Id("recordID").Dot("ID").Assert(jen.String()),
-						jen.If(jen.Op("!").Id("ok")).Block(
-							jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("expected string ID, got %T"), jen.Id("recordID").Dot("ID"))),
+						jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
+						jen.If(jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
 						),
 						jen.Id("idStr").Op("=").Id("s"),
 					)
@@ -389,6 +405,7 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 
 func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 	tableName := node.NameDatabase()
+	idVal := b.nodeIDValue(node)
 	return jen.Func().
 		Id("to"+node.NameGo()+"Link").
 		Params(jen.Id("node").Add(b.SourceQual(node.NameGo()))).
@@ -398,7 +415,7 @@ func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 				jen.Return(jen.Nil()),
 			),
 			jen.Id("rid").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
-				jen.Lit(tableName), jen.Id("node").Dot("ID").Call(),
+				jen.Lit(tableName), idVal,
 			),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
 				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Id("node")),
@@ -410,6 +427,7 @@ func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 
 func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 	tableName := node.NameDatabase()
+	idVal := b.nodeIDValue(node)
 	return jen.Func().
 		Id("to"+node.NameGo()+"LinkPtr").
 		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).
@@ -424,7 +442,7 @@ func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 					jen.Return(jen.Nil()),
 				),
 			jen.Id("rid").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
-				jen.Lit(tableName), jen.Id("node").Dot("ID").Call(),
+				jen.Lit(tableName), idVal,
 			),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
 				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Op("*").Id("node")),

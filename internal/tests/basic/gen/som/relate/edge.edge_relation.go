@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -32,10 +33,10 @@ func (e edgeRelation) Create(ctx context.Context, edge *model.EdgeRelation) erro
 		return errors.New("ID of the outgoing node 'SpecialTypes' must not be empty")
 	}
 	inID := models.NewRecordID("all_types", edge.AllTypes.ID())
-	outID := models.NewRecordID("special_types", edge.SpecialTypes.ID())
-	query := "RELATE " + inID.String() + "->edge_relation->" + outID.String() + " CONTENT $data"
+	outID := models.NewRecordID("special_types", som.UUID(edge.SpecialTypes.ID()))
+	query := "RELATE $inID->edge_relation->$outID CONTENT $data"
 	data := conv.FromEdgeRelation(*edge)
-	res, err := e.db.Query(ctx, query, map[string]any{"data": data})
+	res, err := e.db.Query(ctx, query, map[string]any{"inID": inID, "outID": outID, "data": data})
 	if err != nil {
 		return fmt.Errorf("could not create relation: %w", err)
 	}

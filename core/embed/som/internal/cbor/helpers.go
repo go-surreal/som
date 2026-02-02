@@ -2,6 +2,7 @@
 package cbor
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -97,5 +98,27 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 		return nil, err
 	}
 	return &d, nil
+}
+
+func RecordIDToString(id any) (string, error) {
+	switch v := id.(type) {
+	case string:
+		return v, nil
+	case Tag:
+		if v.Number == 37 {
+			uuidBytes, ok := v.Content.([]byte)
+			if !ok {
+				return "", fmt.Errorf("expected []byte UUID content, got %T", v.Content)
+			}
+			if len(uuidBytes) != 16 {
+				return "", fmt.Errorf("UUID must be 16 bytes, got %d", len(uuidBytes))
+			}
+			return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+				uuidBytes[0:4], uuidBytes[4:6], uuidBytes[6:8], uuidBytes[8:10], uuidBytes[10:16]), nil
+		}
+		return "", fmt.Errorf("unsupported CBOR tag %d in record ID", v.Number)
+	default:
+		return "", fmt.Errorf("expected string or tagged ID, got %T", id)
+	}
 }
 

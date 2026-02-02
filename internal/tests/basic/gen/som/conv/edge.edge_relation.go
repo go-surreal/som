@@ -2,7 +2,6 @@
 package conv
 
 import (
-	"fmt"
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
@@ -52,9 +51,9 @@ func (c *EdgeRelation) UnmarshalCBOR(data []byte) error {
 		}
 		var idStr string
 		if recordID != nil {
-			s, ok := recordID.ID.(string)
-			if !ok {
-				return fmt.Errorf("expected string ID, got %T", recordID.ID)
+			s, err := cbor.RecordIDToString(recordID.ID)
+			if err != nil {
+				return err
 			}
 			idStr = s
 		}

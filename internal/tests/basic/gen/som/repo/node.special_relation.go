@@ -122,7 +122,10 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 			db:    c.db,
 			name:  "special_relation",
 			info:  specialRelationRepoInfo,
-			newID: newID}}
+			newID: newID,
+			parseID: func(id string) any {
+				return id
+			}}}
 	}
 	return c.specialRelationRepo
 }

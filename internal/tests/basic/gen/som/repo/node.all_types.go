@@ -115,7 +115,10 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 			db:    c.db,
 			name:  "all_types",
 			info:  allTypesRepoInfo,
-			newID: newULID}}
+			newID: newULID,
+			parseID: func(id string) any {
+				return id
+			}}}
 	}
 	return c.allTypesRepo
 }

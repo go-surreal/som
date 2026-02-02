@@ -107,7 +107,7 @@ func BenchmarkConvRoundTrip(b *testing.B) {
 func BenchmarkConvMarshalSimple(b *testing.B) {
 	c := conv.SpecialTypes{
 		SpecialTypes: model.SpecialTypes{
-			Node: som.NewNode(uuid.New().String()),
+			CustomNode: som.NewCustomNode[som.UUID](uuid.New().String()),
 			Name: "Test Group",
 		},
 	}
@@ -126,7 +126,7 @@ func BenchmarkConvMarshalSimple(b *testing.B) {
 func BenchmarkConvUnmarshalSimple(b *testing.B) {
 	c := conv.SpecialTypes{
 		SpecialTypes: model.SpecialTypes{
-			Node: som.NewNode(uuid.New().String()),
+			CustomNode: som.NewCustomNode[som.UUID](uuid.New().String()),
 			Name: "Test Group",
 		},
 	}
