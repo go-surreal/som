@@ -124,9 +124,8 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 			name:  "special_types",
 			info:  specialTypesRepoInfo,
 			newID: newUUID,
-			parseID: func(id string) any {
-				return som.UUID(id)
-			}}}
+			parseID: parseUUID,
+		}}
 	}
 	return c.specialTypesRepo
 }

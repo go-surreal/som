@@ -46,6 +46,11 @@ func Table(name string) models.Table {
 	return models.Table(name)
 }
 
+// IDType constrains the type of auto-generated record IDs.
+// Embed CustomNode[T] with one of these types in your model struct:
+//   - ULID: lexicographically sortable, default (used by the Node alias)
+//   - UUID: standard UUID v4 format
+//   - Rand: SurrealDB native random string ID
 type IDType interface {
 	~string
 	isIDType()
@@ -60,6 +65,9 @@ func (UUID) isIDType() {}
 func (Rand) isIDType() {}
 
 func (u UUID) MarshalCBOR() ([]byte, error) {
+	if u == "" {
+		return nil, fmt.Errorf("cannot marshal empty UUID")
+	}
 	s := strings.ReplaceAll(string(u), "-", "")
 	b, err := hex.DecodeString(s)
 	if err != nil {

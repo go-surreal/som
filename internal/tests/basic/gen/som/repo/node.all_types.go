@@ -116,9 +116,8 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 			name:  "all_types",
 			info:  allTypesRepoInfo,
 			newID: newULID,
-			parseID: func(id string) any {
-				return id
-			}}}
+			parseID: parseStringID,
+		}}
 	}
 	return c.allTypesRepo
 }

@@ -123,9 +123,8 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 			name:  "special_relation",
 			info:  specialRelationRepoInfo,
 			newID: newID,
-			parseID: func(id string) any {
-				return id
-			}}}
+			parseID: parseStringID,
+		}}
 	}
 	return c.specialRelationRepo
 }

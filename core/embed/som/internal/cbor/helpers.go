@@ -116,7 +116,7 @@ func RecordIDToString(id any) (string, error) {
 			return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
 				uuidBytes[0:4], uuidBytes[4:6], uuidBytes[6:8], uuidBytes[8:10], uuidBytes[10:16]), nil
 		}
-		return "", fmt.Errorf("unsupported CBOR tag %d in record ID", v.Number)
+		return "", fmt.Errorf("unsupported CBOR tag %d in record ID (expected tag 37 for UUID)", v.Number)
 	default:
 		return "", fmt.Errorf("expected string or tagged ID, got %T", id)
 	}

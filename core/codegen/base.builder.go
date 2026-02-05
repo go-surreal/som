@@ -298,7 +298,7 @@ The instance is cached as a singleton on the client.
 							),
 							jen.Add(
 								jen.Line(),
-								jen.Id("parseID").Op(":").Add(parseIDFunc(node, b.subPkg(""))),
+								jen.Id("parseID").Op(":").Id(parseIDFuncName(node)),
 							),
 						),
 				),
@@ -855,16 +855,12 @@ func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string)
 	)
 }
 
-func parseIDFunc(node *field.NodeTable, somPkg string) jen.Code {
+func parseIDFuncName(node *field.NodeTable) string {
 	switch node.Source.IDType {
 	case parser.IDTypeUUID:
-		return jen.Func().Params(jen.Id("id").String()).Any().Block(
-			jen.Return(jen.Qual(somPkg, "UUID").Call(jen.Id("id"))),
-		)
+		return "parseUUID"
 	default:
-		return jen.Func().Params(jen.Id("id").String()).Any().Block(
-			jen.Return(jen.Id("id")),
-		)
+		return "parseStringID"
 	}
 }
 
@@ -875,7 +871,7 @@ func idFuncName(node *field.NodeTable) string {
 	case parser.IDTypeRand:
 		return "newID"
 	default:
-		return "newULID"
+		return "newULID" // ULID is the default ID type (used by the Node alias)
 	}
 }
 

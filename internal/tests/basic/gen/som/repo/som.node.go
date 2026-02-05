@@ -331,3 +331,11 @@ func getOrCreateCache[N som.Model](
 	}
 	return result.(*cache[N]), nil
 }
+
+func parseStringID(id string) any {
+	return id
+}
+
+func parseUUID(id string) any {
+	return som.UUID(id)
+}
