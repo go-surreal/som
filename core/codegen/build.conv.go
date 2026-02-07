@@ -140,11 +140,11 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	return nil
 }
 
-func (b *convBuilder) nodeIDValue(node *field.NodeTable) jen.Code {
+func (b *convBuilder) nodeIDValue(node *field.NodeTable, varName string) jen.Code {
 	if node.Source.IDType == parser.IDTypeUUID {
-		return jen.Qual(b.subPkg(""), "UUID").Call(jen.Id("node").Dot("ID").Call())
+		return jen.Qual(b.subPkg(""), "UUID").Call(jen.Id(varName).Dot("ID").Call())
 	}
-	return jen.Id("node").Dot("ID").Call()
+	return jen.Id(varName).Dot("ID").Call()
 }
 
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
@@ -220,8 +220,8 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				g.Comment("Embedded som.Node/Edge ID field")
 
 				var idValue jen.Code
-				if node, ok := elem.(*field.NodeTable); ok && node.Source.IDType == parser.IDTypeUUID {
-					idValue = jen.Qual(b.subPkg(""), "UUID").Call(jen.Id("c").Dot("ID").Call())
+				if node, ok := elem.(*field.NodeTable); ok {
+					idValue = b.nodeIDValue(node, "c")
 				} else {
 					idValue = jen.Id("c").Dot("ID").Call()
 				}
@@ -405,7 +405,7 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 
 func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 	tableName := node.NameDatabase()
-	idVal := b.nodeIDValue(node)
+	idVal := b.nodeIDValue(node, "node")
 	return jen.Func().
 		Id("to"+node.NameGo()+"Link").
 		Params(jen.Id("node").Add(b.SourceQual(node.NameGo()))).
@@ -427,7 +427,7 @@ func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 
 func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 	tableName := node.NameDatabase()
-	idVal := b.nodeIDValue(node)
+	idVal := b.nodeIDValue(node, "node")
 	return jen.Func().
 		Id("to"+node.NameGo()+"LinkPtr").
 		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).

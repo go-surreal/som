@@ -120,12 +120,11 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 	defer c.mu.Unlock()
 	if c.specialTypesRepo == nil {
 		c.specialTypesRepo = &specialTypes{repo: &repo[model.SpecialTypes]{
-			db:    c.db,
-			name:  "special_types",
-			info:  specialTypesRepoInfo,
-			newID: newUUID,
-			parseID: parseUUID,
-		}}
+			db:      c.db,
+			name:    "special_types",
+			info:    specialTypesRepoInfo,
+			newID:   newUUID,
+			parseID: parseUUID}}
 	}
 	return c.specialTypesRepo
 }
