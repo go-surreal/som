@@ -326,7 +326,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 
 		// prevent custom ID field
 		if strings.ToLower(f.Name()) == "id" {
-			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Node", v.Name())
+			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.%s", v.Name(), node.IDEmbed)
 		}
 
 		field, err := parseField(f, outPkg)
