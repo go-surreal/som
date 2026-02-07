@@ -95,6 +95,26 @@ func NewNode(id string) Node {
 	return NewCustomNode[ULID](id)
 }
 
+type ArrayNode[T any] struct {
+	id T
+}
+
+func NewArrayNode[T any](id T) ArrayNode[T] {
+	return ArrayNode[T]{id: id}
+}
+
+func (n ArrayNode[T]) ID() T { return n.id }
+
+type ObjectNode[T any] struct {
+	id T
+}
+
+func NewObjectNode[T any](id T) ObjectNode[T] {
+	return ObjectNode[T]{id: id}
+}
+
+func (n ObjectNode[T]) ID() T { return n.id }
+
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
