@@ -136,6 +136,10 @@ func isNode(t gotype.Type, outPkg string) bool {
 	for i := 0; i < nf; i++ {
 		f := t.Field(i)
 
+		if !f.IsAnonymous() {
+			continue
+		}
+
 		if f.Name() == "Node" && f.Elem().Name() == "Node" &&
 			f.Elem().PkgPath() == outPkg {
 			return true
@@ -180,6 +184,10 @@ func isEdge(t gotype.Type, outPkg string) bool {
 
 	for i := 0; i < nf; i++ {
 		f := t.Field(i)
+
+		if !f.IsAnonymous() {
+			continue
+		}
 
 		if f.Name() == "Edge" && f.Elem().Name() == "Edge" &&
 			f.Elem().PkgPath() == outPkg {
