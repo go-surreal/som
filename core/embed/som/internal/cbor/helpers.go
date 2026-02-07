@@ -53,9 +53,9 @@ func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
 
 // Duration marshaling helpers
 func MarshalDuration(d time.Duration) (RawMessage, error) {
-	totalSeconds := int64(d.Seconds())
 	totalNanoseconds := d.Nanoseconds()
-	remainingNanoseconds := totalNanoseconds - (totalSeconds * int64(time.Second))
+	totalSeconds := totalNanoseconds / int64(time.Second)
+	remainingNanoseconds := totalNanoseconds % int64(time.Second)
 	content, err := Marshal([]int64{totalSeconds, remainingNanoseconds})
 	if err != nil {
 		return nil, err
