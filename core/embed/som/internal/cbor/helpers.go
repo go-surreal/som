@@ -4,12 +4,8 @@ package cbor
 import (
 	"fmt"
 	"time"
-)
 
-const (
-	tagDatetime = 12
-	tagDuration = 14
-	nanosecond  = 1e+09
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // DateTime marshaling helpers
@@ -20,7 +16,7 @@ func MarshalDateTime(t time.Time) (RawMessage, error) {
 	}
 	return Marshal(RawTag{
 		Content: content,
-		Number:  tagDatetime,
+		Number:  models.TagCustomDatetime,
 	})
 }
 
@@ -59,14 +55,14 @@ func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
 func MarshalDuration(d time.Duration) (RawMessage, error) {
 	totalSeconds := int64(d.Seconds())
 	totalNanoseconds := d.Nanoseconds()
-	remainingNanoseconds := totalNanoseconds - (totalSeconds * nanosecond)
+	remainingNanoseconds := totalNanoseconds - (totalSeconds * int64(time.Second))
 	content, err := Marshal([]int64{totalSeconds, remainingNanoseconds})
 	if err != nil {
 		return nil, err
 	}
 	return Marshal(RawTag{
 		Content: content,
-		Number:  tagDuration,
+		Number:  models.TagCustomDuration,
 	})
 }
 
@@ -105,7 +101,7 @@ func RecordIDToString(id any) (string, error) {
 	case string:
 		return v, nil
 	case Tag:
-		if v.Number == 37 {
+		if v.Number == models.TagSpecBinaryUUID {
 			uuidBytes, ok := v.Content.([]byte)
 			if !ok {
 				return "", fmt.Errorf("expected []byte UUID content, got %T", v.Content)

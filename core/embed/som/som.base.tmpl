@@ -76,11 +76,7 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	if len(b) != 16 {
 		return nil, fmt.Errorf("UUID must be 16 bytes, got %d", len(b))
 	}
-	content, err := cbor.Marshal(b)
-	if err != nil {
-		return nil, err
-	}
-	return cbor.Marshal(cbor.RawTag{Number: 37, Content: content})
+	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
 type CustomNode[T IDType] struct {
