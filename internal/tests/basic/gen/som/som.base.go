@@ -4,9 +4,13 @@ package som
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -42,18 +46,53 @@ func Table(name string) models.Table {
 	return models.Table(name)
 }
 
-type Node struct {
-	id string
+// IDType constrains the type of auto-generated record IDs.
+// Embed CustomNode[T] with one of these types in your model struct:
+//   - ULID: lexicographically sortable, default (used by the Node alias)
+//   - UUID: standard UUID v4 format
+//   - Rand: SurrealDB native random string ID
+type IDType interface {
+	~string
+	isIDType()
 }
+
+type ULID string
+type UUID string
+type Rand string
+
+func (ULID) isIDType() {}
+func (UUID) isIDType() {}
+func (Rand) isIDType() {}
+
+func (u UUID) MarshalCBOR() ([]byte, error) {
+	if u == "" {
+		return nil, fmt.Errorf("cannot marshal empty UUID")
+	}
+	s := strings.ReplaceAll(string(u), "-", "")
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID hex: %w", err)
+	}
+	if len(b) != 16 {
+		return nil, fmt.Errorf("UUID must be 16 bytes, got %d", len(b))
+	}
+	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
+}
+
+type CustomNode[T IDType] struct {
+	id T
+}
+
+func NewCustomNode[T IDType](id string) CustomNode[T] {
+	return CustomNode[T]{id: T(id)}
+}
+
+func (n CustomNode[T]) ID() string { return string(n.id) }
+
+type Node = CustomNode[ULID]
 
 func NewNode(id string) Node {
-	return Node{
-		id: id,
-	}
-}
-
-func (n Node) ID() string {
-	return n.id
+	return NewCustomNode[ULID](id)
 }
 
 // Edge describes an edge between two Node elements.

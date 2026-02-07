@@ -5,7 +5,7 @@ import (
 )
 
 type SpecialTypes struct {
-	som.Node
+	som.CustomNode[som.UUID]
 	som.OptimisticLock
 	som.SoftDelete
 
@@ -13,7 +13,7 @@ type SpecialTypes struct {
 }
 
 type SpecialRelation struct {
-	som.Node
+	som.CustomNode[som.Rand]
 	som.SoftDelete
 
 	Title   string

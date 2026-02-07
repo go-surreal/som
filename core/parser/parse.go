@@ -136,13 +136,50 @@ func isNode(t gotype.Type, outPkg string) bool {
 	for i := 0; i < nf; i++ {
 		f := t.Field(i)
 
+		if !f.IsAnonymous() {
+			continue
+		}
+
 		if f.Name() == "Node" && f.Elem().Name() == "Node" &&
 			f.Elem().PkgPath() == outPkg {
 			return true
 		}
+
+		if f.Name() == "CustomNode" {
+			if isCustomNodeFromSom(f.Elem(), outPkg) {
+				return true
+			}
+		}
 	}
 
 	return false
+}
+
+func isCustomNodeFromSom(t gotype.Type, outPkg string) bool {
+	if pkgPath := t.PkgPath(); pkgPath != "" {
+		return pkgPath == outPkg
+	}
+
+	origin := t.Origin()
+	if origin == nil {
+		return false
+	}
+	indexExpr, ok := origin.(*ast.IndexExpr)
+	if !ok {
+		return false
+	}
+	selExpr, ok := indexExpr.X.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	if selExpr.Sel.Name != "CustomNode" {
+		return false
+	}
+	ident, ok := selExpr.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	return ident.Name == path.Base(outPkg)
 }
 
 func isEdge(t gotype.Type, outPkg string) bool {
@@ -154,6 +191,10 @@ func isEdge(t gotype.Type, outPkg string) bool {
 
 	for i := 0; i < nf; i++ {
 		f := t.Field(i)
+
+		if !f.IsAnonymous() {
+			continue
+		}
 
 		if f.Name() == "Edge" && f.Elem().Name() == "Edge" &&
 			f.Elem().PkgPath() == outPkg {
@@ -206,6 +247,28 @@ func parsePasswordAlgorithm(t gotype.Type) PasswordAlgorithm {
 	return PasswordBcrypt
 }
 
+func parseIDType(t gotype.Type) IDType {
+	origin := t.Origin()
+	if origin == nil {
+		return IDTypeULID
+	}
+
+	if indexExpr, ok := origin.(*ast.IndexExpr); ok {
+		if selExpr, ok := indexExpr.Index.(*ast.SelectorExpr); ok {
+			switch selExpr.Sel.Name {
+			case "UUID":
+				return IDTypeUUID
+			case "Rand":
+				return IDTypeRand
+			case "ULID":
+				return IDTypeULID
+			}
+		}
+	}
+
+	return IDTypeULID
+}
+
 func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 	internalPkg := path.Join(outPkg, "internal")
 
@@ -221,9 +284,13 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 		}
 
 		if f.IsAnonymous() {
-			if f.Elem().PkgPath() == outPkg && f.Name() == "Node" {
+			if (f.Name() == "Node" && f.Elem().PkgPath() == outPkg) ||
+				(f.Name() == "CustomNode" && isCustomNodeFromSom(f.Elem(), outPkg)) {
+				gen := parseIDType(f.Elem())
+				node.IDType = gen
+				node.IDEmbed = f.Name()
 				node.Fields = append(node.Fields,
-					&FieldID{&fieldAtomic{name: "ID"}},
+					&FieldID{&fieldAtomic{name: "ID"}, gen},
 				)
 				continue
 			}
@@ -266,7 +333,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 
 		// prevent custom ID field
 		if strings.ToLower(f.Name()) == "id" {
-			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Node", v.Name())
+			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.%s", v.Name(), node.IDEmbed)
 		}
 
 		field, err := parseField(f, outPkg)
@@ -302,7 +369,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 		if f.IsAnonymous() {
 			if f.Elem().PkgPath() == outPkg && f.Name() == "Edge" {
 				edge.Fields = append(edge.Fields,
-					&FieldID{&fieldAtomic{name: "ID"}},
+					&FieldID{&fieldAtomic{name: "ID"}, IDTypeULID},
 				)
 				continue
 			}

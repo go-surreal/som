@@ -119,9 +119,11 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 	defer c.mu.Unlock()
 	if c.specialRelationRepo == nil {
 		c.specialRelationRepo = &specialRelation{repo: &repo[model.SpecialRelation]{
-			db:   c.db,
-			name: "special_relation",
-			info: specialRelationRepoInfo}}
+			db:      c.db,
+			name:    "special_relation",
+			info:    specialRelationRepoInfo,
+			newID:   newID,
+			parseID: parseStringID}}
 	}
 	return c.specialRelationRepo
 }

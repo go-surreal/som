@@ -2,7 +2,6 @@
 package conv
 
 import (
-	"fmt"
 	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
@@ -24,7 +23,7 @@ func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
-		data["id"] = models.NewRecordID("special_types", c.ID())
+		data["id"] = models.NewRecordID("special_types", som.UUID(c.ID()))
 	}
 
 	if c.SoftDelete.IsDeleted() {
@@ -50,13 +49,13 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 		}
 		var idStr string
 		if recordID != nil {
-			s, ok := recordID.ID.(string)
-			if !ok {
-				return fmt.Errorf("expected string ID, got %T", recordID.ID)
+			s, err := cbor.RecordIDToString(recordID.ID)
+			if err != nil {
+				return err
 			}
 			idStr = s
 		}
-		c.Node = som.NewNode(idStr)
+		c.CustomNode = som.NewCustomNode[som.UUID](idStr)
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {
@@ -142,7 +141,7 @@ func toSpecialTypesLink(node model.SpecialTypes) *specialTypesLink {
 	if node.ID() == "" {
 		return nil
 	}
-	rid := models.NewRecordID("special_types", node.ID())
+	rid := models.NewRecordID("special_types", som.UUID(node.ID()))
 	link := specialTypesLink{SpecialTypes: FromSpecialTypes(node), ID: &rid}
 	return &link
 }
@@ -151,7 +150,7 @@ func toSpecialTypesLinkPtr(node *model.SpecialTypes) *specialTypesLink {
 	if node == nil || node.ID() == "" {
 		return nil
 	}
-	rid := models.NewRecordID("special_types", node.ID())
+	rid := models.NewRecordID("special_types", som.UUID(node.ID()))
 	link := specialTypesLink{SpecialTypes: FromSpecialTypes(*node), ID: &rid}
 	return &link
 }

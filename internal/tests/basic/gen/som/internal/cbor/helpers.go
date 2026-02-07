@@ -2,13 +2,10 @@
 package cbor
 
 import (
+	"fmt"
 	"time"
-)
 
-const (
-	tagDatetime = 12
-	tagDuration = 14
-	nanosecond  = 1e+09
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // DateTime marshaling helpers
@@ -19,7 +16,7 @@ func MarshalDateTime(t time.Time) (RawMessage, error) {
 	}
 	return Marshal(RawTag{
 		Content: content,
-		Number:  tagDatetime,
+		Number:  models.TagCustomDatetime,
 	})
 }
 
@@ -56,16 +53,16 @@ func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
 
 // Duration marshaling helpers
 func MarshalDuration(d time.Duration) (RawMessage, error) {
-	totalSeconds := int64(d.Seconds())
 	totalNanoseconds := d.Nanoseconds()
-	remainingNanoseconds := totalNanoseconds - (totalSeconds * nanosecond)
+	totalSeconds := totalNanoseconds / int64(time.Second)
+	remainingNanoseconds := totalNanoseconds % int64(time.Second)
 	content, err := Marshal([]int64{totalSeconds, remainingNanoseconds})
 	if err != nil {
 		return nil, err
 	}
 	return Marshal(RawTag{
 		Content: content,
-		Number:  tagDuration,
+		Number:  models.TagCustomDuration,
 	})
 }
 
@@ -97,5 +94,27 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 		return nil, err
 	}
 	return &d, nil
+}
+
+func RecordIDToString(id any) (string, error) {
+	switch v := id.(type) {
+	case string:
+		return v, nil
+	case Tag:
+		if v.Number == models.TagSpecBinaryUUID {
+			uuidBytes, ok := v.Content.([]byte)
+			if !ok {
+				return "", fmt.Errorf("expected []byte UUID content, got %T", v.Content)
+			}
+			if len(uuidBytes) != 16 {
+				return "", fmt.Errorf("UUID must be 16 bytes, got %d", len(uuidBytes))
+			}
+			return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+				uuidBytes[0:4], uuidBytes[4:6], uuidBytes[6:8], uuidBytes[8:10], uuidBytes[10:16]), nil
+		}
+		return "", fmt.Errorf("unsupported CBOR tag %d in record ID (expected tag %d for UUID)", v.Number, models.TagSpecBinaryUUID)
+	default:
+		return "", fmt.Errorf("expected string or tagged ID, got %T", id)
+	}
 }
 

@@ -112,9 +112,11 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 	defer c.mu.Unlock()
 	if c.allTypesRepo == nil {
 		c.allTypesRepo = &allTypes{repo: &repo[model.AllTypes]{
-			db:   c.db,
-			name: "all_types",
-			info: allTypesRepoInfo}}
+			db:      c.db,
+			name:    "all_types",
+			info:    allTypesRepoInfo,
+			newID:   newULID,
+			parseID: parseStringID}}
 	}
 	return c.allTypesRepo
 }
