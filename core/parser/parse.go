@@ -142,7 +142,7 @@ func isNode(t gotype.Type, outPkg string) bool {
 		}
 
 		if f.Name() == "CustomNode" {
-			if isCustomNodeFromSom(f.Elem()) {
+			if isCustomNodeFromSom(f.Elem(), outPkg) {
 				return true
 			}
 		}
@@ -151,7 +151,11 @@ func isNode(t gotype.Type, outPkg string) bool {
 	return false
 }
 
-func isCustomNodeFromSom(t gotype.Type) bool {
+func isCustomNodeFromSom(t gotype.Type, outPkg string) bool {
+	if pkgPath := t.PkgPath(); pkgPath != "" {
+		return pkgPath == outPkg
+	}
+
 	origin := t.Origin()
 	if origin == nil {
 		return false
@@ -266,7 +270,7 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 
 		if f.IsAnonymous() {
 			if (f.Name() == "Node" && f.Elem().PkgPath() == outPkg) ||
-				(f.Name() == "CustomNode" && isCustomNodeFromSom(f.Elem())) {
+				(f.Name() == "CustomNode" && isCustomNodeFromSom(f.Elem(), outPkg)) {
 				gen := parseIDType(f.Elem())
 				node.IDType = gen
 				node.IDEmbed = f.Name()
