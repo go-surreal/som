@@ -172,7 +172,14 @@ func isCustomNodeFromSom(t gotype.Type, outPkg string) bool {
 	if !ok {
 		return false
 	}
-	return selExpr.Sel.Name == "CustomNode"
+	if selExpr.Sel.Name != "CustomNode" {
+		return false
+	}
+	ident, ok := selExpr.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	return ident.Name == path.Base(outPkg)
 }
 
 func isEdge(t gotype.Type, outPkg string) bool {
