@@ -38,7 +38,7 @@ func TestWithDatabase(t *testing.T) {
 
 	userOut, err := client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.ID.Equal(userIn.ID()),
+			filter.AllTypes.ID.Equal(string(userIn.ID())),
 			filter.AllTypes.FieldString.Equal(str),
 		).
 		First(ctx)
@@ -109,7 +109,7 @@ func FuzzWithDatabase(f *testing.F) {
 
 		userOut, err := client.AllTypesRepo().Query().
 			Where(
-				filter.AllTypes.ID.Equal(userIn.ID()),
+				filter.AllTypes.ID.Equal(string(userIn.ID())),
 			).
 			First(ctx)
 
@@ -154,7 +154,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 			t.Fatal("user ID must not be empty after create call")
 		}
 
-		userOut, ok, err := client.AllTypesRepo().Read(ctx, userIn.ID())
+		userOut, ok, err := client.AllTypesRepo().Read(ctx, string(userIn.ID()))
 
 		if err != nil {
 			t.Fatal(err)
@@ -207,7 +207,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 
 		userOut, err := client.AllTypesRepo().Query().
 			Where(
-				filter.AllTypes.ID.Equal(userIn.ID()),
+				filter.AllTypes.ID.Equal(string(userIn.ID())),
 			).
 			First(ctx)
 

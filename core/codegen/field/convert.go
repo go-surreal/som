@@ -308,6 +308,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				source:    f,
 			}, true
 		}
+
+	case *parser.FieldComplexID:
+		{
+			return &ComplexID{
+				baseField: base,
+				source:    f,
+			}, true
+		}
 	}
 
 	return nil, false

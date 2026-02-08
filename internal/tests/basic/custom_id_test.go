@@ -24,7 +24,7 @@ func TestCustomID(t *testing.T) {
 		rec := model.SpecialTypes{Name: "uuid-test"}
 		err := client.SpecialTypesRepo().Create(ctx, &rec)
 		assert.NilError(t, err)
-		assert.Assert(t, uuidRegex.MatchString(rec.ID()), "expected UUID format, got %q", rec.ID())
+		assert.Assert(t, uuidRegex.MatchString(string(rec.ID())), "expected UUID format, got %q", rec.ID())
 	})
 
 	t.Run("rand", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestCustomID(t *testing.T) {
 		rec := model.AllTypes{FieldString: "ulid-test"}
 		err := client.AllTypesRepo().Create(ctx, &rec)
 		assert.NilError(t, err)
-		assert.Assert(t, ulidRegex.MatchString(rec.ID()), "expected ULID format, got %q", rec.ID())
+		assert.Assert(t, ulidRegex.MatchString(string(rec.ID())), "expected ULID format, got %q", rec.ID())
 	})
 
 	t.Run("create_with_id_uuid", func(t *testing.T) {
@@ -46,12 +46,12 @@ func TestCustomID(t *testing.T) {
 		rec := model.SpecialTypes{Name: "uuid-with-id"}
 		err := client.SpecialTypesRepo().CreateWithID(ctx, knownUUID, &rec)
 		assert.NilError(t, err)
-		assert.Equal(t, rec.ID(), knownUUID)
+		assert.Equal(t, string(rec.ID()), knownUUID)
 
 		read, ok, err := client.SpecialTypesRepo().Read(ctx, knownUUID)
 		assert.NilError(t, err)
 		assert.Assert(t, ok, "expected record to exist")
-		assert.Equal(t, read.ID(), knownUUID)
+		assert.Equal(t, string(read.ID()), knownUUID)
 		assert.Equal(t, read.Name, "uuid-with-id")
 	})
 
@@ -60,12 +60,12 @@ func TestCustomID(t *testing.T) {
 		rec := model.AllTypes{FieldString: "ulid-with-id"}
 		err := client.AllTypesRepo().CreateWithID(ctx, knownID, &rec)
 		assert.NilError(t, err)
-		assert.Equal(t, rec.ID(), knownID)
+		assert.Equal(t, string(rec.ID()), knownID)
 
 		read, ok, err := client.AllTypesRepo().Read(ctx, knownID)
 		assert.NilError(t, err)
 		assert.Assert(t, ok, "expected record to exist")
-		assert.Equal(t, read.ID(), knownID)
+		assert.Equal(t, string(read.ID()), knownID)
 		assert.Equal(t, read.FieldString, "ulid-with-id")
 	})
 }

@@ -59,7 +59,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 
 		case isNode(v, outPkg):
 			{
-				node, err := parseNode(v, outPkg)
+				node, err := parseNode(v, outPkg, n)
 				if err != nil {
 					return nil, err
 				}
@@ -80,6 +80,10 @@ func Parse(dir string, outPkg string) (*Output, error) {
 		case v.Kind() == gotype.Struct:
 			{
 				// TODO: prevent external structs!
+
+				if isComplexIDStruct(v, outPkg) {
+					continue
+				}
 
 				str, err := parseStruct(v, outPkg)
 				if err != nil {
@@ -152,17 +156,6 @@ func isNode(t gotype.Type, outPkg string) bool {
 			}
 		}
 
-		if f.Name() == "ArrayNode" {
-			if isArrayNode(f.Elem(), outPkg) {
-				return true
-			}
-		}
-
-		if f.Name() == "ObjectNode" {
-			if isObjectNode(f.Elem(), outPkg) {
-				return true
-			}
-		}
 	}
 
 	return false
@@ -199,12 +192,34 @@ func isCustomNodeFromSom(t gotype.Type, outPkg string) bool {
 	return isGenericNodeFromSom(t, outPkg, "CustomNode")
 }
 
-func isArrayNode(t gotype.Type, outPkg string) bool {
-	return isGenericNodeFromSom(t, outPkg, "ArrayNode")
+func isKnownStringIDType(t gotype.Type) bool {
+	origin := t.Origin()
+	if origin == nil {
+		return true // Node alias (no type arg) is ULID
+	}
+	indexExpr, ok := origin.(*ast.IndexExpr)
+	if !ok {
+		return true
+	}
+	_, ok = indexExpr.Index.(*ast.SelectorExpr)
+	return ok // SelectorExpr means som.ULID/som.UUID/som.Rand
 }
 
-func isObjectNode(t gotype.Type, outPkg string) bool {
-	return isGenericNodeFromSom(t, outPkg, "ObjectNode")
+func isComplexIDStruct(t gotype.Type, outPkg string) bool {
+	if t.Kind() != gotype.Struct {
+		return false
+	}
+	nf := t.NumField()
+	for i := 0; i < nf; i++ {
+		f := t.Field(i)
+		if !f.IsAnonymous() {
+			continue
+		}
+		if f.Name() == "ArrayID" || f.Name() == "ObjectID" {
+			return true
+		}
+	}
+	return false
 }
 
 func isEdge(t gotype.Type, outPkg string) bool {
@@ -294,12 +309,32 @@ func parseIDType(t gotype.Type) IDType {
 	return IDTypeULID
 }
 
-func parseComplexIDFields(t gotype.Type, outPkg string, kind IDType) (*FieldComplexID, error) {
-	if t.NumTypeParam() == 0 {
-		return nil, fmt.Errorf("complex ID type has no type parameters")
+func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*FieldComplexID, error) {
+	origin := t.Origin()
+	if origin == nil {
+		return nil, fmt.Errorf("complex ID type has no AST origin")
 	}
 
-	keyType := t.TypeParam(0)
+	indexExpr, ok := origin.(*ast.IndexExpr)
+	if !ok {
+		return nil, fmt.Errorf("complex ID type is not a generic instantiation (expected IndexExpr, got %T)", origin)
+	}
+
+	var typeArgName string
+	switch idx := indexExpr.Index.(type) {
+	case *ast.Ident:
+		typeArgName = idx.Name
+	case *ast.SelectorExpr:
+		typeArgName = idx.Sel.Name
+	default:
+		return nil, fmt.Errorf("complex ID type argument: unsupported AST node %T", indexExpr.Index)
+	}
+
+	keyType, ok := pkgScope.ChildByName(typeArgName)
+	if !ok {
+		return nil, fmt.Errorf("complex ID type argument %s not found in package scope", typeArgName)
+	}
+
 	if keyType.Kind() != gotype.Struct {
 		return nil, fmt.Errorf("complex ID type parameter must be a struct, got %s", keyType.Kind())
 	}
@@ -308,8 +343,19 @@ func parseComplexIDFields(t gotype.Type, outPkg string, kind IDType) (*FieldComp
 	nf := keyType.NumField()
 	fields := make([]ComplexIDField, 0, nf)
 
+	var kind IDType
 	for i := 0; i < nf; i++ {
 		sf := keyType.Field(i)
+
+		if sf.IsAnonymous() {
+			switch sf.Name() {
+			case "ArrayID":
+				kind = IDTypeArray
+			case "ObjectID":
+				kind = IDTypeObject
+			}
+			continue
+		}
 
 		if !ast.IsExported(sf.Name()) {
 			continue
@@ -333,6 +379,10 @@ func parseComplexIDFields(t gotype.Type, outPkg string, kind IDType) (*FieldComp
 		})
 	}
 
+	if kind == "" {
+		return nil, fmt.Errorf("complex ID struct %s must embed som.ArrayID or som.ObjectID", structName)
+	}
+
 	if len(fields) == 0 {
 		return nil, fmt.Errorf("complex ID struct %s has no exported fields", structName)
 	}
@@ -345,7 +395,7 @@ func parseComplexIDFields(t gotype.Type, outPkg string, kind IDType) (*FieldComp
 	}, nil
 }
 
-func parseNode(v gotype.Type, outPkg string) (*Node, error) {
+func parseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*Node, error) {
 	internalPkg := path.Join(outPkg, "internal")
 
 	node := &Node{Name: v.Name()}
@@ -362,32 +412,24 @@ func parseNode(v gotype.Type, outPkg string) (*Node, error) {
 		if f.IsAnonymous() {
 			if (f.Name() == "Node" && f.Elem().PkgPath() == outPkg) ||
 				(f.Name() == "CustomNode" && isCustomNodeFromSom(f.Elem(), outPkg)) {
-				gen := parseIDType(f.Elem())
-				node.IDType = gen
-				node.IDEmbed = f.Name()
-				node.Fields = append(node.Fields,
-					&FieldID{&fieldAtomic{name: "ID"}, gen},
-				)
-				continue
-			}
-
-			if (f.Name() == "ArrayNode" && isArrayNode(f.Elem(), outPkg)) ||
-				(f.Name() == "ObjectNode" && isObjectNode(f.Elem(), outPkg)) {
-				var idType IDType
-				if f.Name() == "ArrayNode" {
-					idType = IDTypeArray
+				if isKnownStringIDType(f.Elem()) {
+					gen := parseIDType(f.Elem())
+					node.IDType = gen
+					node.IDEmbed = f.Name()
+					node.Fields = append(node.Fields,
+						&FieldID{&fieldAtomic{name: "ID"}, gen},
+					)
 				} else {
-					idType = IDTypeObject
-				}
-				node.IDEmbed = f.Name()
-				node.IDType = idType
+					node.IDEmbed = "CustomNode"
 
-				complexID, err := parseComplexIDFields(f.Elem(), outPkg, idType)
-				if err != nil {
-					return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+					complexID, err := parseComplexIDFields(f.Elem(), outPkg, pkgScope)
+					if err != nil {
+						return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+					}
+					node.IDType = complexID.Kind
+					node.ComplexID = complexID
+					node.Fields = append(node.Fields, complexID)
 				}
-				node.ComplexID = complexID
-				node.Fields = append(node.Fields, complexID)
 				continue
 			}
 

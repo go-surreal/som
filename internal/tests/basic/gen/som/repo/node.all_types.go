@@ -399,7 +399,7 @@ func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, 
 		return r.read(ctx, r.recordID(id))
 	}
 	idFunc := func(n *model.AllTypes) string {
-		return n.ID()
+		return string(n.ID())
 	}
 	queryAll := func(ctx context.Context) ([]*model.AllTypes, error) {
 		return r.Query().All(ctx)
@@ -440,7 +440,7 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 			return err
 		}
 	}
-	if err := r.update(ctx, r.recordID(allTypes.ID()), allTypes); err != nil {
+	if err := r.update(ctx, r.recordID(string(allTypes.ID())), allTypes); err != nil {
 		return err
 	}
 	if h, ok := any(allTypes).(som.OnAfterUpdateHook); ok {
@@ -482,7 +482,7 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 			return err
 		}
 	}
-	if err := r.delete(ctx, r.recordID(allTypes.ID()), allTypes, false, nil); err != nil {
+	if err := r.delete(ctx, r.recordID(string(allTypes.ID())), allTypes, false, nil); err != nil {
 		return err
 	}
 	if h, ok := any(allTypes).(som.OnAfterDeleteHook); ok {
@@ -510,7 +510,7 @@ func (r *allTypes) Refresh(ctx context.Context, allTypes *model.AllTypes) error 
 	if allTypes.ID() == "" {
 		return errors.New("cannot refresh AllTypes without existing record ID")
 	}
-	return r.refresh(ctx, r.recordID(allTypes.ID()), allTypes)
+	return r.refresh(ctx, r.recordID(string(allTypes.ID())), allTypes)
 }
 
 // Relate returns a new relate instance for the AllTypes model.

@@ -26,9 +26,14 @@ func (b *build) buildWireFile() error {
 			jen.New(jen.Qual(pkgRepo, "Client")),
 			jen.New(jen.Op("*").Qual(pkgRepo, "ClientImpl")),
 		)
-		for i, node := range b.input.nodes {
-			if i == 0 {
+		first := true
+		for _, node := range b.input.nodes {
+			if node.HasComplexID() {
+				continue
+			}
+			if first {
 				g.Add(jen.Line(), jen.Id("Provide"+node.NameGo()+"Repo"))
+				first = false
 			} else {
 				g.Id("Provide" + node.NameGo() + "Repo")
 			}
@@ -53,8 +58,10 @@ func (b *build) buildWireFile() error {
 		jen.Return(jen.Id("client"), jen.Id("cleanup"), jen.Nil()),
 	)
 
-	// Per-node provider functions
 	for _, node := range b.input.nodes {
+		if node.HasComplexID() {
+			continue
+		}
 		f.Line()
 		f.Func().Id("Provide"+node.NameGo()+"Repo").Params(
 			jen.Id("client").Op("*").Qual(pkgRepo, "ClientImpl"),

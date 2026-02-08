@@ -71,6 +71,9 @@ func (b *build) build() error {
 	}
 
 	for _, node := range b.input.nodes {
+		if node.HasComplexID() {
+			continue
+		}
 		if err := b.buildBaseFile(node); err != nil {
 			return err
 		}
@@ -108,6 +111,9 @@ func (b *build) buildInterfaceFile() error {
 
 	f.Type().Id("Client").InterfaceFunc(func(g *jen.Group) {
 		for _, node := range b.input.nodes {
+			if node.HasComplexID() {
+				continue
+			}
 			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
 		}
 
@@ -120,6 +126,9 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("db").Id("Database")
 		g.Id("mu").Qual("sync", "Mutex")
 		for _, node := range b.input.nodes {
+			if node.HasComplexID() {
+				continue
+			}
 			g.Id(node.NameGoLower() + "Repo").Op("*").Id(node.NameGoLower())
 		}
 	})
@@ -486,7 +495,7 @@ If caching is enabled via som.WithCache, it will be used.
 				jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.Id("id")))),
 			),
 			jen.Id("idFunc").Op(":=").Func().Params(jen.Id("n").Op("*").Add(b.input.SourceQual(node.NameGo()))).String().Block(
-				jen.Return(jen.Id("n").Dot("ID").Call()),
+				jen.Return(jen.String().Call(jen.Id("n").Dot("ID").Call())),
 			),
 			jen.Id("queryAll").Op(":=").Func().Params(jen.Id("ctx").Qual("context", "Context")).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
 				jen.Return(jen.Id("r").Dot("Query").Call().Dot("All").Call(jen.Id("ctx"))),
@@ -544,7 +553,7 @@ Update updates the record for the given model.
 			b.addBeforeHooks(g, node, "Update")
 
 			g.If(jen.Err().Op(":=").Id("r").Dot("update").Call(
-				jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()), jen.Id(node.NameGoLower()),
+				jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.String().Call(jen.Id(node.NameGoLower()).Dot("ID").Call())), jen.Id(node.NameGoLower()),
 			), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 			b.addAfterHooks(g, node, "Update")
@@ -586,7 +595,7 @@ Delete deletes the record for the given model.
 				g.Id("version").Op(":=").Id(node.NameGoLower()).Dot("Version").Call()
 				g.If(jen.Err().Op(":=").Id("r").Dot("delete").Call(
 					jen.Id("ctx"),
-					jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
+					jen.Id("r").Dot("recordID").Call(jen.String().Call(jen.Id(node.NameGoLower()).Dot("ID").Call())),
 					jen.Id(node.NameGoLower()),
 					jen.Lit(true),
 					jen.Op("&").Id("version"),
@@ -594,7 +603,7 @@ Delete deletes the record for the given model.
 			} else {
 				g.If(jen.Err().Op(":=").Id("r").Dot("delete").Call(
 					jen.Id("ctx"),
-					jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
+					jen.Id("r").Dot("recordID").Call(jen.String().Call(jen.Id(node.NameGoLower()).Dot("ID").Call())),
 					jen.Id(node.NameGoLower()),
 					jen.Lit(node.Source.SoftDelete),
 					jen.Nil(),
@@ -633,7 +642,7 @@ Use this to permanently remove soft-deleted records.
 				jen.Return(
 					jen.Id("r").Dot("delete").Call(
 						jen.Id("ctx"),
-						jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
+						jen.Id("r").Dot("recordID").Call(jen.String().Call(jen.Id(node.NameGoLower()).Dot("ID").Call())),
 						jen.Id(node.NameGoLower()),
 						jen.Lit(false), // Hard delete
 						jen.Nil(),
@@ -671,14 +680,14 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 					g.Add(jen.Id("query").Op(":=").Lit("UPDATE $id SET deleted_at = NONE, __som_lock_version = $lock_version"))
 					g.Add(jen.Id("vars").Op(":=").Map(jen.String()).Any().Values(
 						jen.Dict{
-							jen.Lit("id"):           jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
+							jen.Lit("id"):           jen.Id("r").Dot("recordID").Call(jen.String().Call(jen.Id(node.NameGoLower()).Dot("ID").Call())),
 							jen.Lit("lock_version"): jen.Id(node.NameGoLower()).Dot("Version").Call(),
 						},
 					))
 				} else {
 					g.Add(jen.Id("query").Op(":=").Lit("UPDATE $id SET deleted_at = NONE"))
 					g.Add(jen.Id("vars").Op(":=").Map(jen.String()).Any().Values(
-						jen.Dict{jen.Lit("id"): jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call())},
+						jen.Dict{jen.Lit("id"): jen.Id("r").Dot("recordID").Call(jen.String().Call(jen.Id(node.NameGoLower()).Dot("ID").Call()))},
 					))
 				}
 
@@ -706,7 +715,7 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 
 				g.Return(jen.Id("r").Dot("refresh").Call(
 					jen.Id("ctx"),
-					jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
+					jen.Id("r").Dot("recordID").Call(jen.String().Call(jen.Id(node.NameGoLower()).Dot("ID").Call())),
 					jen.Id(node.NameGoLower()),
 				))
 			})
@@ -737,7 +746,7 @@ Refresh refreshes the given model with the remote data.
 			jen.Return(
 				jen.Id("r").Dot("refresh").Call(
 					jen.Id("ctx"),
-					jen.Id("r").Dot("recordID").Call(jen.Id(node.NameGoLower()).Dot("ID").Call()),
+					jen.Id("r").Dot("recordID").Call(jen.String().Call(jen.Id(node.NameGoLower()).Dot("ID").Call())),
 					jen.Id(node.NameGoLower()),
 				),
 			),

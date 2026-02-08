@@ -53,7 +53,7 @@ func TestNumerics(t *testing.T) {
 
 	userOut, err := client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.ID.Equal(userIn.ID()),
+			filter.AllTypes.ID.Equal(string(userIn.ID())),
 		).
 		First(ctx)
 	if err != nil {
@@ -96,7 +96,7 @@ func TestNumerics(t *testing.T) {
 
 	userOut, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.ID.Equal(userIn.ID()),
+			filter.AllTypes.ID.Equal(string(userIn.ID())),
 		).
 		First(ctx)
 	if err != nil {
@@ -320,7 +320,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack, _, err := client.AllTypesRepo().Read(ctx, user.ID())
+	readBack, _, err := client.AllTypesRepo().Read(ctx, string(user.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,7 +348,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack2, _, err := client.AllTypesRepo().Read(ctx, user2.ID())
+	readBack2, _, err := client.AllTypesRepo().Read(ctx, string(user2.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +370,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack3, _, err := client.AllTypesRepo().Read(ctx, user3.ID())
+	readBack3, _, err := client.AllTypesRepo().Read(ctx, string(user3.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,7 +391,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack4, _, err := client.AllTypesRepo().Read(ctx, user4.ID())
+	readBack4, _, err := client.AllTypesRepo().Read(ctx, string(user4.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,7 +424,7 @@ func TestSliceNilElements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readBack5, _, err := client.AllTypesRepo().Read(ctx, user5.ID())
+	readBack5, _, err := client.AllTypesRepo().Read(ctx, string(user5.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -485,7 +485,7 @@ func TestURLTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readModel, exists, err := client.AllTypesRepo().Read(ctx, newModel.ID())
+	readModel, exists, err := client.AllTypesRepo().Read(ctx, string(newModel.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -550,7 +550,7 @@ func TestDuration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	modelOut, exists, err := client.AllTypesRepo().Read(ctx, modelIn.ID())
+	modelOut, exists, err := client.AllTypesRepo().Read(ctx, string(modelIn.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -605,7 +605,7 @@ func TestUUID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	modelOut, exists, err := client.AllTypesRepo().Read(ctx, modelIn.ID())
+	modelOut, exists, err := client.AllTypesRepo().Read(ctx, string(modelIn.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -660,7 +660,7 @@ func TestUUIDGofrs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	modelOut, exists, err := client.AllTypesRepo().Read(ctx, modelIn.ID())
+	modelOut, exists, err := client.AllTypesRepo().Read(ctx, string(modelIn.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -725,7 +725,7 @@ func TestPassword(t *testing.T) {
 	}
 
 	// Step 2: Verify password was hashed (not equal to original)
-	modelOut, exists, err := client.AllTypesRepo().Read(ctx, modelIn.ID())
+	modelOut, exists, err := client.AllTypesRepo().Read(ctx, string(modelIn.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -740,7 +740,7 @@ func TestPassword(t *testing.T) {
 	// Step 3: Verify password comparison works
 	modelFound, err := client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.ID.Equal(modelIn.ID()),
+			filter.AllTypes.ID.Equal(string(modelIn.ID())),
 			filter.AllTypes.FieldCredentials().Password.Verify(plainPassword),
 		).
 		First(ctx)
@@ -764,7 +764,7 @@ func TestPassword(t *testing.T) {
 	// This will FAIL if double-hashing occurs
 	modelFoundAfterUpdate, err := client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.ID.Equal(modelIn.ID()),
+			filter.AllTypes.ID.Equal(string(modelIn.ID())),
 			filter.AllTypes.FieldCredentials().Password.Verify(plainPassword),
 		).
 		First(ctx)
@@ -801,7 +801,7 @@ func TestEmail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	modelOut, exists, err := client.AllTypesRepo().Read(ctx, modelIn.ID())
+	modelOut, exists, err := client.AllTypesRepo().Read(ctx, string(modelIn.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}

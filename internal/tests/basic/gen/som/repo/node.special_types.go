@@ -407,7 +407,7 @@ func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes
 		return r.read(ctx, r.recordID(id))
 	}
 	idFunc := func(n *model.SpecialTypes) string {
-		return n.ID()
+		return string(n.ID())
 	}
 	queryAll := func(ctx context.Context) ([]*model.SpecialTypes, error) {
 		return r.Query().All(ctx)
@@ -448,7 +448,7 @@ func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTy
 			return err
 		}
 	}
-	if err := r.update(ctx, r.recordID(specialTypes.ID()), specialTypes); err != nil {
+	if err := r.update(ctx, r.recordID(string(specialTypes.ID())), specialTypes); err != nil {
 		return err
 	}
 	if h, ok := any(specialTypes).(som.OnAfterUpdateHook); ok {
@@ -494,7 +494,7 @@ func (r *specialTypes) Delete(ctx context.Context, specialTypes *model.SpecialTy
 		}
 	}
 	version := specialTypes.Version()
-	if err := r.delete(ctx, r.recordID(specialTypes.ID()), specialTypes, true, &version); err != nil {
+	if err := r.delete(ctx, r.recordID(string(specialTypes.ID())), specialTypes, true, &version); err != nil {
 		return err
 	}
 	if h, ok := any(specialTypes).(som.OnAfterDeleteHook); ok {
@@ -524,7 +524,7 @@ func (r *specialTypes) Erase(ctx context.Context, specialTypes *model.SpecialTyp
 	if specialTypes.ID() == "" {
 		return errors.New("cannot erase SpecialTypes without existing record ID")
 	}
-	return r.delete(ctx, r.recordID(specialTypes.ID()), specialTypes, false, nil)
+	return r.delete(ctx, r.recordID(string(specialTypes.ID())), specialTypes, false, nil)
 }
 
 // Restore un-deletes a soft-deleted record.
@@ -541,7 +541,7 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 	}
 	query := "UPDATE $id SET deleted_at = NONE, __som_lock_version = $lock_version"
 	vars := map[string]any{
-		"id":           r.recordID(specialTypes.ID()),
+		"id":           r.recordID(string(specialTypes.ID())),
 		"lock_version": specialTypes.Version(),
 	}
 	_, err := r.db.Query(ctx, query, vars)
@@ -551,7 +551,7 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 		}
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
-	return r.refresh(ctx, r.recordID(specialTypes.ID()), specialTypes)
+	return r.refresh(ctx, r.recordID(string(specialTypes.ID())), specialTypes)
 }
 
 // Refresh refreshes the given model with the remote data.
@@ -562,7 +562,7 @@ func (r *specialTypes) Refresh(ctx context.Context, specialTypes *model.SpecialT
 	if specialTypes.ID() == "" {
 		return errors.New("cannot refresh SpecialTypes without existing record ID")
 	}
-	return r.refresh(ctx, r.recordID(specialTypes.ID()), specialTypes)
+	return r.refresh(ctx, r.recordID(string(specialTypes.ID())), specialTypes)
 }
 
 // Relate returns a new relate instance for the SpecialTypes model.

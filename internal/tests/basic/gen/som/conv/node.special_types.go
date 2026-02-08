@@ -55,7 +55,7 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 			}
 			idStr = s
 		}
-		c.CustomNode = som.NewCustomNode[som.UUID](idStr)
+		c.CustomNode = som.NewCustomNode[som.UUID](som.UUID(idStr))
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {

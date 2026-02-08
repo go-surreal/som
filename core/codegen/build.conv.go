@@ -141,10 +141,143 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 }
 
 func (b *convBuilder) nodeIDValue(node *field.NodeTable, varName string) jen.Code {
+	if node.HasComplexID() {
+		return b.complexNodeIDValue(node, varName)
+	}
 	if node.Source.IDType == parser.IDTypeUUID {
 		return jen.Qual(b.subPkg(""), "UUID").Call(jen.Id(varName).Dot("ID").Call())
 	}
 	return jen.Id(varName).Dot("ID").Call()
+}
+
+func (b *convBuilder) complexNodeIDValue(node *field.NodeTable, varName string) jen.Code {
+	cid := node.Source.ComplexID
+
+	if cid.Kind == parser.IDTypeArray {
+		var elems []jen.Code
+		for _, sf := range cid.Fields {
+			elems = append(elems, b.complexFieldMarshalValue(sf, varName))
+		}
+		return jen.Index().Any().Values(elems...)
+	}
+
+	// Object ID: map[string]any{...}
+	dict := jen.Dict{}
+	for _, sf := range cid.Fields {
+		dict[jen.Lit(sf.DBName)] = b.complexFieldMarshalValue(sf, varName)
+	}
+	return jen.Map(jen.String()).Any().Values(dict)
+}
+
+func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
+	cid := node.Source.ComplexID
+	cborPkg := path.Join(b.basePkg, "internal/cbor")
+
+	g.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
+		jen.Id("ok"),
+	).BlockFunc(func(bg *jen.Group) {
+		bg.Var().Id("recordID").Op("*").Qual(b.subPkg(""), "ID")
+		bg.If(
+			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
+			jen.Err().Op("!=").Nil(),
+		).Block(jen.Return(jen.Err()))
+
+		bg.If(jen.Id("recordID").Op("!=").Nil()).BlockFunc(func(inner *jen.Group) {
+			// Re-marshal recordID.ID to raw CBOR bytes for typed unmarshal
+			inner.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("recordID").Dot("ID"))
+			inner.If(jen.Err().Op("==").Nil()).BlockFunc(func(idBlock *jen.Group) {
+				if cid.Kind == parser.IDTypeArray {
+					idBlock.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
+					idBlock.If(
+						jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
+						jen.Err().Op("==").Nil().Op("&&").Len(jen.Id("rawArr")).Op(">=").Lit(len(cid.Fields)),
+					).BlockFunc(func(arrBlock *jen.Group) {
+						arrBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
+
+						for i, sf := range cid.Fields {
+							arrBlock.Add(b.complexFieldUnmarshalAssign(sf, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
+						}
+
+						arrBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
+							Qual(b.subPkg(""), "NewCustomNode").Types(
+							jen.Qual(b.sourcePkgPath, cid.StructName),
+						).Call(jen.Id("key"))
+					})
+				} else {
+					idBlock.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+					idBlock.If(
+						jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
+						jen.Err().Op("==").Nil(),
+					).BlockFunc(func(objBlock *jen.Group) {
+						objBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
+
+						for _, sf := range cid.Fields {
+							objBlock.Add(b.complexFieldUnmarshalAssign(sf, jen.Id("rawObj").Index(jen.Lit(sf.DBName)), cborPkg))
+						}
+
+						objBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
+							Qual(b.subPkg(""), "NewCustomNode").Types(
+							jen.Qual(b.sourcePkgPath, cid.StructName),
+						).Call(jen.Id("key"))
+					})
+				}
+			})
+		})
+	})
+}
+
+func (b *convBuilder) complexFieldUnmarshalAssign(sf parser.ComplexIDField, accessor jen.Code, cborPkg string) jen.Code {
+	switch f := sf.Field.(type) {
+	case *parser.FieldString:
+		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("key").Dot(sf.Name))
+
+	case *parser.FieldNumeric:
+		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("key").Dot(sf.Name))
+
+	case *parser.FieldBool:
+		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("key").Dot(sf.Name))
+
+	case *parser.FieldTime:
+		return jen.List(jen.Id("key").Dot(sf.Name), jen.Id("_")).Op("=").
+			Qual(cborPkg, "UnmarshalDateTime").Call(accessor)
+
+	case *parser.FieldDuration:
+		return jen.List(jen.Id("key").Dot(sf.Name), jen.Id("_")).Op("=").
+			Qual(cborPkg, "UnmarshalDuration").Call(accessor)
+
+	case *parser.FieldUUID:
+		var unmarshalFunc string
+		switch f.Package {
+		case parser.UUIDPackageGoogle:
+			unmarshalFunc = "UnmarshalUUIDGoogle"
+		case parser.UUIDPackageGofrs:
+			unmarshalFunc = "UnmarshalUUIDGofrs"
+		default:
+			unmarshalFunc = "UnmarshalUUIDGoogle"
+		}
+		return jen.List(jen.Id("key").Dot(sf.Name), jen.Id("_")).Op("=").
+			Qual(cborPkg, unmarshalFunc).Call(accessor)
+
+	default:
+		return jen.Null()
+	}
+}
+
+func (b *convBuilder) complexFieldMarshalValue(sf parser.ComplexIDField, varName string) jen.Code {
+	accessor := jen.Id(varName).Dot("ID").Call().Dot(sf.Name)
+	switch sf.Field.(type) {
+	case *parser.FieldTime:
+		return jen.Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
+			jen.Id("Time").Op(":").Add(accessor),
+		)
+	case *parser.FieldDuration:
+		return jen.Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "Duration").Values(
+			jen.Id("Duration").Op(":").Add(accessor),
+		)
+	default:
+		return accessor
+	}
 }
 
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
@@ -219,18 +352,25 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				g.Line()
 				g.Comment("Embedded som.Node/Edge ID field")
 
-				var idValue jen.Code
-				if node, ok := elem.(*field.NodeTable); ok {
-					idValue = b.nodeIDValue(node, "c")
-				} else {
-					idValue = jen.Id("c").Dot("ID").Call()
-				}
-
-				g.If(jen.Id("c").Dot("ID").Call().Op("!=").Lit("")).Block(
-					jen.Id("data").Index(jen.Lit("id")).Op("=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
+				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
+					idValue := b.complexNodeIDValue(node, "c")
+					g.Id("data").Index(jen.Lit("id")).Op("=").Qual(def.PkgModels, "NewRecordID").Call(
 						jen.Lit(tableName), idValue,
-					),
-				)
+					)
+				} else {
+					var idValue jen.Code
+					if node, ok := elem.(*field.NodeTable); ok {
+						idValue = b.nodeIDValue(node, "c")
+					} else {
+						idValue = jen.Id("c").Dot("ID").Call()
+					}
+
+					g.If(jen.Id("c").Dot("ID").Call().Op("!=").Lit("")).Block(
+						jen.Id("data").Index(jen.Lit("id")).Op("=").Qual(def.PkgModels, "NewRecordID").Call(
+							jen.Lit(tableName), idValue,
+						),
+					)
+				}
 			}
 
 			// Marshal all fields
@@ -273,41 +413,46 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 			if isNode || isEdge {
 				g.Line()
 				g.Comment("Embedded som.Node/Edge ID field")
-				g.If(
-					jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
-					jen.Id("ok"),
-				).BlockFunc(func(bg *jen.Group) {
-					bg.Var().Id("recordID").Op("*").Qual(b.subPkg(""), "ID")
-					bg.If(
-					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
-					jen.Err().Op("!=").Nil(),
-				).Block(jen.Return(jen.Err()))
-					bg.Var().Id("idStr").String()
-					bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
-						jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
-						jen.If(jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-						jen.Id("idStr").Op("=").Id("s"),
-					)
 
-					if isNode {
-						node := elem.(*field.NodeTable)
-						fieldName := node.Source.IDEmbed
-						if fieldName == "" {
-							fieldName = "Node"
-						}
-						if fieldName == "Node" {
-							bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr"))
+				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
+					b.unmarshalComplexID(g, node)
+				} else {
+					g.If(
+						jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
+						jen.Id("ok"),
+					).BlockFunc(func(bg *jen.Group) {
+						bg.Var().Id("recordID").Op("*").Qual(b.subPkg(""), "ID")
+						bg.If(
+							jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
+							jen.Err().Op("!=").Nil(),
+						).Block(jen.Return(jen.Err()))
+						bg.Var().Id("idStr").String()
+						bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
+							jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
+							jen.If(jen.Err().Op("!=").Nil()).Block(
+								jen.Return(jen.Err()),
+							),
+							jen.Id("idStr").Op("=").Id("s"),
+						)
+
+						if isNode {
+							node := elem.(*field.NodeTable)
+							fieldName := node.Source.IDEmbed
+							if fieldName == "" {
+								fieldName = "Node"
+							}
+							if fieldName == "Node" {
+								bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr"))
+							} else {
+								bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewCustomNode").Types(
+									jen.Qual(b.subPkg(""), string(node.Source.IDType)),
+								).Call(jen.Qual(b.subPkg(""), string(node.Source.IDType)).Call(jen.Id("idStr")))
+							}
 						} else {
-							bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewCustomNode").Types(
-								jen.Qual(b.subPkg(""), string(node.Source.IDType)),
-							).Call(jen.Id("idStr"))
+							bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("idStr"))
 						}
-					} else {
-						bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("idStr"))
-					}
-				})
+					})
+				}
 			}
 
 			// Unmarshal all fields
@@ -376,8 +521,8 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 
 func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Id("from"+node.NameGo()+"Link").
-		Params(jen.Id("link").Op("*").Id(node.NameGoLower()+"Link")).
+		Id("from" + node.NameGo() + "Link").
+		Params(jen.Id("link").Op("*").Id(node.NameGoLower() + "Link")).
 		Add(b.SourceQual(node.NameGo())).
 		BlockFunc(func(g *jen.Group) {
 			g.If(jen.Id("link").Op("==").Nil()).Block(
@@ -390,8 +535,8 @@ func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
 
 func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 	return jen.Func().
-		Id("from"+node.NameGo()+"LinkPtr").
-		Params(jen.Id("link").Op("*").Id(node.NameGoLower()+"Link")).
+		Id("from" + node.NameGo() + "LinkPtr").
+		Params(jen.Id("link").Op("*").Id(node.NameGoLower() + "Link")).
 		Op("*").Add(b.SourceQual(node.NameGo())).
 		BlockFunc(func(g *jen.Group) {
 			g.If(jen.Id("link").Op("==").Nil()).Block(
@@ -406,42 +551,58 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 	tableName := node.NameDatabase()
 	idVal := b.nodeIDValue(node, "node")
+
+	var stmts []jen.Code
+
+	if !node.HasComplexID() {
+		stmts = append(stmts, jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
+			jen.Return(jen.Nil()),
+		))
+	}
+
+	stmts = append(stmts,
+		jen.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
+			jen.Lit(tableName), idVal,
+		),
+		jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
+			jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Id("node")),
+			jen.Id("ID").Op(":").Op("&").Id("rid"),
+		),
+		jen.Return(jen.Op("&").Id("link")),
+	)
+
 	return jen.Func().
-		Id("to"+node.NameGo()+"Link").
+		Id("to" + node.NameGo() + "Link").
 		Params(jen.Id("node").Add(b.SourceQual(node.NameGo()))).
-		Op("*").Id(node.NameGoLower()+"Link").
-		Block(
-			jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
-				jen.Return(jen.Nil()),
-			),
-			jen.Id("rid").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
-				jen.Lit(tableName), idVal,
-			),
-			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Id("node")),
-				jen.Id("ID").Op(":").Op("&").Id("rid"),
-			),
-			jen.Return(jen.Op("&").Id("link")),
-		)
+		Op("*").Id(node.NameGoLower() + "Link").
+		Block(stmts...)
 }
 
 func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 	tableName := node.NameDatabase()
 	idVal := b.nodeIDValue(node, "node")
+
+	var nilCheck jen.Code
+	if node.HasComplexID() {
+		nilCheck = jen.If(jen.Id("node").Op("==").Nil()).Block(
+			jen.Return(jen.Nil()),
+		)
+	} else {
+		nilCheck = jen.If(
+			jen.Id("node").Op("==").Nil().Op("||").
+				Id("node").Dot("ID").Call().Op("==").Lit(""),
+		).Block(
+			jen.Return(jen.Nil()),
+		)
+	}
+
 	return jen.Func().
 		Id("to"+node.NameGo()+"LinkPtr").
 		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).
 		Op("*").Id(node.NameGoLower()+"Link").
 		Block(
-			jen.
-				If(
-					jen.Id("node").Op("==").Nil().Op("||").
-						Id("node").Dot("ID").Call().Op("==").Lit(""),
-				).
-				Block(
-					jen.Return(jen.Nil()),
-				),
-			jen.Id("rid").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
+			nilCheck,
+			jen.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
 				jen.Lit(tableName), idVal,
 			),
 			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(

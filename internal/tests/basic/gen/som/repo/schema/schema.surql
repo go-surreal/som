@@ -3,6 +3,11 @@
 DEFINE ANALYZER english TOKENIZERS blank, punct FILTERS lowercase, snowball(english);
 DEFINE ANALYZER autocomplete TOKENIZERS class FILTERS lowercase, edgengram(1, 10);
 
+DEFINE TABLE weather SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id[0] ON TABLE weather TYPE string;
+DEFINE FIELD id[1] ON TABLE weather TYPE datetime;
+DEFINE FIELD temperature ON TABLE weather TYPE float ;
+
 DEFINE TABLE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE special_types TYPE string;
 DEFINE FIELD deleted_at ON TABLE special_types TYPE option<datetime> DEFAULT NONE;
@@ -15,6 +20,11 @@ DEFINE FIELD deleted_at ON TABLE special_relation TYPE option<datetime> DEFAULT 
 DEFINE FIELD title ON TABLE special_relation TYPE string;
 DEFINE FIELD author ON TABLE special_relation TYPE option<record<special_types>>;
 DEFINE FIELD authors ON TABLE special_relation TYPE option<array<record<special_types> | null>>;
+
+DEFINE TABLE person_obj SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id.name ON TABLE person_obj TYPE string;
+DEFINE FIELD id.age ON TABLE person_obj TYPE int|float;
+DEFINE FIELD email ON TABLE person_obj TYPE string;
 
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_types TYPE string;

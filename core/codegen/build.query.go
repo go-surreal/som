@@ -22,6 +22,9 @@ func newQueryBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *queryBui
 
 func (b *queryBuilder) build() error {
 	for _, node := range b.nodes {
+		if node.HasComplexID() {
+			continue
+		}
 		if err := b.buildFile(node); err != nil {
 			return err
 		}

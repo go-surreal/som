@@ -34,9 +34,7 @@ var ErrEmptyID = errors.New("id cannot be empty")
 var ErrEmptyResponse = errors.New("empty response")
 
 // Model is implemented by all generated model types (nodes and edges).
-type Model interface {
-	ID() string
-}
+type Model interface {}
 
 type ID = models.RecordID
 
@@ -46,23 +44,39 @@ func Table(name string) models.Table {
 	return models.Table(name)
 }
 
-// IDType constrains the type of auto-generated record IDs.
+type nodeID interface {
+	isNodeID()
+}
+
+// IDType constrains the type of auto-generated string record IDs.
 // Embed CustomNode[T] with one of these types in your model struct:
 //   - ULID: lexicographically sortable, default (used by the Node alias)
 //   - UUID: standard UUID v4 format
 //   - Rand: SurrealDB native random string ID
 type IDType interface {
 	~string
-	isIDType()
+	nodeID
 }
 
 type ULID string
 type UUID string
 type Rand string
 
-func (ULID) isIDType() {}
-func (UUID) isIDType() {}
-func (Rand) isIDType() {}
+func (ULID) isNodeID() {}
+func (UUID) isNodeID() {}
+func (Rand) isNodeID() {}
+
+// ArrayID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an array.
+type ArrayID struct{}
+
+func (ArrayID) isNodeID() {}
+
+// ObjectID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an object.
+type ObjectID struct{}
+
+func (ObjectID) isNodeID() {}
 
 func (u UUID) MarshalCBOR() ([]byte, error) {
 	if u == "" {
@@ -79,41 +93,21 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-type CustomNode[T IDType] struct {
+type CustomNode[T nodeID] struct {
 	id T
 }
 
-func NewCustomNode[T IDType](id string) CustomNode[T] {
-	return CustomNode[T]{id: T(id)}
+func NewCustomNode[T nodeID](id T) CustomNode[T] {
+	return CustomNode[T]{id: id}
 }
 
-func (n CustomNode[T]) ID() string { return string(n.id) }
+func (n CustomNode[T]) ID() T { return n.id }
 
 type Node = CustomNode[ULID]
 
 func NewNode(id string) Node {
-	return NewCustomNode[ULID](id)
+	return CustomNode[ULID]{id: ULID(id)}
 }
-
-type ArrayNode[T any] struct {
-	id T
-}
-
-func NewArrayNode[T any](id T) ArrayNode[T] {
-	return ArrayNode[T]{id: id}
-}
-
-func (n ArrayNode[T]) ID() T { return n.id }
-
-type ObjectNode[T any] struct {
-	id T
-}
-
-func NewObjectNode[T any](id T) ObjectNode[T] {
-	return ObjectNode[T]{id: id}
-}
-
-func (n ObjectNode[T]) ID() T { return n.id }
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.

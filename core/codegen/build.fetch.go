@@ -22,6 +22,9 @@ func newFetchBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *fetchBui
 
 func (b *fetchBuilder) build() error {
 	for _, node := range b.nodes {
+		if node.HasComplexID() {
+			continue
+		}
 		if err := b.buildFile(node); err != nil {
 			return err
 		}
