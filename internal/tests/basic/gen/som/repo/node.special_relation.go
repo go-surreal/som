@@ -11,6 +11,7 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -118,18 +119,21 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.specialRelationRepo == nil {
-		c.specialRelationRepo = &specialRelation{repo: &repo[model.SpecialRelation]{
-			db:      c.db,
-			name:    "special_relation",
-			info:    specialRelationRepoInfo,
-			newID:   newID,
-			parseID: parseStringID}}
+		c.specialRelationRepo = &specialRelation{repo: &repo[model.SpecialRelation, string]{
+			db:    c.db,
+			name:  "special_relation",
+			info:  specialRelationRepoInfo,
+			newID: newID,
+			recordID: func(id string) *ID {
+				rid := models.NewRecordID("special_relation", parseStringID(id))
+				return &rid
+			}}}
 	}
 	return c.specialRelationRepo
 }
 
 type specialRelation struct {
-	*repo[model.SpecialRelation]
+	*repo[model.SpecialRelation, string]
 	mu           sync.RWMutex
 	beforeCreate []specialRelationHook
 	afterCreate  []specialRelationHook
@@ -402,8 +406,9 @@ func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRe
 	if id == "" {
 		return nil, false, som.ErrEmptyID
 	}
+	rid := r.recordID(id)
 	if !internal.CacheEnabled[model.SpecialRelation](ctx) {
-		return r.read(ctx, r.recordID(id))
+		return r.read(ctx, rid)
 	}
 	idFunc := func(n *model.SpecialRelation) string {
 		return string(n.ID())
@@ -422,7 +427,7 @@ func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRe
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.SpecialRelation]{cacheID: internal.GetCacheKey[model.SpecialRelation](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, cache, refreshFuncs)
+	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.

@@ -336,7 +336,9 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 			// Count fields for pre-sized map allocation
 			fieldCount := 0
 			if isNode || isEdge {
-				fieldCount++ // ID field
+				if node, ok := elem.(*field.NodeTable); !ok || !node.HasComplexID() {
+					fieldCount++
+				}
 			}
 			for _, f := range elem.GetFields() {
 				if f.NameDatabase() != "id" {
@@ -353,10 +355,7 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				g.Comment("Embedded som.Node/Edge ID field")
 
 				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
-					idValue := b.complexNodeIDValue(node, "c")
-					g.Id("data").Index(jen.Lit("id")).Op("=").Qual(def.PkgModels, "NewRecordID").Call(
-						jen.Lit(tableName), idValue,
-					)
+					_ = node // no-op: complex ID sub-fields are populated from the record ID
 				} else {
 					var idValue jen.Code
 					if node, ok := elem.(*field.NodeTable); ok {

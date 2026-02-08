@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/docker/docker/api/types/container"
@@ -49,10 +50,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 			"start", "--allow-funcs", "--log", "trace",
 		},
 		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor: wait.ForAll(
-			wait.ForLog(containerStartedMsg),
-			wait.ForListeningPort("8000/tcp"),
-		),
+		WaitingFor: wait.ForLog(containerStartedMsg),
 		HostConfigModifier: func(conf *container.HostConfig) {
 			conf.AutoRemove = true
 		},
@@ -84,7 +82,14 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		Database:  database,
 	}
 
-	client, err := repo.NewClient(ctx, config)
+	var client *repo.ClientImpl
+	for range 5 {
+		client, err = repo.NewClient(ctx, config)
+		if err == nil {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	if err != nil {
 		tb.Fatal(err)
 	}

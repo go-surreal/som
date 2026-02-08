@@ -7,8 +7,10 @@ import (
 )
 
 type Client interface {
+	WeatherRepo() WeatherRepo
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
+	PersonObjRepo() PersonObjRepo
 	AllTypesRepo() AllTypesRepo
 	ApplySchema(ctx context.Context) error
 	Close()
@@ -17,7 +19,9 @@ type Client interface {
 type ClientImpl struct {
 	db                  Database
 	mu                  sync.Mutex
+	weatherRepo         *weather
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
+	personObjRepo       *personObj
 	allTypesRepo        *allTypes
 }

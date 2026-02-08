@@ -4,8 +4,7 @@ DEFINE ANALYZER english TOKENIZERS blank, punct FILTERS lowercase, snowball(engl
 DEFINE ANALYZER autocomplete TOKENIZERS class FILTERS lowercase, edgengram(1, 10);
 
 DEFINE TABLE weather SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id[0] ON TABLE weather TYPE string;
-DEFINE FIELD id[1] ON TABLE weather TYPE datetime;
+DEFINE FIELD id ON TABLE weather TYPE array<any, 2>;
 DEFINE FIELD temperature ON TABLE weather TYPE float ;
 
 DEFINE TABLE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
@@ -22,8 +21,7 @@ DEFINE FIELD author ON TABLE special_relation TYPE option<record<special_types>>
 DEFINE FIELD authors ON TABLE special_relation TYPE option<array<record<special_types> | null>>;
 
 DEFINE TABLE person_obj SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id.name ON TABLE person_obj TYPE string;
-DEFINE FIELD id.age ON TABLE person_obj TYPE int|float;
+DEFINE FIELD id ON TABLE person_obj TYPE object;
 DEFINE FIELD email ON TABLE person_obj TYPE string;
 
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;

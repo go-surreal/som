@@ -28,17 +28,16 @@ type RepoInfo[N any] struct {
 	MarshalOne func(node *N) any
 }
 
-// N is a placeholder for the node type.
-type repo[N any] struct {
+type repo[N any, K any] struct {
 	db Database
 
-	name    string
-	info    RepoInfo[N]
-	newID   func(string) RecordID
-	parseID func(string) any
+	name     string
+	info     RepoInfo[N]
+	newID    func(string) RecordID
+	recordID func(K) *ID
 }
 
-func (r *repo[N]) create(ctx context.Context, node *N) error {
+func (r *repo[N, K]) create(ctx context.Context, node *N) error {
 	data := r.info.MarshalOne(node)
 	raw, err := r.db.Create(ctx, r.newID(r.name), data)
 	if err != nil {
@@ -52,9 +51,9 @@ func (r *repo[N]) create(ctx context.Context, node *N) error {
 	return nil
 }
 
-func (r *repo[N]) createWithID(ctx context.Context, id string, node *N) error {
+func (r *repo[N, K]) createWithID(ctx context.Context, id K, node *N) error {
 	data := r.info.MarshalOne(node)
-	res, err := r.db.Create(ctx, models.NewRecordID(r.name, r.parseID(id)), data)
+	res, err := r.db.Create(ctx, *r.recordID(id), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -66,12 +65,7 @@ func (r *repo[N]) createWithID(ctx context.Context, id string, node *N) error {
 	return nil
 }
 
-func (r *repo[N]) recordID(id string) *ID {
-	rid := models.NewRecordID(r.name, r.parseID(id))
-	return &rid
-}
-
-func (r *repo[N]) read(ctx context.Context, id *ID) (*N, bool, error) {
+func (r *repo[N, K]) read(ctx context.Context, id *ID) (*N, bool, error) {
 	res, err := r.db.Select(ctx, id)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
@@ -86,7 +80,7 @@ func (r *repo[N]) read(ctx context.Context, id *ID) (*N, bool, error) {
 	return result, true, nil
 }
 
-func (r *repo[N]) update(ctx context.Context, id *ID, node *N) error {
+func (r *repo[N, K]) update(ctx context.Context, id *ID, node *N) error {
 	data := r.info.MarshalOne(node)
 	res, err := r.db.Update(ctx, id, data)
 	if err != nil {
@@ -103,7 +97,7 @@ func (r *repo[N]) update(ctx context.Context, id *ID, node *N) error {
 	return nil
 }
 
-func (r *repo[N]) delete(ctx context.Context, id *ID, node *N, softDelete bool, lockVersion *int) error {
+func (r *repo[N, K]) delete(ctx context.Context, id *ID, node *N, softDelete bool, lockVersion *int) error {
 	if softDelete {
 		query := "LET $res = (UPDATE $id SET deleted_at = time::now()"
 		vars := map[string]any{
@@ -134,7 +128,7 @@ func (r *repo[N]) delete(ctx context.Context, id *ID, node *N, softDelete bool, 
 	return nil
 }
 
-func (r *repo[N]) refresh(ctx context.Context, id *models.RecordID, node *N) error {
+func (r *repo[N, K]) refresh(ctx context.Context, id *models.RecordID, node *N) error {
 	read, exists, err := r.read(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to read node: %w", err)
@@ -192,12 +186,9 @@ func loadEagerRecords[N any](
 // If cache is in eager mode and record not found, returns (nil, false, nil).
 // If cache is in lazy mode and record not found, queries DB and populates cache.
 // For eager mode with TTL, expired caches are automatically refreshed.
-func (r *repo[N]) readWithCache(ctx context.Context, id string, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
-	if id == "" {
-		return nil, false, som.ErrEmptyID
-	}
+func (r *repo[N, K]) readWithCache(ctx context.Context, cacheKey string, rid *ID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
 	if c == nil {
-		return r.read(ctx, r.recordID(id))
+		return r.read(ctx, rid)
 	}
 
 	// Check if eager cache needs refresh due to TTL expiration
@@ -207,7 +198,7 @@ func (r *repo[N]) readWithCache(ctx context.Context, id string, c *cache[N], ref
 		}
 	}
 
-	if record, found := c.get(id); found {
+	if record, found := c.get(cacheKey); found {
 		return record, true, nil
 	}
 
@@ -215,13 +206,13 @@ func (r *repo[N]) readWithCache(ctx context.Context, id string, c *cache[N], ref
 		return nil, false, nil
 	}
 
-	record, exists, err := r.read(ctx, r.recordID(id))
+	record, exists, err := r.read(ctx, rid)
 	if err != nil {
 		return nil, false, err
 	}
 
 	if exists && record != nil {
-		c.set(id, record)
+		c.set(cacheKey, record)
 	}
 
 	return record, exists, nil
@@ -229,7 +220,7 @@ func (r *repo[N]) readWithCache(ctx context.Context, id string, c *cache[N], ref
 
 // refreshEagerCache reloads all records for an expired eager cache.
 // Uses singleflight to prevent concurrent refresh operations.
-func (r *repo[N]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *eagerRefreshFuncs[N]) error {
+func (r *repo[N, K]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *eagerRefreshFuncs[N]) error {
 	_, err, _ := cacheRefreshGroup.Do(funcs.cacheID, func() (any, error) {
 		if !c.isExpired() {
 			return nil, nil

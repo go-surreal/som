@@ -11,6 +11,7 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	"slices"
 	"strings"
 	"sync"
@@ -119,18 +120,21 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.specialTypesRepo == nil {
-		c.specialTypesRepo = &specialTypes{repo: &repo[model.SpecialTypes]{
-			db:      c.db,
-			name:    "special_types",
-			info:    specialTypesRepoInfo,
-			newID:   newUUID,
-			parseID: parseUUID}}
+		c.specialTypesRepo = &specialTypes{repo: &repo[model.SpecialTypes, string]{
+			db:    c.db,
+			name:  "special_types",
+			info:  specialTypesRepoInfo,
+			newID: newUUID,
+			recordID: func(id string) *ID {
+				rid := models.NewRecordID("special_types", parseUUID(id))
+				return &rid
+			}}}
 	}
 	return c.specialTypesRepo
 }
 
 type specialTypes struct {
-	*repo[model.SpecialTypes]
+	*repo[model.SpecialTypes, string]
 	mu           sync.RWMutex
 	beforeCreate []specialTypesHook
 	afterCreate  []specialTypesHook
@@ -403,8 +407,9 @@ func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes
 	if id == "" {
 		return nil, false, som.ErrEmptyID
 	}
+	rid := r.recordID(id)
 	if !internal.CacheEnabled[model.SpecialTypes](ctx) {
-		return r.read(ctx, r.recordID(id))
+		return r.read(ctx, rid)
 	}
 	idFunc := func(n *model.SpecialTypes) string {
 		return string(n.ID())
@@ -423,7 +428,7 @@ func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.SpecialTypes]{cacheID: internal.GetCacheKey[model.SpecialTypes](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, cache, refreshFuncs)
+	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.

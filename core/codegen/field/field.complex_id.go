@@ -32,43 +32,19 @@ func (f *ComplexID) TypeDatabase() string {
 	}
 }
 
-func (f *ComplexID) SchemaStatements(table, prefix string) []string {
-	var statements []string
-
-	for i, sub := range f.source.Fields {
-		var dbType string
-		switch sub.Field.(type) {
-		case *parser.FieldString:
-			dbType = "string"
-		case *parser.FieldNumeric:
-			dbType = "int|float"
-		case *parser.FieldBool:
-			dbType = "bool"
-		case *parser.FieldTime:
-			dbType = "datetime"
-		case *parser.FieldDuration:
-			dbType = "duration"
-		case *parser.FieldUUID:
-			dbType = "string"
-		default:
-			dbType = "any"
-		}
-
-		var fieldName string
-		switch f.source.Kind {
-		case parser.IDTypeArray:
-			fieldName = fmt.Sprintf("id[%d]", i)
-		case parser.IDTypeObject:
-			fieldName = "id." + sub.DBName
-		}
-
-		statements = append(statements, fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-			prefix+fieldName, table, dbType,
-		))
+func (f *ComplexID) SchemaStatements(table, _ string) []string {
+	var typeDef string
+	switch f.source.Kind {
+	case parser.IDTypeArray:
+		typeDef = fmt.Sprintf("array<any, %d>", len(f.source.Fields))
+	case parser.IDTypeObject:
+		typeDef = "object"
+	default:
+		return nil
 	}
-
-	return statements
+	return []string{
+		fmt.Sprintf("DEFINE FIELD id ON TABLE %s TYPE %s;", table, typeDef),
+	}
 }
 
 func (f *ComplexID) CodeGen() *CodeGen {

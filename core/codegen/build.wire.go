@@ -28,9 +28,6 @@ func (b *build) buildWireFile() error {
 		)
 		first := true
 		for _, node := range b.input.nodes {
-			if node.HasComplexID() {
-				continue
-			}
 			if first {
 				g.Add(jen.Line(), jen.Id("Provide"+node.NameGo()+"Repo"))
 				first = false
@@ -59,9 +56,6 @@ func (b *build) buildWireFile() error {
 	)
 
 	for _, node := range b.input.nodes {
-		if node.HasComplexID() {
-			continue
-		}
 		f.Line()
 		f.Func().Id("Provide"+node.NameGo()+"Repo").Params(
 			jen.Id("client").Op("*").Qual(pkgRepo, "ClientImpl"),

@@ -18,10 +18,9 @@ func (c *Weather) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 2)
+	data := make(map[string]any, 1)
 
 	// Embedded som.Node/Edge ID field
-	data["id"] = models.NewRecordID("weather", []any{c.ID().City, &types.DateTime{Time: c.ID().Date}})
 
 	data["temperature"] = c.Temperature
 

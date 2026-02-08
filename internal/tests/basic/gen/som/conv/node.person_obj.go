@@ -17,13 +17,9 @@ func (c *PersonObj) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 2)
+	data := make(map[string]any, 1)
 
 	// Embedded som.Node/Edge ID field
-	data["id"] = models.NewRecordID("person_obj", map[string]any{
-		"age":  c.ID().Age,
-		"name": c.ID().Name,
-	})
 
 	data["email"] = c.Email
 
