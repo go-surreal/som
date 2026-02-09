@@ -21,9 +21,6 @@ func newFilterBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *filterB
 
 func (b *filterBuilder) build() error {
 	for _, node := range b.nodes {
-		if node.HasComplexID() {
-			continue
-		}
 		if err := b.buildFile(node); err != nil {
 			return err
 		}

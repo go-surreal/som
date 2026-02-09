@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	"slices"
@@ -14,6 +15,9 @@ import (
 )
 
 type PersonObjRepo interface {
+	// Query returns a new query builder for the PersonObj model.
+
+	Query() query.Builder[model.PersonObj]
 	// CreateWithID creates a new record with the given key for the PersonObj model.
 
 	CreateWithID(ctx context.Context, personObj *model.PersonObj) error
@@ -287,6 +291,11 @@ func (r *personObj) OnAfterDelete(fn func(ctx context.Context, node *model.Perso
 			}
 		}
 	}
+}
+
+// Query returns a new query builder for the PersonObj model.
+func (r *personObj) Query() query.Builder[model.PersonObj] {
+	return query.NewPersonObj(r.db)
 }
 
 // CreateWithID creates a new record for the PersonObj model using its embedded key.

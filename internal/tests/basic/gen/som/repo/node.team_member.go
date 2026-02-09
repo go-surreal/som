@@ -7,6 +7,7 @@ import (
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	"slices"
@@ -15,6 +16,9 @@ import (
 )
 
 type TeamMemberRepo interface {
+	// Query returns a new query builder for the TeamMember model.
+
+	Query() query.Builder[model.TeamMember]
 	// CreateWithID creates a new record with the given key for the TeamMember model.
 
 	CreateWithID(ctx context.Context, teamMember *model.TeamMember) error
@@ -288,6 +292,11 @@ func (r *teamMember) OnAfterDelete(fn func(ctx context.Context, node *model.Team
 			}
 		}
 	}
+}
+
+// Query returns a new query builder for the TeamMember model.
+func (r *teamMember) Query() query.Builder[model.TeamMember] {
+	return query.NewTeamMember(r.db)
 }
 
 // CreateWithID creates a new record for the TeamMember model using its embedded key.

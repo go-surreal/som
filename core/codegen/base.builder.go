@@ -178,10 +178,10 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	// type {NodeName}Repo interface {...}
 	//
 	f.Line().Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
-		if !node.HasComplexID() {
-			g.Add(comment("Query returns a new query builder for the " + node.NameGo() + " model."))
-			g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
+		g.Add(comment("Query returns a new query builder for the " + node.NameGo() + " model."))
+		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
 
+		if !node.HasComplexID() {
 			g.Add(comment("Create creates a new record for the " + node.NameGo() + " model."))
 			g.Id("Create").Call(
 				jen.Id("ctx").Qual("context", "Context"),
@@ -447,21 +447,19 @@ The instance is cached as a singleton on the client.
 		}
 	}
 
-	// Query (string ID only)
-	if !node.HasComplexID() {
-		f.Line().
-			Add(comment(`
+	// Query
+	f.Line().
+		Add(comment(`
 Query returns a new query builder for the `+node.NameGo()+` model.
 		`)).
-			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
-			Id("Query").Params().
-			Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo())).
-			Block(
-				jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
-					jen.Id("r").Dot("db"),
-				)),
-			)
-	}
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("Query").Params().
+		Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo())).
+		Block(
+			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
+				jen.Id("r").Dot("db"),
+			)),
+		)
 
 	// Create (string ID only)
 	if !node.HasComplexID() {

@@ -21,9 +21,6 @@ func newSortBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *sortBuild
 
 func (b *sortBuilder) build() error {
 	for _, node := range b.nodes {
-		if node.HasComplexID() {
-			continue
-		}
 		if err := b.buildNodeFile(node); err != nil {
 			return err
 		}

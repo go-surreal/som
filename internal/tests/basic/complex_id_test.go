@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/by"
+	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 )
@@ -252,4 +254,232 @@ func TestComplexIDNodeRef(t *testing.T) {
 	_, ok, err = client.TeamMemberRepo().Read(ctx, tmKey)
 	assert.NilError(t, err)
 	assert.Assert(t, !ok, "expected record to be deleted")
+}
+
+func TestComplexIDQueryAll(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	keys := []model.PersonKey{
+		{Name: "Alice", Age: 30},
+		{Name: "Bob", Age: 25},
+		{Name: "Charlie", Age: 35},
+	}
+	emails := []string{"alice@example.com", "bob@example.com", "charlie@example.com"}
+
+	for i, key := range keys {
+		p := &model.PersonObj{
+			CustomNode: som.NewCustomNode[model.PersonKey](key),
+			Email:      emails[i],
+		}
+		err := client.PersonObjRepo().CreateWithID(ctx, p)
+		assert.NilError(t, err)
+	}
+
+	all, err := client.PersonObjRepo().Query().All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(all), 3)
+
+	count, err := client.PersonObjRepo().Query().Count(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, count, 3)
+}
+
+func TestComplexIDQueryFilter(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	keys := []model.PersonKey{
+		{Name: "Alice", Age: 30},
+		{Name: "Bob", Age: 25},
+		{Name: "Charlie", Age: 35},
+	}
+	emails := []string{"alice@example.com", "bob@example.com", "charlie@example.com"}
+
+	for i, key := range keys {
+		p := &model.PersonObj{
+			CustomNode: som.NewCustomNode[model.PersonKey](key),
+			Email:      emails[i],
+		}
+		err := client.PersonObjRepo().CreateWithID(ctx, p)
+		assert.NilError(t, err)
+	}
+
+	results, err := client.PersonObjRepo().Query().
+		Where(filter.PersonObj.Email.Equal("bob@example.com")).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 1)
+	assert.Equal(t, results[0].Email, "bob@example.com")
+
+	results, err = client.PersonObjRepo().Query().
+		Where(filter.PersonObj.Email.Equal("nonexistent@example.com")).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 0)
+}
+
+func TestComplexIDQuerySort(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	temps := []float64{22.5, 10.0, 35.0}
+	cities := []string{"Berlin", "London", "Tokyo"}
+
+	for i, city := range cities {
+		fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+		key := model.WeatherKey{City: city, Date: fixedDate}
+		w := &model.Weather{
+			CustomNode:  som.NewCustomNode[model.WeatherKey](key),
+			Temperature: temps[i],
+		}
+		err := client.WeatherRepo().CreateWithID(ctx, w)
+		assert.NilError(t, err)
+	}
+
+	asc, err := client.WeatherRepo().Query().
+		Order(by.Weather.Temperature.Asc()).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(asc), 3)
+	assert.Equal(t, asc[0].Temperature, 10.0)
+	assert.Equal(t, asc[1].Temperature, 22.5)
+	assert.Equal(t, asc[2].Temperature, 35.0)
+
+	desc, err := client.WeatherRepo().Query().
+		Order(by.Weather.Temperature.Desc()).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(desc), 3)
+	assert.Equal(t, desc[0].Temperature, 35.0)
+	assert.Equal(t, desc[1].Temperature, 22.5)
+	assert.Equal(t, desc[2].Temperature, 10.0)
+}
+
+func TestComplexIDQueryLimitOffset(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	keys := []model.PersonKey{
+		{Name: "Alice", Age: 30},
+		{Name: "Bob", Age: 25},
+		{Name: "Charlie", Age: 35},
+	}
+	emails := []string{"alice@example.com", "bob@example.com", "charlie@example.com"}
+
+	for i, key := range keys {
+		p := &model.PersonObj{
+			CustomNode: som.NewCustomNode[model.PersonKey](key),
+			Email:      emails[i],
+		}
+		err := client.PersonObjRepo().CreateWithID(ctx, p)
+		assert.NilError(t, err)
+	}
+
+	limited, err := client.PersonObjRepo().Query().
+		Order(by.PersonObj.Email.Asc()).
+		Limit(2).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(limited), 2)
+	assert.Equal(t, limited[0].Email, "alice@example.com")
+	assert.Equal(t, limited[1].Email, "bob@example.com")
+
+	offset, err := client.PersonObjRepo().Query().
+		Order(by.PersonObj.Email.Asc()).
+		Offset(1).
+		Limit(1).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(offset), 1)
+	assert.Equal(t, offset[0].Email, "bob@example.com")
+}
+
+func TestComplexIDQueryFirst(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+	for _, city := range []string{"Berlin", "London"} {
+		key := model.WeatherKey{City: city, Date: fixedDate}
+		temp := 22.5
+		if city == "London" {
+			temp = 10.0
+		}
+		w := &model.Weather{
+			CustomNode:  som.NewCustomNode[model.WeatherKey](key),
+			Temperature: temp,
+		}
+		err := client.WeatherRepo().CreateWithID(ctx, w)
+		assert.NilError(t, err)
+	}
+
+	first, err := client.WeatherRepo().Query().
+		Order(by.Weather.Temperature.Asc()).
+		First(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, first.Temperature, 10.0)
+	assert.Equal(t, first.ID().City, "London")
+}
+
+func TestComplexIDQueryNodeRef(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	member1 := &model.AllTypes{FieldString: "member-1"}
+	member2 := &model.AllTypes{FieldString: "member-2"}
+	err := client.AllTypesRepo().Create(ctx, member1)
+	assert.NilError(t, err)
+	err = client.AllTypesRepo().Create(ctx, member2)
+	assert.NilError(t, err)
+
+	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+	weather := &model.Weather{
+		CustomNode:  som.NewCustomNode[model.WeatherKey](model.WeatherKey{City: "Berlin", Date: fixedDate}),
+		Temperature: 22.5,
+	}
+	err = client.WeatherRepo().CreateWithID(ctx, weather)
+	assert.NilError(t, err)
+
+	tm1 := &model.TeamMember{
+		CustomNode: som.NewCustomNode[model.TeamMemberKey](model.TeamMemberKey{
+			Member:   *member1,
+			Forecast: *weather,
+		}),
+		Role: "engineer",
+	}
+	tm2 := &model.TeamMember{
+		CustomNode: som.NewCustomNode[model.TeamMemberKey](model.TeamMemberKey{
+			Member:   *member2,
+			Forecast: *weather,
+		}),
+		Role: "designer",
+	}
+	err = client.TeamMemberRepo().CreateWithID(ctx, tm1)
+	assert.NilError(t, err)
+	err = client.TeamMemberRepo().CreateWithID(ctx, tm2)
+	assert.NilError(t, err)
+
+	results, err := client.TeamMemberRepo().Query().
+		Where(filter.TeamMember.Role.Equal("engineer")).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 1)
+	assert.Equal(t, results[0].Role, "engineer")
+
+	all, err := client.TeamMemberRepo().Query().All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(all), 2)
 }
