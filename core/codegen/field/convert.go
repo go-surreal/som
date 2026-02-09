@@ -61,6 +61,17 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		def.Edges = append(def.Edges, dbEdge)
 	}
 
+	for _, dbNode := range def.Nodes {
+		for _, f := range dbNode.Fields {
+			if cid, ok := f.(*ComplexID); ok && cid.element != nil {
+				def.Objects = append(def.Objects, &DatabaseObject{
+					Name:   cid.element.NameGo(),
+					Fields: cid.element.GetFields(),
+				})
+			}
+		}
+	}
+
 	for _, str := range source.Structs {
 		dbObject := &DatabaseObject{
 			Name: str.Name,
@@ -311,10 +322,23 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 
 	case *parser.FieldComplexID:
 		{
-			return &ComplexID{
-				baseField: base,
-				source:    f,
-			}, true
+			var fields []Field
+			for _, sf := range f.Fields {
+				if _, ok := sf.Field.(*parser.FieldNode); ok {
+					continue
+				}
+				fld, ok := Convert(source, conf, sf.Field)
+				if !ok {
+					continue
+				}
+				fields = append(fields, fld)
+			}
+
+			cid := &ComplexID{baseField: base, source: f}
+			if len(fields) > 0 {
+				cid.element = &NodeTable{Name: f.StructName, Fields: fields}
+			}
+			return cid, true
 		}
 	}
 

@@ -19,3 +19,7 @@ type personObj[M any] struct {
 	key   string
 	Email *lib.StringSort[M]
 }
+
+func (n personObj[M]) ID() personKey[M] {
+	return newPersonKey[M](keyed(n.key, "id"))
+}

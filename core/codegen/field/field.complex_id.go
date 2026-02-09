@@ -4,13 +4,15 @@ import (
 	"fmt"
 
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
 type ComplexID struct {
 	*baseField
 
-	source *parser.FieldComplexID
+	source  *parser.FieldComplexID
+	element Table
 }
 
 func (f *ComplexID) typeGo() jen.Code {
@@ -48,5 +50,42 @@ func (f *ComplexID) SchemaStatements(table, _ string) []string {
 }
 
 func (f *ComplexID) CodeGen() *CodeGen {
-	return &CodeGen{}
+	if f.element == nil {
+		return &CodeGen{}
+	}
+	return &CodeGen{
+		filterFunc: f.filterFunc,
+		sortFunc:   f.sortFunc,
+		fieldFunc:  f.fieldFieldFunc,
+	}
+}
+
+func (f *ComplexID) filterFunc(ctx Context) jen.Code {
+	return jen.Func().
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
+		Id(f.NameGo()).Params().
+		Id(f.element.NameGoLower()).Types(def.TypeModel).
+		Block(
+			jen.Return(jen.Id("new"+f.source.StructName).Types(def.TypeModel).
+				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
+}
+
+func (f *ComplexID) sortFunc(ctx Context) jen.Code {
+	return jen.Func().
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
+		Id(f.NameGo()).Params().
+		Id(f.element.NameGoLower()).Types(def.TypeModel).
+		Block(
+			jen.Return(jen.Id("new"+f.source.StructName).Types(def.TypeModel).
+				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
+}
+
+func (f *ComplexID) fieldFieldFunc(ctx Context) jen.Code {
+	return jen.Func().
+		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
+		Id(f.NameGo()).Params().
+		Id(f.element.NameGoLower()).Types(def.TypeModel).
+		Block(
+			jen.Return(jen.Id("new"+f.source.StructName).Types(def.TypeModel).
+				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }

@@ -19,3 +19,7 @@ type weather[M any] struct {
 	key         string
 	Temperature distinct.Field[M, float64]
 }
+
+func (n weather[M]) ID() weatherKey[M] {
+	return newWeatherKey[M](keyed(n.key, "id"))
+}

@@ -19,3 +19,7 @@ type personObj[M any] struct {
 	key   string
 	Email distinct.Field[M, string]
 }
+
+func (n personObj[M]) ID() personKey[M] {
+	return newPersonKey[M](keyed(n.key, "id"))
+}

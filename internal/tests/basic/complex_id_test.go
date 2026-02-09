@@ -432,6 +432,159 @@ func TestComplexIDQueryFirst(t *testing.T) {
 	assert.Equal(t, first.ID().City, "London")
 }
 
+func TestComplexIDFilterByObjectIDField(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	keys := []model.PersonKey{
+		{Name: "Alice", Age: 30},
+		{Name: "Bob", Age: 25},
+		{Name: "Charlie", Age: 35},
+	}
+	emails := []string{"alice@example.com", "bob@example.com", "charlie@example.com"}
+
+	for i, key := range keys {
+		p := &model.PersonObj{
+			CustomNode: som.NewCustomNode[model.PersonKey](key),
+			Email:      emails[i],
+		}
+		err := client.PersonObjRepo().CreateWithID(ctx, p)
+		assert.NilError(t, err)
+	}
+
+	// Filter by ID sub-field: Name
+	results, err := client.PersonObjRepo().Query().
+		Where(filter.PersonObj.ID().Name.Equal("Alice")).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 1)
+	assert.Equal(t, results[0].Email, "alice@example.com")
+
+	// Filter by ID sub-field: Age > 26 → Alice(30) and Charlie(35)
+	results, err = client.PersonObjRepo().Query().
+		Where(filter.PersonObj.ID().Age.GreaterThan(26)).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 2)
+}
+
+func TestComplexIDFilterByArrayIDField(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	dates := []time.Time{
+		time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC),
+		time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
+		time.Date(2024, 12, 25, 0, 0, 0, 0, time.UTC),
+	}
+	cities := []string{"Berlin", "London", "Tokyo"}
+	temps := []float64{5.0, 20.0, 30.0}
+
+	for i, city := range cities {
+		key := model.WeatherKey{City: city, Date: dates[i]}
+		w := &model.Weather{
+			CustomNode:  som.NewCustomNode[model.WeatherKey](key),
+			Temperature: temps[i],
+		}
+		err := client.WeatherRepo().CreateWithID(ctx, w)
+		assert.NilError(t, err)
+	}
+
+	// Filter by ID sub-field: City
+	results, err := client.WeatherRepo().Query().
+		Where(filter.Weather.ID().City.Equal("Berlin")).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 1)
+	assert.Equal(t, results[0].Temperature, 5.0)
+
+	// Filter by ID sub-field: Date >= June 1st → London and Tokyo
+	cutoff := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
+	results, err = client.WeatherRepo().Query().
+		Where(filter.Weather.ID().Date.GreaterThanEqual(cutoff)).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 2)
+}
+
+func TestComplexIDSortByIDField(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	keys := []model.PersonKey{
+		{Name: "Charlie", Age: 35},
+		{Name: "Alice", Age: 30},
+		{Name: "Bob", Age: 25},
+	}
+	emails := []string{"charlie@example.com", "alice@example.com", "bob@example.com"}
+
+	for i, key := range keys {
+		p := &model.PersonObj{
+			CustomNode: som.NewCustomNode[model.PersonKey](key),
+			Email:      emails[i],
+		}
+		err := client.PersonObjRepo().CreateWithID(ctx, p)
+		assert.NilError(t, err)
+	}
+
+	// Sort by ID().Name ascending
+	results, err := client.PersonObjRepo().Query().
+		Order(by.PersonObj.ID().Name.Asc()).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 3)
+	assert.Equal(t, results[0].ID().Name, "Alice")
+	assert.Equal(t, results[1].ID().Name, "Bob")
+	assert.Equal(t, results[2].ID().Name, "Charlie")
+
+	// Sort by ID().Age descending
+	results, err = client.PersonObjRepo().Query().
+		Order(by.PersonObj.ID().Age.Desc()).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 3)
+	assert.Equal(t, results[0].ID().Age, 35)
+	assert.Equal(t, results[1].ID().Age, 30)
+	assert.Equal(t, results[2].ID().Age, 25)
+}
+
+func TestComplexIDSortByArrayIDField(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+	cities := []string{"Tokyo", "Berlin", "London"}
+	temps := []float64{30.0, 22.5, 10.0}
+
+	for i, city := range cities {
+		key := model.WeatherKey{City: city, Date: fixedDate}
+		w := &model.Weather{
+			CustomNode:  som.NewCustomNode[model.WeatherKey](key),
+			Temperature: temps[i],
+		}
+		err := client.WeatherRepo().CreateWithID(ctx, w)
+		assert.NilError(t, err)
+	}
+
+	// Sort by ID().City ascending
+	results, err := client.WeatherRepo().Query().
+		Order(by.Weather.ID().City.Asc()).
+		All(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, len(results), 3)
+	assert.Equal(t, results[0].ID().City, "Berlin")
+	assert.Equal(t, results[1].ID().City, "London")
+	assert.Equal(t, results[2].ID().City, "Tokyo")
+}
+
 func TestComplexIDQueryNodeRef(t *testing.T) {
 	ctx := context.Background()
 

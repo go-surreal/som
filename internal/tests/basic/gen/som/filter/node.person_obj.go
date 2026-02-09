@@ -20,6 +20,10 @@ type personObj[M any] struct {
 	Email *lib.String[M]
 }
 
+func (n personObj[M]) ID() personKey[M] {
+	return newPersonKey[M](lib.Field(n.Key, "id"))
+}
+
 type personObjEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

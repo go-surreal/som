@@ -20,6 +20,10 @@ type weather[M any] struct {
 	Temperature *lib.Float[M, float64]
 }
 
+func (n weather[M]) ID() weatherKey[M] {
+	return newWeatherKey[M](lib.Field(n.Key, "id"))
+}
+
 type weatherEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]
