@@ -27,3 +27,14 @@ type PersonObj struct {
 	som.CustomNode[PersonKey]
 	Email string
 }
+
+type TeamMemberKey struct {
+	som.ObjectID
+	Member  AllTypes
+	Forecast Weather
+}
+
+type TeamMember struct {
+	som.CustomNode[TeamMemberKey]
+	Role string
+}

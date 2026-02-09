@@ -140,13 +140,16 @@ func (b *build) keyTypeCode(node *field.NodeTable) jen.Code {
 
 func (b *build) recordIDFuncCode(node *field.NodeTable) jen.Code {
 	if node.HasComplexID() {
-		return b.complexIDRecordIDFunc(node)
+		return b.complexRecordIDFunc(node)
 	}
 	return b.stringRecordIDFunc(node)
 }
 
 func (b *build) addIDEmptyCheck(g *jen.Group, node *field.NodeTable, varName string, errMsg string) {
 	if node.HasComplexID() {
+		if node.Source.ComplexID.HasNodeRef() {
+			return
+		}
 		g.Var().Id("zeroKey").Add(b.keyTypeCode(node))
 		g.If(jen.Id(varName).Dot("ID").Call().Op("==").Id("zeroKey")).
 			Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit(errMsg))))
@@ -510,9 +513,11 @@ The node must have a non-zero ID set.
 				g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 					Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
 
-				g.Var().Id("zeroKey").Add(keyType)
-				g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Id("zeroKey")).
-					Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node must have a non-zero ID"))))
+				if !node.Source.ComplexID.HasNodeRef() {
+					g.Var().Id("zeroKey").Add(keyType)
+					g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Id("zeroKey")).
+						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node must have a non-zero ID"))))
+				}
 
 				b.addBeforeHooks(g, node, "Create")
 
@@ -911,40 +916,44 @@ func (b *build) subPkg(pkg string) string {
 	return path.Join(b.basePkg(), pkg)
 }
 
-func (b *build) complexIDRecordIDFunc(node *field.NodeTable) jen.Code {
+func (b *build) complexRecordIDFunc(node *field.NodeTable) jen.Code {
 	cid := node.Source.ComplexID
 	keyType := b.input.SourceQual(cid.StructName)
 
 	return jen.Func().Params(jen.Id("key").Add(keyType)).Op("*").Id("ID").BlockFunc(func(g *jen.Group) {
 		g.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
 			jen.Lit(node.NameDatabase()),
-			b.complexIDValue(node, "key"),
+			b.recordIDValue(node, "key"),
 		)
 		g.Return(jen.Op("&").Id("rid"))
 	})
 }
 
-func (b *build) complexIDValue(node *field.NodeTable, keyVar string) jen.Code {
+func (b *build) recordIDValue(node *field.NodeTable, keyVar string) jen.Code {
 	cid := node.Source.ComplexID
 
 	if cid.Kind == parser.IDTypeArray {
 		var elems []jen.Code
 		for _, sf := range cid.Fields {
-			elems = append(elems, b.complexFieldValue(sf, keyVar))
+			elems = append(elems, b.fieldValue(sf, keyVar))
 		}
 		return jen.Index().Any().Values(elems...)
 	}
 
 	dict := jen.Dict{}
 	for _, sf := range cid.Fields {
-		dict[jen.Lit(sf.DBName)] = b.complexFieldValue(sf, keyVar)
+		dict[jen.Lit(sf.DBName)] = b.fieldValue(sf, keyVar)
 	}
 	return jen.Map(jen.String()).Any().Values(dict)
 }
 
-func (b *build) complexFieldValue(sf parser.ComplexIDField, keyVar string) jen.Code {
+func (b *build) fieldValue(sf parser.ComplexIDField, keyVar string) jen.Code {
 	accessor := jen.Id(keyVar).Dot(sf.Name)
-	switch sf.Field.(type) {
+	return b.fieldValueFrom(sf, accessor)
+}
+
+func (b *build) fieldValueFrom(sf parser.ComplexIDField, accessor jen.Code) jen.Code {
+	switch f := sf.Field.(type) {
 	case *parser.FieldTime:
 		return jen.Op("&").Qual(path.Join(b.basePkg(), def.PkgTypes), "DateTime").Values(
 			jen.Id("Time").Op(":").Add(accessor),
@@ -953,9 +962,46 @@ func (b *build) complexFieldValue(sf parser.ComplexIDField, keyVar string) jen.C
 		return jen.Op("&").Qual(path.Join(b.basePkg(), def.PkgTypes), "Duration").Values(
 			jen.Id("Duration").Op(":").Add(accessor),
 		)
+	case *parser.FieldNode:
+		refNode := b.findNodeByName(f.Node)
+		if refNode == nil {
+			return accessor
+		}
+		tableName := refNode.NameDatabase()
+		idVal := b.nodeRefValue(refNode, accessor)
+		return jen.Qual(def.PkgModels, "NewRecordID").Call(jen.Lit(tableName), idVal)
 	default:
 		return accessor
 	}
+}
+
+func (b *build) nodeRefValue(refNode *field.NodeTable, accessor jen.Code) jen.Code {
+	if !refNode.HasComplexID() {
+		return jen.String().Call(jen.Add(accessor).Dot("ID").Call())
+	}
+	cid := refNode.Source.ComplexID
+	innerAccessor := jen.Add(accessor).Dot("ID").Call()
+	if cid.Kind == parser.IDTypeArray {
+		var elems []jen.Code
+		for _, sf := range cid.Fields {
+			elems = append(elems, b.fieldValueFrom(sf, jen.Add(innerAccessor).Dot(sf.Name)))
+		}
+		return jen.Index().Any().Values(elems...)
+	}
+	dict := jen.Dict{}
+	for _, sf := range cid.Fields {
+		dict[jen.Lit(sf.DBName)] = b.fieldValueFrom(sf, jen.Add(innerAccessor).Dot(sf.Name))
+	}
+	return jen.Map(jen.String()).Any().Values(dict)
+}
+
+func (b *build) findNodeByName(name string) *field.NodeTable {
+	for _, node := range b.input.nodes {
+		if node.NameGo() == name {
+			return node
+		}
+	}
+	return nil
 }
 
 //

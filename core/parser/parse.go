@@ -367,9 +367,9 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 		}
 
 		switch parsed.(type) {
-		case *FieldString, *FieldNumeric, *FieldBool, *FieldTime, *FieldDuration, *FieldUUID:
+		case *FieldString, *FieldNumeric, *FieldBool, *FieldTime, *FieldDuration, *FieldUUID, *FieldNode:
 		default:
-			return nil, fmt.Errorf("complex ID field %s: unsupported type %T (only string, numeric, bool, time.Time, time.Duration, and UUID are allowed)", sf.Name(), parsed)
+			return nil, fmt.Errorf("complex ID field %s: unsupported type %T (only string, numeric, bool, time.Time, time.Duration, UUID, and node references are allowed)", sf.Name(), parsed)
 		}
 
 		fields = append(fields, ComplexIDField{

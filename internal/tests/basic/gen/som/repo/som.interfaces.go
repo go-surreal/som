@@ -8,6 +8,7 @@ import (
 
 type Client interface {
 	WeatherRepo() WeatherRepo
+	TeamMemberRepo() TeamMemberRepo
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
 	PersonObjRepo() PersonObjRepo
@@ -20,6 +21,7 @@ type ClientImpl struct {
 	db                  Database
 	mu                  sync.Mutex
 	weatherRepo         *weather
+	teamMemberRepo      *teamMember
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
 	personObjRepo       *personObj

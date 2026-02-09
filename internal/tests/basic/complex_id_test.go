@@ -186,3 +186,70 @@ func TestComplexIDMultipleRecords(t *testing.T) {
 	assert.Assert(t, ok)
 	assert.Equal(t, read2.Email, "bob@example.com")
 }
+
+func TestComplexIDNodeRef(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	// Create referenced nodes first.
+	member := &model.AllTypes{FieldString: "ref-member"}
+	err := client.AllTypesRepo().Create(ctx, member)
+	assert.NilError(t, err)
+	assert.Assert(t, member.ID() != "")
+
+	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+	weatherKey := model.WeatherKey{City: "Berlin", Date: fixedDate}
+	weather := &model.Weather{
+		CustomNode:  som.NewCustomNode[model.WeatherKey](weatherKey),
+		Temperature: 22.5,
+	}
+	err = client.WeatherRepo().CreateWithID(ctx, weather)
+	assert.NilError(t, err)
+
+	// Create TeamMember with node references in key.
+	tmKey := model.TeamMemberKey{
+		Member:   *member,
+		Forecast: *weather,
+	}
+	tm := &model.TeamMember{
+		CustomNode: som.NewCustomNode[model.TeamMemberKey](tmKey),
+		Role:       "engineer",
+	}
+	err = client.TeamMemberRepo().CreateWithID(ctx, tm)
+	assert.NilError(t, err)
+
+	// Read back and verify.
+	read, ok, err := client.TeamMemberRepo().Read(ctx, tmKey)
+	assert.NilError(t, err)
+	assert.Assert(t, ok, "expected record to exist")
+	assert.Equal(t, read.Role, "engineer")
+	assert.Equal(t, read.ID().Member.ID(), member.ID())
+	assert.Equal(t, read.ID().Forecast.ID().City, "Berlin")
+	assert.Assert(t, read.ID().Forecast.ID().Date.Equal(fixedDate))
+
+	// Update.
+	tm.Role = "senior-engineer"
+	err = client.TeamMemberRepo().Update(ctx, tm)
+	assert.NilError(t, err)
+
+	read, ok, err = client.TeamMemberRepo().Read(ctx, tmKey)
+	assert.NilError(t, err)
+	assert.Assert(t, ok)
+	assert.Equal(t, read.Role, "senior-engineer")
+
+	// Refresh.
+	tm.Role = "should-be-overwritten"
+	err = client.TeamMemberRepo().Refresh(ctx, tm)
+	assert.NilError(t, err)
+	assert.Equal(t, tm.Role, "senior-engineer")
+
+	// Delete.
+	err = client.TeamMemberRepo().Delete(ctx, tm)
+	assert.NilError(t, err)
+
+	_, ok, err = client.TeamMemberRepo().Read(ctx, tmKey)
+	assert.NilError(t, err)
+	assert.Assert(t, !ok, "expected record to be deleted")
+}

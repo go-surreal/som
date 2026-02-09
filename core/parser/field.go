@@ -241,6 +241,15 @@ type FieldComplexID struct {
 	Fields     []ComplexIDField
 }
 
+func (f *FieldComplexID) HasNodeRef() bool {
+	for _, sf := range f.Fields {
+		if _, ok := sf.Field.(*FieldNode); ok {
+			return true
+		}
+	}
+	return false
+}
+
 // type FieldMap struct {
 // 	fieldAtomic
 // 	Key   string
