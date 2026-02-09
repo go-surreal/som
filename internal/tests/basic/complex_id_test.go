@@ -152,6 +152,24 @@ func TestComplexIDZeroKeyErrors(t *testing.T) {
 		err := client.WeatherRepo().Delete(ctx, w)
 		assert.ErrorContains(t, err, "without existing record ID")
 	})
+
+	t.Run("create_zero_team_member_key", func(t *testing.T) {
+		tm := &model.TeamMember{}
+		err := client.TeamMemberRepo().CreateWithID(ctx, tm)
+		assert.ErrorContains(t, err, "Member.ID must not be empty")
+	})
+
+	t.Run("update_zero_team_member_key", func(t *testing.T) {
+		tm := &model.TeamMember{}
+		err := client.TeamMemberRepo().Update(ctx, tm)
+		assert.ErrorContains(t, err, "Member.ID must not be empty")
+	})
+
+	t.Run("delete_zero_team_member_key", func(t *testing.T) {
+		tm := &model.TeamMember{}
+		err := client.TeamMemberRepo().Delete(ctx, tm)
+		assert.ErrorContains(t, err, "Member.ID must not be empty")
+	})
 }
 
 func TestComplexIDMultipleRecords(t *testing.T) {

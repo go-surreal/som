@@ -305,6 +305,13 @@ func (r *teamMember) CreateWithID(ctx context.Context, teamMember *model.TeamMem
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if teamMember.ID().Member.ID() == "" {
+		return errors.New("Member.ID must not be empty")
+	}
+	var zeroForecastKey model.WeatherKey
+	if teamMember.ID().Forecast.ID() == zeroForecastKey {
+		return errors.New("Forecast.ID must not be empty")
+	}
 	if h, ok := any(teamMember).(som.OnBeforeCreateHook); ok {
 		if err := h.OnBeforeCreate(ctx); err != nil {
 			return err
@@ -350,6 +357,13 @@ func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) e
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if teamMember.ID().Member.ID() == "" {
+		return errors.New("Member.ID must not be empty")
+	}
+	var zeroForecastKey model.WeatherKey
+	if teamMember.ID().Forecast.ID() == zeroForecastKey {
+		return errors.New("Forecast.ID must not be empty")
+	}
 	if h, ok := any(teamMember).(som.OnBeforeUpdateHook); ok {
 		if err := h.OnBeforeUpdate(ctx); err != nil {
 			return err
@@ -389,6 +403,13 @@ func (r *teamMember) Delete(ctx context.Context, teamMember *model.TeamMember) e
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if teamMember.ID().Member.ID() == "" {
+		return errors.New("Member.ID must not be empty")
+	}
+	var zeroForecastKey model.WeatherKey
+	if teamMember.ID().Forecast.ID() == zeroForecastKey {
+		return errors.New("Forecast.ID must not be empty")
+	}
 	if h, ok := any(teamMember).(som.OnBeforeDeleteHook); ok {
 		if err := h.OnBeforeDelete(ctx); err != nil {
 			return err
@@ -427,6 +448,13 @@ func (r *teamMember) Delete(ctx context.Context, teamMember *model.TeamMember) e
 func (r *teamMember) Refresh(ctx context.Context, teamMember *model.TeamMember) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if teamMember.ID().Member.ID() == "" {
+		return errors.New("Member.ID must not be empty")
+	}
+	var zeroForecastKey model.WeatherKey
+	if teamMember.ID().Forecast.ID() == zeroForecastKey {
+		return errors.New("Forecast.ID must not be empty")
 	}
 	return r.refresh(ctx, r.recordID(teamMember.ID()), teamMember)
 }

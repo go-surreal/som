@@ -147,15 +147,41 @@ func (b *build) recordIDFuncCode(node *field.NodeTable) jen.Code {
 
 func (b *build) addIDEmptyCheck(g *jen.Group, node *field.NodeTable, varName string, errMsg string) {
 	if node.HasComplexID() {
-		if node.Source.ComplexID.HasNodeRef() {
-			return
+		cid := node.Source.ComplexID
+		if !cid.HasNodeRef() {
+			g.Var().Id("zeroKey").Add(b.keyTypeCode(node))
+			g.If(jen.Id(varName).Dot("ID").Call().Op("==").Id("zeroKey")).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit(errMsg))))
+		} else {
+			b.addNodeRefFieldChecks(g, cid, varName)
 		}
-		g.Var().Id("zeroKey").Add(b.keyTypeCode(node))
-		g.If(jen.Id(varName).Dot("ID").Call().Op("==").Id("zeroKey")).
-			Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit(errMsg))))
 	} else {
 		g.If(jen.Id(varName).Dot("ID").Call().Op("==").Lit("")).
 			Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit(errMsg))))
+	}
+}
+
+func (b *build) addNodeRefFieldChecks(g *jen.Group, cid *parser.FieldComplexID, varName string) {
+	for _, sf := range cid.Fields {
+		fn, ok := sf.Field.(*parser.FieldNode)
+		if !ok {
+			continue
+		}
+		refNode := b.findNodeByName(fn.Node)
+		if refNode == nil {
+			continue
+		}
+		fieldErrMsg := sf.Name + ".ID must not be empty"
+		accessor := jen.Id(varName).Dot("ID").Call().Dot(sf.Name)
+		if !refNode.HasComplexID() {
+			g.If(jen.Add(accessor).Dot("ID").Call().Op("==").Lit("")).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit(fieldErrMsg))))
+		} else if !refNode.Source.ComplexID.HasNodeRef() {
+			zeroVar := "zero" + sf.Name + "Key"
+			g.Var().Id(zeroVar).Add(b.input.SourceQual(refNode.Source.ComplexID.StructName))
+			g.If(jen.Add(accessor).Dot("ID").Call().Op("==").Id(zeroVar)).
+				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit(fieldErrMsg))))
+		}
 	}
 }
 
@@ -511,11 +537,7 @@ The node must have a non-zero ID set.
 				g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 					Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
 
-				if !node.Source.ComplexID.HasNodeRef() {
-					g.Var().Id("zeroKey").Add(keyType)
-					g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("==").Id("zeroKey")).
-						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node must have a non-zero ID"))))
-				}
+				b.addIDEmptyCheck(g, node, node.NameGoLower(), "node must have a non-zero ID")
 
 				b.addBeforeHooks(g, node, "Create")
 
