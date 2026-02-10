@@ -81,11 +81,5 @@ func (f *ComplexID) sortFunc(ctx Context) jen.Code {
 }
 
 func (f *ComplexID) fieldFieldFunc(ctx Context) jen.Code {
-	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
-		Id(f.NameGo()).Params().
-		Id(f.element.NameGoLower()).Types(def.TypeModel).
-		Block(
-			jen.Return(jen.Id("new"+f.source.StructName).Types(def.TypeModel).
-				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
+	return f.sortFunc(ctx)
 }

@@ -969,15 +969,7 @@ func (b *build) recordIDValue(node *field.NodeTable, keyVar string) jen.Code {
 
 func (b *build) fieldValue(sf parser.ComplexIDField, keyVar string) jen.Code {
 	accessor := jen.Id(keyVar).Dot(sf.Name)
-	return b.fieldValueFrom(sf, accessor)
-}
-
-func (b *build) fieldValueFrom(sf parser.ComplexIDField, accessor jen.Code) jen.Code {
 	return fieldValueFrom(b.input, b.basePkg(), sf, accessor)
-}
-
-func (b *build) nodeRefValue(refNode *field.NodeTable, accessor jen.Code) jen.Code {
-	return nodeRefValue(b.input, b.basePkg(), refNode, accessor)
 }
 
 //

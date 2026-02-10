@@ -347,15 +347,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 
 func (b *convBuilder) marshalFieldValue(sf parser.ComplexIDField, varName string) jen.Code {
 	accessor := jen.Id(varName).Dot("ID").Call().Dot(sf.Name)
-	return b.marshalFieldValueFrom(sf, accessor)
-}
-
-func (b *convBuilder) marshalFieldValueFrom(sf parser.ComplexIDField, accessor jen.Code) jen.Code {
 	return fieldValueFrom(b.input, b.basePkg, sf, accessor)
-}
-
-func (b *convBuilder) marshalNodeRefValue(refNode *field.NodeTable, accessor jen.Code) jen.Code {
-	return nodeRefValue(b.input, b.basePkg, refNode, accessor)
 }
 
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {

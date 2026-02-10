@@ -420,7 +420,7 @@ func parseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*Node, error
 						&FieldID{&fieldAtomic{name: "ID"}, gen},
 					)
 				} else {
-					node.IDEmbed = "CustomNode"
+					node.IDEmbed = f.Name()
 
 					complexID, err := parseComplexIDFields(f.Elem(), outPkg, pkgScope)
 					if err != nil {
