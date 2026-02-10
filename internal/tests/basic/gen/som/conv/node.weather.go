@@ -124,6 +124,10 @@ func fromWeatherLinkPtr(link *weatherLink) *model.Weather {
 }
 
 func toWeatherLink(node model.Weather) *weatherLink {
+	var zeroKey model.WeatherKey
+	if node.ID() == zeroKey {
+		return nil
+	}
 	rid := models.NewRecordID("weather", []any{node.ID().City, &types.DateTime{Time: node.ID().Date}})
 	link := weatherLink{Weather: FromWeather(node), ID: &rid}
 	return &link
@@ -131,6 +135,10 @@ func toWeatherLink(node model.Weather) *weatherLink {
 
 func toWeatherLinkPtr(node *model.Weather) *weatherLink {
 	if node == nil {
+		return nil
+	}
+	var zeroKey model.WeatherKey
+	if node.ID() == zeroKey {
 		return nil
 	}
 	rid := models.NewRecordID("weather", []any{node.ID().City, &types.DateTime{Time: node.ID().Date}})

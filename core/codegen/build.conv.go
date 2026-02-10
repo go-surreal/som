@@ -706,7 +706,19 @@ func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
 
 	var stmts []jen.Code
 
-	if !node.HasComplexID() {
+	if node.HasComplexID() {
+		cid := node.Source.ComplexID
+		if !cid.HasNodeRef() {
+			stmts = append(stmts,
+				jen.Var().Id("zeroKey").Add(b.SourceQual(cid.StructName)),
+				jen.If(jen.Id("node").Dot("ID").Call().Op("==").Id("zeroKey")).Block(
+					jen.Return(jen.Nil()),
+				),
+			)
+		} else {
+			b.addLinkNodeRefFieldChecks(&stmts, cid, "node")
+		}
+	} else {
 		stmts = append(stmts, jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
 			jen.Return(jen.Nil()),
 		))
@@ -734,33 +746,71 @@ func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 	tableName := node.NameDatabase()
 	idVal := b.nodeIDValue(node, "node")
 
-	var nilCheck jen.Code
+	var stmts []jen.Code
+
+	stmts = append(stmts, jen.If(jen.Id("node").Op("==").Nil()).Block(
+		jen.Return(jen.Nil()),
+	))
+
 	if node.HasComplexID() {
-		nilCheck = jen.If(jen.Id("node").Op("==").Nil()).Block(
-			jen.Return(jen.Nil()),
-		)
+		cid := node.Source.ComplexID
+		if !cid.HasNodeRef() {
+			stmts = append(stmts,
+				jen.Var().Id("zeroKey").Add(b.SourceQual(cid.StructName)),
+				jen.If(jen.Id("node").Dot("ID").Call().Op("==").Id("zeroKey")).Block(
+					jen.Return(jen.Nil()),
+				),
+			)
+		} else {
+			b.addLinkNodeRefFieldChecks(&stmts, cid, "node")
+		}
 	} else {
-		nilCheck = jen.If(
-			jen.Id("node").Op("==").Nil().Op("||").
-				Id("node").Dot("ID").Call().Op("==").Lit(""),
-		).Block(
+		stmts = append(stmts, jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
 			jen.Return(jen.Nil()),
-		)
+		))
 	}
+
+	stmts = append(stmts,
+		jen.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
+			jen.Lit(tableName), idVal,
+		),
+		jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
+			jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Op("*").Id("node")),
+			jen.Id("ID").Op(":").Op("&").Id("rid"),
+		),
+		jen.Return(jen.Op("&").Id("link")),
+	)
 
 	return jen.Func().
 		Id("to"+node.NameGo()+"LinkPtr").
 		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).
 		Op("*").Id(node.NameGoLower()+"Link").
-		Block(
-			nilCheck,
-			jen.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
-				jen.Lit(tableName), idVal,
-			),
-			jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-				jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Op("*").Id("node")),
-				jen.Id("ID").Op(":").Op("&").Id("rid"),
-			),
-			jen.Return(jen.Op("&").Id("link")),
-		)
+		Block(stmts...)
+}
+
+func (b *convBuilder) addLinkNodeRefFieldChecks(stmts *[]jen.Code, cid *parser.FieldComplexID, varName string) {
+	for _, sf := range cid.Fields {
+		fn, ok := sf.Field.(*parser.FieldNode)
+		if !ok {
+			continue
+		}
+		refNode := b.findNodeByName(fn.Node)
+		if refNode == nil {
+			continue
+		}
+		accessor := jen.Id(varName).Dot("ID").Call().Dot(sf.Name)
+		if !refNode.HasComplexID() {
+			*stmts = append(*stmts, jen.If(jen.Add(accessor).Dot("ID").Call().Op("==").Lit("")).Block(
+				jen.Return(jen.Nil()),
+			))
+		} else if !refNode.Source.ComplexID.HasNodeRef() {
+			zeroVar := "zero" + sf.Name + "Key"
+			*stmts = append(*stmts,
+				jen.Var().Id(zeroVar).Add(b.SourceQual(refNode.Source.ComplexID.StructName)),
+				jen.If(jen.Add(accessor).Dot("ID").Call().Op("==").Id(zeroVar)).Block(
+					jen.Return(jen.Nil()),
+				),
+			)
+		}
+	}
 }

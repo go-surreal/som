@@ -123,6 +123,10 @@ func fromPersonObjLinkPtr(link *personObjLink) *model.PersonObj {
 }
 
 func toPersonObjLink(node model.PersonObj) *personObjLink {
+	var zeroKey model.PersonKey
+	if node.ID() == zeroKey {
+		return nil
+	}
 	rid := models.NewRecordID("person_obj", map[string]any{
 		"age":  node.ID().Age,
 		"name": node.ID().Name,
@@ -133,6 +137,10 @@ func toPersonObjLink(node model.PersonObj) *personObjLink {
 
 func toPersonObjLinkPtr(node *model.PersonObj) *personObjLink {
 	if node == nil {
+		return nil
+	}
+	var zeroKey model.PersonKey
+	if node.ID() == zeroKey {
 		return nil
 	}
 	rid := models.NewRecordID("person_obj", map[string]any{

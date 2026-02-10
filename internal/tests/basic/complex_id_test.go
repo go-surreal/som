@@ -523,7 +523,7 @@ func TestComplexIDFilterByArrayIDField(t *testing.T) {
 	// Filter by ID sub-field: Date >= June 1st → London and Tokyo
 	cutoff := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
 	results, err = client.WeatherRepo().Query().
-		Where(filter.Weather.ID().Date.GreaterThanEqual(cutoff)).
+		Where(filter.Weather.ID().Date.AfterOrEqual(cutoff)).
 		All(ctx)
 	assert.NilError(t, err)
 	assert.Equal(t, len(results), 2)

@@ -146,6 +146,13 @@ func fromTeamMemberLinkPtr(link *teamMemberLink) *model.TeamMember {
 }
 
 func toTeamMemberLink(node model.TeamMember) *teamMemberLink {
+	if node.ID().Member.ID() == "" {
+		return nil
+	}
+	var zeroForecastKey model.WeatherKey
+	if node.ID().Forecast.ID() == zeroForecastKey {
+		return nil
+	}
 	rid := models.NewRecordID("team_member", map[string]any{
 		"forecast": models.NewRecordID("weather", []any{node.ID().Forecast.ID().City, &types.DateTime{Time: node.ID().Forecast.ID().Date}}),
 		"member":   models.NewRecordID("all_types", string(node.ID().Member.ID())),
@@ -156,6 +163,13 @@ func toTeamMemberLink(node model.TeamMember) *teamMemberLink {
 
 func toTeamMemberLinkPtr(node *model.TeamMember) *teamMemberLink {
 	if node == nil {
+		return nil
+	}
+	if node.ID().Member.ID() == "" {
+		return nil
+	}
+	var zeroForecastKey model.WeatherKey
+	if node.ID().Forecast.ID() == zeroForecastKey {
 		return nil
 	}
 	rid := models.NewRecordID("team_member", map[string]any{

@@ -732,7 +732,10 @@ func toAllTypesLink(node model.AllTypes) *allTypesLink {
 }
 
 func toAllTypesLinkPtr(node *model.AllTypes) *allTypesLink {
-	if node == nil || node.ID() == "" {
+	if node == nil {
+		return nil
+	}
+	if node.ID() == "" {
 		return nil
 	}
 	rid := models.NewRecordID("all_types", node.ID())

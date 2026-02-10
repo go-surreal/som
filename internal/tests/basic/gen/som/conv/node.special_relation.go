@@ -168,7 +168,10 @@ func toSpecialRelationLink(node model.SpecialRelation) *specialRelationLink {
 }
 
 func toSpecialRelationLinkPtr(node *model.SpecialRelation) *specialRelationLink {
-	if node == nil || node.ID() == "" {
+	if node == nil {
+		return nil
+	}
+	if node.ID() == "" {
 		return nil
 	}
 	rid := models.NewRecordID("special_relation", node.ID())

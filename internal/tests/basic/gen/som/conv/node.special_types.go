@@ -147,7 +147,10 @@ func toSpecialTypesLink(node model.SpecialTypes) *specialTypesLink {
 }
 
 func toSpecialTypesLinkPtr(node *model.SpecialTypes) *specialTypesLink {
-	if node == nil || node.ID() == "" {
+	if node == nil {
+		return nil
+	}
+	if node.ID() == "" {
 		return nil
 	}
 	rid := models.NewRecordID("special_types", som.UUID(node.ID()))
