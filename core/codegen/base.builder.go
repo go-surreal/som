@@ -167,7 +167,7 @@ func (b *build) addNodeRefFieldChecks(g *jen.Group, cid *parser.FieldComplexID, 
 		if !ok {
 			continue
 		}
-		refNode := b.findNodeByName(fn.Node)
+		refNode := b.input.findNodeByName(fn.Node)
 		if refNode == nil {
 			continue
 		}
@@ -973,55 +973,11 @@ func (b *build) fieldValue(sf parser.ComplexIDField, keyVar string) jen.Code {
 }
 
 func (b *build) fieldValueFrom(sf parser.ComplexIDField, accessor jen.Code) jen.Code {
-	switch f := sf.Field.(type) {
-	case *parser.FieldTime:
-		return jen.Op("&").Qual(path.Join(b.basePkg(), def.PkgTypes), "DateTime").Values(
-			jen.Id("Time").Op(":").Add(accessor),
-		)
-	case *parser.FieldDuration:
-		return jen.Op("&").Qual(path.Join(b.basePkg(), def.PkgTypes), "Duration").Values(
-			jen.Id("Duration").Op(":").Add(accessor),
-		)
-	case *parser.FieldNode:
-		refNode := b.findNodeByName(f.Node)
-		if refNode == nil {
-			return accessor
-		}
-		tableName := refNode.NameDatabase()
-		idVal := b.nodeRefValue(refNode, accessor)
-		return jen.Qual(def.PkgModels, "NewRecordID").Call(jen.Lit(tableName), idVal)
-	default:
-		return accessor
-	}
+	return fieldValueFrom(b.input, b.basePkg(), sf, accessor)
 }
 
 func (b *build) nodeRefValue(refNode *field.NodeTable, accessor jen.Code) jen.Code {
-	if !refNode.HasComplexID() {
-		return jen.String().Call(jen.Add(accessor).Dot("ID").Call())
-	}
-	cid := refNode.Source.ComplexID
-	innerAccessor := jen.Add(accessor).Dot("ID").Call()
-	if cid.Kind == parser.IDTypeArray {
-		var elems []jen.Code
-		for _, sf := range cid.Fields {
-			elems = append(elems, b.fieldValueFrom(sf, jen.Add(innerAccessor).Dot(sf.Name)))
-		}
-		return jen.Index().Any().Values(elems...)
-	}
-	dict := jen.Dict{}
-	for _, sf := range cid.Fields {
-		dict[jen.Lit(sf.DBName)] = b.fieldValueFrom(sf, jen.Add(innerAccessor).Dot(sf.Name))
-	}
-	return jen.Map(jen.String()).Any().Values(dict)
-}
-
-func (b *build) findNodeByName(name string) *field.NodeTable {
-	for _, node := range b.input.nodes {
-		if node.NameGo() == name {
-			return node
-		}
-	}
-	return nil
+	return nodeRefValue(b.input, b.basePkg(), refNode, accessor)
 }
 
 //

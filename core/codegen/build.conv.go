@@ -196,7 +196,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 						arrBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
 
 						for i, sf := range cid.Fields {
-							arrBlock.Add(b.unmarshalFieldAssign(sf, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
+							arrBlock.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
 						}
 
 						arrBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
@@ -213,7 +213,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 						objBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
 
 						for _, sf := range cid.Fields {
-							objBlock.Add(b.unmarshalFieldAssign(sf, jen.Id("rawObj").Index(jen.Lit(sf.DBName)), cborPkg))
+							objBlock.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawObj").Index(jen.Lit(sf.DBName)), cborPkg))
 						}
 
 						objBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
@@ -227,23 +227,23 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 	})
 }
 
-func (b *convBuilder) unmarshalFieldAssign(sf parser.ComplexIDField, accessor jen.Code, cborPkg string) jen.Code {
+func (b *convBuilder) unmarshalFieldAssign(keyVar string, sf parser.ComplexIDField, accessor jen.Code, cborPkg string) jen.Code {
 	switch f := sf.Field.(type) {
 	case *parser.FieldString:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("key").Dot(sf.Name))
+		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
 
 	case *parser.FieldNumeric:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("key").Dot(sf.Name))
+		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
 
 	case *parser.FieldBool:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("key").Dot(sf.Name))
+		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
 
 	case *parser.FieldTime:
-		return jen.List(jen.Id("key").Dot(sf.Name), jen.Id("_")).Op("=").
+		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
 			Qual(cborPkg, "UnmarshalDateTime").Call(accessor)
 
 	case *parser.FieldDuration:
-		return jen.List(jen.Id("key").Dot(sf.Name), jen.Id("_")).Op("=").
+		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
 			Qual(cborPkg, "UnmarshalDuration").Call(accessor)
 
 	case *parser.FieldUUID:
@@ -256,7 +256,7 @@ func (b *convBuilder) unmarshalFieldAssign(sf parser.ComplexIDField, accessor je
 		default:
 			unmarshalFunc = "UnmarshalUUIDGoogle"
 		}
-		return jen.List(jen.Id("key").Dot(sf.Name), jen.Id("_")).Op("=").
+		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
 			Qual(cborPkg, unmarshalFunc).Call(accessor)
 
 	case *parser.FieldNode:
@@ -318,7 +318,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 		).BlockFunc(func(arrBlock *jen.Group) {
 			arrBlock.Var().Id("innerKey").Qual(b.sourcePkgPath, cid.StructName)
 			for i, innerSF := range cid.Fields {
-				arrBlock.Add(b.unmarshalFieldAssignInner("innerKey", innerSF, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
+				arrBlock.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
 			}
 			arrBlock.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
 				jen.Id(refNode.Source.IDEmbed): jen.Qual(b.subPkg(""), "NewCustomNode").Types(
@@ -334,7 +334,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 		).BlockFunc(func(objBlock *jen.Group) {
 			objBlock.Var().Id("innerKey").Qual(b.sourcePkgPath, cid.StructName)
 			for _, innerSF := range cid.Fields {
-				objBlock.Add(b.unmarshalFieldAssignInner("innerKey", innerSF, jen.Id("rawObj").Index(jen.Lit(innerSF.DBName)), cborPkg))
+				objBlock.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawObj").Index(jen.Lit(innerSF.DBName)), cborPkg))
 			}
 			objBlock.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
 				jen.Id(refNode.Source.IDEmbed): jen.Qual(b.subPkg(""), "NewCustomNode").Types(
@@ -345,92 +345,17 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 	}
 }
 
-func (b *convBuilder) unmarshalFieldAssignInner(keyVar string, sf parser.ComplexIDField, accessor jen.Code, cborPkg string) jen.Code {
-	switch f := sf.Field.(type) {
-	case *parser.FieldString:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
-	case *parser.FieldNumeric:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
-	case *parser.FieldBool:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
-	case *parser.FieldTime:
-		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
-			Qual(cborPkg, "UnmarshalDateTime").Call(accessor)
-	case *parser.FieldDuration:
-		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
-			Qual(cborPkg, "UnmarshalDuration").Call(accessor)
-	case *parser.FieldUUID:
-		var unmarshalFunc string
-		switch f.Package {
-		case parser.UUIDPackageGoogle:
-			unmarshalFunc = "UnmarshalUUIDGoogle"
-		case parser.UUIDPackageGofrs:
-			unmarshalFunc = "UnmarshalUUIDGofrs"
-		default:
-			unmarshalFunc = "UnmarshalUUIDGoogle"
-		}
-		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
-			Qual(cborPkg, unmarshalFunc).Call(accessor)
-	default:
-		return jen.Null()
-	}
-}
-
 func (b *convBuilder) marshalFieldValue(sf parser.ComplexIDField, varName string) jen.Code {
 	accessor := jen.Id(varName).Dot("ID").Call().Dot(sf.Name)
 	return b.marshalFieldValueFrom(sf, accessor)
 }
 
 func (b *convBuilder) marshalFieldValueFrom(sf parser.ComplexIDField, accessor jen.Code) jen.Code {
-	switch f := sf.Field.(type) {
-	case *parser.FieldTime:
-		return jen.Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "DateTime").Values(
-			jen.Id("Time").Op(":").Add(accessor),
-		)
-	case *parser.FieldDuration:
-		return jen.Op("&").Qual(path.Join(b.basePkg, def.PkgTypes), "Duration").Values(
-			jen.Id("Duration").Op(":").Add(accessor),
-		)
-	case *parser.FieldNode:
-		refNode := b.findNodeByName(f.Node)
-		if refNode == nil {
-			return accessor
-		}
-		tableName := refNode.NameDatabase()
-		idVal := b.marshalNodeRefValue(refNode, accessor)
-		return jen.Qual(def.PkgModels, "NewRecordID").Call(jen.Lit(tableName), idVal)
-	default:
-		return accessor
-	}
+	return fieldValueFrom(b.input, b.basePkg, sf, accessor)
 }
 
 func (b *convBuilder) marshalNodeRefValue(refNode *field.NodeTable, accessor jen.Code) jen.Code {
-	if !refNode.HasComplexID() {
-		return jen.String().Call(jen.Add(accessor).Dot("ID").Call())
-	}
-	cid := refNode.Source.ComplexID
-	innerAccessor := jen.Add(accessor).Dot("ID").Call()
-	if cid.Kind == parser.IDTypeArray {
-		var elems []jen.Code
-		for _, sf := range cid.Fields {
-			elems = append(elems, b.marshalFieldValueFrom(sf, jen.Add(innerAccessor).Dot(sf.Name)))
-		}
-		return jen.Index().Any().Values(elems...)
-	}
-	dict := jen.Dict{}
-	for _, sf := range cid.Fields {
-		dict[jen.Lit(sf.DBName)] = b.marshalFieldValueFrom(sf, jen.Add(innerAccessor).Dot(sf.Name))
-	}
-	return jen.Map(jen.String()).Any().Values(dict)
-}
-
-func (b *convBuilder) findNodeByName(name string) *field.NodeTable {
-	for _, node := range b.nodes {
-		if node.NameGo() == name {
-			return node
-		}
-	}
-	return nil
+	return nodeRefValue(b.input, b.basePkg, refNode, accessor)
 }
 
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
