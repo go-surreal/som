@@ -69,8 +69,8 @@ func Read(tmpl *Template) ([]*File, error) {
 
 		// Compute output path early to check conditions
 		outputPath := strings.TrimPrefix(path, baseDir+string(filepath.Separator))
-		if strings.HasSuffix(outputPath, ".tmpl") {
-			outputPath = strings.TrimSuffix(outputPath, ".tmpl") + ".go"
+		if strings.HasSuffix(outputPath, ".go.tmpl") {
+			outputPath = strings.TrimSuffix(outputPath, ".tmpl")
 		}
 
 		// Check if file should be included based on condition
