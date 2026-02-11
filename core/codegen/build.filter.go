@@ -288,8 +288,13 @@ func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 				jen.Id(elem.NameGoLower()).Types(def.TypeModel).
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("Key")] = jen.Id("key")
-						for _, f := range elem.GetFields() {
-							if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
+						for i, f := range elem.GetFields() {
+							fCtx := fieldCtx
+							if obj, ok := elem.(*field.DatabaseObject); ok && obj.IsArrayIndexed {
+								idx := i
+								fCtx.ArrayIndex = &idx
+							}
+							if code := f.CodeGen().FilterInit(fCtx); code != nil {
 								d[jen.Id(f.NameGo())] = code
 							}
 						}

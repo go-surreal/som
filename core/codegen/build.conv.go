@@ -229,13 +229,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 
 func (b *convBuilder) unmarshalFieldAssign(keyVar string, sf parser.ComplexIDField, accessor jen.Code, cborPkg string) jen.Code {
 	switch f := sf.Field.(type) {
-	case *parser.FieldString:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
-
-	case *parser.FieldNumeric:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
-
-	case *parser.FieldBool:
+	case *parser.FieldString, *parser.FieldNumeric, *parser.FieldBool:
 		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
 
 	case *parser.FieldTime:
@@ -425,7 +419,7 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				g.Comment("Embedded som.Node/Edge ID field")
 
 				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
-					_ = node // no-op: complex ID sub-fields are populated from the record ID
+					// Complex IDs: no ID marshaling needed, sub-fields are populated from the record ID.
 				} else {
 					var idValue jen.Code
 					if node, ok := elem.(*field.NodeTable); ok {

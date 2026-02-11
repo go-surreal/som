@@ -65,8 +65,9 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		for _, f := range dbNode.Fields {
 			if cid, ok := f.(*ComplexID); ok && cid.element != nil {
 				def.Objects = append(def.Objects, &DatabaseObject{
-					Name:   cid.element.NameGo(),
-					Fields: cid.element.GetFields(),
+					Name:           cid.element.NameGo(),
+					Fields:         cid.element.GetFields(),
+					IsArrayIndexed: cid.source.Kind == parser.IDTypeArray,
 				})
 			}
 		}

@@ -4,6 +4,7 @@ package lib
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -202,6 +203,12 @@ func (k Key[M]) render(ctx *context) string {
 	}
 
 	return statement
+}
+
+func Index[T any](k Key[T], idx int) Key[T] {
+	return append(k, RawKeyPart(func(_ *context) string {
+		return "[" + strconv.Itoa(idx) + "]"
+	}))
 }
 
 func Field[T any](k Key[T], name string) Key[T] {

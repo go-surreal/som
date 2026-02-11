@@ -379,10 +379,6 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 		})
 	}
 
-	if kind == "" {
-		return nil, fmt.Errorf("complex ID struct %s must embed som.ArrayID or som.ObjectID", structName)
-	}
-
 	if len(fields) == 0 {
 		return nil, fmt.Errorf("complex ID struct %s has no exported fields", structName)
 	}

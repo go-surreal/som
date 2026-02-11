@@ -8,8 +8,8 @@ import (
 
 func newWeatherKey[M any](key string) weatherKey[M] {
 	return weatherKey[M]{
-		City: distinct.NewField[M, string](keyed(key, "city")),
-		Date: distinct.NewTimeField[M](keyed(key, "date")),
+		City: distinct.NewField[M, string](indexed(key, 0)),
+		Date: distinct.NewTimeField[M](indexed(key, 1)),
 		key:  key,
 	}
 }

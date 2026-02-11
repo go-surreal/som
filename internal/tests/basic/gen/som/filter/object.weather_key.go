@@ -5,8 +5,8 @@ import lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 
 func newWeatherKey[M any](key lib.Key[M]) weatherKey[M] {
 	return weatherKey[M]{
-		City: lib.NewString[M](lib.Field(key, "city")),
-		Date: lib.NewTime[M](lib.Field(key, "date")),
+		City: lib.NewString[M](lib.Index(key, 0)),
+		Date: lib.NewTime[M](lib.Index(key, 1)),
 		Key:  key,
 	}
 }
