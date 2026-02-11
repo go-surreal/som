@@ -34,7 +34,7 @@ func (c *PersonObj) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var recordID *som.ID
+		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func ToPersonObjPtr(data *PersonObj) *model.PersonObj {
 
 type personObjLink struct {
 	PersonObj
-	ID *som.ID
+	ID *models.RecordID
 }
 
 func (f *personObjLink) MarshalCBOR() ([]byte, error) {

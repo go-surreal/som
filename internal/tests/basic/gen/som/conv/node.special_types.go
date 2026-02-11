@@ -43,7 +43,7 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var recordID *som.ID
+		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
@@ -97,7 +97,7 @@ func ToSpecialTypesPtr(data *SpecialTypes) *model.SpecialTypes {
 
 type specialTypesLink struct {
 	SpecialTypes
-	ID *som.ID
+	ID *models.RecordID
 }
 
 func (f *specialTypesLink) MarshalCBOR() ([]byte, error) {

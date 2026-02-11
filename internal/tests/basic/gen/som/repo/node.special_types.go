@@ -125,7 +125,7 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 			name:  "special_types",
 			info:  specialTypesRepoInfo,
 			newID: newUUID,
-			recordID: func(id string) *ID {
+			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_types", parseUUID(id))
 				return &rid
 			}}}

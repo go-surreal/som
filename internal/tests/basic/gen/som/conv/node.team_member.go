@@ -35,7 +35,7 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var recordID *som.ID
+		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 				if err := cbor.Unmarshal(idRaw, &rawObj); err == nil {
 					var key model.TeamMemberKey
 					{
-						var rid *som.ID
+						var rid *models.RecordID
 						cbor.Unmarshal(rawObj["member"], &rid)
 						if rid != nil {
 							idRaw, _ := cbor.Marshal(rid.ID)
@@ -56,7 +56,7 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 						}
 					}
 					{
-						var rid *som.ID
+						var rid *models.RecordID
 						cbor.Unmarshal(rawObj["forecast"], &rid)
 						if rid != nil {
 							idRaw, _ := cbor.Marshal(rid.ID)
@@ -105,7 +105,7 @@ func ToTeamMemberPtr(data *TeamMember) *model.TeamMember {
 
 type teamMemberLink struct {
 	TeamMember
-	ID *som.ID
+	ID *models.RecordID
 }
 
 func (f *teamMemberLink) MarshalCBOR() ([]byte, error) {

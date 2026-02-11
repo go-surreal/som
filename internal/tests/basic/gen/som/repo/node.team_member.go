@@ -109,7 +109,7 @@ func (c *ClientImpl) TeamMemberRepo() TeamMemberRepo {
 			db:   c.db,
 			name: "team_member",
 			info: teamMemberRepoInfo,
-			recordID: func(key model.TeamMemberKey) *ID {
+			recordID: func(key model.TeamMemberKey) *models.RecordID {
 				rid := models.NewRecordID("team_member", map[string]any{
 					"forecast": models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}}),
 					"member":   models.NewRecordID("all_types", string(key.Member.ID())),

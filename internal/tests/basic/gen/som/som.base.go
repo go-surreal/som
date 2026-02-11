@@ -33,19 +33,8 @@ var ErrEmptyID = errors.New("id cannot be empty")
 // ErrEmptyResponse is returned when the database returns an unexpected empty response.
 var ErrEmptyResponse = errors.New("empty response")
 
-// Model is implemented by all generated model types (nodes and edges).
-type Model interface {}
-
-type ID = models.RecordID
-
-// Table creates a RecordID representing a table (for server-generated IDs).
-// This is a convenience wrapper to avoid importing surrealdb.go directly.
-func Table(name string) models.Table {
-	return models.Table(name)
-}
-
-type nodeID interface {
-	isNodeID()
+type node interface {
+	isNode()
 }
 
 // IDType constrains the type of auto-generated string record IDs.
@@ -55,28 +44,28 @@ type nodeID interface {
 //   - Rand: SurrealDB native random string ID
 type IDType interface {
 	~string
-	nodeID
+	node
 }
 
 type ULID string
 type UUID string
 type Rand string
 
-func (ULID) isNodeID() {}
-func (UUID) isNodeID() {}
-func (Rand) isNodeID() {}
+func (ULID) isNode() {}
+func (UUID) isNode() {}
+func (Rand) isNode() {}
 
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.
 type ArrayID struct{}
 
-func (ArrayID) isNodeID() {}
+func (ArrayID) isNode() {}
 
 // ObjectID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an object.
 type ObjectID struct{}
 
-func (ObjectID) isNodeID() {}
+func (ObjectID) isNode() {}
 
 func (u UUID) MarshalCBOR() ([]byte, error) {
 	if u == "" {
@@ -93,15 +82,17 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-type CustomNode[T nodeID] struct {
+type CustomNode[T node] struct {
 	id T
 }
 
-func NewCustomNode[T nodeID](id T) CustomNode[T] {
+func NewCustomNode[T node](id T) CustomNode[T] {
 	return CustomNode[T]{id: id}
 }
 
 func (n CustomNode[T]) ID() T { return n.id }
+
+func (CustomNode[T]) isNode() {}
 
 type Node = CustomNode[ULID]
 

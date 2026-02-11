@@ -1,3 +1,4 @@
+{{/* gotype: your/package.YourStruct */}}
 //go:build embed
 
 package som
@@ -33,50 +34,30 @@ var ErrEmptyID = errors.New("id cannot be empty")
 // ErrEmptyResponse is returned when the database returns an unexpected empty response.
 var ErrEmptyResponse = errors.New("empty response")
 
-// Model is implemented by all generated model types (nodes and edges).
-type Model interface {}
-
-type ID = models.RecordID
-
-// Table creates a RecordID representing a table (for server-generated IDs).
-// This is a convenience wrapper to avoid importing surrealdb.go directly.
-func Table(name string) models.Table {
-	return models.Table(name)
+// ID is a marker type for all ID types.
+type ID interface {
+    isID()
 }
 
-type nodeID interface {
-	isNodeID()
-}
+type ULID struct{}
+type UUID struct{}
+type Rand struct{}
 
-// IDType constrains the type of auto-generated string record IDs.
-// Embed CustomNode[T] with one of these types in your model struct:
-//   - ULID: lexicographically sortable, default (used by the Node alias)
-//   - UUID: standard UUID v4 format
-//   - Rand: SurrealDB native random string ID
-type IDType interface {
-	~string
-	nodeID
-}
-
-type ULID string
-type UUID string
-type Rand string
-
-func (ULID) isNodeID() {}
-func (UUID) isNodeID() {}
-func (Rand) isNodeID() {}
+func (ULID) isID() {}
+func (UUID) isID() {}
+func (Rand) isID() {}
 
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.
 type ArrayID struct{}
 
-func (ArrayID) isNodeID() {}
+func (ArrayID) isID() {}
 
 // ObjectID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an object.
 type ObjectID struct{}
 
-func (ObjectID) isNodeID() {}
+func (ObjectID) isID() {}
 
 func (u UUID) MarshalCBOR() ([]byte, error) {
 	if u == "" {
@@ -93,15 +74,17 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-type CustomNode[T nodeID] struct {
-	id T
+type CustomNode[ID ID] struct {
+	id ID
 }
 
-func NewCustomNode[T nodeID](id T) CustomNode[T] {
-	return CustomNode[T]{id: id}
+func NewCustomNode[ID ID](id ID) CustomNode[ID] {
+	return CustomNode[ID]{id: id}
 }
 
 func (n CustomNode[T]) ID() T { return n.id }
+
+func (CustomNode[T]) isNode() {}
 
 type Node = CustomNode[ULID]
 

@@ -108,7 +108,7 @@ func (c *ClientImpl) PersonObjRepo() PersonObjRepo {
 			db:   c.db,
 			name: "person_obj",
 			info: personObjRepoInfo,
-			recordID: func(key model.PersonKey) *ID {
+			recordID: func(key model.PersonKey) *models.RecordID {
 				rid := models.NewRecordID("person_obj", map[string]any{
 					"age":  key.Age,
 					"name": key.Name,

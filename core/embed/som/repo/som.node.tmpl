@@ -34,7 +34,7 @@ type repo[N any, K any] struct {
 	name     string
 	info     RepoInfo[N]
 	newID    func(string) RecordID
-	recordID func(K) *ID
+	recordID func(K) *models.RecordID
 }
 
 func (r *repo[N, K]) create(ctx context.Context, node *N) error {
@@ -65,7 +65,7 @@ func (r *repo[N, K]) createWithID(ctx context.Context, id K, node *N) error {
 	return nil
 }
 
-func (r *repo[N, K]) read(ctx context.Context, id *ID) (*N, bool, error) {
+func (r *repo[N, K]) read(ctx context.Context, id *models.RecordID) (*N, bool, error) {
 	res, err := r.db.Select(ctx, id)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
@@ -80,7 +80,7 @@ func (r *repo[N, K]) read(ctx context.Context, id *ID) (*N, bool, error) {
 	return result, true, nil
 }
 
-func (r *repo[N, K]) update(ctx context.Context, id *ID, node *N) error {
+func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) error {
 	data := r.info.MarshalOne(node)
 	res, err := r.db.Update(ctx, id, data)
 	if err != nil {
@@ -97,7 +97,7 @@ func (r *repo[N, K]) update(ctx context.Context, id *ID, node *N) error {
 	return nil
 }
 
-func (r *repo[N, K]) delete(ctx context.Context, id *ID, node *N, softDelete bool, lockVersion *int) error {
+func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, softDelete bool, lockVersion *int) error {
 	if softDelete {
 		query := "LET $res = (UPDATE $id SET deleted_at = time::now()"
 		vars := map[string]any{
@@ -186,7 +186,7 @@ func loadEagerRecords[N any](
 // If cache is in eager mode and record not found, returns (nil, false, nil).
 // If cache is in lazy mode and record not found, queries DB and populates cache.
 // For eager mode with TTL, expired caches are automatically refreshed.
-func (r *repo[N, K]) readWithCache(ctx context.Context, cacheKey string, rid *ID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
+func (r *repo[N, K]) readWithCache(ctx context.Context, cacheKey string, rid *models.RecordID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
 	if c == nil {
 		return r.read(ctx, rid)
 	}
@@ -242,7 +242,7 @@ func (r *repo[N, K]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *
 // The queryAll function loads all records for eager mode.
 // The countAll function counts records to check against maxSize.
 // Returns ErrCacheAlreadyCleaned if the cache was previously cleaned up.
-func getOrCreateCache[N som.Model](
+func getOrCreateCache[N any](
 	ctx context.Context,
 	idFunc func(*N) string,
 	queryAll func(context.Context) ([]*N, error),

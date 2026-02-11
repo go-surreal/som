@@ -109,7 +109,7 @@ func (c *ClientImpl) WeatherRepo() WeatherRepo {
 			db:   c.db,
 			name: "weather",
 			info: weatherRepoInfo,
-			recordID: func(key model.WeatherKey) *ID {
+			recordID: func(key model.WeatherKey) *models.RecordID {
 				rid := models.NewRecordID("weather", []any{key.City, &types.DateTime{Time: key.Date}})
 				return &rid
 			}}}

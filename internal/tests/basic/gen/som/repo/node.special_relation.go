@@ -124,7 +124,7 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 			name:  "special_relation",
 			info:  specialRelationRepoInfo,
 			newID: newID,
-			recordID: func(id string) *ID {
+			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_relation", parseStringID(id))
 				return &rid
 			}}}

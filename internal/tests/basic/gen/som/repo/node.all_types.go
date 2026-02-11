@@ -117,7 +117,7 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 			name:  "all_types",
 			info:  allTypesRepoInfo,
 			newID: newULID,
-			recordID: func(id string) *ID {
+			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("all_types", parseStringID(id))
 				return &rid
 			}}}

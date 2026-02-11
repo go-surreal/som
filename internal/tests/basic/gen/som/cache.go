@@ -59,7 +59,7 @@ type CacheOption = internal.CacheOption
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager())         // eager, load on first read
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.WithTTL(5*time.Minute))  // with expiration
 //	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(5000))
-func WithCache[T Model](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
+func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
 	options := &internal.CacheOptions{
 		Mode:    internal.CacheModeLazy,
 		MaxSize: internal.DefaultMaxSize,

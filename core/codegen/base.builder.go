@@ -940,7 +940,7 @@ func (b *build) complexRecordIDFunc(node *field.NodeTable) jen.Code {
 	cid := node.Source.ComplexID
 	keyType := b.input.SourceQual(cid.StructName)
 
-	return jen.Func().Params(jen.Id("key").Add(keyType)).Op("*").Id("ID").BlockFunc(func(g *jen.Group) {
+	return jen.Func().Params(jen.Id("key").Add(keyType)).Op("*").Qual(def.PkgModels, "RecordID").BlockFunc(func(g *jen.Group) {
 		g.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
 			jen.Lit(node.NameDatabase()),
 			b.recordIDValue(node, "key"),
@@ -1031,7 +1031,7 @@ func (b *build) stringRecordIDFunc(node *field.NodeTable) jen.Code {
 	if node.Source.IDType == parser.IDTypeUUID {
 		parseFuncName = "parseUUID"
 	}
-	return jen.Func().Params(jen.Id("id").String()).Op("*").Id("ID").Block(
+	return jen.Func().Params(jen.Id("id").String()).Op("*").Qual(def.PkgModels, "RecordID").Block(
 		jen.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
 			jen.Lit(node.NameDatabase()),
 			jen.Id(parseFuncName).Call(jen.Id("id")),

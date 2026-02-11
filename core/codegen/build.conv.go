@@ -83,7 +83,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		f.Line()
 		f.Type().Id(node.NameGoLower()+"Link").Struct(
 			jen.Id(node.NameGo()),
-			jen.Id("ID").Op("*").Qual(b.subPkg(""), "ID"),
+			jen.Id("ID").Op("*").Qual(def.PkgModels, "RecordID"),
 		)
 
 		f.Line()
@@ -177,7 +177,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
 		jen.Id("ok"),
 	).BlockFunc(func(bg *jen.Group) {
-		bg.Var().Id("recordID").Op("*").Qual(b.subPkg(""), "ID")
+		bg.Var().Id("recordID").Op("*").Qual(def.PkgModels, "RecordID")
 		bg.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
 			jen.Err().Op("!=").Nil(),
@@ -268,7 +268,7 @@ func (b *convBuilder) unmarshalNodeRef(sf parser.ComplexIDField, f *parser.Field
 	}
 
 	return jen.BlockFunc(func(g *jen.Group) {
-		g.Var().Id("rid").Op("*").Qual(b.subPkg(""), "ID")
+		g.Var().Id("rid").Op("*").Qual(def.PkgModels, "RecordID")
 		g.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("rid"))
 		g.If(jen.Id("rid").Op("!=").Nil()).BlockFunc(func(inner *jen.Group) {
 			if !refNode.HasComplexID() {
@@ -484,7 +484,7 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 						jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
 						jen.Id("ok"),
 					).BlockFunc(func(bg *jen.Group) {
-						bg.Var().Id("recordID").Op("*").Qual(b.subPkg(""), "ID")
+						bg.Var().Id("recordID").Op("*").Qual(def.PkgModels, "RecordID")
 						bg.If(
 							jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
 							jen.Err().Op("!=").Nil(),
