@@ -2,16 +2,17 @@ package core
 
 import (
 	"fmt"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/go-surreal/som/core/codegen"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
 	"github.com/go-surreal/som/core/util/gomod"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
-func Generate(inPath, outPath string, verbose, dry, check bool, wireOverride string) error {
+func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverride string) error {
 	absDir, err := filepath.Abs(outPath)
 	if err != nil {
 		return fmt.Errorf("could not find absolute path: %v", err)
@@ -72,22 +73,33 @@ func Generate(inPath, outPath string, verbose, dry, check bool, wireOverride str
 
 	outPkg := path.Join(mod.Module(), strings.TrimPrefix(absDir, mod.Dir()))
 
-	// Parse first to determine which features are used.
-	source, err := parser.Parse(inPath, outPkg)
-	if err != nil {
-		return fmt.Errorf("could not parse source: %w", err)
-	}
-
 	out := fs.New()
 
+	var source *parser.Output
+	usedFeatures := &parser.UsedFeatures{}
+
+	if !init {
+		// Parse first to determine which features are used.
+		source, err = parser.Parse(inPath, outPkg)
+		if err != nil {
+			return fmt.Errorf("could not parse source: %w", err)
+		}
+
+		usedFeatures = source.UsedFeatures
+	}
+
 	// Generate static files with feature flags from parsing.
-	err = codegen.BuildStatic(out, outPkg, source.UsedFeatures)
+	err = codegen.BuildStatic(out, outPkg, usedFeatures)
 	if err != nil {
 		return fmt.Errorf("could not generate code: %w", err)
 	}
 
 	if err := out.Flush(absDir); err != nil {
 		return fmt.Errorf("could not write static files: %w", err)
+	}
+
+	if init {
+		return nil
 	}
 
 	err = codegen.Build(source, out, outPkg, wirePackage)

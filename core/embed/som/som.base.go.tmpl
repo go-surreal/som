@@ -39,9 +39,9 @@ type ID interface {
     isID()
 }
 
-type ULID struct{}
-type UUID struct{}
-type Rand struct{}
+type ULID string
+type UUID string
+type Rand string
 
 func (ULID) isID() {}
 func (UUID) isID() {}
@@ -74,12 +74,12 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-type CustomNode[ID ID] struct {
-	id ID
+type CustomNode[T ID] struct {
+	id T
 }
 
-func NewCustomNode[ID ID](id ID) CustomNode[ID] {
-	return CustomNode[ID]{id: id}
+func NewCustomNode[T ID](id T) CustomNode[T] {
+	return CustomNode[T]{id: id}
 }
 
 func (n CustomNode[T]) ID() T { return n.id }

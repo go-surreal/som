@@ -18,11 +18,21 @@ tasks:
     cmds:
       - go run main.go -- {{.CLI_ARGS}}
 
+  gen-fresh:
+    aliases: [ g ]
+    desc: "Generate code for the example codebase."
+    cmds:
+      - cd internal/tests/basic && go tool som gen --init ./gen/som
+    sources:
+      - internal/tests/basic/model/**/*
+    generates:
+      - internal/tests/basic/gen/som/**/*
+
   gen:
     aliases: [ g ]
     desc: "Generate code for the example codebase."
     cmds:
-      - cd internal/tests/basic && go generate gen.go
+      - cd internal/tests/basic && go tool som gen ./model ./gen/som
     sources:
       - internal/tests/basic/model/**/*
     generates:

@@ -33,39 +33,30 @@ var ErrEmptyID = errors.New("id cannot be empty")
 // ErrEmptyResponse is returned when the database returns an unexpected empty response.
 var ErrEmptyResponse = errors.New("empty response")
 
-type node interface {
-	isNode()
-}
-
-// IDType constrains the type of auto-generated string record IDs.
-// Embed CustomNode[T] with one of these types in your model struct:
-//   - ULID: lexicographically sortable, default (used by the Node alias)
-//   - UUID: standard UUID v4 format
-//   - Rand: SurrealDB native random string ID
-type IDType interface {
-	~string
-	node
+// ID is a marker type for all ID types.
+type ID interface {
+    isID()
 }
 
 type ULID string
 type UUID string
 type Rand string
 
-func (ULID) isNode() {}
-func (UUID) isNode() {}
-func (Rand) isNode() {}
+func (ULID) isID() {}
+func (UUID) isID() {}
+func (Rand) isID() {}
 
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.
 type ArrayID struct{}
 
-func (ArrayID) isNode() {}
+func (ArrayID) isID() {}
 
 // ObjectID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an object.
 type ObjectID struct{}
 
-func (ObjectID) isNode() {}
+func (ObjectID) isID() {}
 
 func (u UUID) MarshalCBOR() ([]byte, error) {
 	if u == "" {
@@ -82,11 +73,11 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-type CustomNode[T node] struct {
+type CustomNode[T ID] struct {
 	id T
 }
 
-func NewCustomNode[T node](id T) CustomNode[T] {
+func NewCustomNode[T ID](id T) CustomNode[T] {
 	return CustomNode[T]{id: id}
 }
 

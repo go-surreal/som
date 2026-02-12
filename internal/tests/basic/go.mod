@@ -1,8 +1,12 @@
 module github.com/go-surreal/som/tests/basic
 
-go 1.24.0
+go 1.25.7
 
 replace github.com/go-surreal/som => ../../../
+
+tool (
+	github.com/go-surreal/som
+)
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.14.0
