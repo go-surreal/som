@@ -79,6 +79,27 @@ func WithMaxSize(n int) CacheOption {
 	}
 }
 
+// WithCache sets up caching for the specified model type.
+func WithCache[T any](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
+	options := &CacheOptions{
+		Mode:    CacheModeLazy,
+		MaxSize: DefaultMaxSize,
+	}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	id := NextCacheID()
+	InitCache(id, nil)
+	ctx = SetCacheContext[T](ctx, id, options)
+
+	cleanup := func() {
+		DropCacheByID(id)
+	}
+
+	return ctx, cleanup
+}
+
 type cacheKey[T any] struct{}
 
 type cacheOptionsKey[T any] struct{}

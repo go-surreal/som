@@ -34,30 +34,30 @@ var ErrEmptyID = errors.New("id cannot be empty")
 // ErrEmptyResponse is returned when the database returns an unexpected empty response.
 var ErrEmptyResponse = errors.New("empty response")
 
-// ID is a marker type for all ID types.
-type ID interface {
-    isID()
+// nodeID is a marker type for all ID types.
+type nodeID interface {
+    isNodeID()
 }
 
 type ULID string
 type UUID string
 type Rand string
 
-func (ULID) isID() {}
-func (UUID) isID() {}
-func (Rand) isID() {}
+func (ULID) isNodeID() {}
+func (UUID) isNodeID() {}
+func (Rand) isNodeID() {}
 
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.
 type ArrayID struct{}
 
-func (ArrayID) isID() {}
+func (ArrayID) isNodeID() {}
 
 // ObjectID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an object.
 type ObjectID struct{}
 
-func (ObjectID) isID() {}
+func (ObjectID) isNodeID() {}
 
 func (u UUID) MarshalCBOR() ([]byte, error) {
 	if u == "" {
@@ -74,11 +74,11 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-type CustomNode[T ID] struct {
+type CustomNode[T nodeID] struct {
 	id T
 }
 
-func NewCustomNode[T ID](id T) CustomNode[T] {
+func NewCustomNode[T nodeID](id T) CustomNode[T] {
 	return CustomNode[T]{id: id}
 }
 
@@ -106,6 +106,12 @@ func NewEdge(id string) Edge {
 
 func (e Edge) ID() string {
 	return e.id
+}
+
+type node interface{ isNode() }
+
+func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
+	return internal.WithCache[T](ctx, opts...)
 }
 
 type Timestamps = internal.Timestamps
