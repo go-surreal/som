@@ -3,7 +3,7 @@
 services:
 
   surrealdb:
-    image: surrealdb/surrealdb:v2.6.1
+    image: surrealdb/surrealdb:v3.0.0
     command: start --allow-funcs --log trace
     environment:
       SURREAL_PATH: surrealkv:data/surreal,
