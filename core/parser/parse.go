@@ -215,7 +215,7 @@ func isComplexIDStruct(t gotype.Type, outPkg string) bool {
 		if !f.IsAnonymous() {
 			continue
 		}
-		if f.Name() == "ArrayID" || f.Name() == "ObjectID" {
+		if (f.Name() == "ArrayID" || f.Name() == "ObjectID") && f.Elem().PkgPath() == outPkg {
 			return true
 		}
 	}
@@ -344,15 +344,24 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 	fields := make([]ComplexIDField, 0, nf)
 
 	var kind IDType
+	var kindSet bool
 	for i := 0; i < nf; i++ {
 		sf := keyType.Field(i)
 
 		if sf.IsAnonymous() {
 			switch sf.Name() {
 			case "ArrayID":
+				if kindSet {
+					return nil, fmt.Errorf("complex ID struct %s embeds both ArrayID and ObjectID", structName)
+				}
 				kind = IDTypeArray
+				kindSet = true
 			case "ObjectID":
+				if kindSet {
+					return nil, fmt.Errorf("complex ID struct %s embeds both ArrayID and ObjectID", structName)
+				}
 				kind = IDTypeObject
+				kindSet = true
 			}
 			continue
 		}

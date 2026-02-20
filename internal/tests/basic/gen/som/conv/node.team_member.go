@@ -41,30 +41,59 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 		}
 		if recordID != nil {
 			idRaw, err := cbor.Marshal(recordID.ID)
-			if err == nil {
+			if err != nil {
+				return err
+			}
+			{
 				var rawObj map[string]v2.RawMessage
-				if err := cbor.Unmarshal(idRaw, &rawObj); err == nil {
+				if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
+					return err
+				}
+				{
 					var key model.TeamMemberKey
 					{
 						var rid *models.RecordID
-						cbor.Unmarshal(rawObj["member"], &rid)
+						if err := cbor.Unmarshal(rawObj["member"], &rid); err != nil {
+							return err
+						}
 						if rid != nil {
-							idRaw, _ := cbor.Marshal(rid.ID)
+							idRaw, err := cbor.Marshal(rid.ID)
+							if err != nil {
+								return err
+							}
 							var idStr string
-							cbor.Unmarshal(idRaw, &idStr)
+							if err := cbor.Unmarshal(idRaw, &idStr); err != nil {
+								return err
+							}
 							key.Member = model.AllTypes{Node: som.NewNode(idStr)}
 						}
 					}
 					{
 						var rid *models.RecordID
-						cbor.Unmarshal(rawObj["forecast"], &rid)
+						if err := cbor.Unmarshal(rawObj["forecast"], &rid); err != nil {
+							return err
+						}
 						if rid != nil {
-							idRaw, _ := cbor.Marshal(rid.ID)
+							idRaw, err := cbor.Marshal(rid.ID)
+							if err != nil {
+								return err
+							}
 							var rawArr []v2.RawMessage
-							if err := cbor.Unmarshal(idRaw, &rawArr); err == nil && len(rawArr) >= 2 {
+							if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
+								return err
+							}
+							if len(rawArr) >= 2 {
 								var innerKey model.WeatherKey
-								cbor.Unmarshal(rawArr[0], &innerKey.City)
-								innerKey.Date, _ = cbor.UnmarshalDateTime(rawArr[1])
+								if err := cbor.Unmarshal(rawArr[0], &innerKey.City); err != nil {
+									return err
+								}
+								{
+									var DateErr error
+									innerKey.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
+									if DateErr != nil {
+										return DateErr
+									}
+								}
 								key.Forecast = model.Weather{CustomNode: som.NewCustomNode[model.WeatherKey](innerKey)}
 							}
 						}

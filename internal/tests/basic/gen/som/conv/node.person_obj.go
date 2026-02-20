@@ -40,12 +40,22 @@ func (c *PersonObj) UnmarshalCBOR(data []byte) error {
 		}
 		if recordID != nil {
 			idRaw, err := cbor.Marshal(recordID.ID)
-			if err == nil {
+			if err != nil {
+				return err
+			}
+			{
 				var rawObj map[string]v2.RawMessage
-				if err := cbor.Unmarshal(idRaw, &rawObj); err == nil {
+				if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
+					return err
+				}
+				{
 					var key model.PersonKey
-					cbor.Unmarshal(rawObj["name"], &key.Name)
-					cbor.Unmarshal(rawObj["age"], &key.Age)
+					if err := cbor.Unmarshal(rawObj["name"], &key.Name); err != nil {
+						return err
+					}
+					if err := cbor.Unmarshal(rawObj["age"], &key.Age); err != nil {
+						return err
+					}
 					c.CustomNode = som.NewCustomNode[model.PersonKey](key)
 				}
 			}

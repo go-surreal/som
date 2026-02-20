@@ -186,43 +186,42 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 		bg.If(jen.Id("recordID").Op("!=").Nil()).BlockFunc(func(inner *jen.Group) {
 			// Re-marshal recordID.ID to raw CBOR bytes for typed unmarshal
 			inner.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("recordID").Dot("ID"))
-			inner.If(jen.Err().Op("==").Nil()).BlockFunc(func(idBlock *jen.Group) {
-				if cid.Kind == parser.IDTypeArray {
-					idBlock.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
-					idBlock.If(
-						jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
-						jen.Err().Op("==").Nil().Op("&&").Len(jen.Id("rawArr")).Op(">=").Lit(len(cid.Fields)),
-					).BlockFunc(func(arrBlock *jen.Group) {
-						arrBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
+			inner.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
+			if cid.Kind == parser.IDTypeArray {
+				inner.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
+				inner.If(
+					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
+					jen.Err().Op("!=").Nil(),
+				).Block(jen.Return(jen.Err()))
+				inner.If(jen.Len(jen.Id("rawArr")).Op(">=").Lit(len(cid.Fields))).BlockFunc(func(arrBlock *jen.Group) {
+					arrBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
 
-						for i, sf := range cid.Fields {
-							arrBlock.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
-						}
+					for i, sf := range cid.Fields {
+						arrBlock.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
+					}
 
-						arrBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
-							Qual(b.subPkg(""), "NewCustomNode").Types(
-							jen.Qual(b.sourcePkgPath, cid.StructName),
-						).Call(jen.Id("key"))
-					})
-				} else {
-					idBlock.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
-					idBlock.If(
-						jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
-						jen.Err().Op("==").Nil(),
-					).BlockFunc(func(objBlock *jen.Group) {
-						objBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
+					arrBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
+						Qual(b.subPkg(""), "NewCustomNode").Types(
+						jen.Qual(b.sourcePkgPath, cid.StructName),
+					).Call(jen.Id("key"))
+				})
+			} else {
+				inner.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+				inner.If(
+					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
+					jen.Err().Op("!=").Nil(),
+				).Block(jen.Return(jen.Err()))
+				inner.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
 
-						for _, sf := range cid.Fields {
-							objBlock.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawObj").Index(jen.Lit(sf.DBName)), cborPkg))
-						}
-
-						objBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
-							Qual(b.subPkg(""), "NewCustomNode").Types(
-							jen.Qual(b.sourcePkgPath, cid.StructName),
-						).Call(jen.Id("key"))
-					})
+				for _, sf := range cid.Fields {
+					inner.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawObj").Index(jen.Lit(sf.DBName)), cborPkg))
 				}
-			})
+
+				inner.Id("c").Dot(node.Source.IDEmbed).Op("=").
+					Qual(b.subPkg(""), "NewCustomNode").Types(
+					jen.Qual(b.sourcePkgPath, cid.StructName),
+				).Call(jen.Id("key"))
+			}
 		})
 	})
 }
@@ -230,15 +229,28 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 func (b *convBuilder) unmarshalFieldAssign(keyVar string, sf parser.ComplexIDField, accessor jen.Code, cborPkg string) jen.Code {
 	switch f := sf.Field.(type) {
 	case *parser.FieldString, *parser.FieldNumeric, *parser.FieldBool:
-		return jen.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name))
+		return jen.If(
+			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id(keyVar).Dot(sf.Name)),
+			jen.Err().Op("!=").Nil(),
+		).Block(jen.Return(jen.Err()))
 
 	case *parser.FieldTime:
-		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
-			Qual(cborPkg, "UnmarshalDateTime").Call(accessor)
+		errVar := jen.Id(sf.Name + "Err")
+		return jen.BlockFunc(func(g *jen.Group) {
+			g.Var().Add(errVar).Error()
+			g.List(jen.Id(keyVar).Dot(sf.Name), errVar).Op("=").
+				Qual(cborPkg, "UnmarshalDateTime").Call(accessor)
+			g.If(errVar.Clone().Op("!=").Nil()).Block(jen.Return(errVar.Clone()))
+		})
 
 	case *parser.FieldDuration:
-		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
-			Qual(cborPkg, "UnmarshalDuration").Call(accessor)
+		errVar := jen.Id(sf.Name + "Err")
+		return jen.BlockFunc(func(g *jen.Group) {
+			g.Var().Add(errVar).Error()
+			g.List(jen.Id(keyVar).Dot(sf.Name), errVar).Op("=").
+				Qual(cborPkg, "UnmarshalDuration").Call(accessor)
+			g.If(errVar.Clone().Op("!=").Nil()).Block(jen.Return(errVar.Clone()))
+		})
 
 	case *parser.FieldUUID:
 		var unmarshalFunc string
@@ -250,8 +262,13 @@ func (b *convBuilder) unmarshalFieldAssign(keyVar string, sf parser.ComplexIDFie
 		default:
 			unmarshalFunc = "UnmarshalUUIDGoogle"
 		}
-		return jen.List(jen.Id(keyVar).Dot(sf.Name), jen.Id("_")).Op("=").
-			Qual(cborPkg, unmarshalFunc).Call(accessor)
+		errVar := jen.Id(sf.Name + "Err")
+		return jen.BlockFunc(func(g *jen.Group) {
+			g.Var().Add(errVar).Error()
+			g.List(jen.Id(keyVar).Dot(sf.Name), errVar).Op("=").
+				Qual(cborPkg, unmarshalFunc).Call(accessor)
+			g.If(errVar.Clone().Op("!=").Nil()).Block(jen.Return(errVar.Clone()))
+		})
 
 	case *parser.FieldNode:
 		return b.unmarshalNodeRef(sf, f, accessor, cborPkg)
@@ -269,12 +286,19 @@ func (b *convBuilder) unmarshalNodeRef(sf parser.ComplexIDField, f *parser.Field
 
 	return jen.BlockFunc(func(g *jen.Group) {
 		g.Var().Id("rid").Op("*").Qual(def.PkgModels, "RecordID")
-		g.Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("rid"))
+		g.If(
+			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(accessor, jen.Op("&").Id("rid")),
+			jen.Err().Op("!=").Nil(),
+		).Block(jen.Return(jen.Err()))
 		g.If(jen.Id("rid").Op("!=").Nil()).BlockFunc(func(inner *jen.Group) {
 			if !refNode.HasComplexID() {
-				inner.List(jen.Id("idRaw"), jen.Id("_")).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("rid").Dot("ID"))
+				inner.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("rid").Dot("ID"))
+				inner.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 				inner.Var().Id("idStr").String()
-				inner.Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("idStr"))
+				inner.If(
+					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("idStr")),
+					jen.Err().Op("!=").Nil(),
+				).Block(jen.Return(jen.Err()))
 
 				idEmbed := refNode.Source.IDEmbed
 				if idEmbed == "" {
@@ -302,14 +326,16 @@ func (b *convBuilder) unmarshalNodeRef(sf parser.ComplexIDField, f *parser.Field
 func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDField, refNode *field.NodeTable, cborPkg string) {
 	cid := refNode.Source.ComplexID
 
-	g.List(jen.Id("idRaw"), jen.Id("_")).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("rid").Dot("ID"))
+	g.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("rid").Dot("ID"))
+	g.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 	if cid.Kind == parser.IDTypeArray {
 		g.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
 		g.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
-			jen.Err().Op("==").Nil().Op("&&").Len(jen.Id("rawArr")).Op(">=").Lit(len(cid.Fields)),
-		).BlockFunc(func(arrBlock *jen.Group) {
+			jen.Err().Op("!=").Nil(),
+		).Block(jen.Return(jen.Err()))
+		g.If(jen.Len(jen.Id("rawArr")).Op(">=").Lit(len(cid.Fields))).BlockFunc(func(arrBlock *jen.Group) {
 			arrBlock.Var().Id("innerKey").Qual(b.sourcePkgPath, cid.StructName)
 			for i, innerSF := range cid.Fields {
 				arrBlock.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
@@ -324,8 +350,9 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 		g.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
 		g.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
-			jen.Err().Op("==").Nil(),
-		).BlockFunc(func(objBlock *jen.Group) {
+			jen.Err().Op("!=").Nil(),
+		).Block(jen.Return(jen.Err()))
+		g.BlockFunc(func(objBlock *jen.Group) {
 			objBlock.Var().Id("innerKey").Qual(b.sourcePkgPath, cid.StructName)
 			for _, innerSF := range cid.Fields {
 				objBlock.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawObj").Index(jen.Lit(innerSF.DBName)), cborPkg))
@@ -612,56 +639,24 @@ func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
 }
 
 func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
-	tableName := node.NameDatabase()
-	idVal := b.nodeIDValue(node, "node")
-
-	var stmts []jen.Code
-
-	if node.HasComplexID() {
-		cid := node.Source.ComplexID
-		if !cid.HasNodeRef() {
-			stmts = append(stmts,
-				jen.Var().Id("zeroKey").Add(b.SourceQual(cid.StructName)),
-				jen.If(jen.Id("node").Dot("ID").Call().Op("==").Id("zeroKey")).Block(
-					jen.Return(jen.Nil()),
-				),
-			)
-		} else {
-			b.addLinkNodeRefFieldChecks(&stmts, cid, "node")
-		}
-	} else {
-		stmts = append(stmts, jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
-			jen.Return(jen.Nil()),
-		))
-	}
-
-	stmts = append(stmts,
-		jen.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
-			jen.Lit(tableName), idVal,
-		),
-		jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-			jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Id("node")),
-			jen.Id("ID").Op(":").Op("&").Id("rid"),
-		),
-		jen.Return(jen.Op("&").Id("link")),
-	)
-
-	return jen.Func().
-		Id("to" + node.NameGo() + "Link").
-		Params(jen.Id("node").Add(b.SourceQual(node.NameGo()))).
-		Op("*").Id(node.NameGoLower() + "Link").
-		Block(stmts...)
+	return b.buildToLinkCommon(node, false)
 }
 
 func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
+	return b.buildToLinkCommon(node, true)
+}
+
+func (b *convBuilder) buildToLinkCommon(node *field.NodeTable, isPtr bool) jen.Code {
 	tableName := node.NameDatabase()
 	idVal := b.nodeIDValue(node, "node")
 
 	var stmts []jen.Code
 
-	stmts = append(stmts, jen.If(jen.Id("node").Op("==").Nil()).Block(
-		jen.Return(jen.Nil()),
-	))
+	if isPtr {
+		stmts = append(stmts, jen.If(jen.Id("node").Op("==").Nil()).Block(
+			jen.Return(jen.Nil()),
+		))
+	}
 
 	if node.HasComplexID() {
 		cid := node.Source.ComplexID
@@ -681,21 +676,35 @@ func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
 		))
 	}
 
+	var fromArg jen.Code
+	if isPtr {
+		fromArg = jen.Op("*").Id("node")
+	} else {
+		fromArg = jen.Id("node")
+	}
+
 	stmts = append(stmts,
 		jen.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
 			jen.Lit(tableName), idVal,
 		),
 		jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-			jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(jen.Op("*").Id("node")),
+			jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(fromArg),
 			jen.Id("ID").Op(":").Op("&").Id("rid"),
 		),
 		jen.Return(jen.Op("&").Id("link")),
 	)
 
+	funcName := "to" + node.NameGo() + "Link"
+	paramType := jen.Add(b.SourceQual(node.NameGo()))
+	if isPtr {
+		funcName += "Ptr"
+		paramType = jen.Op("*").Add(b.SourceQual(node.NameGo()))
+	}
+
 	return jen.Func().
-		Id("to"+node.NameGo()+"LinkPtr").
-		Params(jen.Id("node").Op("*").Add(b.SourceQual(node.NameGo()))).
-		Op("*").Id(node.NameGoLower()+"Link").
+		Id(funcName).
+		Params(jen.Id("node").Add(paramType)).
+		Op("*").Id(node.NameGoLower() + "Link").
 		Block(stmts...)
 }
 
