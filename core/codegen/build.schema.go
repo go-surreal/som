@@ -187,7 +187,7 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			if searchDef != nil {
 				// Index name format: __som__<table>_search_<field>
 				indexName := fmt.Sprintf(def.IndexPrefix+"%s_search_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s SEARCH ANALYZER %s",
+				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s FULLTEXT ANALYZER %s",
 					indexName, tableName, fieldPath, searchDef.AnalyzerName)
 				if searchDef.HasBM25 {
 					stmt += fmt.Sprintf(" BM25(%g, %g)", searchDef.BM25K1, searchDef.BM25B)

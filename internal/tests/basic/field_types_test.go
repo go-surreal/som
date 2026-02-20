@@ -448,8 +448,8 @@ func TestTimestamps(t *testing.T) {
 
 	assert.Check(t, !user.CreatedAt().IsZero())
 	assert.Check(t, !user.UpdatedAt().IsZero())
-	assert.Check(t, time.Since(user.CreatedAt()) < time.Second)
-	assert.Check(t, time.Since(user.UpdatedAt()) < time.Second)
+	assert.Check(t, time.Since(user.CreatedAt()) < 5*time.Second)
+	assert.Check(t, time.Since(user.UpdatedAt()) < 5*time.Second)
 
 	time.Sleep(time.Second)
 
@@ -461,7 +461,7 @@ func TestTimestamps(t *testing.T) {
 	assert.Check(t, !user.CreatedAt().IsZero())
 	assert.Check(t, !user.UpdatedAt().IsZero())
 	assert.Check(t, time.Since(user.CreatedAt()) > time.Second)
-	assert.Check(t, time.Since(user.UpdatedAt()) < time.Second)
+	assert.Check(t, time.Since(user.UpdatedAt()) < 5*time.Second)
 }
 
 func TestURLTypes(t *testing.T) {

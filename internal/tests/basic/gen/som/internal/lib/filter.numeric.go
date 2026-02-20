@@ -180,35 +180,35 @@ func (n *Numeric[M, T]) Tan() *Float[M, float64] {
 //
 
 func (n *Numeric[M, T]) AsDurationDays() *Duration[M] {
-	return NewDuration[M](n.Base.fn("duration::from::days"))
+	return NewDuration[M](n.Base.fn("duration::from_days"))
 }
 
 func (n *Numeric[M, T]) AsDurationHours() *Duration[M] {
-	return NewDuration[M](n.Base.fn("duration::from::hours"))
+	return NewDuration[M](n.Base.fn("duration::from_hours"))
 }
 
 func (n *Numeric[M, T]) AsDurationMicros() *Duration[M] {
-	return NewDuration[M](n.Base.fn("duration::from::micros"))
+	return NewDuration[M](n.Base.fn("duration::from_micros"))
 }
 
 func (n *Numeric[M, T]) AsDurationMillis() *Duration[M] {
-	return NewDuration[M](n.Base.fn("duration::from::millis"))
+	return NewDuration[M](n.Base.fn("duration::from_millis"))
 }
 
 func (n *Numeric[M, T]) AsDurationMins() *Duration[M] {
-	return NewDuration[M](n.Base.fn("duration::from::mins"))
+	return NewDuration[M](n.Base.fn("duration::from_mins"))
 }
 
 func (n *Numeric[M, T]) AsDurationNanos() *Duration[M] {
-	return NewDuration[M](n.Base.fn("duration::from::nanos"))
+	return NewDuration[M](n.Base.fn("duration::from_nanos"))
 }
 
 func (n *Numeric[M, T]) AsDurationSecs() *Duration[M] {
-	return NewDuration[M](n.Base.fn("duration::from::secs"))
+	return NewDuration[M](n.Base.fn("duration::from_secs"))
 }
 
 func (n *Numeric[M, T]) AsDurationWeeks() *Duration[M] {
-	return NewDuration[M](n.Base.fn("duration::from::weeks"))
+	return NewDuration[M](n.Base.fn("duration::from_weeks"))
 }
 
 //
@@ -216,21 +216,21 @@ func (n *Numeric[M, T]) AsDurationWeeks() *Duration[M] {
 //
 
 func (n *Numeric[M, T]) AsTimeMicros() *Time[M] {
-	return NewTime[M](n.Base.fn("time::from::micros"))
+	return NewTime[M](n.Base.fn("time::from_micros"))
 }
 
 func (n *Numeric[M, T]) AsTimeMillis() *Time[M] {
-	return NewTime[M](n.Base.fn("time::from::millis"))
+	return NewTime[M](n.Base.fn("time::from_millis"))
 }
 
 func (n *Numeric[M, T]) AsTimeNanos() *Time[M] {
-	return NewTime[M](n.Base.fn("time::from::nanos"))
+	return NewTime[M](n.Base.fn("time::from_nanos"))
 }
 
 func (n *Numeric[M, T]) AsTimeSecs() *Time[M] {
-	return NewTime[M](n.Base.fn("time::from::secs"))
+	return NewTime[M](n.Base.fn("time::from_secs"))
 }
 
 func (n *Numeric[M, T]) AsTimeUnix() *Time[M] {
-	return NewTime[M](n.Base.fn("time::from::unix"))
+	return NewTime[M](n.Base.fn("time::from_unix"))
 }

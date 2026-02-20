@@ -24,6 +24,9 @@ func NewUUIDGoogleField[M any](key string) Field[M, uuid.UUID] {
 				return nil, nil
 			}
 			vals := raw[0].Result[0].Values
+			if len(vals) == 0 {
+				return nil, nil
+			}
 			result := make([]uuid.UUID, len(vals))
 			for i, v := range vals {
 				result[i] = uuid.UUID(v)

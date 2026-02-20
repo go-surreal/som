@@ -23,8 +23,9 @@ func (f *ID) typeConv(ctx Context) jen.Code {
 }
 
 func (f *ID) TypeDatabase() string {
-	// TODO: type "uuid" works, but there is no native type "ulid"
-	// see: https://github.com/surrealdb/surrealdb/issues/1722
+	if f.source.Type == parser.IDTypeUUID {
+		return "uuid"
+	}
 	return "string"
 }
 

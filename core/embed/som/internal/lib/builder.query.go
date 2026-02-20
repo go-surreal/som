@@ -10,7 +10,6 @@ import (
 
 const (
 	somPrefix             = "__som__"
-	sortFieldPrefix       = somPrefix + "sort_"
 	searchScorePrefix     = somPrefix + "search_score_"
 	searchHighlightPrefix = somPrefix + "search_highlight_"
 	searchOffsetsPrefix   = somPrefix + "search_offsets_"
@@ -117,7 +116,7 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 }
 
 func (q Query[T]) BuildDistinct(field string) *Result {
-	q.fields = []string{"array::group(" + field + ") AS values"}
+	q.fields = []string{"array::distinct(array::group(" + field + ")) AS values"}
 	q.groupAll = true
 
 	q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
@@ -140,12 +139,6 @@ func (q Query[T]) render() string {
 	}
 
 	fields := q.fields
-	for _, s := range q.Sort {
-		if s.IsScore {
-			continue
-		}
-		fields = append(fields, s.Field+" as "+sortFieldPrefix+s.Field)
-	}
 
 	// Add search score, highlight, and offset projections
 	for _, sc := range q.SearchClauses {

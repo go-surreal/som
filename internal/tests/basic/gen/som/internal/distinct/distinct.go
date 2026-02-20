@@ -31,7 +31,11 @@ func NewField[M any, T any](key string) Field[M, T] {
 			if len(raw) < 1 || len(raw[0].Result) < 1 {
 				return nil, nil
 			}
-			return raw[0].Result[0].Values, nil
+			vals := raw[0].Result[0].Values
+			if len(vals) == 0 {
+				return nil, nil
+			}
+			return vals, nil
 		},
 	}
 }
@@ -48,6 +52,9 @@ func NewTimeField[M any](key string) Field[M, time.Time] {
 				return nil, nil
 			}
 			vals := raw[0].Result[0].Values
+			if len(vals) == 0 {
+				return nil, nil
+			}
 			result := make([]time.Time, len(vals))
 			for i, v := range vals {
 				result[i] = v.Time
@@ -73,6 +80,9 @@ func NewDurationField[M any](key string) Field[M, time.Duration] {
 				return nil, nil
 			}
 			vals := raw[0].Result[0].Values
+			if len(vals) == 0 {
+				return nil, nil
+			}
 			result := make([]time.Duration, len(vals))
 			for i, v := range vals {
 				result[i] = v.Duration
@@ -98,6 +108,9 @@ func NewURLField[M any](key string) Field[M, url.URL] {
 				return nil, nil
 			}
 			vals := raw[0].Result[0].Values
+			if len(vals) == 0 {
+				return nil, nil
+			}
 			result := make([]url.URL, 0, len(vals))
 			for _, v := range vals {
 				u, err := url.Parse(v)
