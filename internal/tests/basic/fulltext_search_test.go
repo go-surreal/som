@@ -1,6 +1,7 @@
 package basic
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -375,11 +376,10 @@ func TestFullTextSearchScore(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, len(results))
-	score := results[0].Score()
-	t.Logf("Search score: %f", score)
-	// SurrealDB v3.0.0 returns 0 for BM25 scores with FULLTEXT indexes.
-	// Just verify we got a result with a score field present.
-	_ = score
+	t.Logf("Search score: %f", results[0].Score())
+	assert.Assert(t, len(results[0].Scores) > 0, "expected score projection to be present")
+	assert.Assert(t, !math.IsNaN(results[0].Score()) && !math.IsInf(results[0].Score(), 0),
+		"score must be a finite number, got %f", results[0].Score())
 }
 
 func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
