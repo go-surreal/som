@@ -201,7 +201,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 					}
 
 					arrBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
-						Qual(b.subPkg(""), "NewCustomNode").Types(
+						Qual(b.subPkg(""), "NewNode").Types(
 						jen.Qual(b.sourcePkgPath, cid.StructName),
 					).Call(jen.Id("key"))
 				})
@@ -218,7 +218,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 				}
 
 				inner.Id("c").Dot(node.Source.IDEmbed).Op("=").
-					Qual(b.subPkg(""), "NewCustomNode").Types(
+					Qual(b.subPkg(""), "NewNode").Types(
 					jen.Qual(b.sourcePkgPath, cid.StructName),
 				).Call(jen.Id("key"))
 			}
@@ -300,22 +300,11 @@ func (b *convBuilder) unmarshalNodeRef(sf parser.ComplexIDField, f *parser.Field
 					jen.Err().Op("!=").Nil(),
 				).Block(jen.Return(jen.Err()))
 
-				idEmbed := refNode.Source.IDEmbed
-				if idEmbed == "" {
-					idEmbed = "Node"
-				}
-
-				if idEmbed == "Node" {
-					inner.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
-						jen.Id(idEmbed): jen.Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr")),
-					})
-				} else {
-					inner.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
-						jen.Id(idEmbed): jen.Qual(b.subPkg(""), "NewCustomNode").Types(
-							jen.Qual(b.subPkg(""), string(refNode.Source.IDType)),
-						).Call(jen.Qual(b.subPkg(""), string(refNode.Source.IDType)).Call(jen.Id("idStr"))),
-					})
-				}
+				inner.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
+					jen.Id("Node"): jen.Qual(b.subPkg(""), "NewNode").Types(
+						jen.Qual(b.subPkg(""), string(refNode.Source.IDType)),
+					).Call(jen.Qual(b.subPkg(""), string(refNode.Source.IDType)).Call(jen.Id("idStr"))),
+				})
 			} else {
 				b.unmarshalNodeRefComplex(inner, sf, refNode, cborPkg)
 			}
@@ -341,7 +330,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 				arrBlock.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
 			}
 			arrBlock.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
-				jen.Id(refNode.Source.IDEmbed): jen.Qual(b.subPkg(""), "NewCustomNode").Types(
+				jen.Id(refNode.Source.IDEmbed): jen.Qual(b.subPkg(""), "NewNode").Types(
 					jen.Qual(b.sourcePkgPath, cid.StructName),
 				).Call(jen.Id("innerKey")),
 			})
@@ -352,16 +341,14 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
 			jen.Err().Op("!=").Nil(),
 		).Block(jen.Return(jen.Err()))
-		g.BlockFunc(func(objBlock *jen.Group) {
-			objBlock.Var().Id("innerKey").Qual(b.sourcePkgPath, cid.StructName)
-			for _, innerSF := range cid.Fields {
-				objBlock.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawObj").Index(jen.Lit(innerSF.DBName)), cborPkg))
-			}
-			objBlock.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
-				jen.Id(refNode.Source.IDEmbed): jen.Qual(b.subPkg(""), "NewCustomNode").Types(
-					jen.Qual(b.sourcePkgPath, cid.StructName),
-				).Call(jen.Id("innerKey")),
-			})
+		g.Var().Id("innerKey").Qual(b.sourcePkgPath, cid.StructName)
+		for _, innerSF := range cid.Fields {
+			g.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawObj").Index(jen.Lit(innerSF.DBName)), cborPkg))
+		}
+		g.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
+			jen.Id(refNode.Source.IDEmbed): jen.Qual(b.subPkg(""), "NewNode").Types(
+				jen.Qual(b.sourcePkgPath, cid.StructName),
+			).Call(jen.Id("innerKey")),
 		})
 	}
 }
@@ -527,17 +514,9 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 
 						if isNode {
 							node := elem.(*field.NodeTable)
-							fieldName := node.Source.IDEmbed
-							if fieldName == "" {
-								fieldName = "Node"
-							}
-							if fieldName == "Node" {
-								bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr"))
-							} else {
-								bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewCustomNode").Types(
-									jen.Qual(b.subPkg(""), string(node.Source.IDType)),
-								).Call(jen.Qual(b.subPkg(""), string(node.Source.IDType)).Call(jen.Id("idStr")))
-							}
+							bg.Id("c").Dot("Node").Op("=").Qual(b.subPkg(""), "NewNode").Types(
+								jen.Qual(b.subPkg(""), string(node.Source.IDType)),
+							).Call(jen.Qual(b.subPkg(""), string(node.Source.IDType)).Call(jen.Id("idStr")))
 						} else {
 							bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("idStr"))
 						}

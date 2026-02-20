@@ -44,63 +44,59 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 			if err != nil {
 				return err
 			}
+			var rawObj map[string]v2.RawMessage
+			if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
+				return err
+			}
+			var key model.TeamMemberKey
 			{
-				var rawObj map[string]v2.RawMessage
-				if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
+				var rid *models.RecordID
+				if err := cbor.Unmarshal(rawObj["member"], &rid); err != nil {
 					return err
 				}
-				{
-					var key model.TeamMemberKey
-					{
-						var rid *models.RecordID
-						if err := cbor.Unmarshal(rawObj["member"], &rid); err != nil {
-							return err
-						}
-						if rid != nil {
-							idRaw, err := cbor.Marshal(rid.ID)
-							if err != nil {
-								return err
-							}
-							var idStr string
-							if err := cbor.Unmarshal(idRaw, &idStr); err != nil {
-								return err
-							}
-							key.Member = model.AllTypes{Node: som.NewNode(idStr)}
-						}
+				if rid != nil {
+					idRaw, err := cbor.Marshal(rid.ID)
+					if err != nil {
+						return err
 					}
-					{
-						var rid *models.RecordID
-						if err := cbor.Unmarshal(rawObj["forecast"], &rid); err != nil {
-							return err
-						}
-						if rid != nil {
-							idRaw, err := cbor.Marshal(rid.ID)
-							if err != nil {
-								return err
-							}
-							var rawArr []v2.RawMessage
-							if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
-								return err
-							}
-							if len(rawArr) >= 2 {
-								var innerKey model.WeatherKey
-								if err := cbor.Unmarshal(rawArr[0], &innerKey.City); err != nil {
-									return err
-								}
-								{
-									var DateErr error
-									innerKey.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
-									if DateErr != nil {
-										return DateErr
-									}
-								}
-								key.Forecast = model.Weather{CustomNode: som.NewCustomNode[model.WeatherKey](innerKey)}
-							}
-						}
+					var idStr string
+					if err := cbor.Unmarshal(idRaw, &idStr); err != nil {
+						return err
 					}
-					c.CustomNode = som.NewCustomNode[model.TeamMemberKey](key)
+					key.Member = model.AllTypes{Node: som.NewNode[som.ULID](som.ULID(idStr))}
 				}
 			}
+			{
+				var rid *models.RecordID
+				if err := cbor.Unmarshal(rawObj["forecast"], &rid); err != nil {
+					return err
+				}
+				if rid != nil {
+					idRaw, err := cbor.Marshal(rid.ID)
+					if err != nil {
+						return err
+					}
+					var rawArr []v2.RawMessage
+					if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
+						return err
+					}
+					if len(rawArr) >= 2 {
+						var innerKey model.WeatherKey
+						if err := cbor.Unmarshal(rawArr[0], &innerKey.City); err != nil {
+							return err
+						}
+						{
+							var DateErr error
+							innerKey.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
+							if DateErr != nil {
+								return DateErr
+							}
+						}
+						key.Forecast = model.Weather{Node: som.NewNode[model.WeatherKey](innerKey)}
+					}
+				}
+			}
+			c.Node = som.NewNode[model.TeamMemberKey](key)
 		}
 	}
 

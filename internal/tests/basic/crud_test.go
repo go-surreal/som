@@ -54,7 +54,7 @@ func TestWithDatabase(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userNew, *userOut,
-		cmpopts.IgnoreUnexported(som.Node{}, som.CustomNode[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus"),
 	)

@@ -12,7 +12,7 @@ import (
 )
 
 type AllTypes struct {
-	som.Node
+	som.Node[som.ULID]
 	som.Timestamps
 
 	// basic types

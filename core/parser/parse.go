@@ -145,15 +145,8 @@ func isNode(t gotype.Type, outPkg string) bool {
 			continue
 		}
 
-		if f.Name() == "Node" && f.Elem().Name() == "Node" &&
-			f.Elem().PkgPath() == outPkg {
+		if f.Name() == "Node" && isGenericNodeFromSom(f.Elem(), outPkg, "Node") {
 			return true
-		}
-
-		if f.Name() == "CustomNode" {
-			if isCustomNodeFromSom(f.Elem(), outPkg) {
-				return true
-			}
 		}
 
 	}
@@ -188,14 +181,10 @@ func isGenericNodeFromSom(t gotype.Type, outPkg string, name string) bool {
 	return ident.Name == path.Base(outPkg)
 }
 
-func isCustomNodeFromSom(t gotype.Type, outPkg string) bool {
-	return isGenericNodeFromSom(t, outPkg, "CustomNode")
-}
-
 func isKnownStringIDType(t gotype.Type) bool {
 	origin := t.Origin()
 	if origin == nil {
-		return true // Node alias (no type arg) is ULID
+		return false
 	}
 	indexExpr, ok := origin.(*ast.IndexExpr)
 	if !ok {
@@ -415,8 +404,7 @@ func parseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*Node, error
 		}
 
 		if f.IsAnonymous() {
-			if (f.Name() == "Node" && f.Elem().PkgPath() == outPkg) ||
-				(f.Name() == "CustomNode" && isCustomNodeFromSom(f.Elem(), outPkg)) {
+			if f.Name() == "Node" && isGenericNodeFromSom(f.Elem(), outPkg, "Node") {
 				if isKnownStringIDType(f.Elem()) {
 					gen := parseIDType(f.Elem())
 					node.IDType = gen

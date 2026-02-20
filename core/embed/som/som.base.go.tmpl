@@ -74,23 +74,17 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-type CustomNode[T nodeID] struct {
+type Node[T nodeID] struct {
 	id T
 }
 
-func NewCustomNode[T nodeID](id T) CustomNode[T] {
-	return CustomNode[T]{id: id}
+func NewNode[T nodeID](id T) Node[T] {
+	return Node[T]{id: id}
 }
 
-func (n CustomNode[T]) ID() T { return n.id }
+func (n Node[T]) ID() T { return n.id }
 
-func (CustomNode[T]) isNode() {}
-
-type Node = CustomNode[ULID]
-
-func NewNode(id string) Node {
-	return CustomNode[ULID]{id: ULID(id)}
-}
+func (Node[T]) isNode() {}
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
@@ -133,7 +127,7 @@ type Email string
 // Example:
 //
 //	type User struct {
-//	    som.Node
+//	    som.Node[som.ULID]
 //	    Password som.Password[som.Bcrypt]
 //	}
 type Password[A PasswordAlgorithm] string

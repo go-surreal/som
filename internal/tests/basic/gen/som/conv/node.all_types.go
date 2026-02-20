@@ -312,7 +312,7 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 			}
 			idStr = s
 		}
-		c.Node = som.NewNode(idStr)
+		c.Node = som.NewNode[som.ULID](som.ULID(idStr))
 	}
 
 	if raw, ok := rawMap["created_at"]; ok {

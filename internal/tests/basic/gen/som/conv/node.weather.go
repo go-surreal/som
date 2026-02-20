@@ -44,25 +44,23 @@ func (c *Weather) UnmarshalCBOR(data []byte) error {
 			if err != nil {
 				return err
 			}
-			{
-				var rawArr []v2.RawMessage
-				if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
+			var rawArr []v2.RawMessage
+			if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
+				return err
+			}
+			if len(rawArr) >= 2 {
+				var key model.WeatherKey
+				if err := cbor.Unmarshal(rawArr[0], &key.City); err != nil {
 					return err
 				}
-				if len(rawArr) >= 2 {
-					var key model.WeatherKey
-					if err := cbor.Unmarshal(rawArr[0], &key.City); err != nil {
-						return err
+				{
+					var DateErr error
+					key.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
+					if DateErr != nil {
+						return DateErr
 					}
-					{
-						var DateErr error
-						key.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
-						if DateErr != nil {
-							return DateErr
-						}
-					}
-					c.CustomNode = som.NewCustomNode[model.WeatherKey](key)
 				}
+				c.Node = som.NewNode[model.WeatherKey](key)
 			}
 		}
 	}

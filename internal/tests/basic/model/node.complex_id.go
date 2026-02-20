@@ -13,7 +13,7 @@ type WeatherKey struct {
 }
 
 type Weather struct {
-	som.CustomNode[WeatherKey]
+	som.Node[WeatherKey]
 	Temperature float64
 }
 
@@ -24,7 +24,7 @@ type PersonKey struct {
 }
 
 type PersonObj struct {
-	som.CustomNode[PersonKey]
+	som.Node[PersonKey]
 	Email string
 }
 
@@ -35,6 +35,6 @@ type TeamMemberKey struct {
 }
 
 type TeamMember struct {
-	som.CustomNode[TeamMemberKey]
+	som.Node[TeamMemberKey]
 	Role string
 }

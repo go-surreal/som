@@ -38,6 +38,9 @@ type repo[N any, K any] struct {
 }
 
 func (r *repo[N, K]) create(ctx context.Context, node *N) error {
+	if r.newID == nil {
+		return fmt.Errorf("create without explicit ID is not supported for this model")
+	}
 	data := r.info.MarshalOne(node)
 	raw, err := r.db.Create(ctx, r.newID(r.name), data)
 	if err != nil {
