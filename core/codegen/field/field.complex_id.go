@@ -40,7 +40,9 @@ func (f *ComplexID) SchemaStatements(table, _ string) []string {
 	case parser.IDTypeArray:
 		typeDef = fmt.Sprintf("array<any, %d>", len(f.source.Fields))
 	case parser.IDTypeObject:
-		typeDef = "object"
+		return []string{
+			fmt.Sprintf("DEFINE FIELD id ON TABLE %s TYPE object FLEXIBLE;", table),
+		}
 	default:
 		return nil
 	}

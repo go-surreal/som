@@ -8,7 +8,7 @@ DEFINE FIELD id ON TABLE weather TYPE array<any, 2>;
 DEFINE FIELD temperature ON TABLE weather TYPE float ;
 
 DEFINE TABLE team_member SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE team_member TYPE object;
+DEFINE FIELD id ON TABLE team_member TYPE object FLEXIBLE;
 DEFINE FIELD role ON TABLE team_member TYPE string;
 
 DEFINE TABLE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
@@ -25,7 +25,7 @@ DEFINE FIELD author ON TABLE special_relation TYPE option<record<special_types>>
 DEFINE FIELD authors ON TABLE special_relation TYPE option<array<record<special_types> | null>>;
 
 DEFINE TABLE person_obj SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE person_obj TYPE object;
+DEFINE FIELD id ON TABLE person_obj TYPE object FLEXIBLE;
 DEFINE FIELD email ON TABLE person_obj TYPE string;
 
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
