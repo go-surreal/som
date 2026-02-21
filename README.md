@@ -8,7 +8,7 @@
 <hr />
 
 <p align="center">
-    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.24.12-informational" alt="Go 1.24.12"></a>
+    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.25.7-informational" alt="Go 1.25.7"></a>
     &nbsp;
     <a href="https://goreportcard.com/report/github.com/go-surreal/som"><img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card"></a>
     &nbsp;
