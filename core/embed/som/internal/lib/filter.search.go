@@ -72,10 +72,9 @@ func (s *search[M]) build(ctx *context, autoRef int) SearchClause {
 		ref = *s.ref
 	}
 
-	// Render: field @ref@ $terms
 	sql := strings.TrimPrefix(s.key.render(ctx), ".") +
-		" @" + strconv.Itoa(ref) + "@ " +
-		ctx.asVar(s.terms)
+		" @" + strconv.Itoa(ref) + "@ '" +
+		escapeSearchTerms(s.terms) + "'"
 
 	return SearchClause{
 		SQL:        sql,
@@ -85,6 +84,12 @@ func (s *search[M]) build(ctx *context, autoRef int) SearchClause {
 		HLSuffix:   s.hlSuffix,
 		Offsets:    s.offsets,
 	}
+}
+
+func escapeSearchTerms(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `'`, `\'`)
+	return s
 }
 
 // BuildSearchOr combines multiple search conditions with OR and returns the SQL and clauses.

@@ -33,9 +33,9 @@ func (f *URL) TypeDatabase() string {
 func (f *URL) SchemaStatements(table, prefix string) []string {
 	var extend string
 	if f.source.Pointer() {
-		extend = "ASSERT $value == NONE OR $value == NULL OR string::is::url($value)"
+		extend = "ASSERT $value == NONE OR $value == NULL OR string::is_url($value)"
 	} else {
-		extend = `ASSERT $value == "" OR string::is::url($value)`
+		extend = `ASSERT $value == "" OR string::is_url($value)`
 	}
 
 	return []string{

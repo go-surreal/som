@@ -1,6 +1,7 @@
 package basic
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -375,10 +376,10 @@ func TestFullTextSearchScore(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, len(results))
-	score := results[0].Score()
-	t.Logf("Search score: %f", score)
-	// BM25 scores can be negative, just verify we got a score value
-	assert.Assert(t, score != 0, "expected non-zero search score")
+	t.Logf("Search score: %f", results[0].Score())
+	assert.Assert(t, len(results[0].Scores) > 0, "expected score projection to be present")
+	assert.Assert(t, !math.IsNaN(results[0].Score()) && !math.IsInf(results[0].Score(), 0),
+		"score must be a finite number, got %f", results[0].Score())
 }
 
 func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
@@ -429,7 +430,7 @@ func TestFulltextSearchOrder(t *testing.T) {
 		Order(query.Score(0).Desc(), by.AllTypes.FieldString.Asc())
 
 	assert.Assert(t, strings.Contains(query1.Describe(),
-		"ORDER BY __som__search_score_0 DESC, __som__sort_field_string ASC"))
+		"ORDER BY __som__search_score_0 DESC, field_string ASC"))
 
 	// Test 2: Field sort first, then score sort
 	query2 := client.AllTypesRepo().Query().
@@ -437,7 +438,7 @@ func TestFulltextSearchOrder(t *testing.T) {
 		Order(by.AllTypes.FieldString.Asc(), query.Score(0).Desc())
 
 	assert.Assert(t, strings.Contains(query2.Describe(),
-		"ORDER BY __som__sort_field_string ASC, __som__search_score_0 DESC"))
+		"ORDER BY field_string ASC, __som__search_score_0 DESC"))
 }
 
 func TestFulltextSearchScoreCombination(t *testing.T) {
