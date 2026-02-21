@@ -13,7 +13,7 @@ const fileGoMod = "go.mod"
 
 const (
 	minSupportedGoVersion = "1.24"    // suffix '.0' omitted on purpose!
-	maxSupportedGoVersion = "1.25.99" // allow for future patch versions
+	maxSupportedGoVersion = "1.26.99" // allow for future patch versions
 
 	pkgSOM    = "github.com/go-surreal/som"
 	pkgDriver = "github.com/surrealdb/surrealdb.go"
@@ -21,7 +21,7 @@ const (
 	pkgGoogleWire = "github.com/google/wire"
 	pkgGoforjWire = "github.com/goforj/wire"
 
-	requiredSOMVersion    = "v0.11.0"
+	requiredSOMVersion    = "v0.15.0"
 	requiredDriverVersion = "v1.0.0"
 )
 

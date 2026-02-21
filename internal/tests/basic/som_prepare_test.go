@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	surrealDBVersion    = "2.6.0"
+	surrealDBVersion    = "3.0.0"
 	containerStartedMsg = "Started web server on "
 )
 
@@ -50,7 +50,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 			"start", "--allow-funcs", "--log", "trace",
 		},
 		ExposedPorts: []string{"8000/tcp"},
-		WaitingFor: wait.ForLog(containerStartedMsg),
+		WaitingFor:   wait.ForLog(containerStartedMsg),
 		HostConfigModifier: func(conf *container.HostConfig) {
 			conf.AutoRemove = true
 		},

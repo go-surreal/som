@@ -96,6 +96,11 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 	return &d, nil
 }
 
+// None is a pre-encoded CBOR Tag 6 + null (0xc6 0xf6).
+// SurrealDB uses CBOR Tag 6 to represent NONE, which is accepted by option<T> fields.
+// Use this instead of nil when encoding array elements that should be NONE rather than NULL.
+var None RawMessage = []byte{0xc6, 0xf6}
+
 func RecordIDToString(id any) (string, error) {
 	switch v := id.(type) {
 	case string:

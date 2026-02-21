@@ -53,23 +53,22 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 
 	structElem, isStruct := f.element.(*Struct)
 
-	// For pointer struct element slices, use FLEXIBLE TYPE and skip nested
-	// DEFINE FIELD recursion. SurrealDB rejects NULL object elements when
-	// strict TYPE + nested DEFINE FIELDs are used.
-	typeKeyword := "TYPE"
-	if isStruct && structElem.source.Pointer() {
-		typeKeyword = "FLEXIBLE TYPE"
+	dbType := f.TypeDatabase()
+
+	isPtrStruct := isStruct && structElem.source.Pointer()
+
+	if isPtrStruct {
+		dbType = "option<array<option<object>>>"
 	}
 
-	// Generate own DEFINE FIELD statement.
 	statements := []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s %s %s;",
-			prefix+f.NameDatabase(), table, typeKeyword, f.TypeDatabase(),
+			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			prefix+f.NameDatabase(), table, dbType,
 		),
 	}
 
-	if isStruct && !structElem.source.Pointer() {
+	if isStruct {
 		nestedPrefix := prefix + f.NameDatabase() + ".*."
 		for _, field := range structElem.Table().GetFields() {
 			statements = append(statements, field.SchemaStatements(table, nestedPrefix)...)
@@ -565,7 +564,7 @@ func (f *Slice) distinctElemInit(ctx Context) jen.Code {
 	}
 }
 
-func (f *Slice) cborMarshal(_ Context) jen.Code {
+func (f *Slice) cborMarshal(ctx Context) jen.Code {
 	// For struct slices, we need to convert each element through the conv wrapper
 	// to get proper snake_case field names in the CBOR output.
 	if structElem, ok := f.element.(*Struct); ok {
@@ -581,17 +580,19 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 		}
 
 		if structElem.source.Pointer() {
-			sliceElemType := jen.Index().Op("*").Id(structElem.element.NameGoLower())
-
 			return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 				jen.Id("convSlice").Op(":=").Make(
-					sliceElemType,
+					jen.Index().Any(),
 					jen.Len(srcSlice),
 				),
 				jen.For(
 					jen.Id("i").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
 				).Block(
-					jen.Id("convSlice").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+					jen.If(jen.Id("v").Op("==").Nil()).Block(
+						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Qual(ctx.pkgCBOR(), "None"),
+					).Else().Block(
+						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+					),
 				),
 				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("convSlice"),
 			)
