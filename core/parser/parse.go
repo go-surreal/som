@@ -338,19 +338,21 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 		sf := keyType.Field(i)
 
 		if sf.IsAnonymous() {
-			switch sf.Name() {
-			case "ArrayID":
-				if kindSet {
-					return nil, fmt.Errorf("complex ID struct %s embeds both ArrayID and ObjectID", structName)
+			if sf.Elem().PkgPath() == outPkg {
+				switch sf.Name() {
+				case "ArrayID":
+					if kindSet {
+						return nil, fmt.Errorf("complex ID struct %s embeds both ArrayID and ObjectID", structName)
+					}
+					kind = IDTypeArray
+					kindSet = true
+				case "ObjectID":
+					if kindSet {
+						return nil, fmt.Errorf("complex ID struct %s embeds both ArrayID and ObjectID", structName)
+					}
+					kind = IDTypeObject
+					kindSet = true
 				}
-				kind = IDTypeArray
-				kindSet = true
-			case "ObjectID":
-				if kindSet {
-					return nil, fmt.Errorf("complex ID struct %s embeds both ArrayID and ObjectID", structName)
-				}
-				kind = IDTypeObject
-				kindSet = true
 			}
 			continue
 		}
@@ -375,6 +377,10 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 			DBName: strcase.ToSnake(sf.Name()),
 			Field:  parsed,
 		})
+	}
+
+	if !kindSet {
+		return nil, fmt.Errorf("complex ID struct %s must embed exactly one of som.ArrayID or som.ObjectID", structName)
 	}
 
 	if len(fields) == 0 {
