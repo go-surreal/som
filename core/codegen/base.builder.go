@@ -193,8 +193,8 @@ func (b *build) recordIDFromNode(node *field.NodeTable) jen.Code {
 }
 
 func (b *build) buildBaseFile(node *field.NodeTable) error {
-	pkgQuery := b.subPkg(def.PkgQuery)
-	pkgConv := b.subPkg(def.PkgConv)
+	pkgQuery := b.relativePkgPath(def.PkgQuery)
+	pkgConv := b.relativePkgPath(def.PkgConv)
 
 	f := jen.NewFile(def.PkgRepo)
 
@@ -286,7 +286,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 		if !node.HasComplexID() {
 			g.Add(comment("Relate returns a new relate builder for the " + node.NameGo() + " model."))
-			g.Id("Relate").Call().Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo())
+			g.Id("Relate").Call().Op("*").Qual(b.relativePkgPath(def.PkgRelate), node.NameGo())
 		}
 
 		g.Line()
@@ -566,7 +566,7 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 				g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 					Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
 				g.If(jen.Id("id").Op("==").Lit("")).
-					Block(jen.Return(jen.Qual(b.subPkg(""), "ErrEmptyID")))
+					Block(jen.Return(jen.Qual(b.relativePkgPath(), "ErrEmptyID")))
 				g.If(jen.Id(node.NameGoLower()).Dot("ID").Call().Op("!=").Lit("")).
 					Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("given node already has an id"))))
 
@@ -597,8 +597,8 @@ The returned bool indicates whether the record was found or not.
 			).
 			Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 			BlockFunc(func(g *jen.Group) {
-				g.If(jen.Qual(b.subPkg("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
-					jen.Return(jen.Nil(), jen.False(), jen.Qual(b.subPkg(""), "ErrCacheNotSupported")),
+				g.If(jen.Qual(b.relativePkgPath("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
+					jen.Return(jen.Nil(), jen.False(), jen.Qual(b.relativePkgPath(), "ErrCacheNotSupported")),
 				)
 				g.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.Id("key"))))
 			})
@@ -618,10 +618,10 @@ If caching is enabled via som.WithCache, it will be used.
 			Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
 			Block(
 				jen.If(jen.Id("id").Op("==").Lit("")).Block(
-					jen.Return(jen.Nil(), jen.False(), jen.Qual(b.subPkg(""), "ErrEmptyID")),
+					jen.Return(jen.Nil(), jen.False(), jen.Qual(b.relativePkgPath(), "ErrEmptyID")),
 				),
 				jen.Id("rid").Op(":=").Id("r").Dot("recordID").Call(jen.Id("id")),
-				jen.If(jen.Op("!").Qual(b.subPkg("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
+				jen.If(jen.Op("!").Qual(b.relativePkgPath("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
 					jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("rid"))),
 				),
 				jen.Id("idFunc").Op(":=").Func().Params(jen.Id("n").Op("*").Add(b.input.SourceQual(node.NameGo()))).String().Block(
@@ -647,7 +647,7 @@ If caching is enabled via som.WithCache, it will be used.
 				jen.Var().Id("refreshFuncs").Op("*").Id("eagerRefreshFuncs").Types(b.input.SourceQual(node.NameGo())),
 				jen.If(jen.Id("cache").Op("!=").Nil().Op("&&").Id("cache").Dot("isEager").Call()).Block(
 					jen.Id("refreshFuncs").Op("=").Op("&").Id("eagerRefreshFuncs").Types(b.input.SourceQual(node.NameGo())).Values(
-						jen.Id("cacheID").Op(":").Qual(b.subPkg("internal"), "GetCacheKey").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx")),
+						jen.Id("cacheID").Op(":").Qual(b.relativePkgPath("internal"), "GetCacheKey").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx")),
 						jen.Id("queryAll").Op(":").Id("queryAll"),
 						jen.Id("countAll").Op(":").Id("countAll"),
 						jen.Id("idFunc").Op(":").Id("idFunc"),
@@ -716,7 +716,7 @@ Delete deletes the record for the given model.
 
 			if node.Source.SoftDelete {
 				g.If(jen.Id(node.NameGoLower()).Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
-					jen.Return(jen.Qual(b.subPkg(""), "ErrAlreadyDeleted")),
+					jen.Return(jen.Qual(b.relativePkgPath(), "ErrAlreadyDeleted")),
 				)
 			}
 
@@ -831,7 +831,7 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 						jen.If(jen.Qual("strings", "Contains").Call(
 							jen.Err().Dot("Error").Call(), jen.Lit("optimistic_lock_failed"),
 						)).Block(
-							jen.Return(jen.Qual(b.subPkg(""), "ErrOptimisticLock")),
+							jen.Return(jen.Qual(b.relativePkgPath(), "ErrOptimisticLock")),
 						),
 						jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not restore entity: %w"), jen.Err())),
 					)
@@ -886,10 +886,10 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 		`)).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 			Id("Relate").Params().
-			Op("*").Qual(b.subPkg(def.PkgRelate), node.NameGo()).
+			Op("*").Qual(b.relativePkgPath(def.PkgRelate), node.NameGo()).
 			Block(
 				jen.Return(
-					jen.Qual(b.subPkg(def.PkgRelate), "New"+node.NameGo()).Call(
+					jen.Qual(b.relativePkgPath(def.PkgRelate), "New"+node.NameGo()).Call(
 						jen.Id("r").Dot("db"),
 					),
 				),
@@ -935,8 +935,8 @@ func (b *build) basePkg() string {
 	return b.outPkg
 }
 
-func (b *build) subPkg(pkg string) string {
-	return path.Join(b.basePkg(), pkg)
+func (b *build) relativePkgPath(pkg ...string) string {
+	return path.Join(append([]string{b.basePkg()}, pkg...)...)
 }
 
 func (b *build) complexRecordIDFunc(node *field.NodeTable) jen.Code {
@@ -980,7 +980,7 @@ func (b *build) fieldValue(sf parser.ComplexIDField, keyVar string) jen.Code {
 //
 
 func (b *build) addBeforeHooks(g *jen.Group, node *field.NodeTable, event string) {
-	somPkg := b.subPkg("")
+	somPkg := b.relativePkgPath()
 	hookIface := "OnBefore" + event + "Hook"
 	fieldName := "before" + event
 
@@ -1005,7 +1005,7 @@ func (b *build) addBeforeHooks(g *jen.Group, node *field.NodeTable, event string
 }
 
 func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string) {
-	somPkg := b.subPkg("")
+	somPkg := b.relativePkgPath()
 	hookIface := "OnAfter" + event + "Hook"
 	fieldName := "after" + event
 

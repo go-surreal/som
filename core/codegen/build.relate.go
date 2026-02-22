@@ -130,7 +130,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 
 			jen.Id("query").Op(":=").Lit("RELATE $inID->"+edge.NameDatabase()+"->$outID CONTENT $data"),
 
-			jen.Id("data").Op(":=").Qual(b.subPkg(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
+			jen.Id("data").Op(":=").Qual(b.relativePkgPath(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
 
 			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("e").Dot("db").Dot("Query").Call(
 				jen.Id("ctx"),
@@ -145,7 +145,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create relation: %w"), jen.Err())),
 			),
 
-			jen.Var().Id("rawResult").Index().Qual(b.subPkg(def.PkgInternal), "QueryResult").Types(jen.Qual(b.subPkg(def.PkgConv), edge.NameGo())),
+			jen.Var().Id("rawResult").Index().Qual(b.relativePkgPath(def.PkgInternal), "QueryResult").Types(jen.Qual(b.relativePkgPath(def.PkgConv), edge.NameGo())),
 			jen.Err().Op("=").Id("e").Dot("db").Dot("Unmarshal").Call(jen.Id("res"), jen.Op("&").Id("rawResult")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal relation: %w"), jen.Err())),
@@ -157,7 +157,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			jen.Id("convEdge").Op(":=").Op("&").Id("rawResult").Index(jen.Lit(0)).Dot("Result").Index(jen.Lit(0)),
 
 			jen.Op("*").Id("edge").Op("=").
-				Qual(b.subPkg(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
+				Qual(b.relativePkgPath(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
 
 			jen.Return(jen.Nil()),
 		)
@@ -191,7 +191,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 func (b *relateBuilder) edgeNodeIDValue(node *field.Node) jen.Code {
 	idExpr := jen.Id("edge").Dot(node.Table().NameGo()).Dot("ID").Call()
 	if node.Table().Source.IDType == parser.IDTypeUUID {
-		return jen.Qual(b.subPkg(""), "UUID").Call(idExpr)
+		return jen.Qual(b.relativePkgPath(), "UUID").Call(idExpr)
 	}
 	return idExpr
 }

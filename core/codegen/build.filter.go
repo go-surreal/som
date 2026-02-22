@@ -60,7 +60,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 }
 
 func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
-	pkgLib := b.subPkg(def.PkgLib)
+	pkgLib := b.relativePkgPath(def.PkgLib)
 
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
@@ -142,7 +142,7 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 }
 
 func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
-	pkgLib := b.subPkg(def.PkgLib)
+	pkgLib := b.relativePkgPath(def.PkgLib)
 
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
@@ -271,7 +271,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 }
 
 func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
-	pkgLib := b.subPkg(def.PkgLib)
+	pkgLib := b.relativePkgPath(def.PkgLib)
 
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,

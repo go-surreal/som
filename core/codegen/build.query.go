@@ -31,8 +31,8 @@ func (b *queryBuilder) build() error {
 }
 
 func (b *queryBuilder) buildFile(node *field.NodeTable) error {
-	pkgLib := b.subPkg(def.PkgLib)
-	pkgConv := b.subPkg(def.PkgConv)
+	pkgLib := b.relativePkgPath(def.PkgLib)
+	pkgConv := b.relativePkgPath(def.PkgConv)
 
 	f := jen.NewFile(b.pkgName)
 

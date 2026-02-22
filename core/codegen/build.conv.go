@@ -145,7 +145,7 @@ func (b *convBuilder) nodeIDValue(node *field.NodeTable, varName string) jen.Cod
 		return b.complexNodeIDValue(node, varName)
 	}
 	if node.Source.IDType == parser.IDTypeUUID {
-		return jen.Qual(b.subPkg(""), "UUID").Call(jen.Id(varName).Dot("ID").Call())
+		return jen.Qual(b.relativePkgPath(), "UUID").Call(jen.Id(varName).Dot("ID").Call())
 	}
 	return jen.Id(varName).Dot("ID").Call()
 }
@@ -201,7 +201,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 					}
 
 					arrBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
-						Qual(b.subPkg(""), "NewNode").Types(
+						Qual(b.relativePkgPath(), "NewNode").Types(
 						jen.Qual(b.sourcePkgPath, cid.StructName),
 					).Call(jen.Id("key"))
 				})
@@ -218,7 +218,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 				}
 
 				inner.Id("c").Dot(node.Source.IDEmbed).Op("=").
-					Qual(b.subPkg(""), "NewNode").Types(
+					Qual(b.relativePkgPath(), "NewNode").Types(
 					jen.Qual(b.sourcePkgPath, cid.StructName),
 				).Call(jen.Id("key"))
 			}
@@ -301,9 +301,9 @@ func (b *convBuilder) unmarshalNodeRef(sf parser.ComplexIDField, f *parser.Field
 				).Block(jen.Return(jen.Err()))
 
 				inner.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
-					jen.Id("Node"): jen.Qual(b.subPkg(""), "NewNode").Types(
-						jen.Qual(b.subPkg(""), string(refNode.Source.IDType)),
-					).Call(jen.Qual(b.subPkg(""), string(refNode.Source.IDType)).Call(jen.Id("idStr"))),
+					jen.Id("Node"): jen.Qual(b.relativePkgPath(), "NewNode").Types(
+						jen.Qual(b.relativePkgPath(), string(refNode.Source.IDType)),
+					).Call(jen.Qual(b.relativePkgPath(), string(refNode.Source.IDType)).Call(jen.Id("idStr"))),
 				})
 			} else {
 				b.unmarshalNodeRefComplex(inner, sf, refNode, cborPkg)
@@ -330,7 +330,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 				arrBlock.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
 			}
 			arrBlock.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
-				jen.Id(refNode.Source.IDEmbed): jen.Qual(b.subPkg(""), "NewNode").Types(
+				jen.Id(refNode.Source.IDEmbed): jen.Qual(b.relativePkgPath(), "NewNode").Types(
 					jen.Qual(b.sourcePkgPath, cid.StructName),
 				).Call(jen.Id("innerKey")),
 			})
@@ -346,7 +346,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 			g.Add(b.unmarshalFieldAssign("innerKey", innerSF, jen.Id("rawObj").Index(jen.Lit(innerSF.DBName)), cborPkg))
 		}
 		g.Id("key").Dot(sf.Name).Op("=").Qual(b.sourcePkgPath, refNode.NameGo()).Values(jen.Dict{
-			jen.Id(refNode.Source.IDEmbed): jen.Qual(b.subPkg(""), "NewNode").Types(
+			jen.Id(refNode.Source.IDEmbed): jen.Qual(b.relativePkgPath(), "NewNode").Types(
 				jen.Qual(b.sourcePkgPath, cid.StructName),
 			).Call(jen.Id("innerKey")),
 		})
@@ -490,7 +490,6 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 			if isNode || isEdge {
 				g.Line()
 				g.Comment("Embedded som.Node/Edge ID field")
-
 				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
 					b.unmarshalComplexID(g, node)
 				} else {
@@ -514,11 +513,11 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 
 						if isNode {
 							node := elem.(*field.NodeTable)
-							bg.Id("c").Dot("Node").Op("=").Qual(b.subPkg(""), "NewNode").Types(
-								jen.Qual(b.subPkg(""), string(node.Source.IDType)),
-							).Call(jen.Qual(b.subPkg(""), string(node.Source.IDType)).Call(jen.Id("idStr")))
+							bg.Id("c").Dot("Node").Op("=").Qual(b.relativePkgPath(), "NewNode").Types(
+								jen.Qual(b.relativePkgPath(), string(node.Source.IDType)),
+							).Call(jen.Qual(b.relativePkgPath(), string(node.Source.IDType)).Call(jen.Id("idStr")))
 						} else {
-							bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("idStr"))
+							bg.Id("c").Dot("Edge").Op("=").Qual(b.relativePkgPath(), "NewEdge").Call(jen.Id("idStr"))
 						}
 					})
 				}
