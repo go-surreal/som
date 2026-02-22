@@ -241,3 +241,7 @@ func EdgeOut[T, S any](key Key[T], name string, filters []Filter[S]) Key[T] {
 		filters:   filters,
 	})
 }
+
+func Fn[T any](k Key[T], fn string) Key[T] {
+	return k.fn(fn)
+}

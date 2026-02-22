@@ -21,7 +21,7 @@ type weather[M any] struct {
 }
 
 func (n weather[M]) ID() weatherKey[M] {
-	return newWeatherKey[M](lib.Field(n.Key, "id"))
+	return newWeatherKey[M](lib.Fn(lib.Field(n.Key, "id"), "meta::id"))
 }
 
 type weatherEdges[M any] struct {

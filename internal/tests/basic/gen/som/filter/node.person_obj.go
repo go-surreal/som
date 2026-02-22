@@ -21,7 +21,7 @@ type personObj[M any] struct {
 }
 
 func (n personObj[M]) ID() personKey[M] {
-	return newPersonKey[M](lib.Field(n.Key, "id"))
+	return newPersonKey[M](lib.Fn(lib.Field(n.Key, "id"), "meta::id"))
 }
 
 type personObjEdges[M any] struct {

@@ -57,31 +57,20 @@ func (f *ComplexID) CodeGen() *CodeGen {
 	}
 	return &CodeGen{
 		filterFunc: f.filterFunc,
-		sortFunc:   f.sortFunc,
-		fieldFunc:  f.fieldFieldFunc,
 	}
 }
 
 func (f *ComplexID) filterFunc(ctx Context) jen.Code {
+	idKey := jen.Qual(ctx.pkgLib(), "Fn").Call(
+		jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())),
+		jen.Lit("meta::id"),
+	)
+
 	return jen.Func().
 		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
 		Id(f.NameGo()).Params().
 		Id(f.element.NameGoLower()).Types(def.TypeModel).
 		Block(
 			jen.Return(jen.Id("new"+f.source.StructName).Types(def.TypeModel).
-				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
-}
-
-func (f *ComplexID) sortFunc(ctx Context) jen.Code {
-	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
-		Id(f.NameGo()).Params().
-		Id(f.element.NameGoLower()).Types(def.TypeModel).
-		Block(
-			jen.Return(jen.Id("new"+f.source.StructName).Types(def.TypeModel).
-				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
-}
-
-func (f *ComplexID) fieldFieldFunc(ctx Context) jen.Code {
-	return f.sortFunc(ctx)
+				Params(idKey)))
 }

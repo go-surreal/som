@@ -19,7 +19,3 @@ type weather[M any] struct {
 	key         string
 	Temperature *lib.BaseSort[M]
 }
-
-func (n weather[M]) ID() weatherKey[M] {
-	return newWeatherKey[M](keyed(n.key, "id"))
-}
