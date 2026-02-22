@@ -274,6 +274,20 @@ func TestComplexIDNodeRef(t *testing.T) {
 	assert.Assert(t, !ok, "expected record to be deleted")
 }
 
+func TestComplexIDCacheNotSupported(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	cachedCtx, cleanupCache := som.WithCache[model.PersonObj](ctx)
+	defer cleanupCache()
+
+	key := model.PersonKey{Name: "Alice", Age: 30}
+	_, _, err := client.PersonObjRepo().Read(cachedCtx, key)
+	assert.ErrorIs(t, err, som.ErrCacheNotSupported)
+}
+
 func TestComplexIDQueryAll(t *testing.T) {
 	ctx := context.Background()
 

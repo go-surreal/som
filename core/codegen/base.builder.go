@@ -596,9 +596,12 @@ The returned bool indicates whether the record was found or not.
 				jen.Id("key").Add(keyType),
 			).
 			Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
-			Block(
-				jen.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.Id("key")))),
-			)
+			BlockFunc(func(g *jen.Group) {
+				g.If(jen.Qual(b.subPkg("internal"), "CacheEnabled").Types(b.input.SourceQual(node.NameGo())).Call(jen.Id("ctx"))).Block(
+					jen.Return(jen.Nil(), jen.False(), jen.Qual(b.subPkg(""), "ErrCacheNotSupported")),
+				)
+				g.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("r").Dot("recordID").Call(jen.Id("key"))))
+			})
 	} else {
 		f.Line().
 			Add(comment(`

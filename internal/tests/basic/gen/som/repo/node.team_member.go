@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -349,6 +350,9 @@ func (r *teamMember) CreateWithID(ctx context.Context, teamMember *model.TeamMem
 // Read returns the record for the given key, if it exists.
 // The returned bool indicates whether the record was found or not.
 func (r *teamMember) Read(ctx context.Context, key model.TeamMemberKey) (*model.TeamMember, bool, error) {
+	if internal.CacheEnabled[model.TeamMember](ctx) {
+		return nil, false, som.ErrCacheNotSupported
+	}
 	return r.read(ctx, r.recordID(key))
 }
 

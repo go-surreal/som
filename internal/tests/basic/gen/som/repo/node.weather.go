@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -343,6 +344,9 @@ func (r *weather) CreateWithID(ctx context.Context, weather *model.Weather) erro
 // Read returns the record for the given key, if it exists.
 // The returned bool indicates whether the record was found or not.
 func (r *weather) Read(ctx context.Context, key model.WeatherKey) (*model.Weather, bool, error) {
+	if internal.CacheEnabled[model.Weather](ctx) {
+		return nil, false, som.ErrCacheNotSupported
+	}
 	return r.read(ctx, r.recordID(key))
 }
 
