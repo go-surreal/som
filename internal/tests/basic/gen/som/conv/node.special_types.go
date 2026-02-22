@@ -43,7 +43,7 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var recordID *som.ID
+		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 			}
 			idStr = s
 		}
-		c.CustomNode = som.NewCustomNode[som.UUID](idStr)
+		c.Node = som.NewNode[som.UUID](som.UUID(idStr))
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {
@@ -97,7 +97,7 @@ func ToSpecialTypesPtr(data *SpecialTypes) *model.SpecialTypes {
 
 type specialTypesLink struct {
 	SpecialTypes
-	ID *som.ID
+	ID *models.RecordID
 }
 
 func (f *specialTypesLink) MarshalCBOR() ([]byte, error) {
@@ -147,7 +147,10 @@ func toSpecialTypesLink(node model.SpecialTypes) *specialTypesLink {
 }
 
 func toSpecialTypesLinkPtr(node *model.SpecialTypes) *specialTypesLink {
-	if node == nil || node.ID() == "" {
+	if node == nil {
+		return nil
+	}
+	if node.ID() == "" {
 		return nil
 	}
 	rid := models.NewRecordID("special_types", som.UUID(node.ID()))

@@ -54,7 +54,7 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var recordID *som.ID
+		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
@@ -66,7 +66,7 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 			}
 			idStr = s
 		}
-		c.CustomNode = som.NewCustomNode[som.Rand](idStr)
+		c.Node = som.NewNode[som.Rand](som.Rand(idStr))
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {
@@ -118,7 +118,7 @@ func ToSpecialRelationPtr(data *SpecialRelation) *model.SpecialRelation {
 
 type specialRelationLink struct {
 	SpecialRelation
-	ID *som.ID
+	ID *models.RecordID
 }
 
 func (f *specialRelationLink) MarshalCBOR() ([]byte, error) {
@@ -168,7 +168,10 @@ func toSpecialRelationLink(node model.SpecialRelation) *specialRelationLink {
 }
 
 func toSpecialRelationLinkPtr(node *model.SpecialRelation) *specialRelationLink {
-	if node == nil || node.ID() == "" {
+	if node == nil {
+		return nil
+	}
+	if node.ID() == "" {
 		return nil
 	}
 	rid := models.NewRecordID("special_relation", node.ID())

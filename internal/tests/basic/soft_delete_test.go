@@ -173,7 +173,7 @@ func TestSoftDeleteRead(t *testing.T) {
 	err := client.SpecialTypesRepo().Create(ctx, &record)
 	assert.NilError(t, err)
 
-	id := record.ID()
+	id := string(record.ID())
 
 	err = client.SpecialTypesRepo().Delete(ctx, &record)
 	assert.NilError(t, err)

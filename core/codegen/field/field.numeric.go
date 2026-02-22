@@ -192,7 +192,7 @@ func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo()),
-		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *Numeric) sortDefine(ctx Context) jen.Code {
@@ -201,7 +201,7 @@ func (f *Numeric) sortDefine(ctx Context) jen.Code {
 
 func (f *Numeric) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Numeric) typeGoBase() jen.Code {
@@ -239,7 +239,7 @@ func (f *Numeric) fieldDefine(ctx Context) jen.Code {
 
 func (f *Numeric) fieldInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, f.typeGoBase()).
-		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Numeric) cborMarshal(_ Context) jen.Code {

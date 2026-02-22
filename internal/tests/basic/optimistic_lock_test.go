@@ -31,7 +31,7 @@ func TestOptimisticLock(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, 2, record.Version())
 
-	staleRecord, exists, err := client.SpecialTypesRepo().Read(ctx, record.ID())
+	staleRecord, exists, err := client.SpecialTypesRepo().Read(ctx, string(record.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Equal(t, 2, staleRecord.Version())
@@ -47,7 +47,7 @@ func TestOptimisticLock(t *testing.T) {
 	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock),
 		"expected ErrOptimisticLock, got: %v", err)
 
-	finalRecord, exists, err := client.SpecialTypesRepo().Read(ctx, record.ID())
+	finalRecord, exists, err := client.SpecialTypesRepo().Read(ctx, string(record.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Equal(t, "Updated Again", finalRecord.Name)

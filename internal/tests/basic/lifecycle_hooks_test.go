@@ -28,7 +28,7 @@ func TestHookBeforeCreate(t *testing.T) {
 	err := client.SpecialTypesRepo().Create(ctx, &group)
 	assert.NilError(t, err)
 
-	read, exists, err := client.SpecialTypesRepo().Read(ctx, group.ID())
+	read, exists, err := client.SpecialTypesRepo().Read(ctx, string(group.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Equal(t, "modified-by-hook", read.Name)
@@ -53,7 +53,7 @@ func TestHookAfterCreate(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, called.Load())
 
-	_, exists, err := client.SpecialTypesRepo().Read(ctx, group.ID())
+	_, exists, err := client.SpecialTypesRepo().Read(ctx, string(group.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 }
@@ -102,7 +102,7 @@ func TestHookBeforeUpdate(t *testing.T) {
 	err = client.SpecialTypesRepo().Update(ctx, &group)
 	assert.NilError(t, err)
 
-	read, exists, err := client.SpecialTypesRepo().Read(ctx, group.ID())
+	read, exists, err := client.SpecialTypesRepo().Read(ctx, string(group.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Equal(t, "modified-by-update-hook", read.Name)
@@ -152,7 +152,7 @@ func TestHookBeforeDelete(t *testing.T) {
 	err = client.SpecialTypesRepo().Delete(ctx, &group)
 	assert.Assert(t, errors.Is(err, hookErr))
 
-	_, exists, err := client.SpecialTypesRepo().Read(ctx, group.ID())
+	_, exists, err := client.SpecialTypesRepo().Read(ctx, string(group.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 }
@@ -180,7 +180,7 @@ func TestHookAfterDelete(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, called.Load())
 
-	read, exists, err := client.SpecialTypesRepo().Read(ctx, id)
+	read, exists, err := client.SpecialTypesRepo().Read(ctx, string(id))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Assert(t, read.SoftDelete.IsDeleted())
@@ -245,7 +245,7 @@ func TestModelHookBeforeCreate(t *testing.T) {
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
-	read, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
+	read, exists, err := client.AllTypesRepo().Read(ctx, string(rec.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Equal(t, "[created]active", read.FieldHookStatus)
@@ -278,7 +278,7 @@ func TestModelHookBeforeUpdate(t *testing.T) {
 	err = client.AllTypesRepo().Update(ctx, &rec)
 	assert.NilError(t, err)
 
-	read, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
+	read, exists, err := client.AllTypesRepo().Read(ctx, string(rec.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 	assert.Equal(t, "[updated]changed", read.FieldHookStatus)
@@ -316,7 +316,7 @@ func TestModelHookBeforeDeleteAbort(t *testing.T) {
 	err = client.AllTypesRepo().Delete(deleteCtx, &rec)
 	assert.Assert(t, err != nil)
 
-	_, exists, err := client.AllTypesRepo().Read(ctx, rec.ID())
+	_, exists, err := client.AllTypesRepo().Read(ctx, string(rec.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
 }
@@ -330,7 +330,7 @@ func TestModelHookAfterDelete(t *testing.T) {
 	rec := model.AllTypes{FieldHookStatus: "remove"}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
-	id := rec.ID()
+	id := string(rec.ID())
 
 	called := false
 	deleteCtx := context.WithValue(ctx, model.AfterDeleteCalledKey, &called)

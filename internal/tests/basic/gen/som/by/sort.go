@@ -2,9 +2,15 @@
 
 package by
 
+import "strconv"
+
 func keyed(base, key string) string {
 	if base == "" {
 		return key
 	}
 	return base + "." + key
+}
+
+func indexed(base string, idx int) string {
+	return base + "[" + strconv.Itoa(idx) + "]"
 }

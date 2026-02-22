@@ -16,7 +16,7 @@ func BenchmarkConvMarshal(b *testing.B) {
 
 	c := conv.AllTypes{
 		AllTypes: model.AllTypes{
-			Node:     som.NewNode(uuid.New().String()),
+			Node:     som.NewNode[som.ULID](som.ULID(uuid.New().String())),
 			FieldString:   "test string",
 			FieldInt:      42,
 			FieldFloat64:  3.14,
@@ -43,7 +43,7 @@ func BenchmarkConvUnmarshal(b *testing.B) {
 
 	c := conv.AllTypes{
 		AllTypes: model.AllTypes{
-			Node:     som.NewNode(uuid.New().String()),
+			Node:     som.NewNode[som.ULID](som.ULID(uuid.New().String())),
 			FieldString:   "test string",
 			FieldInt:      42,
 			FieldFloat64:  3.14,
@@ -76,7 +76,7 @@ func BenchmarkConvRoundTrip(b *testing.B) {
 
 	c := conv.AllTypes{
 		AllTypes: model.AllTypes{
-			Node:     som.NewNode(uuid.New().String()),
+			Node:     som.NewNode[som.ULID](som.ULID(uuid.New().String())),
 			FieldString:   "test string",
 			FieldInt:      42,
 			FieldFloat64:  3.14,
@@ -107,7 +107,7 @@ func BenchmarkConvRoundTrip(b *testing.B) {
 func BenchmarkConvMarshalSimple(b *testing.B) {
 	c := conv.SpecialTypes{
 		SpecialTypes: model.SpecialTypes{
-			CustomNode: som.NewCustomNode[som.UUID](uuid.New().String()),
+			Node: som.NewNode[som.UUID](som.UUID(uuid.New().String())),
 			Name: "Test Group",
 		},
 	}
@@ -126,7 +126,7 @@ func BenchmarkConvMarshalSimple(b *testing.B) {
 func BenchmarkConvUnmarshalSimple(b *testing.B) {
 	c := conv.SpecialTypes{
 		SpecialTypes: model.SpecialTypes{
-			CustomNode: som.NewCustomNode[som.UUID](uuid.New().String()),
+			Node: som.NewNode[som.UUID](som.UUID(uuid.New().String())),
 			Name: "Test Group",
 		},
 	}

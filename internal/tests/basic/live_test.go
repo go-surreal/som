@@ -29,7 +29,7 @@ func TestCreateWithAllTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readModel, exists, err := client.AllTypesRepo().Read(ctx, newModel.ID())
+	readModel, exists, err := client.AllTypesRepo().Read(ctx, string(newModel.ID()))
 	if err != nil {
 		t.Fatal(err)
 	}

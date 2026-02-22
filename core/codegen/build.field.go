@@ -161,8 +161,13 @@ func (b *fieldBuilder) fieldNewObject(object *field.DatabaseObject) jen.Code {
 				jen.Id(object.NameGoLower()).Types(def.TypeModel).
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("key")] = jen.Id("key")
-						for _, f := range object.Fields {
-							if code := f.CodeGen().FieldInit(fieldCtx); code != nil {
+						for i, f := range object.Fields {
+							fCtx := fieldCtx
+							if object.IsArrayIndexed {
+								idx := i
+								fCtx.ArrayIndex = &idx
+							}
+							if code := f.CodeGen().FieldInit(fCtx); code != nil {
 								d[jen.Id(f.NameGo())] = code
 							}
 						}

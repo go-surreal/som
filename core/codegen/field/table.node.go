@@ -32,3 +32,7 @@ func (t *NodeTable) NameGoLower() string {
 func (t *NodeTable) NameDatabase() string {
 	return strcase.ToSnake(t.Name) // TODO
 }
+
+func (t *NodeTable) HasComplexID() bool {
+	return t.Source != nil && t.Source.ComplexID != nil
+}

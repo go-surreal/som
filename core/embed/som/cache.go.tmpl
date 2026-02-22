@@ -4,8 +4,6 @@
 package som
 
 import (
-	"context"
-
 	"{{.GenerateOutPath}}/internal"
 )
 
@@ -37,45 +35,3 @@ var WithMaxSize = internal.WithMaxSize
 
 // CacheOption is a functional option for configuring cache behavior.
 type CacheOption = internal.CacheOption
-
-// WithCache enables caching for the specified model type.
-// Returns the context with cache enabled and a cleanup function.
-// The cleanup function should be called when the cache is no longer needed,
-// typically via defer.
-//
-// After the cleanup function is called, any attempt to use the returned context
-// for cached reads will return ErrCacheAlreadyCleaned. This prevents accidental
-// use of stale cache references.
-//
-// For eager caching, WithMaxSize limits the number of records that can be cached.
-// If the table exceeds MaxSize, Read returns ErrCacheSizeLimitExceeded.
-// This check happens both during initial cache load and during TTL-based refresh.
-//
-// Example:
-//
-//	ctx, cleanup := som.WithCache[model.Group](ctx)
-//	defer cleanup()
-//
-//	ctx, cleanup := som.WithCache[model.Group](ctx, som.Lazy())          // explicit lazy
-//	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager())         // eager, load on first read
-//	ctx, cleanup := som.WithCache[model.Group](ctx, som.WithTTL(5*time.Minute))  // with expiration
-//	ctx, cleanup := som.WithCache[model.Group](ctx, som.Eager(), som.WithMaxSize(5000))
-func WithCache[T Model](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
-	options := &internal.CacheOptions{
-		Mode:    internal.CacheModeLazy,
-		MaxSize: internal.DefaultMaxSize,
-	}
-	for _, opt := range opts {
-		opt(options)
-	}
-
-	id := internal.NextCacheID()
-	internal.InitCache(id, nil) // Initialize placeholder to track active cache
-	ctx = internal.SetCacheContext[T](ctx, id, options)
-
-	cleanup := func() {
-		internal.DropCacheByID(id)
-	}
-
-	return ctx, cleanup
-}

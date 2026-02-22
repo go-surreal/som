@@ -73,9 +73,11 @@ func (f *fieldAtomic) Validate() error {
 type IDType string
 
 const (
-	IDTypeULID IDType = "ULID"
-	IDTypeUUID IDType = "UUID"
-	IDTypeRand IDType = "Rand"
+	IDTypeULID   IDType = "ULID"
+	IDTypeUUID   IDType = "UUID"
+	IDTypeRand   IDType = "Rand"
+	IDTypeArray  IDType = "Array"
+	IDTypeObject IDType = "Object"
 )
 
 type FieldID struct {
@@ -224,6 +226,28 @@ func (f *FieldSlice) Validate() error {
 
 type FieldVersion struct {
 	*fieldAtomic
+}
+
+type ComplexIDField struct {
+	Name   string
+	DBName string
+	Field  Field
+}
+
+type FieldComplexID struct {
+	*fieldAtomic
+	Kind       IDType
+	StructName string
+	Fields     []ComplexIDField
+}
+
+func (f *FieldComplexID) HasNodeRef() bool {
+	for _, sf := range f.Fields {
+		if _, ok := sf.Field.(*FieldNode); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // type FieldMap struct {
