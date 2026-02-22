@@ -16,16 +16,14 @@ import (
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
-type ID = models.RecordID
-
 type Database interface {
 	// Create accepts either a table name (string) for server-generated IDs or a RecordID for specific IDs
 	Create(ctx context.Context, what any, data any) ([]byte, error)
-	Select(ctx context.Context, id *ID) ([]byte, error)
+	Select(ctx context.Context, id *models.RecordID) ([]byte, error)
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	Update(ctx context.Context, id *ID, data any) ([]byte, error)
-	Delete(ctx context.Context, id *ID) ([]byte, error)
+	Update(ctx context.Context, id *models.RecordID, data any) ([]byte, error)
+	Delete(ctx context.Context, id *models.RecordID) ([]byte, error)
 
 	Marshal(val any) ([]byte, error)
 	Unmarshal(buf []byte, val any) error
@@ -89,7 +87,7 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Select(ctx context.Context, id *ID) ([]byte, error) {
+func (w *surrealDBWrapper) Select(ctx context.Context, id *models.RecordID) ([]byte, error) {
 	if id == nil {
 		return nil, som.ErrNilID
 	}
@@ -209,7 +207,7 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 	return out, nil
 }
 
-func (w *surrealDBWrapper) Update(ctx context.Context, id *ID, data any) ([]byte, error) {
+func (w *surrealDBWrapper) Update(ctx context.Context, id *models.RecordID, data any) ([]byte, error) {
 	if id == nil {
 		return nil, som.ErrNilID
 	}
@@ -221,7 +219,7 @@ func (w *surrealDBWrapper) Update(ctx context.Context, id *ID, data any) ([]byte
 	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Delete(ctx context.Context, id *ID) ([]byte, error) {
+func (w *surrealDBWrapper) Delete(ctx context.Context, id *models.RecordID) ([]byte, error) {
 	if id == nil {
 		return nil, som.ErrNilID
 	}

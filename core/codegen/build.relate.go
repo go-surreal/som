@@ -23,6 +23,9 @@ func newRelateBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *relateB
 
 func (b *relateBuilder) build() error {
 	for _, node := range b.nodes {
+		if node.HasComplexID() {
+			continue
+		}
 		if err := b.buildNodeFile(node); err != nil {
 			return err
 		}

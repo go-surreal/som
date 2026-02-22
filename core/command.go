@@ -2,10 +2,12 @@ package core
 
 import (
 	"context"
+
 	"github.com/urfave/cli/v3"
 )
 
 const (
+	flagInit    = "init"
 	flagVerbose = "verbose"
 	flagDry     = "dry"
 	flagNoCheck = "no-check"
@@ -20,6 +22,10 @@ func Gen() *cli.Command {
 		Description: "Takes the models from <input_path> and generates a typesafe access layer at <output_path>.",
 		ArgsUsage:   "<input_path> <output_path>",
 		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  flagInit,
+				Usage: `Initialize a new project with only the basic som files.`,
+			},
 			&cli.BoolFlag{
 				Name:    flagVerbose,
 				Aliases: []string{"v"},
@@ -43,14 +49,22 @@ func Gen() *cli.Command {
 }
 
 func generate(_ context.Context, cmd *cli.Command) error {
-	if cmd.Args().Len() != 2 {
+	init := cmd.Bool(flagInit)
+
+	if (init && cmd.Args().Len() != 1) ||
+		(!init && cmd.Args().Len() != 2) {
 		return cli.Exit("Incorrect number of arguments", 1)
 	}
 
 	inPath := cmd.Args().Get(0)
 	outPath := cmd.Args().Get(1)
 
-	if err := Generate(inPath, outPath, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck), cmd.String(flagWire)); err != nil {
+	if init {
+		inPath = "<not-used>"
+		outPath = cmd.Args().Get(0)
+	}
+
+	if err := Generate(inPath, outPath, init, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck), cmd.String(flagWire)); err != nil {
 		return cli.Exit(err.Error(), 1)
 	}
 

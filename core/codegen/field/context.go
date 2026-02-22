@@ -13,6 +13,7 @@ type Context struct {
 	Table       Table
 	Element     Element
 	Receiver    *jen.Statement
+	ArrayIndex  *int
 	isFromSlice bool
 }
 
@@ -34,6 +35,20 @@ func (c Context) pkgCBOR() string {
 
 func (c Context) pkgInternal() string {
 	return path.Join(c.TargetPkg, def.PkgInternal)
+}
+
+func (c Context) filterKeyCode(name string) jen.Code {
+	if c.ArrayIndex != nil {
+		return jen.Qual(c.pkgLib(), "Index").Call(jen.Id("key"), jen.Lit(*c.ArrayIndex))
+	}
+	return jen.Qual(c.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(name))
+}
+
+func (c Context) sortKeyCode(name string) jen.Code {
+	if c.ArrayIndex != nil {
+		return jen.Id("indexed").Call(jen.Id("key"), jen.Lit(*c.ArrayIndex))
+	}
+	return jen.Id("keyed").Call(jen.Id("key"), jen.Lit(name))
 }
 
 func (c Context) fromSlice() Context {

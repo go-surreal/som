@@ -11,6 +11,7 @@ import (
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -118,18 +119,21 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.specialRelationRepo == nil {
-		c.specialRelationRepo = &specialRelation{repo: &repo[model.SpecialRelation]{
-			db:      c.db,
-			name:    "special_relation",
-			info:    specialRelationRepoInfo,
-			newID:   newID,
-			parseID: parseStringID}}
+		c.specialRelationRepo = &specialRelation{repo: &repo[model.SpecialRelation, string]{
+			db:    c.db,
+			name:  "special_relation",
+			info:  specialRelationRepoInfo,
+			newID: newID,
+			recordID: func(id string) *models.RecordID {
+				rid := models.NewRecordID("special_relation", parseStringID(id))
+				return &rid
+			}}}
 	}
 	return c.specialRelationRepo
 }
 
 type specialRelation struct {
-	*repo[model.SpecialRelation]
+	*repo[model.SpecialRelation, string]
 	mu           sync.RWMutex
 	beforeCreate []specialRelationHook
 	afterCreate  []specialRelationHook
@@ -402,11 +406,12 @@ func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRe
 	if id == "" {
 		return nil, false, som.ErrEmptyID
 	}
+	rid := r.recordID(id)
 	if !internal.CacheEnabled[model.SpecialRelation](ctx) {
-		return r.read(ctx, r.recordID(id))
+		return r.read(ctx, rid)
 	}
 	idFunc := func(n *model.SpecialRelation) string {
-		return n.ID()
+		return string(n.ID())
 	}
 	queryAll := func(ctx context.Context) ([]*model.SpecialRelation, error) {
 		return r.Query().All(ctx)
@@ -422,7 +427,7 @@ func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRe
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.SpecialRelation]{cacheID: internal.GetCacheKey[model.SpecialRelation](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, cache, refreshFuncs)
+	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.
@@ -447,7 +452,7 @@ func (r *specialRelation) Update(ctx context.Context, specialRelation *model.Spe
 			return err
 		}
 	}
-	if err := r.update(ctx, r.recordID(specialRelation.ID()), specialRelation); err != nil {
+	if err := r.update(ctx, r.recordID(string(specialRelation.ID())), specialRelation); err != nil {
 		return err
 	}
 	if h, ok := any(specialRelation).(som.OnAfterUpdateHook); ok {
@@ -492,7 +497,7 @@ func (r *specialRelation) Delete(ctx context.Context, specialRelation *model.Spe
 			return err
 		}
 	}
-	if err := r.delete(ctx, r.recordID(specialRelation.ID()), specialRelation, true, nil); err != nil {
+	if err := r.delete(ctx, r.recordID(string(specialRelation.ID())), specialRelation, true, nil); err != nil {
 		return err
 	}
 	if h, ok := any(specialRelation).(som.OnAfterDeleteHook); ok {
@@ -522,7 +527,7 @@ func (r *specialRelation) Erase(ctx context.Context, specialRelation *model.Spec
 	if specialRelation.ID() == "" {
 		return errors.New("cannot erase SpecialRelation without existing record ID")
 	}
-	return r.delete(ctx, r.recordID(specialRelation.ID()), specialRelation, false, nil)
+	return r.delete(ctx, r.recordID(string(specialRelation.ID())), specialRelation, false, nil)
 }
 
 // Restore un-deletes a soft-deleted record.
@@ -538,12 +543,12 @@ func (r *specialRelation) Restore(ctx context.Context, specialRelation *model.Sp
 		return errors.New("record is not deleted, cannot restore")
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
-	vars := map[string]any{"id": r.recordID(specialRelation.ID())}
+	vars := map[string]any{"id": r.recordID(string(specialRelation.ID()))}
 	_, err := r.db.Query(ctx, query, vars)
 	if err != nil {
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
-	return r.refresh(ctx, r.recordID(specialRelation.ID()), specialRelation)
+	return r.refresh(ctx, r.recordID(string(specialRelation.ID())), specialRelation)
 }
 
 // Refresh refreshes the given model with the remote data.
@@ -554,7 +559,7 @@ func (r *specialRelation) Refresh(ctx context.Context, specialRelation *model.Sp
 	if specialRelation.ID() == "" {
 		return errors.New("cannot refresh SpecialRelation without existing record ID")
 	}
-	return r.refresh(ctx, r.recordID(specialRelation.ID()), specialRelation)
+	return r.refresh(ctx, r.recordID(string(specialRelation.ID())), specialRelation)
 }
 
 // Relate returns a new relate instance for the SpecialRelation model.

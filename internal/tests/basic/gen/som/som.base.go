@@ -33,36 +33,33 @@ var ErrEmptyID = errors.New("id cannot be empty")
 // ErrEmptyResponse is returned when the database returns an unexpected empty response.
 var ErrEmptyResponse = errors.New("empty response")
 
-// Model is implemented by all generated model types (nodes and edges).
-type Model interface {
-	ID() string
-}
+// ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
+var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
-type ID = models.RecordID
-
-// Table creates a RecordID representing a table (for server-generated IDs).
-// This is a convenience wrapper to avoid importing surrealdb.go directly.
-func Table(name string) models.Table {
-	return models.Table(name)
-}
-
-// IDType constrains the type of auto-generated record IDs.
-// Embed CustomNode[T] with one of these types in your model struct:
-//   - ULID: lexicographically sortable, default (used by the Node alias)
-//   - UUID: standard UUID v4 format
-//   - Rand: SurrealDB native random string ID
-type IDType interface {
-	~string
-	isIDType()
+// nodeID is a marker type for all ID types.
+type nodeID interface {
+    isNodeID()
 }
 
 type ULID string
 type UUID string
 type Rand string
 
-func (ULID) isIDType() {}
-func (UUID) isIDType() {}
-func (Rand) isIDType() {}
+func (ULID) isNodeID() {}
+func (UUID) isNodeID() {}
+func (Rand) isNodeID() {}
+
+// ArrayID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an array.
+type ArrayID struct{}
+
+func (ArrayID) isNodeID() {}
+
+// ObjectID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an object.
+type ObjectID struct{}
+
+func (ObjectID) isNodeID() {}
 
 func (u UUID) MarshalCBOR() ([]byte, error) {
 	if u == "" {
@@ -79,21 +76,17 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-type CustomNode[T IDType] struct {
+type Node[T nodeID] struct {
 	id T
 }
 
-func NewCustomNode[T IDType](id string) CustomNode[T] {
-	return CustomNode[T]{id: T(id)}
+func NewNode[T nodeID](id T) Node[T] {
+	return Node[T]{id: id}
 }
 
-func (n CustomNode[T]) ID() string { return string(n.id) }
+func (n Node[T]) ID() T { return n.id }
 
-type Node = CustomNode[ULID]
-
-func NewNode(id string) Node {
-	return NewCustomNode[ULID](id)
-}
+func (Node[T]) isNode() {}
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
@@ -109,6 +102,12 @@ func NewEdge(id string) Edge {
 
 func (e Edge) ID() string {
 	return e.id
+}
+
+type node interface{ isNode() }
+
+func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
+	return internal.WithCache[T](ctx, opts...)
 }
 
 type Timestamps = internal.Timestamps
@@ -130,7 +129,7 @@ type Email string
 // Example:
 //
 //	type User struct {
-//	    som.Node
+//	    som.Node[som.ULID]
 //	    Password som.Password[som.Bcrypt]
 //	}
 type Password[A PasswordAlgorithm] string

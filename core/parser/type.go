@@ -5,6 +5,7 @@ type Node struct {
 	Fields         []Field
 	IDType         IDType
 	IDEmbed        string
+	ComplexID      *FieldComplexID
 	Timestamps     bool
 	OptimisticLock bool
 	SoftDelete     bool

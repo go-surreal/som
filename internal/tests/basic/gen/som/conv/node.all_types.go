@@ -308,7 +308,7 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var recordID *som.ID
+		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
@@ -320,7 +320,7 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 			}
 			idStr = s
 		}
-		c.Node = som.NewNode(idStr)
+		c.Node = som.NewNode[som.ULID](som.ULID(idStr))
 	}
 
 	if raw, ok := rawMap["created_at"]; ok {
@@ -690,7 +690,7 @@ func ToAllTypesPtr(data *AllTypes) *model.AllTypes {
 
 type allTypesLink struct {
 	AllTypes
-	ID *som.ID
+	ID *models.RecordID
 }
 
 func (f *allTypesLink) MarshalCBOR() ([]byte, error) {
@@ -740,7 +740,10 @@ func toAllTypesLink(node model.AllTypes) *allTypesLink {
 }
 
 func toAllTypesLinkPtr(node *model.AllTypes) *allTypesLink {
-	if node == nil || node.ID() == "" {
+	if node == nil {
+		return nil
+	}
+	if node.ID() == "" {
 		return nil
 	}
 	rid := models.NewRecordID("all_types", node.ID())

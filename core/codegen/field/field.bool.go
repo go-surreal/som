@@ -69,7 +69,7 @@ func (f *Bool) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *Bool) sortDefine(ctx Context) jen.Code {
@@ -78,7 +78,7 @@ func (f *Bool) sortDefine(ctx Context) jen.Code {
 
 func (f *Bool) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Bool) fieldDefine(ctx Context) jen.Code {
@@ -87,7 +87,7 @@ func (f *Bool) fieldDefine(ctx Context) jen.Code {
 
 func (f *Bool) fieldInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Bool()).
-		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Bool) cborMarshal(_ Context) jen.Code {

@@ -4,6 +4,7 @@ package lib
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -204,6 +205,12 @@ func (k Key[M]) render(ctx *context) string {
 	return statement
 }
 
+func Index[T any](k Key[T], idx int) Key[T] {
+	return append(k, RawKeyPart(func(_ *context) string {
+		return "[" + strconv.Itoa(idx) + "]"
+	}))
+}
+
 func Field[T any](k Key[T], name string) Key[T] {
 	return append(k, BaseKeyPart[T]{
 		name:      name,
@@ -233,4 +240,8 @@ func EdgeOut[T, S any](key Key[T], name string, filters []Filter[S]) Key[T] {
 		separator: "<-",
 		filters:   filters,
 	})
+}
+
+func Fn[T any](k Key[T], fn string) Key[T] {
+	return k.fn(fn)
 }

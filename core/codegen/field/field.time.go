@@ -84,7 +84,7 @@ func (f *Time) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *Time) sortDefine(ctx Context) jen.Code {
@@ -93,7 +93,7 @@ func (f *Time) sortDefine(ctx Context) jen.Code {
 
 func (f *Time) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Time) fieldDefine(ctx Context) jen.Code {
@@ -106,7 +106,7 @@ func (f *Time) fieldInit(ctx Context) jen.Code {
 		factory = "NewTimePtrField"
 	}
 	return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).
-		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Time) cborMarshal(ctx Context) jen.Code {

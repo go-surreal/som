@@ -1,8 +1,12 @@
 module github.com/go-surreal/som/tests/basic
 
-go 1.24.0
+go 1.25.7
 
 replace github.com/go-surreal/som => ../../../
+
+tool (
+	github.com/go-surreal/som
+)
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.14.0
@@ -20,7 +24,7 @@ require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/dave/jennifer v1.7.1 // indirect
-	github.com/go-surreal/som v0.11.0 // indirect
+	github.com/go-surreal/som v0.15.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/urfave/cli/v3 v3.6.2 // indirect
