@@ -9,7 +9,7 @@ import (
 )
 
 func (b *build) buildWireFile() error {
-	pkgRepo := b.subPkg(def.PkgRepo)
+	pkgRepo := b.relativePkgPath(def.PkgRepo)
 
 	f := jen.NewFile(def.PkgSomWire)
 	f.PackageComment(string(embed.CodegenComment))

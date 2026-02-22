@@ -83,7 +83,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		f.Line()
 		f.Type().Id(node.NameGoLower()+"Link").Struct(
 			jen.Id(node.NameGo()),
-			jen.Id("ID").Op("*").Qual(b.subPkg(""), "ID"),
+			jen.Id("ID").Op("*").Qual(b.relativePkgPath(), "ID"),
 		)
 
 		f.Line()
@@ -142,7 +142,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 
 func (b *convBuilder) nodeIDValue(node *field.NodeTable, varName string) jen.Code {
 	if node.Source.IDType == parser.IDTypeUUID {
-		return jen.Qual(b.subPkg(""), "UUID").Call(jen.Id(varName).Dot("ID").Call())
+		return jen.Qual(b.relativePkgPath(), "UUID").Call(jen.Id(varName).Dot("ID").Call())
 	}
 	return jen.Id(varName).Dot("ID").Call()
 }
@@ -277,7 +277,7 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 					jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
 					jen.Id("ok"),
 				).BlockFunc(func(bg *jen.Group) {
-					bg.Var().Id("recordID").Op("*").Qual(b.subPkg(""), "ID")
+					bg.Var().Id("recordID").Op("*").Qual(b.relativePkgPath(), "ID")
 					bg.If(
 					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
 					jen.Err().Op("!=").Nil(),
@@ -298,14 +298,14 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 							fieldName = "Node"
 						}
 						if fieldName == "Node" {
-							bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewNode").Call(jen.Id("idStr"))
+							bg.Id("c").Dot(fieldName).Op("=").Qual(b.relativePkgPath(), "NewNode").Call(jen.Id("idStr"))
 						} else {
-							bg.Id("c").Dot(fieldName).Op("=").Qual(b.subPkg(""), "NewCustomNode").Types(
-								jen.Qual(b.subPkg(""), string(node.Source.IDType)),
+							bg.Id("c").Dot(fieldName).Op("=").Qual(b.relativePkgPath(), "NewCustomNode").Types(
+								jen.Qual(b.relativePkgPath(), string(node.Source.IDType)),
 							).Call(jen.Id("idStr"))
 						}
 					} else {
-						bg.Id("c").Dot("Edge").Op("=").Qual(b.subPkg(""), "NewEdge").Call(jen.Id("idStr"))
+						bg.Id("c").Dot("Edge").Op("=").Qual(b.relativePkgPath(), "NewEdge").Call(jen.Id("idStr"))
 					}
 				})
 			}
