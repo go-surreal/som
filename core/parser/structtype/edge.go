@@ -25,7 +25,31 @@ func (h *EdgeHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
 	return nil
 }
 
-func (h *EdgeHandler) Validate(_ *parser.TypeContext) error { return nil }
+func (h *EdgeHandler) Validate(ctx *parser.TypeContext) error {
+	names := make([]string, len(ctx.Output.Edges))
+	for i, e := range ctx.Output.Edges {
+		names[i] = e.Name
+		if e.In == nil {
+			return fmt.Errorf("edge %s: missing 'in' field (tag som:\"in\")", e.Name)
+		}
+		if e.Out == nil {
+			return fmt.Errorf("edge %s: missing 'out' field (tag som:\"out\")", e.Name)
+		}
+		if err := validateField("edge "+e.Name, e.In, ctx.Output); err != nil {
+			return err
+		}
+		if err := validateField("edge "+e.Name, e.Out, ctx.Output); err != nil {
+			return err
+		}
+		if err := validateFields("edge "+e.Name, e.Fields, ctx.Output); err != nil {
+			return err
+		}
+	}
+	if dup, ok := hasDuplicates(names); ok {
+		return fmt.Errorf("duplicate edge name %q", dup)
+	}
+	return nil
+}
 
 func IsEdge(t gotype.Type, outPkg string) bool {
 	if t.Kind() != gotype.Struct {

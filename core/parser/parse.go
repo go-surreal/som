@@ -72,15 +72,15 @@ func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers 
 		}
 	}
 
-	if err := tReg.validate(ctx); err != nil {
-		return nil, err
-	}
-
 	define, err := parseDefine(absDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse define files: %w", err)
 	}
 	res.Define = define
+
+	if err := tReg.validate(ctx); err != nil {
+		return nil, fmt.Errorf("validation: %w", err)
+	}
 
 	res.UsedFeatures = collectUsedFeatures(res)
 

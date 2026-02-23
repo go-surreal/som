@@ -22,4 +22,6 @@ func (h *EnumValueHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error 
 	return nil
 }
 
-func (h *EnumValueHandler) Validate(_ *parser.TypeContext) error { return nil }
+func (h *EnumValueHandler) Validate(_ *parser.TypeContext) error {
+	return nil
+}

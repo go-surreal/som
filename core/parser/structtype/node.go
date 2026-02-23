@@ -26,7 +26,19 @@ func (h *NodeHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
 	return nil
 }
 
-func (h *NodeHandler) Validate(_ *parser.TypeContext) error { return nil }
+func (h *NodeHandler) Validate(ctx *parser.TypeContext) error {
+	names := make([]string, len(ctx.Output.Nodes))
+	for i, n := range ctx.Output.Nodes {
+		names[i] = n.Name
+		if err := validateFields("node "+n.Name, n.Fields, ctx.Output); err != nil {
+			return err
+		}
+	}
+	if dup, ok := hasDuplicates(names); ok {
+		return fmt.Errorf("duplicate node name %q", dup)
+	}
+	return nil
+}
 
 func IsNode(t gotype.Type, outPkg string) bool {
 	if t.Kind() != gotype.Struct {

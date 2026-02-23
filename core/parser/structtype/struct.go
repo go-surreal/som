@@ -1,6 +1,8 @@
 package structtype
 
 import (
+	"fmt"
+
 	"github.com/go-surreal/som/core/parser"
 	"github.com/wzshiming/gotype"
 )
@@ -20,7 +22,19 @@ func (h *StructHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
 	return nil
 }
 
-func (h *StructHandler) Validate(_ *parser.TypeContext) error { return nil }
+func (h *StructHandler) Validate(ctx *parser.TypeContext) error {
+	names := make([]string, len(ctx.Output.Structs))
+	for i, s := range ctx.Output.Structs {
+		names[i] = s.Name
+		if err := validateFields("struct "+s.Name, s.Fields, ctx.Output); err != nil {
+			return err
+		}
+	}
+	if dup, ok := hasDuplicates(names); ok {
+		return fmt.Errorf("duplicate struct name %q", dup)
+	}
+	return nil
+}
 
 func parseStruct(v gotype.Type, outPkg string) (*parser.Struct, error) {
 	str := &parser.Struct{Name: v.Name()}
