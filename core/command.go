@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-surreal/som/core/util/gomod"
 	"github.com/urfave/cli/v3"
@@ -70,11 +71,18 @@ func generate(_ context.Context, cmd *cli.Command) error {
 		return cli.Exit(err.Error(), 1)
 	}
 
+	if err := validateRelativePath(flagOut, cmd.String(flagOut)); err != nil {
+		return cli.Exit(err.Error(), 1)
+	}
+
 	outPath := filepath.Join(modDir, cmd.String(flagOut))
 
 	inDir := defaultInputDir
 	if cmd.IsSet(flagIn) {
 		inDir = cmd.String(flagIn)
+		if err := validateRelativePath(flagIn, inDir); err != nil {
+			return cli.Exit(err.Error(), 1)
+		}
 	}
 
 	absInPath := filepath.Join(modDir, inDir)
@@ -102,6 +110,17 @@ func generate(_ context.Context, cmd *cli.Command) error {
 		return cli.Exit(err.Error(), 1)
 	}
 
+	return nil
+}
+
+func validateRelativePath(flagName, value string) error {
+	if filepath.IsAbs(value) {
+		return fmt.Errorf("--%s must be a relative path, got %q", flagName, value)
+	}
+	cleaned := filepath.Clean(value)
+	if cleaned == ".." || strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("--%s must not escape the module root, got %q", flagName, value)
+	}
 	return nil
 }
 
