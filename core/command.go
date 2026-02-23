@@ -19,7 +19,6 @@ const (
 	flagNoCheck = "no-check"
 	flagWire    = "wire"
 
-	defaultInputDir  = "model"
 	defaultOutputDir = "gen/som"
 )
 
@@ -27,7 +26,7 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:        "som",
 		Usage:       "Generate code for typesafe SurrealDB access",
-		Description: "Detects the closest go.mod and generates a typesafe access layer.\n\nBy default, models are read from 'model' and output is written to 'gen/som' (relative to go.mod).\nIf the input directory does not exist, only static base files are generated.",
+		Description: "Detects the closest go.mod and generates a typesafe access layer.\n\nOutput is written to 'gen/som' by default (relative to go.mod).\nIf --in is not specified, only static base files are generated.",
 		Suggest:     true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -77,24 +76,21 @@ func generate(_ context.Context, cmd *cli.Command) error {
 
 	outPath := filepath.Join(modDir, cmd.String(flagOut))
 
-	inDir := defaultInputDir
-	if cmd.IsSet(flagIn) {
-		inDir = cmd.String(flagIn)
+	init := !cmd.IsSet(flagIn)
+	inPath := ""
+
+	if !init {
+		inDir := cmd.String(flagIn)
 		if err := validateRelativePath(flagIn, inDir); err != nil {
 			return cli.Exit(err.Error(), 1)
 		}
-	}
 
-	absInPath := filepath.Join(modDir, inDir)
-	init := false
-	inPath := ""
+		absInPath := filepath.Join(modDir, inDir)
 
-	if _, err := os.Stat(absInPath); err != nil {
-		if cmd.IsSet(flagIn) {
+		if _, err := os.Stat(absInPath); err != nil {
 			return cli.Exit(fmt.Sprintf("input directory %q not found", inDir), 1)
 		}
-		init = true
-	} else {
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return cli.Exit(fmt.Sprintf("could not get working directory: %v", err), 1)
