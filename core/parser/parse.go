@@ -12,8 +12,17 @@ import (
 	"github.com/wzshiming/gotype"
 )
 
-func Parse(dir string, outPkg string) (*Output, error) {
+// activeFieldRegistry is set at the start of Parse() so that
+// ParseField / ParseFieldInternal can delegate to it.
+var activeFieldRegistry *fieldRegistry
+
+func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers []FieldHandler) (*Output, error) {
 	res := &Output{}
+
+	tReg := newTypeRegistry(typeHandlers)
+	fReg := newFieldRegistry(fieldHandlers)
+
+	activeFieldRegistry = fReg
 
 	imp := gotype.NewImporter()
 
@@ -54,7 +63,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 			continue
 		}
 
-		matched, err := defaultTypeRegistry.handle(v, ctx)
+		matched, err := tReg.handle(v, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +72,7 @@ func Parse(dir string, outPkg string) (*Output, error) {
 		}
 	}
 
-	if err := defaultTypeRegistry.validate(ctx); err != nil {
+	if err := tReg.validate(ctx); err != nil {
 		return nil, err
 	}
 
@@ -78,8 +87,8 @@ func Parse(dir string, outPkg string) (*Output, error) {
 	return res, nil
 }
 
-func parseField(t gotype.Type, outPkg string) (Field, error) {
-	field, err := parseFieldInternal(t, outPkg, true)
+func ParseField(t gotype.Type, outPkg string) (Field, error) {
+	field, err := ParseFieldInternal(t, outPkg, true)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +100,7 @@ func parseField(t gotype.Type, outPkg string) (Field, error) {
 	return field, nil
 }
 
-func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field, error) {
+func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field, error) {
 	var indexInfo *IndexInfo
 	var searchInfo *SearchInfo
 	if isStructField {
@@ -99,9 +108,12 @@ func parseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 		indexInfo, searchInfo = parseSomTag(somTag)
 	}
 
-	ctx := &FieldContext{OutPkg: outPkg}
+	ctx := &FieldContext{
+		OutPkg:       outPkg,
+		RecurseParse: activeFieldRegistry.parse,
+	}
 
-	field, err := defaultFieldRegistry.parse(t, t.Elem(), ctx)
+	field, err := activeFieldRegistry.parse(t, t.Elem(), ctx)
 	if err != nil {
 		return nil, err
 	}

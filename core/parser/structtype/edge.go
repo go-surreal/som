@@ -1,4 +1,4 @@
-package parser
+package structtype
 
 import (
 	"fmt"
@@ -6,19 +6,18 @@ import (
 	"path"
 	"strings"
 
+	"github.com/go-surreal/som/core/parser"
 	"github.com/wzshiming/gotype"
 )
 
-type edgeHandler struct{}
+type EdgeHandler struct{}
 
-
-
-func (h *edgeHandler) Match(t gotype.Type, ctx *TypeContext) bool {
-	return isEdge(t, ctx.OutPkg)
+func (h *EdgeHandler) Match(t gotype.Type, ctx *parser.TypeContext) bool {
+	return IsEdge(t, ctx.OutPkg)
 }
 
-func (h *edgeHandler) Handle(t gotype.Type, ctx *TypeContext) error {
-	edge, err := parseEdge(t, ctx.OutPkg)
+func (h *EdgeHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
+	edge, err := ParseEdge(t, ctx.OutPkg)
 	if err != nil {
 		return err
 	}
@@ -26,9 +25,9 @@ func (h *edgeHandler) Handle(t gotype.Type, ctx *TypeContext) error {
 	return nil
 }
 
-func (h *edgeHandler) Validate(_ *TypeContext) error { return nil }
+func (h *EdgeHandler) Validate(_ *parser.TypeContext) error { return nil }
 
-func isEdge(t gotype.Type, outPkg string) bool {
+func IsEdge(t gotype.Type, outPkg string) bool {
 	if t.Kind() != gotype.Struct {
 		return false
 	}
@@ -51,12 +50,12 @@ func isEdge(t gotype.Type, outPkg string) bool {
 	return false
 }
 
-func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
+func ParseEdge(v gotype.Type, outPkg string) (*parser.Edge, error) {
 	internalPkg := path.Join(outPkg, "internal")
 
-	edge := &Edge{Name: v.Name()}
+	edge := &parser.Edge{Name: v.Name()}
 
-	var features featureSet
+	var features parser.FeatureSet
 
 	nf := v.NumField()
 
@@ -70,12 +69,12 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 		if f.IsAnonymous() {
 			if f.Elem().PkgPath() == outPkg && f.Name() == "Edge" {
 				edge.Fields = append(edge.Fields,
-					&FieldID{&fieldAtomic{name: "ID"}, IDTypeULID},
+					parser.NewFieldID("ID", parser.IDTypeULID),
 				)
 				continue
 			}
 
-			if parseFeature(f, internalPkg, &features, &edge.Fields) {
+			if parser.ParseFeature(f, internalPkg, &features, &edge.Fields) {
 				continue
 			}
 
@@ -86,7 +85,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Edge", v.Name())
 		}
 
-		field, err := parseField(f, outPkg)
+		field, err := parser.ParseField(f, outPkg)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +103,7 @@ func parseEdge(v gotype.Type, outPkg string) (*Edge, error) {
 		edge.Fields = append(edge.Fields, field)
 	}
 
-	applyFeatures(features, &edge.Timestamps, &edge.OptimisticLock, &edge.SoftDelete, &edge.Fields)
+	parser.ApplyFeatures(features, &edge.Timestamps, &edge.OptimisticLock, &edge.SoftDelete, &edge.Fields)
 
 	return edge, nil
 }

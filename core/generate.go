@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-surreal/som/core/codegen"
 	"github.com/go-surreal/som/core/parser"
+	"github.com/go-surreal/som/core/parser/fieldtype"
+	"github.com/go-surreal/som/core/parser/structtype"
 	"github.com/go-surreal/som/core/util/fs"
 	"github.com/go-surreal/som/core/util/gomod"
 )
@@ -80,7 +82,34 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 
 	if !init {
 		// Parse first to determine which features are used.
-		source, err = parser.Parse(inPath, outPkg)
+		source, err = parser.Parse(inPath, outPkg,
+			[]parser.TypeHandler{
+				&structtype.NodeHandler{},
+				&structtype.EdgeHandler{},
+				&structtype.ComplexIDStructHandler{},
+				&structtype.EnumHandler{},
+				&structtype.EnumValueHandler{},
+				&structtype.StructHandler{},
+			},
+			[]parser.FieldHandler{
+				&fieldtype.EmailHandler{},
+				&fieldtype.PasswordHandler{},
+				&fieldtype.EnumHandler{},
+				&fieldtype.DurationHandler{},
+				&fieldtype.TimeHandler{},
+				&fieldtype.URLHandler{},
+				&fieldtype.NodeRefHandler{},
+				&fieldtype.EdgeRefHandler{},
+				&fieldtype.UUIDHandler{},
+				&fieldtype.SliceHandler{},
+				&fieldtype.PtrHandler{},
+				&fieldtype.BoolHandler{},
+				&fieldtype.ByteHandler{},
+				&fieldtype.StringHandler{},
+				&fieldtype.NumericHandler{},
+				&fieldtype.StructHandler{},
+			},
+		)
 		if err != nil {
 			return fmt.Errorf("could not parse source: %w", err)
 		}

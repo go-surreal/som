@@ -2,15 +2,15 @@ package parser
 
 import "github.com/wzshiming/gotype"
 
-type featureSet struct {
+type FeatureSet struct {
 	Timestamps     bool
 	OptimisticLock bool
 	SoftDelete     bool
 }
 
-// parseFeature checks if an anonymous field is a known feature embed.
+// ParseFeature checks if an anonymous field is a known feature embed.
 // Returns true if the field was matched as a feature (caller should continue to next field).
-func parseFeature(f gotype.Type, internalPkg string, features *featureSet, fields *[]Field) bool {
+func ParseFeature(f gotype.Type, internalPkg string, features *FeatureSet, fields *[]Field) bool {
 	if f.Elem().PkgPath() != internalPkg {
 		return false
 	}
@@ -50,9 +50,9 @@ func parseFeature(f gotype.Type, internalPkg string, features *featureSet, field
 	return false
 }
 
-// applyFeatures copies feature flags to the target booleans and appends
+// ApplyFeatures copies feature flags to the target booleans and appends
 // the Version field if OptimisticLock is enabled.
-func applyFeatures(features featureSet, timestamps, optimisticLock, softDelete *bool, fields *[]Field) {
+func ApplyFeatures(features FeatureSet, timestamps, optimisticLock, softDelete *bool, fields *[]Field) {
 	*timestamps = features.Timestamps
 	*optimisticLock = features.OptimisticLock
 	*softDelete = features.SoftDelete

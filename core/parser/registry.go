@@ -24,21 +24,12 @@ type TypeHandler interface {
 	Validate(ctx *TypeContext) error
 }
 
-var defaultTypeRegistry = &typeRegistry{
-	registry[TypeHandler]{
-		handlers: []TypeHandler{
-			&nodeHandler{},
-			&edgeHandler{},
-			&complexIDStructHandler{},
-			&enumHandler{},
-			&enumValueHandler{},
-			&structHandler{},
-		},
-	},
-}
-
 type typeRegistry struct {
 	registry[TypeHandler]
+}
+
+func newTypeRegistry(handlers []TypeHandler) *typeRegistry {
+	return &typeRegistry{registry[TypeHandler]{handlers: handlers}}
 }
 
 func (r *typeRegistry) handle(t gotype.Type, ctx *TypeContext) (bool, error) {
@@ -62,7 +53,8 @@ func (r *typeRegistry) validate(ctx *TypeContext) error {
 // Field registry
 
 type FieldContext struct {
-	OutPkg string
+	OutPkg       string
+	RecurseParse func(t gotype.Type, elem gotype.Type, ctx *FieldContext) (Field, error)
 }
 
 type FieldHandler interface {
@@ -70,31 +62,12 @@ type FieldHandler interface {
 	Parse(t gotype.Type, elem gotype.Type, ctx *FieldContext) (Field, error)
 }
 
-var defaultFieldRegistry = &fieldRegistry{
-	registry[FieldHandler]{
-		handlers: []FieldHandler{
-			&emailFieldHandler{},
-			&passwordFieldHandler{},
-			&enumFieldHandler{},
-			&durationFieldHandler{},
-			&timeFieldHandler{},
-			&urlFieldHandler{},
-			&nodeRefFieldHandler{},
-			&edgeRefFieldHandler{},
-			&uuidFieldHandler{},
-			&sliceFieldHandler{},
-			&ptrFieldHandler{},
-			&boolFieldHandler{},
-			&byteFieldHandler{},
-			&stringFieldHandler{},
-			&numericFieldHandler{},
-			&structFieldHandler{},
-		},
-	},
-}
-
 type fieldRegistry struct {
 	registry[FieldHandler]
+}
+
+func newFieldRegistry(handlers []FieldHandler) *fieldRegistry {
+	return &fieldRegistry{registry[FieldHandler]{handlers: handlers}}
 }
 
 func (r *fieldRegistry) parse(t gotype.Type, elem gotype.Type, ctx *FieldContext) (Field, error) {

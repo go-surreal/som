@@ -1,4 +1,4 @@
-package parser
+package structtype
 
 import (
 	"fmt"
@@ -6,20 +6,19 @@ import (
 	"path"
 	"strings"
 
+	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
 	"github.com/wzshiming/gotype"
 )
 
-type nodeHandler struct{}
+type NodeHandler struct{}
 
-
-
-func (h *nodeHandler) Match(t gotype.Type, ctx *TypeContext) bool {
-	return isNode(t, ctx.OutPkg)
+func (h *NodeHandler) Match(t gotype.Type, ctx *parser.TypeContext) bool {
+	return IsNode(t, ctx.OutPkg)
 }
 
-func (h *nodeHandler) Handle(t gotype.Type, ctx *TypeContext) error {
-	node, err := parseNode(t, ctx.OutPkg, ctx.PkgScope)
+func (h *NodeHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
+	node, err := ParseNode(t, ctx.OutPkg, ctx.PkgScope)
 	if err != nil {
 		return err
 	}
@@ -27,9 +26,9 @@ func (h *nodeHandler) Handle(t gotype.Type, ctx *TypeContext) error {
 	return nil
 }
 
-func (h *nodeHandler) Validate(_ *TypeContext) error { return nil }
+func (h *NodeHandler) Validate(_ *parser.TypeContext) error { return nil }
 
-func isNode(t gotype.Type, outPkg string) bool {
+func IsNode(t gotype.Type, outPkg string) bool {
 	if t.Kind() != gotype.Struct {
 		return false
 	}
@@ -43,7 +42,7 @@ func isNode(t gotype.Type, outPkg string) bool {
 			continue
 		}
 
-		if f.Name() == "Node" && isGenericNodeFromSom(f.Elem(), outPkg, "Node") {
+		if f.Name() == "Node" && IsGenericNodeFromSom(f.Elem(), outPkg, "Node") {
 			return true
 		}
 	}
@@ -51,7 +50,7 @@ func isNode(t gotype.Type, outPkg string) bool {
 	return false
 }
 
-func isGenericNodeFromSom(t gotype.Type, outPkg string, name string) bool {
+func IsGenericNodeFromSom(t gotype.Type, outPkg string, name string) bool {
 	if pkgPath := t.PkgPath(); pkgPath != "" {
 		return pkgPath == outPkg
 	}
@@ -78,7 +77,7 @@ func isGenericNodeFromSom(t gotype.Type, outPkg string, name string) bool {
 	return ident.Name == path.Base(outPkg)
 }
 
-func isKnownStringIDType(t gotype.Type) bool {
+func IsKnownStringIDType(t gotype.Type) bool {
 	origin := t.Origin()
 	if origin == nil {
 		return false
@@ -91,29 +90,29 @@ func isKnownStringIDType(t gotype.Type) bool {
 	return ok
 }
 
-func parseIDType(t gotype.Type) IDType {
+func ParseIDType(t gotype.Type) parser.IDType {
 	origin := t.Origin()
 	if origin == nil {
-		return IDTypeULID
+		return parser.IDTypeULID
 	}
 
 	if indexExpr, ok := origin.(*ast.IndexExpr); ok {
 		if selExpr, ok := indexExpr.Index.(*ast.SelectorExpr); ok {
 			switch selExpr.Sel.Name {
 			case "UUID":
-				return IDTypeUUID
+				return parser.IDTypeUUID
 			case "Rand":
-				return IDTypeRand
+				return parser.IDTypeRand
 			case "ULID":
-				return IDTypeULID
+				return parser.IDTypeULID
 			}
 		}
 	}
 
-	return IDTypeULID
+	return parser.IDTypeULID
 }
 
-func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*FieldComplexID, error) {
+func ParseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.FieldComplexID, error) {
 	origin := t.Origin()
 	if origin == nil {
 		return nil, fmt.Errorf("complex ID type has no AST origin")
@@ -145,9 +144,9 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 
 	structName := keyType.Name()
 	nf := keyType.NumField()
-	fields := make([]ComplexIDField, 0, nf)
+	fields := make([]parser.ComplexIDField, 0, nf)
 
-	var kind IDType
+	var kind parser.IDType
 	var kindSet bool
 	for i := 0; i < nf; i++ {
 		sf := keyType.Field(i)
@@ -159,13 +158,13 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 					if kindSet {
 						return nil, fmt.Errorf("complex ID struct %s embeds both ArrayID and ObjectID", structName)
 					}
-					kind = IDTypeArray
+					kind = parser.IDTypeArray
 					kindSet = true
 				case "ObjectID":
 					if kindSet {
 						return nil, fmt.Errorf("complex ID struct %s embeds both ArrayID and ObjectID", structName)
 					}
-					kind = IDTypeObject
+					kind = parser.IDTypeObject
 					kindSet = true
 				}
 			}
@@ -176,18 +175,18 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 			continue
 		}
 
-		parsed, err := parseFieldInternal(sf, outPkg, false)
+		parsed, err := parser.ParseFieldInternal(sf, outPkg, false)
 		if err != nil {
 			return nil, fmt.Errorf("complex ID field %s: %w", sf.Name(), err)
 		}
 
 		switch parsed.(type) {
-		case *FieldString, *FieldNumeric, *FieldBool, *FieldTime, *FieldDuration, *FieldUUID, *FieldNode:
+		case *parser.FieldString, *parser.FieldNumeric, *parser.FieldBool, *parser.FieldTime, *parser.FieldDuration, *parser.FieldUUID, *parser.FieldNode:
 		default:
 			return nil, fmt.Errorf("complex ID field %s: unsupported type %T (only string, numeric, bool, time.Time, time.Duration, UUID, and node references are allowed)", sf.Name(), parsed)
 		}
 
-		fields = append(fields, ComplexIDField{
+		fields = append(fields, parser.ComplexIDField{
 			Name:   sf.Name(),
 			DBName: strcase.ToSnake(sf.Name()),
 			Field:  parsed,
@@ -202,20 +201,15 @@ func parseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 		return nil, fmt.Errorf("complex ID struct %s has no exported fields", structName)
 	}
 
-	return &FieldComplexID{
-		fieldAtomic: &fieldAtomic{name: "ID"},
-		Kind:        kind,
-		StructName:  structName,
-		Fields:      fields,
-	}, nil
+	return parser.NewFieldComplexID("ID", kind, structName, fields), nil
 }
 
-func parseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*Node, error) {
+func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node, error) {
 	internalPkg := path.Join(outPkg, "internal")
 
-	node := &Node{Name: v.Name()}
+	node := &parser.Node{Name: v.Name()}
 
-	var features featureSet
+	var features parser.FeatureSet
 
 	nf := v.NumField()
 
@@ -227,18 +221,18 @@ func parseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*Node, error
 		}
 
 		if f.IsAnonymous() {
-			if f.Name() == "Node" && isGenericNodeFromSom(f.Elem(), outPkg, "Node") {
-				if isKnownStringIDType(f.Elem()) {
-					gen := parseIDType(f.Elem())
+			if f.Name() == "Node" && IsGenericNodeFromSom(f.Elem(), outPkg, "Node") {
+				if IsKnownStringIDType(f.Elem()) {
+					gen := ParseIDType(f.Elem())
 					node.IDType = gen
 					node.IDEmbed = f.Name()
 					node.Fields = append(node.Fields,
-						&FieldID{&fieldAtomic{name: "ID"}, gen},
+						parser.NewFieldID("ID", gen),
 					)
 				} else {
 					node.IDEmbed = f.Name()
 
-					complexID, err := parseComplexIDFields(f.Elem(), outPkg, pkgScope)
+					complexID, err := ParseComplexIDFields(f.Elem(), outPkg, pkgScope)
 					if err != nil {
 						return nil, fmt.Errorf("model %s: %w", v.Name(), err)
 					}
@@ -249,7 +243,7 @@ func parseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*Node, error
 				continue
 			}
 
-			if parseFeature(f, internalPkg, &features, &node.Fields) {
+			if parser.ParseFeature(f, internalPkg, &features, &node.Fields) {
 				continue
 			}
 
@@ -260,7 +254,7 @@ func parseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*Node, error
 			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.%s", v.Name(), node.IDEmbed)
 		}
 
-		field, err := parseField(f, outPkg)
+		field, err := parser.ParseField(f, outPkg)
 		if err != nil {
 			return nil, err
 		}
@@ -268,7 +262,7 @@ func parseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*Node, error
 		node.Fields = append(node.Fields, field)
 	}
 
-	applyFeatures(features, &node.Timestamps, &node.OptimisticLock, &node.SoftDelete, &node.Fields)
+	parser.ApplyFeatures(features, &node.Timestamps, &node.OptimisticLock, &node.SoftDelete, &node.Fields)
 
 	return node, nil
 }
