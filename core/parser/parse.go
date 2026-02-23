@@ -109,8 +109,10 @@ func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 	}
 
 	ctx := &FieldContext{
-		OutPkg:       outPkg,
-		RecurseParse: activeFieldRegistry.parse,
+		OutPkg: outPkg,
+	}
+	ctx.ParseElem = func(t gotype.Type, elem gotype.Type) (Field, error) {
+		return activeFieldRegistry.parse(t, elem, ctx)
 	}
 
 	field, err := activeFieldRegistry.parse(t, t.Elem(), ctx)

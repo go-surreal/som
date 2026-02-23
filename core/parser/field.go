@@ -304,14 +304,6 @@ func NewFieldComplexID(name string, kind IDType, structName string, fields []Com
 	}
 }
 
-func SetFieldName(f Field, name string) {
-	f.setName(name)
-}
-
-func SetFieldPointer(f Field, val bool) {
-	f.setPointer(val)
-}
-
 func (f *FieldComplexID) HasNodeRef() bool {
 	for _, sf := range f.Fields {
 		if _, ok := sf.Field.(*FieldNode); ok {

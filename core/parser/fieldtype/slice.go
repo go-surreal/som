@@ -12,7 +12,7 @@ func (h *SliceHandler) Match(elem gotype.Type, _ *parser.FieldContext) bool {
 }
 
 func (h *SliceHandler) Parse(t gotype.Type, elem gotype.Type, ctx *parser.FieldContext) (parser.Field, error) {
-	inner, err := ctx.RecurseParse(elem, elem.Elem(), ctx)
+	inner, err := ctx.ParseElem(elem, elem.Elem())
 	if err != nil {
 		return nil, err
 	}

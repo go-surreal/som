@@ -53,8 +53,8 @@ func (r *typeRegistry) validate(ctx *TypeContext) error {
 // Field registry
 
 type FieldContext struct {
-	OutPkg       string
-	RecurseParse func(t gotype.Type, elem gotype.Type, ctx *FieldContext) (Field, error)
+	OutPkg    string
+	ParseElem func(t gotype.Type, elem gotype.Type) (Field, error)
 }
 
 type FieldHandler interface {
@@ -71,9 +71,21 @@ func newFieldRegistry(handlers []FieldHandler) *fieldRegistry {
 }
 
 func (r *fieldRegistry) parse(t gotype.Type, elem gotype.Type, ctx *FieldContext) (Field, error) {
+	isPtr := elem.Kind() == gotype.Ptr
+	if isPtr {
+		elem = elem.Elem()
+	}
+
 	for _, h := range r.handlers {
 		if h.Match(elem, ctx) {
-			return h.Parse(t, elem, ctx)
+			field, err := h.Parse(t, elem, ctx)
+			if err != nil {
+				return nil, err
+			}
+			if isPtr {
+				field.setPointer(true)
+			}
+			return field, nil
 		}
 	}
 	return nil, fmt.Errorf("field %s has unsupported type %s", t.Name(), elem.Kind())
