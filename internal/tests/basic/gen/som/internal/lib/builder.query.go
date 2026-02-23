@@ -48,6 +48,7 @@ type Query[T any] struct {
 	Timeout    time.Duration
 	Parallel   bool
 	TempFiles  bool
+	RangeExpr  string
 
 	SearchClauses []SearchClause
 	SearchWhere   string
@@ -55,6 +56,10 @@ type Query[T any] struct {
 	// Soft delete support for main queries (not fetched relations)
 	SoftDeleteFilter Filter[T] // Injected at initialization
 	IncludeDeleted   bool      // Flag to skip soft delete filter
+}
+
+func (q *Query[T]) AsVar(val any) string {
+	return q.context.asVar(val)
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -178,7 +183,7 @@ func (q Query[T]) render() string {
 	//	out.WriteString(strings.Join(omitFields, ", "))
 	//}
 
-	out.WriteString(" FROM " + q.node)
+	out.WriteString(" FROM " + q.node + q.RangeExpr)
 
 	// Build WHERE clause combining soft delete, search and regular filters
 	var whereParts []string

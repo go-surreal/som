@@ -2,6 +2,7 @@
 package query
 
 import (
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -20,12 +21,33 @@ var personObjModelInfo = modelInfo[model.PersonObj]{
 	},
 }
 
+var personObjRangeFn = rangeFn[model.PersonObj](func(q *lib.Query[model.PersonObj], from som.RangeFrom, to som.RangeTo) string {
+	var expr string
+	if !from.IsOpen() {
+		key := from.Value().(model.PersonKey)
+		expr += ":{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		key := to.Value().(model.PersonKey)
+		expr += ":{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
+	}
+	return expr
+})
+
 // NewPersonObj creates a new query builder for PersonObj models.
 func NewPersonObj(db Database) Builder[model.PersonObj] {
 	q := lib.NewQuery[model.PersonObj]("person_obj")
 	return Builder[model.PersonObj]{builder[model.PersonObj]{
-		db:    db,
-		info:  personObjModelInfo,
-		query: q,
+		db:      db,
+		info:    personObjModelInfo,
+		query:   q,
+		rangeFn: personObjRangeFn,
 	}}
 }

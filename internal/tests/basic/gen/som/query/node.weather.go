@@ -2,8 +2,10 @@
 package query
 
 import (
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -20,12 +22,33 @@ var weatherModelInfo = modelInfo[model.Weather]{
 	},
 }
 
+var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], from som.RangeFrom, to som.RangeTo) string {
+	var expr string
+	if !from.IsOpen() {
+		key := from.Value().(model.WeatherKey)
+		expr += ":[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		key := to.Value().(model.WeatherKey)
+		expr += ":[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
+	}
+	return expr
+})
+
 // NewWeather creates a new query builder for Weather models.
 func NewWeather(db Database) Builder[model.Weather] {
 	q := lib.NewQuery[model.Weather]("weather")
 	return Builder[model.Weather]{builder[model.Weather]{
-		db:    db,
-		info:  weatherModelInfo,
-		query: q,
+		db:      db,
+		info:    weatherModelInfo,
+		query:   q,
+		rangeFn: weatherRangeFn,
 	}}
 }
