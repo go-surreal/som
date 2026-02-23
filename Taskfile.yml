@@ -32,7 +32,7 @@ tasks:
     aliases: [ g ]
     desc: "Generate code for the example codebase."
     cmds:
-      - cd internal/tests/basic && go tool som
+      - cd internal/tests/basic && go tool som --in model
     sources:
       - internal/tests/basic/model/**/*
     generates:

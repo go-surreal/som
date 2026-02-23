@@ -30,11 +30,14 @@ type modelInfo[M any] struct {
 	UnmarshalSearchAll func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*M], error)
 }
 
+type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) string
+
 // M is a placeholder for the model type.
 type builder[M any] struct {
-	db    Database
-	query lib.Query[M]
-	info  modelInfo[M]
+	db      Database
+	query   lib.Query[M]
+	info    modelInfo[M]
+	rangeFn rangeFn[M]
 }
 
 type Builder[M any] struct {
@@ -63,6 +66,17 @@ func (b builder[M]) Where(filters ...lib.Filter[M]) Builder[M] {
 func (b builder[M]) WithDeleted() Builder[M] {
 	b.query.IncludeDeleted = true
 	return Builder[M]{b}
+}
+
+// Range restricts the query to a range of record IDs.
+// This uses SurrealDB's native range syntax (e.g. table:start..end)
+// which avoids table scans and is much more performant than WHERE filters.
+// Only available for models with complex IDs (ArrayID/ObjectID).
+func (b builder[M]) Range(from som.RangeFrom, to som.RangeTo) BuilderNoLive[M] {
+	if b.rangeFn != nil {
+		b.query.RangeExpr = b.rangeFn(&b.query, from, to)
+	}
+	return BuilderNoLive[M]{b}
 }
 
 // Order sorts the returned records based on the given conditions.

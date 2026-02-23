@@ -62,6 +62,27 @@ type ObjectID struct{}
 
 func (ObjectID) isNodeID() {}
 
+type rangeBound struct {
+	val       any
+	inclusive bool
+	open      bool
+}
+
+func (b rangeBound) Value() any        { return b.val }
+func (b rangeBound) IsInclusive() bool { return b.inclusive }
+func (b rangeBound) IsOpen() bool      { return b.open }
+
+type RangeFrom struct{ rangeBound }
+type RangeTo struct{ rangeBound }
+
+func From[T nodeID](val T) RangeFrom         { return RangeFrom{rangeBound{val: val, inclusive: true}} }
+func FromExclusive[T nodeID](val T) RangeFrom { return RangeFrom{rangeBound{val: val, inclusive: false}} }
+func FromStart() RangeFrom                     { return RangeFrom{rangeBound{open: true}} }
+
+func To[T nodeID](val T) RangeTo             { return RangeTo{rangeBound{val: val, inclusive: false}} }
+func ToInclusive[T nodeID](val T) RangeTo     { return RangeTo{rangeBound{val: val, inclusive: true}} }
+func ToEnd() RangeTo                           { return RangeTo{rangeBound{open: true}} }
+
 func (u UUID) MarshalCBOR() ([]byte, error) {
 	if u == "" {
 		return nil, fmt.Errorf("cannot marshal empty UUID")

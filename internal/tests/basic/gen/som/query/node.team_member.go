@@ -2,9 +2,12 @@
 package query
 
 import (
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // teamMemberModelInfo holds the model-specific unmarshal functions for TeamMember.
@@ -20,12 +23,33 @@ var teamMemberModelInfo = modelInfo[model.TeamMember]{
 	},
 }
 
+var teamMemberRangeFn = rangeFn[model.TeamMember](func(q *lib.Query[model.TeamMember], from som.RangeFrom, to som.RangeTo) string {
+	expr := ":"
+	if !from.IsOpen() {
+		key := from.Value().(model.TeamMemberKey)
+		expr += "{" + "member: " + q.AsVar(models.NewRecordID("all_types", string(key.Member.ID()))) + ", " + "forecast: " + q.AsVar(models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}})) + "}"
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		key := to.Value().(model.TeamMemberKey)
+		expr += "{" + "member: " + q.AsVar(models.NewRecordID("all_types", string(key.Member.ID()))) + ", " + "forecast: " + q.AsVar(models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}})) + "}"
+	}
+	return expr
+})
+
 // NewTeamMember creates a new query builder for TeamMember models.
 func NewTeamMember(db Database) Builder[model.TeamMember] {
 	q := lib.NewQuery[model.TeamMember]("team_member")
 	return Builder[model.TeamMember]{builder[model.TeamMember]{
-		db:    db,
-		info:  teamMemberModelInfo,
-		query: q,
+		db:      db,
+		info:    teamMemberModelInfo,
+		query:   q,
+		rangeFn: teamMemberRangeFn,
 	}}
 }
