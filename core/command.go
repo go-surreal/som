@@ -2,38 +2,50 @@ package core
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/go-surreal/som/core/util/gomod"
 	"github.com/urfave/cli/v3"
 )
 
 const (
-	flagInit    = "init"
+	flagIn      = "in"
+	flagOut     = "out"
 	flagVerbose = "verbose"
 	flagDry     = "dry"
 	flagNoCheck = "no-check"
 	flagWire    = "wire"
+
+	defaultOutputDir = "gen/som"
 )
 
-func Gen() *cli.Command {
+func Command() *cli.Command {
 	return &cli.Command{
-		Name:        "gen",
-		Aliases:     []string{"g"},
-		Usage:       "Generate code for the database access based on input models",
-		Description: "Takes the models from <input_path> and generates a typesafe access layer at <output_path>.",
-		ArgsUsage:   "<input_path> <output_path>",
+		Name:        "som",
+		Usage:       "Generate code for typesafe SurrealDB access",
+		Description: "Detects the closest go.mod and generates a typesafe access layer.\n\nOutput is written to 'gen/som' by default (relative to go.mod).\nIf --in is not specified, only static base files are generated.",
+		Suggest:     true,
 		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  flagInit,
-				Usage: `Initialize a new project with only the basic som files.`,
+			&cli.StringFlag{
+				Name:    flagIn,
+				Aliases: []string{"i"},
+				Usage:   "Input model directory (relative to go.mod)",
+			},
+			&cli.StringFlag{
+				Name:    flagOut,
+				Aliases: []string{"o"},
+				Usage:   "Output directory (relative to go.mod)",
+				Value:   defaultOutputDir,
 			},
 			&cli.BoolFlag{
 				Name:    flagVerbose,
 				Aliases: []string{"v"},
-				Value:   false,
 			},
 			&cli.BoolFlag{
-				Name:  flagDry,
-				Value: false,
+				Name: flagDry,
 			},
 			&cli.BoolFlag{
 				Name:  flagNoCheck,
@@ -49,19 +61,45 @@ func Gen() *cli.Command {
 }
 
 func generate(_ context.Context, cmd *cli.Command) error {
-	init := cmd.Bool(flagInit)
-
-	if (init && cmd.Args().Len() != 1) ||
-		(!init && cmd.Args().Len() != 2) {
-		return cli.Exit("Incorrect number of arguments", 1)
+	if cmd.Args().Len() > 0 {
+		return cli.Exit("unexpected positional arguments; use --in and --out flags instead", 1)
 	}
 
-	inPath := cmd.Args().Get(0)
-	outPath := cmd.Args().Get(1)
+	modDir, err := findModDir()
+	if err != nil {
+		return cli.Exit(err.Error(), 1)
+	}
 
-	if init {
-		inPath = "<not-used>"
-		outPath = cmd.Args().Get(0)
+	if err := validateRelativePath(flagOut, cmd.String(flagOut)); err != nil {
+		return cli.Exit(err.Error(), 1)
+	}
+
+	outPath := filepath.Join(modDir, cmd.String(flagOut))
+
+	init := !cmd.IsSet(flagIn)
+	inPath := ""
+
+	if !init {
+		inDir := cmd.String(flagIn)
+		if err := validateRelativePath(flagIn, inDir); err != nil {
+			return cli.Exit(err.Error(), 1)
+		}
+
+		absInPath := filepath.Join(modDir, inDir)
+
+		if _, err := os.Stat(absInPath); err != nil {
+			return cli.Exit(fmt.Sprintf("input directory %q not found", inDir), 1)
+		}
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			return cli.Exit(fmt.Sprintf("could not get working directory: %v", err), 1)
+		}
+
+		inPath, err = filepath.Rel(cwd, absInPath)
+		if err != nil {
+			inPath = absInPath
+		}
 	}
 
 	if err := Generate(inPath, outPath, init, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck), cmd.String(flagWire)); err != nil {
@@ -69,4 +107,29 @@ func generate(_ context.Context, cmd *cli.Command) error {
 	}
 
 	return nil
+}
+
+func validateRelativePath(flagName, value string) error {
+	if filepath.IsAbs(value) {
+		return fmt.Errorf("--%s must be a relative path, got %q", flagName, value)
+	}
+	cleaned := filepath.Clean(value)
+	if cleaned == ".." || strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("--%s must not escape the module root, got %q", flagName, value)
+	}
+	return nil
+}
+
+func findModDir() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("could not get working directory: %w", err)
+	}
+
+	mod, err := gomod.FindGoMod(cwd)
+	if err != nil {
+		return "", fmt.Errorf("could not find go.mod: %w", err)
+	}
+
+	return mod.Dir(), nil
 }
