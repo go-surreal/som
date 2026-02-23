@@ -132,12 +132,12 @@ func (b *queryBuilder) generateRangeFn(
 			jen.Id("from").Qual(somPkg, "RangeFrom"),
 			jen.Id("to").Qual(somPkg, "RangeTo"),
 		).String().BlockFunc(func(g *jen.Group) {
-			g.Var().Id("expr").String()
+			g.Id("expr").Op(":=").Lit(":")
 
 			// From bound
 			g.If(jen.Op("!").Id("from").Dot("IsOpen").Call()).BlockFunc(func(inner *jen.Group) {
 				inner.Id("key").Op(":=").Id("from").Dot("Value").Call().Assert(keyType)
-				inner.Id("expr").Op("+=").Lit(":").Op("+").Add(b.rangeBoundExpr(node, cid, "key"))
+				inner.Id("expr").Op("+=").Add(b.rangeBoundExpr(node, cid, "key"))
 			})
 
 			// Operator between bounds

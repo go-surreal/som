@@ -23,10 +23,10 @@ var weatherModelInfo = modelInfo[model.Weather]{
 }
 
 var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], from som.RangeFrom, to som.RangeTo) string {
-	var expr string
+	expr := ":"
 	if !from.IsOpen() {
 		key := from.Value().(model.WeatherKey)
-		expr += ":" + "[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
+		expr += "[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
 	}
 	if !from.IsOpen() && !from.IsInclusive() {
 		expr += ">"

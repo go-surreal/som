@@ -24,10 +24,10 @@ var teamMemberModelInfo = modelInfo[model.TeamMember]{
 }
 
 var teamMemberRangeFn = rangeFn[model.TeamMember](func(q *lib.Query[model.TeamMember], from som.RangeFrom, to som.RangeTo) string {
-	var expr string
+	expr := ":"
 	if !from.IsOpen() {
 		key := from.Value().(model.TeamMemberKey)
-		expr += ":" + "{" + "member: " + q.AsVar(models.NewRecordID("all_types", string(key.Member.ID()))) + ", " + "forecast: " + q.AsVar(models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}})) + "}"
+		expr += "{" + "member: " + q.AsVar(models.NewRecordID("all_types", string(key.Member.ID()))) + ", " + "forecast: " + q.AsVar(models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}})) + "}"
 	}
 	if !from.IsOpen() && !from.IsInclusive() {
 		expr += ">"
