@@ -25,7 +25,7 @@ var personObjRangeFn = rangeFn[model.PersonObj](func(q *lib.Query[model.PersonOb
 	var expr string
 	if !from.IsOpen() {
 		key := from.Value().(model.PersonKey)
-		expr += ":{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
+		expr += ":" + "{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
 	}
 	if !from.IsOpen() && !from.IsInclusive() {
 		expr += ">"
@@ -36,7 +36,7 @@ var personObjRangeFn = rangeFn[model.PersonObj](func(q *lib.Query[model.PersonOb
 	}
 	if !to.IsOpen() {
 		key := to.Value().(model.PersonKey)
-		expr += ":{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
+		expr += "{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
 	}
 	return expr
 })

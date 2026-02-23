@@ -26,7 +26,7 @@ var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], fr
 	var expr string
 	if !from.IsOpen() {
 		key := from.Value().(model.WeatherKey)
-		expr += ":[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
+		expr += ":" + "[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
 	}
 	if !from.IsOpen() && !from.IsInclusive() {
 		expr += ">"
@@ -37,7 +37,7 @@ var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], fr
 	}
 	if !to.IsOpen() {
 		key := to.Value().(model.WeatherKey)
-		expr += ":[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
+		expr += "[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
 	}
 	return expr
 })

@@ -137,7 +137,7 @@ func (b *queryBuilder) generateRangeFn(
 			// From bound
 			g.If(jen.Op("!").Id("from").Dot("IsOpen").Call()).BlockFunc(func(inner *jen.Group) {
 				inner.Id("key").Op(":=").Id("from").Dot("Value").Call().Assert(keyType)
-				inner.Id("expr").Op("+=").Add(b.rangeBoundExpr(node, cid, "key"))
+				inner.Id("expr").Op("+=").Lit(":").Op("+").Add(b.rangeBoundExpr(node, cid, "key"))
 			})
 
 			// Operator between bounds
@@ -164,7 +164,7 @@ func (b *queryBuilder) rangeBoundExpr(node *field.NodeTable, cid *parser.FieldCo
 	var parts []jen.Code
 
 	if cid.Kind == parser.IDTypeArray {
-		parts = append(parts, jen.Lit(":["))
+		parts = append(parts, jen.Lit("["))
 		for i, sf := range cid.Fields {
 			if i > 0 {
 				parts = append(parts, jen.Lit(", "))
@@ -173,7 +173,7 @@ func (b *queryBuilder) rangeBoundExpr(node *field.NodeTable, cid *parser.FieldCo
 		}
 		parts = append(parts, jen.Lit("]"))
 	} else {
-		parts = append(parts, jen.Lit(":{"))
+		parts = append(parts, jen.Lit("{"))
 		for i, sf := range cid.Fields {
 			if i > 0 {
 				parts = append(parts, jen.Lit(", "))
