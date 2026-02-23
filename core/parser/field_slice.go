@@ -4,9 +4,7 @@ import "github.com/wzshiming/gotype"
 
 type sliceFieldHandler struct{}
 
-func init() { RegisterFieldHandler(&sliceFieldHandler{}) }
 
-func (h *sliceFieldHandler) Priority() int { return 50 }
 
 func (h *sliceFieldHandler) Match(elem gotype.Type, _ *FieldContext) bool {
 	return elem.Kind() == gotype.Slice

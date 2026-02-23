@@ -4,9 +4,7 @@ import "github.com/wzshiming/gotype"
 
 type structFieldHandler struct{}
 
-func init() { RegisterFieldHandler(&structFieldHandler{}) }
 
-func (h *structFieldHandler) Priority() int { return 90 }
 
 func (h *structFieldHandler) Match(elem gotype.Type, _ *FieldContext) bool {
 	return elem.Kind() == gotype.Struct

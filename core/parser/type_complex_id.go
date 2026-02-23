@@ -4,9 +4,7 @@ import "github.com/wzshiming/gotype"
 
 type complexIDStructHandler struct{}
 
-func init() { RegisterTypeHandler(&complexIDStructHandler{}) }
 
-func (h *complexIDStructHandler) Priority() int { return 20 }
 
 func (h *complexIDStructHandler) Match(t gotype.Type, ctx *TypeContext) bool {
 	return isComplexIDStruct(t, ctx.OutPkg)

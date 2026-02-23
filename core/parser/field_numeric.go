@@ -18,9 +18,7 @@ var numericKinds = map[gotype.Kind]NumberType{
 
 type numericFieldHandler struct{}
 
-func init() { RegisterFieldHandler(&numericFieldHandler{}) }
 
-func (h *numericFieldHandler) Priority() int { return 90 }
 
 func (h *numericFieldHandler) Match(elem gotype.Type, _ *FieldContext) bool {
 	_, ok := numericKinds[elem.Kind()]

@@ -11,9 +11,7 @@ import (
 
 type edgeHandler struct{}
 
-func init() { RegisterTypeHandler(&edgeHandler{}) }
 
-func (h *edgeHandler) Priority() int { return 10 }
 
 func (h *edgeHandler) Match(t gotype.Type, ctx *TypeContext) bool {
 	return isEdge(t, ctx.OutPkg)

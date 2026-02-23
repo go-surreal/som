@@ -8,9 +8,7 @@ import (
 
 type ptrFieldHandler struct{}
 
-func init() { RegisterFieldHandler(&ptrFieldHandler{}) }
 
-func (h *ptrFieldHandler) Priority() int { return 50 }
 
 func (h *ptrFieldHandler) Match(elem gotype.Type, _ *FieldContext) bool {
 	return elem.Kind() == gotype.Ptr

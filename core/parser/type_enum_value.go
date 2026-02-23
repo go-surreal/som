@@ -8,9 +8,7 @@ import (
 
 type enumValueHandler struct{}
 
-func init() { RegisterTypeHandler(&enumValueHandler{}) }
 
-func (h *enumValueHandler) Priority() int { return 30 }
 
 func (h *enumValueHandler) Match(t gotype.Type, _ *TypeContext) bool {
 	return t.Kind() == gotype.Declaration

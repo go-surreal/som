@@ -4,9 +4,7 @@ import "github.com/wzshiming/gotype"
 
 type structHandler struct{}
 
-func init() { RegisterTypeHandler(&structHandler{}) }
 
-func (h *structHandler) Priority() int { return 90 }
 
 func (h *structHandler) Match(t gotype.Type, _ *TypeContext) bool {
 	return t.Kind() == gotype.Struct

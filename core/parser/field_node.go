@@ -4,9 +4,7 @@ import "github.com/wzshiming/gotype"
 
 type nodeRefFieldHandler struct{}
 
-func init() { RegisterFieldHandler(&nodeRefFieldHandler{}) }
 
-func (h *nodeRefFieldHandler) Priority() int { return 30 }
 
 func (h *nodeRefFieldHandler) Match(elem gotype.Type, ctx *FieldContext) bool {
 	return elem.Kind() == gotype.Struct && isNode(elem, ctx.OutPkg)

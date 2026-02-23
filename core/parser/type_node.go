@@ -12,9 +12,7 @@ import (
 
 type nodeHandler struct{}
 
-func init() { RegisterTypeHandler(&nodeHandler{}) }
 
-func (h *nodeHandler) Priority() int { return 10 }
 
 func (h *nodeHandler) Match(t gotype.Type, ctx *TypeContext) bool {
 	return isNode(t, ctx.OutPkg)

@@ -8,9 +8,7 @@ import (
 
 type passwordFieldHandler struct{}
 
-func init() { RegisterFieldHandler(&passwordFieldHandler{}) }
 
-func (h *passwordFieldHandler) Priority() int { return 10 }
 
 func (h *passwordFieldHandler) Match(elem gotype.Type, ctx *FieldContext) bool {
 	return elem.Kind() == gotype.String && isPassword(elem, ctx.OutPkg)

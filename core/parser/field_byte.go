@@ -4,9 +4,7 @@ import "github.com/wzshiming/gotype"
 
 type byteFieldHandler struct{}
 
-func init() { RegisterFieldHandler(&byteFieldHandler{}) }
 
-func (h *byteFieldHandler) Priority() int { return 90 }
 
 func (h *byteFieldHandler) Match(elem gotype.Type, _ *FieldContext) bool {
 	return elem.Kind() == gotype.Byte

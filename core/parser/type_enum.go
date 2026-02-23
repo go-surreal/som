@@ -4,9 +4,7 @@ import "github.com/wzshiming/gotype"
 
 type enumHandler struct{}
 
-func init() { RegisterTypeHandler(&enumHandler{}) }
 
-func (h *enumHandler) Priority() int { return 30 }
 
 func (h *enumHandler) Match(t gotype.Type, ctx *TypeContext) bool {
 	return isEnum(t, ctx.OutPkg)
