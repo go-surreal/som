@@ -85,8 +85,16 @@ type FieldID struct {
 	Type IDType
 }
 
+func NewFieldID(name string, idType IDType) *FieldID {
+	return &FieldID{fieldAtomic: &fieldAtomic{name: name}, Type: idType}
+}
+
 type FieldString struct {
 	*fieldAtomic
+}
+
+func NewFieldString(name string) *FieldString {
+	return &FieldString{fieldAtomic: &fieldAtomic{name: name}}
 }
 
 func (f *FieldString) Validate() error {
@@ -96,6 +104,10 @@ func (f *FieldString) Validate() error {
 type FieldNumeric struct {
 	*fieldAtomic
 	Type NumberType
+}
+
+func NewFieldNumeric(name string, numType NumberType) *FieldNumeric {
+	return &FieldNumeric{fieldAtomic: &fieldAtomic{name: name}, Type: numType}
 }
 
 type NumberType int32
@@ -121,12 +133,24 @@ type FieldBool struct {
 	*fieldAtomic
 }
 
+func NewFieldBool(name string) *FieldBool {
+	return &FieldBool{fieldAtomic: &fieldAtomic{name: name}}
+}
+
 type FieldByte struct {
 	*fieldAtomic
 }
 
+func NewFieldByte(name string) *FieldByte {
+	return &FieldByte{fieldAtomic: &fieldAtomic{name: name}}
+}
+
 type FieldDuration struct {
 	*fieldAtomic
+}
+
+func NewFieldDuration(name string) *FieldDuration {
+	return &FieldDuration{fieldAtomic: &fieldAtomic{name: name}}
 }
 
 type FieldTime struct {
@@ -134,6 +158,10 @@ type FieldTime struct {
 	IsCreatedAt bool
 	IsUpdatedAt bool
 	IsDeletedAt bool
+}
+
+func NewFieldTime(name string) *FieldTime {
+	return &FieldTime{fieldAtomic: &fieldAtomic{name: name}}
 }
 
 type UUIDPackage string
@@ -148,11 +176,10 @@ type FieldUUID struct {
 	Package UUIDPackage
 }
 
-func NewFieldUUID(name string, pointer bool, pkg UUIDPackage) *FieldUUID {
+func NewFieldUUID(name string, pkg UUIDPackage) *FieldUUID {
 	return &FieldUUID{
 		fieldAtomic: &fieldAtomic{
-			name:    name,
-			pointer: pointer,
+			name: name,
 		},
 		Package: pkg,
 	}
@@ -162,9 +189,17 @@ type FieldURL struct {
 	*fieldAtomic
 }
 
+func NewFieldURL(name string) *FieldURL {
+	return &FieldURL{fieldAtomic: &fieldAtomic{name: name}}
+}
+
 type FieldPassword struct {
 	*fieldAtomic
 	Algorithm PasswordAlgorithm
+}
+
+func NewFieldPassword(name string, algo PasswordAlgorithm) *FieldPassword {
+	return &FieldPassword{fieldAtomic: &fieldAtomic{name: name}, Algorithm: algo}
 }
 
 type PasswordAlgorithm string
@@ -180,9 +215,17 @@ type FieldEmail struct {
 	*fieldAtomic
 }
 
+func NewFieldEmail(name string) *FieldEmail {
+	return &FieldEmail{fieldAtomic: &fieldAtomic{name: name}}
+}
+
 type FieldNode struct {
 	*fieldAtomic
 	Node string
+}
+
+func NewFieldNode(name string, node string) *FieldNode {
+	return &FieldNode{fieldAtomic: &fieldAtomic{name: name}, Node: node}
 }
 
 type FieldEdge struct {
@@ -190,9 +233,17 @@ type FieldEdge struct {
 	Edge string
 }
 
+func NewFieldEdge(name string, edge string) *FieldEdge {
+	return &FieldEdge{fieldAtomic: &fieldAtomic{name: name}, Edge: edge}
+}
+
 type FieldEnum struct {
 	*fieldAtomic
 	Typ string
+}
+
+func NewFieldEnum(name string, typ string) *FieldEnum {
+	return &FieldEnum{fieldAtomic: &fieldAtomic{name: name}, Typ: typ}
 }
 
 type FieldStruct struct {
@@ -200,22 +251,24 @@ type FieldStruct struct {
 	Struct string
 }
 
+func NewFieldStruct(name string, structName string) *FieldStruct {
+	return &FieldStruct{fieldAtomic: &fieldAtomic{name: name}, Struct: structName}
+}
+
 type FieldSlice struct {
 	*fieldAtomic
-	// Value  string
 	Field Field
-	// IsNode bool
-	// IsEdge bool
-	// IsEnum bool
+}
+
+func NewFieldSlice(name string, inner Field) *FieldSlice {
+	return &FieldSlice{fieldAtomic: &fieldAtomic{name: name}, Field: inner}
 }
 
 func (f *FieldSlice) Validate() error {
-	// First validate the element
 	if err := f.Field.Validate(); err != nil {
 		return err
 	}
 
-	// Fulltext is only valid for string slices
 	if f.search != nil {
 		if _, ok := f.Field.(*FieldString); !ok {
 			return fmt.Errorf("field %s: fulltext index only supports string slice types, got slice of %T", f.name, f.Field)
@@ -241,6 +294,15 @@ type FieldComplexID struct {
 	Fields     []ComplexIDField
 }
 
+func NewFieldComplexID(name string, kind IDType, structName string, fields []ComplexIDField) *FieldComplexID {
+	return &FieldComplexID{
+		fieldAtomic: &fieldAtomic{name: name},
+		Kind:        kind,
+		StructName:  structName,
+		Fields:      fields,
+	}
+}
+
 func (f *FieldComplexID) HasNodeRef() bool {
 	for _, sf := range f.Fields {
 		if _, ok := sf.Field.(*FieldNode); ok {
@@ -249,9 +311,3 @@ func (f *FieldComplexID) HasNodeRef() bool {
 	}
 	return false
 }
-
-// type FieldMap struct {
-// 	fieldAtomic
-// 	Key   string
-// 	Value string
-// }
