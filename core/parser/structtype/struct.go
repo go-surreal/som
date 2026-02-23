@@ -2,6 +2,7 @@ package structtype
 
 import (
 	"fmt"
+	"go/ast"
 
 	"github.com/go-surreal/som/core/parser"
 	"github.com/wzshiming/gotype"
@@ -43,6 +44,10 @@ func parseStruct(v gotype.Type, outPkg string) (*parser.Struct, error) {
 
 	for i := 0; i < nf; i++ {
 		f := v.Field(i)
+
+		if !ast.IsExported(f.Name()) {
+			continue
+		}
 
 		field, err := parser.ParseField(f, outPkg)
 		if err != nil {

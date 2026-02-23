@@ -92,7 +92,7 @@ func IsGenericNodeFromSom(t gotype.Type, outPkg string, name string) bool {
 func IsKnownStringIDType(t gotype.Type) bool {
 	origin := t.Origin()
 	if origin == nil {
-		return false
+		return true
 	}
 	indexExpr, ok := origin.(*ast.IndexExpr)
 	if !ok {

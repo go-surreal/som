@@ -176,11 +176,10 @@ type FieldUUID struct {
 	Package UUIDPackage
 }
 
-func NewFieldUUID(name string, pointer bool, pkg UUIDPackage) *FieldUUID {
+func NewFieldUUID(name string, pkg UUIDPackage) *FieldUUID {
 	return &FieldUUID{
 		fieldAtomic: &fieldAtomic{
-			name:    name,
-			pointer: pointer,
+			name: name,
 		},
 		Package: pkg,
 	}

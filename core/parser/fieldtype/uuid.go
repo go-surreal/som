@@ -16,5 +16,5 @@ func (h *UUIDHandler) Match(elem gotype.Type, _ *parser.FieldContext) bool {
 }
 
 func (h *UUIDHandler) Parse(t gotype.Type, elem gotype.Type, _ *parser.FieldContext) (parser.Field, error) {
-	return parser.NewFieldUUID(t.Name(), false, parser.UUIDPackage(elem.PkgPath())), nil
+	return parser.NewFieldUUID(t.Name(), parser.UUIDPackage(elem.PkgPath())), nil
 }

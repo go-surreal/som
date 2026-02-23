@@ -79,7 +79,7 @@ func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers 
 	res.Define = define
 
 	if err := tReg.validate(ctx); err != nil {
-		return nil, fmt.Errorf("validation: %w", err)
+		return nil, err
 	}
 
 	res.UsedFeatures = collectUsedFeatures(res)
