@@ -21,7 +21,7 @@ const (
 	pkgGoogleWire = "github.com/google/wire"
 	pkgGoforjWire = "github.com/goforj/wire"
 
-	requiredSOMVersion    = "v0.15.0"
+	requiredSOMVersion    = "v0.16.0"
 	requiredDriverVersion = "v1.0.0"
 )
 
