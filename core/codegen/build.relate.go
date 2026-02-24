@@ -3,10 +3,8 @@ package codegen
 import (
 	"path"
 
-	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
-	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
 )
@@ -40,18 +38,26 @@ func (b *relateBuilder) build() error {
 	return nil
 }
 
+type relateNodeEdgeField struct {
+	FieldName     string
+	EdgeTypeLower string
+}
+
+const relateNodeTmpl = `func New{{.NameGo}}(db Database) *{{.NameGo}} {
+	return &{{.NameGo}}{db: db}
+}
+
+type {{.NameGo}} struct {
+	db Database
+}
+{{range .EdgeFields}}
+func (n {{$.NameGo}}) {{.FieldName}}() {{.EdgeTypeLower}} {
+	return {{.EdgeTypeLower}}(n)
+}
+{{end}}`
+
 func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
-	f := jen.NewFile(b.pkgName)
-
-	f.PackageComment(string(embed.CodegenComment))
-
-	f.Line()
-	f.Add(b.byNew(node))
-
-	f.Line()
-	f.Type().Id(node.Name).Struct(
-		jen.Id("db").Id("Database"),
-	)
+	var edgeFields []relateNodeEdgeField
 
 	for _, fld := range node.GetFields() {
 		slice, ok := fld.(*field.Slice)
@@ -64,149 +70,125 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 			continue
 		}
 
-		f.Line()
-		f.Func().Params(jen.Id("n").Id(node.NameGo())).
-			Id(fld.NameGo()).Params().
-			Id(edgeElement.Table().NameGoLower()).
-			Block(
-				jen.Return(jen.Id(edgeElement.Table().NameGoLower()).Call(jen.Id("n"))),
-			)
+		edgeFields = append(edgeFields, relateNodeEdgeField{
+			FieldName:     fld.NameGo(),
+			EdgeTypeLower: edgeElement.Table().NameGoLower(),
+		})
 	}
 
-	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
-		return err
+	data := map[string]any{
+		"NameGo":     node.NameGo(),
+		"EdgeFields": edgeFields,
 	}
 
+	return renderGoFile(
+		b.fs.Writer(path.Join(b.path(), node.FileName())),
+		b.pkgName,
+		"relateNode",
+		relateNodeTmpl,
+		data,
+	)
+}
+
+const relateEdgeTmpl = `{{.ImportBlock}}
+
+type {{.TypeName}} struct {
+	db Database
+}
+
+// Create creates a new edge between the given nodes.
+// Note: The ID type if both nodes must be a string or number for now.
+
+func (e {{.TypeName}}) Create(ctx context.Context, edge *model.{{.EdgeNameGo}}) error {
+	if edge == nil {
+		return errors.New("the given edge must not be nil")
+	}
+	if edge.ID() != "" {
+		return errors.New("ID must not be set for an edge to be created")
+	}
+	if edge.{{.InNameGo}}.ID() == "" {
+		return errors.New("ID of the incoming node '{{.InNameGo}}' must not be empty")
+	}
+	if edge.{{.OutNameGo}}.ID() == "" {
+		return errors.New("ID of the outgoing node '{{.OutNameGo}}' must not be empty")
+	}
+	inID := models.NewRecordID("{{.InNameDB}}", {{.InIDValue}})
+	outID := models.NewRecordID("{{.OutNameDB}}", {{.OutIDValue}})
+	query := "RELATE $inID->{{.EdgeNameDB}}->$outID CONTENT $data"
+	data := conv.From{{.EdgeNameGo}}(*edge)
+	res, err := e.db.Query(ctx, query, map[string]any{"inID": inID, "outID": outID, "data": data})
+	if err != nil {
+		return fmt.Errorf("could not create relation: %w", err)
+	}
+	var rawResult []internal.QueryResult[conv.{{.EdgeNameGo}}]
+	err = e.db.Unmarshal(res, &rawResult)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal relation: %w", err)
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return errors.New("no result returned for relation")
+	}
+	convEdge := &rawResult[0].Result[0]
+	*edge = conv.To{{.EdgeNameGo}}(convEdge)
 	return nil
 }
+
+func ({{.TypeName}}) Update(edge *model.{{.EdgeNameGo}}) error {
+	// TODO: implement!
+	return errors.New("not yet implemented")
+}
+
+func ({{.TypeName}}) Delete(edge *model.{{.EdgeNameGo}}) error {
+	// TODO: implement!
+	// https://surrealdb.com/docs/surrealdb/surrealql/statements/delete#deleting-graph-edges
+	return errors.New("not yet implemented")
+}
+`
 
 func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
-	f := jen.NewFile(b.pkgName)
+	needsSom := edge.In.Table().Source.IDType == parser.IDTypeUUID ||
+		edge.Out.Table().Source.IDType == parser.IDTypeUUID
 
-	f.PackageComment(string(embed.CodegenComment))
-
-	f.Line()
-	f.Type().Id(edge.NameGoLower()).Struct(
-		jen.Id("db").Id("Database"),
-	)
-
-	f.Line()
-	f.Add(
-		comment("Create creates a new edge between the given nodes.\nNote: The ID type if both nodes must be a string or number for now."),
-	)
-	f.Func().Params(jen.Id("e").Id(edge.NameGoLower())).Id("Create").
-		Params(
-			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("edge").Op("*").Add(b.SourceQual(edge.Name)),
-		).
-		Error().
-		Block(
-			jen.If(jen.Id("edge").Op("==").Nil()).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the given edge must not be nil"))),
-				),
-
-			jen.If(jen.Id("edge").Dot("ID").Call().Op("!=").Lit("")).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID must not be set for an edge to be created"))),
-				),
-
-			jen.If(jen.Id("edge").Dot(edge.In.NameGo()).Dot("ID").Call().Op("==").Lit("")).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the incoming node '"+edge.In.NameGo()+"' must not be empty"))),
-				),
-
-			jen.If(jen.Id("edge").Dot(edge.Out.NameGo()).Dot("ID").Call().Op("==").Lit("")).
-				Block(
-					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("ID of the outgoing node '"+edge.Out.NameGo()+"' must not be empty"))),
-				),
-
-			jen.Id("inID").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
-				jen.Lit(edge.In.NameDatabase()), b.edgeNodeIDValue(edge.In),
-			),
-			jen.Id("outID").Op(":=").Qual("github.com/surrealdb/surrealdb.go/pkg/models", "NewRecordID").Call(
-				jen.Lit(edge.Out.NameDatabase()), b.edgeNodeIDValue(edge.Out),
-			),
-
-			jen.Id("query").Op(":=").Lit("RELATE $inID->"+edge.NameDatabase()+"->$outID CONTENT $data"),
-
-			jen.Id("data").Op(":=").Qual(b.relativePkgPath(def.PkgConv), "From"+edge.NameGo()).Call(jen.Op("*").Id("edge")),
-
-			jen.List(jen.Id("res"), jen.Err()).Op(":=").Id("e").Dot("db").Dot("Query").Call(
-				jen.Id("ctx"),
-				jen.Id("query"),
-				jen.Map(jen.String()).Any().Values(
-					jen.Lit("inID").Op(":").Id("inID"),
-					jen.Lit("outID").Op(":").Id("outID"),
-					jen.Lit("data").Op(":").Id("data"),
-				),
-			),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not create relation: %w"), jen.Err())),
-			),
-
-			jen.Var().Id("rawResult").Index().Qual(b.relativePkgPath(def.PkgInternal), "QueryResult").Types(jen.Qual(b.relativePkgPath(def.PkgConv), edge.NameGo())),
-			jen.Err().Op("=").Id("e").Dot("db").Dot("Unmarshal").Call(jen.Id("res"), jen.Op("&").Id("rawResult")),
-			jen.If(jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal relation: %w"), jen.Err())),
-			),
-			jen.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("no result returned for relation"))),
-			),
-
-			jen.Id("convEdge").Op(":=").Op("&").Id("rawResult").Index(jen.Lit(0)).Dot("Result").Index(jen.Lit(0)),
-
-			jen.Op("*").Id("edge").Op("=").
-				Qual(b.relativePkgPath(def.PkgConv), "To"+edge.NameGo()).Call(jen.Id("convEdge")),
-
-			jen.Return(jen.Nil()),
-		)
-
-	f.Line()
-	f.Func().Params(jen.Id(edge.NameGoLower())).
-		Id("Update").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
-		Error().
-		Block(
-			jen.Comment("TODO: implement!"),
-			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not yet implemented"))),
-		)
-
-	f.Line()
-	f.Func().Params(jen.Id(edge.NameGoLower())).
-		Id("Delete").Params(jen.Id("edge").Op("*").Add(b.SourceQual(edge.NameGo()))).
-		Error().
-		Block(
-			jen.Comment("TODO: implement!"),
-			jen.Comment("https://surrealdb.com/docs/surrealdb/surrealql/statements/delete#deleting-graph-edges"),
-			jen.Return(jen.Qual("errors", "New").Call(jen.Lit("not yet implemented"))),
-		)
-
-	if err := f.Render(b.fs.Writer(path.Join(b.path(), edge.FileName()))); err != nil {
-		return err
+	imports := []goImport{
+		{Path: "context"},
+		{Path: "errors"},
+		{Path: "fmt"},
+		{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
+		{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
+		{Alias: "model", Path: b.sourcePkgPath},
+		{Alias: "models", Path: def.PkgModels},
 	}
 
-	return nil
+	if needsSom {
+		imports = append(imports, goImport{Alias: "som", Path: b.relativePkgPath()})
+	}
+
+	data := map[string]any{
+		"ImportBlock": formatImportBlock(imports),
+		"TypeName":    edge.NameGoLower(),
+		"EdgeNameGo":  edge.NameGo(),
+		"EdgeNameDB":  edge.NameDatabase(),
+		"InNameGo":    edge.In.NameGo(),
+		"InNameDB":    edge.In.Table().NameDatabase(),
+		"InIDValue":   edgeNodeIDValueStr(edge.In),
+		"OutNameGo":   edge.Out.NameGo(),
+		"OutNameDB":   edge.Out.Table().NameDatabase(),
+		"OutIDValue":  edgeNodeIDValueStr(edge.Out),
+	}
+
+	return renderGoFile(
+		b.fs.Writer(path.Join(b.path(), edge.FileName())),
+		b.pkgName,
+		"relateEdge",
+		relateEdgeTmpl,
+		data,
+	)
 }
 
-func (b *relateBuilder) edgeNodeIDValue(node *field.Node) jen.Code {
-	idExpr := jen.Id("edge").Dot(node.Table().NameGo()).Dot("ID").Call()
+func edgeNodeIDValueStr(node *field.Node) string {
+	accessor := "edge." + node.Table().NameGo() + ".ID()"
 	if node.Table().Source.IDType == parser.IDTypeUUID {
-		return jen.Qual(b.relativePkgPath(), "UUID").Call(idExpr)
+		return "som.UUID(" + accessor + ")"
 	}
-	return idExpr
-}
-
-func (b *relateBuilder) byNew(node field.Element) jen.Code {
-	return jen.Func().Id("New" + node.NameGo()).
-		Params(
-			jen.Id("db").Id("Database"),
-		).
-		Id("*").Id(node.NameGo()).
-		Block(
-			jen.Return(
-				jen.Id("&").Id(node.NameGo()).Values(
-					jen.Id("db").Op(":").Id("db"),
-				),
-			),
-		)
+	return accessor
 }

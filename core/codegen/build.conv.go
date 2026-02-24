@@ -16,6 +16,7 @@ type convBuilder struct {
 }
 
 func newConvBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *convBuilder {
+	jen.Add()
 	return &convBuilder{
 		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
