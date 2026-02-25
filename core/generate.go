@@ -14,7 +14,7 @@ import (
 	"github.com/go-surreal/som/core/util/gomod"
 )
 
-func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverride string) error {
+func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bool, wireOverride string) error {
 	absDir, err := filepath.Abs(outPath)
 	if err != nil {
 		return fmt.Errorf("could not find absolute path: %v", err)
@@ -130,7 +130,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 		return nil
 	}
 
-	err = codegen.Build(source, out, outPkg, wirePackage)
+	err = codegen.Build(source, out, outPkg, wirePackage, noCountIndex)
 	if err != nil {
 		return fmt.Errorf("could not generate code: %w", err)
 	}
