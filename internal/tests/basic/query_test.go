@@ -80,7 +80,7 @@ func TestQueryLimitOffset(t *testing.T) {
 
 	results, err = client.AllTypesRepo().Query().
 		Order(by.AllTypes.FieldInt.Asc()).
-		Offset(2).
+		Start(2).
 		Limit(2).
 		All(ctx)
 	if err != nil {
@@ -92,7 +92,7 @@ func TestQueryLimitOffset(t *testing.T) {
 
 	results, err = client.AllTypesRepo().Query().
 		Order(by.AllTypes.FieldInt.Asc()).
-		Offset(4).
+		Start(4).
 		Limit(10).
 		All(ctx)
 	if err != nil {
