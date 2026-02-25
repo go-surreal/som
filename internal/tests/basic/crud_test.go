@@ -3,6 +3,7 @@ package basic
 import (
 	"context"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"github.com/go-surreal/som/tests/basic/gen/som"
@@ -27,6 +28,8 @@ func TestWithDatabase(t *testing.T) {
 		FieldUUID:      uid,
 		FieldByte:      []byte("x")[0],
 		FieldByteSlice: []byte("some value"),
+		FieldMonth:     time.March,
+		FieldWeekday:   time.Wednesday,
 	}
 
 	userIn := userNew
@@ -38,7 +41,7 @@ func TestWithDatabase(t *testing.T) {
 
 	userOut, err := client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldMonth.Equal(0),
+			filter.AllTypes.FieldMonth.Equal(time.March),
 			filter.AllTypes.ID.Equal(string(userIn.ID())),
 			filter.AllTypes.FieldString.Equal(str),
 		).
