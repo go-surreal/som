@@ -37,6 +37,8 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldInt8:         lib.NewBaseSort[M](keyed(key, "field_int_8")),
 		FieldInt8Ptr:      lib.NewBaseSort[M](keyed(key, "field_int_8_ptr")),
 		FieldIntPtr:       lib.NewBaseSort[M](keyed(key, "field_int_ptr")),
+		FieldMonth:        lib.NewBaseSort[M](keyed(key, "field_month")),
+		FieldMonthPtr:     lib.NewBaseSort[M](keyed(key, "field_month_ptr")),
 		FieldRune:         lib.NewBaseSort[M](keyed(key, "field_rune")),
 		FieldString:       lib.NewStringSort[M](keyed(key, "field_string")),
 		FieldStringPtr:    lib.NewStringSort[M](keyed(key, "field_string_ptr")),
@@ -58,6 +60,8 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldUint32Ptr:    lib.NewBaseSort[M](keyed(key, "field_uint_32_ptr")),
 		FieldUint8:        lib.NewBaseSort[M](keyed(key, "field_uint_8")),
 		FieldUint8Ptr:     lib.NewBaseSort[M](keyed(key, "field_uint_8_ptr")),
+		FieldWeekday:      lib.NewBaseSort[M](keyed(key, "field_weekday")),
+		FieldWeekdayPtr:   lib.NewBaseSort[M](keyed(key, "field_weekday_ptr")),
 		ID:                lib.NewBaseSort[M](keyed(key, "id")),
 		UpdatedAt:         lib.NewBaseSort[M](keyed(key, "updated_at")),
 		key:               key,
@@ -98,6 +102,10 @@ type allTypes[M any] struct {
 	FieldDuration     *lib.BaseSort[M]
 	FieldDurationPtr  *lib.BaseSort[M]
 	FieldDurationNil  *lib.BaseSort[M]
+	FieldMonth        *lib.BaseSort[M]
+	FieldMonthPtr     *lib.BaseSort[M]
+	FieldWeekday      *lib.BaseSort[M]
+	FieldWeekdayPtr   *lib.BaseSort[M]
 	FieldUUID         *lib.BaseSort[M]
 	FieldUUIDPtr      *lib.BaseSort[M]
 	FieldUUIDNil      *lib.BaseSort[M]

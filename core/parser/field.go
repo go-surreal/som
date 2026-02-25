@@ -153,6 +153,22 @@ func NewFieldDuration(name string) *FieldDuration {
 	return &FieldDuration{fieldAtomic: &fieldAtomic{name: name}}
 }
 
+type FieldMonth struct {
+	*fieldAtomic
+}
+
+func NewFieldMonth(name string) *FieldMonth {
+	return &FieldMonth{fieldAtomic: &fieldAtomic{name: name}}
+}
+
+type FieldWeekday struct {
+	*fieldAtomic
+}
+
+func NewFieldWeekday(name string) *FieldWeekday {
+	return &FieldWeekday{fieldAtomic: &fieldAtomic{name: name}}
+}
+
 type FieldTime struct {
 	*fieldAtomic
 	IsCreatedAt bool

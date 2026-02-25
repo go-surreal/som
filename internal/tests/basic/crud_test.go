@@ -38,6 +38,7 @@ func TestWithDatabase(t *testing.T) {
 
 	userOut, err := client.AllTypesRepo().Query().
 		Where(
+			filter.AllTypes.FieldMonth.Equal(0),
 			filter.AllTypes.ID.Equal(string(userIn.ID())),
 			filter.AllTypes.FieldString.Equal(str),
 		).

@@ -92,6 +92,12 @@ type AllTypes struct {
 	FieldDurationNil   *time.Duration
 	FieldDurationSlice []time.Duration
 
+	FieldMonth    time.Month
+	FieldMonthPtr *time.Month
+
+	FieldWeekday    time.Weekday
+	FieldWeekdayPtr *time.Weekday
+
 	FieldUUID      uuid.UUID
 	FieldUUIDPtr   *uuid.UUID
 	FieldUUIDNil   *uuid.UUID
