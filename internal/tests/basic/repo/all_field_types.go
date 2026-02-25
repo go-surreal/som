@@ -110,7 +110,7 @@ func (r *allTypesRepo) List(ctx context.Context) ([]*model.AllTypes, error) {
 		// FetchEdgesWithDepth3().
 		// FetchDepth(2).
 		// OrderRandom().
-		// Offset(10).
+		// Start(10).
 		// Limit(10).
 		Timeout(10 * time.Second).
 		Parallel(true).

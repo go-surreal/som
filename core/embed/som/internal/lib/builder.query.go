@@ -43,7 +43,7 @@ type Query[T any] struct {
 	Sort       []*SortBuilder
 	SortRandom bool
 	Fetch      []string
-	Offset     int
+	Start      int
 	Limit      int
 	Timeout    time.Duration
 	Parallel   bool
@@ -240,9 +240,9 @@ func (q Query[T]) render() string {
 	}
 
 	// START must come after LIMIT.
-	if !q.live && q.Offset > 0 {
+	if !q.live && q.Start > 0 {
 		out.WriteString(" START ")
-		out.WriteString(strconv.Itoa(q.Offset))
+		out.WriteString(strconv.Itoa(q.Start))
 	}
 
 	if len(q.Fetch) > 0 {
