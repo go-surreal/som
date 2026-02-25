@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	flagIn      = "in"
-	flagOut     = "out"
-	flagVerbose = "verbose"
-	flagDry     = "dry"
-	flagNoCheck = "no-check"
-	flagWire    = "wire"
+	flagIn           = "in"
+	flagOut          = "out"
+	flagVerbose      = "verbose"
+	flagDry          = "dry"
+	flagNoCheck      = "no-check"
+	flagNoCountIndex = "no-count-index"
+	flagWire         = "wire"
 
 	defaultOutputDir = "gen/som"
 )
@@ -50,6 +51,10 @@ func Command() *cli.Command {
 			&cli.BoolFlag{
 				Name:  flagNoCheck,
 				Usage: "Disable version checks for go and som",
+			},
+			&cli.BoolFlag{
+				Name:  flagNoCountIndex,
+				Usage: "Disable automatic COUNT index generation",
 			},
 			&cli.StringFlag{
 				Name:  flagWire,
@@ -102,7 +107,7 @@ func generate(_ context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	if err := Generate(inPath, outPath, init, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck), cmd.String(flagWire)); err != nil {
+	if err := Generate(inPath, outPath, init, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck), cmd.Bool(flagNoCountIndex), cmd.String(flagWire)); err != nil {
 		return cli.Exit(err.Error(), 1)
 	}
 

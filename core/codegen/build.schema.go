@@ -121,6 +121,11 @@ func buildFilterString(filter parser.FilterDef) string {
 func (b *build) buildTableIndexStatements(tableName string, fields []field.Field, softDelete bool) []string {
 	var statements []string
 
+	if !b.noCountIndex {
+		stmt := fmt.Sprintf("DEFINE INDEX "+def.IndexPrefix+"%s_count ON %s COUNT;", tableName, tableName)
+		statements = append(statements, stmt)
+	}
+
 	// Collect composite unique index fields grouped by UniqueName
 	compositeUnique := make(map[string][]string) // UniqueName -> []fieldPath
 

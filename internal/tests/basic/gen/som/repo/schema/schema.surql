@@ -147,8 +147,14 @@ DEFINE FIELD meta ON TABLE edge_relation TYPE object;
 DEFINE FIELD meta.is_admin ON TABLE edge_relation TYPE bool;
 DEFINE FIELD meta.is_active ON TABLE edge_relation TYPE bool;
 
+DEFINE INDEX __som__weather_count ON weather COUNT;
+DEFINE INDEX __som__team_member_count ON team_member COUNT;
+DEFINE INDEX __som__special_types_count ON special_types COUNT;
 DEFINE INDEX __som__special_types_index_deleted_at ON special_types FIELDS deleted_at CONCURRENTLY;
+DEFINE INDEX __som__special_relation_count ON special_relation COUNT;
 DEFINE INDEX __som__special_relation_index_deleted_at ON special_relation FIELDS deleted_at CONCURRENTLY;
+DEFINE INDEX __som__person_obj_count ON person_obj COUNT;
+DEFINE INDEX __som__all_types_count ON all_types COUNT;
 DEFINE INDEX __som__all_types_search_field_string ON all_types FIELDS field_string FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_string_ptr ON all_types FIELDS field_string_ptr FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_other ON all_types FIELDS field_other FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
@@ -156,3 +162,4 @@ DEFINE INDEX __som__all_types_search_field_string_ptr_slice ON all_types FIELDS 
 DEFINE INDEX __som__all_types_search_field_string_slice_ptr ON all_types FIELDS field_string_slice_ptr FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_string_ptr_slice_ptr ON all_types FIELDS field_string_ptr_slice_ptr FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_index_field_credentials_username ON all_types FIELDS field_credentials.username CONCURRENTLY;
+DEFINE INDEX __som__edge_relation_count ON edge_relation COUNT;
