@@ -536,3 +536,79 @@ func TestFulltextSearchValidTypes(t *testing.T) {
 		Search(filter.AllTypes.FieldStringPtrSlicePtr.Matches("test"))
 	assert.Assert(t, strings.Contains(q6.Describe(), "field_string_ptr_slice_ptr @0@"))
 }
+
+func TestFulltextSearchMatchesAnySQL(t *testing.T) {
+	client := &repo.ClientImpl{}
+
+	// Test MatchesAny generates @ref,OR@ syntax for all field types
+	q1 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldString.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q1.Describe(), "field_string @0,OR@"))
+
+	q2 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldStringPtr.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q2.Describe(), "field_string_ptr @0,OR@"))
+
+	q3 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldOther.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q3.Describe(), "field_other @0,OR@"))
+
+	q4 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldStringPtrSlice.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q4.Describe(), "field_string_ptr_slice @0,OR@"))
+
+	q5 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldStringSlicePtr.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q5.Describe(), "field_string_slice_ptr @0,OR@"))
+
+	q6 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldStringPtrSlicePtr.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q6.Describe(), "field_string_ptr_slice_ptr @0,OR@"))
+}
+
+func TestFulltextSearchMatchesAnyWithRef(t *testing.T) {
+	client := &repo.ClientImpl{}
+
+	q := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldString.MatchesAny("hello world").Ref(3))
+	assert.Assert(t, strings.Contains(q.Describe(), "field_string @3,OR@"))
+}
+
+func TestFullTextSearchMatchesAnyIntegration(t *testing.T) {
+	ctx := t.Context()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
+		FieldString: "the quick brown fox",
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
+		FieldString: "the lazy dog",
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
+		FieldString: "some other content",
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	// MatchesAny with "fox dog" should match documents containing "fox" OR "dog"
+	results, err := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldString.MatchesAny("fox dog")).
+		AllMatches(ctx)
+
+	if err != nil {
+		t.Fatalf("failed to execute search: %v", err)
+	}
+
+	assert.Equal(t, 2, len(results))
+}
