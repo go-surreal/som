@@ -97,9 +97,9 @@ func (b builder[M]) OrderRandom() BuilderNoLive[M] {
 	return BuilderNoLive[M]{b}
 }
 
-// Offset skips the first x records for the result set.
-func (b builder[M]) Offset(offset int) BuilderNoLive[M] {
-	b.query.Offset = offset
+// Start skips the first x records for the result set.
+func (b builder[M]) Start(start int) BuilderNoLive[M] {
+	b.query.Start = start
 	return BuilderNoLive[M]{b}
 }
 
@@ -273,12 +273,12 @@ func (b builder[M]) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 // Iteration stops on the first error encountered.
 func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, error] {
 	return func(yield func(*M, error) bool) {
-		offset := b.query.Offset
+		start := b.query.Start
 
 		for {
 			batchBuilder := b
 			batchBuilder.query.Limit = batchSize
-			batchBuilder.query.Offset = offset
+			batchBuilder.query.Start = start
 
 			results, err := batchBuilder.All(ctx)
 			if err != nil {
@@ -300,7 +300,7 @@ func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, er
 				return
 			}
 
-			offset += batchSize
+			start += batchSize
 		}
 	}
 }
@@ -310,12 +310,12 @@ func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, er
 // Iteration stops on the first error encountered.
 func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
-		offset := b.query.Offset
+		start := b.query.Start
 
 		for {
 			batchBuilder := b
 			batchBuilder.query.Limit = batchSize
-			batchBuilder.query.Offset = offset
+			batchBuilder.query.Start = start
 
 			ids, err := batchBuilder.AllIDs(ctx)
 			if err != nil {
@@ -337,7 +337,7 @@ func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[stri
 				return
 			}
 
-			offset += batchSize
+			start += batchSize
 		}
 	}
 }
@@ -492,9 +492,9 @@ func (b SearchBuilder[M]) Order(by ...lib.SearchSort) SearchBuilder[M] {
 	return b
 }
 
-// Offset skips the first x records for the result set.
-func (b SearchBuilder[M]) Offset(offset int) SearchBuilder[M] {
-	b.query.Offset = offset
+// Start skips the first x records for the result set.
+func (b SearchBuilder[M]) Start(start int) SearchBuilder[M] {
+	b.query.Start = start
 	return b
 }
 

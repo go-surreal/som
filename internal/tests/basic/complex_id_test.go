@@ -427,7 +427,7 @@ func TestComplexIDQueryLimitOffset(t *testing.T) {
 
 	offset, err := client.PersonObjRepo().Query().
 		Order(by.PersonObj.Email.Asc()).
-		Offset(1).
+		Start(1).
 		Limit(1).
 		All(ctx)
 	assert.NilError(t, err)
