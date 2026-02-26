@@ -7,6 +7,7 @@ import (
 	"fmt"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -48,6 +49,9 @@ type SpecialRelationRepo interface {
 	// Relate returns a new relate builder for the SpecialRelation model.
 
 	Relate() *relate.SpecialRelation
+	// Index returns a new index instance for the SpecialRelation model.
+
+	Index() *index.SpecialRelation
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -565,4 +569,9 @@ func (r *specialRelation) Refresh(ctx context.Context, specialRelation *model.Sp
 // Relate returns a new relate instance for the SpecialRelation model.
 func (r *specialRelation) Relate() *relate.SpecialRelation {
 	return relate.NewSpecialRelation(r.db)
+}
+
+// Index returns a new index instance for the SpecialRelation model.
+func (r *specialRelation) Index() *index.SpecialRelation {
+	return index.NewSpecialRelation(r.db)
 }

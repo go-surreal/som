@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
@@ -35,6 +36,9 @@ type WeatherRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, weather *model.Weather) error
+	// Index returns a new index instance for the Weather model.
+
+	Index() *index.Weather
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -446,4 +450,9 @@ func (r *weather) Refresh(ctx context.Context, weather *model.Weather) error {
 		return errors.New("cannot refresh Weather without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(weather.ID()), weather)
+}
+
+// Index returns a new index instance for the Weather model.
+func (r *weather) Index() *index.Weather {
+	return index.NewWeather(r.db)
 }
