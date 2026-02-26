@@ -106,10 +106,10 @@ func (b *indexBuilder) collectIndexEntries(tableName string, fields []field.Fiel
 	b.collectFieldIndexEntries(tableName, "", fields, &entries, compositeUnique)
 
 	if softDelete {
-		indexName := fmt.Sprintf(def.IndexPrefix+"%s_index_deleted_at", tableName)
+		indexName := fmt.Sprintf(def.IndexPrefix+"%s_deleted_at", tableName)
 		entries = append(entries, indexEntry{
 			IndexName: indexName,
-			GoName:    "IndexDeletedAt",
+			GoName:    "DeletedAt",
 			TableName: tableName,
 		})
 	}

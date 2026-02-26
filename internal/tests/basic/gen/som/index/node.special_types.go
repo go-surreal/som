@@ -13,6 +13,6 @@ func (i *SpecialTypes) Count() *rebuildable {
 	return &rebuildable{db: i.db, table: "special_types", name: "__som__special_types_count"}
 }
 
-func (i *SpecialTypes) IndexDeletedAt() *rebuildable {
-	return &rebuildable{db: i.db, table: "special_types", name: "__som__special_types_index_deleted_at"}
+func (i *SpecialTypes) DeletedAt() *rebuildable {
+	return &rebuildable{db: i.db, table: "special_types", name: "__som__special_types_deleted_at"}
 }

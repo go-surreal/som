@@ -13,6 +13,6 @@ func (i *SpecialRelation) Count() *rebuildable {
 	return &rebuildable{db: i.db, table: "special_relation", name: "__som__special_relation_count"}
 }
 
-func (i *SpecialRelation) IndexDeletedAt() *rebuildable {
-	return &rebuildable{db: i.db, table: "special_relation", name: "__som__special_relation_index_deleted_at"}
+func (i *SpecialRelation) DeletedAt() *rebuildable {
+	return &rebuildable{db: i.db, table: "special_relation", name: "__som__special_relation_deleted_at"}
 }

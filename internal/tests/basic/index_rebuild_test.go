@@ -78,7 +78,7 @@ func TestIndexRebuildSoftDeleteIndex(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	err := client.SpecialTypesRepo().Index().IndexDeletedAt().Rebuild(ctx)
+	err := client.SpecialTypesRepo().Index().DeletedAt().Rebuild(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
