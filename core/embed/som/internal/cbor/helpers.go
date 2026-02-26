@@ -40,6 +40,9 @@ func UnmarshalDateTime(data []byte) (time.Time, error) {
 }
 
 func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
+	if isNoneOrNull(data) {
+		return nil, nil
+	}
 	t, err := UnmarshalDateTime(data)
 	if err != nil {
 		return nil, err
@@ -81,11 +84,24 @@ func UnmarshalDuration(data []byte) (time.Duration, error) {
 }
 
 func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
+	if isNoneOrNull(data) {
+		return nil, nil
+	}
 	d, err := UnmarshalDuration(data)
 	if err != nil {
 		return nil, err
 	}
 	return &d, nil
+}
+
+func isNoneOrNull(data []byte) bool {
+	if len(data) == 1 && data[0] == 0xf6 {
+		return true // CBOR null
+	}
+	if len(data) == 2 && data[0] == 0xc6 && data[1] == 0xf6 {
+		return true // CBOR Tag 6 + null (SurrealDB NONE)
+	}
+	return false
 }
 
 // None is a pre-encoded CBOR Tag 6 + null (0xc6 0xf6).
