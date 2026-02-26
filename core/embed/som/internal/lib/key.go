@@ -226,6 +226,14 @@ func Node[T, S any](k Key[T], name string, filters []Filter[S]) Key[T] {
 	})
 }
 
+func StructField[T, S any](k Key[T], name string, filters []Filter[S]) Key[T] {
+	return append(k, BaseKeyPart[S]{
+		name:      name,
+		separator: ".",
+		filters:   filters,
+	})
+}
+
 func EdgeIn[T, S any](k Key[T], name string, filters []Filter[S]) Key[T] {
 	return append(k, BaseKeyPart[S]{
 		name:      name,
