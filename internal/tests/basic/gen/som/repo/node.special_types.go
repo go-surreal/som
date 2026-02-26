@@ -25,6 +25,10 @@ type SpecialTypesRepo interface {
 	// Create creates a new record for the SpecialTypes model.
 
 	Create(ctx context.Context, specialTypes *model.SpecialTypes) error
+	// Insert creates multiple records in a single operation.
+	// Before- and after-create hooks are invoked for each node.
+
+	Insert(ctx context.Context, nodes []*model.SpecialTypes) error
 	// CreateWithID creates a new record with the given ID for the SpecialTypes model.
 
 	CreateWithID(ctx context.Context, id string, specialTypes *model.SpecialTypes) error
@@ -104,6 +108,20 @@ type SpecialTypesRepo interface {
 var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
 	MarshalOne: func(node *model.SpecialTypes) any {
 		return conv.FromSpecialTypesPtr(node)
+	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialTypes, error) {
+		var raw *[]*conv.SpecialTypes
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		results := make([]*model.SpecialTypes, len(*raw))
+		for i, r := range *raw {
+			results[i] = conv.ToSpecialTypesPtr(r)
+		}
+		return results, nil
 	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialTypes, error) {
 		var raw *conv.SpecialTypes
@@ -314,6 +332,7 @@ func (r *specialTypes) Query() query.Builder[model.SpecialTypes] {
 
 // Create creates a new record for the SpecialTypes model.
 // The ID will be generated automatically as a ULID.
+// Before- and after-create hooks are invoked.
 func (r *specialTypes) Create(ctx context.Context, specialTypes *model.SpecialTypes) error {
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -356,6 +375,7 @@ func (r *specialTypes) Create(ctx context.Context, specialTypes *model.SpecialTy
 }
 
 // CreateWithID creates a new record for the SpecialTypes model with the given id.
+// Before- and after-create hooks are invoked.
 func (r *specialTypes) CreateWithID(ctx context.Context, id string, specialTypes *model.SpecialTypes) error {
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -400,6 +420,58 @@ func (r *specialTypes) CreateWithID(ctx context.Context, id string, specialTypes
 	return nil
 }
 
+// Insert creates multiple records in a single operation.
+// Before- and after-create hooks are invoked for each node.
+func (r *specialTypes) Insert(ctx context.Context, nodes []*model.SpecialTypes) error {
+	if len(nodes) == 0 {
+		return nil
+	}
+	for _, n := range nodes {
+		if n == nil {
+			return errors.New("slice contains nil node")
+		}
+		if n.ID() != "" {
+			return errors.New("node already has an id")
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]specialTypesHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
+			if err := h.OnBeforeCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range beforeCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	if err := r.insert(ctx, nodes); err != nil {
+		return err
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]specialTypesHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnAfterCreateHook); ok {
+			if err := h.OnAfterCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range afterCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
@@ -432,6 +504,7 @@ func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTypes) error {
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -474,6 +547,7 @@ func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTy
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *specialTypes) Delete(ctx context.Context, specialTypes *model.SpecialTypes) error {
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")

@@ -19,6 +19,10 @@ type PersonObjRepo interface {
 	// Query returns a new query builder for the PersonObj model.
 
 	Query() query.Builder[model.PersonObj]
+	// Insert creates multiple records in a single operation.
+	// Before- and after-create hooks are invoked for each node.
+
+	Insert(ctx context.Context, nodes []*model.PersonObj) error
 	// CreateWithID creates a new record with the given key for the PersonObj model.
 
 	CreateWithID(ctx context.Context, personObj *model.PersonObj) error
@@ -89,6 +93,20 @@ type PersonObjRepo interface {
 var personObjRepoInfo = RepoInfo[model.PersonObj]{
 	MarshalOne: func(node *model.PersonObj) any {
 		return conv.FromPersonObjPtr(node)
+	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.PersonObj, error) {
+		var raw *[]*conv.PersonObj
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		results := make([]*model.PersonObj, len(*raw))
+		for i, r := range *raw {
+			results[i] = conv.ToPersonObjPtr(r)
+		}
+		return results, nil
 	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.PersonObj, error) {
 		var raw *conv.PersonObj
@@ -301,6 +319,7 @@ func (r *personObj) Query() query.Builder[model.PersonObj] {
 
 // CreateWithID creates a new record for the PersonObj model using its embedded key.
 // The node must have a non-zero ID set.
+// Before- and after-create hooks are invoked.
 func (r *personObj) CreateWithID(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
@@ -343,6 +362,59 @@ func (r *personObj) CreateWithID(ctx context.Context, personObj *model.PersonObj
 	return nil
 }
 
+// Insert creates multiple records in a single operation.
+// Before- and after-create hooks are invoked for each node.
+func (r *personObj) Insert(ctx context.Context, nodes []*model.PersonObj) error {
+	if len(nodes) == 0 {
+		return nil
+	}
+	for _, n := range nodes {
+		if n == nil {
+			return errors.New("slice contains nil node")
+		}
+		var zeroKey model.PersonKey
+		if n.ID() == zeroKey {
+			return errors.New("node must have a non-zero ID")
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]personObjHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
+			if err := h.OnBeforeCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range beforeCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	if err := r.insert(ctx, nodes); err != nil {
+		return err
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]personObjHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnAfterCreateHook); ok {
+			if err := h.OnAfterCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range afterCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Read returns the record for the given key, if it exists.
 // The returned bool indicates whether the record was found or not.
 func (r *personObj) Read(ctx context.Context, key model.PersonKey) (*model.PersonObj, bool, error) {
@@ -353,6 +425,7 @@ func (r *personObj) Read(ctx context.Context, key model.PersonKey) (*model.Perso
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
@@ -396,6 +469,7 @@ func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) erro
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *personObj) Delete(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")

@@ -85,6 +85,81 @@ func TestRefresh(t *testing.T) {
 	assert.Equal(t, "some value", allTypes.FieldString)
 }
 
+func TestInsert(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	nodes := []*model.AllTypes{
+		{FieldString: "first"},
+		{FieldString: "second"},
+		{FieldString: "third"},
+	}
+
+	err := client.AllTypesRepo().Insert(ctx, nodes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, n := range nodes {
+		if n.ID() == "" {
+			t.Fatalf("node %d: ID must not be empty after insert", i)
+		}
+	}
+
+	assert.Equal(t, "first", nodes[0].FieldString)
+	assert.Equal(t, "second", nodes[1].FieldString)
+	assert.Equal(t, "third", nodes[2].FieldString)
+
+	// Verify records exist in the database.
+	for _, n := range nodes {
+		out, ok, err := client.AllTypesRepo().Read(ctx, string(n.ID()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatalf("record %s not found after insert", n.ID())
+		}
+		assert.Equal(t, n.FieldString, out.FieldString)
+	}
+}
+
+func TestInsertEmpty(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	err := client.AllTypesRepo().Insert(ctx, nil)
+	assert.NilError(t, err)
+
+	err = client.AllTypesRepo().Insert(ctx, []*model.AllTypes{})
+	assert.NilError(t, err)
+}
+
+func TestInsertValidation(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	t.Run("nil element", func(t *testing.T) {
+		err := client.AllTypesRepo().Insert(ctx, []*model.AllTypes{nil})
+		assert.ErrorContains(t, err, "nil node")
+	})
+
+	t.Run("node with existing id", func(t *testing.T) {
+		n := &model.AllTypes{FieldString: "test"}
+		err := client.AllTypesRepo().Create(ctx, n)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = client.AllTypesRepo().Insert(ctx, []*model.AllTypes{n})
+		assert.ErrorContains(t, err, "already has an id")
+	})
+}
+
 func FuzzWithDatabase(f *testing.F) {
 	ctx := context.Background()
 

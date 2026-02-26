@@ -24,6 +24,9 @@ type RepoInfo[N any] struct {
 	// UnmarshalOne unmarshals a single result into *N
 	UnmarshalOne func(unmarshal func([]byte, any) error, data []byte) (*N, error)
 
+	// UnmarshalInsert unmarshals an insert response (a slice of records) into []*N
+	UnmarshalInsert func(unmarshal func([]byte, any) error, data []byte) ([]*N, error)
+
 	// MarshalOne marshals *N for database write operations and returns the raw data
 	MarshalOne func(node *N) any
 }
@@ -65,6 +68,28 @@ func (r *repo[N, K]) createWithID(ctx context.Context, id K, node *N) error {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*node = *result
+	return nil
+}
+
+func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
+	data := make([]any, len(nodes))
+	for i, node := range nodes {
+		data[i] = r.info.MarshalOne(node)
+	}
+	raw, err := r.db.Insert(ctx, r.name, data)
+	if err != nil {
+		return fmt.Errorf("could not insert entities: %w", err)
+	}
+	results, err := r.info.UnmarshalInsert(r.db.Unmarshal, raw)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal response: %w", err)
+	}
+	if len(results) != len(nodes) {
+		return fmt.Errorf("insert returned %d results, expected %d", len(results), len(nodes))
+	}
+	for i, result := range results {
+		*nodes[i] = *result
+	}
 	return nil
 }
 

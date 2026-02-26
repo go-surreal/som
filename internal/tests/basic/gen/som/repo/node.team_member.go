@@ -20,6 +20,10 @@ type TeamMemberRepo interface {
 	// Query returns a new query builder for the TeamMember model.
 
 	Query() query.Builder[model.TeamMember]
+	// Insert creates multiple records in a single operation.
+	// Before- and after-create hooks are invoked for each node.
+
+	Insert(ctx context.Context, nodes []*model.TeamMember) error
 	// CreateWithID creates a new record with the given key for the TeamMember model.
 
 	CreateWithID(ctx context.Context, teamMember *model.TeamMember) error
@@ -90,6 +94,20 @@ type TeamMemberRepo interface {
 var teamMemberRepoInfo = RepoInfo[model.TeamMember]{
 	MarshalOne: func(node *model.TeamMember) any {
 		return conv.FromTeamMemberPtr(node)
+	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.TeamMember, error) {
+		var raw *[]*conv.TeamMember
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		results := make([]*model.TeamMember, len(*raw))
+		for i, r := range *raw {
+			results[i] = conv.ToTeamMemberPtr(r)
+		}
+		return results, nil
 	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.TeamMember, error) {
 		var raw *conv.TeamMember
@@ -302,6 +320,7 @@ func (r *teamMember) Query() query.Builder[model.TeamMember] {
 
 // CreateWithID creates a new record for the TeamMember model using its embedded key.
 // The node must have a non-zero ID set.
+// Before- and after-create hooks are invoked.
 func (r *teamMember) CreateWithID(ctx context.Context, teamMember *model.TeamMember) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
@@ -347,6 +366,62 @@ func (r *teamMember) CreateWithID(ctx context.Context, teamMember *model.TeamMem
 	return nil
 }
 
+// Insert creates multiple records in a single operation.
+// Before- and after-create hooks are invoked for each node.
+func (r *teamMember) Insert(ctx context.Context, nodes []*model.TeamMember) error {
+	if len(nodes) == 0 {
+		return nil
+	}
+	for _, n := range nodes {
+		if n == nil {
+			return errors.New("slice contains nil node")
+		}
+		if n.ID().Member.ID() == "" {
+			return errors.New("Member.ID must not be empty")
+		}
+		var zeroForecastKey model.WeatherKey
+		if n.ID().Forecast.ID() == zeroForecastKey {
+			return errors.New("Forecast.ID must not be empty")
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]teamMemberHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
+			if err := h.OnBeforeCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range beforeCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	if err := r.insert(ctx, nodes); err != nil {
+		return err
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]teamMemberHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnAfterCreateHook); ok {
+			if err := h.OnAfterCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range afterCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Read returns the record for the given key, if it exists.
 // The returned bool indicates whether the record was found or not.
 func (r *teamMember) Read(ctx context.Context, key model.TeamMemberKey) (*model.TeamMember, bool, error) {
@@ -357,6 +432,7 @@ func (r *teamMember) Read(ctx context.Context, key model.TeamMemberKey) (*model.
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
@@ -403,6 +479,7 @@ func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) e
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *teamMember) Delete(ctx context.Context, teamMember *model.TeamMember) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
