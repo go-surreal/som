@@ -21,25 +21,15 @@ type DateTime struct {
 
 func (dt *DateTime) MarshalCBOR() ([]byte, error) {
 	if dt == nil {
-		data, err := cbor.Marshal(nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal nil: %w", err)
-		}
-
-		return data, nil
+		return cbor.None, nil
 	}
 
-	content, err := cbor.Marshal([]int64{dt.Unix(), int64(dt.Nanosecond())})
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal datetime slice: %w", err)
-	}
-
-	data, err := cbor.Marshal(cbor.RawTag{
+	data, err := cbor.Marshal(cbor.Tag{
 		Number:  tagDatetime,
-		Content: content,
+		Content: []int64{dt.Unix(), int64(dt.Nanosecond())},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal raw tag: %w", err)
+		return nil, fmt.Errorf("failed to marshal datetime: %w", err)
 	}
 
 	return data, nil
@@ -69,7 +59,7 @@ func (dt *DateTime) UnmarshalCBOR(data []byte) error {
 		nano = val[1]
 	}
 
-	dt.Time = time.Unix(secs, nano)
+	dt.Time = time.Unix(secs, nano).UTC()
 
 	return nil
 }

@@ -10,19 +10,15 @@ import (
 
 // DateTime marshaling helpers
 func MarshalDateTime(t time.Time) (RawMessage, error) {
-	content, err := Marshal([]int64{t.Unix(), int64(t.Nanosecond())})
-	if err != nil {
-		return nil, err
-	}
-	return Marshal(RawTag{
-		Content: content,
+	return Marshal(Tag{
 		Number:  models.TagCustomDatetime,
+		Content: []int64{t.Unix(), int64(t.Nanosecond())},
 	})
 }
 
 func MarshalDateTimePtr(t *time.Time) (RawMessage, error) {
 	if t == nil {
-		return Marshal(nil)
+		return None, nil
 	}
 	return MarshalDateTime(*t)
 }
@@ -40,7 +36,7 @@ func UnmarshalDateTime(data []byte) (time.Time, error) {
 	if len(val) > 1 {
 		nano = val[1]
 	}
-	return time.Unix(secs, nano), nil
+	return time.Unix(secs, nano).UTC(), nil
 }
 
 func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
@@ -56,19 +52,15 @@ func MarshalDuration(d time.Duration) (RawMessage, error) {
 	totalNanoseconds := d.Nanoseconds()
 	totalSeconds := totalNanoseconds / int64(time.Second)
 	remainingNanoseconds := totalNanoseconds % int64(time.Second)
-	content, err := Marshal([]int64{totalSeconds, remainingNanoseconds})
-	if err != nil {
-		return nil, err
-	}
-	return Marshal(RawTag{
-		Content: content,
+	return Marshal(Tag{
 		Number:  models.TagCustomDuration,
+		Content: []int64{totalSeconds, remainingNanoseconds},
 	})
 }
 
 func MarshalDurationPtr(d *time.Duration) (RawMessage, error) {
 	if d == nil {
-		return Marshal(nil)
+		return None, nil
 	}
 	return MarshalDuration(*d)
 }
