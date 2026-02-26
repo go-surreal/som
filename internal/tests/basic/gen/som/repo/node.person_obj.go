@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -34,6 +35,9 @@ type PersonObjRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, personObj *model.PersonObj) error
+	// Index returns a new index instance for the PersonObj model.
+
+	Index() *index.PersonObj
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -448,4 +452,9 @@ func (r *personObj) Refresh(ctx context.Context, personObj *model.PersonObj) err
 		return errors.New("cannot refresh PersonObj without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(personObj.ID()), personObj)
+}
+
+// Index returns a new index instance for the PersonObj model.
+func (r *personObj) Index() *index.PersonObj {
+	return index.NewPersonObj(r.db)
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -41,6 +42,9 @@ type AllTypesRepo interface {
 	// Relate returns a new relate builder for the AllTypes model.
 
 	Relate() *relate.AllTypes
+	// Index returns a new index instance for the AllTypes model.
+
+	Index() *index.AllTypes
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -521,4 +525,9 @@ func (r *allTypes) Refresh(ctx context.Context, allTypes *model.AllTypes) error 
 // Relate returns a new relate instance for the AllTypes model.
 func (r *allTypes) Relate() *relate.AllTypes {
 	return relate.NewAllTypes(r.db)
+}
+
+// Index returns a new index instance for the AllTypes model.
+func (r *allTypes) Index() *index.AllTypes {
+	return index.NewAllTypes(r.db)
 }

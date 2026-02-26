@@ -85,6 +85,7 @@ func (b *build) build() error {
 		b.newFetchBuilder(),
 		b.newConvBuilder(),
 		b.newRelateBuilder(),
+		b.newIndexBuilder(),
 		b.newFieldBuilder(),
 	}
 
@@ -290,6 +291,9 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			g.Add(comment("Relate returns a new relate builder for the " + node.NameGo() + " model."))
 			g.Id("Relate").Call().Op("*").Qual(b.relativePkgPath(def.PkgRelate), node.NameGo())
 		}
+
+		g.Add(comment("Index returns a new index instance for the " + node.NameGo() + " model."))
+		g.Id("Index").Call().Op("*").Qual(b.relativePkgPath(def.PkgIndex), node.NameGo())
 
 		g.Line()
 
@@ -898,6 +902,22 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			)
 	}
 
+	// Index
+	f.Line().
+		Add(comment(`
+Index returns a new index instance for the `+node.NameGo()+` model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("Index").Params().
+		Op("*").Qual(b.relativePkgPath(def.PkgIndex), node.NameGo()).
+		Block(
+			jen.Return(
+				jen.Qual(b.relativePkgPath(def.PkgIndex), "New"+node.NameGo()).Call(
+					jen.Id("r").Dot("db"),
+				),
+			),
+		)
+
 	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName()))); err != nil {
 		return err
 	}
@@ -927,6 +947,10 @@ func (b *build) newConvBuilder() builder {
 
 func (b *build) newRelateBuilder() builder {
 	return newRelateBuilder(b.input, b.fs, b.basePkg(), def.PkgRelate)
+}
+
+func (b *build) newIndexBuilder() builder {
+	return newIndexBuilder(b.input, b.fs, b.basePkg(), def.PkgIndex, b.noCountIndex, b.input.define)
 }
 
 func (b *build) newFieldBuilder() builder {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
@@ -35,6 +36,9 @@ type TeamMemberRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, teamMember *model.TeamMember) error
+	// Index returns a new index instance for the TeamMember model.
+
+	Index() *index.TeamMember
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -461,4 +465,9 @@ func (r *teamMember) Refresh(ctx context.Context, teamMember *model.TeamMember) 
 		return errors.New("Forecast.ID must not be empty")
 	}
 	return r.refresh(ctx, r.recordID(teamMember.ID()), teamMember)
+}
+
+// Index returns a new index instance for the TeamMember model.
+func (r *teamMember) Index() *index.TeamMember {
+	return index.NewTeamMember(r.db)
 }
