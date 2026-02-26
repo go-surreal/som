@@ -36,6 +36,11 @@ func (dt *DateTime) MarshalCBOR() ([]byte, error) {
 }
 
 func (dt *DateTime) UnmarshalCBOR(data []byte) error {
+	if cbor.IsNoneOrNull(data) {
+		dt.Time = time.Time{}
+		return nil
+	}
+
 	var val []int64
 
 	if err := cbor.Unmarshal(data, &val); err != nil {
@@ -43,7 +48,6 @@ func (dt *DateTime) UnmarshalCBOR(data []byte) error {
 	}
 
 	if len(val) == 0 {
-		// Empty array means zero/unset time
 		dt.Time = time.Time{}
 		return nil
 	}

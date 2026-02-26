@@ -40,6 +40,11 @@ func (d *Duration) MarshalCBOR() ([]byte, error) {
 }
 
 func (d *Duration) UnmarshalCBOR(data []byte) error {
+	if cbor.IsNoneOrNull(data) {
+		d.Duration = 0
+		return nil
+	}
+
 	var val []int64
 
 	if err := cbor.Unmarshal(data, &val); err != nil {
