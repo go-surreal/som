@@ -19,7 +19,7 @@ func MarshalDateTime(t time.Time) (RawMessage, error) {
 
 func MarshalDateTimePtr(t *time.Time) (RawMessage, error) {
 	if t == nil {
-		return None, nil
+		return None(), nil
 	}
 	return MarshalDateTime(*t)
 }
@@ -64,7 +64,7 @@ func MarshalDuration(d time.Duration) (RawMessage, error) {
 
 func MarshalDurationPtr(d *time.Duration) (RawMessage, error) {
 	if d == nil {
-		return None, nil
+		return None(), nil
 	}
 	return MarshalDuration(*d)
 }
@@ -95,22 +95,21 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 	return &d, nil
 }
 
-// None is a pre-encoded CBOR Tag 6 + null (0xc6 0xf6).
+// none is the canonical CBOR Tag 6 + null (0xc6 0xf6) encoding.
 // SurrealDB uses CBOR Tag 6 to represent NONE, which is accepted by option<T> fields.
-// Use this instead of nil when encoding array elements that should be NONE rather than NULL.
-var None RawMessage = []byte{0xc6, 0xf6}
+var none = [2]byte{0xc6, 0xf6}
 
 // cborNull is the single-byte CBOR null encoding.
-var cborNull = []byte{0xf6}
+var cborNull = [1]byte{0xf6}
+
+// None returns a fresh copy of the pre-encoded CBOR NONE bytes.
+func None() RawMessage {
+	b := none
+	return b[:]
+}
 
 func IsNoneOrNull(data []byte) bool {
-	if bytes.Equal(data, None) {
-		return true
-	}
-	if bytes.Equal(data, cborNull) {
-		return true
-	}
-	return false
+	return bytes.Equal(data, none[:]) || bytes.Equal(data, cborNull[:])
 }
 
 func RecordIDToString(id any) (string, error) {

@@ -21,7 +21,7 @@ type DateTime struct {
 
 func (dt *DateTime) MarshalCBOR() ([]byte, error) {
 	if dt == nil {
-		return cbor.None, nil
+		return cbor.None(), nil
 	}
 
 	data, err := cbor.Marshal(cbor.Tag{

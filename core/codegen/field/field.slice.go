@@ -603,7 +603,7 @@ func (f *Slice) cborMarshal(ctx Context) jen.Code {
 					jen.Id("i").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
 				).Block(
 					jen.If(jen.Id("v").Op("==").Nil()).Block(
-						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Qual(ctx.pkgCBOR(), "None"),
+						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Qual(ctx.pkgCBOR(), "None").Call(),
 					).Else().Block(
 						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
 					),

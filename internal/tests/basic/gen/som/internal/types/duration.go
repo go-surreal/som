@@ -21,7 +21,7 @@ type Duration struct {
 
 func (d *Duration) MarshalCBOR() ([]byte, error) {
 	if d == nil {
-		return cbor.None, nil
+		return cbor.None(), nil
 	}
 
 	totalNanoseconds := d.Nanoseconds()
