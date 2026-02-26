@@ -217,11 +217,13 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			).Error()
 		}
 
-		g.Add(comment("Insert creates multiple records in a single operation.\nBefore- and after-create hooks are invoked for each node."))
-		g.Id("Insert").Call(
-			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("nodes").Index().Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).Error()
+		if !node.HasComplexID() {
+			g.Add(comment("Insert creates multiple records in a single operation.\nBefore- and after-create hooks are invoked for each node."))
+			g.Id("Insert").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("nodes").Index().Op("*").Add(b.input.SourceQual(node.NameGo())),
+			).Error()
+		}
 
 		if node.HasComplexID() {
 			g.Add(comment("CreateWithID creates a new record with the given key for the " + node.NameGo() + " model."))
@@ -610,84 +612,82 @@ Before- and after-create hooks are invoked.
 			})
 	}
 
-	// Insert
-	f.Line().
-		Add(comment("Insert creates multiple records in a single operation.\n"+
-			"Before- and after-create hooks are invoked for each node.")).
-		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
-		Id("Insert").
-		Params(
-			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("nodes").Index().Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).
-		Error().
-		BlockFunc(func(g *jen.Group) {
-			somPkg := b.relativePkgPath()
+	// Insert (string ID only - complex-ID models cannot use table-level INSERT)
+	if !node.HasComplexID() {
+		f.Line().
+			Add(comment("Insert creates multiple records in a single operation.\n"+
+				"Before- and after-create hooks are invoked for each node.")).
+			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+			Id("Insert").
+			Params(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("nodes").Index().Op("*").Add(b.input.SourceQual(node.NameGo())),
+			).
+			Error().
+			BlockFunc(func(g *jen.Group) {
+				somPkg := b.relativePkgPath()
 
-			g.If(jen.Len(jen.Id("nodes")).Op("==").Lit(0)).
-				Block(jen.Return(jen.Nil()))
+				g.If(jen.Len(jen.Id("nodes")).Op("==").Lit(0)).
+					Block(jen.Return(jen.Nil()))
 
-			g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
-				inner.If(jen.Id("n").Op("==").Nil()).
-					Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("slice contains nil node"))))
-				if node.HasComplexID() {
-					b.addIDEmptyCheck(inner, node, "n", "node must have a non-zero ID")
-				} else {
+				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
+					inner.If(jen.Id("n").Op("==").Nil()).
+						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("slice contains nil node"))))
 					inner.If(jen.Id("n").Dot("ID").Call().Op("!=").Lit("")).
 						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node already has an id"))))
-				}
+				})
+
+				// Snapshot before-create hooks once
+				g.Id("r").Dot("mu").Dot("RLock").Call()
+				g.Id("beforeCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("beforeCreate")))
+				g.Copy(jen.Id("beforeCreateHooks"), jen.Id("r").Dot("beforeCreate"))
+				g.Id("r").Dot("mu").Dot("RUnlock").Call()
+
+				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
+					jen.If(
+						jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnBeforeCreateHook")),
+						jen.Id("ok"),
+					).Block(
+						jen.If(jen.Err().Op(":=").Id("h").Dot("OnBeforeCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
+						),
+					),
+					jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("beforeCreateHooks")).Block(
+						jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
+						),
+					),
+				)
+
+				g.If(jen.Err().Op(":=").Id("r").Dot("insert").Call(
+					jen.Id("ctx"), jen.Id("nodes"),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
+
+				// Snapshot after-create hooks once
+				g.Id("r").Dot("mu").Dot("RLock").Call()
+				g.Id("afterCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("afterCreate")))
+				g.Copy(jen.Id("afterCreateHooks"), jen.Id("r").Dot("afterCreate"))
+				g.Id("r").Dot("mu").Dot("RUnlock").Call()
+
+				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
+					jen.If(
+						jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnAfterCreateHook")),
+						jen.Id("ok"),
+					).Block(
+						jen.If(jen.Err().Op(":=").Id("h").Dot("OnAfterCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
+						),
+					),
+					jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("afterCreateHooks")).Block(
+						jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
+						),
+					),
+				)
+
+				g.Return(jen.Nil())
 			})
-
-			// Snapshot before-create hooks once
-			g.Id("r").Dot("mu").Dot("RLock").Call()
-			g.Id("beforeCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("beforeCreate")))
-			g.Copy(jen.Id("beforeCreateHooks"), jen.Id("r").Dot("beforeCreate"))
-			g.Id("r").Dot("mu").Dot("RUnlock").Call()
-
-			g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
-				jen.If(
-					jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnBeforeCreateHook")),
-					jen.Id("ok"),
-				).Block(
-					jen.If(jen.Err().Op(":=").Id("h").Dot("OnBeforeCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-						jen.Return(jen.Err()),
-					),
-				),
-				jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("beforeCreateHooks")).Block(
-					jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
-						jen.Return(jen.Err()),
-					),
-				),
-			)
-
-			g.If(jen.Err().Op(":=").Id("r").Dot("insert").Call(
-				jen.Id("ctx"), jen.Id("nodes"),
-			), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
-
-			// Snapshot after-create hooks once
-			g.Id("r").Dot("mu").Dot("RLock").Call()
-			g.Id("afterCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("afterCreate")))
-			g.Copy(jen.Id("afterCreateHooks"), jen.Id("r").Dot("afterCreate"))
-			g.Id("r").Dot("mu").Dot("RUnlock").Call()
-
-			g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
-				jen.If(
-					jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnAfterCreateHook")),
-					jen.Id("ok"),
-				).Block(
-					jen.If(jen.Err().Op(":=").Id("h").Dot("OnAfterCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-						jen.Return(jen.Err()),
-					),
-				),
-				jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("afterCreateHooks")).Block(
-					jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
-						jen.Return(jen.Err()),
-					),
-				),
-			)
-
-			g.Return(jen.Nil())
-		})
+	}
 
 	// Read
 	if node.HasComplexID() {

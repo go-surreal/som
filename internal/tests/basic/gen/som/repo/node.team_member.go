@@ -20,10 +20,6 @@ type TeamMemberRepo interface {
 	// Query returns a new query builder for the TeamMember model.
 
 	Query() query.Builder[model.TeamMember]
-	// Insert creates multiple records in a single operation.
-	// Before- and after-create hooks are invoked for each node.
-
-	Insert(ctx context.Context, nodes []*model.TeamMember) error
 	// CreateWithID creates a new record with the given key for the TeamMember model.
 
 	CreateWithID(ctx context.Context, teamMember *model.TeamMember) error
@@ -361,62 +357,6 @@ func (r *teamMember) CreateWithID(ctx context.Context, teamMember *model.TeamMem
 	for _, h := range afterCreateHooks {
 		if err := h.fn(ctx, teamMember); err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-// Insert creates multiple records in a single operation.
-// Before- and after-create hooks are invoked for each node.
-func (r *teamMember) Insert(ctx context.Context, nodes []*model.TeamMember) error {
-	if len(nodes) == 0 {
-		return nil
-	}
-	for _, n := range nodes {
-		if n == nil {
-			return errors.New("slice contains nil node")
-		}
-		if n.ID().Member.ID() == "" {
-			return errors.New("Member.ID must not be empty")
-		}
-		var zeroForecastKey model.WeatherKey
-		if n.ID().Forecast.ID() == zeroForecastKey {
-			return errors.New("Forecast.ID must not be empty")
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]teamMemberHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
-			if err := h.OnBeforeCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range beforeCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
-	}
-	if err := r.insert(ctx, nodes); err != nil {
-		return err
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]teamMemberHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnAfterCreateHook); ok {
-			if err := h.OnAfterCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range afterCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
 		}
 	}
 	return nil

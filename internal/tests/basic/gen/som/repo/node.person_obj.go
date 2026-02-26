@@ -19,10 +19,6 @@ type PersonObjRepo interface {
 	// Query returns a new query builder for the PersonObj model.
 
 	Query() query.Builder[model.PersonObj]
-	// Insert creates multiple records in a single operation.
-	// Before- and after-create hooks are invoked for each node.
-
-	Insert(ctx context.Context, nodes []*model.PersonObj) error
 	// CreateWithID creates a new record with the given key for the PersonObj model.
 
 	CreateWithID(ctx context.Context, personObj *model.PersonObj) error
@@ -357,59 +353,6 @@ func (r *personObj) CreateWithID(ctx context.Context, personObj *model.PersonObj
 	for _, h := range afterCreateHooks {
 		if err := h.fn(ctx, personObj); err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-// Insert creates multiple records in a single operation.
-// Before- and after-create hooks are invoked for each node.
-func (r *personObj) Insert(ctx context.Context, nodes []*model.PersonObj) error {
-	if len(nodes) == 0 {
-		return nil
-	}
-	for _, n := range nodes {
-		if n == nil {
-			return errors.New("slice contains nil node")
-		}
-		var zeroKey model.PersonKey
-		if n.ID() == zeroKey {
-			return errors.New("node must have a non-zero ID")
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]personObjHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
-			if err := h.OnBeforeCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range beforeCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
-	}
-	if err := r.insert(ctx, nodes); err != nil {
-		return err
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]personObjHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnAfterCreateHook); ok {
-			if err := h.OnAfterCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range afterCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
 		}
 	}
 	return nil

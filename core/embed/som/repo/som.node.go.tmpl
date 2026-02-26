@@ -89,6 +89,9 @@ func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
 		return fmt.Errorf("insert returned %d results, expected %d", len(results), len(nodes))
 	}
 	for i, result := range results {
+		if result == nil {
+			return fmt.Errorf("insert returned nil result at index %d", i)
+		}
 		*nodes[i] = *result
 	}
 	return nil

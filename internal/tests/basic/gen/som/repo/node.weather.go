@@ -20,10 +20,6 @@ type WeatherRepo interface {
 	// Query returns a new query builder for the Weather model.
 
 	Query() query.Builder[model.Weather]
-	// Insert creates multiple records in a single operation.
-	// Before- and after-create hooks are invoked for each node.
-
-	Insert(ctx context.Context, nodes []*model.Weather) error
 	// CreateWithID creates a new record with the given key for the Weather model.
 
 	CreateWithID(ctx context.Context, weather *model.Weather) error
@@ -355,59 +351,6 @@ func (r *weather) CreateWithID(ctx context.Context, weather *model.Weather) erro
 	for _, h := range afterCreateHooks {
 		if err := h.fn(ctx, weather); err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-// Insert creates multiple records in a single operation.
-// Before- and after-create hooks are invoked for each node.
-func (r *weather) Insert(ctx context.Context, nodes []*model.Weather) error {
-	if len(nodes) == 0 {
-		return nil
-	}
-	for _, n := range nodes {
-		if n == nil {
-			return errors.New("slice contains nil node")
-		}
-		var zeroKey model.WeatherKey
-		if n.ID() == zeroKey {
-			return errors.New("node must have a non-zero ID")
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]weatherHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
-			if err := h.OnBeforeCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range beforeCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
-	}
-	if err := r.insert(ctx, nodes); err != nil {
-		return err
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]weatherHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnAfterCreateHook); ok {
-			if err := h.OnAfterCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range afterCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
