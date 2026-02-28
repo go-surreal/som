@@ -220,8 +220,8 @@ As soon as this is fixed, Som will support these types as well.
 - [x] `time.Time`
 - [x] `time.Duration`
 - [ ] `time.Location`
-- [ ] `time.Weekday`?
-- [ ] `time.Month` etc.?
+- [x] `time.Weekday`
+- [x] `time.Month`
 - [ ] `big.Int`
 - [ ] `big.Float`
 - [x] `url.URL`

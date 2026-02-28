@@ -27,6 +27,7 @@ func TestQueryCount(t *testing.T) {
 		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 			FieldTime:     time.Now(),
 			FieldDuration: time.Second,
+			FieldMonth:    time.January,
 		})
 		if err != nil {
 			t.Fatal(err)

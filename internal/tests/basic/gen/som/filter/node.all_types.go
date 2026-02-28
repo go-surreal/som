@@ -58,6 +58,8 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldIntPtrSlicePtr:        lib.NewIntPtrSlicePtr[M, *int](lib.Field(key, "field_int_ptr_slice_ptr")),
 		FieldIntSlice:              lib.NewIntSlice[M, int](lib.Field(key, "field_int_slice")),
 		FieldIntSlicePtr:           lib.NewIntSlicePtr[M, int](lib.Field(key, "field_int_slice_ptr")),
+		FieldMonth:                 lib.NewMonth[M](lib.Field(key, "field_month")),
+		FieldMonthPtr:              lib.NewMonthPtr[M](lib.Field(key, "field_month_ptr")),
 		FieldNestedDataPtrSlice:    lib.NewSliceMaker[M, *model.NestedData, nestedData[M]](newNestedData[M])(lib.Field(key, "field_nested_data_ptr_slice")),
 		FieldNestedDataPtrSlicePtr: lib.NewSliceMakerPtr[M, *model.NestedData, nestedData[M]](newNestedData[M])(lib.Field(key, "field_nested_data_ptr_slice_ptr")),
 		FieldNestedDataSlice:       lib.NewSliceMaker[M, model.NestedData, nestedData[M]](newNestedData[M])(lib.Field(key, "field_nested_data_slice")),
@@ -96,6 +98,8 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldUint32Ptr:             lib.NewIntPtr[M, *uint32](lib.Field(key, "field_uint_32_ptr")),
 		FieldUint8:                 lib.NewInt[M, uint8](lib.Field(key, "field_uint_8")),
 		FieldUint8Ptr:              lib.NewIntPtr[M, *uint8](lib.Field(key, "field_uint_8_ptr")),
+		FieldWeekday:               lib.NewWeekday[M](lib.Field(key, "field_weekday")),
+		FieldWeekdayPtr:            lib.NewWeekdayPtr[M](lib.Field(key, "field_weekday_ptr")),
 		ID:                         lib.NewID[M](lib.Field(key, "id"), "all_types"),
 		Key:                        key,
 		UpdatedAt:                  lib.NewTime[M](lib.Field(key, "updated_at")),
@@ -153,6 +157,10 @@ type allTypes[M any] struct {
 	FieldDurationPtr           *lib.DurationPtr[M]
 	FieldDurationNil           *lib.DurationPtr[M]
 	FieldDurationSlice         *lib.Slice[M, time.Duration, *lib.Duration[M]]
+	FieldMonth                 *lib.Month[M]
+	FieldMonthPtr              *lib.MonthPtr[M]
+	FieldWeekday               *lib.Weekday[M]
+	FieldWeekdayPtr            *lib.WeekdayPtr[M]
 	FieldUUID                  *lib.UUIDGoogle[M]
 	FieldUUIDPtr               *lib.UUIDGooglePtr[M]
 	FieldUUIDNil               *lib.UUIDGooglePtr[M]

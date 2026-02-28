@@ -18,6 +18,7 @@ func TestEdgeRelation(t *testing.T) {
 
 	allTypesNode := &model.AllTypes{
 		FieldString: "edge_source",
+		FieldMonth:  time.January,
 	}
 	err := client.AllTypesRepo().Create(ctx, allTypesNode)
 	if err != nil {

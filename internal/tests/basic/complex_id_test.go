@@ -214,7 +214,7 @@ func TestComplexIDNodeRef(t *testing.T) {
 	defer cleanup()
 
 	// Create referenced nodes first.
-	member := &model.AllTypes{FieldString: "ref-member"}
+	member := &model.AllTypes{FieldString: "ref-member", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, member)
 	assert.NilError(t, err)
 	assert.Assert(t, member.ID() != "")
@@ -549,8 +549,8 @@ func TestComplexIDQueryNodeRef(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	member1 := &model.AllTypes{FieldString: "member-1"}
-	member2 := &model.AllTypes{FieldString: "member-2"}
+	member1 := &model.AllTypes{FieldString: "member-1", FieldMonth: time.January}
+	member2 := &model.AllTypes{FieldString: "member-2", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, member1)
 	assert.NilError(t, err)
 	err = client.AllTypesRepo().Create(ctx, member2)

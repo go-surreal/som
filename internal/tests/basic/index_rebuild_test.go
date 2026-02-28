@@ -17,6 +17,7 @@ func TestIndexRebuildCount(t *testing.T) {
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldTime:     time.Now(),
 		FieldDuration: time.Second,
+		FieldMonth:    time.January,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -38,6 +39,7 @@ func TestIndexRebuildSearch(t *testing.T) {
 		FieldString:   "hello world",
 		FieldTime:     time.Now(),
 		FieldDuration: time.Second,
+		FieldMonth:    time.January,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -58,6 +60,7 @@ func TestIndexRebuildRegularIndex(t *testing.T) {
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldTime:     time.Now(),
 		FieldDuration: time.Second,
+		FieldMonth:    time.January,
 		FieldCredentials: model.Credentials{
 			Username: "testuser",
 		},
@@ -95,6 +98,7 @@ func TestIndexRebuildMultiple(t *testing.T) {
 			FieldString:   "test data",
 			FieldTime:     time.Now(),
 			FieldDuration: time.Second,
+			FieldMonth:    time.January,
 		})
 		if err != nil {
 			t.Fatal(err)

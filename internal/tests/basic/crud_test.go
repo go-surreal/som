@@ -3,6 +3,7 @@ package basic
 import (
 	"context"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"github.com/go-surreal/som/tests/basic/gen/som"
@@ -27,6 +28,8 @@ func TestWithDatabase(t *testing.T) {
 		FieldUUID:      uid,
 		FieldByte:      []byte("x")[0],
 		FieldByteSlice: []byte("some value"),
+		FieldMonth:     time.March,
+		FieldWeekday:   time.Wednesday,
 	}
 
 	userIn := userNew
@@ -38,6 +41,7 @@ func TestWithDatabase(t *testing.T) {
 
 	userOut, err := client.AllTypesRepo().Query().
 		Where(
+			filter.AllTypes.FieldMonth.Equal(time.March),
 			filter.AllTypes.ID.Equal(string(userIn.ID())),
 			filter.AllTypes.FieldString.Equal(str),
 		).
@@ -60,6 +64,96 @@ func TestWithDatabase(t *testing.T) {
 	)
 }
 
+func TestMonthWeekdayPointers(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	march := time.March
+	wednesday := time.Wednesday
+
+	// Create with non-nil pointer values.
+	withValues := &model.AllTypes{
+		FieldMonth:      time.January,
+		FieldMonthPtr:   &march,
+		FieldWeekday:    time.Monday,
+		FieldWeekdayPtr: &wednesday,
+	}
+
+	err := client.AllTypesRepo().Create(ctx, withValues)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readWithValues, ok, err := client.AllTypesRepo().Read(ctx, string(withValues.ID()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, ok)
+	assert.Assert(t, readWithValues.FieldMonthPtr != nil)
+	assert.Equal(t, time.March, *readWithValues.FieldMonthPtr)
+	assert.Assert(t, readWithValues.FieldWeekdayPtr != nil)
+	assert.Equal(t, time.Wednesday, *readWithValues.FieldWeekdayPtr)
+
+	// Create with nil pointer values.
+	withNil := &model.AllTypes{
+		FieldMonth: time.January,
+	}
+
+	err = client.AllTypesRepo().Create(ctx, withNil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readWithNil, ok, err := client.AllTypesRepo().Read(ctx, string(withNil.ID()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, ok)
+	assert.Assert(t, readWithNil.FieldMonthPtr == nil)
+	assert.Assert(t, readWithNil.FieldWeekdayPtr == nil)
+
+	// Filter: non-nil pointer values.
+	results, err := client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldMonthPtr.Equal(time.March)).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, withValues.ID(), results[0].ID())
+
+	// Filter: nil pointer values.
+	results, err = client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldMonthPtr.Nil(true)).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, withNil.ID(), results[0].ID())
+
+	// Filter: weekday pointer.
+	results, err = client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldWeekdayPtr.Equal(time.Wednesday)).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, withValues.ID(), results[0].ID())
+
+	results, err = client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldWeekdayPtr.Nil(true)).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, withNil.ID(), results[0].ID())
+}
+
 func TestRefresh(t *testing.T) {
 	ctx := context.Background()
 
@@ -68,6 +162,7 @@ func TestRefresh(t *testing.T) {
 
 	allTypes := &model.AllTypes{
 		FieldString: "some value",
+		FieldMonth:  time.January,
 	}
 
 	err := client.AllTypesRepo().Create(ctx, allTypes)
@@ -92,9 +187,9 @@ func TestInsert(t *testing.T) {
 	defer cleanup()
 
 	nodes := []*model.AllTypes{
-		{FieldString: "first"},
-		{FieldString: "second"},
-		{FieldString: "third"},
+		{FieldString: "first", FieldMonth: time.January},
+		{FieldString: "second", FieldMonth: time.January},
+		{FieldString: "third", FieldMonth: time.January},
 	}
 
 	err := client.AllTypesRepo().Insert(ctx, nodes)
@@ -150,7 +245,7 @@ func TestInsertValidation(t *testing.T) {
 	})
 
 	t.Run("node with existing id", func(t *testing.T) {
-		n := &model.AllTypes{FieldString: "test"}
+		n := &model.AllTypes{FieldString: "test", FieldMonth: time.January}
 		err := client.AllTypesRepo().Create(ctx, n)
 		if err != nil {
 			t.Fatal(err)
@@ -171,6 +266,7 @@ func FuzzWithDatabase(f *testing.F) {
 	f.Fuzz(func(t *testing.T, str string) {
 		userIn := &model.AllTypes{
 			FieldString: str,
+			FieldMonth:  time.January,
 		}
 
 		err := client.AllTypesRepo().Create(ctx, userIn)
@@ -218,6 +314,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 		userIn := &model.AllTypes{
 			FieldString: "1",
+			FieldMonth:  time.January,
 		}
 
 		err := client.AllTypesRepo().CreateWithID(ctx, id, userIn)
@@ -269,6 +366,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		userIn := &model.AllTypes{
 			FieldString: "Some User",
+			FieldMonth:  time.January,
 		}
 
 		err := client.AllTypesRepo().Create(ctx, userIn)

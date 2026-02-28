@@ -153,6 +153,22 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldMonth:
+		{
+			return &Month{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldWeekday:
+		{
+			return &Weekday{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldUUID:
 		{
 			return &UUID{
