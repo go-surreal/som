@@ -209,9 +209,9 @@ func (n allTypes[M]) FieldNestedDataPtrSlice(filters ...lib.Filter[model.NestedD
 	return lib.NewSlice[M, *model.NestedData, nestedData[M]](key, newNestedData[M])
 }
 
-func (n allTypes[M]) FieldNestedDataPtrSlicePtr(filters ...lib.Filter[model.NestedData]) *lib.Slice[M, *model.NestedData, nestedData[M]] {
+func (n allTypes[M]) FieldNestedDataPtrSlicePtr(filters ...lib.Filter[model.NestedData]) *lib.SlicePtr[M, *model.NestedData, nestedData[M]] {
 	key := lib.StructField(n.Key, "field_nested_data_ptr_slice_ptr", filters)
-	return lib.NewSlice[M, *model.NestedData, nestedData[M]](key, newNestedData[M])
+	return lib.NewSlicePtr[M, *model.NestedData, nestedData[M]](key, newNestedData[M])
 }
 
 func (n allTypes[M]) FieldNode() specialTypes[M] {
