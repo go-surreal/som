@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
@@ -35,6 +36,9 @@ type WeatherRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, weather *model.Weather) error
+	// Index returns a new index instance for the Weather model.
+
+	Index() *index.Weather
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -90,6 +94,20 @@ type WeatherRepo interface {
 var weatherRepoInfo = RepoInfo[model.Weather]{
 	MarshalOne: func(node *model.Weather) any {
 		return conv.FromWeatherPtr(node)
+	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Weather, error) {
+		var raw []internal.QueryResult[*conv.Weather]
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if len(raw) < 1 {
+			return nil, nil
+		}
+		results := make([]*model.Weather, len(raw[0].Result))
+		for i, r := range raw[0].Result {
+			results[i] = conv.ToWeatherPtr(r)
+		}
+		return results, nil
 	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Weather, error) {
 		var raw *conv.Weather
@@ -299,6 +317,7 @@ func (r *weather) Query() query.Builder[model.Weather] {
 
 // CreateWithID creates a new record for the Weather model using its embedded key.
 // The node must have a non-zero ID set.
+// Before- and after-create hooks are invoked.
 func (r *weather) CreateWithID(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
@@ -351,6 +370,7 @@ func (r *weather) Read(ctx context.Context, key model.WeatherKey) (*model.Weathe
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
@@ -394,6 +414,7 @@ func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *weather) Delete(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
@@ -446,4 +467,9 @@ func (r *weather) Refresh(ctx context.Context, weather *model.Weather) error {
 		return errors.New("cannot refresh Weather without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(weather.ID()), weather)
+}
+
+// Index returns a new index instance for the Weather model.
+func (r *weather) Index() *index.Weather {
+	return index.NewWeather(r.db)
 }

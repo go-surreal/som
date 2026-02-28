@@ -85,6 +85,7 @@ func (b *build) build() error {
 		b.newFetchBuilder(),
 		b.newConvBuilder(),
 		b.newRelateBuilder(),
+		b.newIndexBuilder(),
 		b.newFieldBuilder(),
 	}
 
@@ -217,6 +218,14 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			).Error()
 		}
 
+		if !node.HasComplexID() {
+			g.Add(comment("Insert creates multiple records in a single operation.\nBefore- and after-create hooks are invoked for each node."))
+			g.Id("Insert").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("nodes").Index().Op("*").Add(b.input.SourceQual(node.NameGo())),
+			).Error()
+		}
+
 		if node.HasComplexID() {
 			g.Add(comment("CreateWithID creates a new record with the given key for the " + node.NameGo() + " model."))
 			g.Id("CreateWithID").Call(
@@ -291,6 +300,9 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			g.Id("Relate").Call().Op("*").Qual(b.relativePkgPath(def.PkgRelate), node.NameGo())
 		}
 
+		g.Add(comment("Index returns a new index instance for the " + node.NameGo() + " model."))
+		g.Id("Index").Call().Op("*").Qual(b.relativePkgPath(def.PkgIndex), node.NameGo())
+
 		g.Line()
 
 		for _, event := range []string{"Create", "Update", "Delete"} {
@@ -341,6 +353,23 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 			jen.Return(jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")), jen.Nil()),
 		),
+		jen.Id("UnmarshalInsert"): jen.Func().Params(
+			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
+			jen.Var().Id("raw").Index().Qual(b.relativePkgPath(def.PkgInternal), "QueryResult").Types(jen.Op("*").Qual(pkgConv, node.NameGo())),
+			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Err()),
+			),
+			jen.If(jen.Len(jen.Id("raw")).Op("<").Lit(1)).Block(
+				jen.Return(jen.Nil(), jen.Nil()),
+			),
+			jen.Id("results").Op(":=").Make(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Len(jen.Id("raw").Index(jen.Lit(0)).Dot("Result"))),
+			jen.For(jen.List(jen.Id("i"), jen.Id("r")).Op(":=").Range().Id("raw").Index(jen.Lit(0)).Dot("Result")).Block(
+				jen.Id("results").Index(jen.Id("i")).Op("=").Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("r")),
+			),
+			jen.Return(jen.Id("results"), jen.Nil()),
+		),
 		jen.Id("MarshalOne"): jen.Func().Params(
 			jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
 		).Any().Block(
@@ -359,6 +388,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	if !node.HasComplexID() {
 		repoInitValues = append(repoInitValues,
 			jen.Add(jen.Line(), jen.Id("newID").Op(":").Id(idFuncName(node))),
+			jen.Add(jen.Line(), jen.Id("idFunc").Op(":").Lit(idSurrealFunc(node))),
 		)
 	}
 	repoInitValues = append(repoInitValues,
@@ -495,6 +525,7 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 			Add(comment(`
 Create creates a new record for the `+node.NameGo()+` model.
 The ID will be generated automatically as a ULID.
+Before- and after-create hooks are invoked.
 		`)).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 			Id("Create").
@@ -527,6 +558,7 @@ The ID will be generated automatically as a ULID.
 			Add(comment(`
 CreateWithID creates a new record for the `+node.NameGo()+` model using its embedded key.
 The node must have a non-zero ID set.
+Before- and after-create hooks are invoked.
 		`)).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 			Id("CreateWithID").
@@ -555,6 +587,7 @@ The node must have a non-zero ID set.
 		f.Line().
 			Add(comment(`
 CreateWithID creates a new record for the `+node.NameGo()+` model with the given id.
+Before- and after-create hooks are invoked.
 		`)).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 			Id("CreateWithID").
@@ -579,6 +612,83 @@ CreateWithID creates a new record for the `+node.NameGo()+` model with the given
 				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 				b.addAfterHooks(g, node, "Create")
+
+				g.Return(jen.Nil())
+			})
+	}
+
+	// Insert (string ID only - complex-ID models cannot use table-level INSERT)
+	if !node.HasComplexID() {
+		f.Line().
+			Add(comment("Insert creates multiple records in a single operation.\n"+
+				"Before- and after-create hooks are invoked for each node.")).
+			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+			Id("Insert").
+			Params(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("nodes").Index().Op("*").Add(b.input.SourceQual(node.NameGo())),
+			).
+			Error().
+			BlockFunc(func(g *jen.Group) {
+				somPkg := b.relativePkgPath()
+
+				g.If(jen.Len(jen.Id("nodes")).Op("==").Lit(0)).
+					Block(jen.Return(jen.Nil()))
+
+				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
+					inner.If(jen.Id("n").Op("==").Nil()).
+						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("slice contains nil node"))))
+					inner.If(jen.Id("n").Dot("ID").Call().Op("!=").Lit("")).
+						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node already has an id"))))
+				})
+
+				// Snapshot before-create hooks once
+				g.Id("r").Dot("mu").Dot("RLock").Call()
+				g.Id("beforeCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("beforeCreate")))
+				g.Copy(jen.Id("beforeCreateHooks"), jen.Id("r").Dot("beforeCreate"))
+				g.Id("r").Dot("mu").Dot("RUnlock").Call()
+
+				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
+					jen.If(
+						jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnBeforeCreateHook")),
+						jen.Id("ok"),
+					).Block(
+						jen.If(jen.Err().Op(":=").Id("h").Dot("OnBeforeCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
+						),
+					),
+					jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("beforeCreateHooks")).Block(
+						jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
+						),
+					),
+				)
+
+				g.If(jen.Err().Op(":=").Id("r").Dot("insert").Call(
+					jen.Id("ctx"), jen.Id("nodes"),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
+
+				// Snapshot after-create hooks once
+				g.Id("r").Dot("mu").Dot("RLock").Call()
+				g.Id("afterCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("afterCreate")))
+				g.Copy(jen.Id("afterCreateHooks"), jen.Id("r").Dot("afterCreate"))
+				g.Id("r").Dot("mu").Dot("RUnlock").Call()
+
+				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
+					jen.If(
+						jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnAfterCreateHook")),
+						jen.Id("ok"),
+					).Block(
+						jen.If(jen.Err().Op(":=").Id("h").Dot("OnAfterCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
+						),
+					),
+					jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("afterCreateHooks")).Block(
+						jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
+							jen.Return(jen.Err()),
+						),
+					),
+				)
 
 				g.Return(jen.Nil())
 			})
@@ -671,6 +781,7 @@ If caching is enabled via som.WithCache, it will be used.
 	f.Line().
 		Add(comment(`
 Update updates the record for the given model.
+Before- and after-update hooks are invoked.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Update").
@@ -700,6 +811,7 @@ Update updates the record for the given model.
 	f.Line().
 		Add(comment(`
 Delete deletes the record for the given model.
+Before- and after-delete hooks are invoked.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Delete").
@@ -898,6 +1010,22 @@ Relate returns a new relate instance for the `+node.NameGo()+` model.
 			)
 	}
 
+	// Index
+	f.Line().
+		Add(comment(`
+Index returns a new index instance for the `+node.NameGo()+` model.
+		`)).
+		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+		Id("Index").Params().
+		Op("*").Qual(b.relativePkgPath(def.PkgIndex), node.NameGo()).
+		Block(
+			jen.Return(
+				jen.Qual(b.relativePkgPath(def.PkgIndex), "New"+node.NameGo()).Call(
+					jen.Id("r").Dot("db"),
+				),
+			),
+		)
+
 	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName()))); err != nil {
 		return err
 	}
@@ -927,6 +1055,10 @@ func (b *build) newConvBuilder() builder {
 
 func (b *build) newRelateBuilder() builder {
 	return newRelateBuilder(b.input, b.fs, b.basePkg(), def.PkgRelate)
+}
+
+func (b *build) newIndexBuilder() builder {
+	return newIndexBuilder(b.input, b.fs, b.basePkg(), def.PkgIndex, b.noCountIndex, b.input.define)
 }
 
 func (b *build) newFieldBuilder() builder {
@@ -1053,6 +1185,17 @@ func idFuncName(node *field.NodeTable) string {
 		return "newID"
 	default:
 		return "newULID" // ULID is the default ID type (used by the Node alias)
+	}
+}
+
+func idSurrealFunc(node *field.NodeTable) string {
+	switch node.Source.IDType {
+	case parser.IDTypeUUID:
+		return "rand::uuid()"
+	case parser.IDTypeRand:
+		return "rand::string(20)"
+	default:
+		return "rand::ulid()"
 	}
 }
 

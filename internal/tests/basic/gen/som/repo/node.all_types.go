@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
@@ -23,6 +24,10 @@ type AllTypesRepo interface {
 	// Create creates a new record for the AllTypes model.
 
 	Create(ctx context.Context, allTypes *model.AllTypes) error
+	// Insert creates multiple records in a single operation.
+	// Before- and after-create hooks are invoked for each node.
+
+	Insert(ctx context.Context, nodes []*model.AllTypes) error
 	// CreateWithID creates a new record with the given ID for the AllTypes model.
 
 	CreateWithID(ctx context.Context, id string, allTypes *model.AllTypes) error
@@ -41,6 +46,9 @@ type AllTypesRepo interface {
 	// Relate returns a new relate builder for the AllTypes model.
 
 	Relate() *relate.AllTypes
+	// Index returns a new index instance for the AllTypes model.
+
+	Index() *index.AllTypes
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -97,6 +105,20 @@ var allTypesRepoInfo = RepoInfo[model.AllTypes]{
 	MarshalOne: func(node *model.AllTypes) any {
 		return conv.FromAllTypesPtr(node)
 	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.AllTypes, error) {
+		var raw []internal.QueryResult[*conv.AllTypes]
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if len(raw) < 1 {
+			return nil, nil
+		}
+		results := make([]*model.AllTypes, len(raw[0].Result))
+		for i, r := range raw[0].Result {
+			results[i] = conv.ToAllTypesPtr(r)
+		}
+		return results, nil
+	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.AllTypes, error) {
 		var raw *conv.AllTypes
 		if err := unmarshal(data, &raw); err != nil {
@@ -113,10 +135,11 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 	defer c.mu.Unlock()
 	if c.allTypesRepo == nil {
 		c.allTypesRepo = &allTypes{repo: &repo[model.AllTypes, string]{
-			db:    c.db,
-			name:  "all_types",
-			info:  allTypesRepoInfo,
-			newID: newULID,
+			db:     c.db,
+			name:   "all_types",
+			info:   allTypesRepoInfo,
+			newID:  newULID,
+			idFunc: "rand::ulid()",
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("all_types", parseStringID(id))
 				return &rid
@@ -306,6 +329,7 @@ func (r *allTypes) Query() query.Builder[model.AllTypes] {
 
 // Create creates a new record for the AllTypes model.
 // The ID will be generated automatically as a ULID.
+// Before- and after-create hooks are invoked.
 func (r *allTypes) Create(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -348,6 +372,7 @@ func (r *allTypes) Create(ctx context.Context, allTypes *model.AllTypes) error {
 }
 
 // CreateWithID creates a new record for the AllTypes model with the given id.
+// Before- and after-create hooks are invoked.
 func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -392,6 +417,58 @@ func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.
 	return nil
 }
 
+// Insert creates multiple records in a single operation.
+// Before- and after-create hooks are invoked for each node.
+func (r *allTypes) Insert(ctx context.Context, nodes []*model.AllTypes) error {
+	if len(nodes) == 0 {
+		return nil
+	}
+	for _, n := range nodes {
+		if n == nil {
+			return errors.New("slice contains nil node")
+		}
+		if n.ID() != "" {
+			return errors.New("node already has an id")
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]allTypesHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
+			if err := h.OnBeforeCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range beforeCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	if err := r.insert(ctx, nodes); err != nil {
+		return err
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]allTypesHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnAfterCreateHook); ok {
+			if err := h.OnAfterCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range afterCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
@@ -424,6 +501,7 @@ func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, 
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -466,6 +544,7 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -521,4 +600,9 @@ func (r *allTypes) Refresh(ctx context.Context, allTypes *model.AllTypes) error 
 // Relate returns a new relate instance for the AllTypes model.
 func (r *allTypes) Relate() *relate.AllTypes {
 	return relate.NewAllTypes(r.db)
+}
+
+// Index returns a new index instance for the AllTypes model.
+func (r *allTypes) Index() *index.AllTypes {
+	return index.NewAllTypes(r.db)
 }

@@ -239,6 +239,9 @@ type allTypesFieldString[M any] struct {
 func (f allTypesFieldString[M]) Matches(terms string) lib.Search[M] {
 	return lib.NewSearch[M](f.String.Base.Key, terms)
 }
+func (f allTypesFieldString[M]) MatchesAny(terms string) lib.Search[M] {
+	return lib.NewSearchOr[M](f.String.Base.Key, terms)
+}
 func (f allTypesFieldString[M]) key() lib.Key[M] {
 	return f.String.Base.Key
 }
@@ -249,6 +252,9 @@ type allTypesFieldStringPtr[M any] struct {
 
 func (f allTypesFieldStringPtr[M]) Matches(terms string) lib.Search[M] {
 	return lib.NewSearch[M](f.StringPtr.Base.Key, terms)
+}
+func (f allTypesFieldStringPtr[M]) MatchesAny(terms string) lib.Search[M] {
+	return lib.NewSearchOr[M](f.StringPtr.Base.Key, terms)
 }
 func (f allTypesFieldStringPtr[M]) key() lib.Key[M] {
 	return f.StringPtr.Base.Key
@@ -261,6 +267,9 @@ type allTypesFieldOther[M any] struct {
 func (f allTypesFieldOther[M]) Matches(terms string) lib.Search[M] {
 	return lib.NewSearch[M](f.StringSlice.Key, terms)
 }
+func (f allTypesFieldOther[M]) MatchesAny(terms string) lib.Search[M] {
+	return lib.NewSearchOr[M](f.StringSlice.Key, terms)
+}
 func (f allTypesFieldOther[M]) key() lib.Key[M] {
 	return f.StringSlice.Key
 }
@@ -271,6 +280,9 @@ type allTypesFieldStringPtrSlice[M any] struct {
 
 func (f allTypesFieldStringPtrSlice[M]) Matches(terms string) lib.Search[M] {
 	return lib.NewSearch[M](f.StringPtrSlice.Key, terms)
+}
+func (f allTypesFieldStringPtrSlice[M]) MatchesAny(terms string) lib.Search[M] {
+	return lib.NewSearchOr[M](f.StringPtrSlice.Key, terms)
 }
 func (f allTypesFieldStringPtrSlice[M]) key() lib.Key[M] {
 	return f.StringPtrSlice.Key
@@ -283,6 +295,9 @@ type allTypesFieldStringSlicePtr[M any] struct {
 func (f allTypesFieldStringSlicePtr[M]) Matches(terms string) lib.Search[M] {
 	return lib.NewSearch[M](f.StringSlicePtr.Slice.Key, terms)
 }
+func (f allTypesFieldStringSlicePtr[M]) MatchesAny(terms string) lib.Search[M] {
+	return lib.NewSearchOr[M](f.StringSlicePtr.Slice.Key, terms)
+}
 func (f allTypesFieldStringSlicePtr[M]) key() lib.Key[M] {
 	return f.StringSlicePtr.Slice.Key
 }
@@ -293,6 +308,9 @@ type allTypesFieldStringPtrSlicePtr[M any] struct {
 
 func (f allTypesFieldStringPtrSlicePtr[M]) Matches(terms string) lib.Search[M] {
 	return lib.NewSearch[M](f.StringPtrSlicePtr.Slice.Key, terms)
+}
+func (f allTypesFieldStringPtrSlicePtr[M]) MatchesAny(terms string) lib.Search[M] {
+	return lib.NewSearchOr[M](f.StringPtrSlicePtr.Slice.Key, terms)
 }
 func (f allTypesFieldStringPtrSlicePtr[M]) key() lib.Key[M] {
 	return f.StringPtrSlicePtr.Slice.Key

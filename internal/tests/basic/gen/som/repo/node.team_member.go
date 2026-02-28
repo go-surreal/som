@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
@@ -35,6 +36,9 @@ type TeamMemberRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, teamMember *model.TeamMember) error
+	// Index returns a new index instance for the TeamMember model.
+
+	Index() *index.TeamMember
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -90,6 +94,20 @@ type TeamMemberRepo interface {
 var teamMemberRepoInfo = RepoInfo[model.TeamMember]{
 	MarshalOne: func(node *model.TeamMember) any {
 		return conv.FromTeamMemberPtr(node)
+	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.TeamMember, error) {
+		var raw []internal.QueryResult[*conv.TeamMember]
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if len(raw) < 1 {
+			return nil, nil
+		}
+		results := make([]*model.TeamMember, len(raw[0].Result))
+		for i, r := range raw[0].Result {
+			results[i] = conv.ToTeamMemberPtr(r)
+		}
+		return results, nil
 	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.TeamMember, error) {
 		var raw *conv.TeamMember
@@ -302,6 +320,7 @@ func (r *teamMember) Query() query.Builder[model.TeamMember] {
 
 // CreateWithID creates a new record for the TeamMember model using its embedded key.
 // The node must have a non-zero ID set.
+// Before- and after-create hooks are invoked.
 func (r *teamMember) CreateWithID(ctx context.Context, teamMember *model.TeamMember) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
@@ -357,6 +376,7 @@ func (r *teamMember) Read(ctx context.Context, key model.TeamMemberKey) (*model.
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
@@ -403,6 +423,7 @@ func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) e
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *teamMember) Delete(ctx context.Context, teamMember *model.TeamMember) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
@@ -461,4 +482,9 @@ func (r *teamMember) Refresh(ctx context.Context, teamMember *model.TeamMember) 
 		return errors.New("Forecast.ID must not be empty")
 	}
 	return r.refresh(ctx, r.recordID(teamMember.ID()), teamMember)
+}
+
+// Index returns a new index instance for the TeamMember model.
+func (r *teamMember) Index() *index.TeamMember {
+	return index.NewTeamMember(r.db)
 }

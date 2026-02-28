@@ -6,6 +6,7 @@ import (
 	"errors"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
+	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -34,6 +35,9 @@ type PersonObjRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, personObj *model.PersonObj) error
+	// Index returns a new index instance for the PersonObj model.
+
+	Index() *index.PersonObj
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -89,6 +93,20 @@ type PersonObjRepo interface {
 var personObjRepoInfo = RepoInfo[model.PersonObj]{
 	MarshalOne: func(node *model.PersonObj) any {
 		return conv.FromPersonObjPtr(node)
+	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.PersonObj, error) {
+		var raw []internal.QueryResult[*conv.PersonObj]
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if len(raw) < 1 {
+			return nil, nil
+		}
+		results := make([]*model.PersonObj, len(raw[0].Result))
+		for i, r := range raw[0].Result {
+			results[i] = conv.ToPersonObjPtr(r)
+		}
+		return results, nil
 	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.PersonObj, error) {
 		var raw *conv.PersonObj
@@ -301,6 +319,7 @@ func (r *personObj) Query() query.Builder[model.PersonObj] {
 
 // CreateWithID creates a new record for the PersonObj model using its embedded key.
 // The node must have a non-zero ID set.
+// Before- and after-create hooks are invoked.
 func (r *personObj) CreateWithID(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
@@ -353,6 +372,7 @@ func (r *personObj) Read(ctx context.Context, key model.PersonKey) (*model.Perso
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
@@ -396,6 +416,7 @@ func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) erro
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *personObj) Delete(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
@@ -448,4 +469,9 @@ func (r *personObj) Refresh(ctx context.Context, personObj *model.PersonObj) err
 		return errors.New("cannot refresh PersonObj without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(personObj.ID()), personObj)
+}
+
+// Index returns a new index instance for the PersonObj model.
+func (r *personObj) Index() *index.PersonObj {
+	return index.NewPersonObj(r.db)
 }

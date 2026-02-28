@@ -376,6 +376,20 @@ func (f *Slice) filterExtra(ctx Context) jen.Code {
 		jen.Line(),
 		jen.Func().
 			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("MatchesAny").
+			Params(jen.Id("terms").String()).
+			Qual(ctx.pkgLib(), "Search").Types(def.TypeModel).
+			Block(
+				jen.Return(
+					jen.Qual(ctx.pkgLib(), "NewSearchOr").Types(def.TypeModel).Call(
+						keyAccess,
+						jen.Id("terms"),
+					),
+				),
+			),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
 			Id("key").
 			Params().
 			Qual(ctx.pkgLib(), "Key").Types(def.TypeModel).
@@ -589,7 +603,7 @@ func (f *Slice) cborMarshal(ctx Context) jen.Code {
 					jen.Id("i").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
 				).Block(
 					jen.If(jen.Id("v").Op("==").Nil()).Block(
-						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Qual(ctx.pkgCBOR(), "None"),
+						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Qual(ctx.pkgCBOR(), "None").Call(),
 					).Else().Block(
 						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
 					),

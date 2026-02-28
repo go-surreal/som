@@ -229,7 +229,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		convSlice := make([]any, len(c.FieldNestedDataPtrSlice))
 		for i, v := range c.FieldNestedDataPtrSlice {
 			if v == nil {
-				convSlice[i] = cbor.None
+				convSlice[i] = cbor.None()
 			} else {
 				convSlice[i] = fromNestedDataPtr(v)
 			}
@@ -240,7 +240,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		convSlice := make([]any, len(*c.FieldNestedDataPtrSlicePtr))
 		for i, v := range *c.FieldNestedDataPtrSlicePtr {
 			if v == nil {
-				convSlice[i] = cbor.None
+				convSlice[i] = cbor.None()
 			} else {
 				convSlice[i] = fromNestedDataPtr(v)
 			}

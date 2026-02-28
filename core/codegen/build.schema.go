@@ -133,7 +133,7 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 	b.collectIndexes(tableName, "", fields, &statements, compositeUnique)
 
 	if softDelete {
-		indexName := fmt.Sprintf(def.IndexPrefix+"%s_index_deleted_at", tableName)
+		indexName := fmt.Sprintf(def.IndexPrefix+"%s_deleted_at", tableName)
 		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
 		statements = append(statements, stmt)
 	}

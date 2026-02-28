@@ -21,35 +21,30 @@ type Duration struct {
 
 func (d *Duration) MarshalCBOR() ([]byte, error) {
 	if d == nil {
-		data, err := cbor.Marshal(nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal nil: %w", err)
-		}
-
-		return data, nil
+		return cbor.None(), nil
 	}
 
-	totalSeconds := int64(d.Seconds())
 	totalNanoseconds := d.Nanoseconds()
-	remainingNanoseconds := totalNanoseconds - (totalSeconds * nanosecond)
+	totalSeconds := totalNanoseconds / int64(nanosecond)
+	remainingNanoseconds := totalNanoseconds % int64(nanosecond)
 
-	content, err := cbor.Marshal([]int64{totalSeconds, remainingNanoseconds})
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal duration slice: %w", err)
-	}
-
-	data, err := cbor.Marshal(cbor.RawTag{
+	data, err := cbor.Marshal(cbor.Tag{
 		Number:  tagDuration,
-		Content: content,
+		Content: []int64{totalSeconds, remainingNanoseconds},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal raw tag: %w", err)
+		return nil, fmt.Errorf("failed to marshal duration: %w", err)
 	}
 
 	return data, nil
 }
 
 func (d *Duration) UnmarshalCBOR(data []byte) error {
+	if cbor.IsNoneOrNull(data) {
+		d.Duration = 0
+		return nil
+	}
+
 	var val []int64
 
 	if err := cbor.Unmarshal(data, &val); err != nil {

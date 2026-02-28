@@ -21,6 +21,7 @@ type Database interface {
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
 	Update(ctx context.Context, id *models.RecordID, data any) ([]byte, error)
 	Delete(ctx context.Context, id *models.RecordID) ([]byte, error)
+	Insert(ctx context.Context, table string, data any) ([]byte, error)
 
 	Marshal(val any) ([]byte, error)
 	Unmarshal(buf []byte, val any) error
@@ -178,6 +179,14 @@ func (w *surrealDBWrapper) Delete(ctx context.Context, id *models.RecordID) ([]b
 	result, err := surrealdb.Delete[any](ctx, w.db, *id)
 	if err != nil {
 		return nil, err
+	}
+	return cbor.Marshal(result)
+}
+
+func (w *surrealDBWrapper) Insert(ctx context.Context, table string, data any) ([]byte, error) {
+	result, err := surrealdb.Insert[any](ctx, w.db, models.Table(table), data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert: %w", err)
 	}
 	return cbor.Marshal(result)
 }
