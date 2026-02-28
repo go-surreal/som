@@ -95,6 +95,20 @@ var weatherRepoInfo = RepoInfo[model.Weather]{
 	MarshalOne: func(node *model.Weather) any {
 		return conv.FromWeatherPtr(node)
 	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Weather, error) {
+		var raw []internal.QueryResult[*conv.Weather]
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if len(raw) < 1 {
+			return nil, nil
+		}
+		results := make([]*model.Weather, len(raw[0].Result))
+		for i, r := range raw[0].Result {
+			results[i] = conv.ToWeatherPtr(r)
+		}
+		return results, nil
+	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Weather, error) {
 		var raw *conv.Weather
 		if err := unmarshal(data, &raw); err != nil {
@@ -303,6 +317,7 @@ func (r *weather) Query() query.Builder[model.Weather] {
 
 // CreateWithID creates a new record for the Weather model using its embedded key.
 // The node must have a non-zero ID set.
+// Before- and after-create hooks are invoked.
 func (r *weather) CreateWithID(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
@@ -355,6 +370,7 @@ func (r *weather) Read(ctx context.Context, key model.WeatherKey) (*model.Weathe
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
@@ -398,6 +414,7 @@ func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *weather) Delete(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")

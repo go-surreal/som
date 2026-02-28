@@ -94,6 +94,20 @@ var personObjRepoInfo = RepoInfo[model.PersonObj]{
 	MarshalOne: func(node *model.PersonObj) any {
 		return conv.FromPersonObjPtr(node)
 	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.PersonObj, error) {
+		var raw []internal.QueryResult[*conv.PersonObj]
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if len(raw) < 1 {
+			return nil, nil
+		}
+		results := make([]*model.PersonObj, len(raw[0].Result))
+		for i, r := range raw[0].Result {
+			results[i] = conv.ToPersonObjPtr(r)
+		}
+		return results, nil
+	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.PersonObj, error) {
 		var raw *conv.PersonObj
 		if err := unmarshal(data, &raw); err != nil {
@@ -305,6 +319,7 @@ func (r *personObj) Query() query.Builder[model.PersonObj] {
 
 // CreateWithID creates a new record for the PersonObj model using its embedded key.
 // The node must have a non-zero ID set.
+// Before- and after-create hooks are invoked.
 func (r *personObj) CreateWithID(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
@@ -357,6 +372,7 @@ func (r *personObj) Read(ctx context.Context, key model.PersonKey) (*model.Perso
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
@@ -400,6 +416,7 @@ func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) erro
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *personObj) Delete(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")

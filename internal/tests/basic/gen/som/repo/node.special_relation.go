@@ -25,6 +25,10 @@ type SpecialRelationRepo interface {
 	// Create creates a new record for the SpecialRelation model.
 
 	Create(ctx context.Context, specialRelation *model.SpecialRelation) error
+	// Insert creates multiple records in a single operation.
+	// Before- and after-create hooks are invoked for each node.
+
+	Insert(ctx context.Context, nodes []*model.SpecialRelation) error
 	// CreateWithID creates a new record with the given ID for the SpecialRelation model.
 
 	CreateWithID(ctx context.Context, id string, specialRelation *model.SpecialRelation) error
@@ -108,6 +112,20 @@ var specialRelationRepoInfo = RepoInfo[model.SpecialRelation]{
 	MarshalOne: func(node *model.SpecialRelation) any {
 		return conv.FromSpecialRelationPtr(node)
 	},
+	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialRelation, error) {
+		var raw []internal.QueryResult[*conv.SpecialRelation]
+		if err := unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		if len(raw) < 1 {
+			return nil, nil
+		}
+		results := make([]*model.SpecialRelation, len(raw[0].Result))
+		for i, r := range raw[0].Result {
+			results[i] = conv.ToSpecialRelationPtr(r)
+		}
+		return results, nil
+	},
 	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialRelation, error) {
 		var raw *conv.SpecialRelation
 		if err := unmarshal(data, &raw); err != nil {
@@ -124,10 +142,11 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 	defer c.mu.Unlock()
 	if c.specialRelationRepo == nil {
 		c.specialRelationRepo = &specialRelation{repo: &repo[model.SpecialRelation, string]{
-			db:    c.db,
-			name:  "special_relation",
-			info:  specialRelationRepoInfo,
-			newID: newID,
+			db:     c.db,
+			name:   "special_relation",
+			info:   specialRelationRepoInfo,
+			newID:  newID,
+			idFunc: "rand::string(20)",
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_relation", parseStringID(id))
 				return &rid
@@ -317,6 +336,7 @@ func (r *specialRelation) Query() query.Builder[model.SpecialRelation] {
 
 // Create creates a new record for the SpecialRelation model.
 // The ID will be generated automatically as a ULID.
+// Before- and after-create hooks are invoked.
 func (r *specialRelation) Create(ctx context.Context, specialRelation *model.SpecialRelation) error {
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
@@ -359,6 +379,7 @@ func (r *specialRelation) Create(ctx context.Context, specialRelation *model.Spe
 }
 
 // CreateWithID creates a new record for the SpecialRelation model with the given id.
+// Before- and after-create hooks are invoked.
 func (r *specialRelation) CreateWithID(ctx context.Context, id string, specialRelation *model.SpecialRelation) error {
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
@@ -403,6 +424,58 @@ func (r *specialRelation) CreateWithID(ctx context.Context, id string, specialRe
 	return nil
 }
 
+// Insert creates multiple records in a single operation.
+// Before- and after-create hooks are invoked for each node.
+func (r *specialRelation) Insert(ctx context.Context, nodes []*model.SpecialRelation) error {
+	if len(nodes) == 0 {
+		return nil
+	}
+	for _, n := range nodes {
+		if n == nil {
+			return errors.New("slice contains nil node")
+		}
+		if n.ID() != "" {
+			return errors.New("node already has an id")
+		}
+	}
+	r.mu.RLock()
+	beforeCreateHooks := make([]specialRelationHook, len(r.beforeCreate))
+	copy(beforeCreateHooks, r.beforeCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
+			if err := h.OnBeforeCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range beforeCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	if err := r.insert(ctx, nodes); err != nil {
+		return err
+	}
+	r.mu.RLock()
+	afterCreateHooks := make([]specialRelationHook, len(r.afterCreate))
+	copy(afterCreateHooks, r.afterCreate)
+	r.mu.RUnlock()
+	for _, n := range nodes {
+		if h, ok := any(n).(som.OnAfterCreateHook); ok {
+			if err := h.OnAfterCreate(ctx); err != nil {
+				return err
+			}
+		}
+		for _, h := range afterCreateHooks {
+			if err := h.fn(ctx, n); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Read returns the record for the given id, if it exists.
 // The returned bool indicates whether the record was found or not.
 // If caching is enabled via som.WithCache, it will be used.
@@ -435,6 +508,7 @@ func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRe
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *specialRelation) Update(ctx context.Context, specialRelation *model.SpecialRelation) error {
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
@@ -477,6 +551,7 @@ func (r *specialRelation) Update(ctx context.Context, specialRelation *model.Spe
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *specialRelation) Delete(ctx context.Context, specialRelation *model.SpecialRelation) error {
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
