@@ -130,12 +130,3 @@ func (f *Weekday) cborUnmarshal(ctx Context) jen.Code {
 	)
 }
 
-func (f *Weekday) cborAssign(val jen.Code) jen.Code {
-	if f.source.Pointer() {
-		return jen.Block(
-			jen.Id("w").Op(":=").Add(val),
-			jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("w"),
-		)
-	}
-	return jen.Id("c").Dot(f.NameGo()).Op("=").Add(val)
-}

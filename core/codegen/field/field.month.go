@@ -130,12 +130,3 @@ func (f *Month) cborUnmarshal(ctx Context) jen.Code {
 	)
 }
 
-func (f *Month) cborAssign(val jen.Code) jen.Code {
-	if f.source.Pointer() {
-		return jen.Block(
-			jen.Id("m").Op(":=").Add(val),
-			jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("m"),
-		)
-	}
-	return jen.Id("c").Dot(f.NameGo()).Op("=").Add(val)
-}
