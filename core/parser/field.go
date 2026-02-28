@@ -209,6 +209,14 @@ func NewFieldURL(name string) *FieldURL {
 	return &FieldURL{fieldAtomic: &fieldAtomic{name: name}}
 }
 
+type FieldRegex struct {
+	*fieldAtomic
+}
+
+func NewFieldRegex(name string) *FieldRegex {
+	return &FieldRegex{fieldAtomic: &fieldAtomic{name: name}}
+}
+
 type FieldPassword struct {
 	*fieldAtomic
 	Algorithm PasswordAlgorithm

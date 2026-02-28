@@ -8,6 +8,7 @@ import (
 	uuid "github.com/gofrs/uuid"
 	uuid1 "github.com/google/uuid"
 	"net/url"
+	"regexp"
 	"time"
 )
 
@@ -62,6 +63,9 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldMonthPtr:           lib.NewMonthPtr[M](lib.Field(key, "field_month_ptr")),
 		FieldNodeSliceSlice:     lib.NewSliceMaker[M, []model.SpecialTypes, *lib.Slice[M, model.SpecialTypes, specialTypes[M]]](lib.NewSliceMaker[M, model.SpecialTypes, specialTypes[M]](newSpecialTypes[M]))(lib.Field(key, "field_node_slice_slice")),
 		FieldOther:              allTypesFieldOther[M]{lib.NewStringSlice[M](lib.Field(key, "field_other"))},
+		FieldRegex:              lib.NewRegex[M](lib.Field(key, "field_regex")),
+		FieldRegexPtr:           lib.NewRegexPtr[M](lib.Field(key, "field_regex_ptr")),
+		FieldRegexSlice:         lib.NewSliceMaker[M, regexp.Regexp, *lib.Regex[M]](lib.NewRegex[M])(lib.Field(key, "field_regex_slice")),
 		FieldRune:               lib.NewInt[M, rune](lib.Field(key, "field_rune")),
 		FieldRuneSlice:          lib.NewIntSlice[M, rune](lib.Field(key, "field_rune_slice")),
 		FieldSliceSlice:         lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M])(lib.Field(key, "field_slice_slice")),
@@ -170,6 +174,9 @@ type allTypes[M any] struct {
 	FieldURLPtr             *lib.URLPtr[M]
 	FieldURLNil             *lib.URLPtr[M]
 	FieldURLSlice           *lib.Slice[M, url.URL, *lib.URL[M]]
+	FieldRegex              *lib.Regex[M]
+	FieldRegexPtr           *lib.RegexPtr[M]
+	FieldRegexSlice         *lib.Slice[M, regexp.Regexp, *lib.Regex[M]]
 	FieldEmail              *lib.Email[M]
 	FieldEmailPtr           *lib.EmailPtr[M]
 	FieldEmailNil           *lib.EmailPtr[M]

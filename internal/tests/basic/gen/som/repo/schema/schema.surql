@@ -94,6 +94,9 @@ DEFINE FIELD field_url ON TABLE all_types TYPE string ASSERT $value == "" OR str
 DEFINE FIELD field_url_ptr ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_url($value);
 DEFINE FIELD field_url_nil ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_url($value);
 DEFINE FIELD field_url_slice ON TABLE all_types TYPE option<array<string>>;
+DEFINE FIELD field_regex ON TABLE all_types TYPE string;
+DEFINE FIELD field_regex_ptr ON TABLE all_types TYPE option<string>;
+DEFINE FIELD field_regex_slice ON TABLE all_types TYPE option<array<string>>;
 DEFINE FIELD field_email ON TABLE all_types TYPE string ASSERT $value == "" OR string::is_email($value);
 DEFINE FIELD field_email_ptr ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_email($value);
 DEFINE FIELD field_email_nil ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_email($value);

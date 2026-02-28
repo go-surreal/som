@@ -30,6 +30,7 @@ const (
 	PkgCBOR      = "github.com/fxamacker/cbor/v2"
 
 	PkgURL        = "net/url"
+	PkgRegexp     = "regexp"
 	PkgUUIDGoogle = "github.com/google/uuid"
 	PkgUUIDGofrs  = "github.com/gofrs/uuid"
 )

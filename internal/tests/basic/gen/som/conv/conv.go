@@ -4,6 +4,7 @@ package conv
 
 import (
 	"net/url"
+	"regexp"
 
 	"github.com/go-surreal/som/tests/basic/gen/som"
 )
@@ -47,6 +48,35 @@ func toURLPtr(val *string) *url.URL {
 	}
 
 	return res
+}
+
+//
+// -- REGEX
+//
+
+func fromRegex(val regexp.Regexp) string {
+	return val.String()
+}
+
+func fromRegexPtr(val *regexp.Regexp) *string {
+	if val == nil {
+		return nil
+	}
+
+	str := val.String()
+	return &str
+}
+
+func toRegex(val string) regexp.Regexp {
+	return *regexp.MustCompile(val)
+}
+
+func toRegexPtr(val *string) *regexp.Regexp {
+	if val == nil {
+		return nil
+	}
+
+	return regexp.MustCompile(*val)
 }
 
 //

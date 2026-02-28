@@ -569,6 +569,8 @@ func (f *Slice) distinctElemType(ctx Context) jen.Code {
 		return jen.Qual(elem.uuidPkg(), "UUID")
 	case *URL:
 		return jen.Qual(def.PkgURL, "URL")
+	case *Regex:
+		return jen.Qual(def.PkgRegexp, "Regexp")
 	case *Email:
 		return jen.Qual(f.TargetPkg, "Email")
 	default:
@@ -596,6 +598,8 @@ func (f *Slice) distinctElemInit(ctx Context) jen.Code {
 		return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).Call(key)
 	case *URL:
 		return jen.Qual(ctx.pkgDistinct(), "NewURLField").Types(def.TypeModel).Call(key)
+	case *Regex:
+		return jen.Qual(ctx.pkgDistinct(), "NewRegexField").Types(def.TypeModel).Call(key)
 	case *Email:
 		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email")).Call(key)
 	default:

@@ -2,13 +2,15 @@ package basic
 
 import (
 	"context"
+	"regexp"
+	"testing"
+	"time"
+
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
-	"testing"
-	"time"
 )
 
 func TestFilterCompareFields(t *testing.T) {
@@ -56,7 +58,7 @@ func TestFilterCompareFields(t *testing.T) {
 
 	assert.DeepEqual(t,
 		modelNew, *modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus"),
 	)

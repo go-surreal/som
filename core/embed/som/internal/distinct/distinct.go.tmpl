@@ -6,6 +6,7 @@ package distinct
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"time"
 
 	"{{.GenerateOutPath}}/internal"
@@ -129,4 +130,32 @@ func NewURLField[M any](key string) Field[M, url.URL] {
 
 func NewURLPtrField[M any](key string) Field[M, url.URL] {
 	return NewURLField[M](key)
+}
+
+func NewRegexField[M any](key string) Field[M, regexp.Regexp] {
+	return Field[M, regexp.Regexp]{
+		Key: key,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]regexp.Regexp, error) {
+			var raw []internal.QueryResult[DistinctResult[string]]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+			}
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
+				return nil, nil
+			}
+			vals := raw[0].Result[0].Values
+			if len(vals) == 0 {
+				return nil, nil
+			}
+			result := make([]regexp.Regexp, len(vals))
+			for i, v := range vals {
+				result[i] = *regexp.MustCompile(v)
+			}
+			return result, nil
+		},
+	}
+}
+
+func NewRegexPtrField[M any](key string) Field[M, regexp.Regexp] {
+	return NewRegexField[M](key)
 }

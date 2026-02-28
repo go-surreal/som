@@ -8,6 +8,7 @@ import (
 	uuid1 "github.com/gofrs/uuid"
 	uuid "github.com/google/uuid"
 	"net/url"
+	"regexp"
 	"time"
 )
 
@@ -59,6 +60,9 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldMonth:              distinct.NewField[M, time.Month](keyed(key, "field_month")),
 		FieldMonthPtr:           distinct.NewField[M, time.Month](keyed(key, "field_month_ptr")),
 		FieldOther:              distinct.NewField[M, string](keyed(key, "field_other")),
+		FieldRegex:              distinct.NewRegexField[M](keyed(key, "field_regex")),
+		FieldRegexPtr:           distinct.NewRegexPtrField[M](keyed(key, "field_regex_ptr")),
+		FieldRegexSlice:         distinct.NewRegexField[M](keyed(key, "field_regex_slice")),
 		FieldRune:               distinct.NewField[M, rune](keyed(key, "field_rune")),
 		FieldRuneSlice:          distinct.NewField[M, rune](keyed(key, "field_rune_slice")),
 		FieldString:             distinct.NewField[M, string](keyed(key, "field_string")),
@@ -160,6 +164,9 @@ type allTypes[M any] struct {
 	FieldURLPtr             distinct.Field[M, url.URL]
 	FieldURLNil             distinct.Field[M, url.URL]
 	FieldURLSlice           distinct.Field[M, url.URL]
+	FieldRegex              distinct.Field[M, regexp.Regexp]
+	FieldRegexPtr           distinct.Field[M, regexp.Regexp]
+	FieldRegexSlice         distinct.Field[M, regexp.Regexp]
 	FieldEmail              distinct.Field[M, som.Email]
 	FieldEmailPtr           distinct.Field[M, som.Email]
 	FieldEmailNil           distinct.Field[M, som.Email]

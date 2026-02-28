@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/go-surreal/som/tests/basic/gen/som"
@@ -112,6 +113,10 @@ type AllTypes struct {
 	FieldURLPtr   *url.URL
 	FieldURLNil   *url.URL
 	FieldURLSlice []url.URL
+
+	FieldRegex      regexp.Regexp
+	FieldRegexPtr   *regexp.Regexp
+	FieldRegexSlice []regexp.Regexp
 
 	FieldEmail      som.Email
 	FieldEmailPtr   *som.Email

@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"net/url"
+	"regexp"
 	"testing"
 	"time"
 
@@ -63,7 +64,7 @@ func TestNumerics(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userMax, *userOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -107,7 +108,7 @@ func TestNumerics(t *testing.T) {
 
 	assert.DeepEqual(t,
 		userMin, *userOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -729,7 +730,7 @@ func TestDuration(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -747,7 +748,7 @@ func TestDuration(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -785,7 +786,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -803,7 +804,7 @@ func TestUUID(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -841,7 +842,7 @@ func TestUUIDGofrs(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -859,7 +860,7 @@ func TestUUIDGofrs(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -984,7 +985,7 @@ func TestEmail(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)
@@ -1002,7 +1003,7 @@ func TestEmail(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, modelIn, modelOut,
-		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}, regexp.Regexp{}),
 		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
 		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
 	)

@@ -20,7 +20,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 95)
+	data := make(map[string]any, 98)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
@@ -190,6 +190,13 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	}
 	if c.FieldURLSlice != nil {
 		data["field_url_slice"] = c.FieldURLSlice
+	}
+	data["field_regex"] = fromRegex(c.FieldRegex)
+	if c.FieldRegexPtr != nil {
+		data["field_regex_ptr"] = fromRegexPtr(c.FieldRegexPtr)
+	}
+	if c.FieldRegexSlice != nil {
+		data["field_regex_slice"] = c.FieldRegexSlice
 	}
 	data["field_email"] = fromEmail(c.FieldEmail)
 	if c.FieldEmailPtr != nil {
@@ -551,6 +558,19 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_url_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldURLSlice)
+	}
+	if raw, ok := rawMap["field_regex"]; ok {
+		var convVal string
+		cbor.Unmarshal(raw, &convVal)
+		c.FieldRegex = toRegex(convVal)
+	}
+	if raw, ok := rawMap["field_regex_ptr"]; ok {
+		var convVal *string
+		cbor.Unmarshal(raw, &convVal)
+		c.FieldRegexPtr = toRegexPtr(convVal)
+	}
+	if raw, ok := rawMap["field_regex_slice"]; ok {
+		cbor.Unmarshal(raw, &c.FieldRegexSlice)
 	}
 	if raw, ok := rawMap["field_email"]; ok {
 		var convVal string

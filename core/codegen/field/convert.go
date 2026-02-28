@@ -185,6 +185,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldRegex:
+		{
+			return &Regex{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldPassword:
 		{
 			return &Password{
