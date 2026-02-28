@@ -101,11 +101,14 @@ func ParseField(t gotype.Type, outPkg string) (Field, error) {
 }
 
 func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field, error) {
-	var indexInfo *IndexInfo
-	var searchInfo *SearchInfo
+	var tagInfo *TagInfo
 	if isStructField {
 		somTag := t.Tag().Get("som")
-		indexInfo, searchInfo = parseSomTag(somTag)
+		var err error
+		tagInfo, err = parseSomTag(somTag)
+		if err != nil {
+			return nil, fmt.Errorf("field %s: %w", t.Name(), err)
+		}
 	}
 
 	ctx := &FieldContext{
@@ -120,68 +123,83 @@ func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 		return nil, err
 	}
 
-	if indexInfo != nil {
-		field.setIndex(indexInfo)
-	}
-	if searchInfo != nil {
-		field.setSearch(searchInfo)
+	if tagInfo != nil {
+		if len(tagInfo.Indexes) > 0 {
+			field.setIndexes(tagInfo.Indexes)
+		}
+		if tagInfo.Search != nil {
+			field.setSearch(tagInfo.Search)
+		}
 	}
 
 	return field, nil
 }
 
-// parseSomTag parses the "som" struct tag and extracts index/search info.
-func parseSomTag(tag string) (index *IndexInfo, search *SearchInfo) {
-	if tag == "" {
+// TagInfo holds all parsed som struct tag data.
+type TagInfo struct {
+	Indexes []IndexInfo
+	Search  *SearchInfo
+}
+
+// parseSomTag parses the "som" struct tag and extracts field metadata.
+// All parameterized options use key=value syntax:
+//
+//	som:"index"
+//	som:"index=my_index"
+//	som:"unique"
+//	som:"unique=composite_name"
+//	som:"fulltext=english_search"
+//	som:"index,unique=login"
+func parseSomTag(tag string) (*TagInfo, error) {
+	if tag == "" || tag == "in" || tag == "out" {
 		return nil, nil
 	}
 
-	if tag == "in" || tag == "out" {
-		return nil, nil
-	}
+	info := &TagInfo{}
 
 	parts := strings.Split(tag, ",")
 
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
-
-		if strings.HasPrefix(part, "fulltext(") && strings.HasSuffix(part, ")") {
-			configName := part[9 : len(part)-1]
-			search = &SearchInfo{ConfigName: configName}
+		if part == "" {
 			continue
 		}
 
-		if part == "index" {
-			if index == nil {
-				index = &IndexInfo{}
-			}
-			continue
-		}
+		key, value, hasValue := strings.Cut(part, "=")
 
-		if part == "unique" || strings.HasPrefix(part, "unique(") {
-			if index == nil {
-				index = &IndexInfo{}
+		switch key {
+		case "index":
+			idx := IndexInfo{}
+			if hasValue {
+				if value == "" {
+					return nil, fmt.Errorf("invalid tag %q: index name must not be empty", part)
+				}
+				idx.Name = value
 			}
-			index.Unique = true
+			info.Indexes = append(info.Indexes, idx)
 
-			if strings.HasPrefix(part, "unique(") && strings.HasSuffix(part, ")") {
-				inner := part[7 : len(part)-1]
-				index.UniqueName = inner
+		case "unique":
+			idx := IndexInfo{Unique: true}
+			if hasValue {
+				if value == "" {
+					return nil, fmt.Errorf("invalid tag %q: unique name must not be empty", part)
+				}
+				idx.Name = value
 			}
-			continue
-		}
+			info.Indexes = append(info.Indexes, idx)
 
-		if strings.HasPrefix(part, "name:") {
-			name := strings.TrimPrefix(part, "name:")
-			if index == nil {
-				index = &IndexInfo{}
+		case "fulltext":
+			if !hasValue || value == "" {
+				return nil, fmt.Errorf("invalid tag %q: fulltext requires a config name (fulltext=english_search)", part)
 			}
-			index.Name = name
-			continue
+			info.Search = &SearchInfo{ConfigName: value}
+
+		default:
+			return nil, fmt.Errorf("unknown som tag %q", part)
 		}
 	}
 
-	return index, search
+	return info, nil
 }
 
 type Output struct {

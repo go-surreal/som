@@ -133,17 +133,11 @@ func (b *indexBuilder) collectFieldIndexEntries(tableName, fieldPrefix string, f
 			fieldPath = fieldPrefix + "." + fieldPath
 		}
 
-		indexInfo := f.IndexInfo()
-		searchInfo := f.SearchInfo()
-
-		if indexInfo != nil {
-			if indexInfo.Unique && indexInfo.UniqueName != "" {
-				compositeUnique[indexInfo.UniqueName] = true
+		for _, indexInfo := range f.Indexes() {
+			if indexInfo.Unique && indexInfo.Name != "" {
+				compositeUnique[indexInfo.Name] = true
 			} else if indexInfo.Unique {
-				indexName := indexInfo.Name
-				if indexName == "" {
-					indexName = fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				}
+				indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
 				goName := indexGoName(indexName, tableName)
 				*entries = append(*entries, indexEntry{
 					IndexName: indexName,
@@ -164,6 +158,7 @@ func (b *indexBuilder) collectFieldIndexEntries(tableName, fieldPrefix string, f
 			}
 		}
 
+		searchInfo := f.SearchInfo()
 		if searchInfo != nil && searchInfo.ConfigName != "" {
 			searchDef := b.findSearchConfig(searchInfo.ConfigName)
 			if searchDef != nil {

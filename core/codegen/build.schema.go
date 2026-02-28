@@ -117,7 +117,7 @@ func buildFilterString(filter parser.FilterDef) string {
 }
 
 // buildTableIndexStatements builds all index statements for a table, handling both
-// simple indexes and composite unique indexes (fields grouped by UniqueName).
+// simple indexes and composite unique indexes (fields grouped by name).
 func (b *build) buildTableIndexStatements(tableName string, fields []field.Field, softDelete bool) []string {
 	var statements []string
 
@@ -126,8 +126,8 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 		statements = append(statements, stmt)
 	}
 
-	// Collect composite unique index fields grouped by UniqueName
-	compositeUnique := make(map[string][]string) // UniqueName -> []fieldPath
+	// Collect composite unique index fields grouped by name
+	compositeUnique := make(map[string][]string) // name -> []fieldPath
 
 	// Process all fields (including nested)
 	b.collectIndexes(tableName, "", fields, &statements, compositeUnique)
@@ -158,25 +158,17 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			fieldPath = fieldPrefix + "." + fieldPath
 		}
 
-		indexInfo := f.IndexInfo()
-		searchInfo := f.SearchInfo()
-
-		if indexInfo != nil {
-			if indexInfo.Unique && indexInfo.UniqueName != "" {
+		for _, indexInfo := range f.Indexes() {
+			if indexInfo.Unique && indexInfo.Name != "" {
 				// Composite unique index - collect field for later
-				compositeUnique[indexInfo.UniqueName] = append(compositeUnique[indexInfo.UniqueName], fieldPath)
+				compositeUnique[indexInfo.Name] = append(compositeUnique[indexInfo.Name], fieldPath)
 			} else if indexInfo.Unique {
 				// Simple unique index on single field
-				// Index name format: __som__<table>_unique_<field>
-				indexName := indexInfo.Name
-				if indexName == "" {
-					indexName = fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				}
+				indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
 				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
 				*statements = append(*statements, stmt)
 			} else {
 				// Regular (non-unique) index
-				// Index name format: __som__<table>_index_<field>
 				indexName := indexInfo.Name
 				if indexName == "" {
 					indexName = fmt.Sprintf(def.IndexPrefix+"%s_index_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
@@ -186,6 +178,7 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			}
 		}
 
+		searchInfo := f.SearchInfo()
 		if searchInfo != nil && searchInfo.ConfigName != "" {
 			// Look up the search config to get analyzer and options
 			searchDef := b.findSearchConfig(searchInfo.ConfigName)
