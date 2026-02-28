@@ -92,15 +92,15 @@ var weatherRepoInfo = RepoInfo[model.Weather]{
 		return conv.FromWeatherPtr(node)
 	},
 	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Weather, error) {
-		var raw *[]*conv.Weather
+		var raw []internal.QueryResult[*conv.Weather]
 		if err := unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
-		if raw == nil {
+		if len(raw) < 1 {
 			return nil, nil
 		}
-		results := make([]*model.Weather, len(*raw))
-		for i, r := range *raw {
+		results := make([]*model.Weather, len(raw[0].Result))
+		for i, r := range raw[0].Result {
 			results[i] = conv.ToWeatherPtr(r)
 		}
 		return results, nil

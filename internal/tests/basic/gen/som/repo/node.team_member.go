@@ -92,15 +92,15 @@ var teamMemberRepoInfo = RepoInfo[model.TeamMember]{
 		return conv.FromTeamMemberPtr(node)
 	},
 	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.TeamMember, error) {
-		var raw *[]*conv.TeamMember
+		var raw []internal.QueryResult[*conv.TeamMember]
 		if err := unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
-		if raw == nil {
+		if len(raw) < 1 {
 			return nil, nil
 		}
-		results := make([]*model.TeamMember, len(*raw))
-		for i, r := range *raw {
+		results := make([]*model.TeamMember, len(raw[0].Result))
+		for i, r := range raw[0].Result {
 			results[i] = conv.ToTeamMemberPtr(r)
 		}
 		return results, nil

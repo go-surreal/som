@@ -109,15 +109,15 @@ var specialRelationRepoInfo = RepoInfo[model.SpecialRelation]{
 		return conv.FromSpecialRelationPtr(node)
 	},
 	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialRelation, error) {
-		var raw *[]*conv.SpecialRelation
+		var raw []internal.QueryResult[*conv.SpecialRelation]
 		if err := unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
-		if raw == nil {
+		if len(raw) < 1 {
 			return nil, nil
 		}
-		results := make([]*model.SpecialRelation, len(*raw))
-		for i, r := range *raw {
+		results := make([]*model.SpecialRelation, len(raw[0].Result))
+		for i, r := range raw[0].Result {
 			results[i] = conv.ToSpecialRelationPtr(r)
 		}
 		return results, nil
@@ -138,10 +138,11 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 	defer c.mu.Unlock()
 	if c.specialRelationRepo == nil {
 		c.specialRelationRepo = &specialRelation{repo: &repo[model.SpecialRelation, string]{
-			db:    c.db,
-			name:  "special_relation",
-			info:  specialRelationRepoInfo,
-			newID: newID,
+			db:     c.db,
+			name:   "special_relation",
+			info:   specialRelationRepoInfo,
+			newID:  newID,
+			idFunc: "rand::string(20)",
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_relation", parseStringID(id))
 				return &rid

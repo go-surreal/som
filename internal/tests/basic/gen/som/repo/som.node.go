@@ -37,6 +37,7 @@ type repo[N any, K any] struct {
 	name     string
 	info     RepoInfo[N]
 	newID    func(string) RecordID
+	idFunc   string
 	recordID func(K) *models.RecordID
 }
 
@@ -76,7 +77,8 @@ func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
 	for i, node := range nodes {
 		data[i] = r.info.MarshalOne(node)
 	}
-	raw, err := r.db.Insert(ctx, r.name, data)
+	statement := "INSERT INTO " + r.name + " (SELECT *, " + r.idFunc + " AS id FROM $data)"
+	raw, err := r.db.Query(ctx, statement, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not insert entities: %w", err)
 	}

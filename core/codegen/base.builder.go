@@ -353,15 +353,15 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
-			jen.Var().Id("raw").Op("*").Index().Op("*").Qual(pkgConv, node.NameGo()),
+			jen.Var().Id("raw").Index().Qual(b.relativePkgPath(def.PkgInternal), "QueryResult").Types(jen.Op("*").Qual(pkgConv, node.NameGo())),
 			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Err()),
 			),
-			jen.If(jen.Id("raw").Op("==").Nil()).Block(
+			jen.If(jen.Len(jen.Id("raw")).Op("<").Lit(1)).Block(
 				jen.Return(jen.Nil(), jen.Nil()),
 			),
-			jen.Id("results").Op(":=").Make(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Len(jen.Op("*").Id("raw"))),
-			jen.For(jen.List(jen.Id("i"), jen.Id("r")).Op(":=").Range().Op("*").Id("raw")).Block(
+			jen.Id("results").Op(":=").Make(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Len(jen.Id("raw").Index(jen.Lit(0)).Dot("Result"))),
+			jen.For(jen.List(jen.Id("i"), jen.Id("r")).Op(":=").Range().Id("raw").Index(jen.Lit(0)).Dot("Result")).Block(
 				jen.Id("results").Index(jen.Id("i")).Op("=").Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("r")),
 			),
 			jen.Return(jen.Id("results"), jen.Nil()),
@@ -384,6 +384,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	if !node.HasComplexID() {
 		repoInitValues = append(repoInitValues,
 			jen.Add(jen.Line(), jen.Id("newID").Op(":").Id(idFuncName(node))),
+			jen.Add(jen.Line(), jen.Id("idFunc").Op(":").Lit(idSurrealFunc(node))),
 		)
 	}
 	repoInitValues = append(repoInitValues,
@@ -1160,6 +1161,17 @@ func idFuncName(node *field.NodeTable) string {
 		return "newID"
 	default:
 		return "newULID" // ULID is the default ID type (used by the Node alias)
+	}
+}
+
+func idSurrealFunc(node *field.NodeTable) string {
+	switch node.Source.IDType {
+	case parser.IDTypeUUID:
+		return "rand::uuid()"
+	case parser.IDTypeRand:
+		return "rand::string(20)"
+	default:
+		return "rand::ulid()"
 	}
 }
 

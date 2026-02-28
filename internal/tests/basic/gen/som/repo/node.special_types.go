@@ -110,15 +110,15 @@ var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
 		return conv.FromSpecialTypesPtr(node)
 	},
 	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialTypes, error) {
-		var raw *[]*conv.SpecialTypes
+		var raw []internal.QueryResult[*conv.SpecialTypes]
 		if err := unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
-		if raw == nil {
+		if len(raw) < 1 {
 			return nil, nil
 		}
-		results := make([]*model.SpecialTypes, len(*raw))
-		for i, r := range *raw {
+		results := make([]*model.SpecialTypes, len(raw[0].Result))
+		for i, r := range raw[0].Result {
 			results[i] = conv.ToSpecialTypesPtr(r)
 		}
 		return results, nil
@@ -139,10 +139,11 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 	defer c.mu.Unlock()
 	if c.specialTypesRepo == nil {
 		c.specialTypesRepo = &specialTypes{repo: &repo[model.SpecialTypes, string]{
-			db:    c.db,
-			name:  "special_types",
-			info:  specialTypesRepoInfo,
-			newID: newUUID,
+			db:     c.db,
+			name:   "special_types",
+			info:   specialTypesRepoInfo,
+			newID:  newUUID,
+			idFunc: "rand::uuid()",
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_types", parseUUID(id))
 				return &rid

@@ -102,15 +102,15 @@ var allTypesRepoInfo = RepoInfo[model.AllTypes]{
 		return conv.FromAllTypesPtr(node)
 	},
 	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.AllTypes, error) {
-		var raw *[]*conv.AllTypes
+		var raw []internal.QueryResult[*conv.AllTypes]
 		if err := unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
-		if raw == nil {
+		if len(raw) < 1 {
 			return nil, nil
 		}
-		results := make([]*model.AllTypes, len(*raw))
-		for i, r := range *raw {
+		results := make([]*model.AllTypes, len(raw[0].Result))
+		for i, r := range raw[0].Result {
 			results[i] = conv.ToAllTypesPtr(r)
 		}
 		return results, nil
@@ -131,10 +131,11 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 	defer c.mu.Unlock()
 	if c.allTypesRepo == nil {
 		c.allTypesRepo = &allTypes{repo: &repo[model.AllTypes, string]{
-			db:    c.db,
-			name:  "all_types",
-			info:  allTypesRepoInfo,
-			newID: newULID,
+			db:     c.db,
+			name:   "all_types",
+			info:   allTypesRepoInfo,
+			newID:  newULID,
+			idFunc: "rand::ulid()",
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("all_types", parseStringID(id))
 				return &rid
