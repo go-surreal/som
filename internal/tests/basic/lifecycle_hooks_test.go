@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
@@ -241,7 +242,7 @@ func TestModelHookBeforeCreate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookStatus: "active"}
+	rec := model.AllTypes{FieldHookStatus: "active", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -257,7 +258,7 @@ func TestModelHookAfterCreate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookDetail: "info"}
+	rec := model.AllTypes{FieldHookDetail: "info", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -270,7 +271,7 @@ func TestModelHookBeforeUpdate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookStatus: "init"}
+	rec := model.AllTypes{FieldHookStatus: "init", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -290,7 +291,7 @@ func TestModelHookAfterUpdate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookDetail: "info"}
+	rec := model.AllTypes{FieldHookDetail: "info", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -306,7 +307,7 @@ func TestModelHookBeforeDeleteAbort(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookStatus: "keep"}
+	rec := model.AllTypes{FieldHookStatus: "keep", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -327,7 +328,7 @@ func TestModelHookAfterDelete(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookStatus: "remove"}
+	rec := model.AllTypes{FieldHookStatus: "remove", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 	id := string(rec.ID())
@@ -357,7 +358,7 @@ func TestModelHookAndRepoHookOrder(t *testing.T) {
 	})
 	defer unregister()
 
-	rec := model.AllTypes{FieldHookStatus: "orig"}
+	rec := model.AllTypes{FieldHookStatus: "orig", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 

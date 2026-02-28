@@ -22,6 +22,7 @@ func TestCreateWithAllTypes(t *testing.T) {
 
 	newModel := &model.AllTypes{
 		FieldHookStatus: "some value",
+		FieldMonth:      time.January,
 	}
 
 	err := client.AllTypesRepo().Create(ctx, newModel)
@@ -63,6 +64,7 @@ func TestLiveQueries(t *testing.T) {
 
 	newModel := &model.AllTypes{
 		FieldHookStatus: "some value",
+		FieldMonth:      time.January,
 	}
 
 	liveChan, err := client.AllTypesRepo().Query().Live(ctx)
@@ -191,6 +193,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	newModel1 := &model.AllTypes{
 		FieldHookStatus: "some value",
+		FieldMonth:      time.January,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel1)
@@ -200,6 +203,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	newModel2 := &model.AllTypes{
 		FieldHookStatus: "some unsupported value",
+		FieldMonth:      time.January,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel2)
@@ -209,6 +213,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	newModel3 := &model.AllTypes{
 		FieldHookStatus: "some other value",
+		FieldMonth:      time.January,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel3)
@@ -272,6 +277,7 @@ func TestLiveQueryCount(t *testing.T) {
 		newModel := &model.AllTypes{
 			FieldTime:     time.Now(),
 			FieldDuration: time.Second,
+			FieldMonth:    time.January,
 		}
 
 		if err := client.AllTypesRepo().Create(ctx, newModel); err != nil {
@@ -347,9 +353,10 @@ func TestLiveQueryWithFetch(t *testing.T) {
 
 	// Create a record with MainGroup set
 	newModel := &model.AllTypes{
-		FieldTime:      time.Now(),
-		FieldDuration:  time.Second,
-		FieldNode: *group,
+		FieldTime:     time.Now(),
+		FieldDuration: time.Second,
+		FieldMonth:    time.January,
+		FieldNode:     *group,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel)

@@ -9,6 +9,7 @@ import (
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"time"
 )
 
 type AllTypes struct {
@@ -19,7 +20,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 91)
+	data := make(map[string]any, 95)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
@@ -140,6 +141,16 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldDurationSlice != nil {
 		data["field_duration_slice"] = c.FieldDurationSlice
 	}
+	data["field_month"] = int(c.FieldMonth)
+	if c.FieldMonthPtr != nil {
+		val := int(*c.FieldMonthPtr)
+		data["field_month_ptr"] = &val
+	}
+	data["field_weekday"] = int(c.FieldWeekday)
+	if c.FieldWeekdayPtr != nil {
+		val := int(*c.FieldWeekdayPtr)
+		data["field_weekday_ptr"] = &val
+	}
 	{
 		uuidVal := types.UUIDGoogle(c.FieldUUID)
 		data["field_uuid"] = &uuidVal
@@ -218,7 +229,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		convSlice := make([]any, len(c.FieldNestedDataPtrSlice))
 		for i, v := range c.FieldNestedDataPtrSlice {
 			if v == nil {
-				convSlice[i] = cbor.None
+				convSlice[i] = cbor.None()
 			} else {
 				convSlice[i] = fromNestedDataPtr(v)
 			}
@@ -229,7 +240,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		convSlice := make([]any, len(*c.FieldNestedDataPtrSlicePtr))
 		for i, v := range *c.FieldNestedDataPtrSlicePtr {
 			if v == nil {
-				convSlice[i] = cbor.None
+				convSlice[i] = cbor.None()
 			} else {
 				convSlice[i] = fromNestedDataPtr(v)
 			}
@@ -468,6 +479,36 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_duration_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldDurationSlice)
+	}
+	if raw, ok := rawMap["field_month"]; ok {
+		var val int
+		cbor.Unmarshal(raw, &val)
+		c.FieldMonth = time.Month(val)
+	}
+	if raw, ok := rawMap["field_month_ptr"]; ok {
+		var val *int
+		cbor.Unmarshal(raw, &val)
+		if val != nil {
+			m := time.Month(*val)
+			c.FieldMonthPtr = &m
+		} else {
+			c.FieldMonthPtr = nil
+		}
+	}
+	if raw, ok := rawMap["field_weekday"]; ok {
+		var val int
+		cbor.Unmarshal(raw, &val)
+		c.FieldWeekday = time.Weekday(val)
+	}
+	if raw, ok := rawMap["field_weekday_ptr"]; ok {
+		var val *int
+		cbor.Unmarshal(raw, &val)
+		if val != nil {
+			w := time.Weekday(*val)
+			c.FieldWeekdayPtr = &w
+		} else {
+			c.FieldWeekdayPtr = nil
+		}
 	}
 	if raw, ok := rawMap["field_uuid"]; ok {
 		c.FieldUUID, _ = cbor.UnmarshalUUIDGoogle(raw)

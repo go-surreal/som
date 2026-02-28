@@ -28,6 +28,7 @@ func TestNumerics(t *testing.T) {
 
 	userMax := model.AllTypes{
 		FieldString: str,
+		FieldMonth:  time.January,
 		FieldInt:    math.MaxInt,
 		FieldInt8:   math.MaxInt8,
 		FieldInt16:  math.MaxInt16,
@@ -71,6 +72,7 @@ func TestNumerics(t *testing.T) {
 
 	userMin := model.AllTypes{
 		FieldString: str,
+		FieldMonth:  time.January,
 		FieldInt:    math.MinInt,
 		FieldInt8:   math.MinInt8,
 		FieldInt16:  math.MinInt16,
@@ -119,7 +121,7 @@ func TestSlice(t *testing.T) {
 
 	// initial nil slice
 
-	user := &model.AllTypes{}
+	user := &model.AllTypes{FieldMonth: time.January}
 
 	err := client.AllTypesRepo().Create(ctx, user)
 	if err != nil {
@@ -371,6 +373,7 @@ func TestSliceNilElements(t *testing.T) {
 	n2 := 20
 
 	user := &model.AllTypes{
+		FieldMonth:          time.January,
 		FieldStringPtrSlice: []*string{&s1, nil, &s2},
 		FieldIntPtrSlice:    []*int{&n1, nil, &n2},
 	}
@@ -400,6 +403,7 @@ func TestSliceNilElements(t *testing.T) {
 	// *[]*string with nil elements
 	ptrSlice := []*string{&s1, nil, &s2}
 	user2 := &model.AllTypes{
+		FieldMonth:             time.January,
 		FieldStringPtrSlicePtr: &ptrSlice,
 	}
 
@@ -422,6 +426,7 @@ func TestSliceNilElements(t *testing.T) {
 	// []*NestedData with nil elements
 	nested := model.NestedData{StringPtr: &s1}
 	user3 := &model.AllTypes{
+		FieldMonth:              time.January,
 		FieldNestedDataPtrSlice: []*model.NestedData{&nested, nil},
 	}
 
@@ -443,6 +448,7 @@ func TestSliceNilElements(t *testing.T) {
 	r1 := model.RoleUser
 	r2 := model.RoleAdmin
 	user4 := &model.AllTypes{
+		FieldMonth:        time.January,
 		FieldEnumPtrSlice: []*model.Role{&r1, nil, &r2},
 	}
 
@@ -476,6 +482,7 @@ func TestSliceNilElements(t *testing.T) {
 	}
 
 	user5 := &model.AllTypes{
+		FieldMonth:        time.January,
 		FieldNodePtrSlice: []*model.SpecialTypes{node1, nil, node2},
 	}
 
@@ -499,7 +506,7 @@ func TestTimestamps(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	user := &model.AllTypes{}
+	user := &model.AllTypes{FieldMonth: time.January}
 
 	err := client.AllTypesRepo().Create(ctx, user)
 	if err != nil {
@@ -536,6 +543,7 @@ func TestURLTypes(t *testing.T) {
 	}
 
 	newModel := &model.AllTypes{
+		FieldMonth:  time.January,
 		FieldURLPtr: someURL,
 		FieldURL:    *someURL,
 	}
@@ -598,6 +606,7 @@ func TestDuration(t *testing.T) {
 	ptr := time.Hour
 
 	userNew := &model.AllTypes{
+		FieldMonth:       time.January,
 		FieldDuration:    time.Minute,
 		FieldDurationPtr: &ptr,
 		FieldDurationNil: nil,
@@ -653,6 +662,7 @@ func TestUUID(t *testing.T) {
 	ptr := uuid.New()
 
 	userNew := &model.AllTypes{
+		FieldMonth:   time.January,
 		FieldUUID:    uuid.New(),
 		FieldUUIDPtr: &ptr,
 		FieldUUIDNil: nil,
@@ -708,6 +718,7 @@ func TestUUIDGofrs(t *testing.T) {
 	ptr := gofrsuuid.Must(gofrsuuid.NewV4())
 
 	userNew := &model.AllTypes{
+		FieldMonth:        time.January,
 		FieldUUIDGofrs:    gofrsuuid.Must(gofrsuuid.NewV4()),
 		FieldUUIDGofrsPtr: &ptr,
 		FieldUUIDGofrsNil: nil,
@@ -765,6 +776,7 @@ func TestPassword(t *testing.T) {
 	// Step 1: Create a model with a known password (password is now in Credentials struct)
 	modelIn := &model.AllTypes{
 		FieldString: "password_test_user",
+		FieldMonth:  time.January,
 		FieldCredentials: model.Credentials{
 			Username: "testuser",
 			Password: som.Password[som.Bcrypt](plainPassword),
@@ -849,6 +861,7 @@ func TestEmail(t *testing.T) {
 	emailPtr := som.Email("admin@test.org")
 
 	userNew := &model.AllTypes{
+		FieldMonth:    time.January,
 		FieldEmail:    emailValue,
 		FieldEmailPtr: &emailPtr,
 		FieldEmailNil: nil,

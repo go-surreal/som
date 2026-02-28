@@ -4,6 +4,7 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/by"
 	"github.com/go-surreal/som/tests/basic/gen/som/filter"
@@ -21,6 +22,7 @@ func TestFullTextSearchBasic(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "the quick brown fox jumps over the lazy dog",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -46,6 +48,7 @@ func TestFullTextSearchNoMatch(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "hello world",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -77,6 +80,7 @@ func TestFullTextSearchMultipleResults(t *testing.T) {
 	for _, s := range testData {
 		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 			FieldString: s,
+			FieldMonth:  time.January,
 		})
 		if err != nil {
 			t.Fatalf("failed to create test data: %v", err)
@@ -103,6 +107,7 @@ func TestFullTextSearchWithFilter(t *testing.T) {
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "searchable content here",
 		FieldInt:    42,
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -111,6 +116,7 @@ func TestFullTextSearchWithFilter(t *testing.T) {
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "searchable content there",
 		FieldInt:    100,
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -150,6 +156,7 @@ func TestFullTextSearchWithRef(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "testing explicit ref",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -174,6 +181,7 @@ func TestFullTextSearchWithHighlights(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "highlight this word please",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -200,6 +208,7 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "apple pie is delicious",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -207,6 +216,7 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "orange juice is refreshing",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -214,6 +224,7 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "banana bread is tasty",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -244,6 +255,7 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "apple pie is delicious and sweet",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -251,6 +263,7 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "apple juice is refreshing",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -258,6 +271,7 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "orange juice is also refreshing",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -288,6 +302,7 @@ func TestFullTextSearchFirstMatch(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "first result here",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -295,6 +310,7 @@ func TestFullTextSearchFirstMatch(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "second result here",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -337,6 +353,7 @@ func TestFullTextSearchAll(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "get all without metadata",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -362,6 +379,7 @@ func TestFullTextSearchScore(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "test test test repeated words",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -392,6 +410,7 @@ func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString:    strVal,
 		FieldStringPtr: &strVal,
+		FieldMonth:     time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -582,6 +601,7 @@ func TestFullTextSearchMatchesAnyIntegration(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "the quick brown fox",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -589,6 +609,7 @@ func TestFullTextSearchMatchesAnyIntegration(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "the lazy dog",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -596,6 +617,7 @@ func TestFullTextSearchMatchesAnyIntegration(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "some other content",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)

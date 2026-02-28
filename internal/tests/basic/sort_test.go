@@ -105,6 +105,7 @@ func TestSort(t *testing.T) {
 		FieldURLPtr:    url3,
 		FieldEnum:      model.RoleUser,
 		FieldCredentials: model.Credentials{Username: "charlie", Password: "pass3"},
+		FieldMonth:       time.January,
 	}
 
 	record2 := &model.AllTypes{
@@ -142,6 +143,7 @@ func TestSort(t *testing.T) {
 		FieldURLPtr:    url1,
 		FieldEnum:      model.RoleAdmin,
 		FieldCredentials: model.Credentials{Username: "alpha", Password: "pass1"},
+		FieldMonth:       time.January,
 	}
 
 	record3 := &model.AllTypes{
@@ -179,6 +181,7 @@ func TestSort(t *testing.T) {
 		FieldURLPtr:    url2,
 		FieldEnum:      model.RoleUser,
 		FieldCredentials: model.Credentials{Username: "bravo", Password: "pass2"},
+		FieldMonth:       time.January,
 	}
 
 	for _, r := range []*model.AllTypes{record1, record2, record3} {

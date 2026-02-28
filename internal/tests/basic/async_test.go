@@ -3,6 +3,7 @@ package basic
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/model"
@@ -15,7 +16,7 @@ func TestAsync(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{})
+	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldMonth: time.January})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +28,7 @@ func TestAsync(t *testing.T) {
 	assert.NilError(t, <-resCh.Err())
 	assert.Equal(t, 1, <-resCh.Val())
 
-	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{})
+	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldMonth: time.January})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,6 +49,7 @@ func TestAsyncQueries(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "async_test",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatal(err)

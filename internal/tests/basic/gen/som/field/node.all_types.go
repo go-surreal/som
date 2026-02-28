@@ -56,6 +56,8 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldIntPtrSlicePtr:     distinct.NewField[M, int](keyed(key, "field_int_ptr_slice_ptr")),
 		FieldIntSlice:           distinct.NewField[M, int](keyed(key, "field_int_slice")),
 		FieldIntSlicePtr:        distinct.NewField[M, int](keyed(key, "field_int_slice_ptr")),
+		FieldMonth:              distinct.NewField[M, time.Month](keyed(key, "field_month")),
+		FieldMonthPtr:           distinct.NewField[M, time.Month](keyed(key, "field_month_ptr")),
 		FieldOther:              distinct.NewField[M, string](keyed(key, "field_other")),
 		FieldRune:               distinct.NewField[M, rune](keyed(key, "field_rune")),
 		FieldRuneSlice:          distinct.NewField[M, rune](keyed(key, "field_rune_slice")),
@@ -86,6 +88,8 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldUint32Ptr:          distinct.NewField[M, uint32](keyed(key, "field_uint_32_ptr")),
 		FieldUint8:              distinct.NewField[M, uint8](keyed(key, "field_uint_8")),
 		FieldUint8Ptr:           distinct.NewField[M, uint8](keyed(key, "field_uint_8_ptr")),
+		FieldWeekday:            distinct.NewField[M, time.Weekday](keyed(key, "field_weekday")),
+		FieldWeekdayPtr:         distinct.NewField[M, time.Weekday](keyed(key, "field_weekday_ptr")),
 		UpdatedAt:               distinct.NewTimeField[M](keyed(key, "updated_at")),
 		key:                     key,
 	}
@@ -140,6 +144,10 @@ type allTypes[M any] struct {
 	FieldDurationPtr        distinct.Field[M, time.Duration]
 	FieldDurationNil        distinct.Field[M, time.Duration]
 	FieldDurationSlice      distinct.Field[M, time.Duration]
+	FieldMonth              distinct.Field[M, time.Month]
+	FieldMonthPtr           distinct.Field[M, time.Month]
+	FieldWeekday            distinct.Field[M, time.Weekday]
+	FieldWeekdayPtr         distinct.Field[M, time.Weekday]
 	FieldUUID               distinct.Field[M, uuid.UUID]
 	FieldUUIDPtr            distinct.Field[M, uuid.UUID]
 	FieldUUIDNil            distinct.Field[M, uuid.UUID]
