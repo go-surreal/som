@@ -132,7 +132,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataSlice.IsEmpty(),
+			filter.AllTypes.FieldNestedDataSlice().IsEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -154,7 +154,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataSlice.Empty(true),
+			filter.AllTypes.FieldNestedDataSlice().Empty(true),
 		).
 		First(ctx)
 	if err != nil {
@@ -184,7 +184,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataSlice.NotEmpty(),
+			filter.AllTypes.FieldNestedDataSlice().NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -214,7 +214,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataSlice.NotEmpty(),
+			filter.AllTypes.FieldNestedDataSlice().NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -226,6 +226,66 @@ func TestSlice(t *testing.T) {
 	assert.Check(t, *user.FieldNestedDataSlice[0].IntPtr == num1)
 	assert.Check(t, *user.FieldNestedDataSlice[1].StringPtr == str2)
 	assert.Check(t, *user.FieldNestedDataSlice[1].IntPtr == num2)
+
+	// sub-filter: single condition
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataSlice(
+				filter.NestedData.StringPtr.Equal(str1),
+			).NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.FieldNestedDataSlice) == 2)
+
+	// sub-filter: multiple conditions (AND)
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataSlice(
+				filter.NestedData.StringPtr.Equal(str1),
+				filter.NestedData.IntPtr.Equal(&num1),
+			).NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.FieldNestedDataSlice) == 2)
+
+	// sub-filter: no match
+
+	users, err := client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataSlice(
+				filter.NestedData.StringPtr.Equal(str1),
+				filter.NestedData.IntPtr.Equal(&num2),
+			).NotEmpty(),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(users) == 0)
+
+	// sub-filter: without filters (same as calling without sub-filters)
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataSlice().NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.FieldNestedDataSlice) == 2)
 
 	// test FieldNestedDataPtrSlice ([]*NestedData)
 
@@ -241,7 +301,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataPtrSlice.NotEmpty(),
+			filter.AllTypes.FieldNestedDataPtrSlice().NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -251,6 +311,38 @@ func TestSlice(t *testing.T) {
 	assert.Check(t, len(user.FieldNestedDataPtrSlice) == 2)
 	assert.Check(t, user.FieldNestedDataPtrSlice[0] != nil && *user.FieldNestedDataPtrSlice[0].StringPtr == str1)
 	assert.Check(t, user.FieldNestedDataPtrSlice[1] != nil && *user.FieldNestedDataPtrSlice[1].StringPtr == str2)
+
+	// sub-filter on []*NestedData: match
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlice(
+				filter.NestedData.StringPtr.Equal(str2),
+				filter.NestedData.IntPtr.Equal(&num2),
+			).NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.FieldNestedDataPtrSlice) == 2)
+
+	// sub-filter on []*NestedData: no match
+
+	users, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlice(
+				filter.NestedData.StringPtr.Equal(str1),
+				filter.NestedData.IntPtr.Equal(&num2),
+			).NotEmpty(),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(users) == 0)
 
 	// test FieldNestedDataPtrSlicePtr (*[]*NestedData)
 
@@ -266,7 +358,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataPtrSlicePtr.NotEmpty(),
+			filter.AllTypes.FieldNestedDataPtrSlicePtr().NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -276,6 +368,74 @@ func TestSlice(t *testing.T) {
 	assert.Check(t, user.FieldNestedDataPtrSlicePtr != nil)
 	assert.Check(t, len(*user.FieldNestedDataPtrSlicePtr) == 1)
 	assert.Check(t, (*user.FieldNestedDataPtrSlicePtr)[0] != nil && *(*user.FieldNestedDataPtrSlicePtr)[0].StringPtr == str1)
+
+	// sub-filter on *[]*NestedData: match
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlicePtr(
+				filter.NestedData.StringPtr.Equal(str1),
+			).NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user.FieldNestedDataPtrSlicePtr != nil)
+	assert.Check(t, len(*user.FieldNestedDataPtrSlicePtr) == 1)
+
+	// sub-filter on *[]*NestedData: no match
+
+	users, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlicePtr(
+				filter.NestedData.StringPtr.Equal("nonexistent"),
+			).NotEmpty(),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(users) == 0)
+
+	// Nil semantics on *[]*NestedData
+
+	user2 := &model.AllTypes{
+		FieldMonth: time.January,
+	}
+
+	err = client.AllTypesRepo().Create(ctx, user2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user2.FieldNestedDataPtrSlicePtr == nil)
+
+	nilUsers, err := client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlicePtr().Nil(true),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(nilUsers) >= 1)
+
+	nonNilUsers, err := client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlicePtr().Nil(false),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, u := range nonNilUsers {
+		assert.Check(t, u.FieldNestedDataPtrSlicePtr != nil)
+	}
 
 	// test refresh with struct slice data
 

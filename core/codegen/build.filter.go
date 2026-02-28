@@ -75,6 +75,13 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 			Call(jen.Qual(pkgLib, "NewKey").Types(b.SourceQual(elem.NameGo())).Call())
 	}
 
+	if _, ok := elem.(*field.DatabaseObject); ok {
+		file.Line()
+		file.Var().Id(elem.NameGo()).Op("=").
+			Id("new" + elem.NameGo()).Types(b.SourceQual(elem.NameGo())).
+			Call(jen.Qual(pkgLib, "NewKey").Types(b.SourceQual(elem.NameGo())).Call())
+	}
+
 	file.Line()
 	file.Add(b.whereNew(elem))
 

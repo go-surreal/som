@@ -287,9 +287,9 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	case *Struct:
 		{
-			//if !ctx.isFromSlice {
-			//	return nil, nil // handled by filterFunc
-			//}
+			if !ctx.isFromSlice {
+				return nil, nil // handled by filterFunc
+			}
 		}
 
 	case *Byte:
@@ -498,6 +498,31 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 
 			return nil
 		}
+
+	case *Struct:
+		sliceType := "Slice"
+		newFunc := "NewSlice"
+		if f.source.Pointer() {
+			sliceType = "SlicePtr"
+			newFunc = "NewSlicePtr"
+		}
+
+		return jen.Func().
+			Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).Id(f.NameGo()).
+			Params(
+				jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
+					Types(jen.Qual(f.SourcePkg, element.element.NameGo())),
+			).
+			Op("*").Qual(ctx.pkgLib(), sliceType).
+			Types(def.TypeModel, f.element.typeGo(), elemFilter).
+			Block(
+				jen.Id("key").Op(":=").Qual(ctx.pkgLib(), "StructField").Call(
+					jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase()), jen.Id("filters"),
+				),
+				jen.Return(jen.Qual(ctx.pkgLib(), newFunc).
+					Types(def.TypeModel, f.element.typeGo(), elemFilter).
+					Call(jen.Id("key"), makeElemFilter)),
+			)
 
 	default:
 		return nil
