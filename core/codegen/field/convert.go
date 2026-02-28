@@ -201,6 +201,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldSemVer:
+		{
+			return &SemVer{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldEnum:
 		{
 			var values []string
