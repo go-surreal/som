@@ -193,7 +193,7 @@ func TestCacheIsolation(t *testing.T) {
 	err := client.SpecialTypesRepo().Create(ctx, group)
 	assert.NilError(t, err)
 
-	allFieldTypes := &model.AllTypes{FieldString: "Test"}
+	allFieldTypes := &model.AllTypes{FieldString: "Test", FieldMonth: time.January}
 	err = client.AllTypesRepo().Create(ctx, allFieldTypes)
 	assert.NilError(t, err)
 

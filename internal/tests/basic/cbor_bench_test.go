@@ -24,6 +24,7 @@ func BenchmarkConvMarshal(b *testing.B) {
 			FieldTime:     now,
 			FieldDuration: 5 * time.Hour,
 			FieldUUID:     uuid.New(),
+			FieldMonth:    time.January,
 		},
 	}
 
@@ -51,6 +52,7 @@ func BenchmarkConvUnmarshal(b *testing.B) {
 			FieldTime:     now,
 			FieldDuration: 5 * time.Hour,
 			FieldUUID:     uuid.New(),
+			FieldMonth:    time.January,
 		},
 	}
 

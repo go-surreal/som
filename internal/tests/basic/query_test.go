@@ -60,7 +60,8 @@ func TestQueryLimitOffset(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
-			FieldInt: i,
+			FieldInt:   i,
+			FieldMonth: time.January,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -110,7 +111,8 @@ func TestQueryIDs(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
-			FieldInt: i,
+			FieldInt:   i,
+			FieldMonth: time.January,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -141,7 +143,8 @@ func TestOrderRandom(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
-			FieldInt: i,
+			FieldInt:   i,
+			FieldMonth: time.January,
 		})
 		if err != nil {
 			t.Fatal(err)

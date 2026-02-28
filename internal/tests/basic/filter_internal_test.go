@@ -30,6 +30,7 @@ func TestFilterCompareFields(t *testing.T) {
 		FieldTimePtr: &date,
 
 		FieldDuration: time.Hour,
+		FieldMonth:    time.January,
 	}
 
 	modelIn := modelNew

@@ -3,6 +3,7 @@ package basic
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/constant"
 	"github.com/go-surreal/som/tests/basic/gen/som/filter"
@@ -15,12 +16,12 @@ func TestConstants(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldFloat64: 2.0})
+	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldFloat64: 2.0, FieldMonth: time.January})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldFloat64: 4.0})
+	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldFloat64: 4.0, FieldMonth: time.January})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +47,7 @@ func TestConstants(t *testing.T) {
 	assert.Equal(t, 4.0, results[0].FieldFloat64)
 
 	// String constant: filter where FieldString equals a constant string
-	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldString: "hello"})
+	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldString: "hello", FieldMonth: time.January})
 	if err != nil {
 		t.Fatal(err)
 	}

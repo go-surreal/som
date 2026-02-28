@@ -72,6 +72,7 @@ func TestRefresh(t *testing.T) {
 
 	allTypes := &model.AllTypes{
 		FieldString: "some value",
+		FieldMonth:  time.January,
 	}
 
 	err := client.AllTypesRepo().Create(ctx, allTypes)
@@ -96,9 +97,9 @@ func TestInsert(t *testing.T) {
 	defer cleanup()
 
 	nodes := []*model.AllTypes{
-		{FieldString: "first"},
-		{FieldString: "second"},
-		{FieldString: "third"},
+		{FieldString: "first", FieldMonth: time.January},
+		{FieldString: "second", FieldMonth: time.January},
+		{FieldString: "third", FieldMonth: time.January},
 	}
 
 	err := client.AllTypesRepo().Insert(ctx, nodes)
@@ -154,7 +155,7 @@ func TestInsertValidation(t *testing.T) {
 	})
 
 	t.Run("node with existing id", func(t *testing.T) {
-		n := &model.AllTypes{FieldString: "test"}
+		n := &model.AllTypes{FieldString: "test", FieldMonth: time.January}
 		err := client.AllTypesRepo().Create(ctx, n)
 		if err != nil {
 			t.Fatal(err)
@@ -175,6 +176,7 @@ func FuzzWithDatabase(f *testing.F) {
 	f.Fuzz(func(t *testing.T, str string) {
 		userIn := &model.AllTypes{
 			FieldString: str,
+			FieldMonth:  time.January,
 		}
 
 		err := client.AllTypesRepo().Create(ctx, userIn)
@@ -222,6 +224,7 @@ func FuzzCustomModelIDs(f *testing.F) {
 
 		userIn := &model.AllTypes{
 			FieldString: "1",
+			FieldMonth:  time.January,
 		}
 
 		err := client.AllTypesRepo().CreateWithID(ctx, id, userIn)
@@ -273,6 +276,7 @@ func BenchmarkWithDatabase(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		userIn := &model.AllTypes{
 			FieldString: "Some User",
+			FieldMonth:  time.January,
 		}
 
 		err := client.AllTypesRepo().Create(ctx, userIn)
