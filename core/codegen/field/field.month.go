@@ -116,6 +116,8 @@ func (f *Month) cborUnmarshal(ctx Context) jen.Code {
 			jen.If(jen.Id("val").Op("!=").Nil()).Block(
 				jen.Id("m").Op(":=").Qual("time", "Month").Call(jen.Op("*").Id("val")),
 				jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("m"),
+			).Else().Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
 			),
 		)
 	}

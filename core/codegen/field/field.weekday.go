@@ -116,6 +116,8 @@ func (f *Weekday) cborUnmarshal(ctx Context) jen.Code {
 			jen.If(jen.Id("val").Op("!=").Nil()).Block(
 				jen.Id("w").Op(":=").Qual("time", "Weekday").Call(jen.Op("*").Id("val")),
 				jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("w"),
+			).Else().Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
 			),
 		)
 	}
