@@ -17,12 +17,12 @@ type AllTypes struct {
 
 	// basic types
 
-	FieldString            string     `som:"fulltext(english_search)"`
-	FieldStringPtr         *string    `som:"fulltext(english_search)"`
-	FieldOther             []string   `som:"fulltext(english_search)"`
-	FieldStringPtrSlice    []*string  `som:"fulltext(english_search)"`
-	FieldStringSlicePtr    *[]string  `som:"fulltext(english_search)"` // TODO: cannot be filtered for nil!
-	FieldStringPtrSlicePtr *[]*string `som:"fulltext(english_search)"`
+	FieldString            string     `som:"fulltext=english_search"`
+	FieldStringPtr         *string    `som:"fulltext=english_search"`
+	FieldOther             []string   `som:"fulltext=english_search"`
+	FieldStringPtrSlice    []*string  `som:"fulltext=english_search"`
+	FieldStringSlicePtr    *[]string  `som:"fulltext=english_search"` // TODO: cannot be filtered for nil!
+	FieldStringPtrSlicePtr *[]*string `som:"fulltext=english_search"`
 
 	FieldInt            int
 	FieldIntPtr         *int

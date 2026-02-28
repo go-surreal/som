@@ -11,9 +11,9 @@ type Field interface {
 	Pointer() bool
 	setName(string)
 	setPointer(bool)
-	Index() *IndexInfo
+	Indexes() []IndexInfo
 	Search() *SearchInfo
-	setIndex(*IndexInfo)
+	setIndexes([]IndexInfo)
 	setSearch(*SearchInfo)
 	Validate() error
 }
@@ -21,7 +21,7 @@ type Field interface {
 type fieldAtomic struct {
 	name    string
 	pointer bool
-	index   *IndexInfo
+	indexes []IndexInfo
 	search  *SearchInfo
 }
 
@@ -47,12 +47,12 @@ func (f *fieldAtomic) setPointer(val bool) {
 	f.pointer = val
 }
 
-func (f *fieldAtomic) Index() *IndexInfo {
-	return f.index
+func (f *fieldAtomic) Indexes() []IndexInfo {
+	return f.indexes
 }
 
-func (f *fieldAtomic) setIndex(info *IndexInfo) {
-	f.index = info
+func (f *fieldAtomic) setIndexes(indexes []IndexInfo) {
+	f.indexes = indexes
 }
 
 func (f *fieldAtomic) Search() *SearchInfo {
