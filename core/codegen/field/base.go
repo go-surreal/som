@@ -116,6 +116,9 @@ func (f *baseField) NameGoLower() string {
 }
 
 func (f *baseField) NameDatabase() string {
+	if dbName := f.source.DBName(); dbName != "" {
+		return dbName
+	}
 	return f.ToDatabaseName(f.source.Name())
 }
 

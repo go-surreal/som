@@ -20,7 +20,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 95)
+	data := make(map[string]any, 96)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
@@ -305,6 +305,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldByteSlicePtr != nil {
 		data["field_byte_slice_ptr"] = c.FieldByteSlicePtr
 	}
+	data["custom_name"] = c.FieldRenamed
 	data["field_hook_status"] = c.FieldHookStatus
 	data["field_hook_detail"] = c.FieldHookDetail
 
@@ -697,6 +698,9 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_byte_slice_ptr"]; ok {
 		cbor.Unmarshal(raw, &c.FieldByteSlicePtr)
+	}
+	if raw, ok := rawMap["custom_name"]; ok {
+		cbor.Unmarshal(raw, &c.FieldRenamed)
 	}
 	if raw, ok := rawMap["field_hook_status"]; ok {
 		cbor.Unmarshal(raw, &c.FieldHookStatus)

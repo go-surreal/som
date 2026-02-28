@@ -62,6 +62,7 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldMonthPtr:           lib.NewMonthPtr[M](lib.Field(key, "field_month_ptr")),
 		FieldNodeSliceSlice:     lib.NewSliceMaker[M, []model.SpecialTypes, *lib.Slice[M, model.SpecialTypes, specialTypes[M]]](lib.NewSliceMaker[M, model.SpecialTypes, specialTypes[M]](newSpecialTypes[M]))(lib.Field(key, "field_node_slice_slice")),
 		FieldOther:              allTypesFieldOther[M]{lib.NewStringSlice[M](lib.Field(key, "field_other"))},
+		FieldRenamed:            lib.NewString[M](lib.Field(key, "custom_name")),
 		FieldRune:               lib.NewInt[M, rune](lib.Field(key, "field_rune")),
 		FieldRuneSlice:          lib.NewIntSlice[M, rune](lib.Field(key, "field_rune_slice")),
 		FieldSliceSlice:         lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M])(lib.Field(key, "field_slice_slice")),
@@ -187,6 +188,7 @@ type allTypes[M any] struct {
 	FieldBytePtr            *lib.BytePtr[M]
 	FieldByteSlice          *lib.ByteSlice[M]
 	FieldByteSlicePtr       *lib.ByteSlice[M]
+	FieldRenamed            *lib.String[M]
 	FieldHookStatus         *lib.String[M]
 	FieldHookDetail         *lib.String[M]
 }

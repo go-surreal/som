@@ -39,6 +39,7 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldIntPtr:       lib.NewBaseSort[M](keyed(key, "field_int_ptr")),
 		FieldMonth:        lib.NewBaseSort[M](keyed(key, "field_month")),
 		FieldMonthPtr:     lib.NewBaseSort[M](keyed(key, "field_month_ptr")),
+		FieldRenamed:      lib.NewStringSort[M](keyed(key, "custom_name")),
 		FieldRune:         lib.NewBaseSort[M](keyed(key, "field_rune")),
 		FieldString:       lib.NewStringSort[M](keyed(key, "field_string")),
 		FieldStringPtr:    lib.NewStringSort[M](keyed(key, "field_string_ptr")),
@@ -122,6 +123,7 @@ type allTypes[M any] struct {
 	FieldEnumPtr      *lib.BaseSort[M]
 	FieldByte         *lib.BaseSort[M]
 	FieldBytePtr      *lib.BaseSort[M]
+	FieldRenamed      *lib.StringSort[M]
 	FieldHookStatus   *lib.StringSort[M]
 	FieldHookDetail   *lib.StringSort[M]
 }

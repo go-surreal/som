@@ -124,6 +124,9 @@ func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 	}
 
 	if tagInfo != nil {
+		if tagInfo.DBName != "" {
+			field.setDBName(tagInfo.DBName)
+		}
 		if len(tagInfo.Indexes) > 0 {
 			field.setIndexes(tagInfo.Indexes)
 		}
@@ -137,6 +140,7 @@ func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 
 // TagInfo holds all parsed som struct tag data.
 type TagInfo struct {
+	DBName  string
 	Indexes []IndexInfo
 	Search  *SearchInfo
 }
@@ -148,6 +152,7 @@ type TagInfo struct {
 //	som:"index=my_index"
 //	som:"unique"
 //	som:"unique=composite_name"
+//	som:"name=db_field_name"
 //	som:"fulltext=english_search"
 //	som:"index,unique=login"
 func parseSomTag(tag string) (*TagInfo, error) {
@@ -187,6 +192,15 @@ func parseSomTag(tag string) (*TagInfo, error) {
 				idx.Name = value
 			}
 			info.Indexes = append(info.Indexes, idx)
+
+		case "name":
+			if !hasValue || value == "" {
+				return nil, fmt.Errorf("invalid tag %q: name requires a value (name=db_field_name)", part)
+			}
+			if info.DBName != "" {
+				return nil, fmt.Errorf("invalid tag: name specified multiple times")
+			}
+			info.DBName = value
 
 		case "fulltext":
 			if !hasValue || value == "" {

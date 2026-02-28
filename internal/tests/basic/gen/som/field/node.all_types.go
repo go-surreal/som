@@ -59,6 +59,7 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldMonth:              distinct.NewField[M, time.Month](keyed(key, "field_month")),
 		FieldMonthPtr:           distinct.NewField[M, time.Month](keyed(key, "field_month_ptr")),
 		FieldOther:              distinct.NewField[M, string](keyed(key, "field_other")),
+		FieldRenamed:            distinct.NewField[M, string](keyed(key, "custom_name")),
 		FieldRune:               distinct.NewField[M, rune](keyed(key, "field_rune")),
 		FieldRuneSlice:          distinct.NewField[M, rune](keyed(key, "field_rune_slice")),
 		FieldString:             distinct.NewField[M, string](keyed(key, "field_string")),
@@ -171,6 +172,7 @@ type allTypes[M any] struct {
 	FieldEnumPtrSlicePtr    distinct.Field[M, model.Role]
 	FieldByte               distinct.Field[M, byte]
 	FieldBytePtr            distinct.Field[M, byte]
+	FieldRenamed            distinct.Field[M, string]
 	FieldHookStatus         distinct.Field[M, string]
 	FieldHookDetail         distinct.Field[M, string]
 }
