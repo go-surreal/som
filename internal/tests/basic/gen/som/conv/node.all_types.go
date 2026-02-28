@@ -486,10 +486,10 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		c.FieldMonth = time.Month(val)
 	}
 	if raw, ok := rawMap["field_month_ptr"]; ok {
-		var val int
+		var val *int
 		cbor.Unmarshal(raw, &val)
-		{
-			m := time.Month(val)
+		if val != nil {
+			m := time.Month(*val)
 			c.FieldMonthPtr = &m
 		}
 	}
@@ -499,10 +499,10 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		c.FieldWeekday = time.Weekday(val)
 	}
 	if raw, ok := rawMap["field_weekday_ptr"]; ok {
-		var val int
+		var val *int
 		cbor.Unmarshal(raw, &val)
-		{
-			w := time.Weekday(val)
+		if val != nil {
+			w := time.Weekday(*val)
 			c.FieldWeekdayPtr = &w
 		}
 	}

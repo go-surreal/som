@@ -64,6 +64,96 @@ func TestWithDatabase(t *testing.T) {
 	)
 }
 
+func TestMonthWeekdayPointers(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	march := time.March
+	wednesday := time.Wednesday
+
+	// Create with non-nil pointer values.
+	withValues := &model.AllTypes{
+		FieldMonth:      time.January,
+		FieldMonthPtr:   &march,
+		FieldWeekday:    time.Monday,
+		FieldWeekdayPtr: &wednesday,
+	}
+
+	err := client.AllTypesRepo().Create(ctx, withValues)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readWithValues, ok, err := client.AllTypesRepo().Read(ctx, string(withValues.ID()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, ok)
+	assert.Assert(t, readWithValues.FieldMonthPtr != nil)
+	assert.Equal(t, time.March, *readWithValues.FieldMonthPtr)
+	assert.Assert(t, readWithValues.FieldWeekdayPtr != nil)
+	assert.Equal(t, time.Wednesday, *readWithValues.FieldWeekdayPtr)
+
+	// Create with nil pointer values.
+	withNil := &model.AllTypes{
+		FieldMonth: time.January,
+	}
+
+	err = client.AllTypesRepo().Create(ctx, withNil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	readWithNil, ok, err := client.AllTypesRepo().Read(ctx, string(withNil.ID()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, ok)
+	assert.Assert(t, readWithNil.FieldMonthPtr == nil)
+	assert.Assert(t, readWithNil.FieldWeekdayPtr == nil)
+
+	// Filter: non-nil pointer values.
+	results, err := client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldMonthPtr.Equal(time.March)).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, withValues.ID(), results[0].ID())
+
+	// Filter: nil pointer values.
+	results, err = client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldMonthPtr.Nil(true)).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, withNil.ID(), results[0].ID())
+
+	// Filter: weekday pointer.
+	results, err = client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldWeekdayPtr.Equal(time.Wednesday)).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, withValues.ID(), results[0].ID())
+
+	results, err = client.AllTypesRepo().Query().
+		Where(filter.AllTypes.FieldWeekdayPtr.Nil(true)).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, withNil.ID(), results[0].ID())
+}
+
 func TestRefresh(t *testing.T) {
 	ctx := context.Background()
 

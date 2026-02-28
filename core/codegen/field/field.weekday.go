@@ -106,13 +106,27 @@ func (f *Weekday) cborMarshal(_ Context) jen.Code {
 }
 
 func (f *Weekday) cborUnmarshal(ctx Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Var().Id("val").Op("*").Int(),
+			jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("val")),
+			jen.If(jen.Id("val").Op("!=").Nil()).Block(
+				jen.Id("w").Op(":=").Qual("time", "Weekday").Call(jen.Op("*").Id("val")),
+				jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("w"),
+			),
+		)
+	}
+
 	return jen.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).Block(
 		jen.Var().Id("val").Int(),
 		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("val")),
-		f.cborAssign(jen.Qual("time", "Weekday").Call(jen.Id("val"))),
+		jen.Id("c").Dot(f.NameGo()).Op("=").Qual("time", "Weekday").Call(jen.Id("val")),
 	)
 }
 
