@@ -177,6 +177,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldGeometry:
+		{
+			return &Geometry{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldURL:
 		{
 			return &URL{

@@ -32,6 +32,10 @@ const (
 	PkgURL        = "net/url"
 	PkgUUIDGoogle = "github.com/google/uuid"
 	PkgUUIDGofrs  = "github.com/gofrs/uuid"
+
+	PkgGeoOrb            = "github.com/paulmach/orb"
+	PkgGeoSimplefeatures = "github.com/peterstace/simplefeatures/geom"
+	PkgGeoGoGeom         = "github.com/twpayne/go-geom"
 )
 
 var (

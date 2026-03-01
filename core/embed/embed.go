@@ -22,9 +22,12 @@ var (
 var content embed.FS
 
 type Template struct {
-	GenerateOutPath string
-	UsesGoogleUUID  bool
-	UsesGofrsUUID   bool
+	GenerateOutPath      string
+	UsesGoogleUUID       bool
+	UsesGofrsUUID        bool
+	UsesOrbGeo           bool
+	UsesSimplefeaturesGeo bool
+	UsesGoGeomGeo        bool
 }
 
 // FileCondition specifies when a file should be included in the output.
@@ -34,18 +37,33 @@ const (
 	FileAlways FileCondition = iota
 	FileIfGoogleUUID
 	FileIfGofrsUUID
+	FileIfOrbGeo
+	FileIfSimplefeaturesGeo
+	FileIfGoGeomGeo
 )
 
 // fileConditions maps output file paths to their inclusion conditions.
 var fileConditions = map[string]FileCondition{
-	"internal/types/uuid_google.go":           FileIfGoogleUUID,
-	"internal/types/uuid_gofrs.go":            FileIfGofrsUUID,
-	"internal/lib/filter.uuid_google.go":      FileIfGoogleUUID,
-	"internal/lib/filter.uuid_gofrs.go":       FileIfGofrsUUID,
-	"internal/cbor/helpers_uuid_google.go":    FileIfGoogleUUID,
-	"internal/cbor/helpers_uuid_gofrs.go":     FileIfGofrsUUID,
-	"internal/distinct/distinct_uuid_google.go": FileIfGoogleUUID,
-	"internal/distinct/distinct_uuid_gofrs.go":  FileIfGofrsUUID,
+	"internal/types/uuid_google.go":              FileIfGoogleUUID,
+	"internal/types/uuid_gofrs.go":               FileIfGofrsUUID,
+	"internal/lib/filter.uuid_google.go":         FileIfGoogleUUID,
+	"internal/lib/filter.uuid_gofrs.go":          FileIfGofrsUUID,
+	"internal/cbor/helpers_uuid_google.go":       FileIfGoogleUUID,
+	"internal/cbor/helpers_uuid_gofrs.go":        FileIfGofrsUUID,
+	"internal/distinct/distinct_uuid_google.go":  FileIfGoogleUUID,
+	"internal/distinct/distinct_uuid_gofrs.go":   FileIfGofrsUUID,
+	// Geo files - orb
+	"internal/types/geo_orb.go":        FileIfOrbGeo,
+	"internal/lib/filter.geo_orb.go":   FileIfOrbGeo,
+	"internal/cbor/helpers_geo_orb.go": FileIfOrbGeo,
+	// Geo files - simplefeatures
+	"internal/types/geo_sf.go":        FileIfSimplefeaturesGeo,
+	"internal/lib/filter.geo_sf.go":   FileIfSimplefeaturesGeo,
+	"internal/cbor/helpers_geo_sf.go": FileIfSimplefeaturesGeo,
+	// Geo files - go-geom
+	"internal/types/geo_gogeom.go":        FileIfGoGeomGeo,
+	"internal/lib/filter.geo_gogeom.go":   FileIfGoGeomGeo,
+	"internal/cbor/helpers_geo_gogeom.go": FileIfGoGeomGeo,
 }
 
 type File struct {
@@ -82,6 +100,18 @@ func Read(tmpl *Template) ([]*File, error) {
 				}
 			case FileIfGofrsUUID:
 				if !tmpl.UsesGofrsUUID {
+					return nil // Skip this file
+				}
+			case FileIfOrbGeo:
+				if !tmpl.UsesOrbGeo {
+					return nil // Skip this file
+				}
+			case FileIfSimplefeaturesGeo:
+				if !tmpl.UsesSimplefeaturesGeo {
+					return nil // Skip this file
+				}
+			case FileIfGoGeomGeo:
+				if !tmpl.UsesGoGeomGeo {
 					return nil // Skip this file
 				}
 			}

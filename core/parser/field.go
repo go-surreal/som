@@ -212,6 +212,61 @@ func NewFieldUUID(name string, pkg UUIDPackage) *FieldUUID {
 	}
 }
 
+type GeoPackage string
+
+const (
+	GeoPackageOrb            GeoPackage = "github.com/paulmach/orb"
+	GeoPackageSimplefeatures GeoPackage = "github.com/peterstace/simplefeatures/geom"
+	GeoPackageGoGeom         GeoPackage = "github.com/twpayne/go-geom"
+)
+
+type GeometryType int
+
+const (
+	GeometryPoint GeometryType = iota
+	GeometryLineString
+	GeometryPolygon
+	GeometryMultiPoint
+	GeometryMultiLineString
+	GeometryMultiPolygon
+	GeometryCollection
+)
+
+func (g GeometryType) String() string {
+	switch g {
+	case GeometryPoint:
+		return "Point"
+	case GeometryLineString:
+		return "LineString"
+	case GeometryPolygon:
+		return "Polygon"
+	case GeometryMultiPoint:
+		return "MultiPoint"
+	case GeometryMultiLineString:
+		return "MultiLineString"
+	case GeometryMultiPolygon:
+		return "MultiPolygon"
+	case GeometryCollection:
+		return "Collection"
+	default:
+		return "Unknown"
+	}
+}
+
+type FieldGeometry struct {
+	*fieldAtomic
+	Package GeoPackage
+	Type    GeometryType
+}
+
+func NewFieldGeometry(name string, pkg GeoPackage, typ GeometryType) *FieldGeometry {
+	return &FieldGeometry{
+		fieldAtomic: &fieldAtomic{name: name},
+		Package:     pkg,
+		Type:        typ,
+	}
+}
+
 type FieldURL struct {
 	*fieldAtomic
 }

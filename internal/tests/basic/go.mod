@@ -4,9 +4,7 @@ go 1.25.7
 
 replace github.com/go-surreal/som => ../../../
 
-tool (
-	github.com/go-surreal/som
-)
+tool github.com/go-surreal/som
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.14.0
@@ -27,6 +25,9 @@ require (
 	github.com/go-surreal/som v0.16.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
+	github.com/paulmach/orb v0.12.0 // indirect
+	github.com/peterstace/simplefeatures v0.58.0 // indirect
+	github.com/twpayne/go-geom v1.6.1 // indirect
 	github.com/urfave/cli/v3 v3.6.2 // indirect
 	github.com/wzshiming/gotype v0.8.0 // indirect
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
