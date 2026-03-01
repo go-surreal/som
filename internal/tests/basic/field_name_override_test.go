@@ -50,7 +50,7 @@ func TestFieldNameOverride(t *testing.T) {
 
 	// Sort ascending by the renamed field.
 	sorted, err := client.AllTypesRepo().Query().
-		OrderBy(by.AllTypes.FieldRenamed.Asc()).
+		Order(by.AllTypes.FieldRenamed.Asc()).
 		All(ctx)
 	if err != nil {
 		t.Fatal(err)
