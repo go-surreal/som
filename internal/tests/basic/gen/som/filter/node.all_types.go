@@ -64,6 +64,10 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldOther:              allTypesFieldOther[M]{lib.NewStringSlice[M](lib.Field(key, "field_other"))},
 		FieldRune:               lib.NewInt[M, rune](lib.Field(key, "field_rune")),
 		FieldRuneSlice:          lib.NewIntSlice[M, rune](lib.Field(key, "field_rune_slice")),
+		FieldSemVer:             lib.NewSemVer[M](lib.Field(key, "field_sem_ver")),
+		FieldSemVerNil:          lib.NewSemVerPtr[M](lib.Field(key, "field_sem_ver_nil")),
+		FieldSemVerPtr:          lib.NewSemVerPtr[M](lib.Field(key, "field_sem_ver_ptr")),
+		FieldSemVerSlice:        lib.NewSliceMaker[M, som.SemVer, *lib.SemVer[M]](lib.NewSemVer[M])(lib.Field(key, "field_sem_ver_slice")),
 		FieldSliceSlice:         lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M])(lib.Field(key, "field_slice_slice")),
 		FieldSliceSliceSlice:    lib.NewSliceMaker[M, [][]string, *lib.Slice[M, []string, *lib.StringSlice[M]]](lib.NewSliceMaker[M, []string, *lib.StringSlice[M]](lib.NewStringSlice[M]))(lib.Field(key, "field_slice_slice_slice")),
 		FieldSliceSliceSlice2:   lib.NewSliceMaker[M, [][]model.NestedData, *lib.Slice[M, []model.NestedData, *lib.Slice[M, model.NestedData, nestedData[M]]]](lib.NewSliceMaker[M, []model.NestedData, *lib.Slice[M, model.NestedData, nestedData[M]]](lib.NewSliceMaker[M, model.NestedData, nestedData[M]](newNestedData[M])))(lib.Field(key, "field_slice_slice_slice_2")),
@@ -174,6 +178,10 @@ type allTypes[M any] struct {
 	FieldEmailPtr           *lib.EmailPtr[M]
 	FieldEmailNil           *lib.EmailPtr[M]
 	FieldEmailSlice         *lib.Slice[M, som.Email, *lib.Email[M]]
+	FieldSemVer             *lib.SemVer[M]
+	FieldSemVerPtr          *lib.SemVerPtr[M]
+	FieldSemVerNil          *lib.SemVerPtr[M]
+	FieldSemVerSlice        *lib.Slice[M, som.SemVer, *lib.SemVer[M]]
 	FieldEnum               *lib.Enum[M, model.Role]
 	FieldEnumPtr            *lib.EnumPtr[M, model.Role]
 	FieldEnumSlice          *lib.Slice[M, model.Role, *lib.Enum[M, model.Role]]
