@@ -6,7 +6,7 @@ SOM supports most Go primitive types for use in your models.
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name        string
     Description string
@@ -19,7 +19,7 @@ Supported signed integers:
 
 ```go
 type Metrics struct {
-    som.Node
+    som.Node[som.ULID]
 
     Count8  int8
     Count16 int16
@@ -33,7 +33,7 @@ Supported unsigned integers:
 
 ```go
 type Metrics struct {
-    som.Node
+    som.Node[som.ULID]
 
     Size8  uint8
     Size16 uint16
@@ -47,7 +47,7 @@ type Metrics struct {
 
 ```go
 type Measurement struct {
-    som.Node
+    som.Node[som.ULID]
 
     Value32 float32
     Value64 float64
@@ -58,7 +58,7 @@ type Measurement struct {
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     IsActive  bool
     IsAdmin   bool
@@ -69,7 +69,7 @@ type User struct {
 
 ```go
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
 
     SingleByte byte
     Data       []byte
@@ -80,7 +80,7 @@ type Document struct {
 
 ```go
 type Character struct {
-    som.Node
+    som.Node[som.ULID]
 
     Symbol rune
 }
@@ -92,7 +92,7 @@ All primitive types support pointer versions for optional values:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name     string   // Required
     Nickname *string  // Optional, can be nil

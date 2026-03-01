@@ -8,11 +8,11 @@ Common issues and solutions when working with SOM.
 
 **Problem**: The generator doesn't find any models.
 
-**Solution**: Ensure your structs embed `som.Node` or `som.Edge`:
+**Solution**: Ensure your structs embed `som.Node[T]` or `som.Edge`:
 
 ```go
 type User struct {
-    som.Node  // This is required
+    som.Node[som.ULID]  // This is required
     Name string
 }
 ```
@@ -33,7 +33,7 @@ Also check that:
 
 ```bash
 rm -rf ./gen/som
-go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+go run github.com/go-surreal/som@latest -i ./model
 go mod tidy
 ```
 
@@ -75,7 +75,8 @@ type Follows struct {
 
 1. Verify SurrealDB is running:
    ```bash
-   surreal start --user root --pass root memory
+   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.0.0 \
+       start --user root --pass root
    ```
 
 2. Check the address format:
@@ -107,11 +108,8 @@ type Follows struct {
 
 2. Use the correct ID reference:
    ```go
-   // Correct - use ID() method
-   retrieved, exists, err := client.UserRepo().Read(ctx, user.ID())
-
-   // Wrong - don't construct IDs manually
-   // retrieved, exists, err := client.UserRepo().Read(ctx, "user:123")
+   // Correct - use ID() method, convert to string
+   retrieved, exists, err := client.UserRepo().Read(ctx, string(user.ID()))
    ```
 
 3. Check you're using the same namespace/database
@@ -124,7 +122,7 @@ type Follows struct {
 
 1. Regenerate code after any model changes
 2. Check for unsupported types:
-   - `uint64`, `uintptr` - Not supported
+   - `uint`, `uint64`, `uintptr` - Not supported
    - `complex64`, `complex128` - Not supported
    - Channels, functions - Not supported
 
@@ -139,7 +137,7 @@ type Follows struct {
 1. Ensure you're embedding `som.Timestamps`:
    ```go
    type User struct {
-       som.Node
+       som.Node[som.ULID]
        som.Timestamps  // Must be embedded
        Name string
    }
@@ -240,23 +238,26 @@ type Follows struct {
 
 **Solution**:
 
-1. Use pagination:
+1. Use iterators for large result sets:
    ```go
-   for page := 0; ; page++ {
-       users, _ := client.UserRepo().Query().
-           Limit(100).
-           Offset(page * 100).
-           All(ctx)
-       if len(users) == 0 {
+   for user, err := range client.UserRepo().Query().Iterate(ctx, 100) {
+       if err != nil {
            break
        }
-       process(users)
+       process(user)
    }
    ```
 
-2. Close unused live query subscriptions by cancelling their context
+2. Use `TempFiles(true)` for very large queries:
+   ```go
+   users, _ := client.UserRepo().Query().
+       TempFiles(true).
+       All(ctx)
+   ```
 
-3. Don't hold references to large result sets longer than needed
+3. Close unused live query subscriptions by cancelling their context
+
+4. Don't hold references to large result sets longer than needed
 
 ### Connection pool exhaustion
 

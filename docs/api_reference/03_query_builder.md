@@ -85,12 +85,12 @@ Restrict maximum number of results:
 Query().Limit(n int)
 ```
 
-### Offset
+### Start
 
 Skip first n results (for pagination):
 
 ```go
-Query().Offset(n int)
+Query().Start(n int)
 ```
 
 ### Fetch
@@ -140,6 +140,22 @@ users, err := client.UserRepo().Query().
 
 Note: TempFiles reduces memory usage at the cost of slower performance. Not available with Live queries.
 
+### WithDeleted
+
+Include soft-deleted records in results (only for models with `som.SoftDelete`):
+
+```go
+Query().WithDeleted()
+```
+
+### Range
+
+Range query for models with complex IDs (ArrayID or ObjectID):
+
+```go
+Query().Range(from som.RangeFrom, to som.RangeTo)
+```
+
 ## Execution Methods
 
 These methods execute the query and return results.
@@ -160,39 +176,24 @@ users, err := client.UserRepo().Query().
 
 ### First
 
-Get the first matching record:
+Get the first matching record. Returns `ErrNotFound` if no match:
 
 ```go
-func (b Builder) First(ctx context.Context) (*Model, bool, error)
+func (b Builder) First(ctx context.Context) (*Model, error)
 ```
 
-Returns:
-- `*Model` - The record (or nil if not found)
-- `bool` - Whether a record was found
-- `error` - Any error that occurred
-
 ```go
-user, exists, err := client.UserRepo().Query().
+user, err := client.UserRepo().Query().
     Where(filter.User.Email.Equal("john@example.com")).
     First(ctx)
 
-if exists {
-    fmt.Println(user.Name)
+if err != nil {
+    if errors.Is(err, som.ErrNotFound) {
+        // No matching record
+    }
+    return err
 }
-```
-
-### One
-
-Get exactly one matching record. Errors if multiple exist:
-
-```go
-func (b Builder) One(ctx context.Context) (*Model, bool, error)
-```
-
-```go
-user, exists, err := client.UserRepo().Query().
-    Where(filter.User.Email.Equal("john@example.com")).
-    One(ctx)
+fmt.Println(user.Name)
 ```
 
 ### Count
@@ -283,7 +284,7 @@ if found {
 
 ## Iterator Methods
 
-For processing large result sets efficiently, use the iterator methods. These leverage Go 1.22+'s range-over-func feature to stream results in batches.
+For processing large result sets efficiently, use the iterator methods. These leverage Go's range-over-func feature to stream results in batches.
 
 ### Iterate
 
@@ -362,7 +363,6 @@ Every execution method has an async variant that returns immediately:
 |------|-------|
 | `All(ctx)` | `AllAsync(ctx)` |
 | `First(ctx)` | `FirstAsync(ctx)` |
-| `One(ctx)` | `OneAsync(ctx)` |
 | `Count(ctx)` | `CountAsync(ctx)` |
 | `Exists(ctx)` | `ExistsAsync(ctx)` |
 | `Live(ctx)` | `LiveAsync(ctx)` |
@@ -494,7 +494,7 @@ users, err := client.UserRepo().Query().
     ).
     // Pagination
     Limit(20).
-    Offset(0).
+    Start(0).
     // Eager loading
     Fetch(with.User.Posts...).
     // Execution options
@@ -512,7 +512,7 @@ func GetPage(ctx context.Context, page, pageSize int) ([]*model.User, error) {
         Where(filter.User.IsActive.IsTrue()).
         Order(by.User.CreatedAt.Desc()).
         Limit(pageSize).
-        Offset((page - 1) * pageSize).
+        Start((page - 1) * pageSize).
         All(ctx)
 }
 
@@ -535,7 +535,7 @@ baseQuery := client.UserRepo().Query().
 
 // Different executions
 count, _ := baseQuery.Count(ctx)
-first, _, _ := baseQuery.First(ctx)
+first, _ := baseQuery.First(ctx)
 all, _ := baseQuery.Limit(10).All(ctx)
 ```
 

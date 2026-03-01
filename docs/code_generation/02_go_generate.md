@@ -7,7 +7,7 @@ Integrate SOM code generation into your Go build process using `go:generate`.
 Add a generate directive to a file in your project (commonly `generate.go` or in your model package):
 
 ```go
-//go:generate go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+//go:generate go run github.com/go-surreal/som@latest -i ./model
 
 package main
 ```
@@ -33,7 +33,7 @@ go generate ./model/...
 Create a `generate.go` file:
 
 ```go
-//go:generate go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+//go:generate go run github.com/go-surreal/som@latest -i ./model
 
 package main
 ```
@@ -43,7 +43,7 @@ package main
 Add the directive to any `.go` file in your model directory:
 
 ```go
-//go:generate go run github.com/go-surreal/som/cmd/som@latest gen . ../gen/som
+//go:generate go run github.com/go-surreal/som@latest -i .
 
 package model
 ```
@@ -58,18 +58,17 @@ steps:
   - uses: actions/checkout@v4
   - uses: actions/setup-go@v5
     with:
-      go-version: '1.23'
+      go-version: '1.25'
   - run: go generate ./...
   - run: git diff --exit-code  # Fail if generated code differs
 ```
 
-## Multiple Model Directories
+## Custom Output Directory
 
-If you have multiple model directories, add a directive for each:
+Specify a custom output directory with `-o`:
 
 ```go
-//go:generate go run github.com/go-surreal/som/cmd/som@latest gen ./models/users ./gen/users
-//go:generate go run github.com/go-surreal/som/cmd/som@latest gen ./models/products ./gen/products
+//go:generate go run github.com/go-surreal/som@latest -i ./model -o ./db/generated
 
 package main
 ```

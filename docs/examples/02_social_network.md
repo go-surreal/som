@@ -11,13 +11,13 @@ package model
 
 import (
     "time"
-    "github.com/go-surreal/som"
+    "yourproject/gen/som"
 )
 
 // Nodes
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps
 
     Username string
@@ -27,7 +27,7 @@ type User struct {
 }
 
 type Post struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps
 
     Content string
@@ -193,87 +193,15 @@ func main() {
     }
     fmt.Printf("\nPost has %d likes\n", likeCount)
 
-    // Query: Recent posts with most active authors
-    activePosts, err := client.PostRepo().Query().
-        Where(filter.Post.Author.IsActive.IsTrue()).
+    // Query: Recent posts
+    recentPosts, err := client.PostRepo().Query().
         Order(by.Post.CreatedAt.Desc()).
         Limit(10).
         All(ctx)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("\nRecent posts from active users: %d\n", len(activePosts))
-}
-```
-
-## Feed Algorithm
-
-Build a simple chronological feed:
-
-```go
-func GetFeed(ctx context.Context, client *som.Client, user *model.User, limit int) ([]*model.Post, error) {
-    // Get who the user follows
-    following, err := client.FollowsRepo().Query().
-        Where(filter.Follows.In.Equal(user.ID())).
-        All(ctx)
-    if err != nil {
-        return nil, err
-    }
-
-    // Collect followed user IDs
-    var followedIDs []*som.ID
-    for _, f := range following {
-        followedIDs = append(followedIDs, f.Out.ID())
-    }
-
-    // No one followed = empty feed
-    if len(followedIDs) == 0 {
-        return []*model.Post{}, nil
-    }
-
-    // Get posts from followed users
-    posts, err := client.PostRepo().Query().
-        Where(filter.Post.Author.ID().In(followedIDs...)).
-        Order(by.Post.CreatedAt.Desc()).
-        Limit(limit).
-        All(ctx)
-
-    return posts, err
-}
-```
-
-## Mutual Followers
-
-Find mutual connections:
-
-```go
-func GetMutualFollowers(ctx context.Context, client *som.Client, userA, userB *model.User) ([]*model.User, error) {
-    // Get userA's followers
-    followersA, err := client.FollowsRepo().Query().
-        Where(filter.Follows.Out.Equal(userA.ID())).
-        All(ctx)
-    if err != nil {
-        return nil, err
-    }
-
-    // For each of A's followers, check if they also follow B
-    var mutuals []*model.User
-    for _, f := range followersA {
-        followsB, err := client.FollowsRepo().Query().
-            Where(
-                filter.Follows.In.Equal(f.In.ID()),
-                filter.Follows.Out.Equal(userB.ID()),
-            ).
-            Exists(ctx)
-        if err != nil {
-            return nil, err
-        }
-        if followsB {
-            mutuals = append(mutuals, f.In)
-        }
-    }
-
-    return mutuals, nil
+    fmt.Printf("\nRecent posts: %d\n", len(recentPosts))
 }
 ```
 
@@ -309,7 +237,8 @@ func WatchFollowers(ctx context.Context, client *som.Client, user *model.User) {
 ## Running the Example
 
 ```bash
-surreal start --user root --pass root memory
+docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.0.0 \
+    start --user root --pass root
 go run main.go
 ```
 
@@ -331,5 +260,5 @@ Alice has 1 followers:
 
 Post has 2 likes
 
-Recent posts from active users: 1
+Recent posts: 1
 ```

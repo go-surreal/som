@@ -20,17 +20,29 @@ Generated interface for each model:
 type UserRepo interface {
     Create(ctx context.Context, user *model.User) error
     CreateWithID(ctx context.Context, id string, user *model.User) error
-    Read(ctx context.Context, id *som.ID) (*model.User, bool, error)
+    Insert(ctx context.Context, users []*model.User) error
+    Read(ctx context.Context, id string) (*model.User, bool, error)
     Update(ctx context.Context, user *model.User) error
     Delete(ctx context.Context, user *model.User) error
     Refresh(ctx context.Context, user *model.User) error
-    Query() query.Builder[model.User, conv.User]
+    Query() query.Builder[model.User]
+
+    // Index access (e.g. per-index Rebuild)
+    Index() *index.User
+
+    // Lifecycle hooks
+    OnBeforeCreate(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterCreate(fn func(ctx context.Context, node *model.User) error) func()
+    OnBeforeUpdate(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterUpdate(fn func(ctx context.Context, node *model.User) error) func()
+    OnBeforeDelete(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterDelete(fn func(ctx context.Context, node *model.User) error) func()
 }
 ```
 
 ## Create
 
-Insert a new record with auto-generated ULID:
+Insert a new record with auto-generated ID:
 
 ```go
 user := &model.User{
@@ -43,8 +55,8 @@ if err != nil {
     return err
 }
 
-// user.ID is populated after successful creation
-fmt.Println("Created:", user.ID)  // user:01HQMV8K2P...
+// user.ID() is populated after successful creation
+fmt.Println("Created:", user.ID())  // 01HQMV8K2P...
 ```
 
 ## CreateWithID
@@ -61,12 +73,26 @@ err := client.UserRepo().CreateWithID(ctx, "john", user)
 // Creates record with ID: user:john
 ```
 
+## Insert
+
+Bulk insert multiple records in a single operation:
+
+```go
+users := []*model.User{
+    {Name: "Alice", Email: "alice@example.com"},
+    {Name: "Bob", Email: "bob@example.com"},
+    {Name: "Charlie", Email: "charlie@example.com"},
+}
+
+err := client.UserRepo().Insert(ctx, users)
+```
+
 ## Read
 
 Fetch a record by ID:
 
 ```go
-func (r *UserRepo) Read(ctx context.Context, id *som.ID) (*model.User, bool, error)
+func (r *UserRepo) Read(ctx context.Context, id string) (*model.User, bool, error)
 ```
 
 Returns:
@@ -131,6 +157,14 @@ Useful when:
 - You need to verify current state
 - After timestamp fields update
 
+## Index
+
+Access the index manager for this table. Each index exposes a `Rebuild(ctx)` method:
+
+```go
+err := client.UserRepo().Index().Count().Rebuild(ctx)
+```
+
 ## Query
 
 Access the query builder for complex queries:
@@ -147,6 +181,37 @@ users, err := query.
 ```
 
 See [Query Builder API](03_query_builder.md) for full documentation.
+
+## Lifecycle Hooks
+
+Register callbacks that execute before or after CRUD operations:
+
+```go
+// Register a hook
+unregister := client.UserRepo().OnBeforeCreate(func(ctx context.Context, user *model.User) error {
+    // Validate or transform before creation
+    if user.Email == "" {
+        return errors.New("email is required")
+    }
+    return nil
+})
+
+// Unregister the hook when no longer needed
+defer unregister()
+```
+
+Available hooks:
+
+| Hook | When |
+|------|------|
+| `OnBeforeCreate` | Before a record is created |
+| `OnAfterCreate` | After a record is created |
+| `OnBeforeUpdate` | Before a record is updated |
+| `OnAfterUpdate` | After a record is updated |
+| `OnBeforeDelete` | Before a record is deleted |
+| `OnAfterDelete` | After a record is deleted |
+
+Each hook returns an unregister function. Call it to remove the hook.
 
 ## Edge Repository (Relate)
 
@@ -191,10 +256,10 @@ func UserService(ctx context.Context, client *som.Client) error {
     if err := repo.Create(ctx, user); err != nil {
         return fmt.Errorf("create: %w", err)
     }
-    log.Printf("Created user: %s", user.ID)
+    log.Printf("Created user: %s", user.ID())
 
     // Read
-    found, exists, err := repo.Read(ctx, user.ID)
+    found, exists, err := repo.Read(ctx, string(user.ID()))
     if err != nil {
         return fmt.Errorf("read: %w", err)
     }

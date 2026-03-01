@@ -14,11 +14,11 @@ SOM is currently in **early development** and considered experimental. It works 
 
 ### What Go version is required?
 
-Go 1.23 or later is required due to heavy use of generics.
+Go 1.25 or later is required due to heavy use of generics and iterators.
 
 ### What SurrealDB version is supported?
 
-SOM is tested against SurrealDB 2.x. Compatibility with older versions is not guaranteed.
+SOM is tested against SurrealDB [3.0.0](https://surrealdb.com/releases). Compatibility with older versions is not guaranteed.
 
 ## Technical
 
@@ -31,9 +31,9 @@ Code generation provides:
 - **Full IDE support** - Autocompletion, refactoring, go-to-definition
 - **Readable generated code** - Debug and understand what's happening
 
-### What's the difference between som.Node and som.Edge?
+### What's the difference between som.Node[T] and som.Edge?
 
-- **som.Node** - A database record/table. Has an auto-generated ID.
+- **som.Node[T]** - A database record/table. The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, or a custom struct).
 - **som.Edge** - A relationship between two nodes. Has an ID plus `In` and `Out` fields with `som:"in"` and `som:"out"` tags.
 
 ### Why does Read return (record, bool, error)?
@@ -46,12 +46,19 @@ The three-value return distinguishes between:
 
 This avoids conflating "not found" with errors.
 
-### What's the difference between First and One?
+### What does First return?
 
-- **First** - Returns the first matching record (or nil if none match)
-- **One** - Returns exactly one record. Errors if zero or multiple records match.
+`First(ctx)` returns `(*Model, error)`. If no record matches, it returns `ErrNotFound`:
 
-Use `First` when you expect zero or one result. Use `One` when exactly one result is expected.
+```go
+user, err := client.UserRepo().Query().
+    Where(filter.User.Email.Equal("john@example.com")).
+    First(ctx)
+
+if errors.Is(err, som.ErrNotFound) {
+    // No matching record
+}
+```
 
 ### How do I use optional fields?
 
@@ -59,7 +66,7 @@ Use pointers for optional fields:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name     string   // Required
     Nickname *string  // Optional, can be nil
@@ -80,7 +87,7 @@ Embed `som.Timestamps` for automatic tracking:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps  // Adds CreatedAt and UpdatedAt
 
     Name string
@@ -90,7 +97,7 @@ type User struct {
 - `CreatedAt` - Set on create, readonly
 - `UpdatedAt` - Updated on every save
 
-Both are managed by SOM and read-only in your code.
+Both are managed by SurrealDB and read-only in your code.
 
 ### Can I use raw SurrealQL queries?
 
@@ -104,7 +111,7 @@ Migration support is planned but not yet implemented. Currently, schema changes 
 
 Currently not supported:
 
-- `uint64` (SurrealDB integer limitations)
+- `uint`, `uint64` (SurrealDB integer limitations)
 - `complex64`, `complex128`
 - Channels, functions
 - Maps (except specific patterns)
@@ -114,11 +121,11 @@ Currently not supported:
 
 ### The generator isn't finding my models
 
-Ensure your structs embed `som.Node` or `som.Edge`:
+Ensure your structs embed `som.Node[T]` or `som.Edge`:
 
 ```go
 type User struct {
-    som.Node  // Required!
+    som.Node[som.ULID]  // Required!
     Name string
 }
 ```
@@ -129,7 +136,7 @@ Regenerate the code after any model changes:
 
 ```bash
 rm -rf ./gen/som
-go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+go run github.com/go-surreal/som@latest -i ./model
 go mod tidy
 ```
 

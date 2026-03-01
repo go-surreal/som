@@ -6,7 +6,7 @@
 
 Generate type-safe database access code from Go struct models. The generator produces:
 
-- **Repositories** with Create, Read, Update, Delete, and Query methods
+- **Repositories** with Create, Read, Update, Delete, Insert, and Query methods
 - **Query builders** with fluent, chainable API
 - **Filter builders** with 50+ operations per field type
 - **Sort builders** for ordering results
@@ -67,7 +67,7 @@ Embed `som.Timestamps` for auto-managed `CreatedAt` and `UpdatedAt` fields:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps  // Adds CreatedAt, UpdatedAt
     Name string
 }
@@ -79,7 +79,7 @@ Embed `som.OptimisticLock` to prevent concurrent update conflicts:
 
 ```go
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
     som.OptimisticLock  // Adds version tracking
 
     Title string
@@ -92,17 +92,89 @@ if errors.Is(err, som.ErrOptimisticLock) {
 }
 ```
 
-### Iterator Methods
+### Soft Delete
 
-Process large result sets efficiently with Go 1.22+ range-over-func:
+Embed `som.SoftDelete` for non-destructive deletion with automatic query filtering:
 
 ```go
-// Stream records in batches without loading all into memory
+type User struct {
+    som.Node[som.ULID]
+    som.SoftDelete  // Adds deleted_at, WithDeleted(), Restore(), Erase()
+    Name string
+}
+```
+
+### Iterator Methods
+
+Process large result sets efficiently with Go range-over-func:
+
+```go
 for user, err := range client.UserRepo().Query().Iterate(ctx, 100) {
     if err != nil {
         break
     }
     process(user)
+}
+```
+
+### Bulk Insert
+
+Insert multiple records efficiently in a single operation:
+
+```go
+users := []*model.User{
+    {Name: "Alice"},
+    {Name: "Bob"},
+    {Name: "Charlie"},
+}
+err := client.UserRepo().Insert(ctx, users)
+```
+
+### Lifecycle Hooks
+
+Register hooks for pre/post CRUD operations:
+
+```go
+unregister := client.UserRepo().OnBeforeCreate(func(ctx context.Context, user *model.User) error {
+    // Validate or transform before creation
+    return nil
+})
+defer unregister()
+```
+
+### Full-Text Search
+
+BM25-based relevance searching with highlighting and score sorting:
+
+```go
+results, _ := client.ArticleRepo().Query().
+    Search(filter.Article.Content.Matches("golang tutorial")).
+    AllMatches(ctx)
+```
+
+### Context Cache
+
+Optional request-scoped caching for Read operations:
+
+```go
+ctx, cleanup := som.WithCache[model.User](ctx, som.Lazy())
+defer cleanup()
+```
+
+### Complex ID Types
+
+Support for array and object-based record IDs for range-efficient queries:
+
+```go
+type WeatherKey struct {
+    som.ArrayID
+    City string
+    Date time.Time
+}
+
+type Weather struct {
+    som.Node[WeatherKey]
+    Temperature float64
 }
 ```
 
@@ -126,15 +198,27 @@ for user, err := range client.UserRepo().Query().Iterate(ctx, 100) {
 |------|-------------------|------|----------|
 | `time.Time` | Before, After, Add, Sub, Floor, Round, Format | Yes | 12 |
 | `time.Duration` | Before, After, Add, Sub | Yes | 14 |
+| `time.Month` | Comparable operations | Yes | - |
+| `time.Weekday` | Comparable operations | Yes | - |
 
 ### Special Types
 
-| Type | Filter Operations | Sort | CBOR Tag |
-|------|-------------------|------|----------|
-| `uuid.UUID` | Equal, NotEqual, In, NotIn | Yes | 37 |
+| Type | Filter Operations | Sort | Notes |
+|------|-------------------|------|-------|
+| `uuid.UUID` (google) | Equal, NotEqual, In, NotIn | Yes | CBOR Tag 37 |
+| `uuid.UUID` (gofrs) | Equal, NotEqual, In, NotIn | Yes | CBOR Tag 37 |
 | `url.URL` | Equal, NotEqual | Yes | - |
 | `som.Email` | Equal, In, User(), Host() | Yes | - |
-| `som.Password` | Zero, IsNil (auto-hashed) | No | - |
+| `som.Password[A]` | Zero, IsNil (auto-hashed) | No | - |
+| `som.SemVer` | Equal, Compare, Major, Minor, Patch | Yes | - |
+
+### Geometry Types
+
+SOM supports geometry types from three popular Go libraries:
+
+- `github.com/paulmach/orb` - Point, LineString, Polygon, MultiPoint, etc.
+- `github.com/peterstace/simplefeatures/geom` - Same geometry types
+- `github.com/twpayne/go-geom` - Same geometry types
 
 ### Custom Types
 
@@ -158,7 +242,7 @@ type Address struct {
 }
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     Address Address
 }
 
@@ -173,8 +257,7 @@ filter.User.Address.City.Equal("Berlin")
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `All(ctx)` | `([]*Model, error)` | All matching records |
-| `First(ctx)` | `(*Model, bool, error)` | First match or nil |
-| `One(ctx)` | `(*Model, bool, error)` | Exactly one match (errors if multiple) |
+| `First(ctx)` | `(*Model, error)` | First match or `ErrNotFound` |
 | `Count(ctx)` | `(int, error)` | Count of matches |
 | `Exists(ctx)` | `(bool, error)` | Whether any match exists |
 | `Live(ctx)` | `(<-chan LiveResult, error)` | Stream of changes |
@@ -187,11 +270,13 @@ filter.User.Address.City.Equal("Berlin")
 | `Order(...)` | Sort results |
 | `OrderRandom()` | Random ordering |
 | `Limit(n)` | Max results |
-| `Offset(n)` | Skip results |
+| `Start(n)` | Skip results |
 | `Fetch(...)` | Eager load relations |
 | `Timeout(d)` | Query timeout |
 | `Parallel(bool)` | Parallel execution |
 | `TempFiles(bool)` | Disk-based processing for large result sets |
+| `WithDeleted()` | Include soft-deleted records |
+| `Range(from, to)` | Range query for complex IDs |
 
 ## Filter Operations
 

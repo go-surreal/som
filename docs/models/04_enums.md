@@ -29,14 +29,14 @@ Use your enum type as a field in any Node or Edge:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name   string
     Status Status
 }
 
 type Order struct {
-    som.Node
+    som.Node[som.ULID]
 
     OrderNumber string
     Status      OrderStatus
@@ -112,7 +112,7 @@ const (
 func (r Role) Enum() {}
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name  string
     Roles []Role  // User can have multiple roles
@@ -142,7 +142,7 @@ Use pointers for optional enum fields:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name     string
     Status   Status   // Required

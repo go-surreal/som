@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- **Go 1.23 or later** - SOM uses generics extensively
-- **SurrealDB 2.x** - Tested against version 2.3.10
+- **Go 1.25 or later** - SOM uses generics and iterators extensively
+- **SurrealDB 3.x** - Tested against version 3.0.0
 
 ## Install SOM Generator
 
@@ -12,7 +12,7 @@
 Use `go run` to always get the latest version:
 
 ```bash
-go run github.com/go-surreal/som/cmd/som@latest gen <input_dir> <output_dir>
+go run github.com/go-surreal/som@latest -i <input_dir>
 ```
 
 ### Option 2: Install Binary
@@ -20,13 +20,13 @@ go run github.com/go-surreal/som/cmd/som@latest gen <input_dir> <output_dir>
 Install globally for faster execution:
 
 ```bash
-go install github.com/go-surreal/som/cmd/som@latest
+go install github.com/go-surreal/som@latest
 ```
 
 Then run:
 
 ```bash
-som gen <input_dir> <output_dir>
+som -i <input_dir>
 ```
 
 ### Option 3: Pin Version
@@ -34,19 +34,25 @@ som gen <input_dir> <output_dir>
 For reproducible builds, pin to a specific version:
 
 ```bash
-go run github.com/go-surreal/som/cmd/som@v0.10.0 gen ./model ./gen/som
+go run github.com/go-surreal/som@v0.16.0 -i ./model
 ```
 
 ## CLI Flags
 
 ```bash
-som gen [flags] <input_path> <output_path>
+som [flags]
 
 Flags:
-  -v, --verbose    Show detailed generation progress
-      --dry        Simulate generation without writing files
-      --no-check   Skip version compatibility checks
+  -i, --in             Input model directory (relative to go.mod)
+  -o, --out            Output directory (default: gen/som)
+  -v, --verbose        Show detailed generation progress
+      --dry            Simulate generation without writing files
+      --no-check       Skip version compatibility checks
+      --no-count-index Disable automatic COUNT index generation
+      --wire           Override wire generation: "no", "google", or "goforj"
 ```
+
+The tool auto-detects the closest `go.mod` file and resolves paths relative to it. If `--in` is omitted, only static base files are generated (initialization mode).
 
 ## Project Setup
 
@@ -63,10 +69,10 @@ Create `model/user.go`:
 ```go
 package model
 
-import "github.com/go-surreal/som"
+import "yourproject/gen/som"
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name  string
     Email string
@@ -75,8 +81,16 @@ type User struct {
 
 ### 3. Generate Code
 
+First, generate the static base files:
+
 ```bash
-go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+go run github.com/go-surreal/som@latest
+```
+
+Then generate model-specific code:
+
+```bash
+go run github.com/go-surreal/som@latest -i ./model
 ```
 
 ### 4. Import Generated Code
@@ -96,7 +110,7 @@ import (
 ### Using Docker (Recommended)
 
 ```bash
-docker run --rm -p 8000:8000 surrealdb/surrealdb:v2.3.10 \
+docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.0.0 \
     start --user root --pass root
 ```
 
@@ -114,7 +128,7 @@ surreal start --user root --pass root --bind 0.0.0.0:8000
 version: '3'
 services:
   surrealdb:
-    image: surrealdb/surrealdb:v2.3.10
+    image: surrealdb/surrealdb:v3.0.0
     ports:
       - "8000:8000"
     command: start --user root --pass root
