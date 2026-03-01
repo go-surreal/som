@@ -7,23 +7,6 @@ DEFINE TABLE weather SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE weather TYPE array<any, 2>;
 DEFINE FIELD temperature ON TABLE weather TYPE float ;
 
-DEFINE TABLE location SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE location TYPE string;
-DEFINE FIELD created_at ON TABLE location TYPE option<datetime> VALUE $before OR time::now() READONLY;
-DEFINE FIELD updated_at ON TABLE location TYPE option<datetime> VALUE time::now();
-DEFINE FIELD name ON TABLE location TYPE string;
-DEFINE FIELD point ON TABLE location TYPE geometry<point>;
-DEFINE FIELD point_ptr ON TABLE location TYPE option<geometry<point>>;
-DEFINE FIELD line_string ON TABLE location TYPE geometry<line>;
-DEFINE FIELD line_string_ptr ON TABLE location TYPE option<geometry<line>>;
-DEFINE FIELD polygon ON TABLE location TYPE geometry<polygon>;
-DEFINE FIELD polygon_ptr ON TABLE location TYPE option<geometry<polygon>>;
-DEFINE FIELD multi_point ON TABLE location TYPE geometry<multipoint>;
-DEFINE FIELD multi_point_ptr ON TABLE location TYPE option<geometry<multipoint>>;
-DEFINE FIELD multi_line_string ON TABLE location TYPE geometry<multiline>;
-DEFINE FIELD multi_polygon ON TABLE location TYPE geometry<multipolygon>;
-DEFINE FIELD collection ON TABLE location TYPE geometry<collection>;
-
 DEFINE TABLE team_member SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE team_member TYPE object FLEXIBLE;
 DEFINE FIELD role ON TABLE team_member TYPE string;
@@ -44,6 +27,23 @@ DEFINE FIELD authors ON TABLE special_relation TYPE option<array<record<special_
 DEFINE TABLE person_obj SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE person_obj TYPE object FLEXIBLE;
 DEFINE FIELD email ON TABLE person_obj TYPE string;
+
+DEFINE TABLE location SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE location TYPE string;
+DEFINE FIELD created_at ON TABLE location TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE location TYPE option<datetime> VALUE time::now();
+DEFINE FIELD name ON TABLE location TYPE string;
+DEFINE FIELD point ON TABLE location TYPE geometry<point>;
+DEFINE FIELD point_ptr ON TABLE location TYPE option<geometry<point>>;
+DEFINE FIELD line_string ON TABLE location TYPE geometry<line>;
+DEFINE FIELD line_string_ptr ON TABLE location TYPE option<geometry<line>>;
+DEFINE FIELD polygon ON TABLE location TYPE geometry<polygon>;
+DEFINE FIELD polygon_ptr ON TABLE location TYPE option<geometry<polygon>>;
+DEFINE FIELD multi_point ON TABLE location TYPE geometry<multipoint>;
+DEFINE FIELD multi_point_ptr ON TABLE location TYPE option<geometry<multipoint>>;
+DEFINE FIELD multi_line_string ON TABLE location TYPE geometry<multiline>;
+DEFINE FIELD multi_polygon ON TABLE location TYPE geometry<multipolygon>;
+DEFINE FIELD collection ON TABLE location TYPE geometry<collection>;
 
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_types TYPE string;
@@ -175,6 +175,7 @@ DEFINE INDEX __som__special_types_deleted_at ON special_types FIELDS deleted_at 
 DEFINE INDEX __som__special_relation_count ON special_relation COUNT;
 DEFINE INDEX __som__special_relation_deleted_at ON special_relation FIELDS deleted_at CONCURRENTLY;
 DEFINE INDEX __som__person_obj_count ON person_obj COUNT;
+DEFINE INDEX __som__location_count ON location COUNT;
 DEFINE INDEX __som__all_types_count ON all_types COUNT;
 DEFINE INDEX __som__all_types_search_field_string ON all_types FIELDS field_string FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_string_ptr ON all_types FIELDS field_string_ptr FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;

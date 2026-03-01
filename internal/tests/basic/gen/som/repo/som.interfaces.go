@@ -12,6 +12,7 @@ type Client interface {
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
 	PersonObjRepo() PersonObjRepo
+	LocationRepo() LocationRepo
 	AllTypesRepo() AllTypesRepo
 	ApplySchema(ctx context.Context) error
 	Close()
@@ -25,5 +26,6 @@ type ClientImpl struct {
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
 	personObjRepo       *personObj
+	locationRepo        *location
 	allTypesRepo        *allTypes
 }

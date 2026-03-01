@@ -247,6 +247,14 @@ type FieldGeometry struct {
 	Type    GeometryType
 }
 
+func NewFieldGeometry(name string, pkg GeoPackage, typ GeometryType) *FieldGeometry {
+	return &FieldGeometry{
+		fieldAtomic: &fieldAtomic{name: name},
+		Package:     pkg,
+		Type:        typ,
+	}
+}
+
 type FieldURL struct {
 	*fieldAtomic
 }

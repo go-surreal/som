@@ -99,6 +99,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 				&fieldtype.TimeHandler{},
 				&fieldtype.MonthHandler{},
 				&fieldtype.WeekdayHandler{},
+				&fieldtype.GeometryHandler{},
 				&fieldtype.URLHandler{},
 				&fieldtype.NodeRefHandler{},
 				&fieldtype.EdgeRefHandler{},
