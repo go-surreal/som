@@ -173,7 +173,7 @@ client.FollowsRepo().Relate().
 Pin to a specific version for reproducible builds:
 
 ```bash
-go run github.com/go-surreal/som@v0.16.0 -i ./model
+go run github.com/go-surreal/som@v0.17.0 -i ./model
 ```
 
 ## Regenerating Code

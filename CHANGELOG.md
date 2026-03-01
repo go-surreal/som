@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.17.0] - 2026-03-01
+
 ### Added
 - Geo types support via `github.com/twpayne/go-geom` (#404)
 - Semver type with proper query filters (#457)
@@ -26,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Require surrealdb.go client version 1.3.0 (#458)
+
+### Documentation
+- Comprehensive documentation overhaul (#460)
 
 ## [v0.16.0] - 2026-02-23
 
@@ -342,7 +347,8 @@ Initial release.
 - Edge (graph) connection support
 - CLI tool for code generation
 
-[Unreleased]: https://github.com/go-surreal/som/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/go-surreal/som/compare/v0.17.0...HEAD
+[v0.17.0]: https://github.com/go-surreal/som/compare/v0.16.0...v0.17.0
 [v0.16.0]: https://github.com/go-surreal/som/compare/v0.15.0...v0.16.0
 [v0.15.0]: https://github.com/go-surreal/som/compare/v0.14.0...v0.15.0
 [v0.14.0]: https://github.com/go-surreal/som/compare/v0.13.0...v0.14.0
