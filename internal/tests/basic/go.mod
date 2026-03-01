@@ -13,7 +13,10 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
+	github.com/paulmach/orb v0.12.0
+	github.com/peterstace/simplefeatures v0.58.0
 	github.com/testcontainers/testcontainers-go v0.40.0
+	github.com/twpayne/go-geom v1.6.1
 	golang.org/x/sync v0.19.0
 	gotest.tools/v3 v3.5.2
 )
@@ -25,9 +28,6 @@ require (
 	github.com/go-surreal/som v0.16.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
-	github.com/paulmach/orb v0.12.0 // indirect
-	github.com/peterstace/simplefeatures v0.58.0 // indirect
-	github.com/twpayne/go-geom v1.6.1 // indirect
 	github.com/urfave/cli/v3 v3.6.2 // indirect
 	github.com/wzshiming/gotype v0.8.0 // indirect
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
@@ -70,7 +70,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.25.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
-	github.com/surrealdb/surrealdb.go v1.0.0
+	github.com/surrealdb/surrealdb.go v1.3.0
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
