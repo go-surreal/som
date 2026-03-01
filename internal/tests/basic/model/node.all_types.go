@@ -170,6 +170,9 @@ type AllTypes struct {
 	//// MappedGroups map[string]Group // map of string and node
 	//// OtherMap     map[Role]string  // map of enum and string
 
+	// field name override
+	FieldRenamed string `som:"name=custom_name"`
+
 	// hook fields
 	FieldHookStatus string
 	FieldHookDetail string

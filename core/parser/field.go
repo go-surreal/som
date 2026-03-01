@@ -8,8 +8,10 @@ type Field interface {
 	fmt.Stringer
 	field()
 	Name() string
+	DBName() string
 	Pointer() bool
 	setName(string)
+	setDBName(string)
 	setPointer(bool)
 	Indexes() []IndexInfo
 	Search() *SearchInfo
@@ -20,6 +22,7 @@ type Field interface {
 
 type fieldAtomic struct {
 	name    string
+	dbName  string
 	pointer bool
 	indexes []IndexInfo
 	search  *SearchInfo
@@ -37,6 +40,14 @@ func (f *fieldAtomic) Name() string {
 
 func (f *fieldAtomic) setName(name string) {
 	f.name = name
+}
+
+func (f *fieldAtomic) DBName() string {
+	return f.dbName
+}
+
+func (f *fieldAtomic) setDBName(name string) {
+	f.dbName = name
 }
 
 func (f *fieldAtomic) Pointer() bool {
