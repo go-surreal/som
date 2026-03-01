@@ -27,17 +27,31 @@ go mod tidy
 
 ## Version-Specific Guides
 
-### Upgrading to v0.16.x
+### Upgrading to v0.17.x
 
-**SurrealDB 3.0.0 support**: This version requires surrealdb.go client version 1.3.0. Ensure your SurrealDB server is running v3.0.0.
-
-### Upgrading to v0.15.x
-
-**Geo types**: Added support for geometry types from `paulmach/orb`, `peterstace/simplefeatures`, and `twpayne/go-geom`.
+**Geo types**: Added support for geometry types from `github.com/twpayne/go-geom`.
 
 **SemVer type**: Added `som.SemVer` type with query filters (`Major()`, `Minor()`, `Patch()`).
 
-**Field name override**: Added `som:"custom_name"` tag for overriding database field names.
+**Field name override**: Use `som:"custom_name"` tag to override database field names.
+
+**Insert method**: Repos now have an `Insert()` method for bulk record creation.
+
+**Index rebuild**: `RebuildIndexes()` has been replaced with `Index().<IndexName>().Rebuild(ctx)`.
+
+**Driver version**: Requires surrealdb.go client version 1.3.0.
+
+### Upgrading to v0.16.x
+
+**Complex IDs**: Added support for array and object-based IDs via `som.ArrayID` and `som.ObjectID` marker structs.
+
+**CLI flags**: Overhauled CLI command and flags.
+
+### Upgrading to v0.15.x
+
+**SurrealDB v3.0**: Added compatibility with SurrealDB v3.0.
+
+**String record IDs**: Added configurable string ID generator support.
 
 ### Upgrading to v0.14.x
 
