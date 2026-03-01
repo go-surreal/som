@@ -89,6 +89,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 			},
 			[]parser.FieldHandler{
 				&fieldtype.EmailHandler{},
+				&fieldtype.SemVerHandler{},
 				&fieldtype.PasswordHandler{},
 				&fieldtype.EnumHandler{},
 				&fieldtype.DurationHandler{},

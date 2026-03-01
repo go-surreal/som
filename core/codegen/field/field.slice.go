@@ -571,6 +571,8 @@ func (f *Slice) distinctElemType(ctx Context) jen.Code {
 		return jen.Qual(def.PkgURL, "URL")
 	case *Email:
 		return jen.Qual(f.TargetPkg, "Email")
+	case *SemVer:
+		return jen.Qual(f.TargetPkg, "SemVer")
 	default:
 		return nil
 	}
@@ -598,6 +600,8 @@ func (f *Slice) distinctElemInit(ctx Context) jen.Code {
 		return jen.Qual(ctx.pkgDistinct(), "NewURLField").Types(def.TypeModel).Call(key)
 	case *Email:
 		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email")).Call(key)
+	case *SemVer:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "SemVer")).Call(key)
 	default:
 		return nil
 	}

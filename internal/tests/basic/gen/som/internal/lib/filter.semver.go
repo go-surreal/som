@@ -6,7 +6,7 @@ import (
 	"github.com/go-surreal/som/tests/basic/gen/som"
 )
 
-// SemVer is a filter builder for string values.
+// SemVer is a filter builder for semantic version values.
 // M is the model this filter is for.
 type SemVer[M any] struct {
 	*Base[M, som.SemVer, *SemVer[M], *Slice[M, som.SemVer, *SemVer[M]]]
@@ -56,4 +56,16 @@ func (b *SemVer[M]) SetMinor(val int) *SemVer[M] {
 
 func (b *SemVer[M]) SetPatch(val int) *SemVer[M] {
 	return NewSemVer[M](b.Base.fn("string::semver::set::patch", val))
+}
+
+type SemVerPtr[M any] struct {
+	*SemVer[M]
+	*Nillable[M]
+}
+
+func NewSemVerPtr[M any](key Key[M]) *SemVerPtr[M] {
+	return &SemVerPtr[M]{
+		SemVer:   NewSemVer[M](key),
+		Nillable: NewNillable[M](key),
+	}
 }

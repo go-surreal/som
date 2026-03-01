@@ -118,6 +118,11 @@ type AllTypes struct {
 	FieldEmailNil   *som.Email
 	FieldEmailSlice []som.Email
 
+	FieldSemVer      som.SemVer
+	FieldSemVerPtr   *som.SemVer
+	FieldSemVerNil   *som.SemVer
+	FieldSemVerSlice []som.SemVer
+
 	// enums
 
 	FieldEnum            Role
@@ -164,6 +169,9 @@ type AllTypes struct {
 	//// MappedRoles  map[string]Role  // map of string and enum
 	//// MappedGroups map[string]Group // map of string and node
 	//// OtherMap     map[Role]string  // map of enum and string
+
+	// field name override
+	FieldRenamed string `som:"name=custom_name"`
 
 	// hook fields
 	FieldHookStatus string

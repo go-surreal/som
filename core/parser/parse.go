@@ -6,11 +6,24 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/go-surreal/som/core/util/gomod"
 	"github.com/wzshiming/gotype"
 )
+
+var validDBName = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+
+// ReservedDBNames contains field names managed by SOM or SurrealDB internals.
+var ReservedDBNames = map[string]bool{
+	"id":         true,
+	"in":         true,
+	"out":        true,
+	"created_at": true,
+	"updated_at": true,
+	"deleted_at": true,
+}
 
 // activeFieldRegistry is set at the start of Parse() so that
 // ParseField / ParseFieldInternal can delegate to it.
@@ -124,6 +137,9 @@ func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 	}
 
 	if tagInfo != nil {
+		if tagInfo.DBName != "" {
+			field.setDBName(tagInfo.DBName)
+		}
 		if len(tagInfo.Indexes) > 0 {
 			field.setIndexes(tagInfo.Indexes)
 		}
@@ -137,6 +153,7 @@ func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 
 // TagInfo holds all parsed som struct tag data.
 type TagInfo struct {
+	DBName  string
 	Indexes []IndexInfo
 	Search  *SearchInfo
 }
@@ -148,6 +165,7 @@ type TagInfo struct {
 //	som:"index=my_index"
 //	som:"unique"
 //	som:"unique=composite_name"
+//	som:"name=db_field_name"
 //	som:"fulltext=english_search"
 //	som:"index,unique=login"
 func parseSomTag(tag string) (*TagInfo, error) {
@@ -187,6 +205,21 @@ func parseSomTag(tag string) (*TagInfo, error) {
 				idx.Name = value
 			}
 			info.Indexes = append(info.Indexes, idx)
+
+		case "name":
+			if !hasValue || value == "" {
+				return nil, fmt.Errorf("invalid tag %q: name requires a value (name=db_field_name)", part)
+			}
+			if info.DBName != "" {
+				return nil, fmt.Errorf("invalid tag: name specified multiple times")
+			}
+			if !validDBName.MatchString(value) {
+				return nil, fmt.Errorf("invalid tag %q: name must match [a-z][a-z0-9_]*", part)
+			}
+			if ReservedDBNames[value] {
+				return nil, fmt.Errorf("invalid tag %q: %q is a reserved field name", part, value)
+			}
+			info.DBName = value
 
 		case "fulltext":
 			if !hasValue || value == "" {

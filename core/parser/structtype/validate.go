@@ -4,10 +4,24 @@ import (
 	"fmt"
 
 	"github.com/go-surreal/som/core/parser"
+	"github.com/iancoleman/strcase"
 )
 
 func validateFields(typeName string, fields []parser.Field, output *parser.Output) error {
+	seen := make(map[string]string, len(fields)) // dbName -> Go field name
 	for _, f := range fields {
+		dbName := f.DBName()
+		if dbName == "" {
+			dbName = strcase.ToSnake(f.Name())
+		}
+		if !isSOMInternalField(f) && parser.ReservedDBNames[dbName] {
+			return fmt.Errorf("%s: field %q maps to reserved database name %q", typeName, f.Name(), dbName)
+		}
+		if prev, ok := seen[dbName]; ok {
+			return fmt.Errorf("%s: fields %q and %q both map to database name %q", typeName, prev, f.Name(), dbName)
+		}
+		seen[dbName] = f.Name()
+
 		if err := validateField(typeName, f, output); err != nil {
 			return err
 		}
@@ -96,6 +110,18 @@ func searchExists(name string, output *parser.Output) bool {
 		if s.Name == name {
 			return true
 		}
+	}
+	return false
+}
+
+func isSOMInternalField(f parser.Field) bool {
+	switch v := f.(type) {
+	case *parser.FieldID:
+		return true
+	case *parser.FieldComplexID:
+		return true
+	case *parser.FieldTime:
+		return v.IsCreatedAt || v.IsUpdatedAt || v.IsDeletedAt
 	}
 	return false
 }

@@ -20,7 +20,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 95)
+	data := make(map[string]any, 100)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
@@ -201,6 +201,16 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldEmailSlice != nil {
 		data["field_email_slice"] = c.FieldEmailSlice
 	}
+	data["field_sem_ver"] = fromSemVer(c.FieldSemVer)
+	if c.FieldSemVerPtr != nil {
+		data["field_sem_ver_ptr"] = fromSemVerPtr(c.FieldSemVerPtr)
+	}
+	if c.FieldSemVerNil != nil {
+		data["field_sem_ver_nil"] = fromSemVerPtr(c.FieldSemVerNil)
+	}
+	if c.FieldSemVerSlice != nil {
+		data["field_sem_ver_slice"] = c.FieldSemVerSlice
+	}
 	data["field_enum"] = c.FieldEnum
 	if c.FieldEnumPtr != nil {
 		data["field_enum_ptr"] = c.FieldEnumPtr
@@ -305,6 +315,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldByteSlicePtr != nil {
 		data["field_byte_slice_ptr"] = c.FieldByteSlicePtr
 	}
+	data["custom_name"] = c.FieldRenamed
 	data["field_hook_status"] = c.FieldHookStatus
 	data["field_hook_detail"] = c.FieldHookDetail
 
@@ -570,6 +581,24 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	if raw, ok := rawMap["field_email_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldEmailSlice)
 	}
+	if raw, ok := rawMap["field_sem_ver"]; ok {
+		var convVal string
+		cbor.Unmarshal(raw, &convVal)
+		c.FieldSemVer = toSemVer(convVal)
+	}
+	if raw, ok := rawMap["field_sem_ver_ptr"]; ok {
+		var convVal *string
+		cbor.Unmarshal(raw, &convVal)
+		c.FieldSemVerPtr = toSemVerPtr(convVal)
+	}
+	if raw, ok := rawMap["field_sem_ver_nil"]; ok {
+		var convVal *string
+		cbor.Unmarshal(raw, &convVal)
+		c.FieldSemVerNil = toSemVerPtr(convVal)
+	}
+	if raw, ok := rawMap["field_sem_ver_slice"]; ok {
+		cbor.Unmarshal(raw, &c.FieldSemVerSlice)
+	}
 	if raw, ok := rawMap["field_enum"]; ok {
 		cbor.Unmarshal(raw, &c.FieldEnum)
 	}
@@ -697,6 +726,9 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_byte_slice_ptr"]; ok {
 		cbor.Unmarshal(raw, &c.FieldByteSlicePtr)
+	}
+	if raw, ok := rawMap["custom_name"]; ok {
+		cbor.Unmarshal(raw, &c.FieldRenamed)
 	}
 	if raw, ok := rawMap["field_hook_status"]; ok {
 		cbor.Unmarshal(raw, &c.FieldHookStatus)

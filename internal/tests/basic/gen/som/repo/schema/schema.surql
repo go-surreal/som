@@ -135,6 +135,10 @@ DEFINE FIELD field_email ON TABLE all_types TYPE string ASSERT $value == "" OR s
 DEFINE FIELD field_email_ptr ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_email($value);
 DEFINE FIELD field_email_nil ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_email($value);
 DEFINE FIELD field_email_slice ON TABLE all_types TYPE option<array<string>>;
+DEFINE FIELD field_sem_ver ON TABLE all_types TYPE string ASSERT $value == "" OR string::is_semver($value);
+DEFINE FIELD field_sem_ver_ptr ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_semver($value);
+DEFINE FIELD field_sem_ver_nil ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_semver($value);
+DEFINE FIELD field_sem_ver_slice ON TABLE all_types TYPE option<array<string>>;
 DEFINE FIELD field_enum ON TABLE all_types TYPE "" | "admin" | "user";
 DEFINE FIELD field_enum_ptr ON TABLE all_types TYPE option<"" | "admin" | "user">;
 DEFINE FIELD field_enum_slice ON TABLE all_types TYPE option<array<"" | "admin" | "user">>;
@@ -177,6 +181,7 @@ DEFINE FIELD field_byte ON TABLE all_types TYPE int ASSERT $value >= 0 AND $valu
 DEFINE FIELD field_byte_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
 DEFINE FIELD field_byte_slice ON TABLE all_types TYPE option<bytes>;
 DEFINE FIELD field_byte_slice_ptr ON TABLE all_types TYPE option<bytes>;
+DEFINE FIELD custom_name ON TABLE all_types TYPE string;
 DEFINE FIELD field_hook_status ON TABLE all_types TYPE string;
 DEFINE FIELD field_hook_detail ON TABLE all_types TYPE string;
 
