@@ -34,7 +34,7 @@ som -i <input_dir>
 For reproducible builds, pin to a specific version:
 
 ```bash
-go run github.com/go-surreal/som@v0.16.0 -i ./model
+go run github.com/go-surreal/som@v0.17.0 -i ./model
 ```
 
 ## CLI Flags
