@@ -1,0 +1,337 @@
+//go:build embed
+
+package types
+
+import (
+	cbor "{{.GenerateOutPath}}/internal/cbor"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/twpayne/go-geom"
+)
+
+// PointGG wraps geom.Point for CBOR marshaling.
+type PointGG struct {
+	geom.Point
+}
+
+func (p *PointGG) MarshalCBOR() ([]byte, error) {
+	coords := [2]float64{p.X(), p.Y()}
+	raw, err := cbor.Marshal(coords)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryPoint, Content: raw})
+}
+
+func (p *PointGG) UnmarshalCBOR(data []byte) error {
+	var coords [2]float64
+	if err := cbor.Unmarshal(data, &coords); err != nil {
+		return err
+	}
+	p.Point = *geom.NewPointFlat(geom.XY, coords[:])
+	return nil
+}
+
+// LineStringGG wraps geom.LineString for CBOR marshaling.
+type LineStringGG struct {
+	geom.LineString
+}
+
+func (l *LineStringGG) MarshalCBOR() ([]byte, error) {
+	n := l.NumCoords()
+	points := make([]*PointGG, n)
+	for i := 0; i < n; i++ {
+		c := l.Coord(i)
+		points[i] = &PointGG{*geom.NewPointFlat(geom.XY, []float64{c.X(), c.Y()})}
+	}
+	raw, err := cbor.Marshal(points)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryLine, Content: raw})
+}
+
+func (l *LineStringGG) UnmarshalCBOR(data []byte) error {
+	var coords [][2]float64
+	if err := cbor.Unmarshal(data, &coords); err != nil {
+		return err
+	}
+	flat := make([]float64, len(coords)*2)
+	for i, c := range coords {
+		flat[i*2] = c[0]
+		flat[i*2+1] = c[1]
+	}
+	l.LineString = *geom.NewLineStringFlat(geom.XY, flat)
+	return nil
+}
+
+// PolygonGG wraps geom.Polygon for CBOR marshaling.
+type PolygonGG struct {
+	geom.Polygon
+}
+
+func (p *PolygonGG) MarshalCBOR() ([]byte, error) {
+	n := p.NumLinearRings()
+	rings := make([]*LineStringGG, n)
+	for i := 0; i < n; i++ {
+		ring := p.LinearRing(i)
+		rings[i] = &LineStringGG{*geom.NewLineStringFlat(ring.Layout(), ring.FlatCoords())}
+	}
+	raw, err := cbor.Marshal(rings)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryPolygon, Content: raw})
+}
+
+func (p *PolygonGG) UnmarshalCBOR(data []byte) error {
+	var rings [][][2]float64
+	if err := cbor.Unmarshal(data, &rings); err != nil {
+		return err
+	}
+	if len(rings) == 0 {
+		p.Polygon = *geom.NewPolygon(geom.XY)
+		return nil
+	}
+	var flat []float64
+	ends := make([]int, len(rings))
+	for i, ring := range rings {
+		for _, c := range ring {
+			flat = append(flat, c[0], c[1])
+		}
+		ends[i] = len(flat) / 2
+	}
+	p.Polygon = *geom.NewPolygonFlat(geom.XY, flat, ends)
+	return nil
+}
+
+// MultiPointGG wraps geom.MultiPoint for CBOR marshaling.
+type MultiPointGG struct {
+	geom.MultiPoint
+}
+
+func (m *MultiPointGG) MarshalCBOR() ([]byte, error) {
+	n := m.NumCoords()
+	points := make([]*PointGG, n)
+	for i := 0; i < n; i++ {
+		c := m.Coord(i)
+		points[i] = &PointGG{*geom.NewPointFlat(geom.XY, []float64{c.X(), c.Y()})}
+	}
+	raw, err := cbor.Marshal(points)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryMultiPoint, Content: raw})
+}
+
+func (m *MultiPointGG) UnmarshalCBOR(data []byte) error {
+	var coords [][2]float64
+	if err := cbor.Unmarshal(data, &coords); err != nil {
+		return err
+	}
+	flat := make([]float64, len(coords)*2)
+	for i, c := range coords {
+		flat[i*2] = c[0]
+		flat[i*2+1] = c[1]
+	}
+	m.MultiPoint = *geom.NewMultiPointFlat(geom.XY, flat)
+	return nil
+}
+
+// MultiLineStringGG wraps geom.MultiLineString for CBOR marshaling.
+type MultiLineStringGG struct {
+	geom.MultiLineString
+}
+
+func (m *MultiLineStringGG) MarshalCBOR() ([]byte, error) {
+	n := m.NumLineStrings()
+	lines := make([]*LineStringGG, n)
+	for i := 0; i < n; i++ {
+		ls := m.LineString(i)
+		lines[i] = &LineStringGG{*geom.NewLineStringFlat(ls.Layout(), ls.FlatCoords())}
+	}
+	raw, err := cbor.Marshal(lines)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryMultiLine, Content: raw})
+}
+
+func (m *MultiLineStringGG) UnmarshalCBOR(data []byte) error {
+	var lines [][][2]float64
+	if err := cbor.Unmarshal(data, &lines); err != nil {
+		return err
+	}
+	var flat []float64
+	ends := make([]int, len(lines))
+	for i, line := range lines {
+		for _, c := range line {
+			flat = append(flat, c[0], c[1])
+		}
+		ends[i] = len(flat) / 2
+	}
+	m.MultiLineString = *geom.NewMultiLineStringFlat(geom.XY, flat, ends)
+	return nil
+}
+
+// MultiPolygonGG wraps geom.MultiPolygon for CBOR marshaling.
+type MultiPolygonGG struct {
+	geom.MultiPolygon
+}
+
+func (m *MultiPolygonGG) MarshalCBOR() ([]byte, error) {
+	n := m.NumPolygons()
+	polys := make([]*PolygonGG, n)
+	for i := 0; i < n; i++ {
+		poly := m.Polygon(i)
+		polys[i] = &PolygonGG{*geom.NewPolygonFlat(poly.Layout(), poly.FlatCoords(), poly.Ends())}
+	}
+	raw, err := cbor.Marshal(polys)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryMultiPolygon, Content: raw})
+}
+
+func (m *MultiPolygonGG) UnmarshalCBOR(data []byte) error {
+	var polys [][][][2]float64
+	if err := cbor.Unmarshal(data, &polys); err != nil {
+		return err
+	}
+	var flat []float64
+	var endss [][]int
+	for _, poly := range polys {
+		var polyEnds []int
+		for _, ring := range poly {
+			for _, c := range ring {
+				flat = append(flat, c[0], c[1])
+			}
+			polyEnds = append(polyEnds, len(flat)/2)
+		}
+		endss = append(endss, polyEnds)
+	}
+	m.MultiPolygon = *geom.NewMultiPolygonFlat(geom.XY, flat, endss)
+	return nil
+}
+
+// CollectionGG wraps geom.GeometryCollection for CBOR marshaling.
+type CollectionGG struct {
+	*geom.GeometryCollection
+}
+
+func (c *CollectionGG) MarshalCBOR() ([]byte, error) {
+	if c.GeometryCollection == nil {
+		return cbor.Marshal(nil)
+	}
+	n := c.NumGeoms()
+	geometries := make([]any, n)
+	for i := 0; i < n; i++ {
+		g := c.Geom(i)
+		switch t := g.(type) {
+		case *geom.Point:
+			geometries[i] = &PointGG{*t}
+		case *geom.LineString:
+			geometries[i] = &LineStringGG{*t}
+		case *geom.Polygon:
+			geometries[i] = &PolygonGG{*t}
+		case *geom.MultiPoint:
+			geometries[i] = &MultiPointGG{*t}
+		case *geom.MultiLineString:
+			geometries[i] = &MultiLineStringGG{*t}
+		case *geom.MultiPolygon:
+			geometries[i] = &MultiPolygonGG{*t}
+		default:
+			geometries[i] = g
+		}
+	}
+	raw, err := cbor.Marshal(geometries)
+	if err != nil {
+		return nil, err
+	}
+	return cbor.Marshal(cbor.RawTag{Number: models.TagGeometryCollection, Content: raw})
+}
+
+func (c *CollectionGG) UnmarshalCBOR(data []byte) error {
+	var geometries []cbor.RawMessage
+	if err := cbor.Unmarshal(data, &geometries); err != nil {
+		return err
+	}
+	gc := geom.NewGeometryCollection()
+	for _, raw := range geometries {
+		var tag cbor.RawTag
+		if err := cbor.Unmarshal(raw, &tag); err != nil {
+			continue
+		}
+		switch tag.Number {
+		case models.TagGeometryPoint:
+			var coords [2]float64
+			if err := cbor.Unmarshal(tag.Content, &coords); err == nil {
+				gc.MustPush(geom.NewPointFlat(geom.XY, coords[:]))
+			}
+		case models.TagGeometryLine:
+			var coords [][2]float64
+			if err := cbor.Unmarshal(tag.Content, &coords); err == nil {
+				flat := make([]float64, len(coords)*2)
+				for i, coord := range coords {
+					flat[i*2] = coord[0]
+					flat[i*2+1] = coord[1]
+				}
+				gc.MustPush(geom.NewLineStringFlat(geom.XY, flat))
+			}
+		case models.TagGeometryPolygon:
+			var rings [][][2]float64
+			if err := cbor.Unmarshal(tag.Content, &rings); err == nil {
+				var flat []float64
+				ends := make([]int, len(rings))
+				for i, ring := range rings {
+					for _, coord := range ring {
+						flat = append(flat, coord[0], coord[1])
+					}
+					ends[i] = len(flat) / 2
+				}
+				gc.MustPush(geom.NewPolygonFlat(geom.XY, flat, ends))
+			}
+		case models.TagGeometryMultiPoint:
+			var coords [][2]float64
+			if err := cbor.Unmarshal(tag.Content, &coords); err == nil {
+				flat := make([]float64, len(coords)*2)
+				for i, coord := range coords {
+					flat[i*2] = coord[0]
+					flat[i*2+1] = coord[1]
+				}
+				gc.MustPush(geom.NewMultiPointFlat(geom.XY, flat))
+			}
+		case models.TagGeometryMultiLine:
+			var lines [][][2]float64
+			if err := cbor.Unmarshal(tag.Content, &lines); err == nil {
+				var flat []float64
+				ends := make([]int, len(lines))
+				for i, line := range lines {
+					for _, coord := range line {
+						flat = append(flat, coord[0], coord[1])
+					}
+					ends[i] = len(flat) / 2
+				}
+				gc.MustPush(geom.NewMultiLineStringFlat(geom.XY, flat, ends))
+			}
+		case models.TagGeometryMultiPolygon:
+			var polys [][][][2]float64
+			if err := cbor.Unmarshal(tag.Content, &polys); err == nil {
+				var flat []float64
+				var endss [][]int
+				for _, poly := range polys {
+					var polyEnds []int
+					for _, ring := range poly {
+						for _, coord := range ring {
+							flat = append(flat, coord[0], coord[1])
+						}
+						polyEnds = append(polyEnds, len(flat)/2)
+					}
+					endss = append(endss, polyEnds)
+				}
+				gc.MustPush(geom.NewMultiPolygonFlat(geom.XY, flat, endss))
+			}
+		}
+	}
+	c.GeometryCollection = gc
+	return nil
+}

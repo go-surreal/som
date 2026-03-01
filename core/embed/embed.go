@@ -27,6 +27,7 @@ type Template struct {
 	UsesGofrsUUID        bool
 	UsesOrbGeo           bool
 	UsesSimpefeaturesGeo bool
+	UsesGoGeomGeo        bool
 }
 
 // FileCondition specifies when a file should be included in the output.
@@ -38,6 +39,7 @@ const (
 	FileIfGofrsUUID
 	FileIfOrbGeo
 	FileIfSimpefeaturesGeo
+	FileIfGoGeomGeo
 )
 
 // fileConditions maps output file paths to their inclusion conditions.
@@ -58,6 +60,10 @@ var fileConditions = map[string]FileCondition{
 	"internal/types/geo_sf.go":        FileIfSimpefeaturesGeo,
 	"internal/lib/filter.geo_sf.go":   FileIfSimpefeaturesGeo,
 	"internal/cbor/helpers_geo_sf.go": FileIfSimpefeaturesGeo,
+	// Geo files - go-geom
+	"internal/types/geo_gogeom.go":        FileIfGoGeomGeo,
+	"internal/lib/filter.geo_gogeom.go":   FileIfGoGeomGeo,
+	"internal/cbor/helpers_geo_gogeom.go": FileIfGoGeomGeo,
 }
 
 type File struct {
@@ -102,6 +108,10 @@ func Read(tmpl *Template) ([]*File, error) {
 				}
 			case FileIfSimpefeaturesGeo:
 				if !tmpl.UsesSimpefeaturesGeo {
+					return nil // Skip this file
+				}
+			case FileIfGoGeomGeo:
+				if !tmpl.UsesGoGeomGeo {
 					return nil // Skip this file
 				}
 			}

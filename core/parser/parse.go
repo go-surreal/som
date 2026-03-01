@@ -220,6 +220,7 @@ type UsedFeatures struct {
 	UsesGofrsUUID        bool
 	UsesOrbGeo           bool
 	UsesSimpefeaturesGeo bool
+	UsesGoGeomGeo        bool
 }
 
 func collectUsedFeatures(output *Output) *UsedFeatures {
@@ -241,6 +242,8 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 				features.UsesOrbGeo = true
 			case GeoPackageSimplefeatures:
 				features.UsesSimpefeaturesGeo = true
+			case GeoPackageGoGeom:
+				features.UsesGoGeomGeo = true
 			}
 		case *FieldSlice:
 			checkField(field.Field)

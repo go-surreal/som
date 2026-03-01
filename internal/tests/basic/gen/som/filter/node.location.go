@@ -10,42 +10,62 @@ var Location = newLocation[model.Location](lib.NewKey[model.Location]())
 
 func newLocation[M any](key lib.Key[M]) location[M] {
 	return location[M]{
-		Collection:      lib.NewGeoCollectionOrb[M](lib.Field(key, "collection")),
-		CreatedAt:       lib.NewTime[M](lib.Field(key, "created_at")),
-		ID:              lib.NewID[M](lib.Field(key, "id"), "location"),
-		Key:             key,
-		LineString:      lib.NewGeoLineStringOrb[M](lib.Field(key, "line_string")),
-		LineStringPtr:   lib.NewGeoLineStringOrbPtr[M](lib.Field(key, "line_string_ptr")),
-		MultiLineString: lib.NewGeoMultiLineStringOrb[M](lib.Field(key, "multi_line_string")),
-		MultiPoint:      lib.NewGeoMultiPointOrb[M](lib.Field(key, "multi_point")),
-		MultiPointPtr:   lib.NewGeoMultiPointOrbPtr[M](lib.Field(key, "multi_point_ptr")),
-		MultiPolygon:    lib.NewGeoMultiPolygonOrb[M](lib.Field(key, "multi_polygon")),
-		Name:            lib.NewString[M](lib.Field(key, "name")),
-		Point:           lib.NewGeoPointOrb[M](lib.Field(key, "point")),
-		PointPtr:        lib.NewGeoPointOrbPtr[M](lib.Field(key, "point_ptr")),
-		Polygon:         lib.NewGeoPolygonOrb[M](lib.Field(key, "polygon")),
-		PolygonPtr:      lib.NewGeoPolygonOrbPtr[M](lib.Field(key, "polygon_ptr")),
-		UpdatedAt:       lib.NewTime[M](lib.Field(key, "updated_at")),
+		Collection:        lib.NewGeoCollectionOrb[M](lib.Field(key, "collection")),
+		CreatedAt:         lib.NewTime[M](lib.Field(key, "created_at")),
+		GGLineString:      lib.NewGeoLineStringGG[M](lib.Field(key, "gg_line_string")),
+		GGLineStringPtr:   lib.NewGeoLineStringGGPtr[M](lib.Field(key, "gg_line_string_ptr")),
+		GGMultiLineString: lib.NewGeoMultiLineStringGG[M](lib.Field(key, "gg_multi_line_string")),
+		GGMultiPoint:      lib.NewGeoMultiPointGG[M](lib.Field(key, "gg_multi_point")),
+		GGMultiPointPtr:   lib.NewGeoMultiPointGGPtr[M](lib.Field(key, "gg_multi_point_ptr")),
+		GGMultiPolygon:    lib.NewGeoMultiPolygonGG[M](lib.Field(key, "gg_multi_polygon")),
+		GGPoint:           lib.NewGeoPointGG[M](lib.Field(key, "gg_point")),
+		GGPointPtr:        lib.NewGeoPointGGPtr[M](lib.Field(key, "gg_point_ptr")),
+		GGPolygon:         lib.NewGeoPolygonGG[M](lib.Field(key, "gg_polygon")),
+		GGPolygonPtr:      lib.NewGeoPolygonGGPtr[M](lib.Field(key, "gg_polygon_ptr")),
+		ID:                lib.NewID[M](lib.Field(key, "id"), "location"),
+		Key:               key,
+		LineString:        lib.NewGeoLineStringOrb[M](lib.Field(key, "line_string")),
+		LineStringPtr:     lib.NewGeoLineStringOrbPtr[M](lib.Field(key, "line_string_ptr")),
+		MultiLineString:   lib.NewGeoMultiLineStringOrb[M](lib.Field(key, "multi_line_string")),
+		MultiPoint:        lib.NewGeoMultiPointOrb[M](lib.Field(key, "multi_point")),
+		MultiPointPtr:     lib.NewGeoMultiPointOrbPtr[M](lib.Field(key, "multi_point_ptr")),
+		MultiPolygon:      lib.NewGeoMultiPolygonOrb[M](lib.Field(key, "multi_polygon")),
+		Name:              lib.NewString[M](lib.Field(key, "name")),
+		Point:             lib.NewGeoPointOrb[M](lib.Field(key, "point")),
+		PointPtr:          lib.NewGeoPointOrbPtr[M](lib.Field(key, "point_ptr")),
+		Polygon:           lib.NewGeoPolygonOrb[M](lib.Field(key, "polygon")),
+		PolygonPtr:        lib.NewGeoPolygonOrbPtr[M](lib.Field(key, "polygon_ptr")),
+		UpdatedAt:         lib.NewTime[M](lib.Field(key, "updated_at")),
 	}
 }
 
 type location[M any] struct {
 	lib.Key[M]
-	ID              *lib.ID[M]
-	CreatedAt       *lib.Time[M]
-	UpdatedAt       *lib.Time[M]
-	Name            *lib.String[M]
-	Point           *lib.GeoPointOrb[M]
-	PointPtr        *lib.GeoPointOrbPtr[M]
-	LineString      *lib.GeoLineStringOrb[M]
-	LineStringPtr   *lib.GeoLineStringOrbPtr[M]
-	Polygon         *lib.GeoPolygonOrb[M]
-	PolygonPtr      *lib.GeoPolygonOrbPtr[M]
-	MultiPoint      *lib.GeoMultiPointOrb[M]
-	MultiPointPtr   *lib.GeoMultiPointOrbPtr[M]
-	MultiLineString *lib.GeoMultiLineStringOrb[M]
-	MultiPolygon    *lib.GeoMultiPolygonOrb[M]
-	Collection      *lib.GeoCollectionOrb[M]
+	ID                *lib.ID[M]
+	CreatedAt         *lib.Time[M]
+	UpdatedAt         *lib.Time[M]
+	Name              *lib.String[M]
+	Point             *lib.GeoPointOrb[M]
+	PointPtr          *lib.GeoPointOrbPtr[M]
+	LineString        *lib.GeoLineStringOrb[M]
+	LineStringPtr     *lib.GeoLineStringOrbPtr[M]
+	Polygon           *lib.GeoPolygonOrb[M]
+	PolygonPtr        *lib.GeoPolygonOrbPtr[M]
+	MultiPoint        *lib.GeoMultiPointOrb[M]
+	MultiPointPtr     *lib.GeoMultiPointOrbPtr[M]
+	MultiLineString   *lib.GeoMultiLineStringOrb[M]
+	MultiPolygon      *lib.GeoMultiPolygonOrb[M]
+	Collection        *lib.GeoCollectionOrb[M]
+	GGPoint           *lib.GeoPointGG[M]
+	GGPointPtr        *lib.GeoPointGGPtr[M]
+	GGLineString      *lib.GeoLineStringGG[M]
+	GGLineStringPtr   *lib.GeoLineStringGGPtr[M]
+	GGPolygon         *lib.GeoPolygonGG[M]
+	GGPolygonPtr      *lib.GeoPolygonGGPtr[M]
+	GGMultiPoint      *lib.GeoMultiPointGG[M]
+	GGMultiPointPtr   *lib.GeoMultiPointGGPtr[M]
+	GGMultiLineString *lib.GeoMultiLineStringGG[M]
+	GGMultiPolygon    *lib.GeoMultiPolygonGG[M]
 }
 
 type locationEdges[M any] struct {

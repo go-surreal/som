@@ -18,6 +18,8 @@ func (f *Geometry) geoPkg() string {
 	switch f.source.Package {
 	case parser.GeoPackageSimplefeatures:
 		return def.PkgGeoSimplefeatures
+	case parser.GeoPackageGoGeom:
+		return def.PkgGeoGoGeom
 	default:
 		return def.PkgGeoOrb
 	}
@@ -26,8 +28,7 @@ func (f *Geometry) geoPkg() string {
 // geoGoTypeName returns the Go type name from the external library.
 func (f *Geometry) geoGoTypeName() string {
 	switch f.source.Package {
-	case parser.GeoPackageSimplefeatures:
-		// simplefeatures uses "GeometryCollection" instead of "Collection"
+	case parser.GeoPackageSimplefeatures, parser.GeoPackageGoGeom:
 		if f.source.Type == parser.GeometryCollection {
 			return "GeometryCollection"
 		}
@@ -42,6 +43,8 @@ func (f *Geometry) geoConvTypeName() string {
 	switch f.source.Package {
 	case parser.GeoPackageSimplefeatures:
 		return f.source.Type.String() + "SF"
+	case parser.GeoPackageGoGeom:
+		return f.source.Type.String() + "GG"
 	default:
 		return f.source.Type.String() + "Orb"
 	}
@@ -52,6 +55,8 @@ func (f *Geometry) geoFilterTypeName() string {
 	switch f.source.Package {
 	case parser.GeoPackageSimplefeatures:
 		return "Geo" + f.source.Type.String() + "SF"
+	case parser.GeoPackageGoGeom:
+		return "Geo" + f.source.Type.String() + "GG"
 	default:
 		return "Geo" + f.source.Type.String() + "Orb"
 	}
@@ -139,21 +144,28 @@ func (f *Geometry) filterInit(ctx Context) (jen.Code, jen.Code) {
 		)
 }
 
-func (f *Geometry) cborMarshal(ctx Context) jen.Code {
+func (f *Geometry) geoConvExpr(ctx Context, val jen.Code) jen.Code {
 	typeName := f.geoConvTypeName()
+	if f.source.Package == parser.GeoPackageGoGeom {
+		return jen.Qual(ctx.pkgTypes(), typeName).Values(val)
+	}
+	return jen.Qual(ctx.pkgTypes(), typeName).Call(val)
+}
+
+func (f *Geometry) cborMarshal(ctx Context) jen.Code {
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(bg *jen.Group) {
-			bg.Id("geoVal").Op(":=").Qual(ctx.pkgTypes(), typeName).Call(
+			bg.Id("geoVal").Op(":=").Add(f.geoConvExpr(ctx,
 				jen.Op("*").Id("c").Dot(f.NameGo()),
-			)
+			))
 			bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("geoVal")
 		})
 	}
 
 	return jen.BlockFunc(func(g *jen.Group) {
-		g.Id("geoVal").Op(":=").Qual(ctx.pkgTypes(), typeName).Call(
+		g.Id("geoVal").Op(":=").Add(f.geoConvExpr(ctx,
 			jen.Id("c").Dot(f.NameGo()),
-		)
+		))
 		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("geoVal")
 	})
 }

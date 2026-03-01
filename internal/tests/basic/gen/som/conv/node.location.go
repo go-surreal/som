@@ -19,7 +19,7 @@ func (c *Location) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 15)
+	data := make(map[string]any, 25)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
@@ -76,6 +76,46 @@ func (c *Location) MarshalCBOR() ([]byte, error) {
 	{
 		geoVal := types.CollectionOrb(c.Collection)
 		data["collection"] = &geoVal
+	}
+	{
+		geoVal := types.PointGG{c.GGPoint}
+		data["gg_point"] = &geoVal
+	}
+	if c.GGPointPtr != nil {
+		geoVal := types.PointGG{*c.GGPointPtr}
+		data["gg_point_ptr"] = &geoVal
+	}
+	{
+		geoVal := types.LineStringGG{c.GGLineString}
+		data["gg_line_string"] = &geoVal
+	}
+	if c.GGLineStringPtr != nil {
+		geoVal := types.LineStringGG{*c.GGLineStringPtr}
+		data["gg_line_string_ptr"] = &geoVal
+	}
+	{
+		geoVal := types.PolygonGG{c.GGPolygon}
+		data["gg_polygon"] = &geoVal
+	}
+	if c.GGPolygonPtr != nil {
+		geoVal := types.PolygonGG{*c.GGPolygonPtr}
+		data["gg_polygon_ptr"] = &geoVal
+	}
+	{
+		geoVal := types.MultiPointGG{c.GGMultiPoint}
+		data["gg_multi_point"] = &geoVal
+	}
+	if c.GGMultiPointPtr != nil {
+		geoVal := types.MultiPointGG{*c.GGMultiPointPtr}
+		data["gg_multi_point_ptr"] = &geoVal
+	}
+	{
+		geoVal := types.MultiLineStringGG{c.GGMultiLineString}
+		data["gg_multi_line_string"] = &geoVal
+	}
+	{
+		geoVal := types.MultiPolygonGG{c.GGMultiPolygon}
+		data["gg_multi_polygon"] = &geoVal
 	}
 
 	return cbor.Marshal(data)
@@ -147,6 +187,36 @@ func (c *Location) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["collection"]; ok {
 		c.Collection, _ = cbor.UnmarshalCollectionOrb(raw)
+	}
+	if raw, ok := rawMap["gg_point"]; ok {
+		c.GGPoint, _ = cbor.UnmarshalPointGG(raw)
+	}
+	if raw, ok := rawMap["gg_point_ptr"]; ok {
+		c.GGPointPtr, _ = cbor.UnmarshalPointGGPtr(raw)
+	}
+	if raw, ok := rawMap["gg_line_string"]; ok {
+		c.GGLineString, _ = cbor.UnmarshalLineStringGG(raw)
+	}
+	if raw, ok := rawMap["gg_line_string_ptr"]; ok {
+		c.GGLineStringPtr, _ = cbor.UnmarshalLineStringGGPtr(raw)
+	}
+	if raw, ok := rawMap["gg_polygon"]; ok {
+		c.GGPolygon, _ = cbor.UnmarshalPolygonGG(raw)
+	}
+	if raw, ok := rawMap["gg_polygon_ptr"]; ok {
+		c.GGPolygonPtr, _ = cbor.UnmarshalPolygonGGPtr(raw)
+	}
+	if raw, ok := rawMap["gg_multi_point"]; ok {
+		c.GGMultiPoint, _ = cbor.UnmarshalMultiPointGG(raw)
+	}
+	if raw, ok := rawMap["gg_multi_point_ptr"]; ok {
+		c.GGMultiPointPtr, _ = cbor.UnmarshalMultiPointGGPtr(raw)
+	}
+	if raw, ok := rawMap["gg_multi_line_string"]; ok {
+		c.GGMultiLineString, _ = cbor.UnmarshalMultiLineStringGG(raw)
+	}
+	if raw, ok := rawMap["gg_multi_polygon"]; ok {
+		c.GGMultiPolygon, _ = cbor.UnmarshalMultiPolygonGG(raw)
 	}
 
 	return nil

@@ -44,6 +44,16 @@ DEFINE FIELD multi_point_ptr ON TABLE location TYPE option<geometry<multipoint>>
 DEFINE FIELD multi_line_string ON TABLE location TYPE geometry<multiline>;
 DEFINE FIELD multi_polygon ON TABLE location TYPE geometry<multipolygon>;
 DEFINE FIELD collection ON TABLE location TYPE geometry<collection>;
+DEFINE FIELD gg_point ON TABLE location TYPE geometry<point>;
+DEFINE FIELD gg_point_ptr ON TABLE location TYPE option<geometry<point>>;
+DEFINE FIELD gg_line_string ON TABLE location TYPE geometry<line>;
+DEFINE FIELD gg_line_string_ptr ON TABLE location TYPE option<geometry<line>>;
+DEFINE FIELD gg_polygon ON TABLE location TYPE geometry<polygon>;
+DEFINE FIELD gg_polygon_ptr ON TABLE location TYPE option<geometry<polygon>>;
+DEFINE FIELD gg_multi_point ON TABLE location TYPE geometry<multipoint>;
+DEFINE FIELD gg_multi_point_ptr ON TABLE location TYPE option<geometry<multipoint>>;
+DEFINE FIELD gg_multi_line_string ON TABLE location TYPE geometry<multiline>;
+DEFINE FIELD gg_multi_polygon ON TABLE location TYPE geometry<multipolygon>;
 
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_types TYPE string;

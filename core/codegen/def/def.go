@@ -35,6 +35,7 @@ const (
 
 	PkgGeoOrb            = "github.com/paulmach/orb"
 	PkgGeoSimplefeatures = "github.com/peterstace/simplefeatures/geom"
+	PkgGeoGoGeom         = "github.com/twpayne/go-geom"
 )
 
 var (

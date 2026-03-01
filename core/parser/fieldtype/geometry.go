@@ -11,7 +11,9 @@ type GeometryHandler struct{}
 
 func (h *GeometryHandler) Match(elem gotype.Type, _ *parser.FieldContext) bool {
 	pkg := elem.PkgPath()
-	if pkg == string(parser.GeoPackageOrb) || pkg == string(parser.GeoPackageSimplefeatures) {
+	if pkg == string(parser.GeoPackageOrb) ||
+		pkg == string(parser.GeoPackageSimplefeatures) ||
+		pkg == string(parser.GeoPackageGoGeom) {
 		_, ok := geoTypeName(pkg, elem.Name())
 		return ok
 	}
@@ -42,16 +44,26 @@ func (h *GeometryHandler) Parse(t gotype.Type, elem gotype.Type, _ *parser.Field
 }
 
 var orbTypes = map[string]parser.GeometryType{
-	"Point":            parser.GeometryPoint,
-	"LineString":       parser.GeometryLineString,
-	"Polygon":          parser.GeometryPolygon,
-	"MultiPoint":       parser.GeometryMultiPoint,
-	"MultiLineString":  parser.GeometryMultiLineString,
-	"MultiPolygon":     parser.GeometryMultiPolygon,
-	"Collection":       parser.GeometryCollection,
+	"Point":           parser.GeometryPoint,
+	"LineString":      parser.GeometryLineString,
+	"Polygon":         parser.GeometryPolygon,
+	"MultiPoint":      parser.GeometryMultiPoint,
+	"MultiLineString": parser.GeometryMultiLineString,
+	"MultiPolygon":    parser.GeometryMultiPolygon,
+	"Collection":      parser.GeometryCollection,
 }
 
 var sfTypes = map[string]parser.GeometryType{
+	"Point":              parser.GeometryPoint,
+	"LineString":         parser.GeometryLineString,
+	"Polygon":            parser.GeometryPolygon,
+	"MultiPoint":         parser.GeometryMultiPoint,
+	"MultiLineString":    parser.GeometryMultiLineString,
+	"MultiPolygon":       parser.GeometryMultiPolygon,
+	"GeometryCollection": parser.GeometryCollection,
+}
+
+var goGeomTypes = map[string]parser.GeometryType{
 	"Point":              parser.GeometryPoint,
 	"LineString":         parser.GeometryLineString,
 	"Polygon":            parser.GeometryPolygon,
@@ -68,6 +80,9 @@ func geoTypeName(pkg string, name string) (parser.GeometryType, bool) {
 		return t, ok
 	case parser.GeoPackageSimplefeatures:
 		t, ok := sfTypes[name]
+		return t, ok
+	case parser.GeoPackageGoGeom:
+		t, ok := goGeomTypes[name]
 		return t, ok
 	}
 	return 0, false

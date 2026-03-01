@@ -206,6 +206,7 @@ type GeoPackage string
 const (
 	GeoPackageOrb            GeoPackage = "github.com/paulmach/orb"
 	GeoPackageSimplefeatures GeoPackage = "github.com/peterstace/simplefeatures/geom"
+	GeoPackageGoGeom         GeoPackage = "github.com/twpayne/go-geom"
 )
 
 type GeometryType int
