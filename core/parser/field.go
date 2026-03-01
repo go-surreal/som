@@ -246,6 +246,14 @@ func NewFieldEmail(name string) *FieldEmail {
 	return &FieldEmail{fieldAtomic: &fieldAtomic{name: name}}
 }
 
+type FieldSemVer struct {
+	*fieldAtomic
+}
+
+func NewFieldSemVer(name string) *FieldSemVer {
+	return &FieldSemVer{fieldAtomic: &fieldAtomic{name: name}}
+}
+
 type FieldNode struct {
 	*fieldAtomic
 	Node string

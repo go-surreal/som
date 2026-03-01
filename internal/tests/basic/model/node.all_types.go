@@ -118,6 +118,11 @@ type AllTypes struct {
 	FieldEmailNil   *som.Email
 	FieldEmailSlice []som.Email
 
+	FieldSemVer      som.SemVer
+	FieldSemVerPtr   *som.SemVer
+	FieldSemVerNil   *som.SemVer
+	FieldSemVerSlice []som.SemVer
+
 	// enums
 
 	FieldEnum            Role

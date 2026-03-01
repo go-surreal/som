@@ -62,6 +62,10 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldRenamed:            distinct.NewField[M, string](keyed(key, "custom_name")),
 		FieldRune:               distinct.NewField[M, rune](keyed(key, "field_rune")),
 		FieldRuneSlice:          distinct.NewField[M, rune](keyed(key, "field_rune_slice")),
+		FieldSemVer:             distinct.NewField[M, som.SemVer](keyed(key, "field_sem_ver")),
+		FieldSemVerNil:          distinct.NewField[M, som.SemVer](keyed(key, "field_sem_ver_nil")),
+		FieldSemVerPtr:          distinct.NewField[M, som.SemVer](keyed(key, "field_sem_ver_ptr")),
+		FieldSemVerSlice:        distinct.NewField[M, som.SemVer](keyed(key, "field_sem_ver_slice")),
 		FieldString:             distinct.NewField[M, string](keyed(key, "field_string")),
 		FieldStringPtr:          distinct.NewField[M, string](keyed(key, "field_string_ptr")),
 		FieldStringPtrSlice:     distinct.NewField[M, string](keyed(key, "field_string_ptr_slice")),
@@ -165,6 +169,10 @@ type allTypes[M any] struct {
 	FieldEmailPtr           distinct.Field[M, som.Email]
 	FieldEmailNil           distinct.Field[M, som.Email]
 	FieldEmailSlice         distinct.Field[M, som.Email]
+	FieldSemVer             distinct.Field[M, som.SemVer]
+	FieldSemVerPtr          distinct.Field[M, som.SemVer]
+	FieldSemVerNil          distinct.Field[M, som.SemVer]
+	FieldSemVerSlice        distinct.Field[M, som.SemVer]
 	FieldEnum               distinct.Field[M, model.Role]
 	FieldEnumPtr            distinct.Field[M, model.Role]
 	FieldEnumSlice          distinct.Field[M, model.Role]
