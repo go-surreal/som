@@ -33,9 +33,9 @@ func (f *SemVer) TypeDatabase() string {
 func (f *SemVer) SchemaStatements(table, prefix string) []string {
 	var extend string
 	if f.source.Pointer() {
-		extend = "ASSERT $value == NONE OR $value == NULL OR string::is::semver($value)"
+		extend = "ASSERT $value == NONE OR $value == NULL OR string::is_semver($value)"
 	} else {
-		extend = `ASSERT $value == "" OR string::is::semver($value)`
+		extend = `ASSERT $value == "" OR string::is_semver($value)`
 	}
 
 	return []string{
