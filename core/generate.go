@@ -69,10 +69,6 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		wirePackage = mod.WirePackage()
 	}
 
-	if err := mod.Save(); err != nil {
-		return err
-	}
-
 	outPkg := path.Join(mod.Module(), strings.TrimPrefix(absDir, mod.Dir()))
 
 	out := fs.New()
@@ -117,6 +113,14 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		}
 
 		usedFeatures = source.UsedFeatures
+
+		if err := checkLibVersions(mod, usedFeatures); err != nil {
+			return err
+		}
+	}
+
+	if err := mod.Save(); err != nil {
+		return err
 	}
 
 	// Generate static files with feature flags from parsing.
@@ -149,4 +153,33 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 	}
 
 	return out.Flush(absDir)
+}
+
+func checkLibVersions(mod *gomod.GoMod, features *parser.UsedFeatures) error {
+	if features.UsesGoogleUUID {
+		if err := mod.CheckLibVersion(gomod.PkgUUIDGoogle, gomod.MinUUIDGoogleVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesGofrsUUID {
+		if err := mod.CheckLibVersion(gomod.PkgUUIDGofrs, gomod.MinUUIDGofrsVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesOrbGeo {
+		if err := mod.CheckLibVersion(gomod.PkgGeoOrb, gomod.MinGeoOrbVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesSimplefeaturesGeo {
+		if err := mod.CheckLibVersion(gomod.PkgGeoSimplefeatures, gomod.MinGeoSimplefeaturesVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesGoGeomGeo {
+		if err := mod.CheckLibVersion(gomod.PkgGeoGoGeom, gomod.MinGeoGoGeomVersion); err != nil {
+			return err
+		}
+	}
+	return nil
 }
