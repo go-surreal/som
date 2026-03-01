@@ -4,10 +4,21 @@ import (
 	"fmt"
 
 	"github.com/go-surreal/som/core/parser"
+	"github.com/iancoleman/strcase"
 )
 
 func validateFields(typeName string, fields []parser.Field, output *parser.Output) error {
+	seen := make(map[string]string, len(fields)) // dbName -> Go field name
 	for _, f := range fields {
+		dbName := f.DBName()
+		if dbName == "" {
+			dbName = strcase.ToSnake(f.Name())
+		}
+		if prev, ok := seen[dbName]; ok {
+			return fmt.Errorf("%s: fields %q and %q both map to database name %q", typeName, prev, f.Name(), dbName)
+		}
+		seen[dbName] = f.Name()
+
 		if err := validateField(typeName, f, output); err != nil {
 			return err
 		}
