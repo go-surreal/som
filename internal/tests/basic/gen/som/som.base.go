@@ -3,85 +3,137 @@
 package som
 
 import (
+	"context"
+	"encoding/hex"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // ErrOptimisticLock is returned when an update fails due to a version mismatch.
 // This indicates another process has modified the record since it was read.
-var ErrOptimisticLock = errors.New("optimistic lock: version mismatch")
+var ErrOptimisticLock = errors.New("optimistic lock has version mismatch")
 
-type ID = models.RecordID
+// ErrAlreadyDeleted is returned when a soft delete is attempted on a record that is already deleted.
+var ErrAlreadyDeleted = errors.New("soft delete record is already deleted")
 
-// NewRecordID creates a new RecordID with the given table and ID.
-// This is a convenience wrapper to avoid importing surrealdb.go directly.
-func NewRecordID(table string, id any) ID {
-	return models.NewRecordID(table, id)
+// ErrNotFound is returned when a query or operation finds no matching record.
+var ErrNotFound = errors.New("not found")
+
+// ErrNilID is returned when a nil ID is passed to an operation that requires a valid ID.
+var ErrNilID = errors.New("id cannot be nil")
+
+// ErrEmptyID is returned when an empty ID string is passed to an operation that requires a valid ID.
+var ErrEmptyID = errors.New("id cannot be empty")
+
+// ErrEmptyResponse is returned when the database returns an unexpected empty response.
+var ErrEmptyResponse = errors.New("empty response")
+
+// ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
+var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
+
+// nodeID is a marker type for all ID types.
+type nodeID interface {
+    isNodeID()
 }
 
-// MakeID creates a pointer to a RecordID with the given table and ID.
-func MakeID(table string, id any) *ID {
-	recordID := NewRecordID(table, id)
-	return &recordID
+type ULID string
+type UUID string
+type Rand string
+
+func (ULID) isNodeID() {}
+func (UUID) isNodeID() {}
+func (Rand) isNodeID() {}
+
+// ArrayID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an array.
+type ArrayID struct{}
+
+func (ArrayID) isNodeID() {}
+
+// ObjectID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an object.
+type ObjectID struct{}
+
+func (ObjectID) isNodeID() {}
+
+type rangeBound struct {
+	val       any
+	inclusive bool
+	open      bool
 }
 
-// Table creates a RecordID representing a table (for server-generated IDs).
-// This is a convenience wrapper to avoid importing surrealdb.go directly.
-func Table(name string) models.Table {
-	return models.Table(name)
-}
+func (b rangeBound) Value() any        { return b.val }
+func (b rangeBound) IsInclusive() bool { return b.inclusive }
+func (b rangeBound) IsOpen() bool      { return b.open }
 
-// type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
+type RangeFrom struct{ rangeBound }
+type RangeTo struct{ rangeBound }
 
-type Node struct {
-	id *ID
-}
+func From[T nodeID](val T) RangeFrom         { return RangeFrom{rangeBound{val: val, inclusive: true}} }
+func FromExclusive[T nodeID](val T) RangeFrom { return RangeFrom{rangeBound{val: val, inclusive: false}} }
+func FromStart() RangeFrom                     { return RangeFrom{rangeBound{open: true}} }
 
-func NewNode(id *ID) Node {
-	return Node{
-		id: id,
+func To[T nodeID](val T) RangeTo             { return RangeTo{rangeBound{val: val, inclusive: false}} }
+func ToInclusive[T nodeID](val T) RangeTo     { return RangeTo{rangeBound{val: val, inclusive: true}} }
+func ToEnd() RangeTo                           { return RangeTo{rangeBound{open: true}} }
+
+func (u UUID) MarshalCBOR() ([]byte, error) {
+	if u == "" {
+		return nil, fmt.Errorf("cannot marshal empty UUID")
 	}
+	s := strings.ReplaceAll(string(u), "-", "")
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID hex: %w", err)
+	}
+	if len(b) != 16 {
+		return nil, fmt.Errorf("UUID must be 16 bytes, got %d", len(b))
+	}
+	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-func (n Node) ID() *ID {
-	return n.id
+type Node[T nodeID] struct {
+	id T
 }
+
+func NewNode[T nodeID](id T) Node[T] {
+	return Node[T]{id: id}
+}
+
+func (n Node[T]) ID() T { return n.id }
+
+func (Node[T]) isNode() {}
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
-	id *ID
+	id string
 }
 
-func NewEdge(id *ID) Edge {
+func NewEdge(id string) Edge {
 	return Edge{
 		id: id,
 	}
 }
 
-func (e Edge) ID() *ID {
+func (e Edge) ID() string {
 	return e.id
+}
+
+type node interface{ isNode() }
+
+func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
+	return internal.WithCache[T](ctx, opts...)
 }
 
 type Timestamps = internal.Timestamps
 type OptimisticLock = internal.OptimisticLock
-
-// TODO: implement soft delete feature
-// type SoftDelete struct {
-// 	deletedAt time.Time
-// }
-//
-// func NewSoftDelete(deletedAt time.Time) SoftDelete {
-// 	return SoftDelete{
-// 		deletedAt: deletedAt,
-// 	}
-// }
-//
-// func (t SoftDelete) DeletedAt() time.Time {
-// 	return t.deletedAt
-// }
+type SoftDelete = internal.SoftDelete
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
@@ -98,7 +150,7 @@ type Email string
 // Example:
 //
 //	type User struct {
-//	    som.Node
+//	    som.Node[som.ULID]
 //	    Password som.Password[som.Bcrypt]
 //	}
 type Password[A PasswordAlgorithm] string
@@ -153,6 +205,66 @@ type SemVer string
 // 	Status  string
 // 	Message string
 // }
+
+// OnBeforeCreateHook can be implemented by model structs to run logic
+// before a new record is created. If the hook returns an error,
+// the create operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeCreateHook interface {
+	OnBeforeCreate(ctx context.Context) error
+}
+
+// OnAfterCreateHook can be implemented by model structs to run logic
+// after a new record has been created. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterCreateHook interface {
+	OnAfterCreate(ctx context.Context) error
+}
+
+// OnBeforeUpdateHook can be implemented by model structs to run logic
+// before an existing record is updated. If the hook returns an error,
+// the update operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeUpdateHook interface {
+	OnBeforeUpdate(ctx context.Context) error
+}
+
+// OnAfterUpdateHook can be implemented by model structs to run logic
+// after an existing record has been updated. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterUpdateHook interface {
+	OnAfterUpdate(ctx context.Context) error
+}
+
+// OnBeforeDeleteHook can be implemented by model structs to run logic
+// before a record is deleted. If the hook returns an error,
+// the delete operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeDeleteHook interface {
+	OnBeforeDelete(ctx context.Context) error
+}
+
+// OnAfterDeleteHook can be implemented by model structs to run logic
+// after a record has been deleted. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterDeleteHook interface {
+	OnAfterDelete(ctx context.Context) error
+}
 
 // TODO: below needed?
 // type Entity interface {

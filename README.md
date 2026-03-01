@@ -8,7 +8,7 @@
 <hr />
 
 <p align="center">
-    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.24.10-informational" alt="Go 1.24.10"></a>
+    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.25.7-informational" alt="Go 1.25.7"></a>
     &nbsp;
     <a href="https://goreportcard.com/report/github.com/go-surreal/som"><img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card"></a>
     &nbsp;
@@ -54,7 +54,7 @@ This facilitates multi-table, multi-depth document retrieval without complex JOI
 ## Getting started
 
 *Please note: This package is currently tested against version 
-[2.4.0](https://surrealdb.com/releases#v2-4-0)
+[3.0.0](https://surrealdb.com/releases#v3-0-0)
 of SurrealDB.*
 
 ### Disclaimer
@@ -145,7 +145,7 @@ import (
     "log"
     
     "<root>/gen/som"
-    "<root>/gen/som/where"
+    "<root>/gen/som/filter"
     "<root>/model"
 )
 
@@ -180,8 +180,8 @@ func main() {
 		
     // query the user by email
     read, err := client.UserRepo().Query().
-        Filter(
-            where.User.Email.Equal("test@example.com"),
+        Where(
+            filter.User.Email.Equal("test@example.com"),
         ).
         First(ctx)
 
@@ -220,8 +220,8 @@ As soon as this is fixed, Som will support these types as well.
 - [x] `time.Time`
 - [x] `time.Duration`
 - [ ] `time.Location`
-- [ ] `time.Weekday`?
-- [ ] `time.Month` etc.?
+- [x] `time.Weekday`
+- [x] `time.Month`
 - [ ] `big.Int`
 - [ ] `big.Float`
 - [x] `url.URL`

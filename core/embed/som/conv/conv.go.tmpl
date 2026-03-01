@@ -1,0 +1,79 @@
+{{- /* gotype: github.com/go-surreal/som/core/embed.Template */ -}}
+//go:build embed
+
+package conv
+
+import (
+	"net/url"
+
+	"{{.GenerateOutPath}}"
+)
+
+//
+// -- URL
+//
+
+func fromURL(val url.URL) string {
+	return val.String()
+}
+
+func fromURLPtr(val *url.URL) *string {
+	if val == nil {
+		return nil
+	}
+
+	str := val.String()
+	return &str
+}
+
+func toURL(val string) url.URL {
+	res, err := url.Parse(val)
+	if err != nil {
+		// TODO: add logging!
+		return url.URL{}
+	}
+
+	return *res
+}
+
+func toURLPtr(val *string) *url.URL {
+	if val == nil {
+		return nil
+	}
+
+	res, err := url.Parse(*val)
+	if err != nil {
+		// TODO: add logging!
+		return nil
+	}
+
+	return res
+}
+
+//
+// -- EMAIL
+//
+
+func fromEmail(val som.Email) string {
+	return string(val)
+}
+
+func fromEmailPtr(val *som.Email) *string {
+	if val == nil {
+		return nil
+	}
+	str := string(*val)
+	return &str
+}
+
+func toEmail(val string) som.Email {
+	return som.Email(val)
+}
+
+func toEmailPtr(val *string) *som.Email {
+	if val == nil {
+		return nil
+	}
+	email := som.Email(*val)
+	return &email
+}

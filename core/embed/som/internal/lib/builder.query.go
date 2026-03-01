@@ -10,7 +10,6 @@ import (
 
 const (
 	somPrefix             = "__som__"
-	sortFieldPrefix       = somPrefix + "sort_"
 	searchScorePrefix     = somPrefix + "search_score_"
 	searchHighlightPrefix = somPrefix + "search_highlight_"
 	searchOffsetsPrefix   = somPrefix + "search_offsets_"
@@ -44,14 +43,23 @@ type Query[T any] struct {
 	Sort       []*SortBuilder
 	SortRandom bool
 	Fetch      []string
-	Offset     int
+	Start      int
 	Limit      int
 	Timeout    time.Duration
 	Parallel   bool
 	TempFiles  bool
+	RangeExpr  string
 
 	SearchClauses []SearchClause
 	SearchWhere   string
+
+	// Soft delete support for main queries (not fetched relations)
+	SoftDeleteFilter Filter[T] // Injected at initialization
+	IncludeDeleted   bool      // Flag to skip soft delete filter
+}
+
+func (q *Query[T]) AsVar(val any) string {
+	return q.context.asVar(val)
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -112,6 +120,20 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 	}
 }
 
+func (q Query[T]) BuildDistinct(field string) *Result {
+	q.fields = []string{"array::distinct(array::group(" + field + ")) AS values"}
+	q.groupAll = true
+
+	q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
+		return "(" + field + " != NONE AND " + field + " != NULL)"
+	}))
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
 func (q Query[T]) render() string {
 	var out strings.Builder
 
@@ -122,12 +144,6 @@ func (q Query[T]) render() string {
 	}
 
 	fields := q.fields
-	for _, s := range q.Sort {
-		if s.IsScore {
-			continue
-		}
-		fields = append(fields, s.Field+" as "+sortFieldPrefix+s.Field)
-	}
 
 	// Add search score, highlight, and offset projections
 	for _, sc := range q.SearchClauses {
@@ -167,17 +183,25 @@ func (q Query[T]) render() string {
 	//	out.WriteString(strings.Join(omitFields, ", "))
 	//}
 
-	out.WriteString(" FROM " + q.node)
+	out.WriteString(" FROM " + q.node + q.RangeExpr)
 
-	// Build WHERE clause combining search and regular filters
+	// Build WHERE clause combining soft delete, search and regular filters
 	var whereParts []string
 
-	// Add search conditions first
+	// 1. Inject soft delete filter FIRST (if enabled and not disabled)
+	if !q.IncludeDeleted && q.SoftDeleteFilter != nil {
+		var t T
+		if sdFilter := q.SoftDeleteFilter.build(&q.context, t); sdFilter != "" {
+			whereParts = append(whereParts, sdFilter)
+		}
+	}
+
+	// 2. Add search conditions
 	if q.SearchWhere != "" {
 		whereParts = append(whereParts, q.SearchWhere)
 	}
 
-	// Add regular filters
+	// 3. Add regular filters
 	var t T
 	filterWhere := All[T](q.Where).build(&q.context, t)
 	if filterWhere != "" {
@@ -216,13 +240,16 @@ func (q Query[T]) render() string {
 	}
 
 	// START must come after LIMIT.
-	if !q.live && q.Offset > 0 {
+	if !q.live && q.Start > 0 {
 		out.WriteString(" START ")
-		out.WriteString(strconv.Itoa(q.Offset))
+		out.WriteString(strconv.Itoa(q.Start))
 	}
 
 	if len(q.Fetch) > 0 {
 		out.WriteString(" FETCH ")
+		// Note: Soft-delete filtering does NOT apply to fetched relations.
+		// All related records are returned regardless of their soft-delete status.
+		// Users should filter manually using IsDeleted() if needed.
 		out.WriteString(strings.Join(q.Fetch, ", "))
 	}
 

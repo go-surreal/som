@@ -70,14 +70,14 @@ SOM generates filters for nested struct fields:
 ```go
 // Filter by nested field
 users, err := client.UserRepo().Query().
-    Filter(where.User.Address.City.Equal("Berlin")).
+    Where(filter.User.Address.City.Equal("Berlin")).
     All(ctx)
 
 // Multiple nested filters
 users, err := client.UserRepo().Query().
-    Filter(
-        where.User.Address.Country.Equal("Germany"),
-        where.User.Address.City.Contains("Ber"),
+    Where(
+        filter.User.Address.Country.Equal("Germany"),
+        filter.User.Address.City.Contains("Ber"),
     ).
     All(ctx)
 ```
@@ -108,7 +108,7 @@ Filter on deeply nested fields:
 ```go
 // Filter by latitude
 users, err := client.UserRepo().Query().
-    Filter(where.User.Address.Coordinates.Lat.GreaterThan(52.0)).
+    Where(filter.User.Address.Coordinates.Lat.GreaterThan(52.0)).
     All(ctx)
 ```
 
@@ -165,8 +165,8 @@ type Company struct {
 
 SOM generates separate filter definitions for each usage:
 ```go
-where.User.Contact.Email.Equal("...")
-where.Company.Contact.Email.Equal("...")
+filter.User.Contact.Email.Equal("...")
+filter.Company.Contact.Email.Equal("...")
 ```
 
 ## Struct with Special Types

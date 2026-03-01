@@ -35,12 +35,20 @@ type search[M any] struct {
 	hlSuffix   string
 	highlights bool
 	offsets    bool
+	boolOr     bool
 }
 
 // NewSearch creates a full-text search condition for the given key and terms.
 // This is called by generated code for search-indexed string fields.
 func NewSearch[M any](key Key[M], terms string) Search[M] {
 	return &search[M]{key: key, terms: terms}
+}
+
+// NewSearchOr creates a full-text search condition that uses OR boolean mode.
+// With OR mode, documents matching ANY of the search terms will be returned,
+// rather than requiring ALL terms to match (the default AND behavior).
+func NewSearchOr[M any](key Key[M], terms string) Search[M] {
+	return &search[M]{key: key, terms: terms, boolOr: true}
 }
 
 // Ref sets an explicit predicate reference for this search condition.
@@ -72,10 +80,14 @@ func (s *search[M]) build(ctx *context, autoRef int) SearchClause {
 		ref = *s.ref
 	}
 
-	// Render: field @ref@ $terms
+	refStr := strconv.Itoa(ref)
+	if s.boolOr {
+		refStr += ",OR"
+	}
+
 	sql := strings.TrimPrefix(s.key.render(ctx), ".") +
-		" @" + strconv.Itoa(ref) + "@ " +
-		ctx.asVar(s.terms)
+		" @" + refStr + "@ '" +
+		escapeSearchTerms(s.terms) + "'"
 
 	return SearchClause{
 		SQL:        sql,
@@ -85,6 +97,12 @@ func (s *search[M]) build(ctx *context, autoRef int) SearchClause {
 		HLSuffix:   s.hlSuffix,
 		Offsets:    s.offsets,
 	}
+}
+
+func escapeSearchTerms(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `'`, `\'`)
+	return s
 }
 
 // BuildSearchOr combines multiple search conditions with OR and returns the SQL and clauses.

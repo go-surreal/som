@@ -19,13 +19,13 @@ All builder methods return the builder for chaining.
 Add WHERE conditions. Multiple filters are ANDed together:
 
 ```go
-Query().Filter(conditions...)
+Query().Where(conditions...)
 ```
 
 ```go
-query.Filter(
-    where.User.IsActive.IsTrue(),
-    where.User.Age.GreaterThan(18),
+query.Where(
+    filter.User.IsActive.IsTrue(),
+    filter.User.Age.GreaterThan(18),
 )
 ```
 
@@ -38,7 +38,7 @@ Query().Search(searches...)
 ```
 
 ```go
-query.Search(where.Article.Content.Matches("golang tutorial"))
+query.Search(filter.Article.Content.Matches("golang tutorial"))
 ```
 
 ### SearchAll
@@ -51,8 +51,8 @@ Query().SearchAll(searches...)
 
 ```go
 query.SearchAll(
-    where.Article.Content.Matches("golang"),
-    where.Article.Content.Matches("tutorial"),
+    filter.Article.Content.Matches("golang"),
+    filter.Article.Content.Matches("tutorial"),
 )
 ```
 
@@ -132,7 +132,7 @@ Query().TempFiles(enabled bool)
 ```go
 // Process large result sets using temporary files instead of memory
 users, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Limit(100000).
     TempFiles(true).
     All(ctx)
@@ -154,7 +154,7 @@ func (b Builder) All(ctx context.Context) ([]*Model, error)
 
 ```go
 users, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     All(ctx)
 ```
 
@@ -173,7 +173,7 @@ Returns:
 
 ```go
 user, exists, err := client.UserRepo().Query().
-    Filter(where.User.Email.Equal("john@example.com")).
+    Where(filter.User.Email.Equal("john@example.com")).
     First(ctx)
 
 if exists {
@@ -191,7 +191,7 @@ func (b Builder) One(ctx context.Context) (*Model, bool, error)
 
 ```go
 user, exists, err := client.UserRepo().Query().
-    Filter(where.User.Email.Equal("john@example.com")).
+    Where(filter.User.Email.Equal("john@example.com")).
     One(ctx)
 ```
 
@@ -205,7 +205,7 @@ func (b Builder) Count(ctx context.Context) (int, error)
 
 ```go
 count, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Count(ctx)
 ```
 
@@ -219,7 +219,7 @@ func (b Builder) Exists(ctx context.Context) (bool, error)
 
 ```go
 exists, err := client.UserRepo().Query().
-    Filter(where.User.Email.Equal("john@example.com")).
+    Where(filter.User.Email.Equal("john@example.com")).
     Exists(ctx)
 ```
 
@@ -233,7 +233,7 @@ func (b Builder) Live(ctx context.Context) (<-chan LiveResult[Model], error)
 
 ```go
 updates, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Live(ctx)
 
 for update := range updates {
@@ -255,7 +255,7 @@ func (b Builder) AllMatches(ctx context.Context) ([]SearchResult[Model], error)
 
 ```go
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang")).
+    Search(filter.Article.Content.Matches("golang")).
     AllMatches(ctx)
 
 for _, result := range results {
@@ -273,7 +273,7 @@ func (b Builder) FirstMatch(ctx context.Context) (*SearchResult[Model], bool, er
 
 ```go
 result, found, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang")).
+    Search(filter.Article.Content.Matches("golang")).
     FirstMatch(ctx)
 
 if found {
@@ -296,7 +296,7 @@ func (b Builder) Iterate(ctx context.Context, batchSize int) iter.Seq2[*Model, e
 ```go
 // Process all active users in batches of 100
 for user, err := range client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Iterate(ctx, 100) {
 
     if err != nil {
@@ -372,7 +372,7 @@ Every execution method has an async variant that returns immediately:
 ```go
 // Start query in background
 result := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     AllAsync(ctx)
 
 // Do other work...
@@ -466,8 +466,8 @@ query.Score(0, 1).Weighted(2.0, 0.5).Desc() // Weighted combination
 ```go
 results, err := client.ArticleRepo().Query().
     Search(
-        where.Article.Title.Matches("golang").Ref(0),
-        where.Article.Content.Matches("golang").Ref(1),
+        filter.Article.Title.Matches("golang").Ref(0),
+        filter.Article.Content.Matches("golang").Ref(1),
     ).
     Order(query.Score(0, 1).Weighted(2.0, 1.0).Desc()).
     AllMatches(ctx)
@@ -479,12 +479,12 @@ results, err := client.ArticleRepo().Query().
 // Complex query with all features
 users, err := client.UserRepo().Query().
     // Filter conditions
-    Filter(
-        where.User.IsActive.IsTrue(),
-        where.User.Age.GreaterThanOrEqual(18),
-        where.Any(
-            where.User.Role.Equal("admin"),
-            where.User.Role.Equal("moderator"),
+    Where(
+        filter.User.IsActive.IsTrue(),
+        filter.User.Age.GreaterThanOrEqual(18),
+        filter.Any(
+            filter.User.Role.Equal("admin"),
+            filter.User.Role.Equal("moderator"),
         ),
     ).
     // Sorting
@@ -509,7 +509,7 @@ users, err := client.UserRepo().Query().
 ```go
 func GetPage(ctx context.Context, page, pageSize int) ([]*model.User, error) {
     return client.UserRepo().Query().
-        Filter(where.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.IsTrue()).
         Order(by.User.CreatedAt.Desc()).
         Limit(pageSize).
         Offset((page - 1) * pageSize).
@@ -519,7 +519,7 @@ func GetPage(ctx context.Context, page, pageSize int) ([]*model.User, error) {
 // Get total for pagination UI
 func GetTotal(ctx context.Context) (int, error) {
     return client.UserRepo().Query().
-        Filter(where.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.IsTrue()).
         Count(ctx)
 }
 ```
@@ -531,7 +531,7 @@ Queries can be built incrementally:
 ```go
 // Base query
 baseQuery := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue())
+    Where(filter.User.IsActive.IsTrue())
 
 // Different executions
 count, _ := baseQuery.Count(ctx)

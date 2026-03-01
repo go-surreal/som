@@ -4,16 +4,21 @@ import "github.com/dave/jennifer/jen"
 
 const (
 	PkgQuery  = "query"
-	PkgFilter = "where"
+	PkgFilter = "filter"
 	PkgSort   = "by"
 	PkgFetch  = "with"
 	PkgConv   = "conv"
 	PkgRelate = "relate"
-	PkgRepo   = "repo"
+	PkgIndex  = "index"
+	PkgField  = "field"
+	PkgRepo    = "repo"
+	PkgSomWire = "somwire"
 
+	PkgInternal    = "internal"
 	PkgLib         = "internal/lib"
 	PkgTypes       = "internal/types"
 	PkgCBORHelpers = "internal/cbor"
+	PkgDistinct    = "internal/distinct"
 
 	IndexPrefix = "__som__"
 )

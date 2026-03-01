@@ -16,48 +16,40 @@ func TestOptimisticLock(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	// Create a new Group record
-	group := model.Group{
-		Name: "Test Group",
+	record := model.SpecialTypes{
+		Name: "Test Record",
 	}
 
-	err := client.GroupRepo().Create(ctx, &group)
+	err := client.SpecialTypesRepo().Create(ctx, &record)
 	assert.NilError(t, err)
-	assert.Assert(t, group.ID() != nil)
+	assert.Assert(t, record.ID() != "")
 
-	// Verify initial version is 1
-	assert.Equal(t, 1, group.Version())
+	assert.Equal(t, 1, record.Version())
 
-	// Update the record - should succeed and increment version
-	group.Name = "Updated Group"
-	err = client.GroupRepo().Update(ctx, &group)
+	record.Name = "Updated Record"
+	err = client.SpecialTypesRepo().Update(ctx, &record)
 	assert.NilError(t, err)
-	assert.Equal(t, 2, group.Version())
+	assert.Equal(t, 2, record.Version())
 
-	// Read a fresh copy of the same record (simulating another process)
-	staleGroup, exists, err := client.GroupRepo().Read(ctx, group.ID())
+	staleRecord, exists, err := client.SpecialTypesRepo().Read(ctx, string(record.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
-	assert.Equal(t, 2, staleGroup.Version())
+	assert.Equal(t, 2, staleRecord.Version())
 
-	// Update the original copy - version becomes 3
-	group.Name = "Updated Again"
-	err = client.GroupRepo().Update(ctx, &group)
+	record.Name = "Updated Again"
+	err = client.SpecialTypesRepo().Update(ctx, &record)
 	assert.NilError(t, err)
-	assert.Equal(t, 3, group.Version())
+	assert.Equal(t, 3, record.Version())
 
-	// Try to update the stale copy (still has version 2)
-	// This should fail with ErrOptimisticLock
-	staleGroup.Name = "Stale Update"
-	err = client.GroupRepo().Update(ctx, staleGroup)
+	staleRecord.Name = "Stale Update"
+	err = client.SpecialTypesRepo().Update(ctx, staleRecord)
 	assert.Assert(t, err != nil, "expected error from stale update")
 	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock),
 		"expected ErrOptimisticLock, got: %v", err)
 
-	// Verify the record was not updated with stale data
-	finalGroup, exists, err := client.GroupRepo().Read(ctx, group.ID())
+	finalRecord, exists, err := client.SpecialTypesRepo().Read(ctx, string(record.ID()))
 	assert.NilError(t, err)
 	assert.Assert(t, exists)
-	assert.Equal(t, "Updated Again", finalGroup.Name)
-	assert.Equal(t, 3, finalGroup.Version())
+	assert.Equal(t, "Updated Again", finalRecord.Name)
+	assert.Equal(t, 3, finalRecord.Version())
 }

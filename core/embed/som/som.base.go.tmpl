@@ -1,0 +1,278 @@
+{{- /* gotype: github.com/go-surreal/som/core/embed.Template */ -}}
+//go:build embed
+
+package som
+
+import (
+	"context"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"strings"
+
+	"{{.GenerateOutPath}}/internal"
+	"{{.GenerateOutPath}}/internal/cbor"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
+)
+
+// ErrOptimisticLock is returned when an update fails due to a version mismatch.
+// This indicates another process has modified the record since it was read.
+var ErrOptimisticLock = errors.New("optimistic lock has version mismatch")
+
+// ErrAlreadyDeleted is returned when a soft delete is attempted on a record that is already deleted.
+var ErrAlreadyDeleted = errors.New("soft delete record is already deleted")
+
+// ErrNotFound is returned when a query or operation finds no matching record.
+var ErrNotFound = errors.New("not found")
+
+// ErrNilID is returned when a nil ID is passed to an operation that requires a valid ID.
+var ErrNilID = errors.New("id cannot be nil")
+
+// ErrEmptyID is returned when an empty ID string is passed to an operation that requires a valid ID.
+var ErrEmptyID = errors.New("id cannot be empty")
+
+// ErrEmptyResponse is returned when the database returns an unexpected empty response.
+var ErrEmptyResponse = errors.New("empty response")
+
+// ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
+var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
+
+// nodeID is a marker type for all ID types.
+type nodeID interface {
+    isNodeID()
+}
+
+type ULID string
+type UUID string
+type Rand string
+
+func (ULID) isNodeID() {}
+func (UUID) isNodeID() {}
+func (Rand) isNodeID() {}
+
+// ArrayID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an array.
+type ArrayID struct{}
+
+func (ArrayID) isNodeID() {}
+
+// ObjectID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an object.
+type ObjectID struct{}
+
+func (ObjectID) isNodeID() {}
+
+type rangeBound struct {
+	val       any
+	inclusive bool
+	open      bool
+}
+
+func (b rangeBound) Value() any        { return b.val }
+func (b rangeBound) IsInclusive() bool { return b.inclusive }
+func (b rangeBound) IsOpen() bool      { return b.open }
+
+type RangeFrom struct{ rangeBound }
+type RangeTo struct{ rangeBound }
+
+func From[T nodeID](val T) RangeFrom         { return RangeFrom{rangeBound{val: val, inclusive: true}} }
+func FromExclusive[T nodeID](val T) RangeFrom { return RangeFrom{rangeBound{val: val, inclusive: false}} }
+func FromStart() RangeFrom                     { return RangeFrom{rangeBound{open: true}} }
+
+func To[T nodeID](val T) RangeTo             { return RangeTo{rangeBound{val: val, inclusive: false}} }
+func ToInclusive[T nodeID](val T) RangeTo     { return RangeTo{rangeBound{val: val, inclusive: true}} }
+func ToEnd() RangeTo                           { return RangeTo{rangeBound{open: true}} }
+
+func (u UUID) MarshalCBOR() ([]byte, error) {
+	if u == "" {
+		return nil, fmt.Errorf("cannot marshal empty UUID")
+	}
+	s := strings.ReplaceAll(string(u), "-", "")
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID hex: %w", err)
+	}
+	if len(b) != 16 {
+		return nil, fmt.Errorf("UUID must be 16 bytes, got %d", len(b))
+	}
+	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
+}
+
+type Node[T nodeID] struct {
+	id T
+}
+
+func NewNode[T nodeID](id T) Node[T] {
+	return Node[T]{id: id}
+}
+
+func (n Node[T]) ID() T { return n.id }
+
+func (Node[T]) isNode() {}
+
+// Edge describes an edge between two Node elements.
+// It may have its own fields.
+type Edge struct {
+	id string
+}
+
+func NewEdge(id string) Edge {
+	return Edge{
+		id: id,
+	}
+}
+
+func (e Edge) ID() string {
+	return e.id
+}
+
+type node interface{ isNode() }
+
+func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
+	return internal.WithCache[T](ctx, opts...)
+}
+
+type Timestamps = internal.Timestamps
+type OptimisticLock = internal.OptimisticLock
+type SoftDelete = internal.SoftDelete
+
+// Enum describes a database type with a fixed set of allowed values.
+type Enum string
+
+// Email describes a string field that should contain an email address.
+type Email string
+
+// Password describes a string field that contains a password.
+// The type parameter A specifies the encryption algorithm to use.
+// Passwords are automatically encrypted when written to the database.
+// On read, password fields will be empty (for security).
+// Use the Compare method in queries to validate passwords.
+//
+// Example:
+//
+//	type User struct {
+//	    som.Node[som.ULID]
+//	    Password som.Password[som.Bcrypt]
+//	}
+type Password[A PasswordAlgorithm] string
+
+type PasswordAlgorithm interface {
+    isPasswordAlgorithm()
+}
+
+// Password encryption algorithm marker types.
+type (
+	Bcrypt struct{}
+	Argon2 struct{}
+	Pbkdf2 struct{}
+	Scrypt struct{}
+)
+
+func (Bcrypt) isPasswordAlgorithm() {}
+func (Argon2) isPasswordAlgorithm() {}
+func (Pbkdf2) isPasswordAlgorithm() {}
+func (Scrypt) isPasswordAlgorithm() {}
+
+// SemVer describes a string field that should contain a semantic version.
+type SemVer string
+
+// Meta describes a model that is not related to any Node or Edge.
+// Instead, it is used to hold metadata that was queried from a Node or Edge.
+//
+// Applying this struct to a type within your model package will ensure
+// that this type is never considered for the generated layer.
+// type Meta struct{}
+
+// Info holds information about a single database operation.
+// It is used as target to hold said information when building
+// an operation using the WithInfo() method. The generated
+// builder for each model provides this capability.
+//
+// Example:
+// Take a model named "Model" for which the som code is generated.
+// Accessing the database operation happens as usual for example via
+// client.Model().Create() or client.Model().Query(). Extracting the
+// Info out of those operations is as simple as:
+//
+// var info *som.Info
+// client.Model().WithInfo(info).Create()
+// client.Model().WithInfo(info).Query()
+//
+// Please note: When using the same base for multiple operations, the Info
+// struct will only ever hold the information of the last operation.
+// TODO: implement!
+// type Info struct {
+// 	Time    time.Time
+// 	Status  string
+// 	Message string
+// }
+
+// OnBeforeCreateHook can be implemented by model structs to run logic
+// before a new record is created. If the hook returns an error,
+// the create operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeCreateHook interface {
+	OnBeforeCreate(ctx context.Context) error
+}
+
+// OnAfterCreateHook can be implemented by model structs to run logic
+// after a new record has been created. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterCreateHook interface {
+	OnAfterCreate(ctx context.Context) error
+}
+
+// OnBeforeUpdateHook can be implemented by model structs to run logic
+// before an existing record is updated. If the hook returns an error,
+// the update operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeUpdateHook interface {
+	OnBeforeUpdate(ctx context.Context) error
+}
+
+// OnAfterUpdateHook can be implemented by model structs to run logic
+// after an existing record has been updated. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterUpdateHook interface {
+	OnAfterUpdate(ctx context.Context) error
+}
+
+// OnBeforeDeleteHook can be implemented by model structs to run logic
+// before a record is deleted. If the hook returns an error,
+// the delete operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeDeleteHook interface {
+	OnBeforeDelete(ctx context.Context) error
+}
+
+// OnAfterDeleteHook can be implemented by model structs to run logic
+// after a record has been deleted. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterDeleteHook interface {
+	OnAfterDelete(ctx context.Context) error
+}
+
+// TODO: below needed?
+// type Entity interface {
+// 	entity()
+// }
+
+// TODO: implement external types
+// type External struct {
+// 	ID string
+// }

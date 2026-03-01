@@ -129,7 +129,7 @@ The **Query Builder** provides a fluent, type-safe API for constructing database
 
 ```go
 users, err := client.UserRepo().Query().
-    Filter(where.User.Email.Contains("@example.com")).
+    Where(filter.User.Email.Contains("@example.com")).
     Order(by.User.Name.Asc()).
     Limit(10).
     All(ctx)
@@ -157,27 +157,27 @@ users := <-result.Val()
 err := <-result.Err()
 ```
 
-## Filters (where)
+## Filters (filter)
 
-Type-safe conditions for queries. Import from `gen/som/where`:
+Type-safe conditions for queries. Import from `gen/som/filter`:
 
 ```go
-import "yourproject/gen/som/where"
+import "yourproject/gen/som/filter"
 
 // Equality
-where.User.Name.Equal("Alice")
+filter.User.Name.Equal("Alice")
 
 // Comparison
-where.User.Age.GreaterThan(18)
+filter.User.Age.GreaterThan(18)
 
 // String operations
-where.User.Email.Contains("@gmail.com")
+filter.User.Email.Contains("@gmail.com")
 
 // Multiple conditions (AND)
 client.UserRepo().Query().
-    Filter(
-        where.User.IsActive.IsTrue(),
-        where.User.Age.GreaterThan(18),
+    Where(
+        filter.User.IsActive.IsTrue(),
+        filter.User.Age.GreaterThan(18),
     )
 ```
 

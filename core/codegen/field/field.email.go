@@ -33,9 +33,9 @@ func (f *Email) TypeDatabase() string {
 func (f *Email) SchemaStatements(table, prefix string) []string {
 	var extend string
 	if f.source.Pointer() {
-		extend = "ASSERT $value == NONE OR $value == NULL OR string::is::email($value)"
+		extend = "ASSERT $value == NONE OR $value == NULL OR string::is_email($value)"
 	} else {
-		extend = `ASSERT $value == "" OR string::is::email($value)`
+		extend = `ASSERT $value == "" OR string::is_email($value)`
 	}
 
 	return []string{
@@ -56,9 +56,21 @@ func (f *Email) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 	}
+}
+
+func (f *Email) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email"))
+}
+
+func (f *Email) fieldInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email")).
+		Call(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
 func (f *Email) filterDefine(ctx Context) jen.Code {

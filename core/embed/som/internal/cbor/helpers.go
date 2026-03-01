@@ -2,31 +2,24 @@
 package cbor
 
 import (
-	"net/url"
+	"bytes"
+	"fmt"
 	"time"
-)
 
-const (
-	tagDatetime = 12
-	tagDuration = 14
-	nanosecond  = 1e+09
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // DateTime marshaling helpers
 func MarshalDateTime(t time.Time) (RawMessage, error) {
-	content, err := Marshal([]int64{t.Unix(), int64(t.Nanosecond())})
-	if err != nil {
-		return nil, err
-	}
-	return Marshal(RawTag{
-		Content: content,
-		Number:  tagDatetime,
+	return Marshal(Tag{
+		Number:  models.TagCustomDatetime,
+		Content: []int64{t.Unix(), int64(t.Nanosecond())},
 	})
 }
 
 func MarshalDateTimePtr(t *time.Time) (RawMessage, error) {
 	if t == nil {
-		return Marshal(nil)
+		return None(), nil
 	}
 	return MarshalDateTime(*t)
 }
@@ -44,10 +37,13 @@ func UnmarshalDateTime(data []byte) (time.Time, error) {
 	if len(val) > 1 {
 		nano = val[1]
 	}
-	return time.Unix(secs, nano), nil
+	return time.Unix(secs, nano).UTC(), nil
 }
 
 func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
+	if IsNoneOrNull(data) {
+		return nil, nil
+	}
 	t, err := UnmarshalDateTime(data)
 	if err != nil {
 		return nil, err
@@ -57,22 +53,18 @@ func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
 
 // Duration marshaling helpers
 func MarshalDuration(d time.Duration) (RawMessage, error) {
-	totalSeconds := int64(d.Seconds())
 	totalNanoseconds := d.Nanoseconds()
-	remainingNanoseconds := totalNanoseconds - (totalSeconds * nanosecond)
-	content, err := Marshal([]int64{totalSeconds, remainingNanoseconds})
-	if err != nil {
-		return nil, err
-	}
-	return Marshal(RawTag{
-		Content: content,
-		Number:  tagDuration,
+	totalSeconds := totalNanoseconds / int64(time.Second)
+	remainingNanoseconds := totalNanoseconds % int64(time.Second)
+	return Marshal(Tag{
+		Number:  models.TagCustomDuration,
+		Content: []int64{totalSeconds, remainingNanoseconds},
 	})
 }
 
 func MarshalDurationPtr(d *time.Duration) (RawMessage, error) {
 	if d == nil {
-		return Marshal(nil)
+		return None(), nil
 	}
 	return MarshalDuration(*d)
 }
@@ -93,6 +85,9 @@ func UnmarshalDuration(data []byte) (time.Duration, error) {
 }
 
 func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
+	if IsNoneOrNull(data) {
+		return nil, nil
+	}
 	d, err := UnmarshalDuration(data)
 	if err != nil {
 		return nil, err
@@ -100,34 +95,42 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 	return &d, nil
 }
 
-// URL marshaling helpers
-func MarshalURL(u url.URL) string {
-	return u.String()
+// none is the canonical CBOR Tag 6 + null (0xc6 0xf6) encoding.
+// SurrealDB uses CBOR Tag 6 to represent NONE, which is accepted by option<T> fields.
+var none = [2]byte{0xc6, 0xf6}
+
+// cborNull is the single-byte CBOR null encoding.
+var cborNull = [1]byte{0xf6}
+
+// None returns a fresh copy of the pre-encoded CBOR NONE bytes.
+func None() RawMessage {
+	b := none
+	return b[:]
 }
 
-func MarshalURLPtr(u *url.URL) *string {
-	if u == nil {
-		return nil
-	}
-	s := u.String()
-	return &s
+func IsNoneOrNull(data []byte) bool {
+	return bytes.Equal(data, none[:]) || bytes.Equal(data, cborNull[:])
 }
 
-func UnmarshalURL(s string) (url.URL, error) {
-	u, err := url.Parse(s)
-	if err != nil {
-		return url.URL{}, err
+func RecordIDToString(id any) (string, error) {
+	switch v := id.(type) {
+	case string:
+		return v, nil
+	case Tag:
+		if v.Number == models.TagSpecBinaryUUID {
+			uuidBytes, ok := v.Content.([]byte)
+			if !ok {
+				return "", fmt.Errorf("expected []byte UUID content, got %T", v.Content)
+			}
+			if len(uuidBytes) != 16 {
+				return "", fmt.Errorf("UUID must be 16 bytes, got %d", len(uuidBytes))
+			}
+			return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+				uuidBytes[0:4], uuidBytes[4:6], uuidBytes[6:8], uuidBytes[8:10], uuidBytes[10:16]), nil
+		}
+		return "", fmt.Errorf("unsupported CBOR tag %d in record ID (expected tag %d for UUID)", v.Number, models.TagSpecBinaryUUID)
+	default:
+		return "", fmt.Errorf("expected string or tagged ID, got %T", id)
 	}
-	return *u, nil
 }
 
-func UnmarshalURLPtr(s *string) (*url.URL, error) {
-	if s == nil {
-		return nil, nil
-	}
-	u, err := url.Parse(*s)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
-}

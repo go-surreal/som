@@ -1,0 +1,41 @@
+{{- /* gotype: github.com/go-surreal/som/core/embed.Template */ -}}
+//go:build embed
+
+package distinct
+
+import (
+	"fmt"
+
+	"github.com/gofrs/uuid"
+
+	"{{.GenerateOutPath}}/internal"
+	"{{.GenerateOutPath}}/internal/types"
+)
+
+func NewUUIDGofrsField[M any](key string) Field[M, uuid.UUID] {
+	return Field[M, uuid.UUID]{
+		Key: key,
+		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]uuid.UUID, error) {
+			var raw []internal.QueryResult[DistinctResult[types.UUIDGofrs]]
+			if err := unmarshal(data, &raw); err != nil {
+				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+			}
+			if len(raw) < 1 || len(raw[0].Result) < 1 {
+				return nil, nil
+			}
+			vals := raw[0].Result[0].Values
+			if len(vals) == 0 {
+				return nil, nil
+			}
+			result := make([]uuid.UUID, len(vals))
+			for i, v := range vals {
+				result[i] = uuid.UUID(v)
+			}
+			return result, nil
+		},
+	}
+}
+
+func NewUUIDGofrsPtrField[M any](key string) Field[M, uuid.UUID] {
+	return NewUUIDGofrsField[M](key)
+}

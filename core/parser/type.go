@@ -3,8 +3,12 @@ package parser
 type Node struct {
 	Name           string
 	Fields         []Field
+	IDType         IDType
+	IDEmbed        string
+	ComplexID      *FieldComplexID
 	Timestamps     bool
 	OptimisticLock bool
+	SoftDelete     bool
 }
 
 type Edge struct {
@@ -14,6 +18,7 @@ type Edge struct {
 	Fields         []Field
 	Timestamps     bool
 	OptimisticLock bool
+	SoftDelete     bool
 }
 
 type Struct struct {
@@ -33,15 +38,15 @@ type EnumValue struct {
 
 // IndexInfo holds index configuration parsed from struct tags.
 type IndexInfo struct {
-	// Name is the index name. If empty, auto-generated from table and field names.
+	// Name is an optional index name from `index=<name>` or `unique=<name>`.
+	// For regular indexes, this becomes the SurrealDB index name.
+	// For unique indexes with a name, fields sharing the same name are
+	// grouped into a single composite unique index.
+	// If empty, the index name is auto-generated from table and field names.
 	Name string
 
 	// Unique indicates this is a unique index.
 	Unique bool
-
-	// UniqueName is the composite unique index identifier from `unique(name)`.
-	// Fields with the same UniqueName are grouped into a single composite unique index.
-	UniqueName string
 }
 
 // SearchInfo holds fulltext search configuration parsed from struct tags.

@@ -6,7 +6,7 @@ import (
 )
 
 type Location struct {
-	som.Node
+	som.Node[som.ULID]
 	som.Timestamps
 
 	Name string

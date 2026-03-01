@@ -42,12 +42,14 @@ const (
 
 // fileConditions maps output file paths to their inclusion conditions.
 var fileConditions = map[string]FileCondition{
-	"internal/types/uuid_google.go":        FileIfGoogleUUID,
-	"internal/types/uuid_gofrs.go":         FileIfGofrsUUID,
-	"internal/lib/filter.uuid_google.go":   FileIfGoogleUUID,
-	"internal/lib/filter.uuid_gofrs.go":    FileIfGofrsUUID,
-	"internal/cbor/helpers_uuid_google.go": FileIfGoogleUUID,
-	"internal/cbor/helpers_uuid_gofrs.go":  FileIfGofrsUUID,
+	"internal/types/uuid_google.go":              FileIfGoogleUUID,
+	"internal/types/uuid_gofrs.go":               FileIfGofrsUUID,
+	"internal/lib/filter.uuid_google.go":         FileIfGoogleUUID,
+	"internal/lib/filter.uuid_gofrs.go":          FileIfGofrsUUID,
+	"internal/cbor/helpers_uuid_google.go":       FileIfGoogleUUID,
+	"internal/cbor/helpers_uuid_gofrs.go":        FileIfGofrsUUID,
+	"internal/distinct/distinct_uuid_google.go":  FileIfGoogleUUID,
+	"internal/distinct/distinct_uuid_gofrs.go":   FileIfGofrsUUID,
 	// Geo files - orb
 	"internal/types/geo_orb.go":        FileIfOrbGeo,
 	"internal/lib/filter.geo_orb.go":   FileIfOrbGeo,
@@ -79,8 +81,8 @@ func Read(tmpl *Template) ([]*File, error) {
 
 		// Compute output path early to check conditions
 		outputPath := strings.TrimPrefix(path, baseDir+string(filepath.Separator))
-		if strings.HasSuffix(outputPath, ".tmpl") {
-			outputPath = strings.TrimSuffix(outputPath, ".tmpl") + ".go"
+		if strings.HasSuffix(outputPath, ".go.tmpl") {
+			outputPath = strings.TrimSuffix(outputPath, ".tmpl")
 		}
 
 		// Check if file should be included based on condition
