@@ -219,7 +219,7 @@ type UsedFeatures struct {
 	UsesGoogleUUID       bool
 	UsesGofrsUUID        bool
 	UsesOrbGeo           bool
-	UsesSimpefeaturesGeo bool
+	UsesSimplefeaturesGeo bool
 	UsesGoGeomGeo        bool
 }
 
@@ -241,7 +241,7 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 			case GeoPackageOrb:
 				features.UsesOrbGeo = true
 			case GeoPackageSimplefeatures:
-				features.UsesSimpefeaturesGeo = true
+				features.UsesSimplefeaturesGeo = true
 			case GeoPackageGoGeom:
 				features.UsesGoGeomGeo = true
 			}

@@ -33,7 +33,7 @@ func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error 
 		tmpl.UsesGoogleUUID = features.UsesGoogleUUID
 		tmpl.UsesGofrsUUID = features.UsesGofrsUUID
 		tmpl.UsesOrbGeo = features.UsesOrbGeo
-		tmpl.UsesSimpefeaturesGeo = features.UsesSimpefeaturesGeo
+		tmpl.UsesSimplefeaturesGeo = features.UsesSimplefeaturesGeo
 		tmpl.UsesGoGeomGeo = features.UsesGoGeomGeo
 	}
 

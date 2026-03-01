@@ -215,13 +215,10 @@ func (m *MultiPolygonGG) UnmarshalCBOR(data []byte) error {
 
 // CollectionGG wraps geom.GeometryCollection for CBOR marshaling.
 type CollectionGG struct {
-	*geom.GeometryCollection
+	geom.GeometryCollection
 }
 
 func (c *CollectionGG) MarshalCBOR() ([]byte, error) {
-	if c.GeometryCollection == nil {
-		return cbor.Marshal(nil)
-	}
 	n := c.NumGeoms()
 	geometries := make([]any, n)
 	for i := 0; i < n; i++ {
@@ -332,6 +329,6 @@ func (c *CollectionGG) UnmarshalCBOR(data []byte) error {
 			}
 		}
 	}
-	c.GeometryCollection = gc
+	c.GeometryCollection = *gc
 	return nil
 }

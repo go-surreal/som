@@ -166,15 +166,15 @@ func NewGeoMultiPolygonGGPtr[M any](key Key[M]) *GeoMultiPolygonGGPtr[M] {
 
 // GeoCollectionGG is a filter for geom.GeometryCollection fields.
 type GeoCollectionGG[M any] struct {
-	*Geo[M, *geom.GeometryCollection, *GeoCollectionGG[M]]
+	*Geo[M, geom.GeometryCollection, *GeoCollectionGG[M]]
 }
 
 func NewGeoCollectionGG[M any](key Key[M]) *GeoCollectionGG[M] {
-	conv := func(val *geom.GeometryCollection) any {
+	conv := func(val geom.GeometryCollection) any {
 		return &types.CollectionGG{GeometryCollection: val}
 	}
 	return &GeoCollectionGG[M]{
-		Geo: NewGeo[M, *geom.GeometryCollection, *GeoCollectionGG[M]](key, conv),
+		Geo: NewGeo[M, geom.GeometryCollection, *GeoCollectionGG[M]](key, conv),
 	}
 }
 

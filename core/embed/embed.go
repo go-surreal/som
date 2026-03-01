@@ -26,7 +26,7 @@ type Template struct {
 	UsesGoogleUUID       bool
 	UsesGofrsUUID        bool
 	UsesOrbGeo           bool
-	UsesSimpefeaturesGeo bool
+	UsesSimplefeaturesGeo bool
 	UsesGoGeomGeo        bool
 }
 
@@ -38,7 +38,7 @@ const (
 	FileIfGoogleUUID
 	FileIfGofrsUUID
 	FileIfOrbGeo
-	FileIfSimpefeaturesGeo
+	FileIfSimplefeaturesGeo
 	FileIfGoGeomGeo
 )
 
@@ -57,9 +57,9 @@ var fileConditions = map[string]FileCondition{
 	"internal/lib/filter.geo_orb.go":   FileIfOrbGeo,
 	"internal/cbor/helpers_geo_orb.go": FileIfOrbGeo,
 	// Geo files - simplefeatures
-	"internal/types/geo_sf.go":        FileIfSimpefeaturesGeo,
-	"internal/lib/filter.geo_sf.go":   FileIfSimpefeaturesGeo,
-	"internal/cbor/helpers_geo_sf.go": FileIfSimpefeaturesGeo,
+	"internal/types/geo_sf.go":        FileIfSimplefeaturesGeo,
+	"internal/lib/filter.geo_sf.go":   FileIfSimplefeaturesGeo,
+	"internal/cbor/helpers_geo_sf.go": FileIfSimplefeaturesGeo,
 	// Geo files - go-geom
 	"internal/types/geo_gogeom.go":        FileIfGoGeomGeo,
 	"internal/lib/filter.geo_gogeom.go":   FileIfGoGeomGeo,
@@ -106,8 +106,8 @@ func Read(tmpl *Template) ([]*File, error) {
 				if !tmpl.UsesOrbGeo {
 					return nil // Skip this file
 				}
-			case FileIfSimpefeaturesGeo:
-				if !tmpl.UsesSimpefeaturesGeo {
+			case FileIfSimplefeaturesGeo:
+				if !tmpl.UsesSimplefeaturesGeo {
 					return nil // Skip this file
 				}
 			case FileIfGoGeomGeo:
