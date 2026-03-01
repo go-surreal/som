@@ -15,7 +15,8 @@ import (
 
 var validDBName = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
-var reservedDBNames = map[string]bool{
+// ReservedDBNames contains field names managed by SOM or SurrealDB internals.
+var ReservedDBNames = map[string]bool{
 	"id":         true,
 	"in":         true,
 	"out":        true,
@@ -215,7 +216,7 @@ func parseSomTag(tag string) (*TagInfo, error) {
 			if !validDBName.MatchString(value) {
 				return nil, fmt.Errorf("invalid tag %q: name must match [a-z][a-z0-9_]*", part)
 			}
-			if reservedDBNames[value] {
+			if ReservedDBNames[value] {
 				return nil, fmt.Errorf("invalid tag %q: %q is a reserved field name", part, value)
 			}
 			info.DBName = value
