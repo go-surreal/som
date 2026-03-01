@@ -4,35 +4,41 @@ Control the order and size of query results.
 
 ## Ordering
 
-Use the generated `order` package:
+Use the generated `by` package:
 
 ```go
-import "yourproject/gen/som/order"
+import "yourproject/gen/som/by"
 
 users, err := client.UserRepo().Query().
-    OrderBy(order.User.Name.Asc()).
+    Order(by.User.Name.Asc()).
     All(ctx)
 ```
 
 ### Ascending Order
 
 ```go
-OrderBy(order.User.CreatedAt.Asc())
+Order(by.User.CreatedAt.Asc())
 ```
 
 ### Descending Order
 
 ```go
-OrderBy(order.User.CreatedAt.Desc())
+Order(by.User.CreatedAt.Desc())
+```
+
+### Random Order
+
+```go
+client.UserRepo().Query().OrderRandom().All(ctx)
 ```
 
 ### Multiple Order Clauses
 
 ```go
 users, err := client.UserRepo().Query().
-    OrderBy(
-        order.User.LastName.Asc(),
-        order.User.FirstName.Asc(),
+    Order(
+        by.User.LastName.Asc(),
+        by.User.FirstName.Asc(),
     ).
     All(ctx)
 ```
@@ -49,29 +55,29 @@ users, err := client.UserRepo().Query().
     All(ctx)
 ```
 
-### Offset
+### Start
 
 Skip a number of results (for pagination):
 
 ```go
 // Page 2 with 10 items per page
 users, err := client.UserRepo().Query().
-    OrderBy(order.User.CreatedAt.Desc()).
+    Order(by.User.CreatedAt.Desc()).
     Limit(10).
-    Offset(10).
+    Start(10).
     All(ctx)
 ```
 
 ### Pagination Helper
 
-Combine limit and offset for page-based pagination:
+Combine limit and start for page-based pagination:
 
 ```go
 func GetUsersPage(ctx context.Context, page, pageSize int) ([]*model.User, error) {
     return client.UserRepo().Query().
-        OrderBy(order.User.CreatedAt.Desc()).
+        Order(by.User.CreatedAt.Desc()).
         Limit(pageSize).
-        Offset((page - 1) * pageSize).
+        Start((page - 1) * pageSize).
         All(ctx)
 }
 ```
@@ -81,7 +87,7 @@ func GetUsersPage(ctx context.Context, page, pageSize int) ([]*model.User, error
 ```go
 users, err := client.UserRepo().Query().
     Where(filter.User.IsActive.Equal(true)).
-    OrderBy(order.User.Name.Asc()).
+    Order(by.User.Name.Asc()).
     Limit(20).
     All(ctx)
 ```
@@ -95,7 +101,7 @@ query := client.UserRepo().Query().
     Where(filter.User.IsActive.Equal(true))
 
 total, _ := query.Count(ctx)
-users, _ := query.Limit(10).Offset(0).All(ctx)
+users, _ := query.Limit(10).Start(0).All(ctx)
 ```
 
 ## Iterating Large Result Sets
@@ -136,7 +142,7 @@ for id, err := range client.UserRepo().Query().IterateID(ctx, 500) {
 
 | Use Case | Recommended Approach |
 |----------|---------------------|
-| Display page of results to user | `Limit()` + `Offset()` |
+| Display page of results to user | `Limit()` + `Start()` |
 | Process all records in background job | `Iterate()` |
 | Export all data | `Iterate()` |
 | Build list of IDs for batch operation | `IterateID()` |

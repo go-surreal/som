@@ -5,19 +5,37 @@ The SOM CLI generates type-safe database access code from your Go models.
 ## Basic Command
 
 ```bash
-go run github.com/go-surreal/som/cmd/som@latest gen <input_dir> <output_dir>
+go run github.com/go-surreal/som@latest -i <input_dir>
 ```
 
-### Arguments
+### Flags
 
-- `<input_dir>` - Directory containing your model files (structs with `som.Node` or `som.Edge`)
-- `<output_dir>` - Directory where generated code will be written
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-i`, `--in` | Input model directory (relative to go.mod) | *(none, omit for init mode)* |
+| `-o`, `--out` | Output directory | `gen/som` |
+| `-v`, `--verbose` | Show detailed generation progress | `false` |
+| `--dry` | Simulate generation without writing files | `false` |
+| `--no-check` | Skip version compatibility checks | `false` |
+| `--no-count-index` | Disable automatic COUNT index generation | `false` |
+| `--wire` | Override wire generation: `"no"`, `"google"`, or `"goforj"` | auto-detect |
 
 ### Example
 
 ```bash
-# Generate from ./model to ./gen/som
-go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+# Generate from ./model to ./gen/som (default output)
+go run github.com/go-surreal/som@latest -i ./model
+
+# Generate to custom output directory
+go run github.com/go-surreal/som@latest -i ./model -o ./db/generated
+```
+
+## Initialization Mode
+
+When `--in` is omitted, SOM generates only static base files. This is useful for bootstrapping a new project so types like `som.Node` are available before you define models:
+
+```bash
+go run github.com/go-surreal/som@latest
 ```
 
 ## Installing the Binary
@@ -25,13 +43,13 @@ go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
 For faster execution, install the binary:
 
 ```bash
-go install github.com/go-surreal/som/cmd/som@latest
+go install github.com/go-surreal/som@latest
 ```
 
 Then run directly:
 
 ```bash
-som gen ./model ./gen/som
+som -i ./model
 ```
 
 ## Output Structure
@@ -41,7 +59,7 @@ The generator creates the following structure:
 ```
 gen/som/
 ├── som.base.go         # Base types (Node, Edge, ID utilities)
-├── by/                 # Order/sort helpers
+├── by/                 # Sort helpers
 │   └── <model>.go      # Per-model ordering
 ├── constant/           # Generated constants
 ├── conv/               # Model converters (internal ↔ external)
@@ -68,12 +86,14 @@ gen/som/
 
 Core types and client:
 
-- `Node` - Base type for database records
+- `Node[T]` - Base type for database records (generic over ID type)
 - `Edge` - Base type for relationships
-- `ID` - Record ID type alias
-- `NewRecordID()`, `MakeID()`, `Table()` - ID utilities
 - `Timestamps` - Auto-managed timestamp fields
-- `Enum`, `Email`, `Password`, `SemVer` - Special types
+- `OptimisticLock` - Version-based conflict detection
+- `SoftDelete` - Non-destructive deletion
+- `Email`, `Password[A]`, `SemVer` - Special types
+- `ULID`, `UUID`, `Rand` - ID types
+- `ArrayID`, `ObjectID` - Complex ID markers
 
 ### `repo`
 
@@ -83,11 +103,13 @@ Repository implementations with CRUD operations:
 type UserRepo interface {
     Create(ctx, user) error
     CreateWithID(ctx, id, user) error
+    Insert(ctx, users) error
     Read(ctx, id) (*model.User, bool, error)
     Update(ctx, user) error
     Delete(ctx, user) error
     Refresh(ctx, user) error
-    Query() query.Builder[model.User, conv.User]
+    RebuildIndexes(ctx) error
+    Query() query.Builder[model.User]
 }
 ```
 
@@ -115,7 +137,7 @@ filter.User.CreatedAt.After(lastWeek)
 
 ### `by`
 
-Ordering definitions:
+Sort definitions:
 
 ```go
 by.User.Name.Asc()
@@ -151,7 +173,7 @@ client.FollowsRepo().Relate().
 Pin to a specific version for reproducible builds:
 
 ```bash
-go run github.com/go-surreal/som/cmd/som@v0.10.0 gen ./model ./gen/som
+go run github.com/go-surreal/som@v0.16.0 -i ./model
 ```
 
 ## Regenerating Code
@@ -164,24 +186,15 @@ Run the generator whenever you:
 - Change field types
 - Add or remove struct tags
 
-## Docker Usage
-
-Run from Docker for consistent builds:
-
-```bash
-docker run --rm -v $(pwd):/app -w /app golang:1.23 \
-    go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
-```
-
 ## Troubleshooting
 
 ### Models not detected
 
-Ensure structs embed `som.Node` or `som.Edge`:
+Ensure structs embed `som.Node[T]` or `som.Edge`:
 
 ```go
 type User struct {
-    som.Node  // Required!
+    som.Node[som.ULID]  // Required!
     Name string
 }
 ```
@@ -191,7 +204,7 @@ type User struct {
 After model changes, regenerate and run:
 
 ```bash
-som gen ./model ./gen/som
+go run github.com/go-surreal/som@latest -i ./model
 go mod tidy
 ```
 

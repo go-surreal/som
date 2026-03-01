@@ -32,7 +32,7 @@ Input Models (Go structs)
 
 The parser analyzes your Go source files to identify:
 
-- **Nodes**: Structs embedding `som.Node`
+- **Nodes**: Structs embedding `som.Node[T]` (where T is an ID type)
 - **Edges**: Structs embedding `som.Edge`
 - **Structs**: Regular structs used as fields (for nested types)
 - **Enums**: Types implementing `som.Enum` interface
@@ -55,14 +55,14 @@ Generated files are written to the output directory with their own `go.mod`, cre
 
 ```
 gen/som/
-├── som.base.go           # ID, Node, Edge, Timestamps types
+├── som.base.go           # ID types, Node[T], Edge, Timestamps
 ├── som.client.go         # Client implementation
 ├── som.interfaces.go     # Repository interfaces
 ├── som.node.go           # Base repository pattern
 ├── som.schema.go         # Schema utilities
 │
 ├── repo/                 # Repository implementations
-│   └── node.{model}.go   # Per-model: Create, Read, Update, Delete, Query
+│   └── node.{model}.go   # Per-model: Create, Read, Update, Delete, Insert, Query
 │
 ├── query/                # Query builders
 │   ├── builder.go        # Generic builder with all methods
@@ -99,16 +99,18 @@ gen/som/
 
 ### Nodes
 
-Nodes represent database records. Any struct embedding `som.Node` becomes a SurrealDB table:
+Nodes represent database records. Any struct embedding `som.Node[T]` becomes a SurrealDB table:
 
 ```go
 type User struct {
-    som.Node        // Provides ID field
-    som.Timestamps  // Optional: CreatedAt, UpdatedAt
+    som.Node[som.ULID]  // Provides ID field (ULID type)
+    som.Timestamps      // Optional: CreatedAt, UpdatedAt
     Name string
 }
 // Creates table: user
 ```
+
+The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, or a custom struct with `som.ArrayID`/`som.ObjectID`).
 
 ### Edges
 
@@ -131,11 +133,13 @@ Generated for each model with full CRUD operations:
 type UserRepo interface {
     Create(ctx, *User) error
     CreateWithID(ctx, id string, *User) error
-    Read(ctx, *som.ID) (*User, bool, error)
+    Insert(ctx, []*User) error
+    Read(ctx, string) (*User, bool, error)
     Update(ctx, *User) error
     Delete(ctx, *User) error
     Refresh(ctx, *User) error
-    Query() Builder[User, ConvUser]
+    RebuildIndexes(ctx) error
+    Query() Builder[User]
 }
 ```
 
@@ -144,24 +148,29 @@ type UserRepo interface {
 Fluent API with method chaining:
 
 ```go
-Builder[M, C]
+Builder[M]
 ├── Where(filters...)     // WHERE conditions
-├── Order(sorts...)        // ORDER BY
-├── OrderRandom()          // ORDER RAND()
-├── Offset(n)              // OFFSET
-├── Limit(n)               // LIMIT
-├── Fetch(relations...)    // FETCH (eager load)
-├── Timeout(duration)      // Execution timeout
-├── Parallel(bool)         // Parallel execution
+├── Order(sorts...)       // ORDER BY
+├── OrderRandom()         // ORDER RAND()
+├── Start(n)              // START (skip results)
+├── Limit(n)              // LIMIT
+├── Fetch(relations...)   // FETCH (eager load)
+├── Timeout(duration)     // Execution timeout
+├── Parallel(bool)        // Parallel execution
+├── TempFiles(bool)       // Disk-based processing
+├── WithDeleted()         // Include soft-deleted records
+├── Range(from, to)       // Range query for complex IDs
 │
-├── All(ctx)               // Get all results
-├── First(ctx)             // Get first result
-├── One(ctx)               // Get exactly one
-├── Count(ctx)             // Count results
-├── Exists(ctx)            // Check existence
-├── Live(ctx)              // Stream changes
+├── All(ctx)              // Get all results
+├── First(ctx)            // Get first result (or ErrNotFound)
+├── Count(ctx)            // Count results
+├── Exists(ctx)           // Check existence
+├── Live(ctx)             // Stream changes
 │
-└── *Async variants        // AllAsync, FirstAsync, etc.
+├── Iterate(ctx, batch)   // Stream records in batches
+├── IterateID(ctx, batch) // Stream record IDs
+│
+└── *Async variants       // AllAsync, FirstAsync, etc.
 ```
 
 ### Type Converters
@@ -185,20 +194,3 @@ SOM uses CBOR (Concise Binary Object Representation) for SurrealDB communication
 | DateTime | 12 | `[unix_seconds, nanoseconds]` |
 | Duration | 14 | Nanoseconds as int64 |
 | UUID | 37 | 16-byte binary |
-
-## ID Handling
-
-SOM provides utilities for working with SurrealDB record IDs:
-
-```go
-// Create a record ID
-id := som.NewRecordID("user", "abc123")
-
-// Create a pointer to record ID
-idPtr := som.MakeID("user", "abc123")
-
-// Reference a table (for auto-generated IDs)
-table := som.Table("user")
-```
-
-Record IDs are automatically generated as ULIDs when using `Create()`.

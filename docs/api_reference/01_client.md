@@ -70,7 +70,7 @@ All operations accept a context for cancellation and timeouts:
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 
-user, err := client.UserRepo().Read(ctx, id)
+user, exists, err := client.UserRepo().Read(ctx, id)
 ```
 
 ## Error Handling
@@ -78,10 +78,13 @@ user, err := client.UserRepo().Read(ctx, id)
 Check for errors on all operations:
 
 ```go
-user, err := client.UserRepo().Read(ctx, id)
+user, exists, err := client.UserRepo().Read(ctx, id)
 if err != nil {
-    // Handle connection errors, not found, etc.
+    // Handle connection errors, etc.
     return err
+}
+if !exists {
+    // Record not found
 }
 ```
 

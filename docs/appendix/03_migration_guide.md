@@ -4,7 +4,7 @@ This guide helps you upgrade between SOM versions.
 
 ## General Upgrade Steps
 
-1. Review the [GitHub Releases](https://github.com/go-surreal/som/releases) for breaking changes
+1. Review the [CHANGELOG](https://github.com/go-surreal/som/blob/main/CHANGELOG.md) for breaking changes
 2. Update your SOM version
 3. Regenerate all code
 4. Fix any compilation errors
@@ -19,7 +19,7 @@ After any SOM upgrade:
 rm -rf ./gen/som
 
 # Regenerate with new version
-go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+go run github.com/go-surreal/som@latest -i ./model
 
 # Update dependencies
 go mod tidy
@@ -27,13 +27,126 @@ go mod tidy
 
 ## Version-Specific Guides
 
+### Upgrading to v0.16.x
+
+**SurrealDB 3.0.0 support**: This version requires surrealdb.go client version 1.3.0. Ensure your SurrealDB server is running v3.0.0.
+
+### Upgrading to v0.15.x
+
+**Geo types**: Added support for geometry types from `paulmach/orb`, `peterstace/simplefeatures`, and `twpayne/go-geom`.
+
+**SemVer type**: Added `som.SemVer` type with query filters (`Major()`, `Minor()`, `Patch()`).
+
+**Field name override**: Added `som:"custom_name"` tag for overriding database field names.
+
+### Upgrading to v0.14.x
+
+**Generic Node**: `som.Node` is now `som.Node[T]` where `T` specifies the ID type.
+
+**Before (v0.13.x)**:
+```go
+type User struct {
+    som.Node
+    Name string
+}
+```
+
+**After (v0.14.x+)**:
+```go
+type User struct {
+    som.Node[som.ULID]
+    Name string
+}
+```
+
+Available ID types: `som.ULID`, `som.UUID`, `som.Rand`.
+
+**Complex IDs**: For array or object-based IDs, create a key struct:
+```go
+type WeatherKey struct {
+    som.ArrayID
+    City string
+    Date time.Time
+}
+
+type Weather struct {
+    som.Node[WeatherKey]
+    Temperature float64
+}
+```
+
+**Model imports**: Models now import from the generated package rather than the SOM module:
+```go
+// Before
+import "github.com/go-surreal/som"
+
+// After
+import "yourproject/gen/som"
+```
+
+### Upgrading to v0.13.x
+
+**Sorting**: The `order` package was renamed to `by`, and `OrderBy()` was renamed to `Order()`:
+
+```go
+// Before
+import "yourproject/gen/som/order"
+query.OrderBy(order.User.Name.Asc())
+
+// After
+import "yourproject/gen/som/by"
+query.Order(by.User.Name.Asc())
+```
+
+**Pagination**: `Offset()` was renamed to `Start()`:
+
+```go
+// Before
+query.Limit(10).Offset(20).All(ctx)
+
+// After
+query.Limit(10).Start(20).All(ctx)
+```
+
+**First()**: Changed from `(*M, bool, error)` to `(*M, error)`. Returns `ErrNotFound` instead of `exists` bool:
+
+```go
+// Before
+user, exists, err := query.First(ctx)
+if !exists { ... }
+
+// After
+user, err := query.First(ctx)
+if errors.Is(err, som.ErrNotFound) { ... }
+```
+
+### Upgrading to v0.12.x
+
+**CLI syntax change**: The CLI no longer uses positional arguments.
+
+```bash
+# Before
+go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+
+# After
+go run github.com/go-surreal/som@latest -i ./model
+```
+
+The package path also changed from `github.com/go-surreal/som/cmd/som` to `github.com/go-surreal/som`.
+
+**Output directory**: Default output is now `gen/som`. Use `-o` flag to override.
+
+### Upgrading to v0.11.x
+
+**Soft Delete**: Added `som.SoftDelete` embedding with `Delete()`, `Restore()`, `Erase()`, and `WithDeleted()`.
+
+**Optimistic Locking**: Added `som.OptimisticLock` embedding with version tracking and `ErrOptimisticLock`.
+
+**Password type**: `som.Password` is now generic: `som.Password[som.Bcrypt]`. Supported algorithms: `Bcrypt`, `Argon2`, `Pbkdf2`, `Scrypt`.
+
 ### Upgrading to v0.10.x
 
 No specific migration steps required. Regenerate code after upgrade.
-
-### Future Versions
-
-Migration guides will be added here as new versions are released with breaking changes.
 
 ## Common Migration Issues
 

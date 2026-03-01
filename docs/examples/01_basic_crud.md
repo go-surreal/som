@@ -9,12 +9,10 @@ Create `model/user.go`:
 ```go
 package model
 
-import (
-    "github.com/go-surreal/som"
-)
+import "yourproject/gen/som"
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps  // Adds CreatedAt and UpdatedAt
 
     Name     string
@@ -27,7 +25,7 @@ type User struct {
 ## Generate Code
 
 ```bash
-go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+go run github.com/go-surreal/som@latest -i ./model
 ```
 
 ## Application Code
@@ -79,7 +77,7 @@ func main() {
 
     // READ
     // Note: Read returns (record, exists, error)
-    retrieved, exists, err := client.UserRepo().Read(ctx, user.ID())
+    retrieved, exists, err := client.UserRepo().Read(ctx, string(user.ID()))
     if err != nil {
         log.Fatal(err)
     }
@@ -120,7 +118,8 @@ func main() {
 
 1. Start SurrealDB:
    ```bash
-   surreal start --user root --pass root memory
+   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.0.0 \
+       start --user root --pass root
    ```
 
 2. Run the application:
@@ -131,7 +130,7 @@ func main() {
 ## Expected Output
 
 ```
-Created user with ID: user:01HQ...
+Created user with ID: 01HQ...
 Retrieved user: Alice
 Updated user
 Found 1 active users
@@ -167,7 +166,7 @@ Deleted user
 - Use the fluent builder pattern
 - Filter with type-safe conditions from `filter` package
 - Order with helpers from `by` package
-- Execute with `All()`, `First()`, `One()`, `Count()`, or `Exists()`
+- Execute with `All()`, `First()`, `Count()`, or `Exists()`
 
 ## Error Handling Pattern
 

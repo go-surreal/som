@@ -67,7 +67,7 @@ updates, err := client.UserRepo().Query().
 
 ## Fetching Related Records
 
-Since SurrealDB 2.2, live queries support the `Fetch()` clause to include related records:
+Live queries support the `Fetch()` clause to include related records:
 
 ```go
 // Receive updates with related organization data included
