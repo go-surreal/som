@@ -6,11 +6,23 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/go-surreal/som/core/util/gomod"
 	"github.com/wzshiming/gotype"
 )
+
+var validDBName = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+
+var reservedDBNames = map[string]bool{
+	"id":         true,
+	"in":         true,
+	"out":        true,
+	"created_at": true,
+	"updated_at": true,
+	"deleted_at": true,
+}
 
 // activeFieldRegistry is set at the start of Parse() so that
 // ParseField / ParseFieldInternal can delegate to it.
@@ -199,6 +211,12 @@ func parseSomTag(tag string) (*TagInfo, error) {
 			}
 			if info.DBName != "" {
 				return nil, fmt.Errorf("invalid tag: name specified multiple times")
+			}
+			if !validDBName.MatchString(value) {
+				return nil, fmt.Errorf("invalid tag %q: name must match [a-z][a-z0-9_]*", part)
+			}
+			if reservedDBNames[value] {
+				return nil, fmt.Errorf("invalid tag %q: %q is a reserved field name", part, value)
 			}
 			info.DBName = value
 
