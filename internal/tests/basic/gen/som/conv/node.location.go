@@ -19,7 +19,7 @@ func (c *Location) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 25)
+	data := make(map[string]any, 35)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
@@ -116,6 +116,46 @@ func (c *Location) MarshalCBOR() ([]byte, error) {
 	{
 		geoVal := types.MultiPolygonGG{c.GGMultiPolygon}
 		data["gg_multi_polygon"] = &geoVal
+	}
+	{
+		geoVal := types.PointSF(c.SFPoint)
+		data["sf_point"] = &geoVal
+	}
+	if c.SFPointPtr != nil {
+		geoVal := types.PointSF(*c.SFPointPtr)
+		data["sf_point_ptr"] = &geoVal
+	}
+	{
+		geoVal := types.LineStringSF(c.SFLineString)
+		data["sf_line_string"] = &geoVal
+	}
+	if c.SFLineStringPtr != nil {
+		geoVal := types.LineStringSF(*c.SFLineStringPtr)
+		data["sf_line_string_ptr"] = &geoVal
+	}
+	{
+		geoVal := types.PolygonSF(c.SFPolygon)
+		data["sf_polygon"] = &geoVal
+	}
+	if c.SFPolygonPtr != nil {
+		geoVal := types.PolygonSF(*c.SFPolygonPtr)
+		data["sf_polygon_ptr"] = &geoVal
+	}
+	{
+		geoVal := types.MultiPointSF(c.SFMultiPoint)
+		data["sf_multi_point"] = &geoVal
+	}
+	if c.SFMultiPointPtr != nil {
+		geoVal := types.MultiPointSF(*c.SFMultiPointPtr)
+		data["sf_multi_point_ptr"] = &geoVal
+	}
+	{
+		geoVal := types.MultiLineStringSF(c.SFMultiLineString)
+		data["sf_multi_line_string"] = &geoVal
+	}
+	{
+		geoVal := types.MultiPolygonSF(c.SFMultiPolygon)
+		data["sf_multi_polygon"] = &geoVal
 	}
 
 	return cbor.Marshal(data)
@@ -217,6 +257,36 @@ func (c *Location) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["gg_multi_polygon"]; ok {
 		c.GGMultiPolygon, _ = cbor.UnmarshalMultiPolygonGG(raw)
+	}
+	if raw, ok := rawMap["sf_point"]; ok {
+		c.SFPoint, _ = cbor.UnmarshalPointSF(raw)
+	}
+	if raw, ok := rawMap["sf_point_ptr"]; ok {
+		c.SFPointPtr, _ = cbor.UnmarshalPointSFPtr(raw)
+	}
+	if raw, ok := rawMap["sf_line_string"]; ok {
+		c.SFLineString, _ = cbor.UnmarshalLineStringSF(raw)
+	}
+	if raw, ok := rawMap["sf_line_string_ptr"]; ok {
+		c.SFLineStringPtr, _ = cbor.UnmarshalLineStringSFPtr(raw)
+	}
+	if raw, ok := rawMap["sf_polygon"]; ok {
+		c.SFPolygon, _ = cbor.UnmarshalPolygonSF(raw)
+	}
+	if raw, ok := rawMap["sf_polygon_ptr"]; ok {
+		c.SFPolygonPtr, _ = cbor.UnmarshalPolygonSFPtr(raw)
+	}
+	if raw, ok := rawMap["sf_multi_point"]; ok {
+		c.SFMultiPoint, _ = cbor.UnmarshalMultiPointSF(raw)
+	}
+	if raw, ok := rawMap["sf_multi_point_ptr"]; ok {
+		c.SFMultiPointPtr, _ = cbor.UnmarshalMultiPointSFPtr(raw)
+	}
+	if raw, ok := rawMap["sf_multi_line_string"]; ok {
+		c.SFMultiLineString, _ = cbor.UnmarshalMultiLineStringSF(raw)
+	}
+	if raw, ok := rawMap["sf_multi_polygon"]; ok {
+		c.SFMultiPolygon, _ = cbor.UnmarshalMultiPolygonSF(raw)
 	}
 
 	return nil

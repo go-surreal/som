@@ -35,6 +35,16 @@ func newLocation[M any](key lib.Key[M]) location[M] {
 		PointPtr:          lib.NewGeoPointOrbPtr[M](lib.Field(key, "point_ptr")),
 		Polygon:           lib.NewGeoPolygonOrb[M](lib.Field(key, "polygon")),
 		PolygonPtr:        lib.NewGeoPolygonOrbPtr[M](lib.Field(key, "polygon_ptr")),
+		SFLineString:      lib.NewGeoLineStringSF[M](lib.Field(key, "sf_line_string")),
+		SFLineStringPtr:   lib.NewGeoLineStringSFPtr[M](lib.Field(key, "sf_line_string_ptr")),
+		SFMultiLineString: lib.NewGeoMultiLineStringSF[M](lib.Field(key, "sf_multi_line_string")),
+		SFMultiPoint:      lib.NewGeoMultiPointSF[M](lib.Field(key, "sf_multi_point")),
+		SFMultiPointPtr:   lib.NewGeoMultiPointSFPtr[M](lib.Field(key, "sf_multi_point_ptr")),
+		SFMultiPolygon:    lib.NewGeoMultiPolygonSF[M](lib.Field(key, "sf_multi_polygon")),
+		SFPoint:           lib.NewGeoPointSF[M](lib.Field(key, "sf_point")),
+		SFPointPtr:        lib.NewGeoPointSFPtr[M](lib.Field(key, "sf_point_ptr")),
+		SFPolygon:         lib.NewGeoPolygonSF[M](lib.Field(key, "sf_polygon")),
+		SFPolygonPtr:      lib.NewGeoPolygonSFPtr[M](lib.Field(key, "sf_polygon_ptr")),
 		UpdatedAt:         lib.NewTime[M](lib.Field(key, "updated_at")),
 	}
 }
@@ -66,6 +76,16 @@ type location[M any] struct {
 	GGMultiPointPtr   *lib.GeoMultiPointGGPtr[M]
 	GGMultiLineString *lib.GeoMultiLineStringGG[M]
 	GGMultiPolygon    *lib.GeoMultiPolygonGG[M]
+	SFPoint           *lib.GeoPointSF[M]
+	SFPointPtr        *lib.GeoPointSFPtr[M]
+	SFLineString      *lib.GeoLineStringSF[M]
+	SFLineStringPtr   *lib.GeoLineStringSFPtr[M]
+	SFPolygon         *lib.GeoPolygonSF[M]
+	SFPolygonPtr      *lib.GeoPolygonSFPtr[M]
+	SFMultiPoint      *lib.GeoMultiPointSF[M]
+	SFMultiPointPtr   *lib.GeoMultiPointSFPtr[M]
+	SFMultiLineString *lib.GeoMultiLineStringSF[M]
+	SFMultiPolygon    *lib.GeoMultiPolygonSF[M]
 }
 
 type locationEdges[M any] struct {

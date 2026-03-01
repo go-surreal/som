@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/paulmach/orb"
+	sfgeom "github.com/peterstace/simplefeatures/geom"
 	"github.com/twpayne/go-geom"
 )
 
@@ -34,4 +35,15 @@ type Location struct {
 	GGMultiPointPtr   *geom.MultiPoint
 	GGMultiLineString geom.MultiLineString
 	GGMultiPolygon    geom.MultiPolygon
+
+	SFPoint           sfgeom.Point
+	SFPointPtr        *sfgeom.Point
+	SFLineString      sfgeom.LineString
+	SFLineStringPtr   *sfgeom.LineString
+	SFPolygon         sfgeom.Polygon
+	SFPolygonPtr      *sfgeom.Polygon
+	SFMultiPoint      sfgeom.MultiPoint
+	SFMultiPointPtr   *sfgeom.MultiPoint
+	SFMultiLineString sfgeom.MultiLineString
+	SFMultiPolygon    sfgeom.MultiPolygon
 }
