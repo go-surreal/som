@@ -193,15 +193,15 @@ func main() {
     }
     fmt.Printf("\nPost has %d likes\n", likeCount)
 
-    // Query: Recent posts with most active authors
-    activePosts, err := client.PostRepo().Query().
+    // Query: Recent posts
+    recentPosts, err := client.PostRepo().Query().
         Order(by.Post.CreatedAt.Desc()).
         Limit(10).
         All(ctx)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("\nRecent posts: %d\n", len(activePosts))
+    fmt.Printf("\nRecent posts: %d\n", len(recentPosts))
 }
 ```
 

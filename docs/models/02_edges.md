@@ -23,13 +23,7 @@ type Follows struct {
 
 ## Edge Structure
 
-Every edge automatically has these fields from `som.Edge`:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `ID` | auto-generated | Unique identifier for the edge |
-| `In` | Node type | Source node (start of relationship) |
-| `Out` | Node type | Target node (end of relationship) |
+The `som.Edge` embedding provides an `ID()` method returning the edge's unique identifier. You define the connected nodes by declaring fields with `som:"in"` and `som:"out"` tags.
 
 ## Specifying Connected Nodes
 

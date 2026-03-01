@@ -25,10 +25,12 @@ The type parameter `T` determines the ID format:
 
 | Type | Description | Example ID |
 |------|-------------|------------|
-| `som.ULID` | ULID-based IDs (default choice) | `user:01HQMV8K2P...` |
-| `som.UUID` | UUID-based IDs | `user:550e8400-e29b-...` |
-| `som.Rand` | Random string IDs | `user:abc123def` |
-| Custom struct | Complex array/object IDs | `user:[city, date]` |
+| `som.ULID` | ULID-based IDs (default choice) | `01HQMV8K2P...` |
+| `som.UUID` | UUID-based IDs | `550e8400-e29b-...` |
+| `som.Rand` | Random string IDs | `abc123def` |
+| Custom struct | Complex array/object IDs | `[city, date]` |
+
+> **Note**: `ID()` returns the raw ID value. The repository automatically prefixes it with the table name (e.g. `user:01HQMV8K2P...`) when storing and querying records.
 
 ## Timestamps
 
@@ -78,7 +80,7 @@ RELATE user:alice->follows->user:bob
 // After Create(), the ID is populated
 user := &model.User{Name: "Alice"}
 client.UserRepo().Create(ctx, user)
-fmt.Println(user.ID())  // user:01HQMV...
+fmt.Println(user.ID())  // 01HQMV... (raw ULID)
 
 // Create with specific ID
 client.UserRepo().CreateWithID(ctx, "alice", user)
@@ -114,7 +116,8 @@ type UserRepo interface {
     Refresh(ctx context.Context, user *model.User) error
 
     // Rebuild all indexes for this table
-    RebuildIndexes(ctx context.Context) error
+    // Index access (e.g. per-index Rebuild)
+    Index() *index.User
 
     // Get query builder
     Query() query.Builder[model.User]

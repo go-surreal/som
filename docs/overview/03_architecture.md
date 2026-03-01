@@ -138,7 +138,7 @@ type UserRepo interface {
     Update(ctx, *User) error
     Delete(ctx, *User) error
     Refresh(ctx, *User) error
-    RebuildIndexes(ctx) error
+    Index() *index.User
     Query() Builder[User]
 }
 ```
@@ -149,29 +149,32 @@ Fluent API with method chaining:
 
 ```go
 Builder[M]
-├── Where(filters...)     // WHERE conditions
-├── Order(sorts...)       // ORDER BY
-├── OrderRandom()         // ORDER RAND()
-├── Start(n)              // START (skip results)
-├── Limit(n)              // LIMIT
-├── Fetch(relations...)   // FETCH (eager load)
-├── Timeout(duration)     // Execution timeout
-├── Parallel(bool)        // Parallel execution
-├── TempFiles(bool)       // Disk-based processing
-├── WithDeleted()         // Include soft-deleted records
-├── Range(from, to)       // Range query for complex IDs
+├── Where(filters...)     // WHERE conditions (keeps Live available)
+├── Fetch(relations...)   // FETCH (keeps Live available)
+├── WithDeleted()         // Include soft-deleted (keeps Live available)
+│
+├── Order(sorts...)       // ORDER BY (returns BuilderNoLive)
+├── OrderRandom()         // ORDER RAND() (returns BuilderNoLive)
+├── Start(n)              // START (returns BuilderNoLive)
+├── Limit(n)              // LIMIT (returns BuilderNoLive)
+├── Timeout(duration)     // Execution timeout (returns BuilderNoLive)
+├── Parallel(bool)        // Parallel execution (returns BuilderNoLive)
+├── TempFiles(bool)       // Disk-based processing (returns BuilderNoLive)
+├── Range(from, to)       // Range query (returns BuilderNoLive)
 │
 ├── All(ctx)              // Get all results
 ├── First(ctx)            // Get first result (or ErrNotFound)
 ├── Count(ctx)            // Count results
 ├── Exists(ctx)           // Check existence
-├── Live(ctx)             // Stream changes
+├── Live(ctx)             // Stream changes (only on Builder, not BuilderNoLive)
 │
 ├── Iterate(ctx, batch)   // Stream records in batches
 ├── IterateID(ctx, batch) // Stream record IDs
 │
 └── *Async variants       // AllAsync, FirstAsync, etc.
 ```
+
+> **Note**: Methods like `Order`, `Limit`, `Start`, etc. return `BuilderNoLive`, which does not expose `Live()`. This prevents constructing invalid live queries with ordering or pagination.
 
 ### Type Converters
 

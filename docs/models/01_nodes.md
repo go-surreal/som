@@ -254,7 +254,8 @@ type UserRepo interface {
     Refresh(ctx context.Context, user *model.User) error
 
     // Rebuild all indexes
-    RebuildIndexes(ctx context.Context) error
+    // Index access (e.g. per-index Rebuild)
+    Index() *index.User
 
     // Query builder
     Query() query.Builder[model.User]

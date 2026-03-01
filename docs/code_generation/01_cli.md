@@ -108,7 +108,7 @@ type UserRepo interface {
     Update(ctx, user) error
     Delete(ctx, user) error
     Refresh(ctx, user) error
-    RebuildIndexes(ctx) error
+    Index() *index.User
     Query() query.Builder[model.User]
 }
 ```

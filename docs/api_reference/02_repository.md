@@ -25,8 +25,10 @@ type UserRepo interface {
     Update(ctx context.Context, user *model.User) error
     Delete(ctx context.Context, user *model.User) error
     Refresh(ctx context.Context, user *model.User) error
-    RebuildIndexes(ctx context.Context) error
     Query() query.Builder[model.User]
+
+    // Index access (e.g. per-index Rebuild)
+    Index() *index.User
 
     // Lifecycle hooks
     OnBeforeCreate(fn func(ctx context.Context, node *model.User) error) func()
@@ -155,12 +157,12 @@ Useful when:
 - You need to verify current state
 - After timestamp fields update
 
-## RebuildIndexes
+## Index
 
-Rebuild all indexes for this table:
+Access the index manager for this table. Each index exposes a `Rebuild(ctx)` method:
 
 ```go
-err := client.UserRepo().RebuildIndexes(ctx)
+err := client.UserRepo().Index().Count().Rebuild(ctx)
 ```
 
 ## Query
