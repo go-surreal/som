@@ -58,6 +58,12 @@ func (s *TxState) commit(ctx context.Context) error {
 	}
 	s.done = true
 
+	if s.beginErr != nil {
+		err := s.beginErr
+		s.mu.Unlock()
+		return err
+	}
+
 	if !s.started {
 		s.mu.Unlock()
 		return nil
@@ -81,7 +87,7 @@ func (s *TxState) cancel(ctx context.Context) error {
 	}
 	s.done = true
 
-	if !s.started {
+	if s.beginErr != nil || !s.started {
 		s.mu.Unlock()
 		return nil
 	}

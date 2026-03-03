@@ -54,7 +54,11 @@ func (w *surrealDBWrapper) ensureTx(ctx context.Context) (*surrealdb.Transaction
 	if err != nil {
 		return nil, err
 	}
-	return raw.(*surrealdb.Transaction), nil
+	tx, ok := raw.(*surrealdb.Transaction)
+	if !ok {
+		return nil, fmt.Errorf("unexpected transaction type: %T", raw)
+	}
+	return tx, nil
 }
 
 func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]byte, error) {
