@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	ErrTxClosed          = errors.New("transaction is closed")
-	ErrTxAlreadyActive   = errors.New("transaction is already active in this context")
+	ErrTxClosed           = errors.New("transaction is closed")
+	ErrTxAlreadyActive    = errors.New("transaction is already active in this context")
 	ErrTxLiveNotSupported = errors.New("live queries are not supported within transactions")
 )
 
@@ -20,7 +20,6 @@ type transactable interface {
 }
 
 type TxState struct {
-	once     sync.Once
 	mu       sync.Mutex
 	tx       any
 	done     bool
@@ -30,42 +29,43 @@ type TxState struct {
 
 func (s *TxState) EnsureTx(beginFn func() (any, error)) (any, error) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.done {
-		s.mu.Unlock()
 		return nil, ErrTxClosed
 	}
-	s.mu.Unlock()
 
-	s.once.Do(func() {
-		tx, err := beginFn()
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		s.tx = tx
-		s.beginErr = err
-		if err == nil {
-			s.started = true
-		}
-	})
+	if s.started || s.beginErr != nil {
+		return s.tx, s.beginErr
+	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	tx, err := beginFn()
+	s.tx = tx
+	s.beginErr = err
+	if err == nil {
+		s.started = true
+	}
+
 	return s.tx, s.beginErr
 }
 
 func (s *TxState) commit(ctx context.Context) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	if s.done {
+		s.mu.Unlock()
 		return ErrTxClosed
 	}
 	s.done = true
 
 	if !s.started {
+		s.mu.Unlock()
 		return nil
 	}
 
 	t, ok := s.tx.(transactable)
+	s.mu.Unlock()
+
 	if !ok {
 		return errors.New("transaction does not implement commit")
 	}
@@ -74,18 +74,21 @@ func (s *TxState) commit(ctx context.Context) error {
 
 func (s *TxState) cancel(ctx context.Context) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	if s.done {
+		s.mu.Unlock()
 		return nil
 	}
 	s.done = true
 
 	if !s.started {
+		s.mu.Unlock()
 		return nil
 	}
 
 	t, ok := s.tx.(transactable)
+	s.mu.Unlock()
+
 	if !ok {
 		return errors.New("transaction does not implement cancel")
 	}

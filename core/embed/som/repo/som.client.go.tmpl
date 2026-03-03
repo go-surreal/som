@@ -70,24 +70,12 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 	case *newRecordID:
 		statement := fmt.Sprintf("CREATE %s CONTENT $data", v.String())
 		vars := map[string]any{"data": data}
+		var queryResult *[]surrealdb.QueryResult[[]any]
 		if tx != nil {
-			queryResult, err := surrealdb.Query[[]any](ctx, tx, statement, vars)
-			if err != nil {
-				return nil, fmt.Errorf("failed to execute: %w", err)
-			}
-			if queryResult == nil || len(*queryResult) == 0 {
-				return nil, som.ErrEmptyResponse
-			}
-			if (*queryResult)[0].Error != nil {
-				return nil, fmt.Errorf("create failed: %w", (*queryResult)[0].Error)
-			}
-			resultArray := (*queryResult)[0].Result
-			if len(resultArray) == 0 {
-				return nil, som.ErrEmptyResponse
-			}
-			return cbor.Marshal(resultArray[0])
+			queryResult, err = surrealdb.Query[[]any](ctx, tx, statement, vars)
+		} else {
+			queryResult, err = surrealdb.Query[[]any](ctx, w.db, statement, vars)
 		}
-		queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, vars)
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute: %w", err)
 		}
