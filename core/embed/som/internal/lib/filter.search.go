@@ -15,6 +15,8 @@ type Search[M any] interface {
 	WithHighlights(prefix, suffix string) Search[M]
 	WithOffsets() Search[M]
 	build(ctx *context, ref int) SearchClause
+	keyString(ctx *context) string
+	searchTerms() string
 }
 
 // SearchClause holds the rendered search condition and metadata.
@@ -72,6 +74,14 @@ func (s *search[M]) WithHighlights(prefix, suffix string) Search[M] {
 func (s *search[M]) WithOffsets() Search[M] {
 	s.offsets = true
 	return s
+}
+
+func (s *search[M]) keyString(ctx *context) string {
+	return strings.TrimPrefix(s.key.render(ctx), ".")
+}
+
+func (s *search[M]) searchTerms() string {
+	return s.terms
 }
 
 func (s *search[M]) build(ctx *context, autoRef int) SearchClause {
@@ -132,20 +142,53 @@ func BuildSearchOr[M any](searches []Search[M], q *Query[M]) (string, []SearchCl
 type SearchAll[M any] []Search[M]
 
 // BuildClauses renders all search conditions and returns the SQL and clauses.
+// Searches targeting the same field are merged into a single predicate by
+// combining their terms (space-separated), which uses SurrealDB's default
+// AND semantics within a single full-text search predicate.
 func (sa SearchAll[M]) BuildClauses(q *Query[M]) (string, []SearchClause) {
 	if len(sa) == 0 {
 		return "", nil
+	}
+
+	type group struct {
+		keyStr string
+		terms  []string
+	}
+
+	var groups []group
+	seen := map[string]int{}
+
+	for _, s := range sa {
+		ks := s.keyString(&q.context)
+		if idx, ok := seen[ks]; ok {
+			groups[idx].terms = append(groups[idx].terms, s.searchTerms())
+		} else {
+			seen[ks] = len(groups)
+			groups = append(groups, group{
+				keyStr: ks,
+				terms:  []string{s.searchTerms()},
+			})
+		}
 	}
 
 	var parts []string
 	var clauses []SearchClause
 	autoRef := 0
 
-	for _, s := range sa {
-		clause := s.build(&q.context, autoRef)
+	for _, g := range groups {
+		ref := autoRef
+		refStr := strconv.Itoa(ref)
+		combinedTerms := strings.Join(g.terms, " ")
+
+		sql := g.keyStr + " @" + refStr + "@ '" + escapeSearchTerms(combinedTerms) + "'"
+
+		clause := SearchClause{
+			SQL: sql,
+			Ref: ref,
+		}
 		parts = append(parts, clause.SQL)
 		clauses = append(clauses, clause)
-		autoRef = clause.Ref + 1
+		autoRef = ref + 1
 	}
 
 	return "(" + strings.Join(parts, " AND ") + ")", clauses
