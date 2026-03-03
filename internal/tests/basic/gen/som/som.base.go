@@ -131,6 +131,19 @@ func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Contex
 	return internal.WithCache[T](ctx, opts...)
 }
 
+func TxStart(ctx context.Context) (context.Context, func()) {
+	txCtx := internal.TxStart(ctx)
+	return txCtx, func() { _ = internal.TxCancel(txCtx) }
+}
+
+func TxCommit(ctx context.Context) error {
+	return internal.TxCommit(ctx)
+}
+
+func TxCancel(ctx context.Context) error {
+	return internal.TxCancel(ctx)
+}
+
 type Timestamps = internal.Timestamps
 type OptimisticLock = internal.OptimisticLock
 type SoftDelete = internal.SoftDelete

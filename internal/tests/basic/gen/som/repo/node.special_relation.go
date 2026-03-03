@@ -484,6 +484,9 @@ func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRe
 		return nil, false, som.ErrEmptyID
 	}
 	rid := r.recordID(id)
+	if internal.TxActive(ctx) {
+		return r.read(ctx, rid)
+	}
 	if !internal.CacheEnabled[model.SpecialRelation](ctx) {
 		return r.read(ctx, rid)
 	}
