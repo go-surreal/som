@@ -477,6 +477,9 @@ func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, 
 		return nil, false, som.ErrEmptyID
 	}
 	rid := r.recordID(id)
+	if internal.TxActive(ctx) {
+		return r.read(ctx, rid)
+	}
 	if !internal.CacheEnabled[model.AllTypes](ctx) {
 		return r.read(ctx, rid)
 	}

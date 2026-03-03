@@ -485,6 +485,9 @@ func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes
 		return nil, false, som.ErrEmptyID
 	}
 	rid := r.recordID(id)
+	if internal.TxActive(ctx) {
+		return r.read(ctx, rid)
+	}
 	if !internal.CacheEnabled[model.SpecialTypes](ctx) {
 		return r.read(ctx, rid)
 	}

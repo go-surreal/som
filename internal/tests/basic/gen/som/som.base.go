@@ -42,24 +42,28 @@ type nodeID interface {
 }
 
 type ULID string
+
 type UUID string
+
 type Rand string
 
 func (ULID) isNodeID() {}
+
 func (UUID) isNodeID() {}
+
 func (Rand) isNodeID() {}
+
+func (ArrayID) isNodeID() {}
+
+func (ObjectID) isNodeID() {}
 
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.
 type ArrayID struct{}
 
-func (ArrayID) isNodeID() {}
-
 // ObjectID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an object.
 type ObjectID struct{}
-
-func (ObjectID) isNodeID() {}
 
 type rangeBound struct {
 	val       any
@@ -67,20 +71,45 @@ type rangeBound struct {
 	open      bool
 }
 
-func (b rangeBound) Value() any        { return b.val }
-func (b rangeBound) IsInclusive() bool { return b.inclusive }
-func (b rangeBound) IsOpen() bool      { return b.open }
+func (b rangeBound) Value() any {
+	return b.val
+}
+
+func (b rangeBound) IsInclusive() bool {
+	return b.inclusive
+}
+
+func (b rangeBound) IsOpen() bool {
+	return b.open
+}
 
 type RangeFrom struct{ rangeBound }
+
 type RangeTo struct{ rangeBound }
 
-func From[T nodeID](val T) RangeFrom         { return RangeFrom{rangeBound{val: val, inclusive: true}} }
-func FromExclusive[T nodeID](val T) RangeFrom { return RangeFrom{rangeBound{val: val, inclusive: false}} }
-func FromStart() RangeFrom                     { return RangeFrom{rangeBound{open: true}} }
+func From[T nodeID](val T) RangeFrom {
+	return RangeFrom{rangeBound{val: val, inclusive: true}}
+}
 
-func To[T nodeID](val T) RangeTo             { return RangeTo{rangeBound{val: val, inclusive: false}} }
-func ToInclusive[T nodeID](val T) RangeTo     { return RangeTo{rangeBound{val: val, inclusive: true}} }
-func ToEnd() RangeTo                           { return RangeTo{rangeBound{open: true}} }
+func FromExclusive[T nodeID](val T) RangeFrom {
+	return RangeFrom{rangeBound{val: val, inclusive: false}}
+}
+
+func FromStart() RangeFrom {
+	return RangeFrom{rangeBound{open: true}}
+}
+
+func To[T nodeID](val T) RangeTo {
+	return RangeTo{rangeBound{val: val, inclusive: false}}
+}
+
+func ToInclusive[T nodeID](val T) RangeTo {
+	return RangeTo{rangeBound{val: val, inclusive: true}}
+}
+
+func ToEnd() RangeTo {
+	return RangeTo{rangeBound{open: true}}
+}
 
 func (u UUID) MarshalCBOR() ([]byte, error) {
 	if u == "" {
@@ -105,7 +134,9 @@ func NewNode[T nodeID](id T) Node[T] {
 	return Node[T]{id: id}
 }
 
-func (n Node[T]) ID() T { return n.id }
+func (n Node[T]) ID() T {
+	return n.id
+}
 
 func (Node[T]) isNode() {}
 
@@ -125,14 +156,31 @@ func (e Edge) ID() string {
 	return e.id
 }
 
-type node interface{ isNode() }
+type node interface {
+	isNode()
+}
 
 func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
 	return internal.WithCache[T](ctx, opts...)
 }
 
+func TxStart(ctx context.Context) (context.Context, func()) {
+	txCtx := internal.TxStart(ctx)
+	return txCtx, func() { _ = internal.TxCancel(txCtx) }
+}
+
+func TxCommit(ctx context.Context) error {
+	return internal.TxCommit(ctx)
+}
+
+func TxCancel(ctx context.Context) error {
+	return internal.TxCancel(ctx)
+}
+
 type Timestamps = internal.Timestamps
+
 type OptimisticLock = internal.OptimisticLock
+
 type SoftDelete = internal.SoftDelete
 
 // Enum describes a database type with a fixed set of allowed values.
@@ -265,13 +313,3 @@ type OnBeforeDeleteHook interface {
 type OnAfterDeleteHook interface {
 	OnAfterDelete(ctx context.Context) error
 }
-
-// TODO: below needed?
-// type Entity interface {
-// 	entity()
-// }
-
-// TODO: implement external types
-// type External struct {
-// 	ID string
-// }
