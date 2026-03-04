@@ -39,7 +39,12 @@ var ErrEmptyResponse = errors.New("empty response")
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
 // ServerError is a structured error from SurrealDB v3.
-// Use errors.As(err, &som.ServerError{}) to extract it from errors returned by SOM.
+// Use errors.As to extract structured details from errors returned by SOM:
+//
+//	var se som.ServerError
+//	if errors.As(err, &se) {
+//	    fmt.Println(se.Kind, se.Message, se.Details)
+//	}
 type ServerError = connection.ServerError
 
 // nodeID is a marker type for all ID types.
