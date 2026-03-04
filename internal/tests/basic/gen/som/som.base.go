@@ -53,17 +53,17 @@ func (UUID) isNodeID() {}
 
 func (Rand) isNodeID() {}
 
-func (ArrayID) isNodeID() {}
-
-func (ObjectID) isNodeID() {}
-
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.
 type ArrayID struct{}
 
+func (ArrayID) isNodeID() {}
+
 // ObjectID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an object.
 type ObjectID struct{}
+
+func (ObjectID) isNodeID() {}
 
 type rangeBound struct {
 	val       any
@@ -312,4 +312,53 @@ type OnBeforeDeleteHook interface {
 // It is not distributed across multiple instances of the application.
 type OnAfterDeleteHook interface {
 	OnAfterDelete(ctx context.Context) error
+}
+// Params is a map of named parameters for raw queries.
+type Params map[string]any
+
+// RawResult holds the result of a raw query.
+type RawResult struct {
+	data      []byte
+	unmarshal func([]byte, any) error
+}
+
+// NewRawResult creates a new RawResult with the given data and unmarshal function.
+func NewRawResult(data []byte, unmarshal func([]byte, any) error) *RawResult {
+	return &RawResult{data: data, unmarshal: unmarshal}
+}
+
+// Scan unmarshals the query result into dest.
+// dest should be a pointer to a slice for multi-row results.
+func (r *RawResult) Scan(dest any) error {
+	if r.data == nil {
+		return nil
+	}
+	var raw []internal.QueryResult[cbor.RawMessage]
+	if err := r.unmarshal(r.data, &raw); err != nil {
+		return fmt.Errorf("could not decode raw query result: %w", err)
+	}
+	if len(raw) < 1 {
+		return nil
+	}
+	resultBytes, err := cbor.Marshal(raw[0].Result)
+	if err != nil {
+		return fmt.Errorf("could not re-encode result: %w", err)
+	}
+	return r.unmarshal(resultBytes, dest)
+}
+
+// ScanOne unmarshals the first result row into dest.
+// Returns ErrNotFound if no results.
+func (r *RawResult) ScanOne(dest any) error {
+	if r.data == nil {
+		return ErrNotFound
+	}
+	var raw []internal.QueryResult[cbor.RawMessage]
+	if err := r.unmarshal(r.data, &raw); err != nil {
+		return fmt.Errorf("could not decode raw query result: %w", err)
+	}
+	if len(raw) < 1 || len(raw[0].Result) < 1 {
+		return ErrNotFound
+	}
+	return r.unmarshal(raw[0].Result[0], dest)
 }
