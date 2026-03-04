@@ -1,82 +1,109 @@
 package basic
 
 import (
+	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/model"
 	"gotest.tools/v3/assert"
 )
 
-func TestServerError_TypeAlias(t *testing.T) {
-	t.Parallel()
+func TestServerError_OptimisticLockUpdate(t *testing.T) {
+	ctx := context.Background()
 
-	se := som.ServerError{
-		Code:    -32000,
-		Message: "An error occurred",
-		Kind:    "Thrown",
-	}
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
 
-	assert.Equal(t, "An error occurred", se.Error())
-	assert.Equal(t, "Thrown", se.Kind)
-	assert.Equal(t, -32000, se.Code)
-}
+	record := model.SpecialTypes{Name: "Test Record"}
+	err := client.SpecialTypesRepo().Create(ctx, &record)
+	assert.NilError(t, err)
 
-func TestServerError_ErrorsAs(t *testing.T) {
-	t.Parallel()
+	stale, exists, err := client.SpecialTypesRepo().Read(ctx, string(record.ID()))
+	assert.NilError(t, err)
+	assert.Assert(t, exists)
 
-	se := som.ServerError{
-		Code:    -32000,
-		Message: "An error occurred",
-		Kind:    "Thrown",
-	}
-	wrapped := fmt.Errorf("operation failed: %w", se)
+	record.Name = "Updated"
+	err = client.SpecialTypesRepo().Update(ctx, &record)
+	assert.NilError(t, err)
 
-	var extracted som.ServerError
-	assert.Assert(t, errors.As(wrapped, &extracted), "errors.As should extract ServerError from wrapped error")
-	assert.Equal(t, "An error occurred", extracted.Message)
-	assert.Equal(t, "Thrown", extracted.Kind)
-}
-
-func TestServerError_CauseChain(t *testing.T) {
-	t.Parallel()
-
-	se := som.ServerError{
-		Code:    -32000,
-		Message: "outer error",
-		Kind:    "QueryError",
-		Cause: &som.ServerError{
-			Code:    -32000,
-			Message: "inner: optimistic_lock_failed",
-			Kind:    "Thrown",
-		},
-	}
-
-	assert.Equal(t, "outer error: inner: optimistic_lock_failed", se.Error())
-	assert.Equal(t, "inner: optimistic_lock_failed", se.Cause.Message)
-}
-
-func TestServerError_ErrorsIs(t *testing.T) {
-	t.Parallel()
-
-	se := som.ServerError{
-		Code:    -32000,
-		Message: "some error",
-		Kind:    "NotFound",
-	}
-	wrapped := fmt.Errorf("operation failed: %w", se)
-
-	assert.Assert(t, errors.Is(wrapped, som.ServerError{}),
-		"errors.Is should match any ServerError in the chain")
-}
-
-func TestServerError_NotPresent(t *testing.T) {
-	t.Parallel()
-
-	plainErr := errors.New("plain error")
+	stale.Name = "Stale Update"
+	err = client.SpecialTypesRepo().Update(ctx, stale)
+	assert.Assert(t, err != nil)
+	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock))
 
 	var se som.ServerError
-	assert.Assert(t, !errors.As(plainErr, &se),
-		"errors.As should not match when no ServerError in chain")
+	assert.Assert(t, errors.As(err, &se),
+		"optimistic lock error from Update (RPC) should contain a ServerError, got: %v", err)
+	assert.Assert(t, se.Message != "", "ServerError.Message should not be empty")
+}
+
+func TestServerError_OptimisticLockSoftDelete(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	record := model.SpecialTypes{Name: "Test Record"}
+	err := client.SpecialTypesRepo().Create(ctx, &record)
+	assert.NilError(t, err)
+
+	stale := record
+
+	record.Name = "Updated"
+	err = client.SpecialTypesRepo().Update(ctx, &record)
+	assert.NilError(t, err)
+
+	err = client.SpecialTypesRepo().Delete(ctx, &stale)
+	assert.Assert(t, err != nil)
+	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock))
+}
+
+func TestServerError_AlreadyDeleted(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	record := model.SpecialTypes{Name: "Test Record"}
+	err := client.SpecialTypesRepo().Create(ctx, &record)
+	assert.NilError(t, err)
+
+	err = client.SpecialTypesRepo().Delete(ctx, &record)
+	assert.NilError(t, err)
+
+	err = client.SpecialTypesRepo().Delete(ctx, &record)
+	assert.Assert(t, err != nil)
+	assert.Assert(t, errors.Is(err, som.ErrAlreadyDeleted))
+}
+
+func TestServerError_OptimisticLockRestore(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	record := model.SpecialTypes{Name: "Test Record"}
+	err := client.SpecialTypesRepo().Create(ctx, &record)
+	assert.NilError(t, err)
+
+	err = client.SpecialTypesRepo().Delete(ctx, &record)
+	assert.NilError(t, err)
+
+	staleDeleted := record
+
+	err = client.SpecialTypesRepo().Restore(ctx, &record)
+	assert.NilError(t, err)
+
+	record.Name = "Updated After Restore"
+	err = client.SpecialTypesRepo().Update(ctx, &record)
+	assert.NilError(t, err)
+
+	err = client.SpecialTypesRepo().Delete(ctx, &record)
+	assert.NilError(t, err)
+
+	err = client.SpecialTypesRepo().Restore(ctx, &staleDeleted)
+	assert.Assert(t, err != nil)
+	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock))
 }
