@@ -14,7 +14,6 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	"slices"
-	"strings"
 	"sync"
 	"sync/atomic"
 )
@@ -633,7 +632,7 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 	}
 	_, err := r.db.Query(ctx, query, vars)
 	if err != nil {
-		if strings.Contains(err.Error(), "optimistic_lock_failed") {
+		if containsError(err, "optimistic_lock_failed") {
 			return som.ErrOptimisticLock
 		}
 		return fmt.Errorf("could not restore entity: %w", err)

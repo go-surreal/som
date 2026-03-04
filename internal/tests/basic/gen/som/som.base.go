@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -35,6 +36,10 @@ var ErrEmptyResponse = errors.New("empty response")
 
 // ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
+
+// ServerError is a structured error from SurrealDB v3.
+// Use errors.As(err, &som.ServerError{}) to extract it from errors returned by SOM.
+type ServerError = connection.ServerError
 
 // nodeID is a marker type for all ID types.
 type nodeID interface {
