@@ -948,10 +948,10 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 
 				if node.Source.OptimisticLock {
 					g.If(jen.Err().Op("!=").Nil()).Block(
-						jen.If(jen.Qual("strings", "Contains").Call(
-							jen.Err().Dot("Error").Call(), jen.Lit("optimistic_lock_failed"),
+						jen.If(jen.Id("containsError").Call(
+							jen.Err(), jen.Lit("optimistic_lock_failed"),
 						)).Block(
-							jen.Return(jen.Qual(b.relativePkgPath(), "ErrOptimisticLock")),
+							jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("%w: %w"), jen.Qual(b.relativePkgPath(), "ErrOptimisticLock"), jen.Err())),
 						),
 						jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not restore entity: %w"), jen.Err())),
 					)
