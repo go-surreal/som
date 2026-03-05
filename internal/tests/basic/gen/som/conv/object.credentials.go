@@ -2,8 +2,8 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	cbor "github.com/fxamacker/cbor/v2"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -13,7 +13,7 @@ type credentials struct {
 
 func (c *credentials) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 3)
 
@@ -23,23 +23,23 @@ func (c *credentials) MarshalCBOR() ([]byte, error) {
 		data["password_ptr"] = c.PasswordPtr
 	}
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *credentials) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	if raw, ok := rawMap["username"]; ok {
-		cbor.Unmarshal(raw, &c.Username)
+		codec.Unmarshal(raw, &c.Username)
 	}
 	if raw, ok := rawMap["password"]; ok {
-		cbor.Unmarshal(raw, &c.Password)
+		codec.Unmarshal(raw, &c.Password)
 	}
 	if raw, ok := rawMap["password_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.PasswordPtr)
+		codec.Unmarshal(raw, &c.PasswordPtr)
 	}
 
 	return nil

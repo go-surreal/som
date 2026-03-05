@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	index "github.com/go-surreal/som/tests/basic/gen/som/index"
@@ -113,9 +114,9 @@ var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
 	MarshalOne: func(node *model.SpecialTypes) any {
 		return conv.FromSpecialTypesPtr(node)
 	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialTypes, error) {
+	UnmarshalInsert: func(data []byte) ([]*model.SpecialTypes, error) {
 		var raw []internal.QueryResult[*conv.SpecialTypes]
-		if err := unmarshal(data, &raw); err != nil {
+		if err := cbor.Unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
 		if len(raw) < 1 {
@@ -127,9 +128,9 @@ var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialTypes, error) {
+	UnmarshalOne: func(data []byte) (*model.SpecialTypes, error) {
 		var raw *conv.SpecialTypes
-		if err := unmarshal(data, &raw); err != nil {
+		if err := cbor.Unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
 		return conv.ToSpecialTypesPtr(raw), nil

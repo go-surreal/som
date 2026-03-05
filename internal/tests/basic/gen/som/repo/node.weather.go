@@ -4,6 +4,7 @@ package repo
 import (
 	"context"
 	"errors"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	index "github.com/go-surreal/som/tests/basic/gen/som/index"
@@ -95,9 +96,9 @@ var weatherRepoInfo = RepoInfo[model.Weather]{
 	MarshalOne: func(node *model.Weather) any {
 		return conv.FromWeatherPtr(node)
 	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Weather, error) {
+	UnmarshalInsert: func(data []byte) ([]*model.Weather, error) {
 		var raw []internal.QueryResult[*conv.Weather]
-		if err := unmarshal(data, &raw); err != nil {
+		if err := cbor.Unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
 		if len(raw) < 1 {
@@ -109,9 +110,9 @@ var weatherRepoInfo = RepoInfo[model.Weather]{
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Weather, error) {
+	UnmarshalOne: func(data []byte) (*model.Weather, error) {
 		var raw *conv.Weather
-		if err := unmarshal(data, &raw); err != nil {
+		if err := cbor.Unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
 		return conv.ToWeatherPtr(raw), nil

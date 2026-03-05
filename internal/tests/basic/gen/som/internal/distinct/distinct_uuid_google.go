@@ -5,6 +5,7 @@ package distinct
 import (
 	"fmt"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/google/uuid"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
@@ -14,9 +15,9 @@ import (
 func NewUUIDGoogleField[M any](key string) Field[M, uuid.UUID] {
 	return Field[M, uuid.UUID]{
 		Key: key,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]uuid.UUID, error) {
+		Decode: func(data []byte) ([]uuid.UUID, error) {
 			var raw []internal.QueryResult[DistinctResult[types.UUIDGoogle]]
-			if err := unmarshal(data, &raw); err != nil {
+			if err := cbor.Unmarshal(data, &raw); err != nil {
 				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
 			if len(raw) < 1 || len(raw[0].Result) < 1 {

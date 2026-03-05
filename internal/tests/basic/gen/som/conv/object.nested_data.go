@@ -2,8 +2,8 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	cbor "github.com/fxamacker/cbor/v2"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
@@ -14,7 +14,7 @@ type nestedData struct {
 
 func (c *nestedData) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 4)
 
@@ -32,26 +32,26 @@ func (c *nestedData) MarshalCBOR() ([]byte, error) {
 		data["uuid_ptr"] = &uuidVal
 	}
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *nestedData) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	if raw, ok := rawMap["string_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.StringPtr)
+		codec.Unmarshal(raw, &c.StringPtr)
 	}
 	if raw, ok := rawMap["int_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.IntPtr)
+		codec.Unmarshal(raw, &c.IntPtr)
 	}
 	if raw, ok := rawMap["time_ptr"]; ok {
-		c.TimePtr, _ = cbor.UnmarshalDateTimePtr(raw)
+		c.TimePtr, _ = codec.UnmarshalDateTimePtr(raw)
 	}
 	if raw, ok := rawMap["uuid_ptr"]; ok {
-		c.UuidPtr, _ = cbor.UnmarshalUUIDGooglePtr(raw)
+		c.UuidPtr, _ = codec.UnmarshalUUIDGooglePtr(raw)
 	}
 
 	return nil

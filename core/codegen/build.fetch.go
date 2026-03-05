@@ -31,7 +31,7 @@ func (b *fetchBuilder) build() error {
 }
 
 func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
-	f := jen.NewFile(b.pkgName)
+	f := def.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 

@@ -15,7 +15,6 @@ import (
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	Unmarshal(buf []byte, val any) error
 }
 
 // recordID represents a SurrealDB record ID for query results.
@@ -168,9 +167,9 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 // -- UNMARSHAL
 //
 
-func unmarshalAll[M, C any](unmarshal func([]byte, any) error, data []byte, convert func(*C) *M) ([]*M, error) {
+func unmarshalAll[M, C any](data []byte, convert func(*C) *M) ([]*M, error) {
 	var rawNodes []internal.QueryResult[*C]
-	if err := unmarshal(data, &rawNodes); err != nil {
+	if err := cbor.Unmarshal(data, &rawNodes); err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
 	if len(rawNodes) < 1 {
@@ -183,9 +182,9 @@ func unmarshalAll[M, C any](unmarshal func([]byte, any) error, data []byte, conv
 	return results, nil
 }
 
-func unmarshalOne[M, C any](unmarshal func([]byte, any) error, data []byte, convert func(*C) *M) (*M, error) {
+func unmarshalOne[M, C any](data []byte, convert func(*C) *M) (*M, error) {
 	var raw *C
-	if err := unmarshal(data, &raw); err != nil {
+	if err := cbor.Unmarshal(data, &raw); err != nil {
 		return nil, err
 	}
 	return convert(raw), nil
@@ -198,7 +197,6 @@ func unmarshalOne[M, C any](unmarshal func([]byte, any) error, data []byte, conv
 func live[M any](
 	ctx context.Context,
 	in <-chan []byte,
-	unmarshal func(buf []byte, val any) error,
 	info modelInfo[M],
 ) <-chan LiveResult[*M] {
 	out := make(chan LiveResult[*M], 1)
@@ -217,7 +215,7 @@ func live[M any](
 					return
 				}
 
-				out <- toLiveResult(data, unmarshal, info)
+				out <- toLiveResult(data, info)
 			}
 		}
 	}()
@@ -227,12 +225,11 @@ func live[M any](
 
 func toLiveResult[M any](
 	in []byte,
-	unmarshal func(buf []byte, val any) error,
 	info modelInfo[M],
 ) LiveResult[*M] {
 	var response liveResponse
 
-	if err := unmarshal(in, &response); err != nil {
+	if err := cbor.Unmarshal(in, &response); err != nil {
 		return &liveResult[*M]{
 			err: fmt.Errorf("could not unmarshal live response: %w", err),
 		}
@@ -243,7 +240,7 @@ func toLiveResult[M any](
 	case "create":
 		var out liveResult[*M]
 
-		result, err := info.UnmarshalOne(unmarshal, response.Result)
+		result, err := info.UnmarshalOne(response.Result)
 		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
 		}
@@ -259,7 +256,7 @@ func toLiveResult[M any](
 	case "update":
 		var out liveResult[*M]
 
-		result, err := info.UnmarshalOne(unmarshal, response.Result)
+		result, err := info.UnmarshalOne(response.Result)
 		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live update result: %w", err)
 		}
@@ -275,7 +272,7 @@ func toLiveResult[M any](
 	case "delete":
 		var out liveResult[*M]
 
-		result, err := info.UnmarshalOne(unmarshal, response.Result)
+		result, err := info.UnmarshalOne(response.Result)
 		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live delete result: %w", err)
 		}

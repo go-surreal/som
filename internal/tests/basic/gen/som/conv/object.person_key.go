@@ -2,8 +2,8 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	cbor "github.com/fxamacker/cbor/v2"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -13,27 +13,27 @@ type personKey struct {
 
 func (c *personKey) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 2)
 
 	data["name"] = c.Name
 	data["age"] = c.Age
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *personKey) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	if raw, ok := rawMap["name"]; ok {
-		cbor.Unmarshal(raw, &c.Name)
+		codec.Unmarshal(raw, &c.Name)
 	}
 	if raw, ok := rawMap["age"]; ok {
-		cbor.Unmarshal(raw, &c.Age)
+		codec.Unmarshal(raw, &c.Age)
 	}
 
 	return nil

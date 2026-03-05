@@ -15,19 +15,20 @@ import (
 	"{{.GenerateOutPath}}/internal"
 	"{{.GenerateOutPath}}/internal/lib"
 	"{{.GenerateOutPath}}/with"
+	"github.com/fxamacker/cbor/v2"
 )
 
 // modelInfo holds type-specific conversion functions.
 // Passed directly to builder - no registry lookup needed.
 type modelInfo[M any] struct {
 	// UnmarshalAll unmarshals query results into []*M
-	UnmarshalAll func(unmarshal func([]byte, any) error, data []byte) ([]*M, error)
+	UnmarshalAll func(data []byte) ([]*M, error)
 
 	// UnmarshalOne unmarshals a single result into *M
-	UnmarshalOne func(unmarshal func([]byte, any) error, data []byte) (*M, error)
+	UnmarshalOne func(data []byte) (*M, error)
 
 	// UnmarshalSearchAll unmarshals search query results into []SearchResult[*M]
-	UnmarshalSearchAll func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*M], error)
+	UnmarshalSearchAll func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*M], error)
 }
 
 type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) string
@@ -155,7 +156,7 @@ func (b builder[M]) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	var rawCount []internal.QueryResult[countResult]
-	err = b.db.Unmarshal(raw, &rawCount)
+	err = cbor.Unmarshal(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
@@ -193,7 +194,7 @@ func (b builder[M]) All(ctx context.Context) ([]*M, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	return b.info.UnmarshalAll(b.db.Unmarshal, res)
+	return b.info.UnmarshalAll(res)
 }
 
 // AllAsync is the asynchronous version of All.
@@ -209,7 +210,7 @@ func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
 	var rawNodes []internal.QueryResult[idNode]
-	err = b.db.Unmarshal(res, &rawNodes)
+	err = cbor.Unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
@@ -357,7 +358,7 @@ func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
-	return live(ctx, resChan, b.db.Unmarshal, b.info), nil
+	return live(ctx, resChan, b.info), nil
 }
 
 // LiveCount is the live version of Count.
@@ -551,7 +552,7 @@ func (b SearchBuilder[M]) AllMatches(ctx context.Context) ([]lib.SearchResult[*M
 	if err != nil {
 		return nil, fmt.Errorf("could not query search records: %w", err)
 	}
-	return b.info.UnmarshalSearchAll(b.db.Unmarshal, res, b.query.SearchClauses)
+	return b.info.UnmarshalSearchAll(res, b.query.SearchClauses)
 }
 
 // AllMatchesAsync is the asynchronous version of AllMatches.
@@ -615,9 +616,9 @@ func (b SearchBuilder[M]) Debug(prefix ...string) SearchBuilder[M] {
 // Use with SearchBuilder.Order() to sort search results by relevance score.
 var Score = lib.Score
 
-func unmarshalSearchAll[M, C any](unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
+func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
 	var rawNodes []internal.QueryResult[searchRawResult[*C]]
-	if err := unmarshal(data, &rawNodes); err != nil {
+	if err := cbor.Unmarshal(data, &rawNodes); err != nil {
 		return nil, fmt.Errorf("could not unmarshal search records: %w", err)
 	}
 	if len(rawNodes) < 1 {

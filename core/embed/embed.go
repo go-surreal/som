@@ -48,22 +48,22 @@ var fileConditions = map[string]FileCondition{
 	"internal/types/uuid_gofrs.go":               FileIfGofrsUUID,
 	"internal/lib/filter.uuid_google.go":         FileIfGoogleUUID,
 	"internal/lib/filter.uuid_gofrs.go":          FileIfGofrsUUID,
-	"internal/cbor/helpers_uuid_google.go":       FileIfGoogleUUID,
-	"internal/cbor/helpers_uuid_gofrs.go":        FileIfGofrsUUID,
+	"internal/codec/helpers_uuid_google.go":       FileIfGoogleUUID,
+	"internal/codec/helpers_uuid_gofrs.go":        FileIfGofrsUUID,
 	"internal/distinct/distinct_uuid_google.go":  FileIfGoogleUUID,
 	"internal/distinct/distinct_uuid_gofrs.go":   FileIfGofrsUUID,
 	// Geo files - orb
 	"internal/types/geo_orb.go":        FileIfOrbGeo,
 	"internal/lib/filter.geo_orb.go":   FileIfOrbGeo,
-	"internal/cbor/helpers_geo_orb.go": FileIfOrbGeo,
+	"internal/codec/helpers_geo_orb.go": FileIfOrbGeo,
 	// Geo files - simplefeatures
 	"internal/types/geo_sf.go":        FileIfSimplefeaturesGeo,
 	"internal/lib/filter.geo_sf.go":   FileIfSimplefeaturesGeo,
-	"internal/cbor/helpers_geo_sf.go": FileIfSimplefeaturesGeo,
+	"internal/codec/helpers_geo_sf.go": FileIfSimplefeaturesGeo,
 	// Geo files - go-geom
 	"internal/types/geo_gogeom.go":        FileIfGoGeomGeo,
 	"internal/lib/filter.geo_gogeom.go":   FileIfGoGeomGeo,
-	"internal/cbor/helpers_geo_gogeom.go": FileIfGoGeomGeo,
+	"internal/codec/helpers_geo_gogeom.go": FileIfGoGeomGeo,
 }
 
 type File struct {

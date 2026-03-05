@@ -43,7 +43,7 @@ func (b *fieldBuilder) buildNodeFile(node *field.NodeTable) error {
 		Table:     node,
 	}
 
-	f := jen.NewFile(b.pkgName)
+	f := def.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -112,7 +112,7 @@ func (b *fieldBuilder) buildObjectFile(object *field.DatabaseObject) error {
 		Table:     object,
 	}
 
-	f := jen.NewFile(b.pkgName)
+	f := def.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 

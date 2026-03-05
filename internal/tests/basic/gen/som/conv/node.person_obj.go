@@ -2,9 +2,9 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
@@ -15,7 +15,7 @@ type PersonObj struct {
 
 func (c *PersonObj) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 1)
 
@@ -23,35 +23,35 @@ func (c *PersonObj) MarshalCBOR() ([]byte, error) {
 
 	data["email"] = c.Email
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *PersonObj) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
-		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+		if err := codec.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
 		if recordID != nil {
-			idRaw, err := cbor.Marshal(recordID.ID)
+			idRaw, err := codec.Marshal(recordID.ID)
 			if err != nil {
 				return err
 			}
-			var rawObj map[string]v2.RawMessage
-			if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
+			var rawObj map[string]cbor.RawMessage
+			if err := codec.Unmarshal(idRaw, &rawObj); err != nil {
 				return err
 			}
 			var key model.PersonKey
-			if err := cbor.Unmarshal(rawObj["name"], &key.Name); err != nil {
+			if err := codec.Unmarshal(rawObj["name"], &key.Name); err != nil {
 				return err
 			}
-			if err := cbor.Unmarshal(rawObj["age"], &key.Age); err != nil {
+			if err := codec.Unmarshal(rawObj["age"], &key.Age); err != nil {
 				return err
 			}
 			c.Node = som.NewNode[model.PersonKey](key)
@@ -59,7 +59,7 @@ func (c *PersonObj) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["email"]; ok {
-		cbor.Unmarshal(raw, &c.Email)
+		codec.Unmarshal(raw, &c.Email)
 	}
 
 	return nil
@@ -95,16 +95,16 @@ func (f *personObjLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return cbor.Marshal(f.ID)
+	return codec.Marshal(f.ID)
 }
 
 func (f *personObjLink) UnmarshalCBOR(data []byte) error {
-	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+	if err := codec.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias personObjLink
 	var link alias
-	err := cbor.Unmarshal(data, &link)
+	err := codec.Unmarshal(data, &link)
 	if err == nil {
 		*f = personObjLink(link)
 	}

@@ -7,13 +7,14 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 )
 
 type Field[M any, T any] struct {
 	Key    string
-	Decode func(unmarshal func([]byte, any) error, data []byte) ([]T, error)
+	Decode func(data []byte) ([]T, error)
 }
 
 type DistinctResult[T any] struct {
@@ -23,9 +24,9 @@ type DistinctResult[T any] struct {
 func NewField[M any, T any](key string) Field[M, T] {
 	return Field[M, T]{
 		Key: key,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]T, error) {
+		Decode: func(data []byte) ([]T, error) {
 			var raw []internal.QueryResult[DistinctResult[T]]
-			if err := unmarshal(data, &raw); err != nil {
+			if err := cbor.Unmarshal(data, &raw); err != nil {
 				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
 			if len(raw) < 1 || len(raw[0].Result) < 1 {
@@ -43,9 +44,9 @@ func NewField[M any, T any](key string) Field[M, T] {
 func NewTimeField[M any](key string) Field[M, time.Time] {
 	return Field[M, time.Time]{
 		Key: key,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Time, error) {
+		Decode: func(data []byte) ([]time.Time, error) {
 			var raw []internal.QueryResult[DistinctResult[types.DateTime]]
-			if err := unmarshal(data, &raw); err != nil {
+			if err := cbor.Unmarshal(data, &raw); err != nil {
 				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
 			if len(raw) < 1 || len(raw[0].Result) < 1 {
@@ -71,9 +72,9 @@ func NewTimePtrField[M any](key string) Field[M, time.Time] {
 func NewDurationField[M any](key string) Field[M, time.Duration] {
 	return Field[M, time.Duration]{
 		Key: key,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]time.Duration, error) {
+		Decode: func(data []byte) ([]time.Duration, error) {
 			var raw []internal.QueryResult[DistinctResult[types.Duration]]
-			if err := unmarshal(data, &raw); err != nil {
+			if err := cbor.Unmarshal(data, &raw); err != nil {
 				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
 			if len(raw) < 1 || len(raw[0].Result) < 1 {
@@ -99,9 +100,9 @@ func NewDurationPtrField[M any](key string) Field[M, time.Duration] {
 func NewURLField[M any](key string) Field[M, url.URL] {
 	return Field[M, url.URL]{
 		Key: key,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]url.URL, error) {
+		Decode: func(data []byte) ([]url.URL, error) {
 			var raw []internal.QueryResult[DistinctResult[string]]
-			if err := unmarshal(data, &raw); err != nil {
+			if err := cbor.Unmarshal(data, &raw); err != nil {
 				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
 			if len(raw) < 1 || len(raw[0].Result) < 1 {

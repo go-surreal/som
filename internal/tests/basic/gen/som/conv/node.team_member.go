@@ -2,9 +2,9 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
@@ -16,7 +16,7 @@ type TeamMember struct {
 
 func (c *TeamMember) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 1)
 
@@ -24,43 +24,43 @@ func (c *TeamMember) MarshalCBOR() ([]byte, error) {
 
 	data["role"] = c.Role
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *TeamMember) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
-		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+		if err := codec.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
 		if recordID != nil {
-			idRaw, err := cbor.Marshal(recordID.ID)
+			idRaw, err := codec.Marshal(recordID.ID)
 			if err != nil {
 				return err
 			}
-			var rawObj map[string]v2.RawMessage
-			if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
+			var rawObj map[string]cbor.RawMessage
+			if err := codec.Unmarshal(idRaw, &rawObj); err != nil {
 				return err
 			}
 			var key model.TeamMemberKey
 			{
 				var rid *models.RecordID
-				if err := cbor.Unmarshal(rawObj["member"], &rid); err != nil {
+				if err := codec.Unmarshal(rawObj["member"], &rid); err != nil {
 					return err
 				}
 				if rid != nil {
-					idRaw, err := cbor.Marshal(rid.ID)
+					idRaw, err := codec.Marshal(rid.ID)
 					if err != nil {
 						return err
 					}
 					var idStr string
-					if err := cbor.Unmarshal(idRaw, &idStr); err != nil {
+					if err := codec.Unmarshal(idRaw, &idStr); err != nil {
 						return err
 					}
 					key.Member = model.AllTypes{Node: som.NewNode[som.ULID](som.ULID(idStr))}
@@ -68,26 +68,26 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 			}
 			{
 				var rid *models.RecordID
-				if err := cbor.Unmarshal(rawObj["forecast"], &rid); err != nil {
+				if err := codec.Unmarshal(rawObj["forecast"], &rid); err != nil {
 					return err
 				}
 				if rid != nil {
-					idRaw, err := cbor.Marshal(rid.ID)
+					idRaw, err := codec.Marshal(rid.ID)
 					if err != nil {
 						return err
 					}
-					var rawArr []v2.RawMessage
-					if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
+					var rawArr []cbor.RawMessage
+					if err := codec.Unmarshal(idRaw, &rawArr); err != nil {
 						return err
 					}
 					if len(rawArr) >= 2 {
 						var innerKey model.WeatherKey
-						if err := cbor.Unmarshal(rawArr[0], &innerKey.City); err != nil {
+						if err := codec.Unmarshal(rawArr[0], &innerKey.City); err != nil {
 							return err
 						}
 						{
 							var DateErr error
-							innerKey.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
+							innerKey.Date, DateErr = codec.UnmarshalDateTime(rawArr[1])
 							if DateErr != nil {
 								return DateErr
 							}
@@ -101,7 +101,7 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["role"]; ok {
-		cbor.Unmarshal(raw, &c.Role)
+		codec.Unmarshal(raw, &c.Role)
 	}
 
 	return nil
@@ -137,16 +137,16 @@ func (f *teamMemberLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return cbor.Marshal(f.ID)
+	return codec.Marshal(f.ID)
 }
 
 func (f *teamMemberLink) UnmarshalCBOR(data []byte) error {
-	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+	if err := codec.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias teamMemberLink
 	var link alias
-	err := cbor.Unmarshal(data, &link)
+	err := codec.Unmarshal(data, &link)
 	if err == nil {
 		*f = teamMemberLink(link)
 	}

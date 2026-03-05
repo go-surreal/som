@@ -22,17 +22,17 @@ var cacheRefreshGroup singleflight.Group
 // RepoInfo holds type-specific conversion functions for repository operations.
 type RepoInfo[N any] struct {
 	// UnmarshalOne unmarshals a single result into *N
-	UnmarshalOne func(unmarshal func([]byte, any) error, data []byte) (*N, error)
+	UnmarshalOne func(data []byte) (*N, error)
 
 	// UnmarshalInsert unmarshals an insert response (a slice of records) into []*N
-	UnmarshalInsert func(unmarshal func([]byte, any) error, data []byte) ([]*N, error)
+	UnmarshalInsert func(data []byte) ([]*N, error)
 
 	// MarshalOne marshals *N for database write operations and returns the raw data
 	MarshalOne func(node *N) any
 }
 
 type repo[N any, K any] struct {
-	db Database
+	db *dbConn
 
 	name     string
 	info     RepoInfo[N]
@@ -50,7 +50,7 @@ func (r *repo[N, K]) create(ctx context.Context, node *N) error {
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, raw)
+	result, err := r.info.UnmarshalOne(raw)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -64,7 +64,7 @@ func (r *repo[N, K]) createWithID(ctx context.Context, id K, node *N) error {
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
+	result, err := r.info.UnmarshalOne(res)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
@@ -82,7 +82,7 @@ func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
 	if err != nil {
 		return fmt.Errorf("could not insert entities: %w", err)
 	}
-	results, err := r.info.UnmarshalInsert(r.db.Unmarshal, raw)
+	results, err := r.info.UnmarshalInsert(raw)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
@@ -103,7 +103,7 @@ func (r *repo[N, K]) read(ctx context.Context, id *models.RecordID) (*N, bool, e
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
+	result, err := r.info.UnmarshalOne(res)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
@@ -122,7 +122,7 @@ func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) e
 		}
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
+	result, err := r.info.UnmarshalOne(res)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}

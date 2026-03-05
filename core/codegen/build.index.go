@@ -49,7 +49,7 @@ func (b *indexBuilder) build() error {
 }
 
 func (b *indexBuilder) buildFile(nameGo, fileName string, entries []indexEntry) error {
-	f := jen.NewFile(b.pkgName)
+	f := def.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 )
 
 const (

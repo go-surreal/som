@@ -17,7 +17,7 @@ const (
 	PkgInternal    = "internal"
 	PkgLib         = "internal/lib"
 	PkgTypes       = "internal/types"
-	PkgCBORHelpers = "internal/cbor"
+	PkgCBORHelpers = "internal/codec"
 	PkgDistinct    = "internal/distinct"
 
 	IndexPrefix = "__som__"
@@ -41,3 +41,9 @@ const (
 var (
 	TypeModel = jen.Id("M")
 )
+
+func NewFile(pkg string) *jen.File {
+	f := jen.NewFile(pkg)
+	f.ImportAlias(PkgCBOR, "cbor")
+	return f
+}

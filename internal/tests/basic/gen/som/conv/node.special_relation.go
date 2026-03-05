@@ -2,10 +2,10 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
@@ -17,7 +17,7 @@ type SpecialRelation struct {
 
 func (c *SpecialRelation) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 5)
 
@@ -43,24 +43,24 @@ func (c *SpecialRelation) MarshalCBOR() ([]byte, error) {
 		data["authors"] = convSlice
 	}
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
-		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+		if err := codec.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
 		var idStr string
 		if recordID != nil {
-			s, err := cbor.RecordIDToString(recordID.ID)
+			s, err := codec.RecordIDToString(recordID.ID)
 			if err != nil {
 				return err
 			}
@@ -70,20 +70,20 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {
-		tm, _ := cbor.UnmarshalDateTime(raw)
+		tm, _ := codec.UnmarshalDateTime(raw)
 		internal.SetDeletedAt(&c.SoftDelete, tm)
 	}
 	if raw, ok := rawMap["title"]; ok {
-		cbor.Unmarshal(raw, &c.Title)
+		codec.Unmarshal(raw, &c.Title)
 	}
 	if raw, ok := rawMap["author"]; ok {
 		var convVal *specialTypesLink
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.Author = fromSpecialTypesLinkPtr(convVal)
 	}
 	if raw, ok := rawMap["authors"]; ok {
 		var convSlice []*specialTypesLink
-		cbor.Unmarshal(raw, &convSlice)
+		codec.Unmarshal(raw, &convSlice)
 		{
 			c.Authors = make([]*model.SpecialTypes, len(convSlice))
 			for i, v := range convSlice {
@@ -125,16 +125,16 @@ func (f *specialRelationLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return cbor.Marshal(f.ID)
+	return codec.Marshal(f.ID)
 }
 
 func (f *specialRelationLink) UnmarshalCBOR(data []byte) error {
-	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+	if err := codec.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias specialRelationLink
 	var link alias
-	err := cbor.Unmarshal(data, &link)
+	err := codec.Unmarshal(data, &link)
 	if err == nil {
 		*f = specialRelationLink(link)
 	}

@@ -36,7 +36,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	pkgConv := b.relativePkgPath(def.PkgConv)
 	somPkg := b.relativePkgPath()
 
-	f := jen.NewFile(b.pkgName)
+	f := def.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -51,23 +51,20 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	f.Commentf("%s holds the model-specific unmarshal functions for %s.", modelInfoVarName, node.NameGo())
 	f.Var().Id(modelInfoVarName).Op("=").Id("modelInfo").Types(modelType).Values(jen.Dict{
 		jen.Id("UnmarshalAll"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Index().Op("*").Add(modelType), jen.Error()).Block(
-			jen.Return(jen.Id("unmarshalAll").Call(jen.Id("unmarshal"), jen.Id("data"), convFn)),
+			jen.Return(jen.Id("unmarshalAll").Call(jen.Id("data"), convFn)),
 		),
 		jen.Id("UnmarshalOne"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Op("*").Add(modelType), jen.Error()).Block(
-			jen.Return(jen.Id("unmarshalOne").Call(jen.Id("unmarshal"), jen.Id("data"), convFn)),
+			jen.Return(jen.Id("unmarshalOne").Call(jen.Id("data"), convFn)),
 		),
 		jen.Id("UnmarshalSearchAll"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 			jen.Id("clauses").Index().Qual(pkgLib, "SearchClause"),
 		).Params(jen.Index().Qual(pkgLib, "SearchResult").Types(jen.Op("*").Add(modelType)), jen.Error()).Block(
-			jen.Return(jen.Id("unmarshalSearchAll").Call(jen.Id("unmarshal"), jen.Id("data"), jen.Id("clauses"), convFn)),
+			jen.Return(jen.Id("unmarshalSearchAll").Call(jen.Id("data"), jen.Id("clauses"), convFn)),
 		),
 	})
 

@@ -108,7 +108,7 @@ func (b *build) build() error {
 }
 
 func (b *build) buildInterfaceFile() error {
-	f := jen.NewFile(def.PkgRepo)
+	f := def.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -123,7 +123,7 @@ func (b *build) buildInterfaceFile() error {
 
 	// Generate ClientImpl with per-node cached repo fields.
 	f.Line().Type().Id("ClientImpl").StructFunc(func(g *jen.Group) {
-		g.Id("db").Id("Database")
+		g.Id("db").Op("*").Id("dbConn")
 		g.Id("mu").Qual("sync", "Mutex")
 		for _, node := range b.input.nodes {
 			g.Id(node.NameGoLower() + "Repo").Op("*").Id(node.NameGoLower())
@@ -202,7 +202,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	pkgQuery := b.relativePkgPath(def.PkgQuery)
 	pkgConv := b.relativePkgPath(def.PkgConv)
 
-	f := jen.NewFile(def.PkgRepo)
+	f := def.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -347,21 +347,19 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	f.Commentf("%s holds the model-specific conversion functions for %s.", repoInfoVarName, node.NameGo())
 	f.Var().Id(repoInfoVarName).Op("=").Id("RepoInfo").Types(b.input.SourceQual(node.NameGo())).Values(jen.Dict{
 		jen.Id("UnmarshalOne"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
 			jen.Var().Id("raw").Op("*").Qual(pkgConv, node.NameGo()),
-			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+			jen.If(jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Err()),
 			),
 			jen.Return(jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")), jen.Nil()),
 		),
 		jen.Id("UnmarshalInsert"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
 			jen.Var().Id("raw").Index().Qual(b.relativePkgPath(def.PkgInternal), "QueryResult").Types(jen.Op("*").Qual(pkgConv, node.NameGo())),
-			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+			jen.If(jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Err()),
 			),
 			jen.If(jen.Len(jen.Id("raw")).Op("<").Lit(1)).Block(

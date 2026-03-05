@@ -4,6 +4,7 @@ package repo
 import (
 	"context"
 	"errors"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	index "github.com/go-surreal/som/tests/basic/gen/som/index"
@@ -94,9 +95,9 @@ var personObjRepoInfo = RepoInfo[model.PersonObj]{
 	MarshalOne: func(node *model.PersonObj) any {
 		return conv.FromPersonObjPtr(node)
 	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.PersonObj, error) {
+	UnmarshalInsert: func(data []byte) ([]*model.PersonObj, error) {
 		var raw []internal.QueryResult[*conv.PersonObj]
-		if err := unmarshal(data, &raw); err != nil {
+		if err := cbor.Unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
 		if len(raw) < 1 {
@@ -108,9 +109,9 @@ var personObjRepoInfo = RepoInfo[model.PersonObj]{
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.PersonObj, error) {
+	UnmarshalOne: func(data []byte) (*model.PersonObj, error) {
 		var raw *conv.PersonObj
-		if err := unmarshal(data, &raw); err != nil {
+		if err := cbor.Unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
 		return conv.ToPersonObjPtr(raw), nil

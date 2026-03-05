@@ -2,10 +2,10 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
@@ -17,7 +17,7 @@ type EdgeRelation struct {
 
 func (c *EdgeRelation) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 4)
 
@@ -34,24 +34,24 @@ func (c *EdgeRelation) MarshalCBOR() ([]byte, error) {
 	}
 	data["meta"] = fromEdgeMeta(c.Meta)
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *EdgeRelation) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
-		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+		if err := codec.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
 		var idStr string
 		if recordID != nil {
-			s, err := cbor.RecordIDToString(recordID.ID)
+			s, err := codec.RecordIDToString(recordID.ID)
 			if err != nil {
 				return err
 			}
@@ -61,16 +61,16 @@ func (c *EdgeRelation) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["created_at"]; ok {
-		tm, _ := cbor.UnmarshalDateTime(raw)
+		tm, _ := codec.UnmarshalDateTime(raw)
 		internal.SetCreatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["updated_at"]; ok {
-		tm, _ := cbor.UnmarshalDateTime(raw)
+		tm, _ := codec.UnmarshalDateTime(raw)
 		internal.SetUpdatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["meta"]; ok {
 		var convVal edgeMeta
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.Meta = toEdgeMeta(convVal)
 	}
 

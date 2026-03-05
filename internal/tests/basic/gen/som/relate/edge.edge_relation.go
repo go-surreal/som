@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
@@ -41,7 +42,7 @@ func (e edgeRelation) Create(ctx context.Context, edge *model.EdgeRelation) erro
 		return fmt.Errorf("could not create relation: %w", err)
 	}
 	var rawResult []internal.QueryResult[conv.EdgeRelation]
-	err = e.db.Unmarshal(res, &rawResult)
+	err = cbor.Unmarshal(res, &rawResult)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}

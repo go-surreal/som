@@ -14,21 +14,6 @@ import (
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
-type Database interface {
-	// Create accepts either a table name (string) for server-generated IDs or a RecordID for specific IDs
-	Create(ctx context.Context, what any, data any) ([]byte, error)
-	Select(ctx context.Context, id *models.RecordID) ([]byte, error)
-	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
-	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	Update(ctx context.Context, id *models.RecordID, data any) ([]byte, error)
-	Delete(ctx context.Context, id *models.RecordID) ([]byte, error)
-	Insert(ctx context.Context, table string, data any) ([]byte, error)
-
-	Marshal(val any) ([]byte, error)
-	Unmarshal(buf []byte, val any) error
-	Close() error
-}
-
 // Config holds the configuration for connecting to the SurrealDB instance.
 type Config struct {
 	Address   string
@@ -38,18 +23,17 @@ type Config struct {
 	Password  string
 }
 
-// surrealDBWrapper wraps the official surrealdb.go client to implement the Database interface.
-type surrealDBWrapper struct {
-	db *surrealdb.DB
+type dbConn struct {
+	conn *surrealdb.DB
 }
 
-func (w *surrealDBWrapper) ensureTx(ctx context.Context) (*surrealdb.Transaction, error) {
+func (c *dbConn) ensureTx(ctx context.Context) (*surrealdb.Transaction, error) {
 	state := internal.GetTxState(ctx)
 	if state == nil {
 		return nil, nil
 	}
 	raw, err := state.EnsureTx(func() (any, error) {
-		return w.db.Begin(ctx)
+		return c.conn.Begin(ctx)
 	})
 	if err != nil {
 		return nil, err
@@ -61,8 +45,8 @@ func (w *surrealDBWrapper) ensureTx(ctx context.Context) (*surrealdb.Transaction
 	return tx, nil
 }
 
-func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]byte, error) {
-	tx, err := w.ensureTx(ctx)
+func (c *dbConn) Create(ctx context.Context, what any, data any) ([]byte, error) {
+	tx, err := c.ensureTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +61,7 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 		if tx != nil {
 			queryResult, err = surrealdb.Query[[]any](ctx, tx, statement, vars)
 		} else {
-			queryResult, err = surrealdb.Query[[]any](ctx, w.db, statement, vars)
+			queryResult, err = surrealdb.Query[[]any](ctx, c.conn, statement, vars)
 		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute: %w", err)
@@ -97,31 +81,31 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 		if tx != nil {
 			result, err = surrealdb.Create[any](ctx, tx, v, data)
 		} else {
-			result, err = surrealdb.Create[any](ctx, w.db, v, data)
+			result, err = surrealdb.Create[any](ctx, c.conn, v, data)
 		}
 	case models.RecordID:
 		if tx != nil {
 			result, err = surrealdb.Create[any](ctx, tx, v, data)
 		} else {
-			result, err = surrealdb.Create[any](ctx, w.db, v, data)
+			result, err = surrealdb.Create[any](ctx, c.conn, v, data)
 		}
 	case models.Table:
 		if tx != nil {
 			result, err = surrealdb.Create[any](ctx, tx, v, data)
 		} else {
-			result, err = surrealdb.Create[any](ctx, w.db, v, data)
+			result, err = surrealdb.Create[any](ctx, c.conn, v, data)
 		}
 	case []models.Table:
 		if tx != nil {
 			result, err = surrealdb.Create[any](ctx, tx, v, data)
 		} else {
-			result, err = surrealdb.Create[any](ctx, w.db, v, data)
+			result, err = surrealdb.Create[any](ctx, c.conn, v, data)
 		}
 	case []models.RecordID:
 		if tx != nil {
 			result, err = surrealdb.Create[any](ctx, tx, v, data)
 		} else {
-			result, err = surrealdb.Create[any](ctx, w.db, v, data)
+			result, err = surrealdb.Create[any](ctx, c.conn, v, data)
 		}
 	default:
 		return nil, fmt.Errorf("invalid type for 'what' parameter: %T (expected string, RecordID, or Table)", what)
@@ -134,12 +118,12 @@ func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]by
 	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Select(ctx context.Context, id *models.RecordID) ([]byte, error) {
+func (c *dbConn) Select(ctx context.Context, id *models.RecordID) ([]byte, error) {
 	if id == nil {
 		return nil, som.ErrNilID
 	}
 
-	tx, err := w.ensureTx(ctx)
+	tx, err := c.ensureTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +132,7 @@ func (w *surrealDBWrapper) Select(ctx context.Context, id *models.RecordID) ([]b
 	if tx != nil {
 		result, err = surrealdb.Select[any](ctx, tx, *id)
 	} else {
-		result, err = surrealdb.Select[any](ctx, w.db, *id)
+		result, err = surrealdb.Select[any](ctx, c.conn, *id)
 	}
 	if err != nil {
 		return nil, err
@@ -156,8 +140,8 @@ func (w *surrealDBWrapper) Select(ctx context.Context, id *models.RecordID) ([]b
 	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
-	tx, err := w.ensureTx(ctx)
+func (c *dbConn) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
+	tx, err := c.ensureTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +150,7 @@ func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map
 	if tx != nil {
 		result, err = surrealdb.Query[any](ctx, tx, statement, vars)
 	} else {
-		result, err = surrealdb.Query[any](ctx, w.db, statement, vars)
+		result, err = surrealdb.Query[any](ctx, c.conn, statement, vars)
 	}
 	if err != nil {
 		return nil, err
@@ -183,12 +167,12 @@ func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map
 	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
+func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
 	if internal.TxActive(ctx) {
 		return nil, som.ErrLiveNotSupportedInTx
 	}
 
-	result, err := surrealdb.Query[models.UUID](ctx, w.db, statement, vars)
+	result, err := surrealdb.Query[models.UUID](ctx, c.conn, statement, vars)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute live query: %w", err)
 	}
@@ -204,7 +188,7 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 
 	liveID := lastResult.Result.String()
 
-	notifications, err := w.db.LiveNotifications(liveID)
+	notifications, err := c.conn.LiveNotifications(liveID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get live notifications: %w", err)
 	}
@@ -230,12 +214,12 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 	return out, nil
 }
 
-func (w *surrealDBWrapper) Update(ctx context.Context, id *models.RecordID, data any) ([]byte, error) {
+func (c *dbConn) Update(ctx context.Context, id *models.RecordID, data any) ([]byte, error) {
 	if id == nil {
 		return nil, som.ErrNilID
 	}
 
-	tx, err := w.ensureTx(ctx)
+	tx, err := c.ensureTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +228,7 @@ func (w *surrealDBWrapper) Update(ctx context.Context, id *models.RecordID, data
 	if tx != nil {
 		result, err = surrealdb.Update[any](ctx, tx, *id, data)
 	} else {
-		result, err = surrealdb.Update[any](ctx, w.db, *id, data)
+		result, err = surrealdb.Update[any](ctx, c.conn, *id, data)
 	}
 	if err != nil {
 		return nil, err
@@ -252,12 +236,12 @@ func (w *surrealDBWrapper) Update(ctx context.Context, id *models.RecordID, data
 	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Delete(ctx context.Context, id *models.RecordID) ([]byte, error) {
+func (c *dbConn) Delete(ctx context.Context, id *models.RecordID) ([]byte, error) {
 	if id == nil {
 		return nil, som.ErrNilID
 	}
 
-	tx, err := w.ensureTx(ctx)
+	tx, err := c.ensureTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +250,7 @@ func (w *surrealDBWrapper) Delete(ctx context.Context, id *models.RecordID) ([]b
 	if tx != nil {
 		result, err = surrealdb.Delete[any](ctx, tx, *id)
 	} else {
-		result, err = surrealdb.Delete[any](ctx, w.db, *id)
+		result, err = surrealdb.Delete[any](ctx, c.conn, *id)
 	}
 	if err != nil {
 		return nil, err
@@ -274,8 +258,8 @@ func (w *surrealDBWrapper) Delete(ctx context.Context, id *models.RecordID) ([]b
 	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Insert(ctx context.Context, table string, data any) ([]byte, error) {
-	tx, err := w.ensureTx(ctx)
+func (c *dbConn) Insert(ctx context.Context, table string, data any) ([]byte, error) {
+	tx, err := c.ensureTx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -284,24 +268,12 @@ func (w *surrealDBWrapper) Insert(ctx context.Context, table string, data any) (
 	if tx != nil {
 		result, err = surrealdb.Insert[any](ctx, tx, models.Table(table), data)
 	} else {
-		result, err = surrealdb.Insert[any](ctx, w.db, models.Table(table), data)
+		result, err = surrealdb.Insert[any](ctx, c.conn, models.Table(table), data)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert: %w", err)
 	}
 	return cbor.Marshal(result)
-}
-
-func (w *surrealDBWrapper) Marshal(val any) ([]byte, error) {
-	return cbor.Marshal(val)
-}
-
-func (w *surrealDBWrapper) Unmarshal(buf []byte, val any) error {
-	return cbor.Unmarshal(buf, val)
-}
-
-func (w *surrealDBWrapper) Close() error {
-	return w.db.Close(context.Background())
 }
 
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
@@ -349,13 +321,11 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		}
 	}
 
-	wrapper := &surrealDBWrapper{db: db}
-
 	return &ClientImpl{
-		db: wrapper,
+		db: &dbConn{conn: db},
 	}, nil
 }
 
 func (c *ClientImpl) Close() {
-	_ = c.db.Close()
+	_ = c.db.conn.Close(context.Background())
 }

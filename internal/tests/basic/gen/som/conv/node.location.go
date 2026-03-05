@@ -2,10 +2,10 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
@@ -17,7 +17,7 @@ type Location struct {
 
 func (c *Location) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 35)
 
@@ -158,24 +158,24 @@ func (c *Location) MarshalCBOR() ([]byte, error) {
 		data["sf_multi_polygon"] = &geoVal
 	}
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *Location) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
-		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+		if err := codec.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
 		var idStr string
 		if recordID != nil {
-			s, err := cbor.RecordIDToString(recordID.ID)
+			s, err := codec.RecordIDToString(recordID.ID)
 			if err != nil {
 				return err
 			}
@@ -185,108 +185,108 @@ func (c *Location) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["created_at"]; ok {
-		tm, _ := cbor.UnmarshalDateTime(raw)
+		tm, _ := codec.UnmarshalDateTime(raw)
 		internal.SetCreatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["updated_at"]; ok {
-		tm, _ := cbor.UnmarshalDateTime(raw)
+		tm, _ := codec.UnmarshalDateTime(raw)
 		internal.SetUpdatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["name"]; ok {
-		cbor.Unmarshal(raw, &c.Name)
+		codec.Unmarshal(raw, &c.Name)
 	}
 	if raw, ok := rawMap["point"]; ok {
-		c.Point, _ = cbor.UnmarshalPointOrb(raw)
+		c.Point, _ = codec.UnmarshalPointOrb(raw)
 	}
 	if raw, ok := rawMap["point_ptr"]; ok {
-		c.PointPtr, _ = cbor.UnmarshalPointOrbPtr(raw)
+		c.PointPtr, _ = codec.UnmarshalPointOrbPtr(raw)
 	}
 	if raw, ok := rawMap["line_string"]; ok {
-		c.LineString, _ = cbor.UnmarshalLineStringOrb(raw)
+		c.LineString, _ = codec.UnmarshalLineStringOrb(raw)
 	}
 	if raw, ok := rawMap["line_string_ptr"]; ok {
-		c.LineStringPtr, _ = cbor.UnmarshalLineStringOrbPtr(raw)
+		c.LineStringPtr, _ = codec.UnmarshalLineStringOrbPtr(raw)
 	}
 	if raw, ok := rawMap["polygon"]; ok {
-		c.Polygon, _ = cbor.UnmarshalPolygonOrb(raw)
+		c.Polygon, _ = codec.UnmarshalPolygonOrb(raw)
 	}
 	if raw, ok := rawMap["polygon_ptr"]; ok {
-		c.PolygonPtr, _ = cbor.UnmarshalPolygonOrbPtr(raw)
+		c.PolygonPtr, _ = codec.UnmarshalPolygonOrbPtr(raw)
 	}
 	if raw, ok := rawMap["multi_point"]; ok {
-		c.MultiPoint, _ = cbor.UnmarshalMultiPointOrb(raw)
+		c.MultiPoint, _ = codec.UnmarshalMultiPointOrb(raw)
 	}
 	if raw, ok := rawMap["multi_point_ptr"]; ok {
-		c.MultiPointPtr, _ = cbor.UnmarshalMultiPointOrbPtr(raw)
+		c.MultiPointPtr, _ = codec.UnmarshalMultiPointOrbPtr(raw)
 	}
 	if raw, ok := rawMap["multi_line_string"]; ok {
-		c.MultiLineString, _ = cbor.UnmarshalMultiLineStringOrb(raw)
+		c.MultiLineString, _ = codec.UnmarshalMultiLineStringOrb(raw)
 	}
 	if raw, ok := rawMap["multi_polygon"]; ok {
-		c.MultiPolygon, _ = cbor.UnmarshalMultiPolygonOrb(raw)
+		c.MultiPolygon, _ = codec.UnmarshalMultiPolygonOrb(raw)
 	}
 	if raw, ok := rawMap["collection"]; ok {
-		c.Collection, _ = cbor.UnmarshalCollectionOrb(raw)
+		c.Collection, _ = codec.UnmarshalCollectionOrb(raw)
 	}
 	if raw, ok := rawMap["gg_point"]; ok {
-		c.GGPoint, _ = cbor.UnmarshalPointGG(raw)
+		c.GGPoint, _ = codec.UnmarshalPointGG(raw)
 	}
 	if raw, ok := rawMap["gg_point_ptr"]; ok {
-		c.GGPointPtr, _ = cbor.UnmarshalPointGGPtr(raw)
+		c.GGPointPtr, _ = codec.UnmarshalPointGGPtr(raw)
 	}
 	if raw, ok := rawMap["gg_line_string"]; ok {
-		c.GGLineString, _ = cbor.UnmarshalLineStringGG(raw)
+		c.GGLineString, _ = codec.UnmarshalLineStringGG(raw)
 	}
 	if raw, ok := rawMap["gg_line_string_ptr"]; ok {
-		c.GGLineStringPtr, _ = cbor.UnmarshalLineStringGGPtr(raw)
+		c.GGLineStringPtr, _ = codec.UnmarshalLineStringGGPtr(raw)
 	}
 	if raw, ok := rawMap["gg_polygon"]; ok {
-		c.GGPolygon, _ = cbor.UnmarshalPolygonGG(raw)
+		c.GGPolygon, _ = codec.UnmarshalPolygonGG(raw)
 	}
 	if raw, ok := rawMap["gg_polygon_ptr"]; ok {
-		c.GGPolygonPtr, _ = cbor.UnmarshalPolygonGGPtr(raw)
+		c.GGPolygonPtr, _ = codec.UnmarshalPolygonGGPtr(raw)
 	}
 	if raw, ok := rawMap["gg_multi_point"]; ok {
-		c.GGMultiPoint, _ = cbor.UnmarshalMultiPointGG(raw)
+		c.GGMultiPoint, _ = codec.UnmarshalMultiPointGG(raw)
 	}
 	if raw, ok := rawMap["gg_multi_point_ptr"]; ok {
-		c.GGMultiPointPtr, _ = cbor.UnmarshalMultiPointGGPtr(raw)
+		c.GGMultiPointPtr, _ = codec.UnmarshalMultiPointGGPtr(raw)
 	}
 	if raw, ok := rawMap["gg_multi_line_string"]; ok {
-		c.GGMultiLineString, _ = cbor.UnmarshalMultiLineStringGG(raw)
+		c.GGMultiLineString, _ = codec.UnmarshalMultiLineStringGG(raw)
 	}
 	if raw, ok := rawMap["gg_multi_polygon"]; ok {
-		c.GGMultiPolygon, _ = cbor.UnmarshalMultiPolygonGG(raw)
+		c.GGMultiPolygon, _ = codec.UnmarshalMultiPolygonGG(raw)
 	}
 	if raw, ok := rawMap["sf_point"]; ok {
-		c.SFPoint, _ = cbor.UnmarshalPointSF(raw)
+		c.SFPoint, _ = codec.UnmarshalPointSF(raw)
 	}
 	if raw, ok := rawMap["sf_point_ptr"]; ok {
-		c.SFPointPtr, _ = cbor.UnmarshalPointSFPtr(raw)
+		c.SFPointPtr, _ = codec.UnmarshalPointSFPtr(raw)
 	}
 	if raw, ok := rawMap["sf_line_string"]; ok {
-		c.SFLineString, _ = cbor.UnmarshalLineStringSF(raw)
+		c.SFLineString, _ = codec.UnmarshalLineStringSF(raw)
 	}
 	if raw, ok := rawMap["sf_line_string_ptr"]; ok {
-		c.SFLineStringPtr, _ = cbor.UnmarshalLineStringSFPtr(raw)
+		c.SFLineStringPtr, _ = codec.UnmarshalLineStringSFPtr(raw)
 	}
 	if raw, ok := rawMap["sf_polygon"]; ok {
-		c.SFPolygon, _ = cbor.UnmarshalPolygonSF(raw)
+		c.SFPolygon, _ = codec.UnmarshalPolygonSF(raw)
 	}
 	if raw, ok := rawMap["sf_polygon_ptr"]; ok {
-		c.SFPolygonPtr, _ = cbor.UnmarshalPolygonSFPtr(raw)
+		c.SFPolygonPtr, _ = codec.UnmarshalPolygonSFPtr(raw)
 	}
 	if raw, ok := rawMap["sf_multi_point"]; ok {
-		c.SFMultiPoint, _ = cbor.UnmarshalMultiPointSF(raw)
+		c.SFMultiPoint, _ = codec.UnmarshalMultiPointSF(raw)
 	}
 	if raw, ok := rawMap["sf_multi_point_ptr"]; ok {
-		c.SFMultiPointPtr, _ = cbor.UnmarshalMultiPointSFPtr(raw)
+		c.SFMultiPointPtr, _ = codec.UnmarshalMultiPointSFPtr(raw)
 	}
 	if raw, ok := rawMap["sf_multi_line_string"]; ok {
-		c.SFMultiLineString, _ = cbor.UnmarshalMultiLineStringSF(raw)
+		c.SFMultiLineString, _ = codec.UnmarshalMultiLineStringSF(raw)
 	}
 	if raw, ok := rawMap["sf_multi_polygon"]; ok {
-		c.SFMultiPolygon, _ = cbor.UnmarshalMultiPolygonSF(raw)
+		c.SFMultiPolygon, _ = codec.UnmarshalMultiPolygonSF(raw)
 	}
 
 	return nil
@@ -322,16 +322,16 @@ func (f *locationLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return cbor.Marshal(f.ID)
+	return codec.Marshal(f.ID)
 }
 
 func (f *locationLink) UnmarshalCBOR(data []byte) error {
-	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+	if err := codec.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias locationLink
 	var link alias
-	err := cbor.Unmarshal(data, &link)
+	err := codec.Unmarshal(data, &link)
 	if err == nil {
 		*f = locationLink(link)
 	}

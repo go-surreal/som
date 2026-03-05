@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	index "github.com/go-surreal/som/tests/basic/gen/som/index"
@@ -112,9 +113,9 @@ var specialRelationRepoInfo = RepoInfo[model.SpecialRelation]{
 	MarshalOne: func(node *model.SpecialRelation) any {
 		return conv.FromSpecialRelationPtr(node)
 	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialRelation, error) {
+	UnmarshalInsert: func(data []byte) ([]*model.SpecialRelation, error) {
 		var raw []internal.QueryResult[*conv.SpecialRelation]
-		if err := unmarshal(data, &raw); err != nil {
+		if err := cbor.Unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
 		if len(raw) < 1 {
@@ -126,9 +127,9 @@ var specialRelationRepoInfo = RepoInfo[model.SpecialRelation]{
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialRelation, error) {
+	UnmarshalOne: func(data []byte) (*model.SpecialRelation, error) {
 		var raw *conv.SpecialRelation
-		if err := unmarshal(data, &raw); err != nil {
+		if err := cbor.Unmarshal(data, &raw); err != nil {
 			return nil, err
 		}
 		return conv.ToSpecialRelationPtr(raw), nil

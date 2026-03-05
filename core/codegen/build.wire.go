@@ -11,7 +11,7 @@ import (
 func (b *build) buildWireFile() error {
 	pkgRepo := b.relativePkgPath(def.PkgRepo)
 
-	f := jen.NewFile(def.PkgSomWire)
+	f := def.NewFile(def.PkgSomWire)
 	f.PackageComment(string(embed.CodegenComment))
 
 	// var Providers = wire.NewSet(...)

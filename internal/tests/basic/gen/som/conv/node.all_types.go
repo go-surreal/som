@@ -2,10 +2,10 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
+	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
@@ -18,7 +18,7 @@ type AllTypes struct {
 
 func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return cbor.Marshal(nil)
+		return codec.Marshal(nil)
 	}
 	data := make(map[string]any, 100)
 
@@ -239,7 +239,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		convSlice := make([]any, len(c.FieldNestedDataPtrSlice))
 		for i, v := range c.FieldNestedDataPtrSlice {
 			if v == nil {
-				convSlice[i] = cbor.None()
+				convSlice[i] = codec.None()
 			} else {
 				convSlice[i] = fromNestedDataPtr(v)
 			}
@@ -250,7 +250,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		convSlice := make([]any, len(*c.FieldNestedDataPtrSlicePtr))
 		for i, v := range *c.FieldNestedDataPtrSlicePtr {
 			if v == nil {
-				convSlice[i] = cbor.None()
+				convSlice[i] = codec.None()
 			} else {
 				convSlice[i] = fromNestedDataPtr(v)
 			}
@@ -319,24 +319,24 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	data["field_hook_status"] = c.FieldHookStatus
 	data["field_hook_detail"] = c.FieldHookDetail
 
-	return cbor.Marshal(data)
+	return codec.Marshal(data)
 }
 
 func (c *AllTypes) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
-	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+	var rawMap map[string]cbor.RawMessage
+	if err := codec.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
-		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+		if err := codec.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
 		var idStr string
 		if recordID != nil {
-			s, err := cbor.RecordIDToString(recordID.ID)
+			s, err := codec.RecordIDToString(recordID.ID)
 			if err != nil {
 				return err
 			}
@@ -346,159 +346,159 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["created_at"]; ok {
-		tm, _ := cbor.UnmarshalDateTime(raw)
+		tm, _ := codec.UnmarshalDateTime(raw)
 		internal.SetCreatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["updated_at"]; ok {
-		tm, _ := cbor.UnmarshalDateTime(raw)
+		tm, _ := codec.UnmarshalDateTime(raw)
 		internal.SetUpdatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["field_string"]; ok {
-		cbor.Unmarshal(raw, &c.FieldString)
+		codec.Unmarshal(raw, &c.FieldString)
 	}
 	if raw, ok := rawMap["field_string_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldStringPtr)
+		codec.Unmarshal(raw, &c.FieldStringPtr)
 	}
 	if raw, ok := rawMap["field_other"]; ok {
-		cbor.Unmarshal(raw, &c.FieldOther)
+		codec.Unmarshal(raw, &c.FieldOther)
 	}
 	if raw, ok := rawMap["field_string_ptr_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldStringPtrSlice)
+		codec.Unmarshal(raw, &c.FieldStringPtrSlice)
 	}
 	if raw, ok := rawMap["field_string_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldStringSlicePtr)
+		codec.Unmarshal(raw, &c.FieldStringSlicePtr)
 	}
 	if raw, ok := rawMap["field_string_ptr_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldStringPtrSlicePtr)
+		codec.Unmarshal(raw, &c.FieldStringPtrSlicePtr)
 	}
 	if raw, ok := rawMap["field_int"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt)
+		codec.Unmarshal(raw, &c.FieldInt)
 	}
 	if raw, ok := rawMap["field_int_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldIntPtr)
+		codec.Unmarshal(raw, &c.FieldIntPtr)
 	}
 	if raw, ok := rawMap["field_int_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldIntSlice)
+		codec.Unmarshal(raw, &c.FieldIntSlice)
 	}
 	if raw, ok := rawMap["field_int_ptr_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldIntPtrSlice)
+		codec.Unmarshal(raw, &c.FieldIntPtrSlice)
 	}
 	if raw, ok := rawMap["field_int_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldIntSlicePtr)
+		codec.Unmarshal(raw, &c.FieldIntSlicePtr)
 	}
 	if raw, ok := rawMap["field_int_ptr_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldIntPtrSlicePtr)
+		codec.Unmarshal(raw, &c.FieldIntPtrSlicePtr)
 	}
 	if raw, ok := rawMap["field_int_8"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt8)
+		codec.Unmarshal(raw, &c.FieldInt8)
 	}
 	if raw, ok := rawMap["field_int_8_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt8Ptr)
+		codec.Unmarshal(raw, &c.FieldInt8Ptr)
 	}
 	if raw, ok := rawMap["field_int_16"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt16)
+		codec.Unmarshal(raw, &c.FieldInt16)
 	}
 	if raw, ok := rawMap["field_int_16_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt16Ptr)
+		codec.Unmarshal(raw, &c.FieldInt16Ptr)
 	}
 	if raw, ok := rawMap["field_int_32"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt32)
+		codec.Unmarshal(raw, &c.FieldInt32)
 	}
 	if raw, ok := rawMap["field_int_32_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt32Ptr)
+		codec.Unmarshal(raw, &c.FieldInt32Ptr)
 	}
 	if raw, ok := rawMap["field_int_64"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt64)
+		codec.Unmarshal(raw, &c.FieldInt64)
 	}
 	if raw, ok := rawMap["field_int_64_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldInt64Ptr)
+		codec.Unmarshal(raw, &c.FieldInt64Ptr)
 	}
 	if raw, ok := rawMap["field_uint_8"]; ok {
-		cbor.Unmarshal(raw, &c.FieldUint8)
+		codec.Unmarshal(raw, &c.FieldUint8)
 	}
 	if raw, ok := rawMap["field_uint_8_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldUint8Ptr)
+		codec.Unmarshal(raw, &c.FieldUint8Ptr)
 	}
 	if raw, ok := rawMap["field_uint_16"]; ok {
-		cbor.Unmarshal(raw, &c.FieldUint16)
+		codec.Unmarshal(raw, &c.FieldUint16)
 	}
 	if raw, ok := rawMap["field_uint_16_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldUint16Ptr)
+		codec.Unmarshal(raw, &c.FieldUint16Ptr)
 	}
 	if raw, ok := rawMap["field_uint_32"]; ok {
-		cbor.Unmarshal(raw, &c.FieldUint32)
+		codec.Unmarshal(raw, &c.FieldUint32)
 	}
 	if raw, ok := rawMap["field_uint_32_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldUint32Ptr)
+		codec.Unmarshal(raw, &c.FieldUint32Ptr)
 	}
 	if raw, ok := rawMap["field_float_32"]; ok {
-		cbor.Unmarshal(raw, &c.FieldFloat32)
+		codec.Unmarshal(raw, &c.FieldFloat32)
 	}
 	if raw, ok := rawMap["field_float_32_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldFloat32Slice)
+		codec.Unmarshal(raw, &c.FieldFloat32Slice)
 	}
 	if raw, ok := rawMap["field_float_32_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldFloat32SlicePtr)
+		codec.Unmarshal(raw, &c.FieldFloat32SlicePtr)
 	}
 	if raw, ok := rawMap["field_float_32_ptr_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldFloat32PtrSlice)
+		codec.Unmarshal(raw, &c.FieldFloat32PtrSlice)
 	}
 	if raw, ok := rawMap["field_float_32_ptr_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldFloat32PtrSlicePtr)
+		codec.Unmarshal(raw, &c.FieldFloat32PtrSlicePtr)
 	}
 	if raw, ok := rawMap["field_float_64"]; ok {
-		cbor.Unmarshal(raw, &c.FieldFloat64)
+		codec.Unmarshal(raw, &c.FieldFloat64)
 	}
 	if raw, ok := rawMap["field_rune"]; ok {
-		cbor.Unmarshal(raw, &c.FieldRune)
+		codec.Unmarshal(raw, &c.FieldRune)
 	}
 	if raw, ok := rawMap["field_rune_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldRuneSlice)
+		codec.Unmarshal(raw, &c.FieldRuneSlice)
 	}
 	if raw, ok := rawMap["field_bool"]; ok {
-		cbor.Unmarshal(raw, &c.FieldBool)
+		codec.Unmarshal(raw, &c.FieldBool)
 	}
 	if raw, ok := rawMap["field_bool_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldBoolPtr)
+		codec.Unmarshal(raw, &c.FieldBoolPtr)
 	}
 	if raw, ok := rawMap["field_bool_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldBoolSlice)
+		codec.Unmarshal(raw, &c.FieldBoolSlice)
 	}
 	if raw, ok := rawMap["field_time"]; ok {
-		c.FieldTime, _ = cbor.UnmarshalDateTime(raw)
+		c.FieldTime, _ = codec.UnmarshalDateTime(raw)
 	}
 	if raw, ok := rawMap["field_time_ptr"]; ok {
-		c.FieldTimePtr, _ = cbor.UnmarshalDateTimePtr(raw)
+		c.FieldTimePtr, _ = codec.UnmarshalDateTimePtr(raw)
 	}
 	if raw, ok := rawMap["field_time_nil"]; ok {
-		c.FieldTimeNil, _ = cbor.UnmarshalDateTimePtr(raw)
+		c.FieldTimeNil, _ = codec.UnmarshalDateTimePtr(raw)
 	}
 	if raw, ok := rawMap["field_time_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldTimeSlice)
+		codec.Unmarshal(raw, &c.FieldTimeSlice)
 	}
 	if raw, ok := rawMap["field_time_slice_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldTimeSliceSlice)
+		codec.Unmarshal(raw, &c.FieldTimeSliceSlice)
 	}
 	if raw, ok := rawMap["field_duration"]; ok {
-		c.FieldDuration, _ = cbor.UnmarshalDuration(raw)
+		c.FieldDuration, _ = codec.UnmarshalDuration(raw)
 	}
 	if raw, ok := rawMap["field_duration_ptr"]; ok {
-		c.FieldDurationPtr, _ = cbor.UnmarshalDurationPtr(raw)
+		c.FieldDurationPtr, _ = codec.UnmarshalDurationPtr(raw)
 	}
 	if raw, ok := rawMap["field_duration_nil"]; ok {
-		c.FieldDurationNil, _ = cbor.UnmarshalDurationPtr(raw)
+		c.FieldDurationNil, _ = codec.UnmarshalDurationPtr(raw)
 	}
 	if raw, ok := rawMap["field_duration_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldDurationSlice)
+		codec.Unmarshal(raw, &c.FieldDurationSlice)
 	}
 	if raw, ok := rawMap["field_month"]; ok {
 		var val int
-		cbor.Unmarshal(raw, &val)
+		codec.Unmarshal(raw, &val)
 		c.FieldMonth = time.Month(val)
 	}
 	if raw, ok := rawMap["field_month_ptr"]; ok {
 		var val *int
-		cbor.Unmarshal(raw, &val)
+		codec.Unmarshal(raw, &val)
 		if val != nil {
 			m := time.Month(*val)
 			c.FieldMonthPtr = &m
@@ -508,12 +508,12 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_weekday"]; ok {
 		var val int
-		cbor.Unmarshal(raw, &val)
+		codec.Unmarshal(raw, &val)
 		c.FieldWeekday = time.Weekday(val)
 	}
 	if raw, ok := rawMap["field_weekday_ptr"]; ok {
 		var val *int
-		cbor.Unmarshal(raw, &val)
+		codec.Unmarshal(raw, &val)
 		if val != nil {
 			w := time.Weekday(*val)
 			c.FieldWeekdayPtr = &w
@@ -522,111 +522,111 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		}
 	}
 	if raw, ok := rawMap["field_uuid"]; ok {
-		c.FieldUUID, _ = cbor.UnmarshalUUIDGoogle(raw)
+		c.FieldUUID, _ = codec.UnmarshalUUIDGoogle(raw)
 	}
 	if raw, ok := rawMap["field_uuid_ptr"]; ok {
-		c.FieldUUIDPtr, _ = cbor.UnmarshalUUIDGooglePtr(raw)
+		c.FieldUUIDPtr, _ = codec.UnmarshalUUIDGooglePtr(raw)
 	}
 	if raw, ok := rawMap["field_uuid_nil"]; ok {
-		c.FieldUUIDNil, _ = cbor.UnmarshalUUIDGooglePtr(raw)
+		c.FieldUUIDNil, _ = codec.UnmarshalUUIDGooglePtr(raw)
 	}
 	if raw, ok := rawMap["field_uuid_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldUUIDSlice)
+		codec.Unmarshal(raw, &c.FieldUUIDSlice)
 	}
 	if raw, ok := rawMap["field_uuid_gofrs"]; ok {
-		c.FieldUUIDGofrs, _ = cbor.UnmarshalUUIDGofrs(raw)
+		c.FieldUUIDGofrs, _ = codec.UnmarshalUUIDGofrs(raw)
 	}
 	if raw, ok := rawMap["field_uuid_gofrs_ptr"]; ok {
-		c.FieldUUIDGofrsPtr, _ = cbor.UnmarshalUUIDGofrsPtr(raw)
+		c.FieldUUIDGofrsPtr, _ = codec.UnmarshalUUIDGofrsPtr(raw)
 	}
 	if raw, ok := rawMap["field_uuid_gofrs_nil"]; ok {
-		c.FieldUUIDGofrsNil, _ = cbor.UnmarshalUUIDGofrsPtr(raw)
+		c.FieldUUIDGofrsNil, _ = codec.UnmarshalUUIDGofrsPtr(raw)
 	}
 	if raw, ok := rawMap["field_uuid_gofrs_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldUUIDGofrsSlice)
+		codec.Unmarshal(raw, &c.FieldUUIDGofrsSlice)
 	}
 	if raw, ok := rawMap["field_url"]; ok {
 		var convVal string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldURL = toURL(convVal)
 	}
 	if raw, ok := rawMap["field_url_ptr"]; ok {
 		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldURLPtr = toURLPtr(convVal)
 	}
 	if raw, ok := rawMap["field_url_nil"]; ok {
 		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldURLNil = toURLPtr(convVal)
 	}
 	if raw, ok := rawMap["field_url_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldURLSlice)
+		codec.Unmarshal(raw, &c.FieldURLSlice)
 	}
 	if raw, ok := rawMap["field_email"]; ok {
 		var convVal string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldEmail = toEmail(convVal)
 	}
 	if raw, ok := rawMap["field_email_ptr"]; ok {
 		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldEmailPtr = toEmailPtr(convVal)
 	}
 	if raw, ok := rawMap["field_email_nil"]; ok {
 		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldEmailNil = toEmailPtr(convVal)
 	}
 	if raw, ok := rawMap["field_email_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldEmailSlice)
+		codec.Unmarshal(raw, &c.FieldEmailSlice)
 	}
 	if raw, ok := rawMap["field_sem_ver"]; ok {
 		var convVal string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldSemVer = toSemVer(convVal)
 	}
 	if raw, ok := rawMap["field_sem_ver_ptr"]; ok {
 		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldSemVerPtr = toSemVerPtr(convVal)
 	}
 	if raw, ok := rawMap["field_sem_ver_nil"]; ok {
 		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldSemVerNil = toSemVerPtr(convVal)
 	}
 	if raw, ok := rawMap["field_sem_ver_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldSemVerSlice)
+		codec.Unmarshal(raw, &c.FieldSemVerSlice)
 	}
 	if raw, ok := rawMap["field_enum"]; ok {
-		cbor.Unmarshal(raw, &c.FieldEnum)
+		codec.Unmarshal(raw, &c.FieldEnum)
 	}
 	if raw, ok := rawMap["field_enum_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldEnumPtr)
+		codec.Unmarshal(raw, &c.FieldEnumPtr)
 	}
 	if raw, ok := rawMap["field_enum_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldEnumSlice)
+		codec.Unmarshal(raw, &c.FieldEnumSlice)
 	}
 	if raw, ok := rawMap["field_enum_ptr_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldEnumPtrSlice)
+		codec.Unmarshal(raw, &c.FieldEnumPtrSlice)
 	}
 	if raw, ok := rawMap["field_enum_ptr_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldEnumPtrSlicePtr)
+		codec.Unmarshal(raw, &c.FieldEnumPtrSlicePtr)
 	}
 	if raw, ok := rawMap["field_credentials"]; ok {
 		var convVal credentials
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldCredentials = toCredentials(convVal)
 	}
 	if raw, ok := rawMap["field_nested_data_ptr"]; ok {
 		var convVal *nestedData
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldNestedDataPtr = toNestedDataPtr(convVal)
 	}
 	if raw, ok := rawMap["field_nested_data_slice"]; ok {
 		var convSlice []nestedData
-		cbor.Unmarshal(raw, &convSlice)
+		codec.Unmarshal(raw, &convSlice)
 		{
 			c.FieldNestedDataSlice = make([]model.NestedData, len(convSlice))
 			for i, v := range convSlice {
@@ -636,7 +636,7 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_nested_data_ptr_slice"]; ok {
 		var convSlice []*nestedData
-		cbor.Unmarshal(raw, &convSlice)
+		codec.Unmarshal(raw, &convSlice)
 		{
 			c.FieldNestedDataPtrSlice = make([]*model.NestedData, len(convSlice))
 			for i, v := range convSlice {
@@ -646,7 +646,7 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_nested_data_ptr_slice_ptr"]; ok {
 		var convSlice []*nestedData
-		cbor.Unmarshal(raw, &convSlice)
+		codec.Unmarshal(raw, &convSlice)
 		if convSlice == nil {
 			c.FieldNestedDataPtrSlicePtr = nil
 		} else {
@@ -659,17 +659,17 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_node"]; ok {
 		var convVal *specialTypesLink
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldNode = fromSpecialTypesLink(convVal)
 	}
 	if raw, ok := rawMap["field_node_ptr"]; ok {
 		var convVal *specialTypesLink
-		cbor.Unmarshal(raw, &convVal)
+		codec.Unmarshal(raw, &convVal)
 		c.FieldNodePtr = fromSpecialTypesLinkPtr(convVal)
 	}
 	if raw, ok := rawMap["field_node_slice"]; ok {
 		var convSlice []*specialTypesLink
-		cbor.Unmarshal(raw, &convSlice)
+		codec.Unmarshal(raw, &convSlice)
 		{
 			c.FieldNodeSlice = make([]model.SpecialTypes, len(convSlice))
 			for i, v := range convSlice {
@@ -678,11 +678,11 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		}
 	}
 	if raw, ok := rawMap["field_node_slice_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldNodeSliceSlice)
+		codec.Unmarshal(raw, &c.FieldNodeSliceSlice)
 	}
 	if raw, ok := rawMap["field_node_ptr_slice"]; ok {
 		var convSlice []*specialTypesLink
-		cbor.Unmarshal(raw, &convSlice)
+		codec.Unmarshal(raw, &convSlice)
 		{
 			c.FieldNodePtrSlice = make([]*model.SpecialTypes, len(convSlice))
 			for i, v := range convSlice {
@@ -692,7 +692,7 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["field_node_ptr_slice_ptr"]; ok {
 		var convSlice []*specialTypesLink
-		cbor.Unmarshal(raw, &convSlice)
+		codec.Unmarshal(raw, &convSlice)
 		if convSlice == nil {
 			c.FieldNodePtrSlicePtr = nil
 		} else {
@@ -704,37 +704,37 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		}
 	}
 	if raw, ok := rawMap["field_edge_relations"]; ok {
-		cbor.Unmarshal(raw, &c.FieldEdgeRelations)
+		codec.Unmarshal(raw, &c.FieldEdgeRelations)
 	}
 	if raw, ok := rawMap["field_slice_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldSliceSlice)
+		codec.Unmarshal(raw, &c.FieldSliceSlice)
 	}
 	if raw, ok := rawMap["field_slice_slice_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldSliceSliceSlice)
+		codec.Unmarshal(raw, &c.FieldSliceSliceSlice)
 	}
 	if raw, ok := rawMap["field_slice_slice_slice_2"]; ok {
-		cbor.Unmarshal(raw, &c.FieldSliceSliceSlice2)
+		codec.Unmarshal(raw, &c.FieldSliceSliceSlice2)
 	}
 	if raw, ok := rawMap["field_byte"]; ok {
-		cbor.Unmarshal(raw, &c.FieldByte)
+		codec.Unmarshal(raw, &c.FieldByte)
 	}
 	if raw, ok := rawMap["field_byte_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldBytePtr)
+		codec.Unmarshal(raw, &c.FieldBytePtr)
 	}
 	if raw, ok := rawMap["field_byte_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldByteSlice)
+		codec.Unmarshal(raw, &c.FieldByteSlice)
 	}
 	if raw, ok := rawMap["field_byte_slice_ptr"]; ok {
-		cbor.Unmarshal(raw, &c.FieldByteSlicePtr)
+		codec.Unmarshal(raw, &c.FieldByteSlicePtr)
 	}
 	if raw, ok := rawMap["custom_name"]; ok {
-		cbor.Unmarshal(raw, &c.FieldRenamed)
+		codec.Unmarshal(raw, &c.FieldRenamed)
 	}
 	if raw, ok := rawMap["field_hook_status"]; ok {
-		cbor.Unmarshal(raw, &c.FieldHookStatus)
+		codec.Unmarshal(raw, &c.FieldHookStatus)
 	}
 	if raw, ok := rawMap["field_hook_detail"]; ok {
-		cbor.Unmarshal(raw, &c.FieldHookDetail)
+		codec.Unmarshal(raw, &c.FieldHookDetail)
 	}
 
 	return nil
@@ -770,16 +770,16 @@ func (f *allTypesLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return cbor.Marshal(f.ID)
+	return codec.Marshal(f.ID)
 }
 
 func (f *allTypesLink) UnmarshalCBOR(data []byte) error {
-	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+	if err := codec.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias allTypesLink
 	var link alias
-	err := cbor.Unmarshal(data, &link)
+	err := codec.Unmarshal(data, &link)
 	if err == nil {
 		*f = allTypesLink(link)
 	}
