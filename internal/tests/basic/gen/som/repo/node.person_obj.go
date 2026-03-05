@@ -8,7 +8,6 @@ import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
@@ -92,26 +91,47 @@ type PersonObjRepo interface {
 
 // personObjRepoInfo holds the model-specific conversion functions for PersonObj.
 var personObjRepoInfo = RepoInfo[model.PersonObj]{
-	MarshalOne: func(node *model.PersonObj) any {
-		return conv.FromPersonObjPtr(node)
-	},
-	UnmarshalInsert: func(data []byte) ([]*model.PersonObj, error) {
-		var raw []internal.QueryResult[*conv.PersonObj]
-		if err := cbor.Unmarshal(data, &raw); err != nil {
+	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.PersonObj, error) {
+		raw, err := dbCreateNew[conv.PersonObj](ctx, db, idExpr, data)
+		if err != nil {
 			return nil, err
 		}
-		if len(raw) < 1 {
-			return nil, nil
+		return conv.ToPersonObjPtr(raw), nil
+	},
+	CreateOne: func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*model.PersonObj, error) {
+		raw, err := dbCreate[conv.PersonObj](ctx, db, id, data)
+		if err != nil {
+			return nil, err
 		}
-		results := make([]*model.PersonObj, len(raw[0].Result))
-		for i, r := range raw[0].Result {
+		return conv.ToPersonObjPtr(raw), nil
+	},
+	InsertAll: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*model.PersonObj, error) {
+		raw, err := dbInsert[conv.PersonObj](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		results := make([]*model.PersonObj, len(raw))
+		for i, r := range raw {
 			results[i] = conv.ToPersonObjPtr(r)
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(data []byte) (*model.PersonObj, error) {
-		var raw *conv.PersonObj
-		if err := cbor.Unmarshal(data, &raw); err != nil {
+	MarshalOne: func(node *model.PersonObj) any {
+		return conv.FromPersonObjPtr(node)
+	},
+	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.PersonObj, error) {
+		raw, err := dbSelect[conv.PersonObj](ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToPersonObjPtr(raw), nil
+	},
+	UpdateOne: func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*model.PersonObj, error) {
+		raw, err := dbUpdate[conv.PersonObj](ctx, db, id, data)
+		if err != nil {
 			return nil, err
 		}
 		return conv.ToPersonObjPtr(raw), nil

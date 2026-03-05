@@ -8,7 +8,6 @@ import (
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -103,26 +102,47 @@ type LocationRepo interface {
 
 // locationRepoInfo holds the model-specific conversion functions for Location.
 var locationRepoInfo = RepoInfo[model.Location]{
-	MarshalOne: func(node *model.Location) any {
-		return conv.FromLocationPtr(node)
-	},
-	UnmarshalInsert: func(data []byte) ([]*model.Location, error) {
-		var raw []internal.QueryResult[*conv.Location]
-		if err := cbor.Unmarshal(data, &raw); err != nil {
+	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.Location, error) {
+		raw, err := dbCreateNew[conv.Location](ctx, db, idExpr, data)
+		if err != nil {
 			return nil, err
 		}
-		if len(raw) < 1 {
-			return nil, nil
+		return conv.ToLocationPtr(raw), nil
+	},
+	CreateOne: func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*model.Location, error) {
+		raw, err := dbCreate[conv.Location](ctx, db, id, data)
+		if err != nil {
+			return nil, err
 		}
-		results := make([]*model.Location, len(raw[0].Result))
-		for i, r := range raw[0].Result {
+		return conv.ToLocationPtr(raw), nil
+	},
+	InsertAll: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*model.Location, error) {
+		raw, err := dbInsert[conv.Location](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		results := make([]*model.Location, len(raw))
+		for i, r := range raw {
 			results[i] = conv.ToLocationPtr(r)
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(data []byte) (*model.Location, error) {
-		var raw *conv.Location
-		if err := cbor.Unmarshal(data, &raw); err != nil {
+	MarshalOne: func(node *model.Location) any {
+		return conv.FromLocationPtr(node)
+	},
+	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.Location, error) {
+		raw, err := dbSelect[conv.Location](ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToLocationPtr(raw), nil
+	},
+	UpdateOne: func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*model.Location, error) {
+		raw, err := dbUpdate[conv.Location](ctx, db, id, data)
+		if err != nil {
 			return nil, err
 		}
 		return conv.ToLocationPtr(raw), nil
