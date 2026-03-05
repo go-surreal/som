@@ -108,7 +108,7 @@ func (b *build) build() error {
 }
 
 func (b *build) buildInterfaceFile() error {
-	f := def.NewFile(def.PkgRepo)
+	f := jen.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -203,7 +203,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	pkgConv := b.relativePkgPath(def.PkgConv)
 	pkgCBOR := b.relativePkgPath(def.PkgCBORHelpers)
 
-	f := def.NewFile(def.PkgRepo)
+	f := jen.NewFile(def.PkgRepo)
 
 	f.PackageComment(string(embed.CodegenComment))
 

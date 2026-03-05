@@ -50,7 +50,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		Table:     elem,
 	}
 
-	f := def.NewFile(b.pkgName)
+	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 

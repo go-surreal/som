@@ -36,7 +36,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	pkgConv := b.relativePkgPath(def.PkgConv)
 	somPkg := b.relativePkgPath()
 
-	f := def.NewFile(b.pkgName)
+	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 

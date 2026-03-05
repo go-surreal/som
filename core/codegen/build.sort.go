@@ -42,7 +42,7 @@ func (b *sortBuilder) buildNodeFile(node *field.NodeTable) error {
 		Table:     node,
 	}
 
-	f := def.NewFile(b.pkgName)
+	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -111,7 +111,7 @@ func (b *sortBuilder) buildObjectFile(object *field.DatabaseObject) error {
 		Table:     object,
 	}
 
-	f := def.NewFile(b.pkgName)
+	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 

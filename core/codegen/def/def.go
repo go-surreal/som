@@ -40,7 +40,3 @@ const (
 var (
 	TypeModel = jen.Id("M")
 )
-
-func NewFile(pkg string) *jen.File {
-	return jen.NewFile(pkg)
-}

@@ -41,7 +41,7 @@ func (b *relateBuilder) build() error {
 }
 
 func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
-	f := def.NewFile(b.pkgName)
+	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 
@@ -81,7 +81,7 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 }
 
 func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
-	f := def.NewFile(b.pkgName)
+	f := jen.NewFile(b.pkgName)
 
 	f.PackageComment(string(embed.CodegenComment))
 

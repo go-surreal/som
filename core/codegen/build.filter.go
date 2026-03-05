@@ -42,7 +42,7 @@ func (b *filterBuilder) build() error {
 }
 
 func (b *filterBuilder) buildFile(elem field.Element) error {
-	file := def.NewFile(b.pkgName)
+	file := jen.NewFile(b.pkgName)
 
 	file.PackageComment(string(embed.CodegenComment))
 
