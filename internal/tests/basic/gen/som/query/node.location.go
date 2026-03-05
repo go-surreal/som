@@ -9,14 +9,14 @@ import (
 
 // locationModelInfo holds the model-specific unmarshal functions for Location.
 var locationModelInfo = modelInfo[model.Location]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Location, error) {
-		return unmarshalAll(unmarshal, data, conv.ToLocationPtr)
+	UnmarshalAll: func(data []byte) ([]*model.Location, error) {
+		return unmarshalAll(data, conv.ToLocationPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Location, error) {
-		return unmarshalOne(unmarshal, data, conv.ToLocationPtr)
+	UnmarshalOne: func(data []byte) (*model.Location, error) {
+		return unmarshalOne(data, conv.ToLocationPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Location], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToLocationPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Location], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToLocationPtr)
 	},
 }
 

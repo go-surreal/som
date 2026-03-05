@@ -19,7 +19,7 @@ type Client interface {
 }
 
 type ClientImpl struct {
-	db                  Database
+	db                  *dbConn
 	mu                  sync.Mutex
 	weatherRepo         *weather
 	teamMemberRepo      *teamMember

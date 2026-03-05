@@ -92,26 +92,47 @@ type WeatherRepo interface {
 
 // weatherRepoInfo holds the model-specific conversion functions for Weather.
 var weatherRepoInfo = RepoInfo[model.Weather]{
-	MarshalOne: func(node *model.Weather) any {
-		return conv.FromWeatherPtr(node)
-	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Weather, error) {
-		var raw []internal.QueryResult[*conv.Weather]
-		if err := unmarshal(data, &raw); err != nil {
+	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.Weather, error) {
+		raw, err := dbCreateNew[conv.Weather](ctx, db, idExpr, data)
+		if err != nil {
 			return nil, err
 		}
-		if len(raw) < 1 {
-			return nil, nil
+		return conv.ToWeatherPtr(raw), nil
+	},
+	CreateOne: func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*model.Weather, error) {
+		raw, err := dbCreate[conv.Weather](ctx, db, id, data)
+		if err != nil {
+			return nil, err
 		}
-		results := make([]*model.Weather, len(raw[0].Result))
-		for i, r := range raw[0].Result {
+		return conv.ToWeatherPtr(raw), nil
+	},
+	InsertAll: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*model.Weather, error) {
+		raw, err := dbInsert[conv.Weather](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		results := make([]*model.Weather, len(raw))
+		for i, r := range raw {
 			results[i] = conv.ToWeatherPtr(r)
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Weather, error) {
-		var raw *conv.Weather
-		if err := unmarshal(data, &raw); err != nil {
+	MarshalOne: func(node *model.Weather) any {
+		return conv.FromWeatherPtr(node)
+	},
+	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.Weather, error) {
+		raw, err := dbSelect[conv.Weather](ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToWeatherPtr(raw), nil
+	},
+	UpdateOne: func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*model.Weather, error) {
+		raw, err := dbUpdate[conv.Weather](ctx, db, id, data)
+		if err != nil {
 			return nil, err
 		}
 		return conv.ToWeatherPtr(raw), nil

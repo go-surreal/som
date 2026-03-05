@@ -123,7 +123,7 @@ func (b *build) buildInterfaceFile() error {
 
 	// Generate ClientImpl with per-node cached repo fields.
 	f.Line().Type().Id("ClientImpl").StructFunc(func(g *jen.Group) {
-		g.Id("db").Id("Database")
+		g.Id("db").Op("*").Id("dbConn")
 		g.Id("mu").Qual("sync", "Mutex")
 		for _, node := range b.input.nodes {
 			g.Id(node.NameGoLower() + "Repo").Op("*").Id(node.NameGoLower())
@@ -345,36 +345,58 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 	f.Line()
 	f.Commentf("%s holds the model-specific conversion functions for %s.", repoInfoVarName, node.NameGo())
-	f.Var().Id(repoInfoVarName).Op("=").Id("RepoInfo").Types(b.input.SourceQual(node.NameGo())).Values(jen.Dict{
-		jen.Id("UnmarshalOne"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
-			jen.Id("data").Index().Byte(),
-		).Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
-			jen.Var().Id("raw").Op("*").Qual(pkgConv, node.NameGo()),
-			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.Err()),
-			),
-			jen.Return(jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")), jen.Nil()),
+	sourceType := b.input.SourceQual(node.NameGo())
+	convType := jen.Qual(pkgConv, node.NameGo())
+	convFn := jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr")
+
+	ctxParam := jen.Id("ctx").Qual("context", "Context")
+	dbParam := jen.Id("db").Op("*").Id("dbConn")
+	idPtrParam := jen.Id("id").Op("*").Qual(def.PkgModels, "RecordID")
+	idValParam := jen.Id("id").Qual(def.PkgModels, "RecordID")
+
+	f.Var().Id(repoInfoVarName).Op("=").Id("RepoInfo").Types(sourceType).Values(jen.Dict{
+		jen.Id("ReadOne"): jen.Func().Params(ctxParam, dbParam, idPtrParam).Params(
+			jen.Op("*").Add(sourceType), jen.Error(),
+		).Block(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbSelect").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("id")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
+			jen.If(jen.Id("raw").Op("==").Nil()).Block(jen.Return(jen.Nil(), jen.Nil())),
+			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
 		),
-		jen.Id("UnmarshalInsert"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
-			jen.Id("data").Index().Byte(),
-		).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
-			jen.Var().Id("raw").Index().Qual(b.relativePkgPath(def.PkgInternal), "QueryResult").Types(jen.Op("*").Qual(pkgConv, node.NameGo())),
-			jen.If(jen.Err().Op(":=").Id("unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
-				jen.Return(jen.Nil(), jen.Err()),
-			),
-			jen.If(jen.Len(jen.Id("raw")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Nil(), jen.Nil()),
-			),
-			jen.Id("results").Op(":=").Make(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Len(jen.Id("raw").Index(jen.Lit(0)).Dot("Result"))),
-			jen.For(jen.List(jen.Id("i"), jen.Id("r")).Op(":=").Range().Id("raw").Index(jen.Lit(0)).Dot("Result")).Block(
-				jen.Id("results").Index(jen.Id("i")).Op("=").Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("r")),
+		jen.Id("CreateOne"): jen.Func().Params(ctxParam, dbParam, idValParam, jen.Id("data").Any()).Params(
+			jen.Op("*").Add(sourceType), jen.Error(),
+		).Block(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbCreate").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("id"), jen.Id("data")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
+			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
+		),
+		jen.Id("CreateNew"): jen.Func().Params(ctxParam, dbParam, jen.Id("idExpr").String(), jen.Id("data").Any()).Params(
+			jen.Op("*").Add(sourceType), jen.Error(),
+		).Block(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbCreateNew").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("idExpr"), jen.Id("data")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
+			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
+		),
+		jen.Id("UpdateOne"): jen.Func().Params(ctxParam, dbParam, idPtrParam, jen.Id("data").Any()).Params(
+			jen.Op("*").Add(sourceType), jen.Error(),
+		).Block(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbUpdate").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("id"), jen.Id("data")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
+			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
+		),
+		jen.Id("InsertAll"): jen.Func().Params(ctxParam, dbParam, jen.Id("stmt").String(), jen.Id("vars").Map(jen.String()).Any()).Params(
+			jen.Index().Op("*").Add(sourceType), jen.Error(),
+		).Block(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbInsert").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("stmt"), jen.Id("vars")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
+			jen.Id("results").Op(":=").Make(jen.Index().Op("*").Add(sourceType), jen.Len(jen.Id("raw"))),
+			jen.For(jen.List(jen.Id("i"), jen.Id("r")).Op(":=").Range().Id("raw")).Block(
+				jen.Id("results").Index(jen.Id("i")).Op("=").Add(convFn.Clone()).Call(jen.Id("r")),
 			),
 			jen.Return(jen.Id("results"), jen.Nil()),
 		),
 		jen.Id("MarshalOne"): jen.Func().Params(
-			jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
+			jen.Id("node").Op("*").Add(sourceType),
 		).Any().Block(
 			jen.Return(jen.Qual(pkgConv, "From"+node.NameGo()+"Ptr").Call(jen.Id("node"))),
 		),

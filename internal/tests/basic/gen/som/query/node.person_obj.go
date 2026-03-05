@@ -10,14 +10,14 @@ import (
 
 // personObjModelInfo holds the model-specific unmarshal functions for PersonObj.
 var personObjModelInfo = modelInfo[model.PersonObj]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.PersonObj, error) {
-		return unmarshalAll(unmarshal, data, conv.ToPersonObjPtr)
+	UnmarshalAll: func(data []byte) ([]*model.PersonObj, error) {
+		return unmarshalAll(data, conv.ToPersonObjPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.PersonObj, error) {
-		return unmarshalOne(unmarshal, data, conv.ToPersonObjPtr)
+	UnmarshalOne: func(data []byte) (*model.PersonObj, error) {
+		return unmarshalOne(data, conv.ToPersonObjPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.PersonObj], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToPersonObjPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.PersonObj], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToPersonObjPtr)
 	},
 }
 

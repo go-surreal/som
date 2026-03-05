@@ -102,26 +102,47 @@ type AllTypesRepo interface {
 
 // allTypesRepoInfo holds the model-specific conversion functions for AllTypes.
 var allTypesRepoInfo = RepoInfo[model.AllTypes]{
-	MarshalOne: func(node *model.AllTypes) any {
-		return conv.FromAllTypesPtr(node)
-	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.AllTypes, error) {
-		var raw []internal.QueryResult[*conv.AllTypes]
-		if err := unmarshal(data, &raw); err != nil {
+	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.AllTypes, error) {
+		raw, err := dbCreateNew[conv.AllTypes](ctx, db, idExpr, data)
+		if err != nil {
 			return nil, err
 		}
-		if len(raw) < 1 {
-			return nil, nil
+		return conv.ToAllTypesPtr(raw), nil
+	},
+	CreateOne: func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*model.AllTypes, error) {
+		raw, err := dbCreate[conv.AllTypes](ctx, db, id, data)
+		if err != nil {
+			return nil, err
 		}
-		results := make([]*model.AllTypes, len(raw[0].Result))
-		for i, r := range raw[0].Result {
+		return conv.ToAllTypesPtr(raw), nil
+	},
+	InsertAll: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*model.AllTypes, error) {
+		raw, err := dbInsert[conv.AllTypes](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		results := make([]*model.AllTypes, len(raw))
+		for i, r := range raw {
 			results[i] = conv.ToAllTypesPtr(r)
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.AllTypes, error) {
-		var raw *conv.AllTypes
-		if err := unmarshal(data, &raw); err != nil {
+	MarshalOne: func(node *model.AllTypes) any {
+		return conv.FromAllTypesPtr(node)
+	},
+	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.AllTypes, error) {
+		raw, err := dbSelect[conv.AllTypes](ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToAllTypesPtr(raw), nil
+	},
+	UpdateOne: func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*model.AllTypes, error) {
+		raw, err := dbUpdate[conv.AllTypes](ctx, db, id, data)
+		if err != nil {
 			return nil, err
 		}
 		return conv.ToAllTypesPtr(raw), nil

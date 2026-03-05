@@ -2,7 +2,6 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	model "github.com/go-surreal/som/tests/basic/model"
@@ -27,7 +26,7 @@ func (c *PersonObj) MarshalCBOR() ([]byte, error) {
 }
 
 func (c *PersonObj) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
+	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
@@ -43,7 +42,7 @@ func (c *PersonObj) UnmarshalCBOR(data []byte) error {
 			if err != nil {
 				return err
 			}
-			var rawObj map[string]v2.RawMessage
+			var rawObj map[string]cbor.RawMessage
 			if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
 				return err
 			}

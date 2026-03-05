@@ -12,14 +12,14 @@ import (
 
 // teamMemberModelInfo holds the model-specific unmarshal functions for TeamMember.
 var teamMemberModelInfo = modelInfo[model.TeamMember]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.TeamMember, error) {
-		return unmarshalAll(unmarshal, data, conv.ToTeamMemberPtr)
+	UnmarshalAll: func(data []byte) ([]*model.TeamMember, error) {
+		return unmarshalAll(data, conv.ToTeamMemberPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.TeamMember, error) {
-		return unmarshalOne(unmarshal, data, conv.ToTeamMemberPtr)
+	UnmarshalOne: func(data []byte) (*model.TeamMember, error) {
+		return unmarshalOne(data, conv.ToTeamMemberPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.TeamMember], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToTeamMemberPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.TeamMember], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToTeamMemberPtr)
 	},
 }
 
