@@ -201,6 +201,7 @@ func (b *build) recordIDFromNode(node *field.NodeTable) jen.Code {
 func (b *build) buildBaseFile(node *field.NodeTable) error {
 	pkgQuery := b.relativePkgPath(def.PkgQuery)
 	pkgConv := b.relativePkgPath(def.PkgConv)
+	pkgCBOR := b.relativePkgPath(def.PkgCBORHelpers)
 
 	f := def.NewFile(def.PkgRepo)
 
@@ -350,7 +351,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
 			jen.Var().Id("raw").Op("*").Qual(pkgConv, node.NameGo()),
-			jen.If(jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+			jen.If(jen.Err().Op(":=").Qual(pkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Err()),
 			),
 			jen.Return(jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr").Call(jen.Id("raw")), jen.Nil()),
@@ -359,7 +360,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Index().Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Error()).Block(
 			jen.Var().Id("raw").Index().Qual(b.relativePkgPath(def.PkgInternal), "QueryResult").Types(jen.Op("*").Qual(pkgConv, node.NameGo())),
-			jen.If(jen.Err().Op(":=").Qual(def.PkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
+			jen.If(jen.Err().Op(":=").Qual(pkgCBOR, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("raw")), jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Err()),
 			),
 			jen.If(jen.Len(jen.Id("raw")).Op("<").Lit(1)).Block(

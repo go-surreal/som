@@ -94,7 +94,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.If(jen.Id("f").Op("==").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Nil()),
 				),
-				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/codec"), "Marshal").Call(jen.Id("f").Dot("ID"))),
+				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("f").Dot("ID"))),
 			)
 
 		f.Line()
@@ -103,7 +103,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 			Error().
 			Block(
 				jen.If(
-					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/codec"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("f").Dot("ID")),
+					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("f").Dot("ID")),
 					jen.Err().Op("==").Nil(),
 				).Block(
 					jen.Return(jen.Nil()),
@@ -112,7 +112,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.Type().Id("alias").Id(node.NameGoLower()+"Link"),
 				jen.Var().Id("link").Id("alias"),
 
-				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/codec"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("link")),
+				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("link")),
 				jen.If(jen.Err().Op("==").Nil()).Block(
 					jen.Op("*").Id("f").Op("=").Id(node.NameGoLower()+"Link").Call(jen.Id("link")),
 				),
@@ -171,7 +171,7 @@ func (b *convBuilder) complexNodeIDValue(node *field.NodeTable, varName string) 
 
 func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 	cid := node.Source.ComplexID
-	cborPkg := path.Join(b.basePkg, "internal/codec")
+	cborPkg := path.Join(b.basePkg, "internal/cbor")
 
 	g.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
@@ -188,7 +188,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 			inner.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("recordID").Dot("ID"))
 			inner.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 			if cid.Kind == parser.IDTypeArray {
-				inner.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
+				inner.Var().Id("rawArr").Index().Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 				inner.If(
 					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
 					jen.Err().Op("!=").Nil(),
@@ -206,7 +206,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 					).Call(jen.Id("key"))
 				})
 			} else {
-				inner.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+				inner.Var().Id("rawObj").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 				inner.If(
 					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
 					jen.Err().Op("!=").Nil(),
@@ -319,7 +319,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 	g.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 	if cid.Kind == parser.IDTypeArray {
-		g.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
+		g.Var().Id("rawArr").Index().Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 		g.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
 			jen.Err().Op("!=").Nil(),
@@ -336,7 +336,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 			})
 		})
 	} else {
-		g.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+		g.Var().Id("rawObj").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 		g.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
 			jen.Err().Op("!=").Nil(),
@@ -408,7 +408,7 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 		Params(jen.Index().Byte(), jen.Error()).
 		BlockFunc(func(g *jen.Group) {
 			g.If(jen.Id("c").Op("==").Nil()).Block(
-				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/codec"), "Marshal").Call(jen.Nil())),
+				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Nil())),
 			)
 
 			// Count fields for pre-sized map allocation
@@ -465,7 +465,7 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 			}
 
 			g.Line()
-			g.Return(jen.Qual(path.Join(b.basePkg, "internal/codec"), "Marshal").Call(jen.Id("data")))
+			g.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("data")))
 		})
 }
 
@@ -475,9 +475,9 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 		Id("UnmarshalCBOR").Params(jen.Id("data").Index().Byte()).
 		Error().
 		BlockFunc(func(g *jen.Group) {
-			g.Var().Id("rawMap").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+			g.Var().Id("rawMap").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 			g.If(
-				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/codec"), "Unmarshal").Call(
+				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(
 					jen.Id("data"),
 					jen.Op("&").Id("rawMap"),
 				),
@@ -499,12 +499,12 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 					).BlockFunc(func(bg *jen.Group) {
 						bg.Var().Id("recordID").Op("*").Qual(def.PkgModels, "RecordID")
 						bg.If(
-							jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/codec"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
+							jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
 							jen.Err().Op("!=").Nil(),
 						).Block(jen.Return(jen.Err()))
 						bg.Var().Id("idStr").String()
 						bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
-							jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(path.Join(b.basePkg, "internal/codec"), "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
+							jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
 							jen.If(jen.Err().Op("!=").Nil()).Block(
 								jen.Return(jen.Err()),
 							),

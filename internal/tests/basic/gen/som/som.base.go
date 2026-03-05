@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -123,7 +123,7 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 	if len(b) != 16 {
 		return nil, fmt.Errorf("UUID must be 16 bytes, got %d", len(b))
 	}
-	return codec.Marshal(codec.Tag{Number: models.TagSpecBinaryUUID, Content: b})
+	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
 type Node[T nodeID] struct {

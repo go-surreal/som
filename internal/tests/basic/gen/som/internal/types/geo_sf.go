@@ -3,7 +3,7 @@
 package types
 
 import (
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/peterstace/simplefeatures/geom"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )

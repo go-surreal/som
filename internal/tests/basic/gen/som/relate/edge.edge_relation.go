@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )

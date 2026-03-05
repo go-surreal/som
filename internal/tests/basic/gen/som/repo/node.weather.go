@@ -4,11 +4,11 @@ package repo
 import (
 	"context"
 	"errors"
-	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	index "github.com/go-surreal/som/tests/basic/gen/som/index"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	query "github.com/go-surreal/som/tests/basic/gen/som/query"
 	model "github.com/go-surreal/som/tests/basic/model"

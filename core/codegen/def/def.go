@@ -17,7 +17,7 @@ const (
 	PkgInternal    = "internal"
 	PkgLib         = "internal/lib"
 	PkgTypes       = "internal/types"
-	PkgCBORHelpers = "internal/codec"
+	PkgCBORHelpers = "internal/cbor"
 	PkgDistinct    = "internal/distinct"
 
 	IndexPrefix = "__som__"
@@ -27,7 +27,6 @@ const (
 	//PkgSom  = "github.com/go-surreal/som"
 	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"
 	PkgModels    = "github.com/surrealdb/surrealdb.go/pkg/models"
-	PkgCBOR      = "github.com/fxamacker/cbor/v2"
 
 	PkgURL        = "net/url"
 	PkgUUIDGoogle = "github.com/google/uuid"
@@ -43,7 +42,5 @@ var (
 )
 
 func NewFile(pkg string) *jen.File {
-	f := jen.NewFile(pkg)
-	f.ImportAlias(PkgCBOR, "cbor")
-	return f
+	return jen.NewFile(pkg)
 }

@@ -146,7 +146,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			),
 
 			jen.Var().Id("rawResult").Index().Qual(b.relativePkgPath(def.PkgInternal), "QueryResult").Types(jen.Qual(b.relativePkgPath(def.PkgConv), edge.NameGo())),
-			jen.Err().Op("=").Qual("github.com/fxamacker/cbor/v2", "Unmarshal").Call(jen.Id("res"), jen.Op("&").Id("rawResult")),
+			jen.Err().Op("=").Qual(b.relativePkgPath(def.PkgCBORHelpers), "Unmarshal").Call(jen.Id("res"), jen.Op("&").Id("rawResult")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(
 				jen.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("could not unmarshal relation: %w"), jen.Err())),
 			),

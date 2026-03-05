@@ -2,8 +2,7 @@
 package conv
 
 import (
-	cbor "github.com/fxamacker/cbor/v2"
-	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
@@ -14,27 +13,27 @@ type weatherKey struct {
 
 func (c *weatherKey) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return codec.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 2)
 
 	data["city"] = c.City
 	data["date"] = &types.DateTime{Time: c.Date}
 
-	return codec.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *weatherKey) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
-	if err := codec.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	if raw, ok := rawMap["city"]; ok {
-		codec.Unmarshal(raw, &c.City)
+		cbor.Unmarshal(raw, &c.City)
 	}
 	if raw, ok := rawMap["date"]; ok {
-		c.Date, _ = codec.UnmarshalDateTime(raw)
+		c.Date, _ = cbor.UnmarshalDateTime(raw)
 	}
 
 	return nil

@@ -12,9 +12,9 @@ import (
 
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
 	"github.com/go-surreal/som/tests/basic/gen/som/with"
-	"github.com/fxamacker/cbor/v2"
 )
 
 // modelInfo holds type-specific conversion functions.

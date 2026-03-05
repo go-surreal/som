@@ -2,9 +2,8 @@
 package conv
 
 import (
-	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
-	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
@@ -16,7 +15,7 @@ type Weather struct {
 
 func (c *Weather) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return codec.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 1)
 
@@ -24,38 +23,38 @@ func (c *Weather) MarshalCBOR() ([]byte, error) {
 
 	data["temperature"] = c.Temperature
 
-	return codec.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *Weather) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
-	if err := codec.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
-		if err := codec.Unmarshal(raw, &recordID); err != nil {
+		if err := cbor.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
 		if recordID != nil {
-			idRaw, err := codec.Marshal(recordID.ID)
+			idRaw, err := cbor.Marshal(recordID.ID)
 			if err != nil {
 				return err
 			}
 			var rawArr []cbor.RawMessage
-			if err := codec.Unmarshal(idRaw, &rawArr); err != nil {
+			if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
 				return err
 			}
 			if len(rawArr) >= 2 {
 				var key model.WeatherKey
-				if err := codec.Unmarshal(rawArr[0], &key.City); err != nil {
+				if err := cbor.Unmarshal(rawArr[0], &key.City); err != nil {
 					return err
 				}
 				{
 					var DateErr error
-					key.Date, DateErr = codec.UnmarshalDateTime(rawArr[1])
+					key.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
 					if DateErr != nil {
 						return DateErr
 					}
@@ -66,7 +65,7 @@ func (c *Weather) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["temperature"]; ok {
-		codec.Unmarshal(raw, &c.Temperature)
+		cbor.Unmarshal(raw, &c.Temperature)
 	}
 
 	return nil
@@ -102,16 +101,16 @@ func (f *weatherLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return codec.Marshal(f.ID)
+	return cbor.Marshal(f.ID)
 }
 
 func (f *weatherLink) UnmarshalCBOR(data []byte) error {
-	if err := codec.Unmarshal(data, &f.ID); err == nil {
+	if err := cbor.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias weatherLink
 	var link alias
-	err := codec.Unmarshal(data, &link)
+	err := cbor.Unmarshal(data, &link)
 	if err == nil {
 		*f = weatherLink(link)
 	}

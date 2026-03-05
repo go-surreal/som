@@ -2,10 +2,9 @@
 package conv
 
 import (
-	cbor "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
@@ -17,7 +16,7 @@ type SpecialTypes struct {
 
 func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return codec.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 4)
 
@@ -32,24 +31,24 @@ func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 	data["name"] = c.Name
 	data["__som_lock_version"] = c.Version()
 
-	return codec.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
-	if err := codec.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
-		if err := codec.Unmarshal(raw, &recordID); err != nil {
+		if err := cbor.Unmarshal(raw, &recordID); err != nil {
 			return err
 		}
 		var idStr string
 		if recordID != nil {
-			s, err := codec.RecordIDToString(recordID.ID)
+			s, err := cbor.RecordIDToString(recordID.ID)
 			if err != nil {
 				return err
 			}
@@ -59,15 +58,15 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 	}
 
 	if raw, ok := rawMap["deleted_at"]; ok {
-		tm, _ := codec.UnmarshalDateTime(raw)
+		tm, _ := cbor.UnmarshalDateTime(raw)
 		internal.SetDeletedAt(&c.SoftDelete, tm)
 	}
 	if raw, ok := rawMap["name"]; ok {
-		codec.Unmarshal(raw, &c.Name)
+		cbor.Unmarshal(raw, &c.Name)
 	}
 	if raw, ok := rawMap["__som_lock_version"]; ok {
 		var v int
-		codec.Unmarshal(raw, &v)
+		cbor.Unmarshal(raw, &v)
 		c.OptimisticLock.SetVersion(v)
 	}
 
@@ -104,16 +103,16 @@ func (f *specialTypesLink) MarshalCBOR() ([]byte, error) {
 	if f == nil {
 		return nil, nil
 	}
-	return codec.Marshal(f.ID)
+	return cbor.Marshal(f.ID)
 }
 
 func (f *specialTypesLink) UnmarshalCBOR(data []byte) error {
-	if err := codec.Unmarshal(data, &f.ID); err == nil {
+	if err := cbor.Unmarshal(data, &f.ID); err == nil {
 		return nil
 	}
 	type alias specialTypesLink
 	var link alias
-	err := codec.Unmarshal(data, &link)
+	err := cbor.Unmarshal(data, &link)
 	if err == nil {
 		*f = specialTypesLink(link)
 	}

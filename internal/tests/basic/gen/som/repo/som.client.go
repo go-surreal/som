@@ -9,7 +9,7 @@ import (
 
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/fxamacker/cbor/v2"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )

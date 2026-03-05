@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/fxamacker/cbor/v2"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
 )
 

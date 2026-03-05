@@ -2,8 +2,7 @@
 package conv
 
 import (
-	cbor "github.com/fxamacker/cbor/v2"
-	codec "github.com/go-surreal/som/tests/basic/gen/som/internal/codec"
+	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	model "github.com/go-surreal/som/tests/basic/model"
 )
 
@@ -13,27 +12,27 @@ type edgeMeta struct {
 
 func (c *edgeMeta) MarshalCBOR() ([]byte, error) {
 	if c == nil {
-		return codec.Marshal(nil)
+		return cbor.Marshal(nil)
 	}
 	data := make(map[string]any, 2)
 
 	data["is_admin"] = c.IsAdmin
 	data["is_active"] = c.IsActive
 
-	return codec.Marshal(data)
+	return cbor.Marshal(data)
 }
 
 func (c *edgeMeta) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
-	if err := codec.Unmarshal(data, &rawMap); err != nil {
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	if raw, ok := rawMap["is_admin"]; ok {
-		codec.Unmarshal(raw, &c.IsAdmin)
+		cbor.Unmarshal(raw, &c.IsAdmin)
 	}
 	if raw, ok := rawMap["is_active"]; ok {
-		codec.Unmarshal(raw, &c.IsActive)
+		cbor.Unmarshal(raw, &c.IsActive)
 	}
 
 	return nil
