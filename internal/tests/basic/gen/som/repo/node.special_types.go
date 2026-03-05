@@ -633,7 +633,7 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 	_, err := r.db.Query(ctx, query, vars)
 	if err != nil {
 		if containsError(err, "optimistic_lock_failed") {
-			return som.ErrOptimisticLock
+			return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 		}
 		return fmt.Errorf("could not restore entity: %w", err)
 	}

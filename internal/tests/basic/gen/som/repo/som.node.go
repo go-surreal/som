@@ -133,7 +133,7 @@ func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) e
 	res, err := r.db.Update(ctx, id, data)
 	if err != nil {
 		if containsError(err, "optimistic_lock_failed") {
-			return som.ErrOptimisticLock
+			return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 		}
 		return fmt.Errorf("could not update entity: %w", err)
 	}
@@ -159,10 +159,10 @@ func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, s
 		_, err := r.db.Query(ctx, query, vars)
 		if err != nil {
 			if containsError(err, "record_already_deleted") {
-				return som.ErrAlreadyDeleted
+				return fmt.Errorf("%w: %w", som.ErrAlreadyDeleted, err)
 			}
 			if lockVersion != nil && containsError(err, "optimistic_lock_failed") {
-				return som.ErrOptimisticLock
+				return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 			}
 			return fmt.Errorf("could not soft delete entity: %w", err)
 		}

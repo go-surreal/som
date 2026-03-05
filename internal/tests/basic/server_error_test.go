@@ -31,11 +31,12 @@ func TestServerError_OptimisticLockUpdate(t *testing.T) {
 	stale.Name = "Stale Update"
 	err = client.SpecialTypesRepo().Update(ctx, stale)
 	assert.Assert(t, err != nil)
-	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock))
+	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock),
+		"expected ErrOptimisticLock, got: %v", err)
 
 	var se som.ServerError
 	assert.Assert(t, errors.As(err, &se),
-		"optimistic lock error from Update (RPC) should contain a ServerError, got: %v", err)
+		"optimistic lock from Update (RPC) should preserve ServerError, got: %v", err)
 	assert.Assert(t, se.Message != "", "ServerError.Message should not be empty")
 }
 
@@ -57,7 +58,8 @@ func TestServerError_OptimisticLockSoftDelete(t *testing.T) {
 
 	err = client.SpecialTypesRepo().Delete(ctx, &stale)
 	assert.Assert(t, err != nil)
-	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock))
+	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock),
+		"expected ErrOptimisticLock, got: %v", err)
 }
 
 func TestServerError_AlreadyDeleted(t *testing.T) {
@@ -75,7 +77,8 @@ func TestServerError_AlreadyDeleted(t *testing.T) {
 
 	err = client.SpecialTypesRepo().Delete(ctx, &record)
 	assert.Assert(t, err != nil)
-	assert.Assert(t, errors.Is(err, som.ErrAlreadyDeleted))
+	assert.Assert(t, errors.Is(err, som.ErrAlreadyDeleted),
+		"expected ErrAlreadyDeleted, got: %v", err)
 }
 
 func TestServerError_OptimisticLockRestore(t *testing.T) {
@@ -105,5 +108,6 @@ func TestServerError_OptimisticLockRestore(t *testing.T) {
 
 	err = client.SpecialTypesRepo().Restore(ctx, &staleDeleted)
 	assert.Assert(t, err != nil)
-	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock))
+	assert.Assert(t, errors.Is(err, som.ErrOptimisticLock),
+		"expected ErrOptimisticLock, got: %v", err)
 }
