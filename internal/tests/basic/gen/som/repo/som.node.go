@@ -36,22 +36,21 @@ var cacheRefreshGroup singleflight.Group
 
 // RepoInfo holds type-specific conversion functions for repository operations.
 type RepoInfo[N any] struct {
-	// UnmarshalOne unmarshals a single result into *N
-	UnmarshalOne func(unmarshal func([]byte, any) error, data []byte) (*N, error)
-
-	// UnmarshalInsert unmarshals an insert response (a slice of records) into []*N
-	UnmarshalInsert func(unmarshal func([]byte, any) error, data []byte) ([]*N, error)
-
-	// MarshalOne marshals *N for database write operations and returns the raw data
+	ReadOne    func(ctx context.Context, db *dbConn, id *models.RecordID) (*N, error)
+	CreateOne  func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*N, error)
+	CreateNew  func(ctx context.Context, db *dbConn, idExpr string, data any) (*N, error)
+	UpdateOne  func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*N, error)
+	InsertAll  func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*N, error)
+	QueryOne   func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*N, error)
 	MarshalOne func(node *N) any
 }
 
 type repo[N any, K any] struct {
-	db Database
+	db *dbConn
 
 	name     string
 	info     RepoInfo[N]
-	newID    func(string) RecordID
+	newID    func(string) string
 	idFunc   string
 	recordID func(K) *models.RecordID
 }
@@ -61,13 +60,9 @@ func (r *repo[N, K]) create(ctx context.Context, node *N) error {
 		return fmt.Errorf("create without explicit ID is not supported for this model")
 	}
 	data := r.info.MarshalOne(node)
-	raw, err := r.db.Create(ctx, r.newID(r.name), data)
+	result, err := r.info.CreateNew(ctx, r.db, r.newID(r.name), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
-	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, raw)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*node = *result
 	return nil
@@ -75,13 +70,9 @@ func (r *repo[N, K]) create(ctx context.Context, node *N) error {
 
 func (r *repo[N, K]) createWithID(ctx context.Context, id K, node *N) error {
 	data := r.info.MarshalOne(node)
-	res, err := r.db.Create(ctx, *r.recordID(id), data)
+	result, err := r.info.CreateOne(ctx, r.db, *r.recordID(id), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
-	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*node = *result
 	return nil
@@ -93,13 +84,9 @@ func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
 		data[i] = r.info.MarshalOne(node)
 	}
 	statement := "INSERT INTO " + r.name + " (SELECT *, " + r.idFunc + " AS id FROM $data)"
-	raw, err := r.db.Query(ctx, statement, map[string]any{"data": data})
+	results, err := r.info.InsertAll(ctx, r.db, statement, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not insert entities: %w", err)
-	}
-	results, err := r.info.UnmarshalInsert(r.db.Unmarshal, raw)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	if len(results) != len(nodes) {
 		return fmt.Errorf("insert returned %d results, expected %d", len(results), len(nodes))
@@ -114,13 +101,9 @@ func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
 }
 
 func (r *repo[N, K]) read(ctx context.Context, id *models.RecordID) (*N, bool, error) {
-	res, err := r.db.Select(ctx, id)
+	result, err := r.info.ReadOne(ctx, r.db, id)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
-	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
-	if err != nil {
-		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	if result == nil {
 		return nil, false, nil
@@ -130,16 +113,12 @@ func (r *repo[N, K]) read(ctx context.Context, id *models.RecordID) (*N, bool, e
 
 func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) error {
 	data := r.info.MarshalOne(node)
-	res, err := r.db.Update(ctx, id, data)
+	result, err := r.info.UpdateOne(ctx, r.db, id, data)
 	if err != nil {
 		if containsError(err, "optimistic_lock_failed") {
 			return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 		}
 		return fmt.Errorf("could not update entity: %w", err)
-	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*node = *result
 	return nil
@@ -147,7 +126,7 @@ func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) e
 
 func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, softDelete bool, lockVersion *int) error {
 	if softDelete {
-		query := "LET $res = (UPDATE $id SET deleted_at = time::now()"
+		query := "UPDATE $id SET deleted_at = time::now()"
 		vars := map[string]any{
 			"id": id,
 		}
@@ -155,22 +134,22 @@ func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, s
 			query += ", __som_lock_version = $lock_version"
 			vars["lock_version"] = *lockVersion
 		}
-		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL); IF array::len($res) = 0 { THROW 'record_already_deleted' };"
-		_, err := r.db.Query(ctx, query, vars)
+		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL"
+		result, err := r.info.QueryOne(ctx, r.db, query, vars)
 		if err != nil {
-			if containsError(err, "record_already_deleted") {
-				return fmt.Errorf("%w: %w", som.ErrAlreadyDeleted, err)
-			}
 			if lockVersion != nil && containsError(err, "optimistic_lock_failed") {
 				return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 			}
 			return fmt.Errorf("could not soft delete entity: %w", err)
 		}
-		return r.refresh(ctx, id, node)
+		if result == nil {
+			return som.ErrAlreadyDeleted
+		}
+		*node = *result
+		return nil
 	}
 
-	_, err := r.db.Delete(ctx, id)
-	if err != nil {
+	if err := dbDelete(ctx, r.db, id); err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}
 	return nil

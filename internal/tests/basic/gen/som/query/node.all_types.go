@@ -9,14 +9,14 @@ import (
 
 // allTypesModelInfo holds the model-specific unmarshal functions for AllTypes.
 var allTypesModelInfo = modelInfo[model.AllTypes]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.AllTypes, error) {
-		return unmarshalAll(unmarshal, data, conv.ToAllTypesPtr)
+	UnmarshalAll: func(data []byte) ([]*model.AllTypes, error) {
+		return unmarshalAll(data, conv.ToAllTypesPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.AllTypes, error) {
-		return unmarshalOne(unmarshal, data, conv.ToAllTypesPtr)
+	UnmarshalOne: func(data []byte) (*model.AllTypes, error) {
+		return unmarshalOne(data, conv.ToAllTypesPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.AllTypes], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToAllTypesPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.AllTypes], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToAllTypesPtr)
 	},
 }
 
