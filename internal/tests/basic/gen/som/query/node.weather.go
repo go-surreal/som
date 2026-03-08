@@ -11,14 +11,14 @@ import (
 
 // weatherModelInfo holds the model-specific unmarshal functions for Weather.
 var weatherModelInfo = modelInfo[model.Weather]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Weather, error) {
-		return unmarshalAll(unmarshal, data, conv.ToWeatherPtr)
+	UnmarshalAll: func(data []byte) ([]*model.Weather, error) {
+		return unmarshalAll(data, conv.ToWeatherPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Weather, error) {
-		return unmarshalOne(unmarshal, data, conv.ToWeatherPtr)
+	UnmarshalOne: func(data []byte) (*model.Weather, error) {
+		return unmarshalOne(data, conv.ToWeatherPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Weather], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToWeatherPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Weather], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToWeatherPtr)
 	},
 }
 

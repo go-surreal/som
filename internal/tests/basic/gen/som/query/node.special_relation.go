@@ -10,14 +10,14 @@ import (
 
 // specialRelationModelInfo holds the model-specific unmarshal functions for SpecialRelation.
 var specialRelationModelInfo = modelInfo[model.SpecialRelation]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialRelation, error) {
-		return unmarshalAll(unmarshal, data, conv.ToSpecialRelationPtr)
+	UnmarshalAll: func(data []byte) ([]*model.SpecialRelation, error) {
+		return unmarshalAll(data, conv.ToSpecialRelationPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialRelation, error) {
-		return unmarshalOne(unmarshal, data, conv.ToSpecialRelationPtr)
+	UnmarshalOne: func(data []byte) (*model.SpecialRelation, error) {
+		return unmarshalOne(data, conv.ToSpecialRelationPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SpecialRelation], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToSpecialRelationPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SpecialRelation], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToSpecialRelationPtr)
 	},
 }
 

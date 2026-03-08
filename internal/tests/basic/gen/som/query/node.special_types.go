@@ -10,14 +10,14 @@ import (
 
 // specialTypesModelInfo holds the model-specific unmarshal functions for SpecialTypes.
 var specialTypesModelInfo = modelInfo[model.SpecialTypes]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialTypes, error) {
-		return unmarshalAll(unmarshal, data, conv.ToSpecialTypesPtr)
+	UnmarshalAll: func(data []byte) ([]*model.SpecialTypes, error) {
+		return unmarshalAll(data, conv.ToSpecialTypesPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialTypes, error) {
-		return unmarshalOne(unmarshal, data, conv.ToSpecialTypesPtr)
+	UnmarshalOne: func(data []byte) (*model.SpecialTypes, error) {
+		return unmarshalOne(data, conv.ToSpecialTypesPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SpecialTypes], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToSpecialTypesPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SpecialTypes], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToSpecialTypesPtr)
 	},
 }
 

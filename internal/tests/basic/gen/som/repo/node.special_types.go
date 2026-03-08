@@ -14,7 +14,6 @@ import (
 	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	"slices"
-	"strings"
 	"sync"
 	"sync/atomic"
 )
@@ -110,26 +109,57 @@ type SpecialTypesRepo interface {
 
 // specialTypesRepoInfo holds the model-specific conversion functions for SpecialTypes.
 var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
-	MarshalOne: func(node *model.SpecialTypes) any {
-		return conv.FromSpecialTypesPtr(node)
-	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialTypes, error) {
-		var raw []internal.QueryResult[*conv.SpecialTypes]
-		if err := unmarshal(data, &raw); err != nil {
+	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.SpecialTypes, error) {
+		raw, err := dbCreateNew[conv.SpecialTypes](ctx, db, idExpr, data)
+		if err != nil {
 			return nil, err
 		}
-		if len(raw) < 1 {
-			return nil, nil
+		return conv.ToSpecialTypesPtr(raw), nil
+	},
+	CreateOne: func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*model.SpecialTypes, error) {
+		raw, err := dbCreate[conv.SpecialTypes](ctx, db, id, data)
+		if err != nil {
+			return nil, err
 		}
-		results := make([]*model.SpecialTypes, len(raw[0].Result))
-		for i, r := range raw[0].Result {
+		return conv.ToSpecialTypesPtr(raw), nil
+	},
+	InsertAll: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*model.SpecialTypes, error) {
+		raw, err := dbInsert[conv.SpecialTypes](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		results := make([]*model.SpecialTypes, len(raw))
+		for i, r := range raw {
 			results[i] = conv.ToSpecialTypesPtr(r)
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialTypes, error) {
-		var raw *conv.SpecialTypes
-		if err := unmarshal(data, &raw); err != nil {
+	MarshalOne: func(node *model.SpecialTypes) any {
+		return conv.FromSpecialTypesPtr(node)
+	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.SpecialTypes, error) {
+		raw, err := dbQueryOne[conv.SpecialTypes](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToSpecialTypesPtr(raw), nil
+	},
+	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.SpecialTypes, error) {
+		raw, err := dbSelect[conv.SpecialTypes](ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToSpecialTypesPtr(raw), nil
+	},
+	UpdateOne: func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*model.SpecialTypes, error) {
+		raw, err := dbUpdate[conv.SpecialTypes](ctx, db, id, data)
+		if err != nil {
 			return nil, err
 		}
 		return conv.ToSpecialTypesPtr(raw), nil
@@ -631,14 +661,18 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 		"id":           r.recordID(string(specialTypes.ID())),
 		"lock_version": specialTypes.Version(),
 	}
-	_, err := r.db.Query(ctx, query, vars)
+	result, err := r.info.QueryOne(ctx, r.db, query, vars)
 	if err != nil {
-		if strings.Contains(err.Error(), "optimistic_lock_failed") {
-			return som.ErrOptimisticLock
+		if containsError(err, "optimistic_lock_failed") {
+			return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 		}
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
-	return r.refresh(ctx, r.recordID(string(specialTypes.ID())), specialTypes)
+	if result == nil {
+		return som.ErrNotFound
+	}
+	*specialTypes = *result
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

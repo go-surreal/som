@@ -188,7 +188,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 			inner.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("recordID").Dot("ID"))
 			inner.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 			if cid.Kind == parser.IDTypeArray {
-				inner.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
+				inner.Var().Id("rawArr").Index().Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 				inner.If(
 					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
 					jen.Err().Op("!=").Nil(),
@@ -206,7 +206,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 					).Call(jen.Id("key"))
 				})
 			} else {
-				inner.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+				inner.Var().Id("rawObj").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 				inner.If(
 					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
 					jen.Err().Op("!=").Nil(),
@@ -319,7 +319,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 	g.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 	if cid.Kind == parser.IDTypeArray {
-		g.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
+		g.Var().Id("rawArr").Index().Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 		g.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
 			jen.Err().Op("!=").Nil(),
@@ -336,7 +336,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 			})
 		})
 	} else {
-		g.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+		g.Var().Id("rawObj").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 		g.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
 			jen.Err().Op("!=").Nil(),
@@ -475,7 +475,7 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 		Id("UnmarshalCBOR").Params(jen.Id("data").Index().Byte()).
 		Error().
 		BlockFunc(func(g *jen.Group) {
-			g.Var().Id("rawMap").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+			g.Var().Id("rawMap").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 			g.If(
 				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(
 					jen.Id("data"),
