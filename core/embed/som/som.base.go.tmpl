@@ -324,10 +324,12 @@ type OnBeforeDeleteHook interface {
 type OnAfterDeleteHook interface {
 	OnAfterDelete(ctx context.Context) error
 }
+
 // Params is a map of named parameters for raw queries.
 type Params map[string]any
 
 // RawResult holds the result of a raw query.
+// For multi-statement queries, only the first statement's result set is used.
 type RawResult struct {
 	data []byte
 }
@@ -337,8 +339,9 @@ func NewRawResult(data []byte) *RawResult {
 	return &RawResult{data: data}
 }
 
-// Scan unmarshals the query result into dest.
+// Scan unmarshals the first statement's result set into dest.
 // dest should be a pointer to a slice for multi-row results.
+// For multi-statement queries, only the first statement's results are decoded.
 func (r *RawResult) Scan(dest any) error {
 	if r.data == nil {
 		return nil
@@ -350,6 +353,9 @@ func (r *RawResult) Scan(dest any) error {
 	if len(raw) < 1 {
 		return nil
 	}
+	// Re-wrap the raw messages into a CBOR array so they can be
+	// unmarshalled into the caller's typed slice without reflection.
+	// This is cheap: Marshal on []RawMessage only prepends an array header.
 	resultBytes, err := cbor.Marshal(raw[0].Result)
 	if err != nil {
 		return fmt.Errorf("could not re-encode result: %w", err)
@@ -357,7 +363,7 @@ func (r *RawResult) Scan(dest any) error {
 	return cbor.Unmarshal(resultBytes, dest)
 }
 
-// ScanOne unmarshals the first result row into dest.
+// ScanOne unmarshals the first row of the first statement's result set into dest.
 // Returns ErrNotFound if no results.
 func (r *RawResult) ScanOne(dest any) error {
 	if r.data == nil {

@@ -304,12 +304,8 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	}, nil
 }
 
-func (c *ClientImpl) Raw(ctx context.Context, query string, params ...som.Params) (*som.RawResult, error) {
-	var vars map[string]any
-	if len(params) > 0 {
-		vars = map[string]any(params[0])
-	}
-	data, err := c.db.Query(ctx, query, vars)
+func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error) {
+	data, err := c.db.Query(ctx, query, map[string]any(params))
 	if err != nil {
 		return nil, err
 	}

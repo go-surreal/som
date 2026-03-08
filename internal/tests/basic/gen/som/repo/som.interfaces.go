@@ -15,7 +15,7 @@ type Client interface {
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
 	AllTypesRepo() AllTypesRepo
-	Raw(ctx context.Context, query string, params ...som.Params) (*som.RawResult, error)
+	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
 	Close()
 }

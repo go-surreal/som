@@ -120,7 +120,7 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("Raw").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("query").String(),
-			jen.Id("params").Op("...").Qual(b.relativePkgPath(), "Params"),
+			jen.Id("params").Qual(b.relativePkgPath(), "Params"),
 		).Parens(jen.List(
 			jen.Op("*").Qual(b.relativePkgPath(), "RawResult"),
 			jen.Error(),
