@@ -328,13 +328,12 @@ type Params map[string]any
 
 // RawResult holds the result of a raw query.
 type RawResult struct {
-	data      []byte
-	unmarshal func([]byte, any) error
+	data []byte
 }
 
-// NewRawResult creates a new RawResult with the given data and unmarshal function.
-func NewRawResult(data []byte, unmarshal func([]byte, any) error) *RawResult {
-	return &RawResult{data: data, unmarshal: unmarshal}
+// NewRawResult creates a new RawResult from raw query response data.
+func NewRawResult(data []byte) *RawResult {
+	return &RawResult{data: data}
 }
 
 // Scan unmarshals the query result into dest.
@@ -344,7 +343,7 @@ func (r *RawResult) Scan(dest any) error {
 		return nil
 	}
 	var raw []internal.QueryResult[cbor.RawMessage]
-	if err := r.unmarshal(r.data, &raw); err != nil {
+	if err := cbor.Unmarshal(r.data, &raw); err != nil {
 		return fmt.Errorf("could not decode raw query result: %w", err)
 	}
 	if len(raw) < 1 {
@@ -354,7 +353,7 @@ func (r *RawResult) Scan(dest any) error {
 	if err != nil {
 		return fmt.Errorf("could not re-encode result: %w", err)
 	}
-	return r.unmarshal(resultBytes, dest)
+	return cbor.Unmarshal(resultBytes, dest)
 }
 
 // ScanOne unmarshals the first result row into dest.
@@ -364,11 +363,11 @@ func (r *RawResult) ScanOne(dest any) error {
 		return ErrNotFound
 	}
 	var raw []internal.QueryResult[cbor.RawMessage]
-	if err := r.unmarshal(r.data, &raw); err != nil {
+	if err := cbor.Unmarshal(r.data, &raw); err != nil {
 		return fmt.Errorf("could not decode raw query result: %w", err)
 	}
 	if len(raw) < 1 || len(raw[0].Result) < 1 {
 		return ErrNotFound
 	}
-	return r.unmarshal(raw[0].Result[0], dest)
+	return cbor.Unmarshal(raw[0].Result[0], dest)
 }
