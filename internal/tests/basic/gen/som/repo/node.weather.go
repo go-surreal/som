@@ -120,6 +120,16 @@ var weatherRepoInfo = RepoInfo[model.Weather]{
 	MarshalOne: func(node *model.Weather) any {
 		return conv.FromWeatherPtr(node)
 	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.Weather, error) {
+		raw, err := dbQueryOne[conv.Weather](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToWeatherPtr(raw), nil
+	},
 	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.Weather, error) {
 		raw, err := dbSelect[conv.Weather](ctx, db, id)
 		if err != nil {

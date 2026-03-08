@@ -130,6 +130,16 @@ var allTypesRepoInfo = RepoInfo[model.AllTypes]{
 	MarshalOne: func(node *model.AllTypes) any {
 		return conv.FromAllTypesPtr(node)
 	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.AllTypes, error) {
+		raw, err := dbQueryOne[conv.AllTypes](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToAllTypesPtr(raw), nil
+	},
 	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.AllTypes, error) {
 		raw, err := dbSelect[conv.AllTypes](ctx, db, id)
 		if err != nil {

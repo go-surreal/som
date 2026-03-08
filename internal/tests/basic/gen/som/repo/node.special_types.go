@@ -138,6 +138,16 @@ var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
 	MarshalOne: func(node *model.SpecialTypes) any {
 		return conv.FromSpecialTypesPtr(node)
 	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.SpecialTypes, error) {
+		raw, err := dbQueryOne[conv.SpecialTypes](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToSpecialTypesPtr(raw), nil
+	},
 	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.SpecialTypes, error) {
 		raw, err := dbSelect[conv.SpecialTypes](ctx, db, id)
 		if err != nil {
@@ -652,14 +662,18 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 		"id":           r.recordID(string(specialTypes.ID())),
 		"lock_version": specialTypes.Version(),
 	}
-	_, err := r.db.Query(ctx, query, vars)
+	result, err := r.info.QueryOne(ctx, r.db, query, vars)
 	if err != nil {
 		if strings.Contains(err.Error(), "optimistic_lock_failed") {
 			return som.ErrOptimisticLock
 		}
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
-	return r.refresh(ctx, r.recordID(string(specialTypes.ID())), specialTypes)
+	if result == nil {
+		return som.ErrNotFound
+	}
+	*specialTypes = *result
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

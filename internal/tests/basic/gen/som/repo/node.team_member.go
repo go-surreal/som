@@ -120,6 +120,16 @@ var teamMemberRepoInfo = RepoInfo[model.TeamMember]{
 	MarshalOne: func(node *model.TeamMember) any {
 		return conv.FromTeamMemberPtr(node)
 	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.TeamMember, error) {
+		raw, err := dbQueryOne[conv.TeamMember](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToTeamMemberPtr(raw), nil
+	},
 	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.TeamMember, error) {
 		raw, err := dbSelect[conv.TeamMember](ctx, db, id)
 		if err != nil {

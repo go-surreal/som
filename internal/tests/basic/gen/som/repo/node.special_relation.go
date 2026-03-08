@@ -137,6 +137,16 @@ var specialRelationRepoInfo = RepoInfo[model.SpecialRelation]{
 	MarshalOne: func(node *model.SpecialRelation) any {
 		return conv.FromSpecialRelationPtr(node)
 	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.SpecialRelation, error) {
+		raw, err := dbQueryOne[conv.SpecialRelation](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToSpecialRelationPtr(raw), nil
+	},
 	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.SpecialRelation, error) {
 		raw, err := dbSelect[conv.SpecialRelation](ctx, db, id)
 		if err != nil {
@@ -647,11 +657,15 @@ func (r *specialRelation) Restore(ctx context.Context, specialRelation *model.Sp
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
 	vars := map[string]any{"id": r.recordID(string(specialRelation.ID()))}
-	_, err := r.db.Query(ctx, query, vars)
+	result, err := r.info.QueryOne(ctx, r.db, query, vars)
 	if err != nil {
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
-	return r.refresh(ctx, r.recordID(string(specialRelation.ID())), specialRelation)
+	if result == nil {
+		return som.ErrNotFound
+	}
+	*specialRelation = *result
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

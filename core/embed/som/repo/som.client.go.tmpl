@@ -130,6 +130,33 @@ func dbDelete(ctx context.Context, db *dbConn, id *models.RecordID) error {
 	return err
 }
 
+func dbQueryOne[T any](ctx context.Context, db *dbConn, statement string, vars map[string]any) (*T, error) {
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var result *[]surrealdb.QueryResult[[]T]
+	if tx != nil {
+		result, err = surrealdb.Query[[]T](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]T](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result == nil || len(*result) == 0 {
+		return nil, nil
+	}
+	qr := (*result)[0]
+	if qr.Error != nil {
+		return nil, qr.Error
+	}
+	if len(qr.Result) == 0 {
+		return nil, nil
+	}
+	return &qr.Result[0], nil
+}
+
 func dbInsert[T any](ctx context.Context, db *dbConn, statement string, vars map[string]any) ([]*T, error) {
 	tx, err := db.ensureTx(ctx)
 	if err != nil {

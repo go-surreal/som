@@ -395,6 +395,14 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			),
 			jen.Return(jen.Id("results"), jen.Nil()),
 		),
+		jen.Id("QueryOne"): jen.Func().Params(ctxParam, dbParam, jen.Id("stmt").String(), jen.Id("vars").Map(jen.String()).Any()).Params(
+			jen.Op("*").Add(sourceType), jen.Error(),
+		).Block(
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbQueryOne").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("stmt"), jen.Id("vars")),
+			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
+			jen.If(jen.Id("raw").Op("==").Nil()).Block(jen.Return(jen.Nil(), jen.Nil())),
+			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
+		),
 		jen.Id("MarshalOne"): jen.Func().Params(
 			jen.Id("node").Op("*").Add(sourceType),
 		).Any().Block(
@@ -961,9 +969,10 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 					))
 				}
 
-				g.List(jen.Id("_"), jen.Err()).Op(":=").
-					Id("r").Dot("db").Dot("Query").Call(
+				g.List(jen.Id("result"), jen.Err()).Op(":=").
+					Id("r").Dot("info").Dot("QueryOne").Call(
 					jen.Id("ctx"),
+					jen.Id("r").Dot("db"),
 					jen.Id("query"),
 					jen.Id("vars"),
 				)
@@ -983,11 +992,11 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 					)
 				}
 
-				g.Return(jen.Id("r").Dot("refresh").Call(
-					jen.Id("ctx"),
-					b.recordIDFromNode(node),
-					jen.Id(node.NameGoLower()),
-				))
+				g.If(jen.Id("result").Op("==").Nil()).Block(
+					jen.Return(jen.Qual(b.relativePkgPath(), "ErrNotFound")),
+				)
+				g.Op("*").Id(node.NameGoLower()).Op("=").Op("*").Id("result")
+				g.Return(jen.Nil())
 			})
 	}
 

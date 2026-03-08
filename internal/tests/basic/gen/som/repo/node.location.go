@@ -130,6 +130,16 @@ var locationRepoInfo = RepoInfo[model.Location]{
 	MarshalOne: func(node *model.Location) any {
 		return conv.FromLocationPtr(node)
 	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.Location, error) {
+		raw, err := dbQueryOne[conv.Location](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToLocationPtr(raw), nil
+	},
 	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.Location, error) {
 		raw, err := dbSelect[conv.Location](ctx, db, id)
 		if err != nil {

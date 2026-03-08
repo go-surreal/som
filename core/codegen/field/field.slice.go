@@ -704,18 +704,60 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 			convFuncName += "Ptr"
 		}
 
-		// Determine the slice element type based on whether the struct element is a pointer
-		var sliceElemType jen.Code
 		if structElem.source.Pointer() {
-			sliceElemType = jen.Index().Op("*").Id(structElem.element.NameGoLower())
-		} else {
-			sliceElemType = jen.Index().Id(structElem.element.NameGoLower())
+			// For pointer element slices, unmarshal each element individually
+			// to correctly handle NONE/null as nil pointers.
+			innerSliceType := jen.Index().Add(f.element.typeGo())
+
+			var assignStmt jen.Code
+			if f.source.Pointer() {
+				assignStmt = jen.If(jen.Id("rawSlice").Op("==").Nil()).Block(
+					jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+				).Else().BlockFunc(func(bg *jen.Group) {
+					bg.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("rawSlice")))
+					bg.For(jen.Id("i").Op(",").Id("elem").Op(":=").Range().Id("rawSlice")).BlockFunc(func(fg *jen.Group) {
+						fg.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("elem"))).Block(
+							jen.Continue(),
+						)
+						fg.Var().Id("v").Id(structElem.element.NameGoLower())
+						fg.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("elem"), jen.Op("&").Id("v"))
+						fg.Id("result").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Op("&").Id("v"))
+					})
+					bg.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("result")
+				})
+			} else {
+				assignStmt = jen.Block(
+					jen.Id("c").Dot(f.NameGo()).Op("=").Make(
+						f.typeGo(),
+						jen.Len(jen.Id("rawSlice")),
+					),
+					jen.For(
+						jen.Id("i").Op(",").Id("elem").Op(":=").Range().Id("rawSlice"),
+					).BlockFunc(func(fg *jen.Group) {
+						fg.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("elem"))).Block(
+							jen.Continue(),
+						)
+						fg.Var().Id("v").Id(structElem.element.NameGoLower())
+						fg.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("elem"), jen.Op("&").Id("v"))
+						fg.Id("c").Dot(f.NameGo()).Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Op("&").Id("v"))
+					}),
+				)
+			}
+
+			return jen.If(
+				jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+				jen.Id("ok"),
+			).BlockFunc(func(g *jen.Group) {
+				g.Var().Id("rawSlice").Index().Qual(ctx.pkgCBOR(), "RawMessage")
+				g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("rawSlice"))
+				g.Add(assignStmt)
+			})
 		}
 
-		// Determine the inner slice type (the model slice type)
+		// Non-pointer struct elements: unmarshal directly into typed slice.
+		sliceElemType := jen.Index().Id(structElem.element.NameGoLower())
 		innerSliceType := jen.Index().Add(f.element.typeGo())
 
-		// Build the assignment statement - handle pointer-to-slice case
 		var assignStmt jen.Code
 		if f.source.Pointer() {
 			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(

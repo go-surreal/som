@@ -21,11 +21,12 @@ var cacheRefreshGroup singleflight.Group
 
 // RepoInfo holds type-specific conversion functions for repository operations.
 type RepoInfo[N any] struct {
-	ReadOne   func(ctx context.Context, db *dbConn, id *models.RecordID) (*N, error)
-	CreateOne func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*N, error)
-	CreateNew func(ctx context.Context, db *dbConn, idExpr string, data any) (*N, error)
-	UpdateOne func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*N, error)
-	InsertAll func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*N, error)
+	ReadOne    func(ctx context.Context, db *dbConn, id *models.RecordID) (*N, error)
+	CreateOne  func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*N, error)
+	CreateNew  func(ctx context.Context, db *dbConn, idExpr string, data any) (*N, error)
+	UpdateOne  func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*N, error)
+	InsertAll  func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*N, error)
+	QueryOne   func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*N, error)
 	MarshalOne func(node *N) any
 }
 
@@ -110,7 +111,7 @@ func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) e
 
 func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, softDelete bool, lockVersion *int) error {
 	if softDelete {
-		query := "LET $res = (UPDATE $id SET deleted_at = time::now()"
+		query := "UPDATE $id SET deleted_at = time::now()"
 		vars := map[string]any{
 			"id": id,
 		}
@@ -118,18 +119,19 @@ func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, s
 			query += ", __som_lock_version = $lock_version"
 			vars["lock_version"] = *lockVersion
 		}
-		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL); IF array::len($res) = 0 { THROW 'record_already_deleted' };"
-		_, err := r.db.Query(ctx, query, vars)
+		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL"
+		result, err := r.info.QueryOne(ctx, r.db, query, vars)
 		if err != nil {
-			if strings.Contains(err.Error(), "record_already_deleted") {
-				return som.ErrAlreadyDeleted
-			}
 			if lockVersion != nil && strings.Contains(err.Error(), "optimistic_lock_failed") {
 				return som.ErrOptimisticLock
 			}
 			return fmt.Errorf("could not soft delete entity: %w", err)
 		}
-		return r.refresh(ctx, id, node)
+		if result == nil {
+			return som.ErrAlreadyDeleted
+		}
+		*node = *result
+		return nil
 	}
 
 	if err := dbDelete(ctx, r.db, id); err != nil {

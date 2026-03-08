@@ -119,6 +119,16 @@ var personObjRepoInfo = RepoInfo[model.PersonObj]{
 	MarshalOne: func(node *model.PersonObj) any {
 		return conv.FromPersonObjPtr(node)
 	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.PersonObj, error) {
+		raw, err := dbQueryOne[conv.PersonObj](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToPersonObjPtr(raw), nil
+	},
 	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.PersonObj, error) {
 		raw, err := dbSelect[conv.PersonObj](ctx, db, id)
 		if err != nil {
