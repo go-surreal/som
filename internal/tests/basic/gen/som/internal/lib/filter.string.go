@@ -117,77 +117,77 @@ func (s *String[M]) Words() *Slice[M, string, *String[M]] {
 // TODO: string::html::sanitize (v2.0.0)
 
 func (s *String[M]) IsAlphaNum() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::alphanum"))
+	return NewBool(s.Base.fn("string::is_alphanum"))
 }
 
 func (s *String[M]) IsAlpha() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::alpha"))
+	return NewBool(s.Base.fn("string::is_alpha"))
 }
 
 func (s *String[M]) IsAscii() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::ascii"))
+	return NewBool(s.Base.fn("string::is_ascii"))
 }
 
 // IsDateTime returns a boolean field that is true if the string is a valid date and time.
 //
 // See [Time.Format] for the format string.
 func (s *String[M]) IsDateTime(format string) *Bool[M] {
-	return NewBool(s.Base.fn("string::is::datetime", format))
+	return NewBool(s.Base.fn("string::is_datetime", format))
 }
 
 func (s *String[M]) IsDomain() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::domain"))
+	return NewBool(s.Base.fn("string::is_domain"))
 }
 
 func (s *String[M]) IsEmail() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::email"))
+	return NewBool(s.Base.fn("string::is_email"))
 }
 
 func (s *String[M]) IsHexadecimal() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::hexadecimal"))
+	return NewBool(s.Base.fn("string::is_hexadecimal"))
 }
 
 func (s *String[M]) IsIP() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::ip"))
+	return NewBool(s.Base.fn("string::is_ip"))
 }
 
 func (s *String[M]) IsIPv4() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::ipv4"))
+	return NewBool(s.Base.fn("string::is_ipv4"))
 }
 
 func (s *String[M]) IsIPv6() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::ipv6"))
+	return NewBool(s.Base.fn("string::is_ipv6"))
 }
 
 func (s *String[M]) IsLatitude() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::latitude"))
+	return NewBool(s.Base.fn("string::is_latitude"))
 }
 
 func (s *String[M]) IsLongitude() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::longitude"))
+	return NewBool(s.Base.fn("string::is_longitude"))
 }
 
 func (s *String[M]) IsNumeric() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::numeric"))
+	return NewBool(s.Base.fn("string::is_numeric"))
 }
 
 func (s *String[M]) IsSemVer() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::semver"))
+	return NewBool(s.Base.fn("string::is_semver"))
 }
 
 func (s *String[M]) IsULID() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::ulid"))
+	return NewBool(s.Base.fn("string::is_ulid"))
 }
 
 func (s *String[M]) IsURL() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::url"))
+	return NewBool(s.Base.fn("string::is_url"))
 }
 
 func (s *String[M]) IsUUID() *Bool[M] {
-	return NewBool(s.Base.fn("string::is::uuid"))
+	return NewBool(s.Base.fn("string::is_uuid"))
 }
 
-// TODO: string::is::record (needed?)
+// TODO: string::is_record (needed?)
 
 // TODO: string::html::encode & string::html::sanitize
 

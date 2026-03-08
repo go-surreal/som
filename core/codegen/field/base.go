@@ -35,7 +35,7 @@ type Field interface {
 
 	CodeGen() *CodeGen
 
-	IndexInfo() *parser.IndexInfo
+	Indexes() []parser.IndexInfo
 	SearchInfo() *parser.SearchInfo
 	NestedFields() []Field
 }
@@ -116,11 +116,14 @@ func (f *baseField) NameGoLower() string {
 }
 
 func (f *baseField) NameDatabase() string {
+	if dbName := f.source.DBName(); dbName != "" {
+		return dbName
+	}
 	return f.ToDatabaseName(f.source.Name())
 }
 
-func (f *baseField) IndexInfo() *parser.IndexInfo {
-	return f.source.Index()
+func (f *baseField) Indexes() []parser.IndexInfo {
+	return f.source.Indexes()
 }
 
 func (f *baseField) SearchInfo() *parser.SearchInfo {

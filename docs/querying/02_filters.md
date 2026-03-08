@@ -4,53 +4,53 @@ Filters narrow down query results using type-safe conditions. SOM generates comp
 
 ## Basic Filtering
 
-Use the generated `where` package:
+Use the generated `filter` package:
 
 ```go
-import "yourproject/gen/som/where"
+import "yourproject/gen/som/filter"
 
 users, err := client.UserRepo().Query().
-    Filter(where.User.Email.Equal("john@example.com")).
+    Where(filter.User.Email.Equal("john@example.com")).
     All(ctx)
 ```
 
 ## Multiple Filters (AND)
 
-Multiple filters in a single `Filter()` call are combined with AND:
+Multiple filters in a single `Where()` call are combined with AND:
 
 ```go
 users, err := client.UserRepo().Query().
-    Filter(
-        where.User.IsActive.IsTrue(),
-        where.User.Age.GreaterThan(18),
-        where.User.Email.Contains("@company.com"),
+    Where(
+        filter.User.IsActive.IsTrue(),
+        filter.User.Age.GreaterThan(18),
+        filter.User.Email.Contains("@company.com"),
     ).
     All(ctx)
 ```
 
 ## Combining Filters (OR)
 
-Use `where.Any()` for OR conditions:
+Use `filter.Any()` for OR conditions:
 
 ```go
 users, err := client.UserRepo().Query().
-    Filter(
-        where.Any(
-            where.User.Role.Equal("admin"),
-            where.User.Role.Equal("moderator"),
+    Where(
+        filter.Any(
+            filter.User.Role.Equal("admin"),
+            filter.User.Role.Equal("moderator"),
         ),
     ).
     All(ctx)
 ```
 
-Use `where.All()` explicitly for AND:
+Use `filter.All()` explicitly for AND:
 
 ```go
 users, err := client.UserRepo().Query().
-    Filter(
-        where.All(
-            where.User.IsActive.IsTrue(),
-            where.User.Age.GreaterThan(18),
+    Where(
+        filter.All(
+            filter.User.IsActive.IsTrue(),
+            filter.User.Age.GreaterThan(18),
         ),
     ).
     All(ctx)
@@ -62,10 +62,10 @@ Available on all comparable field types:
 
 | Operation | Description | Example |
 |-----------|-------------|---------|
-| `Equal(val)` | Equals | `where.User.Name.Equal("John")` |
-| `NotEqual(val)` | Not equals | `where.User.Name.NotEqual("John")` |
-| `In(vals...)` | In list | `where.User.Status.In("active", "pending")` |
-| `NotIn(vals...)` | Not in list | `where.User.Status.NotIn("deleted")` |
+| `Equal(val)` | Equals | `filter.User.Name.Equal("John")` |
+| `NotEqual(val)` | Not equals | `filter.User.Name.NotEqual("John")` |
+| `In(vals...)` | In list | `filter.User.Status.In("active", "pending")` |
+| `NotIn(vals...)` | Not in list | `filter.User.Status.NotIn("deleted")` |
 
 ## Comparison Operations (Numeric, Time, String)
 
@@ -77,9 +77,9 @@ Available on all comparable field types:
 | `GreaterThanOrEqual(val)` | Greater than or equal |
 
 ```go
-where.User.Age.GreaterThan(18)
-where.User.Age.LessThanOrEqual(65)
-where.User.CreatedAt.GreaterThan(lastWeek)
+filter.User.Age.GreaterThan(18)
+filter.User.Age.LessThanOrEqual(65)
+filter.User.CreatedAt.GreaterThan(lastWeek)
 ```
 
 ## String Operations
@@ -97,9 +97,9 @@ Strings have the most extensive filter operations:
 | `FuzzyNotMatch(s)` | Fuzzy not match | `!~` |
 
 ```go
-where.User.Email.Contains("@gmail")
-where.User.Name.StartsWith("John")
-where.User.Email.EndsWith(".com")
+filter.User.Email.Contains("@gmail")
+filter.User.Name.StartsWith("John")
+filter.User.Email.EndsWith(".com")
 ```
 
 ### Validation
@@ -123,9 +123,9 @@ where.User.Email.EndsWith(".com")
 | `IsDateTime(format)` | Valid datetime |
 
 ```go
-where.User.Email.IsEmail()
-where.User.Website.IsURL()
-where.User.ExternalID.IsUUID()
+filter.User.Email.IsEmail()
+filter.User.Website.IsURL()
+filter.User.ExternalID.IsUUID()
 ```
 
 ### Transformation (for comparison)
@@ -140,7 +140,7 @@ where.User.ExternalID.IsUUID()
 
 ```go
 // Compare lowercase version
-where.User.Email.Lowercase().Equal("john@example.com")
+filter.User.Email.Lowercase().Equal("john@example.com")
 ```
 
 ### String Functions
@@ -158,7 +158,7 @@ where.User.Email.Lowercase().Equal("john@example.com")
 
 ```go
 // Filter by string length
-where.User.Name.Len().GreaterThan(3)
+filter.User.Name.Len().GreaterThan(3)
 ```
 
 ## Numeric Operations
@@ -174,10 +174,10 @@ where.User.Name.Len().GreaterThan(3)
 
 ```go
 // Age + 5 > 25
-where.User.Age.Add(5).GreaterThan(25)
+filter.User.Age.Add(5).GreaterThan(25)
 
 // Absolute value of balance > 100
-where.Account.Balance.Abs().GreaterThan(100)
+filter.Account.Balance.Abs().GreaterThan(100)
 ```
 
 ## Boolean Operations
@@ -189,8 +189,8 @@ where.Account.Balance.Abs().GreaterThan(100)
 | `IsFalse()` | Is false |
 
 ```go
-where.User.IsActive.IsTrue()
-where.User.IsDeleted.IsFalse()
+filter.User.IsActive.IsTrue()
+filter.User.IsDeleted.IsFalse()
 ```
 
 ## Time Operations
@@ -209,10 +209,10 @@ where.User.IsDeleted.IsFalse()
 
 ```go
 // Created in last 7 days
-where.User.CreatedAt.After(time.Now().AddDate(0, 0, -7))
+filter.User.CreatedAt.After(time.Now().AddDate(0, 0, -7))
 
 // Created this year
-where.User.CreatedAt.After(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))
+filter.User.CreatedAt.After(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))
 ```
 
 ## Duration Operations
@@ -226,7 +226,7 @@ where.User.CreatedAt.After(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))
 
 ```go
 // Session longer than 1 hour
-where.Session.Duration.After(time.Hour)
+filter.Session.Duration.After(time.Hour)
 ```
 
 ## Pointer/Optional Operations
@@ -238,10 +238,10 @@ where.Session.Duration.After(time.Hour)
 
 ```go
 // Find soft-deleted users
-where.User.DeletedAt.IsNotNil()
+filter.User.DeletedAt.IsNotNil()
 
 // Find users without avatar
-where.User.AvatarURL.IsNil()
+filter.User.AvatarURL.IsNil()
 ```
 
 ## Slice Operations
@@ -260,19 +260,19 @@ where.User.AvatarURL.IsNil()
 
 ```go
 // Has at least one tag
-where.Post.Tags.NotEmpty()
+filter.Post.Tags.NotEmpty()
 
 // Has specific tag
-where.Post.Tags.Contains("golang")
+filter.Post.Tags.Contains("golang")
 
 // Has any of these tags
-where.Post.Tags.ContainsAny("golang", "rust", "python")
+filter.Post.Tags.ContainsAny("golang", "rust", "python")
 
 // Has all required tags
-where.Post.Tags.ContainsAll("featured", "published")
+filter.Post.Tags.ContainsAll("featured", "published")
 
 // More than 5 tags
-where.Post.Tags.Length().GreaterThan(5)
+filter.Post.Tags.Length().GreaterThan(5)
 ```
 
 ## Nested Field Filters
@@ -281,46 +281,46 @@ Filter on embedded struct fields:
 
 ```go
 // Filter by nested city
-where.User.Address.City.Equal("Berlin")
+filter.User.Address.City.Equal("Berlin")
 
 // Deeply nested
-where.User.Address.Coordinates.Lat.GreaterThan(52.0)
+filter.User.Address.Coordinates.Lat.GreaterThan(52.0)
 ```
 
 ## Enum Filters
 
 ```go
-where.User.Status.Equal(model.StatusActive)
-where.User.Status.In(model.StatusActive, model.StatusPending)
-where.User.Status.NotEqual(model.StatusDeleted)
+filter.User.Status.Equal(model.StatusActive)
+filter.User.Status.In(model.StatusActive, model.StatusPending)
+filter.User.Status.NotEqual(model.StatusDeleted)
 ```
 
 ## Complex Example
 
 ```go
 users, err := client.UserRepo().Query().
-    Filter(
+    Where(
         // Active users
-        where.User.IsActive.IsTrue(),
+        filter.User.IsActive.IsTrue(),
 
         // Created this month
-        where.User.CreatedAt.After(startOfMonth),
+        filter.User.CreatedAt.After(startOfMonth),
 
         // Has email from allowed domains
-        where.Any(
-            where.User.Email.EndsWith("@company.com"),
-            where.User.Email.EndsWith("@partner.com"),
+        filter.Any(
+            filter.User.Email.EndsWith("@company.com"),
+            filter.User.Email.EndsWith("@partner.com"),
         ),
 
         // Age between 18 and 65
-        where.User.Age.GreaterThanOrEqual(18),
-        where.User.Age.LessThanOrEqual(65),
+        filter.User.Age.GreaterThanOrEqual(18),
+        filter.User.Age.LessThanOrEqual(65),
 
         // Has at least one role
-        where.User.Roles.NotEmpty(),
+        filter.User.Roles.NotEmpty(),
 
         // In Berlin
-        where.User.Address.City.Equal("Berlin"),
+        filter.User.Address.City.Equal("Berlin"),
     ).
     Order(by.User.CreatedAt.Desc()).
     Limit(100).
@@ -333,10 +333,10 @@ Filters can be combined with full-text search conditions:
 
 ```go
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang tutorial")).
-    Filter(
-        where.Article.Published.IsTrue(),
-        where.Article.Category.Equal("programming"),
+    Search(filter.Article.Content.Matches("golang tutorial")).
+    Where(
+        filter.Article.Published.IsTrue(),
+        filter.Article.Category.Equal("programming"),
     ).
     AllMatches(ctx)
 ```

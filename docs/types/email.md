@@ -51,31 +51,31 @@ user.SecondaryEmail = &secondary
 
 ```go
 // Exact match
-where.User.PrimaryEmail.Equal(som.Email("alice@example.com"))
+filter.User.PrimaryEmail.Equal(som.Email("alice@example.com"))
 
 // Not equal
-where.User.PrimaryEmail.NotEqual(som.Email("test@example.com"))
+filter.User.PrimaryEmail.NotEqual(som.Email("test@example.com"))
 ```
 
 ### Set Membership
 
 ```go
 // Value in set
-where.User.PrimaryEmail.In(
+filter.User.PrimaryEmail.In(
     som.Email("alice@example.com"),
     som.Email("bob@example.com"),
 )
 
 // Value not in set
-where.User.PrimaryEmail.NotIn(blockedEmails...)
+filter.User.PrimaryEmail.NotIn(blockedEmails...)
 ```
 
 ### Comparison Operations
 
 ```go
 // Lexicographic comparison
-where.User.PrimaryEmail.LessThan(som.Email("m@example.com"))
-where.User.PrimaryEmail.GreaterThan(som.Email("a@example.com"))
+filter.User.PrimaryEmail.LessThan(som.Email("m@example.com"))
+filter.User.PrimaryEmail.GreaterThan(som.Email("a@example.com"))
 ```
 
 ### Component Extraction
@@ -84,12 +84,12 @@ Extract email parts:
 
 ```go
 // User part (before @)
-where.User.PrimaryEmail.User().Equal("alice")
-where.User.PrimaryEmail.User().StartsWith("admin")
+filter.User.PrimaryEmail.User().Equal("alice")
+filter.User.PrimaryEmail.User().StartsWith("admin")
 
 // Host part (after @)
-where.User.PrimaryEmail.Host().Equal("example.com")
-where.User.PrimaryEmail.Host().EndsWith(".edu")
+filter.User.PrimaryEmail.Host().Equal("example.com")
+filter.User.PrimaryEmail.Host().EndsWith(".edu")
 ```
 
 ### String Operations on Components
@@ -98,32 +98,32 @@ After extracting email components, you can use string operations:
 
 ```go
 // String operations on user part
-where.User.PrimaryEmail.User().Lowercase().Equal("alice")
-where.User.PrimaryEmail.User().StartsWith("support")
+filter.User.PrimaryEmail.User().Lowercase().Equal("alice")
+filter.User.PrimaryEmail.User().StartsWith("support")
 
 // String operations on host part
-where.User.PrimaryEmail.Host().Lowercase().Equal("example.com")
-where.User.PrimaryEmail.Host().EndsWith(".edu")
+filter.User.PrimaryEmail.Host().Lowercase().Equal("example.com")
+filter.User.PrimaryEmail.Host().EndsWith(".edu")
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.User.SecondaryEmail.IsNil()
+filter.User.SecondaryEmail.IsNil()
 
 // Check if not nil
-where.User.SecondaryEmail.IsNotNil()
+filter.User.SecondaryEmail.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Is empty email
-where.User.PrimaryEmail.Zero(true)
+filter.User.PrimaryEmail.Zero(true)
 
 // Is not empty email
-where.User.PrimaryEmail.Zero(false)
+filter.User.PrimaryEmail.Zero(false)
 ```
 
 ## Sorting
@@ -148,16 +148,16 @@ Email filters support component extraction, which returns String filters for fur
 
 ```go
 // Find company emails
-where.User.PrimaryEmail.Host().Equal("company.com")
+filter.User.PrimaryEmail.Host().Equal("company.com")
 
 // Find admin users
-where.User.PrimaryEmail.User().StartsWith("admin")
+filter.User.PrimaryEmail.User().StartsWith("admin")
 
 // Case-insensitive domain match (Host() returns String filter)
-where.User.PrimaryEmail.Host().Lowercase().Equal("company.com")
+filter.User.PrimaryEmail.Host().Lowercase().Equal("company.com")
 
 // Complex user filtering (User() returns String filter)
-where.User.PrimaryEmail.User().Lowercase().Contains("support")
+filter.User.PrimaryEmail.User().Lowercase().Contains("support")
 ```
 
 ## Common Patterns
@@ -167,7 +167,7 @@ where.User.PrimaryEmail.User().Lowercase().Contains("support")
 ```go
 // All company emails
 companyUsers, _ := client.UserRepo().Query().
-    Filter(where.User.PrimaryEmail.Host().Equal("company.com")).
+    Where(filter.User.PrimaryEmail.Host().Equal("company.com")).
     All(ctx)
 ```
 
@@ -175,7 +175,7 @@ companyUsers, _ := client.UserRepo().Query().
 
 ```go
 gmailUsers, _ := client.UserRepo().Query().
-    Filter(where.User.PrimaryEmail.EndsWith("@gmail.com")).
+    Where(filter.User.PrimaryEmail.EndsWith("@gmail.com")).
     All(ctx)
 ```
 
@@ -183,7 +183,7 @@ gmailUsers, _ := client.UserRepo().Query().
 
 ```go
 admins, _ := client.UserRepo().Query().
-    Filter(where.User.PrimaryEmail.User().StartsWith("admin")).
+    Where(filter.User.PrimaryEmail.User().StartsWith("admin")).
     All(ctx)
 ```
 
@@ -191,7 +191,7 @@ admins, _ := client.UserRepo().Query().
 
 ```go
 withSecondary, _ := client.UserRepo().Query().
-    Filter(where.User.SecondaryEmail.IsNotNil()).
+    Where(filter.User.SecondaryEmail.IsNotNil()).
     All(ctx)
 ```
 
@@ -199,7 +199,7 @@ withSecondary, _ := client.UserRepo().Query().
 
 ```go
 eduUsers, _ := client.UserRepo().Query().
-    Filter(where.User.PrimaryEmail.Host().EndsWith(".edu")).
+    Where(filter.User.PrimaryEmail.Host().EndsWith(".edu")).
     All(ctx)
 ```
 
@@ -212,7 +212,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/model"
 )
 
@@ -228,34 +228,34 @@ func main() {
 
     // Find by exact email
     found, exists, _ := client.UserRepo().Query().
-        Filter(where.User.PrimaryEmail.Equal(som.Email("alice@company.com"))).
+        Where(filter.User.PrimaryEmail.Equal(som.Email("alice@company.com"))).
         First(ctx)
 
     // Find all company employees
     employees, _ := client.UserRepo().Query().
-        Filter(where.User.PrimaryEmail.Host().Equal("company.com")).
+        Where(filter.User.PrimaryEmail.Host().Equal("company.com")).
         Order(by.User.PrimaryEmail.Asc()).
         All(ctx)
 
     // Find users by email pattern
     supportTeam, _ := client.UserRepo().Query().
-        Filter(where.User.PrimaryEmail.User().StartsWith("support")).
+        Where(filter.User.PrimaryEmail.User().StartsWith("support")).
         All(ctx)
 
     // Find Gmail users
     gmailUsers, _ := client.UserRepo().Query().
-        Filter(where.User.PrimaryEmail.EndsWith("@gmail.com")).
+        Where(filter.User.PrimaryEmail.EndsWith("@gmail.com")).
         All(ctx)
 
     // Users with backup email configured
     withBackup, _ := client.UserRepo().Query().
-        Filter(where.User.SecondaryEmail.IsNotNil()).
+        Where(filter.User.SecondaryEmail.IsNotNil()).
         All(ctx)
 
     // Case-insensitive search
     caseInsensitive, _ := client.UserRepo().Query().
-        Filter(
-            where.User.PrimaryEmail.Lowercase().Equal("alice@company.com"),
+        Where(
+            filter.User.PrimaryEmail.Lowercase().Equal("alice@company.com"),
         ).
         All(ctx)
 }

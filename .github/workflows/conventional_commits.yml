@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Verify
-        uses: agenthunt/conventional-commit-checker-action@v2.0.0
+        uses: agenthunt/conventional-commit-checker-action@v2.0.1
         with:
           pr-title-regex: "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\\([\\w\\-\\.]+\\))?(!)?: ([\\w ])+([\\s\\S]*)"
           pr-body-regex: ".*"

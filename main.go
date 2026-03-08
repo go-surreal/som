@@ -2,43 +2,32 @@ package main
 
 import (
 	"context"
-	"github.com/go-surreal/som/core"
-	cli "github.com/urfave/cli/v3"
 	"log"
 	"os"
 	"runtime/debug"
+
+	"github.com/go-surreal/som/core"
 )
 
 func main() {
 	ctx := context.Background()
 
-	app := cli.Command{
-		Name:  "som",
-		Usage: "Generate code for typesafe SurrealDB access",
-		// ArgsUsage:      "<input_path> <output_path>",
-		Description: "Tool for generating typesafe SurrealDB access layer from input models.",
+	app := core.Command()
 
-		Commands: []*cli.Command{
-			core.Gen(),
-		},
-		DefaultCommand: "gen",
-		Suggest:        true,
+	app.Authors = []any{
+		"Marc Binz",
+	}
+	app.Copyright = "github.com/go-surreal/som"
 
-		Authors: []any{
-			"Marc Binz",
-		},
-		Copyright: "github.com/go-surreal/som",
+	app.ExtraInfo = func() map[string]string {
+		info, ok := debug.ReadBuildInfo()
+		if !ok {
+			return nil
+		}
 
-		ExtraInfo: func() map[string]string {
-			info, ok := debug.ReadBuildInfo()
-			if !ok {
-				return nil
-			}
-
-			return map[string]string{
-				"GoVersion": info.GoVersion,
-			}
-		},
+		return map[string]string{
+			"GoVersion": info.GoVersion,
+		}
 	}
 
 	if err := app.Run(ctx, os.Args); err != nil {

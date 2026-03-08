@@ -159,7 +159,7 @@ func (t *Time[M]) Year() *Numeric[M, int] {
 }
 
 func (t *Time[M]) IsLeapYear() *Bool[M] {
-	return NewBool[M](t.fn("time::is::leap_year"))
+	return NewBool[M](t.fn("time::is_leap_year"))
 }
 
 type TimePtr[R any] struct {

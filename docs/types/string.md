@@ -39,116 +39,116 @@ DEFINE FIELD nickname ON user TYPE option<string>;
 
 ```go
 // Exact match
-where.User.Name.Equal("Alice")
+filter.User.Name.Equal("Alice")
 
 // Not equal
-where.User.Name.NotEqual("Bob")
+filter.User.Name.NotEqual("Bob")
 
 // Fuzzy match (pattern matching)
-where.User.Name.FuzzyMatch("Ali*")
+filter.User.Name.FuzzyMatch("Ali*")
 
 // Negated fuzzy match
-where.User.Name.FuzzyNotMatch("*bot*")
+filter.User.Name.FuzzyNotMatch("*bot*")
 ```
 
 ### Set Membership
 
 ```go
 // Value in set
-where.User.Role.In("admin", "moderator", "user")
+filter.User.Role.In("admin", "moderator", "user")
 
 // Value not in set
-where.User.Status.NotIn("banned", "deleted")
+filter.User.Status.NotIn("banned", "deleted")
 ```
 
 ### Comparison Operations
 
 ```go
 // Less than (lexicographic)
-where.User.Name.LessThan("M")
+filter.User.Name.LessThan("M")
 
 // Less than or equal
-where.User.Name.LessThanEqual("Alice")
+filter.User.Name.LessThanEqual("Alice")
 
 // Greater than
-where.User.Name.GreaterThan("A")
+filter.User.Name.GreaterThan("A")
 
 // Greater than or equal
-where.User.Name.GreaterThanEqual("Alice")
+filter.User.Name.GreaterThanEqual("Alice")
 ```
 
 ### Substring Operations
 
 ```go
 // Contains substring
-where.User.Email.Contains("@gmail")
+filter.User.Email.Contains("@gmail")
 
 // Starts with prefix
-where.User.Name.StartsWith("Dr.")
+filter.User.Name.StartsWith("Dr.")
 
 // Ends with suffix
-where.User.Email.EndsWith(".com")
+filter.User.Email.EndsWith(".com")
 ```
 
 ### Case Transformation
 
 ```go
 // Convert to lowercase then compare
-where.User.Email.Lowercase().Equal("alice@example.com")
+filter.User.Email.Lowercase().Equal("alice@example.com")
 
 // Convert to uppercase then compare
-where.User.Name.Uppercase().Equal("ALICE")
+filter.User.Name.Uppercase().Equal("ALICE")
 ```
 
 ### String Manipulation
 
 ```go
 // Trim whitespace
-where.User.Name.Trim().Equal("Alice")
+filter.User.Name.Trim().Equal("Alice")
 
 // Reverse string
-where.User.Code.Reverse().Equal("cba")
+filter.User.Code.Reverse().Equal("cba")
 
 // Repeat string
-where.User.Pattern.Repeat(3).Equal("abcabcabc")
+filter.User.Pattern.Repeat(3).Equal("abcabcabc")
 
 // Replace substring
-where.User.Name.Replace("old", "new").Equal("new value")
+filter.User.Name.Replace("old", "new").Equal("new value")
 
 // Get slug version
-where.Article.Title.Slug().Equal("hello-world")
+filter.Article.Title.Slug().Equal("hello-world")
 ```
 
 ### String Parts
 
 ```go
 // Slice substring (start, length)
-where.User.Name.Slice(0, 3).Equal("Ali")
+filter.User.Name.Slice(0, 3).Equal("Ali")
 
 // Split into array
-where.User.Tags.Split(",").Contains("golang")
+filter.User.Tags.Split(",").Contains("golang")
 
 // Get words as array
-where.Article.Title.Words().Len().GreaterThan(5)
+filter.Article.Title.Words().Len().GreaterThan(5)
 
 // Concatenate strings
-where.User.FullName.Concat(" Jr.").Equal("John Smith Jr.")
+filter.User.FullName.Concat(" Jr.").Equal("John Smith Jr.")
 
 // Join array elements
-where.User.Tags.Join(", ").Contains("go")
+filter.User.Tags.Join(", ").Contains("go")
 ```
 
 ### Length Operations
 
 ```go
 // Get string length
-where.User.Name.Len().GreaterThan(3)
+filter.User.Name.Len().GreaterThan(3)
 
 // Check minimum length
-where.User.Password.Len().GreaterThanEqual(8)
+filter.User.Password.Len().GreaterThanEqual(8)
 
 // Check maximum length
-where.User.Bio.Len().LessThanEqual(500)
+filter.User.Bio.Len().LessThanEqual(500)
 ```
 
 ### Validation Operations
@@ -157,86 +157,86 @@ These return boolean filters:
 
 ```go
 // Email validation
-where.User.Email.IsEmail()
+filter.User.Email.IsEmail()
 
 // URL validation
-where.User.Website.IsURL()
+filter.User.Website.IsURL()
 
 // Domain validation
-where.User.Domain.IsDomain()
+filter.User.Domain.IsDomain()
 
 // UUID validation
-where.User.ExternalID.IsUUID()
+filter.User.ExternalID.IsUUID()
 
 // Semantic version validation
-where.Package.Version.IsSemVer()
+filter.Package.Version.IsSemVer()
 
 // DateTime format validation
-where.User.BirthDate.IsDateTime("%Y-%m-%d")
+filter.User.BirthDate.IsDateTime("%Y-%m-%d")
 
 // IP address validation (any)
-where.Server.Address.IsIP()
+filter.Server.Address.IsIP()
 
 // IPv4 validation
-where.Server.IPv4.IsIPv4()
+filter.Server.IPv4.IsIPv4()
 
 // IPv6 validation
-where.Server.IPv6.IsIPv6()
+filter.Server.IPv6.IsIPv6()
 
 // Latitude validation
-where.Location.Lat.IsLatitude()
+filter.Location.Lat.IsLatitude()
 
 // Longitude validation
-where.Location.Lng.IsLongitude()
+filter.Location.Lng.IsLongitude()
 
 // Alphabetic only
-where.User.Name.IsAlpha()
+filter.User.Name.IsAlpha()
 
 // Alphanumeric
-where.User.Username.IsAlphaNum()
+filter.User.Username.IsAlphaNum()
 
 // ASCII only
-where.User.Code.IsAscii()
+filter.User.Code.IsAscii()
 
 // Hexadecimal
-where.User.Color.IsHexadecimal()
+filter.User.Color.IsHexadecimal()
 
 // Numeric string
-where.User.Phone.IsNumeric()
+filter.User.Phone.IsNumeric()
 ```
 
 ### Encoding Operations
 
 ```go
 // Decode base64
-where.User.EncodedData.Base64Decode().Equal("decoded value")
+filter.User.EncodedData.Base64Decode().Equal("decoded value")
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.User.Nickname.IsNil()
+filter.User.Nickname.IsNil()
 
 // Check if not nil
-where.User.Nickname.IsNotNil()
+filter.User.Nickname.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Is empty string
-where.User.Name.Zero(true)
+filter.User.Name.Zero(true)
 
 // Is not empty string
-where.User.Name.Zero(false)
+filter.User.Name.Zero(false)
 ```
 
 ### Truth Conversion
 
 ```go
 // Convert to boolean (non-empty = true)
-where.User.Name.Truth()
+filter.User.Name.Truth()
 ```
 
 ## Sorting
@@ -258,20 +258,20 @@ String fields with fulltext indexes support search operations:
 
 ```go
 // Basic search
-where.User.Bio.Matches("software engineer")
+filter.User.Bio.Matches("software engineer")
 
 // With highlighting
-where.User.Bio.Matches("golang").WithHighlights("<mark>", "</mark>")
+filter.User.Bio.Matches("golang").WithHighlights("<mark>", "</mark>")
 
 // With explicit ref and offsets
-where.User.Bio.Matches("developer").Ref(0).WithOffsets()
+filter.User.Bio.Matches("developer").Ref(0).WithOffsets()
 ```
 
 Search is used with the query builder's `Search()` method:
 
 ```go
 results, err := client.UserRepo().Query().
-    Search(where.User.Bio.Matches("golang developer")).
+    Search(filter.User.Bio.Matches("golang developer")).
     AllMatches(ctx)
 ```
 
@@ -283,16 +283,16 @@ String filters support extensive chaining:
 
 ```go
 // Lowercase email domain check
-where.User.Email.Lowercase().EndsWith("@company.com")
+filter.User.Email.Lowercase().EndsWith("@company.com")
 
 // Trim and check length
-where.User.Bio.Trim().Len().LessThan(100)
+filter.User.Bio.Trim().Len().LessThan(100)
 
 // Slug and compare
-where.Article.Title.Slug().Equal("my-article-title")
+filter.Article.Title.Slug().Equal("my-article-title")
 
 // Complex chain
-where.User.Name.Trim().Lowercase().StartsWith("admin")
+filter.User.Name.Trim().Lowercase().StartsWith("admin")
 ```
 
 ## Complete Example
@@ -304,7 +304,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -313,26 +313,26 @@ func main() {
 
     // Find users with gmail addresses
     gmailUsers, _ := client.UserRepo().Query().
-        Filter(
-            where.User.Email.Lowercase().EndsWith("@gmail.com"),
-            where.User.Email.IsEmail(),
+        Where(
+            filter.User.Email.Lowercase().EndsWith("@gmail.com"),
+            filter.User.Email.IsEmail(),
         ).
         Order(by.User.Name.Asc()).
         All(ctx)
 
     // Search by name pattern
     matches, _ := client.UserRepo().Query().
-        Filter(where.User.Name.FuzzyMatch("*smith*")).
+        Where(filter.User.Name.FuzzyMatch("*smith*")).
         All(ctx)
 
     // Find users with long bios
     longBios, _ := client.UserRepo().Query().
-        Filter(where.User.Bio.Len().GreaterThan(500)).
+        Where(filter.User.Bio.Len().GreaterThan(500)).
         All(ctx)
 
     // Validate data quality
     invalidEmails, _ := client.UserRepo().Query().
-        Filter(where.User.Email.IsEmail().Invert()).
+        Where(filter.User.Email.IsEmail().Invert()).
         All(ctx)
 }
 ```

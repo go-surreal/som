@@ -40,7 +40,7 @@ jobs:
   test-core:
     name: Test Core
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 2
     steps:
 
       - name: Checkout
@@ -69,12 +69,12 @@ jobs:
         run: |
           go test \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
-          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
+          -failfast -count=1 -race -vet=off -v ./...
 
   test-basic:
     name: Test Basic
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 7
     steps:
 
       - name: Checkout
@@ -107,4 +107,4 @@ jobs:
         run: |
           go test \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
-          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
+          -failfast -count=1 -race -vet=off -v ./...

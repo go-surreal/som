@@ -4,32 +4,15 @@ package repo
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"log/slog"
-	"math/big"
-	"strings"
 
-	"github.com/fxamacker/cbor/v2"
+	som "github.com/go-surreal/som/tests/basic/gen/som"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
-
-type ID = models.RecordID
-
-type Database interface {
-	// Create accepts either a table name (string) for server-generated IDs or a RecordID for specific IDs
-	Create(ctx context.Context, what any, data any) ([]byte, error)
-	Select(ctx context.Context, id *ID) ([]byte, error)
-	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
-	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	Update(ctx context.Context, id *ID, data any) ([]byte, error)
-	Delete(ctx context.Context, id *ID) ([]byte, error)
-
-	Marshal(val any) ([]byte, error)
-	Unmarshal(buf []byte, val any) error
-	Close() error
-}
 
 // Config holds the configuration for connecting to the SurrealDB instance.
 type Config struct {
@@ -40,78 +23,179 @@ type Config struct {
 	Password  string
 }
 
-type ClientImpl struct {
-	db Database
+type dbConn struct {
+	conn *surrealdb.DB
 }
 
-// surrealDBWrapper wraps the official surrealdb.go client to implement the Database interface.
-type surrealDBWrapper struct {
-	db *surrealdb.DB
-}
-
-func (w *surrealDBWrapper) Create(ctx context.Context, what any, data any) ([]byte, error) {
-	var result *any
-	var err error
-
-	switch v := what.(type) {
-	case *newRecordID:
-		statement := fmt.Sprintf("CREATE %s CONTENT $data", v.String())
-		queryResult, err := surrealdb.Query[[]any](ctx, w.db, statement, map[string]any{"data": data})
-		if err != nil {
-			return nil, fmt.Errorf("failed to execute: %w", err)
-		}
-		if queryResult == nil || len(*queryResult) == 0 {
-			return nil, fmt.Errorf("empty response from create")
-		}
-		if (*queryResult)[0].Error != nil {
-			return nil, fmt.Errorf("create failed: %w", (*queryResult)[0].Error)
-		}
-		resultArray := (*queryResult)[0].Result
-		if len(resultArray) == 0 {
-			return nil, fmt.Errorf("empty result array from create")
-		}
-		return cbor.Marshal(resultArray[0])
-	case string:
-		result, err = surrealdb.Create[any](ctx, w.db, v, data)
-	case models.RecordID:
-		result, err = surrealdb.Create[any](ctx, w.db, v, data)
-	case models.Table:
-		result, err = surrealdb.Create[any](ctx, w.db, v, data)
-	case []models.Table:
-		result, err = surrealdb.Create[any](ctx, w.db, v, data)
-	case []models.RecordID:
-		result, err = surrealdb.Create[any](ctx, w.db, v, data)
-	default:
-		return nil, fmt.Errorf("invalid type for 'what' parameter: %T (expected string, RecordID, or Table)", what)
+func (c *dbConn) ensureTx(ctx context.Context) (*surrealdb.Transaction, error) {
+	state := internal.GetTxState(ctx)
+	if state == nil {
+		return nil, nil
 	}
-
+	raw, err := state.EnsureTx(func() (any, error) {
+		return c.conn.Begin(ctx)
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create: %w", err)
+		return nil, err
 	}
-
-	return cbor.Marshal(result)
+	tx, ok := raw.(*surrealdb.Transaction)
+	if !ok {
+		return nil, fmt.Errorf("unexpected transaction type: %T", raw)
+	}
+	return tx, nil
 }
 
-func (w *surrealDBWrapper) Select(ctx context.Context, id *ID) ([]byte, error) {
+func dbSelect[T any](ctx context.Context, db *dbConn, id *models.RecordID) (*T, error) {
 	if id == nil {
-		return nil, fmt.Errorf("id cannot be nil")
+		return nil, som.ErrNilID
 	}
-
-	result, err := surrealdb.Select[any](ctx, w.db, *id)
+	tx, err := db.ensureTx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return cbor.Marshal(result)
+	if tx != nil {
+		return surrealdb.Select[T](ctx, tx, *id)
+	}
+	return surrealdb.Select[T](ctx, db.conn, *id)
 }
 
-func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
-	result, err := surrealdb.Query[any](ctx, w.db, statement, vars)
+func dbCreate[T any](ctx context.Context, db *dbConn, id models.RecordID, data any) (*T, error) {
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if tx != nil {
+		return surrealdb.Create[T](ctx, tx, id, data)
+	}
+	return surrealdb.Create[T](ctx, db.conn, id, data)
+}
+
+func dbCreateNew[T any](ctx context.Context, db *dbConn, idExpr string, data any) (*T, error) {
+	statement := fmt.Sprintf("CREATE %s CONTENT $data", idExpr)
+	vars := map[string]any{"data": data}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var result *[]surrealdb.QueryResult[[]T]
+	if tx != nil {
+		result, err = surrealdb.Query[[]T](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]T](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result == nil || len(*result) == 0 {
+		return nil, som.ErrEmptyResponse
+	}
+	qr := (*result)[0]
+	if qr.Error != nil {
+		return nil, fmt.Errorf("create failed: %w", qr.Error)
+	}
+	if len(qr.Result) == 0 {
+		return nil, som.ErrEmptyResponse
+	}
+	return &qr.Result[0], nil
+}
+
+func dbUpdate[T any](ctx context.Context, db *dbConn, id *models.RecordID, data any) (*T, error) {
+	if id == nil {
+		return nil, som.ErrNilID
+	}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if tx != nil {
+		return surrealdb.Update[T](ctx, tx, *id, data)
+	}
+	return surrealdb.Update[T](ctx, db.conn, *id, data)
+}
+
+func dbDelete(ctx context.Context, db *dbConn, id *models.RecordID) error {
+	if id == nil {
+		return som.ErrNilID
+	}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return err
+	}
+	if tx != nil {
+		_, err = surrealdb.Delete[any](ctx, tx, *id)
+	} else {
+		_, err = surrealdb.Delete[any](ctx, db.conn, *id)
+	}
+	return err
+}
+
+func dbQueryOne[T any](ctx context.Context, db *dbConn, statement string, vars map[string]any) (*T, error) {
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var result *[]surrealdb.QueryResult[[]T]
+	if tx != nil {
+		result, err = surrealdb.Query[[]T](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]T](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result == nil || len(*result) == 0 {
+		return nil, nil
+	}
+	qr := (*result)[0]
+	if qr.Error != nil {
+		return nil, qr.Error
+	}
+	if len(qr.Result) == 0 {
+		return nil, nil
+	}
+	return &qr.Result[0], nil
+}
+
+func dbInsert[T any](ctx context.Context, db *dbConn, statement string, vars map[string]any) ([]*T, error) {
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var result *[]surrealdb.QueryResult[[]*T]
+	if tx != nil {
+		result, err = surrealdb.Query[[]*T](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]*T](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result == nil || len(*result) == 0 {
+		return nil, nil
+	}
+	qr := (*result)[0]
+	if qr.Error != nil {
+		return nil, fmt.Errorf("insert failed: %w", qr.Error)
+	}
+	return qr.Result, nil
+}
+
+func (c *dbConn) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
+	tx, err := c.ensureTx(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check for errors in individual query results.
-	// The surrealdb.Query function returns *[]QueryResult[T], where each result can have its own error.
+	var result *[]surrealdb.QueryResult[any]
+	if tx != nil {
+		result, err = surrealdb.Query[any](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[any](ctx, c.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	if result != nil {
 		for i, qr := range *result {
 			if qr.Error != nil {
@@ -123,62 +207,28 @@ func (w *surrealDBWrapper) Query(ctx context.Context, statement string, vars map
 	return cbor.Marshal(result)
 }
 
-func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
-	// NOTE: SurrealDB does not yet support proper variable handling for live queries.
-	// To circumvent this limitation, params are registered in the database before issuing
-	// the actual live query. Those params are given the values of the variables passed to
-	// this method. This way, the live query can be filtered by said params.
-	//
-	// References:
-	// Bug: Using variables in filters does not emit live messages (https://github.com/surrealdb/surrealdb/issues/2623)
-	// Bug: LQ params should be evaluated before registering (https://github.com/surrealdb/surrealdb/issues/2641)
-	// Bug: parameters do not work with live queries (https://github.com/surrealdb/surrealdb/issues/3602)
-	// Feature: Live Query WHERE clause should process Params (https://github.com/surrealdb/surrealdb/issues/4026)
-
-	// Generate a random prefix to prevent param name collisions.
-	varPrefix, err := randString(32)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate random string: %w", err)
+func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
+	if internal.TxActive(ctx) {
+		return nil, som.ErrLiveNotSupportedInTx
 	}
 
-	// Create DEFINE PARAM statements for each variable.
-	params := make(map[string]string, len(vars))
-	for key := range vars {
-		newKey := varPrefix + "_" + key
-		params[newKey] = "DEFINE PARAM $" + newKey + " VALUE $" + key
-		statement = strings.ReplaceAll(statement, "$"+key, "$"+newKey)
-	}
-
-	// Prepend DEFINE PARAM statements to the query.
-	if len(params) > 0 {
-		var paramDefs strings.Builder
-		for _, value := range params {
-			paramDefs.WriteString(value + "; ")
-		}
-		statement = paramDefs.String() + statement
-	}
-
-	// Execute the LIVE statement via Query call.
-	result, err := surrealdb.Query[models.UUID](ctx, w.db, statement, vars)
+	result, err := surrealdb.Query[models.UUID](ctx, c.conn, statement, vars)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute live query: %w", err)
 	}
 
-	// Extract the live query ID from the result.
-	// The last result contains the live query UUID.
-	queryIndex := len(params)
-	if result == nil || len(*result) <= queryIndex {
-		return nil, fmt.Errorf("empty response from live query")
+	if result == nil || len(*result) == 0 {
+		return nil, som.ErrEmptyResponse
 	}
 
-	lastResult := (*result)[queryIndex]
+	lastResult := (*result)[0]
 	if lastResult.Error != nil {
 		return nil, fmt.Errorf("live query error: %w", lastResult.Error)
 	}
 
 	liveID := lastResult.Result.String()
 
-	notifications, err := w.db.LiveNotifications(liveID)
+	notifications, err := c.conn.LiveNotifications(liveID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get live notifications: %w", err)
 	}
@@ -186,18 +236,10 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 	out := make(chan []byte)
 	go func() {
 		defer close(out)
-		defer func() {
-			// Clean up the defined params when the live query ends.
-			cleanupCtx := context.Background()
-			for newKey := range params {
-				_, _ = surrealdb.Query[any](cleanupCtx, w.db, fmt.Sprintf("REMOVE PARAM $%s;", newKey), nil)
-			}
-		}()
 
 		for notif := range notifications {
 			data, err := cbor.Marshal(notif)
 			if err != nil {
-				// TODO: add logger to overall client config and use it here
 				slog.ErrorContext(ctx, "failed to marshal live notification", "error", err)
 				continue
 			}
@@ -210,42 +252,6 @@ func (w *surrealDBWrapper) Live(ctx context.Context, statement string, vars map[
 	}()
 
 	return out, nil
-}
-
-func (w *surrealDBWrapper) Update(ctx context.Context, id *ID, data any) ([]byte, error) {
-	if id == nil {
-		return nil, fmt.Errorf("id cannot be nil")
-	}
-
-	result, err := surrealdb.Update[any](ctx, w.db, *id, data)
-	if err != nil {
-		return nil, err
-	}
-	return cbor.Marshal(result)
-}
-
-func (w *surrealDBWrapper) Delete(ctx context.Context, id *ID) ([]byte, error) {
-	if id == nil {
-		return nil, fmt.Errorf("id cannot be nil")
-	}
-
-	result, err := surrealdb.Delete[any](ctx, w.db, *id)
-	if err != nil {
-		return nil, err
-	}
-	return cbor.Marshal(result)
-}
-
-func (w *surrealDBWrapper) Marshal(val any) ([]byte, error) {
-	return cbor.Marshal(val)
-}
-
-func (w *surrealDBWrapper) Unmarshal(buf []byte, val any) error {
-	return cbor.Unmarshal(buf, val)
-}
-
-func (w *surrealDBWrapper) Close() error {
-	return w.db.Close(context.Background())
 }
 
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
@@ -293,29 +299,11 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		}
 	}
 
-	wrapper := &surrealDBWrapper{db: db}
-
 	return &ClientImpl{
-		db: wrapper,
+		db: &dbConn{conn: db},
 	}, nil
 }
 
 func (c *ClientImpl) Close() {
-	_ = c.db.Close()
-}
-
-// randString generates a random alphanumeric string of length n.
-func randString(n int) (string, error) {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	byteSlice := make([]byte, n)
-
-	for index := range byteSlice {
-		randInt, err := rand.Int(rand.Reader, big.NewInt(int64(len(letterBytes))))
-		if err != nil {
-			return "", fmt.Errorf("failed to generate random string: %w", err)
-		}
-		byteSlice[index] = letterBytes[randInt.Int64()]
-	}
-
-	return string(byteSlice), nil
+	_ = c.db.conn.Close(context.Background())
 }

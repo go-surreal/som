@@ -99,9 +99,9 @@ SOM provides a type-safe `Verify()` filter method for password verification:
 ```go
 // Type-safe password verification
 user, ok, err := client.UserRepo().Query().
-    Filter(
-        where.User.Username.Equal("alice"),
-        where.User.Password.Verify("plaintext_password"),
+    Where(
+        filter.User.Username.Equal("alice"),
+        filter.User.Password.Verify("plaintext_password"),
     ).
     First(ctx)
 
@@ -138,7 +138,7 @@ Password fields have limited filter operations due to their secure nature:
 
 ```go
 // Verify password against stored hash
-where.User.Password.Verify("plaintext_password")
+filter.User.Password.Verify("plaintext_password")
 ```
 
 This uses the appropriate crypto comparison function for the password's algorithm.
@@ -147,20 +147,20 @@ This uses the appropriate crypto comparison function for the password's algorith
 
 ```go
 // Check if optional password is set
-where.Admin.Recovery.IsNil()
+filter.Admin.Recovery.IsNil()
 
 // Check if optional password exists
-where.Admin.Recovery.IsNotNil()
+filter.Admin.Recovery.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Check if password is empty (not set)
-where.User.Password.Zero(true)
+filter.User.Password.Zero(true)
 
 // Check if password has a value
-where.User.Password.Zero(false)
+filter.User.Password.Zero(false)
 ```
 
 ## Algorithm Comparison
@@ -186,7 +186,7 @@ package main
 import (
     "context"
     "yourproject/gen/som"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/model"
 )
 
@@ -212,7 +212,7 @@ func main() {
 
     // Find users with recovery password set
     adminsWithRecovery, _ := client.AdminRepo().Query().
-        Filter(where.Admin.Recovery.IsNotNil()).
+        Where(filter.Admin.Recovery.IsNotNil()).
         All(ctx)
 }
 ```

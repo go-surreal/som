@@ -99,24 +99,24 @@ Access nested fields using dot notation in the where clause:
 
 ```go
 // Filter by nested field
-where.User.Address.City.Equal("New York")
+filter.User.Address.City.Equal("New York")
 
 // String operations on nested fields
-where.User.Address.Country.Equal("USA")
-where.User.Address.ZipCode.StartsWith("100")
+filter.User.Address.Country.Equal("USA")
+filter.User.Address.ZipCode.StartsWith("100")
 
 // Numeric nested fields
-where.Product.Dimensions.Width.GreaterThan(10.0)
-where.Product.Dimensions.Height.LessThan(50.0)
+filter.Product.Dimensions.Width.GreaterThan(10.0)
+filter.Product.Dimensions.Height.LessThan(50.0)
 ```
 
 ### Complex Nested Filters
 
 ```go
 // Multiple conditions on nested struct
-query.Filter(
-    where.User.Address.City.Equal("New York"),
-    where.User.Address.Country.Equal("USA"),
+query.Where(
+    filter.User.Address.City.Equal("New York"),
+    filter.User.Address.Country.Equal("USA"),
 )
 ```
 
@@ -124,17 +124,17 @@ query.Filter(
 
 ```go
 // Has billing address
-where.User.Billing.IsNotNil()
+filter.User.Billing.IsNotNil()
 
 // No billing address
-where.User.Billing.IsNil()
+filter.User.Billing.IsNil()
 ```
 
 ### Optional Struct Field Access
 
 ```go
 // Filter by optional struct's field (if struct is not nil)
-where.User.Billing.City.Equal("Chicago")
+filter.User.Billing.City.Equal("Chicago")
 ```
 
 ## Sorting
@@ -173,7 +173,7 @@ type Document struct {
 }
 
 // Access as direct fields
-where.Document.CreatedBy.Equal("admin")
+filter.Document.CreatedBy.Equal("admin")
 ```
 
 ## Deeply Nested Structs
@@ -195,8 +195,8 @@ type Company struct {
 }
 
 // Access deeply nested fields
-where.Company.Contact.Address.City.Equal("San Francisco")
-where.Company.Contact.Email.EndsWith("@company.com")
+filter.Company.Contact.Address.City.Equal("San Francisco")
+filter.Company.Contact.Email.EndsWith("@company.com")
 ```
 
 ## Common Patterns
@@ -206,7 +206,7 @@ where.Company.Contact.Email.EndsWith("@company.com")
 ```go
 // Users in New York
 nyUsers, _ := client.UserRepo().Query().
-    Filter(where.User.Address.City.Equal("New York")).
+    Where(filter.User.Address.City.Equal("New York")).
     All(ctx)
 ```
 
@@ -215,7 +215,7 @@ nyUsers, _ := client.UserRepo().Query().
 ```go
 // Users in USA
 usUsers, _ := client.UserRepo().Query().
-    Filter(where.User.Address.Country.Equal("USA")).
+    Where(filter.User.Address.Country.Equal("USA")).
     All(ctx)
 ```
 
@@ -224,7 +224,7 @@ usUsers, _ := client.UserRepo().Query().
 ```go
 // Users with separate billing
 withBilling, _ := client.UserRepo().Query().
-    Filter(where.User.Billing.IsNotNil()).
+    Where(filter.User.Billing.IsNotNil()).
     All(ctx)
 ```
 
@@ -233,15 +233,15 @@ withBilling, _ := client.UserRepo().Query().
 ```go
 // Large products
 largeProducts, _ := client.ProductRepo().Query().
-    Filter(
-        where.Product.Dimensions.Width.GreaterThan(100),
-        where.Product.Dimensions.Height.GreaterThan(100),
+    Where(
+        filter.Product.Dimensions.Width.GreaterThan(100),
+        filter.Product.Dimensions.Height.GreaterThan(100),
     ).
     All(ctx)
 
 // Calculate volume (simplified)
 wideProducts, _ := client.ProductRepo().Query().
-    Filter(where.Product.Dimensions.Width.GreaterThan(50)).
+    Where(filter.Product.Dimensions.Width.GreaterThan(50)).
     Order(by.Product.Dimensions.Width.Desc()).
     All(ctx)
 ```
@@ -255,7 +255,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -276,29 +276,29 @@ func main() {
 
     // Find by city
     nyUsers, _ := client.UserRepo().Query().
-        Filter(where.User.Address.City.Equal("New York")).
+        Where(filter.User.Address.City.Equal("New York")).
         All(ctx)
 
     // Find by country
     usUsers, _ := client.UserRepo().Query().
-        Filter(where.User.Address.Country.Equal("USA")).
+        Where(filter.User.Address.Country.Equal("USA")).
         All(ctx)
 
     // Find by zip code prefix
     manhattan, _ := client.UserRepo().Query().
-        Filter(where.User.Address.ZipCode.StartsWith("100")).
+        Where(filter.User.Address.ZipCode.StartsWith("100")).
         All(ctx)
 
     // Users with billing address
     withBilling, _ := client.UserRepo().Query().
-        Filter(where.User.Billing.IsNotNil()).
+        Where(filter.User.Billing.IsNotNil()).
         All(ctx)
 
     // Users with billing in different city
     differentBilling, _ := client.UserRepo().Query().
-        Filter(
-            where.User.Billing.IsNotNil(),
-            where.User.Billing.City.NotEqual(where.User.Address.City),
+        Where(
+            filter.User.Billing.IsNotNil(),
+            filter.User.Billing.City.NotEqual(filter.User.Address.City),
         ).
         All(ctx)
 
@@ -309,9 +309,9 @@ func main() {
 
     // Products by dimensions
     products, _ := client.ProductRepo().Query().
-        Filter(
-            where.Product.Dimensions.Width.LessThan(100),
-            where.Product.Dimensions.Height.LessThan(100),
+        Where(
+            filter.Product.Dimensions.Width.LessThan(100),
+            filter.Product.Dimensions.Height.LessThan(100),
         ).
         Order(by.Product.Dimensions.Width.Desc()).
         All(ctx)
@@ -334,16 +334,16 @@ All filter operations available for the nested field's type:
 
 ```go
 // String fields in struct
-where.User.Address.City.Equal("NYC")
-where.User.Address.City.Contains("York")
-where.User.Address.City.Lowercase().StartsWith("new")
+filter.User.Address.City.Equal("NYC")
+filter.User.Address.City.Contains("York")
+filter.User.Address.City.Lowercase().StartsWith("new")
 
 // Numeric fields in struct
-where.Product.Dimensions.Width.GreaterThan(10)
-where.Product.Dimensions.Width.Mul(2).LessThan(100)
+filter.Product.Dimensions.Width.GreaterThan(10)
+filter.Product.Dimensions.Width.Mul(2).LessThan(100)
 
 // Bool fields in struct
-where.Config.Settings.IsEnabled.True()
+filter.Config.Settings.IsEnabled.True()
 ```
 
 ## Best Practices

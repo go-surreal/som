@@ -61,19 +61,19 @@ All types support these base filter operations:
 
 ```go
 // Equality
-where.User.Name.Equal("Alice")
-where.User.Name.NotEqual("Bob")
+filter.User.Name.Equal("Alice")
+filter.User.Name.NotEqual("Bob")
 
 // Set membership
-where.User.Role.In("admin", "moderator")
-where.User.Status.NotIn("banned", "suspended")
+filter.User.Role.In("admin", "moderator")
+filter.User.Status.NotIn("banned", "suspended")
 
 // Zero value check
-where.User.Name.Zero(true)   // Is empty string
-where.User.Age.Zero(false)   // Is not zero
+filter.User.Name.Zero(true)   // Is empty string
+filter.User.Age.Zero(false)   // Is not zero
 
 // Truthiness
-where.User.Name.Truth()      // Convert to bool filter
+filter.User.Name.Truth()      // Convert to bool filter
 ```
 
 ### Pointer Types (Optional Fields)
@@ -92,8 +92,8 @@ type User struct {
 Pointer types add nil-checking operations:
 
 ```go
-where.User.Nickname.IsNil()     // Field is NULL/NONE
-where.User.Nickname.IsNotNil()  // Field has a value
+filter.User.Nickname.IsNil()     // Field is NULL/NONE
+filter.User.Nickname.IsNotNil()  // Field has a value
 ```
 
 ## CBOR Encoding
@@ -132,16 +132,16 @@ Many filter operations return new filters, enabling powerful chains:
 
 ```go
 // String transformations
-where.User.Email.Lowercase().Contains("@gmail")
+filter.User.Email.Lowercase().Contains("@gmail")
 
 // Numeric math
-where.Product.Price.Mul(1.1).LessThan(100)
+filter.Product.Price.Mul(1.1).LessThan(100)
 
 // Time extraction
-where.Event.StartTime.Year().Equal(2024)
+filter.Event.StartTime.Year().Equal(2024)
 
 // Slice operations
-where.Post.Tags.Distinct().Len().GreaterThan(3)
+filter.Post.Tags.Distinct().Len().GreaterThan(3)
 ```
 
 ## Schema Generation

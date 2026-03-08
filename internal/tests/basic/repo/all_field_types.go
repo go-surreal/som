@@ -4,114 +4,113 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/by"
 	"github.com/go-surreal/som/tests/basic/gen/som/repo"
-	"github.com/go-surreal/som/tests/basic/gen/som/where"
+	"github.com/go-surreal/som/tests/basic/gen/som/filter"
 	"github.com/go-surreal/som/tests/basic/gen/som/with"
 	"github.com/go-surreal/som/tests/basic/model"
 )
 
-type AllFieldTypesRepo interface {
-	repo.AllFieldTypesRepo
+type AllTypesRepo interface {
+	repo.AllTypesRepo
 
-	FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error)
-	List(ctx context.Context) ([]*model.AllFieldTypes, error)
+	FindByID(ctx context.Context, id string) (*model.AllTypes, error)
+	List(ctx context.Context) ([]*model.AllTypes, error)
 }
 
-type allFieldTypesRepo struct {
-	repo.AllFieldTypesRepo
+type allTypesRepo struct {
+	repo.AllTypesRepo
 }
 
-func NewAllFieldTypesRepo(db repo.Client) AllFieldTypesRepo {
-	return &allFieldTypesRepo{
-		AllFieldTypesRepo: db.AllFieldTypesRepo(),
+func NewAllTypesRepo(db repo.Client) AllTypesRepo {
+	return &allTypesRepo{
+		AllTypesRepo: db.AllTypesRepo(),
 	}
 }
 
-func (r *allFieldTypesRepo) FindByID(ctx context.Context, id *som.ID) (*model.AllFieldTypes, error) {
-	return r.AllFieldTypesRepo.Query().Filter(where.AllFieldTypes.ID.Equal(id)).First(ctx)
+func (r *allTypesRepo) FindByID(ctx context.Context, id string) (*model.AllTypes, error) {
+	return r.AllTypesRepo.Query().Where(filter.AllTypes.ID.Equal(id)).First(ctx)
 }
 
-func (r *allFieldTypesRepo) FetchByID(
+func (r *allTypesRepo) FetchByID(
 	ctx context.Context,
-	id *som.ID,
-	fetch ...with.Fetch_[model.AllFieldTypes],
+	id string,
+	fetch ...with.Fetch_[model.AllTypes],
 ) (
-	[]*model.AllFieldTypes,
+	[]*model.AllTypes,
 	error,
 ) {
-	return r.AllFieldTypesRepo.Query().
-		Filter(where.AllFieldTypes.ID.Equal(id)).
+	return r.AllTypesRepo.Query().
+		Where(filter.AllTypes.ID.Equal(id)).
 		Fetch(fetch...).
 		All(ctx)
 }
 
 var b byte
 
-func (r *allFieldTypesRepo) List(ctx context.Context) ([]*model.AllFieldTypes, error) {
-	return r.AllFieldTypesRepo.Query().
-		Filter(
-			//where.Any[model.AllFieldTypes](
-			//	where.User.ID.Equal("9rb97n04ggwmekxats5a"),
-			//	where.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
-			//	where.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
-			//	where.User.MyGroups().Since.Before(time.Now()), // ->(member_of where since < $)
-			//	where.User.MyGroups().Group().ID.Equal(""),     // ->member_of->(group where id = $)
+func (r *allTypesRepo) List(ctx context.Context) ([]*model.AllTypes, error) {
+	return r.AllTypesRepo.Query().
+		Where(
+			//filter.Any[model.AllTypes](
+			//	filter.User.ID.Equal("9rb97n04ggwmekxats5a"),
+			//	filter.User.ID.Equal("lvsl8w9gx5i97vado4tp"),
+			//	filter.User.MainGroup().ID.Equal("wq4p7fj4efocis35znzz"),
+			//	filter.User.MyGroups().Since.Before(time.Now()), // ->(member_of where since < $)
+			//	filter.User.MyGroups().Group().ID.Equal(""),     // ->member_of->(group where id = $)
 			//
-			//	where.AllFieldTypes.MemberOf().Group().Members().User(
-			//		where.AllFieldTypes.ID.Equal("klkl4w6i9z8u0uyo5w7f"),
+			//	filter.AllTypes.FieldMemberOf().Group().Members().User(
+			//		filter.AllTypes.ID.Equal("klkl4w6i9z8u0uyo5w7f"),
 			//	),
 			//
-			//	where.AllFieldTypes.Byte.Equal(b),
+			//	filter.AllTypes.FieldByte.Equal(b),
 			//
-			//	where.AllFieldTypes.BytePtr.Equal(b),
+			//	filter.AllTypes.FieldBytePtr.Equal(b),
 			//
-			//	where.AllFieldTypes.ByteSlice().Equal([]byte("omr4f")),
+			//	filter.AllTypes.FieldByteSlice().Equal([]byte("omr4f")),
 			//
-			//	where.AllFieldTypes.ByteSlicePtr().Equal([]byte("")),
+			//	filter.AllTypes.FieldByteSlicePtr().Equal([]byte("")),
 			//
-			//	where.User.Groups().ID.In(nil),
-			//	where.User.Groups().Name.In(nil),
+			//	filter.User.Groups().ID.In(nil),
+			//	filter.User.Groups().Name.In(nil),
 			//
-			//	where.User.Groups(
-			//		where.Group.ID.Equal(""),
-			//		where.Group.Name.Equal(""),
+			//	filter.User.Groups(
+			//		filter.Group.ID.Equal(""),
+			//		filter.Group.Name.Equal(""),
 			//	),
 			//),
-			// where.User.String.FuzzyMatch("my fuzzy value"),
-			// where.User.UUID.Equal(uuid.UUID{}),
-			// where.Any(
-			// 	where.User.Role.Equal(""),
-			// 	where.User.CreatedAt.Before(time.Now()),
+			// filter.User.FieldString.FuzzyMatch("my fuzzy value"),
+			// filter.User.FieldUUID.Equal(uuid.UUID{}),
+			// filter.Any(
+			// 	filter.User.FieldRole.Equal(""),
+			// 	filter.User.CreatedAt.Before(time.Now()),
 			// ),
-			// where.All(
-			// 	where.User.Role.Equal(""),
-			// 	where.User.Groups().Name.FuzzyMatch("some group"),
-			// 	where.User.Groups().Contains(model.Group{}),
+			// filter.All(
+			// 	filter.User.FieldRole.Equal(""),
+			// 	filter.User.Groups().Name.FuzzyMatch("some group"),
+			// 	filter.User.Groups().Contains(model.Group{}),
 			// ),
-			// where.User.ID.Equal(""),
-			// where.User.Login().Username.Equal(""),
-			// where.User.Role.Equal(""),
-			// where.User.Groups().Count().GreaterThan(5),
+			// filter.User.ID.Equal(""),
+			// filter.User.FieldCredentials().Username.Equal(""),
+			// filter.User.FieldRole.Equal(""),
+			// filter.User.Groups().Count().GreaterThan(5),
 			// //
-			// where.User.Other().Contains(""),
-			// where.User.Other().ContainsAll([]string{"", ""}),
-			// where.User.Roles().ContainsNot(model.RoleAdmin),
+			// filter.User.FieldOther().Contains(""),
+			// filter.User.FieldOther().ContainsAll([]string{"", ""}),
+			// filter.User.FieldRoles().ContainsNot(model.RoleAdmin),
 		).
 		Order(
-			by.AllFieldTypes.CreatedAt.Asc(),
-			by.AllFieldTypes.MainGroup().Name.Asc(),
+			by.AllTypes.CreatedAt.Asc(),
+			by.AllTypes.FieldNode().Name.Asc(),
 		).
 		Fetch(
-			with.AllFieldTypes, // this is implicit
-			with.AllFieldTypes.MainGroup(),
+			with.AllTypes, // this is implicit
+			with.AllTypes.FieldNode(),
 		).
 		// FetchRecordsWithDepth(3).
 		// FetchEdgesWithDepth3().
 		// FetchDepth(2).
 		// OrderRandom().
-		// Offset(10).
+		// Start(10).
 		// Limit(10).
 		Timeout(10 * time.Second).
 		Parallel(true).

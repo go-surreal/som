@@ -11,7 +11,7 @@ package model
 
 import (
     "time"
-    "github.com/go-surreal/som"
+    "yourproject/gen/som"
 )
 
 type Follows struct {
@@ -23,13 +23,7 @@ type Follows struct {
 
 ## Edge Structure
 
-Every edge automatically has these fields from `som.Edge`:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `ID` | `*som.ID` | Unique identifier for the edge |
-| `In` | Node type | Source node (start of relationship) |
-| `Out` | Node type | Target node (end of relationship) |
+The `som.Edge` embedding provides an `ID()` method returning the edge's unique identifier. You define the connected nodes by declaring fields with `som:"in"` and `som:"out"` tags.
 
 ## Specifying Connected Nodes
 
@@ -113,7 +107,7 @@ err := client.GroupMemberRepo().Create(ctx, membership)
 ```go
 // Find all groups a user belongs to
 memberships, err := client.GroupMemberRepo().Query().
-    Filter(where.GroupMember.In.Equal(user.ID)).
+    Where(filter.GroupMember.In.Equal(user.ID)).
     All(ctx)
 ```
 
@@ -122,7 +116,7 @@ memberships, err := client.GroupMemberRepo().Query().
 ```go
 // Find all members of a group
 memberships, err := client.GroupMemberRepo().Query().
-    Filter(where.GroupMember.Out.Equal(group.ID)).
+    Where(filter.GroupMember.Out.Equal(group.ID)).
     All(ctx)
 ```
 
@@ -131,9 +125,9 @@ memberships, err := client.GroupMemberRepo().Query().
 ```go
 // Find admin memberships
 admins, err := client.GroupMemberRepo().Query().
-    Filter(
-        where.GroupMember.Out.Equal(group.ID),
-        where.GroupMember.Role.Equal("admin"),
+    Where(
+        filter.GroupMember.Out.Equal(group.ID),
+        filter.GroupMember.Role.Equal("admin"),
     ).
     All(ctx)
 ```
@@ -236,13 +230,13 @@ type Enrollment struct {
 ```go
 // Nodes
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     Username string
     Email    string
 }
 
 type Post struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps
     Content string
     Author  *User  // Direct link (not an edge)

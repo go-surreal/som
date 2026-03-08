@@ -60,7 +60,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 }
 
 func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
-	pkgLib := b.subPkg(def.PkgLib)
+	pkgLib := b.relativePkgPath(def.PkgLib)
 
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
@@ -69,6 +69,13 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	}
 
 	if _, ok := elem.(*field.NodeTable); ok {
+		file.Line()
+		file.Var().Id(elem.NameGo()).Op("=").
+			Id("new" + elem.NameGo()).Types(b.SourceQual(elem.NameGo())).
+			Call(jen.Qual(pkgLib, "NewKey").Types(b.SourceQual(elem.NameGo())).Call())
+	}
+
+	if _, ok := elem.(*field.DatabaseObject); ok {
 		file.Line()
 		file.Var().Id(elem.NameGo()).Op("=").
 			Id("new" + elem.NameGo()).Types(b.SourceQual(elem.NameGo())).
@@ -142,7 +149,7 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 }
 
 func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
-	pkgLib := b.subPkg(def.PkgLib)
+	pkgLib := b.relativePkgPath(def.PkgLib)
 
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
@@ -271,7 +278,7 @@ func (b *filterBuilder) buildEdge(file *jen.File, edge *field.EdgeTable) {
 }
 
 func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
-	pkgLib := b.subPkg(def.PkgLib)
+	pkgLib := b.relativePkgPath(def.PkgLib)
 
 	fieldCtx := field.Context{
 		SourcePkg: b.sourcePkgPath,
@@ -288,8 +295,13 @@ func (b *filterBuilder) whereNew(elem field.Element) jen.Code {
 				jen.Id(elem.NameGoLower()).Types(def.TypeModel).
 					Values(jen.DictFunc(func(d jen.Dict) {
 						d[jen.Id("Key")] = jen.Id("key")
-						for _, f := range elem.GetFields() {
-							if code := f.CodeGen().FilterInit(fieldCtx); code != nil {
+						for i, f := range elem.GetFields() {
+							fCtx := fieldCtx
+							if obj, ok := elem.(*field.DatabaseObject); ok && obj.IsArrayIndexed {
+								idx := i
+								fCtx.ArrayIndex = &idx
+							}
+							if code := f.CodeGen().FilterInit(fCtx); code != nil {
 								d[jen.Id(f.NameGo())] = code
 							}
 						}

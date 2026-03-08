@@ -137,7 +137,7 @@ jobs:
     name: Test Core
     #if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 2
     steps:
 
       - name: Checkout
@@ -167,13 +167,13 @@ jobs:
           go test \
           -coverprofile=coverage.txt -covermode=atomic \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
-          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
+          -failfast -count=1 -race -vet=off -v ./...
 
   test-basic:
     name: Test Basic
     #if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 7
     steps:
 
       - name: Checkout
@@ -208,7 +208,7 @@ jobs:
           -coverprofile=coverage.txt -covermode=atomic \
           -coverpkg=github.com/go-surreal/som/tests/basic/gen/som/... \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
-          -failfast -parallel 10 -count=1 -race -vet=off -v ./...
+          -failfast -count=1 -race -vet=off -v ./...
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

@@ -66,16 +66,16 @@ client.PostRepo().Create(ctx, post)
 
 ```go
 // Filter by referenced record's ID
-where.Post.Author.ID().Equal(userID)
+filter.Post.Author.ID().Equal(userID)
 
 // Not equal
-where.Post.Author.ID().NotEqual(excludeUserID)
+filter.Post.Author.ID().NotEqual(excludeUserID)
 
 // In set
-where.Post.Author.ID().In(authorID1, authorID2)
+filter.Post.Author.ID().In(authorID1, authorID2)
 
 // Not in set
-where.Post.Author.ID().NotIn(bannedIDs...)
+filter.Post.Author.ID().NotIn(bannedIDs...)
 ```
 
 ### Nested Field Filtering
@@ -84,16 +84,16 @@ Access fields of the referenced record:
 
 ```go
 // Filter by author's name
-where.Post.Author.Name.Equal("Alice")
+filter.Post.Author.Name.Equal("Alice")
 
 // Filter by author's email
-where.Post.Author.Email.EndsWith("@company.com")
+filter.Post.Author.Email.EndsWith("@company.com")
 
 // Filter by author's status
-where.Post.Author.IsActive.True()
+filter.Post.Author.IsActive.True()
 
 // Chain nested fields
-where.Post.Author.Email.Lowercase().Contains("@admin")
+filter.Post.Author.Email.Lowercase().Contains("@admin")
 ```
 
 ### Deep Nesting
@@ -102,20 +102,20 @@ For deeply nested references:
 
 ```go
 // Comment -> Post -> Author
-where.Comment.Post.Author.Name.Equal("Alice")
+filter.Comment.Post.Author.Name.Equal("Alice")
 
 // Filter by parent post's author's status
-where.Comment.Post.Author.IsActive.True()
+filter.Comment.Post.Author.IsActive.True()
 ```
 
 ### Nil Checks
 
 ```go
 // Posts with author
-where.Post.Author.IsNotNil()
+filter.Post.Author.IsNotNil()
 
 // Posts without editor
-where.Post.Editor.IsNil()
+filter.Post.Editor.IsNil()
 ```
 
 ## Sorting
@@ -181,7 +181,7 @@ comments, _ := client.CommentRepo().Query().
 ```go
 // Posts by specific author
 authorPosts, _ := client.PostRepo().Query().
-    Filter(where.Post.Author.ID().Equal(author.ID())).
+    Where(filter.Post.Author.ID().Equal(author.ID())).
     All(ctx)
 ```
 
@@ -190,7 +190,7 @@ authorPosts, _ := client.PostRepo().Query().
 ```go
 // Posts by active authors
 activePosts, _ := client.PostRepo().Query().
-    Filter(where.Post.Author.IsActive.True()).
+    Where(filter.Post.Author.IsActive.True()).
     All(ctx)
 ```
 
@@ -199,7 +199,7 @@ activePosts, _ := client.PostRepo().Query().
 ```go
 // Posts needing an editor
 needsEditor, _ := client.PostRepo().Query().
-    Filter(where.Post.Editor.IsNil()).
+    Where(filter.Post.Editor.IsNil()).
     All(ctx)
 ```
 
@@ -215,12 +215,12 @@ type Category struct {
 
 // Find root categories
 roots, _ := client.CategoryRepo().Query().
-    Filter(where.Category.Parent.IsNil()).
+    Where(filter.Category.Parent.IsNil()).
     All(ctx)
 
 // Find children of specific category
 children, _ := client.CategoryRepo().Query().
-    Filter(where.Category.Parent.ID().Equal(parentID)).
+    Where(filter.Category.Parent.ID().Equal(parentID)).
     All(ctx)
 ```
 
@@ -233,7 +233,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/gen/som/with"
 )
 
@@ -254,22 +254,22 @@ func main() {
 
     // Find posts by author ID
     authorPosts, _ := client.PostRepo().Query().
-        Filter(where.Post.Author.ID().Equal(author.ID())).
+        Where(filter.Post.Author.ID().Equal(author.ID())).
         All(ctx)
 
     // Find posts by author name
     alicePosts, _ := client.PostRepo().Query().
-        Filter(where.Post.Author.Name.Equal("Alice")).
+        Where(filter.Post.Author.Name.Equal("Alice")).
         All(ctx)
 
     // Find posts by active authors only
     activePosts, _ := client.PostRepo().Query().
-        Filter(where.Post.Author.IsActive.True()).
+        Where(filter.Post.Author.IsActive.True()).
         All(ctx)
 
     // Posts without editor
     unedited, _ := client.PostRepo().Query().
-        Filter(where.Post.Editor.IsNil()).
+        Where(filter.Post.Editor.IsNil()).
         All(ctx)
 
     // Sort by author name
@@ -288,9 +288,9 @@ func main() {
 
     // Complex nested filter
     comments, _ := client.CommentRepo().Query().
-        Filter(
-            where.Comment.Post.Author.IsActive.True(),
-            where.Comment.Author.Name.StartsWith("Admin"),
+        Where(
+            filter.Comment.Post.Author.IsActive.True(),
+            filter.Comment.Author.Name.StartsWith("Admin"),
         ).
         All(ctx)
 }
@@ -319,8 +319,8 @@ func main() {
 All fields of the referenced node type are accessible:
 
 ```go
-where.Post.Author.Name        // String filter
-where.Post.Author.Email       // Email filter
-where.Post.Author.IsActive    // Bool filter
-where.Post.Author.CreatedAt   // Time filter
+filter.Post.Author.Name        // String filter
+filter.Post.Author.Email       // Email filter
+filter.Post.Author.IsActive    // Bool filter
+filter.Post.Author.CreatedAt   // Time filter
 ```

@@ -5,14 +5,15 @@ package query
 import (
 	"context"
 	"fmt"
-	"github.com/fxamacker/cbor/v2"
 	"strings"
+
+	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 )
 
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	Unmarshal(buf []byte, val any) error
 }
 
 // recordID represents a SurrealDB record ID for query results.
@@ -49,12 +50,6 @@ type idNode struct {
 
 type countResult struct {
 	Count int
-}
-
-type queryResult[M any] struct {
-	Result []M    `json:"result"`
-	Status string `json:"status"`
-	Time   string `json:"time"`
 }
 
 // searchOffset represents a position offset for a matched search term.
@@ -168,18 +163,42 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 }
 
 //
+// -- UNMARSHAL
+//
+
+func unmarshalAll[M, C any](data []byte, convert func(*C) *M) ([]*M, error) {
+	var rawNodes []internal.QueryResult[*C]
+	if err := cbor.Unmarshal(data, &rawNodes); err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, nil
+	}
+	results := make([]*M, len(rawNodes[0].Result))
+	for i, raw := range rawNodes[0].Result {
+		results[i] = convert(raw)
+	}
+	return results, nil
+}
+
+func unmarshalOne[M, C any](data []byte, convert func(*C) *M) (*M, error) {
+	var raw *C
+	if err := cbor.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	return convert(raw), nil
+}
+
+//
 // -- LIVE
 //
 
-func live[C, M any](
+func live[M any](
 	ctx context.Context,
 	in <-chan []byte,
-	unmarshal func(buf []byte, val any) error,
-	convert func(C) M,
-	fetchBits uint64,
-	setFetched func(M, uint64),
-) <-chan LiveResult[M] {
-	out := make(chan LiveResult[M], 1)
+	info modelInfo[M],
+) <-chan LiveResult[*M] {
+	out := make(chan LiveResult[*M], 1)
 
 	go func() {
 		defer close(out)
@@ -195,7 +214,7 @@ func live[C, M any](
 					return
 				}
 
-				out <- toLiveResult[C, M](data, unmarshal, convert, fetchBits, setFetched)
+				out <- toLiveResult(data, info)
 			}
 		}
 	}()
@@ -203,17 +222,14 @@ func live[C, M any](
 	return out
 }
 
-func toLiveResult[C, M any](
+func toLiveResult[M any](
 	in []byte,
-	unmarshal func(buf []byte, val any) error,
-	convert func(C) M,
-	fetchBits uint64,
-	setFetched func(M, uint64),
-) LiveResult[M] {
+	info modelInfo[M],
+) LiveResult[*M] {
 	var response liveResponse
 
-	if err := unmarshal(in, &response); err != nil {
-		return &liveResult[M]{
+	if err := cbor.Unmarshal(in, &response); err != nil {
+		return &liveResult[*M]{
 			err: fmt.Errorf("could not unmarshal live response: %w", err),
 		}
 	}
@@ -221,67 +237,55 @@ func toLiveResult[C, M any](
 	switch strings.ToLower(response.Action) {
 
 	case "create":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalOne(response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
-			if fetchBits != 0 && setFetched != nil {
-				setFetched(out.res, fetchBits)
-			}
+			out.res = result
 		}
 
-		return &liveCreate[M]{
+		return &liveCreate[*M]{
 			liveResult: out,
 		}
 
 	case "update":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalOne(response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live update result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
-			if fetchBits != 0 && setFetched != nil {
-				setFetched(out.res, fetchBits)
-			}
+			out.res = result
 		}
 
-		return &liveUpdate[M]{
+		return &liveUpdate[*M]{
 			liveResult: out,
 		}
 
 	case "delete":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalOne(response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live delete result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
-			if fetchBits != 0 && setFetched != nil {
-				setFetched(out.res, fetchBits)
-			}
+			out.res = result
 		}
 
-		return &liveDelete[M]{
+		return &liveDelete[*M]{
 			liveResult: out,
 		}
 
 	default:
-		return &liveResult[M]{
+		return &liveResult[*M]{
 			err: fmt.Errorf("unknown action type %s", response.Action),
 		}
 	}

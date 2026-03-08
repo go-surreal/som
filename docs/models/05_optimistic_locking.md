@@ -16,7 +16,7 @@ Embed `som.OptimisticLock` in your model:
 
 ```go
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
     som.OptimisticLock  // Adds version tracking
 
     Title   string
@@ -87,7 +87,7 @@ if errors.Is(err, som.ErrOptimisticLock) {
 #### Strategy 1: Retry with Fresh Data
 
 ```go
-func updateWithRetry(ctx context.Context, id *som.ID, updateFn func(*model.Document)) error {
+func updateWithRetry(ctx context.Context, id string, updateFn func(*model.Document)) error {
     maxRetries := 3
 
     for i := 0; i < maxRetries; i++ {
@@ -127,7 +127,7 @@ updateWithRetry(ctx, docID, func(doc *model.Document) {
 ```go
 func mergeUpdate(ctx context.Context, staleDoc *model.Document) error {
     // Get current version
-    current, _, err := client.DocumentRepo().Read(ctx, staleDoc.ID())
+    current, _, err := client.DocumentRepo().Read(ctx, string(staleDoc.ID()))
     if err != nil {
         return err
     }
@@ -145,7 +145,7 @@ func mergeUpdate(ctx context.Context, staleDoc *model.Document) error {
 
 ```go
 func handleConflict(ctx context.Context, staleDoc *model.Document) error {
-    current, _, _ := client.DocumentRepo().Read(ctx, staleDoc.ID())
+    current, _, _ := client.DocumentRepo().Read(ctx, string(staleDoc.ID()))
 
     // Present both versions to user
     fmt.Println("Your version:", staleDoc.Title)
@@ -161,7 +161,7 @@ func handleConflict(ctx context.Context, staleDoc *model.Document) error {
 Access the current version number:
 
 ```go
-doc, _, _ := client.DocumentRepo().Read(ctx, docID)
+doc, _, _ := client.DocumentRepo().Read(ctx, string(docID))
 version := doc.Version()
 fmt.Printf("Document version: %d\n", version)
 ```
@@ -172,7 +172,7 @@ You can use optimistic locking together with automatic timestamps:
 
 ```go
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps      // CreatedAt, UpdatedAt
     som.OptimisticLock  // Version tracking
 
@@ -227,10 +227,10 @@ func main() {
 
     // Simulate concurrent access
     // Process A reads
-    docA, _, _ := client.DocumentRepo().Read(ctx, doc.ID())
+    docA, _, _ := client.DocumentRepo().Read(ctx, string(doc.ID()))
 
     // Process B reads same document
-    docB, _, _ := client.DocumentRepo().Read(ctx, doc.ID())
+    docB, _, _ := client.DocumentRepo().Read(ctx, string(doc.ID()))
 
     // Process A updates successfully
     docA.Content = "Updated by A"
@@ -247,7 +247,7 @@ func main() {
         fmt.Println("Conflict detected! B's update was rejected.")
 
         // Resolve by getting fresh data and retrying
-        fresh, _, _ := client.DocumentRepo().Read(ctx, doc.ID())
+        fresh, _, _ := client.DocumentRepo().Read(ctx, string(doc.ID()))
         fresh.Content = "Updated by B (retry)"
         err = client.DocumentRepo().Update(ctx, fresh)
         if err == nil {

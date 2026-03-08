@@ -24,6 +24,7 @@
   * [Structs](models/03_structs.md)
   * [Enums](models/04_enums.md)
   * [Optimistic Locking](models/05_optimistic_locking.md)
+  * [Soft Delete](models/06_soft_delete.md)
 
 ## Data Types
 
@@ -60,6 +61,7 @@
   * [Client](api_reference/01_client.md)
   * [Repository](api_reference/02_repository.md)
   * [Query Builder](api_reference/03_query_builder.md)
+  * [Caching](api_reference/04_caching.md)
 
 ## Examples
 

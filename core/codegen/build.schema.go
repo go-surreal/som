@@ -38,7 +38,7 @@ func (b *build) buildSchemaFile() error {
 		}
 
 		// Build indexes for this table (handles both simple and composite)
-		indexStatements = append(indexStatements, b.buildTableIndexStatements(node.NameDatabase(), node.GetFields())...)
+		indexStatements = append(indexStatements, b.buildTableIndexStatements(node.NameDatabase(), node.GetFields(), node.Source.SoftDelete)...)
 
 		statements = append(statements, "")
 	}
@@ -57,7 +57,7 @@ func (b *build) buildSchemaFile() error {
 		}
 
 		// Build indexes for this table (handles both simple and composite)
-		indexStatements = append(indexStatements, b.buildTableIndexStatements(edge.NameDatabase(), edge.GetFields())...)
+		indexStatements = append(indexStatements, b.buildTableIndexStatements(edge.NameDatabase(), edge.GetFields(), edge.Source.SoftDelete)...)
 
 		statements = append(statements, "")
 	}
@@ -117,15 +117,26 @@ func buildFilterString(filter parser.FilterDef) string {
 }
 
 // buildTableIndexStatements builds all index statements for a table, handling both
-// simple indexes and composite unique indexes (fields grouped by UniqueName).
-func (b *build) buildTableIndexStatements(tableName string, fields []field.Field) []string {
+// simple indexes and composite unique indexes (fields grouped by name).
+func (b *build) buildTableIndexStatements(tableName string, fields []field.Field, softDelete bool) []string {
 	var statements []string
 
-	// Collect composite unique index fields grouped by UniqueName
-	compositeUnique := make(map[string][]string) // UniqueName -> []fieldPath
+	if !b.noCountIndex {
+		stmt := fmt.Sprintf("DEFINE INDEX "+def.IndexPrefix+"%s_count ON %s COUNT;", tableName, tableName)
+		statements = append(statements, stmt)
+	}
+
+	// Collect composite unique index fields grouped by name
+	compositeUnique := make(map[string][]string) // name -> []fieldPath
 
 	// Process all fields (including nested)
 	b.collectIndexes(tableName, "", fields, &statements, compositeUnique)
+
+	if softDelete {
+		indexName := fmt.Sprintf(def.IndexPrefix+"%s_deleted_at", tableName)
+		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
+		statements = append(statements, stmt)
+	}
 
 	// Generate composite unique index statements
 	for uniqueName, fieldPaths := range compositeUnique {
@@ -147,25 +158,17 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			fieldPath = fieldPrefix + "." + fieldPath
 		}
 
-		indexInfo := f.IndexInfo()
-		searchInfo := f.SearchInfo()
-
-		if indexInfo != nil {
-			if indexInfo.Unique && indexInfo.UniqueName != "" {
+		for _, indexInfo := range f.Indexes() {
+			if indexInfo.Unique && indexInfo.Name != "" {
 				// Composite unique index - collect field for later
-				compositeUnique[indexInfo.UniqueName] = append(compositeUnique[indexInfo.UniqueName], fieldPath)
+				compositeUnique[indexInfo.Name] = append(compositeUnique[indexInfo.Name], fieldPath)
 			} else if indexInfo.Unique {
 				// Simple unique index on single field
-				// Index name format: __som__<table>_unique_<field>
-				indexName := indexInfo.Name
-				if indexName == "" {
-					indexName = fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				}
+				indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
 				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
 				*statements = append(*statements, stmt)
 			} else {
 				// Regular (non-unique) index
-				// Index name format: __som__<table>_index_<field>
 				indexName := indexInfo.Name
 				if indexName == "" {
 					indexName = fmt.Sprintf(def.IndexPrefix+"%s_index_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
@@ -175,13 +178,14 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			}
 		}
 
+		searchInfo := f.SearchInfo()
 		if searchInfo != nil && searchInfo.ConfigName != "" {
 			// Look up the search config to get analyzer and options
 			searchDef := b.findSearchConfig(searchInfo.ConfigName)
 			if searchDef != nil {
 				// Index name format: __som__<table>_search_<field>
 				indexName := fmt.Sprintf(def.IndexPrefix+"%s_search_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s SEARCH ANALYZER %s",
+				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s FULLTEXT ANALYZER %s",
 					indexName, tableName, fieldPath, searchDef.AnalyzerName)
 				if searchDef.HasBM25 {
 					stmt += fmt.Sprintf(" BM25(%g, %g)", searchDef.BM25K1, searchDef.BM25B)
