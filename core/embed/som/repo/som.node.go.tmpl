@@ -17,6 +17,9 @@ import (
 )
 
 func containsError(err error, msg string) bool {
+	if err == nil {
+		return false
+	}
 	var se connection.ServerError
 	if errors.As(err, &se) {
 		for cur := &se; cur != nil; cur = cur.Cause {
