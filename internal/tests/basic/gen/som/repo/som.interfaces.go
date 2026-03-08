@@ -3,6 +3,7 @@ package repo
 
 import (
 	"context"
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	"sync"
 )
 
@@ -14,6 +15,7 @@ type Client interface {
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
 	AllTypesRepo() AllTypesRepo
+	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
 	Close()
 }

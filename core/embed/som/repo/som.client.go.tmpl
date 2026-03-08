@@ -305,6 +305,14 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	}, nil
 }
 
+func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error) {
+	data, err := c.db.Query(ctx, query, map[string]any(params))
+	if err != nil {
+		return nil, err
+	}
+	return som.NewRawResult(data), nil
+}
+
 func (c *ClientImpl) Close() {
 	_ = c.db.conn.Close(context.Background())
 }
