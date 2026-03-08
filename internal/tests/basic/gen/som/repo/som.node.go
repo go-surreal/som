@@ -4,14 +4,32 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"golang.org/x/sync/singleflight"
 )
+
+func containsError(err error, msg string) bool {
+	if err == nil {
+		return false
+	}
+	var se connection.ServerError
+	if errors.As(err, &se) {
+		for cur := &se; cur != nil; cur = cur.Cause {
+			if strings.Contains(cur.Message, msg) {
+				return true
+			}
+		}
+		return false
+	}
+	return strings.Contains(err.Error(), msg)
+}
 
 // cacheInitGroup deduplicates concurrent cache initialization requests.
 var cacheInitGroup singleflight.Group
@@ -100,8 +118,8 @@ func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) e
 	data := r.info.MarshalOne(node)
 	result, err := r.info.UpdateOne(ctx, r.db, id, data)
 	if err != nil {
-		if strings.Contains(err.Error(), "optimistic_lock_failed") {
-			return som.ErrOptimisticLock
+		if containsError(err, "optimistic_lock_failed") {
+			return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 		}
 		return fmt.Errorf("could not update entity: %w", err)
 	}
@@ -122,8 +140,8 @@ func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, s
 		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL"
 		result, err := r.info.QueryOne(ctx, r.db, query, vars)
 		if err != nil {
-			if lockVersion != nil && strings.Contains(err.Error(), "optimistic_lock_failed") {
-				return som.ErrOptimisticLock
+			if lockVersion != nil && containsError(err, "optimistic_lock_failed") {
+				return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 			}
 			return fmt.Errorf("could not soft delete entity: %w", err)
 		}

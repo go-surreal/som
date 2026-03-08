@@ -141,8 +141,8 @@ github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/surrealdb/surrealdb.go v1.3.0 h1:/ccM9zQnx+SXYjQh1eFxcc0UagDd3VDHNUzmbyU/QEc=
-github.com/surrealdb/surrealdb.go v1.3.0/go.mod h1:ju3vn9OHXde9Ulvc7/fP9I8ylkiapOdBSdrEs2PmTtA=
+github.com/surrealdb/surrealdb.go v1.4.0 h1:c3Tump5z+b1j27M6Puj0By59axd13ME2NFYptHiIdRw=
+github.com/surrealdb/surrealdb.go v1.4.0/go.mod h1:ju3vn9OHXde9Ulvc7/fP9I8ylkiapOdBSdrEs2PmTtA=
 github.com/testcontainers/testcontainers-go v0.40.0 h1:pSdJYLOVgLE8YdUY2FHQ1Fxu+aMnb6JfVz1mxk7OeMU=
 github.com/testcontainers/testcontainers-go v0.40.0/go.mod h1:FSXV5KQtX2HAMlm7U3APNyLkkap35zNLxukw9oBi/MY=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
