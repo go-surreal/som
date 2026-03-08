@@ -92,26 +92,57 @@ type TeamMemberRepo interface {
 
 // teamMemberRepoInfo holds the model-specific conversion functions for TeamMember.
 var teamMemberRepoInfo = RepoInfo[model.TeamMember]{
-	MarshalOne: func(node *model.TeamMember) any {
-		return conv.FromTeamMemberPtr(node)
-	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.TeamMember, error) {
-		var raw []internal.QueryResult[*conv.TeamMember]
-		if err := unmarshal(data, &raw); err != nil {
+	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.TeamMember, error) {
+		raw, err := dbCreateNew[conv.TeamMember](ctx, db, idExpr, data)
+		if err != nil {
 			return nil, err
 		}
-		if len(raw) < 1 {
-			return nil, nil
+		return conv.ToTeamMemberPtr(raw), nil
+	},
+	CreateOne: func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*model.TeamMember, error) {
+		raw, err := dbCreate[conv.TeamMember](ctx, db, id, data)
+		if err != nil {
+			return nil, err
 		}
-		results := make([]*model.TeamMember, len(raw[0].Result))
-		for i, r := range raw[0].Result {
+		return conv.ToTeamMemberPtr(raw), nil
+	},
+	InsertAll: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*model.TeamMember, error) {
+		raw, err := dbInsert[conv.TeamMember](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		results := make([]*model.TeamMember, len(raw))
+		for i, r := range raw {
 			results[i] = conv.ToTeamMemberPtr(r)
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.TeamMember, error) {
-		var raw *conv.TeamMember
-		if err := unmarshal(data, &raw); err != nil {
+	MarshalOne: func(node *model.TeamMember) any {
+		return conv.FromTeamMemberPtr(node)
+	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.TeamMember, error) {
+		raw, err := dbQueryOne[conv.TeamMember](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToTeamMemberPtr(raw), nil
+	},
+	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.TeamMember, error) {
+		raw, err := dbSelect[conv.TeamMember](ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToTeamMemberPtr(raw), nil
+	},
+	UpdateOne: func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*model.TeamMember, error) {
+		raw, err := dbUpdate[conv.TeamMember](ctx, db, id, data)
+		if err != nil {
 			return nil, err
 		}
 		return conv.ToTeamMemberPtr(raw), nil

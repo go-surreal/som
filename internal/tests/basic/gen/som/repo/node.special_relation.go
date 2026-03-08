@@ -109,26 +109,57 @@ type SpecialRelationRepo interface {
 
 // specialRelationRepoInfo holds the model-specific conversion functions for SpecialRelation.
 var specialRelationRepoInfo = RepoInfo[model.SpecialRelation]{
-	MarshalOne: func(node *model.SpecialRelation) any {
-		return conv.FromSpecialRelationPtr(node)
-	},
-	UnmarshalInsert: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialRelation, error) {
-		var raw []internal.QueryResult[*conv.SpecialRelation]
-		if err := unmarshal(data, &raw); err != nil {
+	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.SpecialRelation, error) {
+		raw, err := dbCreateNew[conv.SpecialRelation](ctx, db, idExpr, data)
+		if err != nil {
 			return nil, err
 		}
-		if len(raw) < 1 {
-			return nil, nil
+		return conv.ToSpecialRelationPtr(raw), nil
+	},
+	CreateOne: func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*model.SpecialRelation, error) {
+		raw, err := dbCreate[conv.SpecialRelation](ctx, db, id, data)
+		if err != nil {
+			return nil, err
 		}
-		results := make([]*model.SpecialRelation, len(raw[0].Result))
-		for i, r := range raw[0].Result {
+		return conv.ToSpecialRelationPtr(raw), nil
+	},
+	InsertAll: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*model.SpecialRelation, error) {
+		raw, err := dbInsert[conv.SpecialRelation](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		results := make([]*model.SpecialRelation, len(raw))
+		for i, r := range raw {
 			results[i] = conv.ToSpecialRelationPtr(r)
 		}
 		return results, nil
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialRelation, error) {
-		var raw *conv.SpecialRelation
-		if err := unmarshal(data, &raw); err != nil {
+	MarshalOne: func(node *model.SpecialRelation) any {
+		return conv.FromSpecialRelationPtr(node)
+	},
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.SpecialRelation, error) {
+		raw, err := dbQueryOne[conv.SpecialRelation](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToSpecialRelationPtr(raw), nil
+	},
+	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.SpecialRelation, error) {
+		raw, err := dbSelect[conv.SpecialRelation](ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToSpecialRelationPtr(raw), nil
+	},
+	UpdateOne: func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*model.SpecialRelation, error) {
+		raw, err := dbUpdate[conv.SpecialRelation](ctx, db, id, data)
+		if err != nil {
 			return nil, err
 		}
 		return conv.ToSpecialRelationPtr(raw), nil
@@ -626,11 +657,15 @@ func (r *specialRelation) Restore(ctx context.Context, specialRelation *model.Sp
 	}
 	query := "UPDATE $id SET deleted_at = NONE"
 	vars := map[string]any{"id": r.recordID(string(specialRelation.ID()))}
-	_, err := r.db.Query(ctx, query, vars)
+	result, err := r.info.QueryOne(ctx, r.db, query, vars)
 	if err != nil {
 		return fmt.Errorf("could not restore entity: %w", err)
 	}
-	return r.refresh(ctx, r.recordID(string(specialRelation.ID())), specialRelation)
+	if result == nil {
+		return som.ErrNotFound
+	}
+	*specialRelation = *result
+	return nil
 }
 
 // Refresh refreshes the given model with the remote data.

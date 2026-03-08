@@ -2,7 +2,6 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
 	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
@@ -28,7 +27,7 @@ func (c *Weather) MarshalCBOR() ([]byte, error) {
 }
 
 func (c *Weather) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
+	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
@@ -44,7 +43,7 @@ func (c *Weather) UnmarshalCBOR(data []byte) error {
 			if err != nil {
 				return err
 			}
-			var rawArr []v2.RawMessage
+			var rawArr []cbor.RawMessage
 			if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
 				return err
 			}

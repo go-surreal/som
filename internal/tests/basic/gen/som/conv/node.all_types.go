@@ -2,7 +2,6 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
 	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
@@ -323,7 +322,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 }
 
 func (c *AllTypes) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
+	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
@@ -635,24 +634,34 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		}
 	}
 	if raw, ok := rawMap["field_nested_data_ptr_slice"]; ok {
-		var convSlice []*nestedData
-		cbor.Unmarshal(raw, &convSlice)
+		var rawSlice []cbor.RawMessage
+		cbor.Unmarshal(raw, &rawSlice)
 		{
-			c.FieldNestedDataPtrSlice = make([]*model.NestedData, len(convSlice))
-			for i, v := range convSlice {
-				c.FieldNestedDataPtrSlice[i] = toNestedDataPtr(v)
+			c.FieldNestedDataPtrSlice = make([]*model.NestedData, len(rawSlice))
+			for i, elem := range rawSlice {
+				if cbor.IsNoneOrNull(elem) {
+					continue
+				}
+				var v nestedData
+				cbor.Unmarshal(elem, &v)
+				c.FieldNestedDataPtrSlice[i] = toNestedDataPtr(&v)
 			}
 		}
 	}
 	if raw, ok := rawMap["field_nested_data_ptr_slice_ptr"]; ok {
-		var convSlice []*nestedData
-		cbor.Unmarshal(raw, &convSlice)
-		if convSlice == nil {
+		var rawSlice []cbor.RawMessage
+		cbor.Unmarshal(raw, &rawSlice)
+		if rawSlice == nil {
 			c.FieldNestedDataPtrSlicePtr = nil
 		} else {
-			result := make([]*model.NestedData, len(convSlice))
-			for i, v := range convSlice {
-				result[i] = toNestedDataPtr(v)
+			result := make([]*model.NestedData, len(rawSlice))
+			for i, elem := range rawSlice {
+				if cbor.IsNoneOrNull(elem) {
+					continue
+				}
+				var v nestedData
+				cbor.Unmarshal(elem, &v)
+				result[i] = toNestedDataPtr(&v)
 			}
 			c.FieldNestedDataPtrSlicePtr = &result
 		}
