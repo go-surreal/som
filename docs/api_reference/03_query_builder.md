@@ -150,11 +150,51 @@ Query().WithDeleted()
 
 ### Range
 
-Range query for models with complex IDs (ArrayID or ObjectID):
+Range query for models with string IDs (ULID, UUID, Rand) or complex IDs (ArrayID, ObjectID):
 
 ```go
 Query().Range(from som.RangeFrom, to som.RangeTo)
 ```
+
+Range boundary constructors:
+
+| Constructor | Description |
+|-------------|-------------|
+| `som.From[T](val)` | Inclusive start bound |
+| `som.FromExclusive[T](val)` | Exclusive start bound |
+| `som.FromStart()` | Open-ended start (no lower bound) |
+| `som.To[T](val)` | Exclusive end bound |
+| `som.ToInclusive[T](val)` | Inclusive end bound |
+| `som.ToEnd()` | Open-ended end (no upper bound) |
+
+String ID example:
+
+```go
+results, err := client.UserRepo().Query().Range(
+    som.From(som.ULID("01HY5E8ZQA1BCD2EF3GH4JK5MN")),
+    som.To(som.ULID("01HY5E8ZQA9ZZZ9ZZ9ZZ9ZZ9ZZ")),
+).All(ctx)
+```
+
+Open-ended range:
+
+```go
+results, err := client.UserRepo().Query().Range(
+    som.From(som.ULID("01HY5E8ZQA1BCD2EF3GH4JK5MN")),
+    som.ToEnd(),
+).All(ctx)
+```
+
+Complex ID example:
+
+```go
+results, err := client.WeatherRepo().Query().Range(
+    som.From(model.WeatherKey{City: "London", Date: start}),
+    som.To(model.WeatherKey{City: "London", Date: end}),
+).All(ctx)
+```
+
+Note: `Range()` returns a `BuilderNoLive` — live queries are not supported with range queries.
 
 ## Execution Methods
 

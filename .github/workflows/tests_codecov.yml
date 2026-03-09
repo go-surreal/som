@@ -42,7 +42,7 @@ jobs:
         run: |
           go test \
           -coverprofile=coverage.txt -covermode=atomic \
-          -coverpkg=github.com/go-surreal/som/tests/basic/gen/som/... \
+          -coverpkg=som.test/gen/som/... \
           -v ./...
 
       - name: Upload coverage reports to Codecov

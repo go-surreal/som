@@ -276,7 +276,8 @@ filter.User.Address.City.Equal("Berlin")
 | `Parallel(bool)` | Parallel execution |
 | `TempFiles(bool)` | Disk-based processing for large result sets |
 | `WithDeleted()` | Include soft-deleted records |
-| `Range(from, to)` | Range query for complex IDs |
+| `Between(from, to)` | Range filter with configurable bounds |
+| `Range(from, to)` | Range query for string and complex IDs |
 
 ## Filter Operations
 
@@ -309,6 +310,48 @@ filter.Any(
 )
 ```
 
+### Raw Queries
+
+Execute arbitrary SurrealQL when the query builder doesn't cover your use case:
+
+```go
+result, err := client.Raw(ctx, "SELECT * FROM user WHERE age > $min", som.Params{"min": 18})
+
+var users []map[string]any
+err = result.Scan(&users)
+```
+
+### Transactions
+
+Group multiple operations into an atomic unit with client-side transactions:
+
+```go
+txCtx, cancel := som.TxStart(ctx)
+defer cancel()
+
+err := client.UserRepo().Create(txCtx, user)
+err = client.PostRepo().Create(txCtx, post)
+
+err = som.TxCommit(txCtx) // Atomic commit
+```
+
+### Between Filter
+
+Range filter with configurable bound inclusivity:
+
+```go
+filter.User.Age.Between(18, 65)
+filter.User.Age.Between(18, 65).FromExclusive()
+```
+
+### Version Verification
+
+SOM automatically verifies the SurrealDB server version on connect, ensuring compatibility with the minimum required version.
+
+### Structured Server Errors
+
+SurrealDB v3 structured errors are exposed as `som.ServerError` for detailed programmatic error handling.
+
 ## Current Limitations
 
 ### Unsupported Go Types
@@ -320,4 +363,3 @@ filter.Any(
 ### Other Limitations
 
 - No automatic migrations (schema changes require manual handling)
-- No transaction support across multiple operations
