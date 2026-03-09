@@ -63,17 +63,17 @@ func (UUID) isNodeID() {}
 
 func (Rand) isNodeID() {}
 
-func (ArrayID) isNodeID() {}
-
-func (ObjectID) isNodeID() {}
-
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.
 type ArrayID struct{}
 
+func (ArrayID) isNodeID() {}
+
 // ObjectID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an object.
 type ObjectID struct{}
+
+func (ObjectID) isNodeID() {}
 
 type rangeBound struct {
 	val       any
@@ -322,4 +322,58 @@ type OnBeforeDeleteHook interface {
 // It is not distributed across multiple instances of the application.
 type OnAfterDeleteHook interface {
 	OnAfterDelete(ctx context.Context) error
+}
+
+// Params is a map of named parameters for raw queries.
+type Params map[string]any
+
+// RawResult holds the result of a raw query.
+// For multi-statement queries, only the first statement's result set is used.
+type RawResult struct {
+	data []byte
+}
+
+// NewRawResult creates a new RawResult from raw query response data.
+func NewRawResult(data []byte) *RawResult {
+	return &RawResult{data: data}
+}
+
+// Scan unmarshals the first statement's result set into dest.
+// dest should be a pointer to a slice for multi-row results.
+// For multi-statement queries, only the first statement's results are decoded.
+func (r *RawResult) Scan(dest any) error {
+	if r.data == nil {
+		return nil
+	}
+	var raw []internal.QueryResult[cbor.RawMessage]
+	if err := cbor.Unmarshal(r.data, &raw); err != nil {
+		return fmt.Errorf("could not decode raw query result: %w", err)
+	}
+	if len(raw) < 1 {
+		return nil
+	}
+	// Re-wrap the raw messages into a CBOR array so they can be
+	// unmarshalled into the caller's typed slice without reflection.
+	// This is cheap: Marshal on []RawMessage only prepends an array header.
+	resultBytes, err := cbor.Marshal(raw[0].Result)
+	if err != nil {
+		return fmt.Errorf("could not re-encode result: %w", err)
+	}
+	return cbor.Unmarshal(resultBytes, dest)
+}
+
+// ScanOne unmarshals the first row of the first statement's result set into dest.
+// Returns ErrNotFound if no results.
+func (r *RawResult) ScanOne(dest any) error {
+	if r.data == nil {
+		return ErrNotFound
+	}
+	var raw []internal.QueryResult[cbor.RawMessage]
+	if err := cbor.Unmarshal(r.data, &raw); err != nil {
+		return fmt.Errorf("could not decode raw query result: %w", err)
+	}
+	if len(raw) < 1 || len(raw[0].Result) < 1 {
+		return ErrNotFound
+	}
+	return cbor.Unmarshal(raw[0].Result[0], dest)
 }

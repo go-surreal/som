@@ -117,6 +117,15 @@ func (b *build) buildInterfaceFile() error {
 			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
 		}
 
+		g.Id("Raw").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("query").String(),
+			jen.Id("params").Qual(b.relativePkgPath(), "Params"),
+		).Parens(jen.List(
+			jen.Op("*").Qual(b.relativePkgPath(), "RawResult"),
+			jen.Error(),
+		))
+
 		g.Id("ApplySchema").Call(jen.Id("ctx").Qual("context", "Context")).Error()
 		g.Id("Close").Call()
 	})
