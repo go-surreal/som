@@ -5,12 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
-	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type edgeRelation struct {

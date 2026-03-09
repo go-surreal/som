@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
@@ -12,8 +14,6 @@ import (
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
 	model "som.test/model"
-	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
 	"sync"
 	"sync/atomic"
 )
