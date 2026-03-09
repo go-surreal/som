@@ -37,6 +37,10 @@ var ErrEmptyResponse = errors.New("empty response")
 // ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
+// ErrUnsupportedVersion is returned when the connected SurrealDB instance
+// is running a version older than the minimum required (3.0.2).
+var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
+
 // ServerError is a structured error from SurrealDB v3.
 // Use errors.As to extract structured details from errors returned by SOM:
 //

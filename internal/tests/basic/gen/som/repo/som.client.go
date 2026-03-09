@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 
 	som "github.com/go-surreal/som/tests/basic/gen/som"
 	"github.com/go-surreal/som/tests/basic/gen/som/internal"
@@ -254,10 +256,50 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	return out, nil
 }
 
+var minVersion = [3]int{3, 0, 2}
+
+func checkVersion(ctx context.Context, db *surrealdb.DB) error {
+	ver, err := db.Version(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve SurrealDB version: %w", err)
+	}
+
+	parts := strings.SplitN(ver.Version, ".", 3)
+	if len(parts) != 3 {
+		return fmt.Errorf("%w: %q", som.ErrUnsupportedVersion, ver.Version)
+	}
+
+	var parsed [3]int
+	for i, p := range parts {
+		n, err := strconv.Atoi(p)
+		if err != nil {
+			return fmt.Errorf("%w: %q", som.ErrUnsupportedVersion, ver.Version)
+		}
+		parsed[i] = n
+	}
+
+	if parsed[0] < minVersion[0] ||
+		(parsed[0] == minVersion[0] && parsed[1] < minVersion[1]) ||
+		(parsed[0] == minVersion[0] && parsed[1] == minVersion[1] && parsed[2] < minVersion[2]) {
+		return fmt.Errorf(
+			"%w: got %s, need %d.%d.%d or higher",
+			som.ErrUnsupportedVersion, ver.Version,
+			minVersion[0], minVersion[1], minVersion[2],
+		)
+	}
+
+	return nil
+}
+
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	db, err := surrealdb.FromEndpointURLString(ctx, conf.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SurrealDB: %w", err)
+	}
+
+	if err := checkVersion(ctx, db); err != nil {
+		_ = db.Close(ctx)
+		return nil, err
 	}
 
 	if conf.Username != "" && conf.Password != "" {
