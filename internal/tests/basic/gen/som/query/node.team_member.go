@@ -2,12 +2,12 @@
 package query
 
 import (
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
-	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 // teamMemberModelInfo holds the model-specific unmarshal functions for TeamMember.

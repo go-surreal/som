@@ -4,14 +4,14 @@ package repo
 import (
 	"context"
 	"errors"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
 	query "som.test/gen/som/query"
 	model "som.test/model"
-	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
 	"sync"
 	"sync/atomic"
 )

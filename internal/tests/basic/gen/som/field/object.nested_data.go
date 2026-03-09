@@ -2,8 +2,8 @@
 package field
 
 import (
-	distinct "som.test/gen/som/internal/distinct"
 	uuid "github.com/google/uuid"
+	distinct "som.test/gen/som/internal/distinct"
 	"time"
 )
 

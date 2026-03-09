@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 
 	som "som.test/gen/som"
 	"som.test/gen/som/internal"
@@ -254,10 +256,65 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	return out, nil
 }
 
+var minVersion = [3]int{3, 0, 2}
+
+func parseVersion(raw string) ([3]int, error) {
+	s := strings.TrimPrefix(raw, "v")
+
+	if idx := strings.IndexAny(s, "-+"); idx != -1 {
+		s = s[:idx]
+	}
+
+	parts := strings.SplitN(s, ".", 3)
+	if len(parts) != 3 {
+		return [3]int{}, fmt.Errorf("expected major.minor.patch, got %q", raw)
+	}
+
+	var v [3]int
+	for i, p := range parts {
+		n, err := strconv.Atoi(p)
+		if err != nil {
+			return [3]int{}, fmt.Errorf("non-numeric component in %q", raw)
+		}
+		v[i] = n
+	}
+
+	return v, nil
+}
+
+func checkVersion(ctx context.Context, db *surrealdb.DB) error {
+	ver, err := db.Version(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve SurrealDB version: %w", err)
+	}
+
+	parsed, err := parseVersion(ver.Version)
+	if err != nil {
+		return fmt.Errorf("%w: %s", som.ErrUnsupportedVersion, err)
+	}
+
+	if parsed[0] < minVersion[0] ||
+		(parsed[0] == minVersion[0] && parsed[1] < minVersion[1]) ||
+		(parsed[0] == minVersion[0] && parsed[1] == minVersion[1] && parsed[2] < minVersion[2]) {
+		return fmt.Errorf(
+			"%w: got %s, need %d.%d.%d or higher",
+			som.ErrUnsupportedVersion, ver.Version,
+			minVersion[0], minVersion[1], minVersion[2],
+		)
+	}
+
+	return nil
+}
+
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	db, err := surrealdb.FromEndpointURLString(ctx, conf.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SurrealDB: %w", err)
+	}
+
+	if err := checkVersion(ctx, db); err != nil {
+		_ = db.Close(ctx)
+		return nil, err
 	}
 
 	if conf.Username != "" && conf.Password != "" {

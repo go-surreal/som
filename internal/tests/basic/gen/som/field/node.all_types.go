@@ -2,12 +2,12 @@
 package field
 
 import (
-	som "som.test/gen/som"
-	distinct "som.test/gen/som/internal/distinct"
-	model "som.test/model"
 	uuid1 "github.com/gofrs/uuid"
 	uuid "github.com/google/uuid"
 	"net/url"
+	som "som.test/gen/som"
+	distinct "som.test/gen/som/internal/distinct"
+	model "som.test/model"
 	"time"
 )
 
