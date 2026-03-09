@@ -2,8 +2,8 @@
 package conv
 
 import (
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	model "github.com/go-surreal/som/tests/basic/model"
+	cbor "som.test/gen/som/internal/cbor"
+	model "som.test/model"
 )
 
 type credentials struct {

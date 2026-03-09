@@ -2,7 +2,7 @@
 package field
 
 import (
-	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
+	distinct "som.test/gen/som/internal/distinct"
 	uuid "github.com/google/uuid"
 	"time"
 )

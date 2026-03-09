@@ -11,7 +11,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/docker/docker/api/types/container"
-	"github.com/go-surreal/som/tests/basic/gen/som/repo"
+	"som.test/gen/som/repo"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )

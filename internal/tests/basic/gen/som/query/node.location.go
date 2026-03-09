@@ -2,9 +2,10 @@
 package query
 
 import (
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	model "som.test/model"
 )
 
 // locationModelInfo holds the model-specific unmarshal functions for Location.
@@ -20,12 +21,31 @@ var locationModelInfo = modelInfo[model.Location]{
 	},
 }
 
+var locationRangeFn = rangeFn[model.Location](func(q *lib.Query[model.Location], from som.RangeFrom, to som.RangeTo) string {
+	expr := ":"
+	if !from.IsOpen() {
+		expr += q.AsVar(from.Value().(som.ULID))
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		expr += q.AsVar(to.Value().(som.ULID))
+	}
+	return expr
+})
+
 // NewLocation creates a new query builder for Location models.
 func NewLocation(db Database) Builder[model.Location] {
 	q := lib.NewQuery[model.Location]("location")
 	return Builder[model.Location]{builder[model.Location]{
-		db:    db,
-		info:  locationModelInfo,
-		query: q,
+		db:      db,
+		info:    locationModelInfo,
+		query:   q,
+		rangeFn: locationRangeFn,
 	}}
 }

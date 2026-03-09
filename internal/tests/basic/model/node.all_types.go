@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 	gofrsuuid "github.com/gofrs/uuid"
 	"github.com/google/uuid"
 )
@@ -133,18 +133,18 @@ type AllTypes struct {
 
 	// structs
 
-	FieldCredentials             Credentials
-	FieldNestedDataPtr           *NestedData
-	FieldNestedDataSlice         []NestedData
-	FieldNestedDataPtrSlice      []*NestedData
-	FieldNestedDataPtrSlicePtr   *[]*NestedData
+	FieldCredentials           Credentials
+	FieldNestedDataPtr         *NestedData
+	FieldNestedDataSlice       []NestedData
+	FieldNestedDataPtrSlice    []*NestedData
+	FieldNestedDataPtrSlicePtr *[]*NestedData
 
 	// nodes
 
-	FieldNode       SpecialTypes   // node
-	FieldNodePtr    *SpecialTypes  // node pointer
-	FieldNodeSlice      []SpecialTypes // slice of Nodes
-	FieldNodeSliceSlice [][]SpecialTypes
+	FieldNode            SpecialTypes   // node
+	FieldNodePtr         *SpecialTypes  // node pointer
+	FieldNodeSlice       []SpecialTypes // slice of Nodes
+	FieldNodeSliceSlice  [][]SpecialTypes
 	FieldNodePtrSlice    []*SpecialTypes
 	FieldNodePtrSlicePtr *[]*SpecialTypes
 
@@ -242,8 +242,8 @@ type EdgeRelation struct {
 	som.Edge
 	som.Timestamps
 
-	AllTypes     AllTypes      `som:"in"`
-	SpecialTypes SpecialTypes  `som:"out"`
+	AllTypes     AllTypes     `som:"in"`
+	SpecialTypes SpecialTypes `som:"out"`
 
 	Meta EdgeMeta
 }

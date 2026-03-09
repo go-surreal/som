@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/model"
 )
 
 func TestIndexRebuildCount(t *testing.T) {

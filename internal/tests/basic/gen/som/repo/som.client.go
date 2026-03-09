@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	som "som.test/gen/som"
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )

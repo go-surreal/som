@@ -2,10 +2,11 @@
 package query
 
 import (
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	filter "github.com/go-surreal/som/tests/basic/gen/som/filter"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	filter "som.test/gen/som/filter"
+	lib "som.test/gen/som/internal/lib"
+	model "som.test/model"
 )
 
 // specialTypesModelInfo holds the model-specific unmarshal functions for SpecialTypes.
@@ -21,14 +22,33 @@ var specialTypesModelInfo = modelInfo[model.SpecialTypes]{
 	},
 }
 
+var specialTypesRangeFn = rangeFn[model.SpecialTypes](func(q *lib.Query[model.SpecialTypes], from som.RangeFrom, to som.RangeTo) string {
+	expr := ":"
+	if !from.IsOpen() {
+		expr += q.AsVar(from.Value().(som.UUID))
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		expr += q.AsVar(to.Value().(som.UUID))
+	}
+	return expr
+})
+
 // NewSpecialTypes creates a new query builder for SpecialTypes models.
 func NewSpecialTypes(db Database) Builder[model.SpecialTypes] {
 	q := lib.NewQuery[model.SpecialTypes]("special_types")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialTypes.DeletedAt.Nil(true)
 	return Builder[model.SpecialTypes]{builder[model.SpecialTypes]{
-		db:    db,
-		info:  specialTypesModelInfo,
-		query: q,
+		db:      db,
+		info:    specialTypesModelInfo,
+		query:   q,
+		rangeFn: specialTypesRangeFn,
 	}}
 }

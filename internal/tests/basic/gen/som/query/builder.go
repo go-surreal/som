@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	"github.com/go-surreal/som/tests/basic/gen/som/with"
+	som "som.test/gen/som"
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
+	"som.test/gen/som/internal/lib"
+	"som.test/gen/som/with"
 )
 
 // modelInfo holds type-specific conversion functions.

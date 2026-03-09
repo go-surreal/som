@@ -2,9 +2,9 @@
 package filter
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	lib "som.test/gen/som/internal/lib"
+	model "som.test/model"
 	uuid "github.com/gofrs/uuid"
 	uuid1 "github.com/google/uuid"
 	"net/url"

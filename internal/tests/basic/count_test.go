@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 

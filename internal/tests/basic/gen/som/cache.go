@@ -3,7 +3,7 @@
 package som
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"som.test/gen/som/internal"
 )
 
 // ErrCacheSizeLimitExceeded is returned when eager cache would exceed the max size.

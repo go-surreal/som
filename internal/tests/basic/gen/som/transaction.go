@@ -3,7 +3,7 @@
 package som
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"som.test/gen/som/internal"
 )
 
 // ErrTransactionClosed is returned when attempting to use a transaction that

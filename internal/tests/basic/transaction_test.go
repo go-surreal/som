@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
