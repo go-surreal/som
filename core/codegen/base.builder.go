@@ -1059,14 +1059,20 @@ The model is updated in-place with the fetched relations.
 
 			b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot fetch "+node.NameGo()+" without existing record ID")
 
-			g.Var().Id("fetchFields").Index().String()
-			g.Var().Id("fetchBits").Uint64()
+			g.Var().Id("requestedBits").Uint64()
 			g.For(jen.List(jen.Id("_"), jen.Id("f")).Op(":=").Range().Id("fetch")).Block(
 				jen.If(jen.Id("field").Op(":=").Qual("fmt", "Sprintf").Call(jen.Lit("%v"), jen.Id("f")).Op(";").Id("field").Op("!=").Lit("")).Block(
-					jen.Id("fetchFields").Op("=").Append(jen.Id("fetchFields"), jen.Id("field")),
-					jen.Id("fetchBits").Op("|=").Qual(pkgWith, node.NameGo()+"FetchBit").Call(jen.Id("field")),
+					jen.Id("requestedBits").Op("|=").Qual(pkgWith, node.NameGo()+"FetchBit").Call(jen.Id("field")),
 				),
 			)
+
+			g.Id("alreadyFetched").Op(":=").Id(node.NameGoLower()).Dot("Node").Dot("GetFetched").Call()
+			g.If(jen.Id("requestedBits").Op("&^").Id("alreadyFetched").Op("==").Lit(0)).Block(
+				jen.Return(jen.Nil()),
+			)
+
+			g.Id("allBits").Op(":=").Id("alreadyFetched").Op("|").Id("requestedBits")
+			g.Id("fetchFields").Op(":=").Qual(pkgWith, node.NameGo()+"FetchFields").Call(jen.Id("allBits"))
 
 			g.Id("err").Op(":=").Id("r").Dot("fetch").Call(
 				jen.Id("ctx"),
@@ -1075,7 +1081,7 @@ The model is updated in-place with the fetched relations.
 				jen.Id("fetchFields"),
 			)
 			g.If(jen.Id("err").Op("==").Nil()).Block(
-				jen.Id(node.NameGoLower()).Dot("Node").Dot("SetFetched").Call(jen.Id("fetchBits")),
+				jen.Id(node.NameGoLower()).Dot("Node").Dot("SetFetched").Call(jen.Id("allBits")),
 			)
 			g.Return(jen.Id("err"))
 		})

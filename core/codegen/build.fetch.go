@@ -73,6 +73,17 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 	)
 
 	f.Line()
+	f.Func().Id(node.NameGo() + "FetchFields").Params(jen.Id("bits").Uint64()).Index().String().BlockFunc(func(g *jen.Group) {
+		g.Var().Id("fields").Index().String()
+		for _, nodeField := range fetchableFields {
+			g.If(jen.Id("bits").Op("&").Id(typeName+"Fetched"+nodeField.NameGo()).Op("!=").Lit(0)).Block(
+				jen.Id("fields").Op("=").Append(jen.Id("fields"), jen.Lit(nodeField.NameDatabase())),
+			)
+		}
+		g.Return(jen.Id("fields"))
+	})
+
+	f.Line()
 	f.Func().Id(node.NameGo() + "SetFetched").Params(
 		jen.Id("m").Op("*").Add(b.SourceQual(node.NameGo())),
 		jen.Id("bits").Uint64(),
