@@ -70,6 +70,8 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	if node.HasComplexID() {
 		b.generateRangeFn(f, node, pkgLib, somPkg, modelType, rangeFnVarName)
+	} else if node.HasStringID() {
+		b.generateStringIDRangeFn(f, node, pkgLib, somPkg, modelType, rangeFnVarName)
 	}
 
 	f.Line()
@@ -95,7 +97,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 				jen.Id("info"):  jen.Id(modelInfoVarName),
 			}
 
-			if node.HasComplexID() {
+			if node.HasComplexID() || node.HasStringID() {
 				builderDict[jen.Id("rangeFn")] = jen.Id(rangeFnVarName)
 			}
 
@@ -192,4 +194,44 @@ func (b *queryBuilder) rangeFieldAsVar(node *field.NodeTable, sf parser.ComplexI
 	accessor := jen.Id(keyVar).Dot(sf.Name)
 	wrappedValue := fieldValueFrom(b.input, b.basePkg, sf, accessor)
 	return jen.Id("q").Dot("AsVar").Call(wrappedValue)
+}
+
+func (b *queryBuilder) generateStringIDRangeFn(
+	f *jen.File, node *field.NodeTable,
+	pkgLib, somPkg string, modelType jen.Code, varName string,
+) {
+	idTypeName := string(node.Source.IDType)
+
+	f.Line()
+	f.Var().Id(varName).Op("=").Id("rangeFn").Types(modelType).Call(
+		jen.Func().Params(
+			jen.Id("q").Op("*").Qual(pkgLib, "Query").Types(modelType),
+			jen.Id("from").Qual(somPkg, "RangeFrom"),
+			jen.Id("to").Qual(somPkg, "RangeTo"),
+		).String().BlockFunc(func(g *jen.Group) {
+			g.Id("expr").Op(":=").Lit(":")
+
+			g.If(jen.Op("!").Id("from").Dot("IsOpen").Call()).Block(
+				jen.Id("expr").Op("+=").Id("q").Dot("AsVar").Call(
+					jen.Id("from").Dot("Value").Call().Assert(jen.Qual(somPkg, idTypeName)),
+				),
+			)
+
+			g.If(jen.Op("!").Id("from").Dot("IsOpen").Call().Op("&&").Op("!").Id("from").Dot("IsInclusive").Call()).Block(
+				jen.Id("expr").Op("+=").Lit(">"),
+			)
+			g.Id("expr").Op("+=").Lit("..")
+			g.If(jen.Op("!").Id("to").Dot("IsOpen").Call().Op("&&").Id("to").Dot("IsInclusive").Call()).Block(
+				jen.Id("expr").Op("+=").Lit("="),
+			)
+
+			g.If(jen.Op("!").Id("to").Dot("IsOpen").Call()).Block(
+				jen.Id("expr").Op("+=").Id("q").Dot("AsVar").Call(
+					jen.Id("to").Dot("Value").Call().Assert(jen.Qual(somPkg, idTypeName)),
+				),
+			)
+
+			g.Return(jen.Id("expr"))
+		}),
+	)
 }
