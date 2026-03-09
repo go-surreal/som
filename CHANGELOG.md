@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.18.0] - 2026-03-09
+
+### Added
+- DB version verification when connecting (#474)
+- Where field value between query filter (#472)
+- Range query for string ID nodes (#471)
+- Raw queries (#466)
+- SurrealDB v3 structured server errors (#465)
+- Client-side transactions (#463)
+
+### Changed
+- Remove DB client wrapper & CBOR round-trip (#468)
+- Optimise test package module name (#473)
+- Remove Docker Compose file (#467)
+
+### Fixed
+- SurrealDB v3.0.2 query search same field (#462)
+
 ## [v0.17.0] - 2026-03-01
 
 ### Added
@@ -347,7 +365,8 @@ Initial release.
 - Edge (graph) connection support
 - CLI tool for code generation
 
-[Unreleased]: https://github.com/go-surreal/som/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/go-surreal/som/compare/v0.18.0...HEAD
+[v0.18.0]: https://github.com/go-surreal/som/compare/v0.17.0...v0.18.0
 [v0.17.0]: https://github.com/go-surreal/som/compare/v0.16.0...v0.17.0
 [v0.16.0]: https://github.com/go-surreal/som/compare/v0.15.0...v0.16.0
 [v0.15.0]: https://github.com/go-surreal/som/compare/v0.14.0...v0.15.0
