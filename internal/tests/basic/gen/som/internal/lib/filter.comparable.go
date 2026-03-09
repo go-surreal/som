@@ -50,3 +50,17 @@ func (c *Comparable[M, T, F]) GreaterThanEqual(val T) Filter[M] {
 
 	return c.op(OpGreaterThanEqual, val)
 }
+
+func (c *Comparable[M, T, F]) Between(from, to T) *BetweenFilter[M, T] {
+	var fromVal, toVal any
+
+	if c.conv != nil {
+		fromVal = c.conv(from)
+		toVal = c.conv(to)
+	} else {
+		fromVal = from
+		toVal = to
+	}
+
+	return newBetweenFilter[M, T](c.Key, fromVal, toVal)
+}
