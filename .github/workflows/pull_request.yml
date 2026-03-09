@@ -206,7 +206,7 @@ jobs:
         run: |
           go test \
           -coverprofile=coverage.txt -covermode=atomic \
-          -coverpkg=github.com/go-surreal/som/tests/basic/gen/som/... \
+          -coverpkg=som.test/gen/som/... \
           -trimpath -ldflags="-s -w" -buildvcs=false -short \
           -failfast -count=1 -race -vet=off -v ./...
 
