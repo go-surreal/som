@@ -40,6 +40,10 @@ func (t *Time[M]) AfterOrEqual(val time.Time) Filter[M] {
 	return t.comp.GreaterThanEqual(val)
 }
 
+func (t *Time[M]) Between(from, to time.Time) *BetweenFilter[M, time.Time] {
+	return t.comp.Between(from, to)
+}
+
 func (t *Time[M]) Add(dur time.Duration) *Time[M] {
 	return NewTime[M](t.calc(OpAdd, types.Duration{Duration: dur}))
 }
