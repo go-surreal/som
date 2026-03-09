@@ -36,3 +36,14 @@ func (t *NodeTable) NameDatabase() string {
 func (t *NodeTable) HasComplexID() bool {
 	return t.Source != nil && t.Source.ComplexID != nil
 }
+
+func (t *NodeTable) HasStringID() bool {
+	if t.Source == nil {
+		return false
+	}
+	switch t.Source.IDType {
+	case parser.IDTypeULID, parser.IDTypeUUID, parser.IDTypeRand:
+		return true
+	}
+	return false
+}

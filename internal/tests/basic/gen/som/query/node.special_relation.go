@@ -2,6 +2,7 @@
 package query
 
 import (
+	som "github.com/go-surreal/som/tests/basic/gen/som"
 	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
 	filter "github.com/go-surreal/som/tests/basic/gen/som/filter"
 	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
@@ -21,14 +22,33 @@ var specialRelationModelInfo = modelInfo[model.SpecialRelation]{
 	},
 }
 
+var specialRelationRangeFn = rangeFn[model.SpecialRelation](func(q *lib.Query[model.SpecialRelation], from som.RangeFrom, to som.RangeTo) string {
+	expr := ":"
+	if !from.IsOpen() {
+		expr += q.AsVar(from.Value().(som.Rand))
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		expr += q.AsVar(to.Value().(som.Rand))
+	}
+	return expr
+})
+
 // NewSpecialRelation creates a new query builder for SpecialRelation models.
 func NewSpecialRelation(db Database) Builder[model.SpecialRelation] {
 	q := lib.NewQuery[model.SpecialRelation]("special_relation")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialRelation.DeletedAt.Nil(true)
 	return Builder[model.SpecialRelation]{builder[model.SpecialRelation]{
-		db:    db,
-		info:  specialRelationModelInfo,
-		query: q,
+		db:      db,
+		info:    specialRelationModelInfo,
+		query:   q,
+		rangeFn: specialRelationRangeFn,
 	}}
 }
