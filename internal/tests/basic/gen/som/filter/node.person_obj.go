@@ -2,8 +2,8 @@
 package filter
 
 import (
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	lib "som.test/gen/som/internal/lib"
+	model "som.test/model"
 )
 
 var PersonObj = newPersonObj[model.PersonObj](lib.NewKey[model.PersonObj]())

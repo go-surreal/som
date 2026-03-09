@@ -5,7 +5,7 @@ package lib
 import (
 	"github.com/paulmach/orb"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som/internal/types"
 )
 
 // GeoPointOrb is a filter for orb.Point fields.

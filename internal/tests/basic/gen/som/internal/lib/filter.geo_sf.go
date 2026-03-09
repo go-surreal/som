@@ -5,7 +5,7 @@ package lib
 import (
 	"github.com/peterstace/simplefeatures/geom"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som/internal/types"
 )
 
 // GeoPointSF is a filter for geom.Point fields.

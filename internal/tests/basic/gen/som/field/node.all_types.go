@@ -2,9 +2,9 @@
 package field
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	distinct "som.test/gen/som/internal/distinct"
+	model "som.test/model"
 	uuid1 "github.com/gofrs/uuid"
 	uuid "github.com/google/uuid"
 	"net/url"

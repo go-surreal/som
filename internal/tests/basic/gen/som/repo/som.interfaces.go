@@ -3,7 +3,7 @@ package repo
 
 import (
 	"context"
-	som "github.com/go-surreal/som/tests/basic/gen/som"
+	som "som.test/gen/som"
 	"sync"
 )
 

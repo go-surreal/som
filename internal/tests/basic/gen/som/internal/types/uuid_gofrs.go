@@ -5,7 +5,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	"som.test/gen/som/internal/cbor"
 	"github.com/gofrs/uuid"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
