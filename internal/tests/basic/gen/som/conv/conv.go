@@ -5,7 +5,7 @@ package conv
 import (
 	"net/url"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 )
 
 //

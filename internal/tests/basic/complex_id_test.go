@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/by"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/gen/som/by"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
@@ -20,8 +20,8 @@ func TestComplexIDObjectKey(t *testing.T) {
 
 	key := model.PersonKey{Name: "Alice", Age: 30}
 	person := &model.PersonObj{
-		Node: som.NewNode[model.PersonKey](key),
-		Email:      "alice@example.com",
+		Node:  som.NewNode[model.PersonKey](key),
+		Email: "alice@example.com",
 	}
 
 	// Create
@@ -70,7 +70,7 @@ func TestComplexIDArrayKey(t *testing.T) {
 	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 	key := model.WeatherKey{City: "Berlin", Date: fixedDate}
 	w := &model.Weather{
-		Node:  som.NewNode[model.WeatherKey](key),
+		Node:        som.NewNode[model.WeatherKey](key),
 		Temperature: 22.5,
 	}
 
@@ -182,12 +182,12 @@ func TestComplexIDMultipleRecords(t *testing.T) {
 	key2 := model.PersonKey{Name: "Bob", Age: 25}
 
 	person1 := &model.PersonObj{
-		Node: som.NewNode[model.PersonKey](key1),
-		Email:      "alice@example.com",
+		Node:  som.NewNode[model.PersonKey](key1),
+		Email: "alice@example.com",
 	}
 	person2 := &model.PersonObj{
-		Node: som.NewNode[model.PersonKey](key2),
-		Email:      "bob@example.com",
+		Node:  som.NewNode[model.PersonKey](key2),
+		Email: "bob@example.com",
 	}
 
 	err := client.PersonObjRepo().CreateWithID(ctx, person1)
@@ -222,7 +222,7 @@ func TestComplexIDNodeRef(t *testing.T) {
 	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 	weatherKey := model.WeatherKey{City: "Berlin", Date: fixedDate}
 	weather := &model.Weather{
-		Node:  som.NewNode[model.WeatherKey](weatherKey),
+		Node:        som.NewNode[model.WeatherKey](weatherKey),
 		Temperature: 22.5,
 	}
 	err = client.WeatherRepo().CreateWithID(ctx, weather)
@@ -235,7 +235,7 @@ func TestComplexIDNodeRef(t *testing.T) {
 	}
 	tm := &model.TeamMember{
 		Node: som.NewNode[model.TeamMemberKey](tmKey),
-		Role:       "engineer",
+		Role: "engineer",
 	}
 	err = client.TeamMemberRepo().CreateWithID(ctx, tm)
 	assert.NilError(t, err)
@@ -303,8 +303,8 @@ func TestComplexIDQueryAll(t *testing.T) {
 
 	for i, key := range keys {
 		p := &model.PersonObj{
-			Node: som.NewNode[model.PersonKey](key),
-			Email:      emails[i],
+			Node:  som.NewNode[model.PersonKey](key),
+			Email: emails[i],
 		}
 		err := client.PersonObjRepo().CreateWithID(ctx, p)
 		assert.NilError(t, err)
@@ -334,8 +334,8 @@ func TestComplexIDQueryFilter(t *testing.T) {
 
 	for i, key := range keys {
 		p := &model.PersonObj{
-			Node: som.NewNode[model.PersonKey](key),
-			Email:      emails[i],
+			Node:  som.NewNode[model.PersonKey](key),
+			Email: emails[i],
 		}
 		err := client.PersonObjRepo().CreateWithID(ctx, p)
 		assert.NilError(t, err)
@@ -368,7 +368,7 @@ func TestComplexIDQuerySort(t *testing.T) {
 		fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 		key := model.WeatherKey{City: city, Date: fixedDate}
 		w := &model.Weather{
-			Node:  som.NewNode[model.WeatherKey](key),
+			Node:        som.NewNode[model.WeatherKey](key),
 			Temperature: temps[i],
 		}
 		err := client.WeatherRepo().CreateWithID(ctx, w)
@@ -409,8 +409,8 @@ func TestComplexIDQueryLimitOffset(t *testing.T) {
 
 	for i, key := range keys {
 		p := &model.PersonObj{
-			Node: som.NewNode[model.PersonKey](key),
-			Email:      emails[i],
+			Node:  som.NewNode[model.PersonKey](key),
+			Email: emails[i],
 		}
 		err := client.PersonObjRepo().CreateWithID(ctx, p)
 		assert.NilError(t, err)
@@ -449,7 +449,7 @@ func TestComplexIDQueryFirst(t *testing.T) {
 			temp = 10.0
 		}
 		w := &model.Weather{
-			Node:  som.NewNode[model.WeatherKey](key),
+			Node:        som.NewNode[model.WeatherKey](key),
 			Temperature: temp,
 		}
 		err := client.WeatherRepo().CreateWithID(ctx, w)
@@ -479,8 +479,8 @@ func TestComplexIDFilterByObjectIDField(t *testing.T) {
 
 	for i, key := range keys {
 		p := &model.PersonObj{
-			Node: som.NewNode[model.PersonKey](key),
-			Email:      emails[i],
+			Node:  som.NewNode[model.PersonKey](key),
+			Email: emails[i],
 		}
 		err := client.PersonObjRepo().CreateWithID(ctx, p)
 		assert.NilError(t, err)
@@ -519,7 +519,7 @@ func TestComplexIDFilterByArrayIDField(t *testing.T) {
 	for i, city := range cities {
 		key := model.WeatherKey{City: city, Date: dates[i]}
 		w := &model.Weather{
-			Node:  som.NewNode[model.WeatherKey](key),
+			Node:        som.NewNode[model.WeatherKey](key),
 			Temperature: temps[i],
 		}
 		err := client.WeatherRepo().CreateWithID(ctx, w)
@@ -558,7 +558,7 @@ func TestComplexIDQueryNodeRef(t *testing.T) {
 
 	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 	weather := &model.Weather{
-		Node:  som.NewNode[model.WeatherKey](model.WeatherKey{City: "Berlin", Date: fixedDate}),
+		Node:        som.NewNode[model.WeatherKey](model.WeatherKey{City: "Berlin", Date: fixedDate}),
 		Temperature: 22.5,
 	}
 	err = client.WeatherRepo().CreateWithID(ctx, weather)

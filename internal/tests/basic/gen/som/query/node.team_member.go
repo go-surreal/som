@@ -2,11 +2,11 @@
 package query
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 

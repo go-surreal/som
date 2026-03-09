@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/by"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/gen/som/query"
-	"github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	"som.test/gen/som/by"
+	"som.test/gen/som/filter"
+	"som.test/gen/som/query"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 

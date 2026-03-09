@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	gofrsuuid "github.com/gofrs/uuid"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"

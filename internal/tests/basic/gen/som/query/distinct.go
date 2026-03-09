@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
+	"som.test/gen/som/internal/distinct"
 )
 
 func Distinct[M any, T any](ctx context.Context, b Builder[M], f distinct.Field[M, T]) ([]T, error) {

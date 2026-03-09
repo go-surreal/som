@@ -2,9 +2,9 @@
 package conv
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	cbor "som.test/gen/som/internal/cbor"
+	model "som.test/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 )
 

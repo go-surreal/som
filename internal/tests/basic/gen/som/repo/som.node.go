@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	som "som.test/gen/som"
+	"som.test/gen/som/internal"
 	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"golang.org/x/sync/singleflight"

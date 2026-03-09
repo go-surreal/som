@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
+	"som.test/gen/som/internal/types"
 )
 
 type Field[M any, T any] struct {

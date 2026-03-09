@@ -7,9 +7,9 @@ import (
 
 	"github.com/gofrs/uuid"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
+	"som.test/gen/som/internal/types"
 )
 
 func NewUUIDGofrsField[M any](key string) Field[M, uuid.UUID] {

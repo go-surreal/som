@@ -1,4 +1,4 @@
-module github.com/go-surreal/som/tests/basic
+module som.test
 
 go 1.25.7
 
@@ -7,7 +7,7 @@ replace github.com/go-surreal/som => ../../../
 tool github.com/go-surreal/som
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.14.0
+	github.com/brianvoe/gofakeit/v7 v7.14.1
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -17,7 +17,7 @@ require (
 	github.com/peterstace/simplefeatures v0.58.0
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/twpayne/go-geom v1.6.1
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 	gotest.tools/v3 v3.5.2
 )
 
