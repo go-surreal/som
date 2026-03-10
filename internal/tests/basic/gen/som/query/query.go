@@ -386,9 +386,9 @@ type liveDelete[M any] struct {
 
 func (*liveDelete[M]) delete() {}
 
-type liveKilled[M any] struct {
-	liveResult[M]
-}
+type liveKilled[M any] struct{}
+
+func (*liveKilled[M]) live() {}
 
 func (*liveKilled[M]) killed() {}
 

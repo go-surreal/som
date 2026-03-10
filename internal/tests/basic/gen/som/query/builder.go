@@ -395,6 +395,7 @@ func (b Builder[M]) LiveCount(ctx context.Context) (*LiveCountQuery, error) {
 				count--
 
 			case LiveKilled[*M]:
+				_ = lq.Kill(context.Background())
 				return
 
 			default:
