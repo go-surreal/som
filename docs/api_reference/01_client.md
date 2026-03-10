@@ -41,13 +41,13 @@ type Config struct {
 
 ## Version Verification
 
-When creating a client, SOM automatically verifies that the connected SurrealDB server meets the minimum required version (currently **3.0.2**). If the version check fails, `NewClient` returns a `som.ErrUnsupportedVersion` error:
+When creating a client, SOM automatically verifies that the connected SurrealDB server meets the minimum required version (currently **3.0.3**). If the version check fails, `NewClient` returns a `som.ErrUnsupportedVersion` error:
 
 ```go
 client, err := som.NewClient(ctx, config)
 if err != nil {
     if errors.Is(err, som.ErrUnsupportedVersion) {
-        log.Fatal("SurrealDB server version too old, please upgrade to 3.0.2+")
+        log.Fatal("SurrealDB server version too old, please upgrade to 3.0.3+")
     }
     log.Fatal(err)
 }
