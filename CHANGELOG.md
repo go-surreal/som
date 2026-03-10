@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove Docker Compose file (#467)
 
 ### Fixed
-- SurrealDB v3.0.2 query search same field (#462)
+- SurrealDB v3.0.3 query search same field (#462)
 
 ## [v0.17.0] - 2026-03-01
 
