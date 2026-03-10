@@ -8,10 +8,12 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"sync"
 
 	som "som.test/gen/som"
 	"som.test/gen/som/internal"
 	"som.test/gen/som/internal/cbor"
+	"som.test/gen/som/query"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
@@ -209,7 +211,7 @@ func (c *dbConn) Query(ctx context.Context, statement string, vars map[string]an
 	return cbor.Marshal(result)
 }
 
-func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
+func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any) (*query.LiveHandle, error) {
 	if internal.TxActive(ctx) {
 		return nil, som.ErrLiveNotSupportedInTx
 	}
@@ -235,7 +237,20 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 		return nil, fmt.Errorf("failed to get live notifications: %w", err)
 	}
 
+	var killOnce sync.Once
+	killed := make(chan struct{})
+
+	killFn := func(killCtx context.Context) error {
+		var killErr error
+		killOnce.Do(func() {
+			close(killed)
+			killErr = surrealdb.Kill(killCtx, c.conn, liveID)
+		})
+		return killErr
+	}
+
 	out := make(chan []byte)
+
 	go func() {
 		defer close(out)
 
@@ -246,14 +261,25 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 				continue
 			}
 			select {
-			case <-ctx.Done():
+			case <-killed:
 				return
 			case out <- data:
 			}
 		}
 	}()
 
-	return out, nil
+	go func() {
+		select {
+		case <-ctx.Done():
+			_ = killFn(context.Background())
+		case <-killed:
+		}
+	}()
+
+	return &query.LiveHandle{
+		Events: out,
+		Kill:   killFn,
+	}, nil
 }
 
 var minVersion = [3]int{3, 0, 2}

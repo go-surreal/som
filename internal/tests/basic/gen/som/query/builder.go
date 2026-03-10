@@ -345,68 +345,70 @@ func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[stri
 // Live registers the constructed query as a live query.
 // Whenever something in the database changes that matches the
 // query conditions, the result channel will receive an update.
-// If the context is canceled, the result channel will be closed.
+// The returned LiveQuery can be used to receive events via Events()
+// or to explicitly kill the live query via Kill().
+// If the context is canceled, the live query is automatically killed
+// on the server and the events channel is closed.
 //
 // Note: If you want both the current result set and live updates,
 // it is advised to execute the live query first. This is to ensure
 // data consistency. The other way around, there could be missing
 // updates happening between the initial query and the live query.
-func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
+func (b Builder[M]) Live(ctx context.Context) (*LiveQuery[*M], error) {
 	req := b.query.BuildAsLive()
-	resChan, err := b.db.Live(ctx, req.Statement, req.Variables)
+	handle, err := b.db.Live(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
-	return live(ctx, resChan, b.info), nil
+	return live(handle, b.info), nil
 }
 
 // LiveCount is the live version of Count.
 // Whenever a record is created or deleted that matches the
 // conditions of the query, the count will be updated.
-func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
+// The returned LiveCountQuery can be used to receive count updates
+// via Count() or to explicitly kill the live query via Kill().
+func (b Builder[M]) LiveCount(ctx context.Context) (*LiveCountQuery, error) {
 	count, err := b.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute initial count: %w", err)
 	}
 
-	resChan, err := b.Live(ctx)
+	lq, err := b.Live(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute live query: %w", err)
 	}
 
 	countChan := make(chan int, 1)
+	countChan <- count
 
 	go func() {
 		defer close(countChan)
 
-		for {
-			select {
+		for res := range lq.Events() {
+			switch res.(type) {
 
-			case <-ctx.Done():
+			case LiveCreate[*M]:
+				count++
+
+			case LiveDelete[*M]:
+				count--
+
+			case LiveKilled[*M]:
 				return
 
-			case res, open := <-resChan:
-				if !open {
-					return
-				}
-
-				switch res.(type) {
-
-				case LiveCreate[*M]:
-					count++
-
-				case LiveDelete[*M]:
-					count--
-				}
-
-				countChan <- count
+			default:
+				continue
 			}
+
+			countChan <- count
 		}
 	}()
 
-	countChan <- count
-
-	return countChan, nil
+	return &LiveCountQuery{
+		counts: countChan,
+		kill:   lq.Kill,
+	}, nil
 }
 
 // LiveDiff behaves like Live, but instead of receiving the full result

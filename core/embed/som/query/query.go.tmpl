@@ -12,9 +12,16 @@ import (
 	"{{.GenerateOutPath}}/internal/cbor"
 )
 
+// LiveHandle is the transport-level handle returned by the Database interface.
+// It carries the raw notification channel and a function to kill the live query.
+type LiveHandle struct {
+	Events <-chan []byte
+	Kill   func(ctx context.Context) error
+}
+
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
-	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
+	Live(ctx context.Context, statement string, vars map[string]any) (*LiveHandle, error)
 }
 
 // recordID represents a SurrealDB record ID for query results.
@@ -194,33 +201,61 @@ func unmarshalOne[M, C any](data []byte, convert func(*C) *M) (*M, error) {
 // -- LIVE
 //
 
+// LiveQuery wraps a live query channel and provides a way to explicitly
+// kill the live query on the server.
+type LiveQuery[M any] struct {
+	events <-chan LiveResult[M]
+	kill   func(ctx context.Context) error
+}
+
+// Events returns the channel receiving live query notifications.
+// The channel is closed when the live query is killed or the context is cancelled.
+func (lq *LiveQuery[M]) Events() <-chan LiveResult[M] {
+	return lq.events
+}
+
+// Kill explicitly terminates the live query on the server and closes the events channel.
+func (lq *LiveQuery[M]) Kill(ctx context.Context) error {
+	return lq.kill(ctx)
+}
+
+// LiveCountQuery wraps a live count query and provides a way to explicitly
+// kill the underlying live query on the server.
+type LiveCountQuery struct {
+	counts <-chan int
+	kill   func(ctx context.Context) error
+}
+
+// Count returns the channel receiving updated count values.
+// The channel is closed when the live query is killed or the context is cancelled.
+func (lq *LiveCountQuery) Count() <-chan int {
+	return lq.counts
+}
+
+// Kill explicitly terminates the underlying live query on the server
+// and closes the count channel.
+func (lq *LiveCountQuery) Kill(ctx context.Context) error {
+	return lq.kill(ctx)
+}
+
 func live[M any](
-	ctx context.Context,
-	in <-chan []byte,
+	handle *LiveHandle,
 	info modelInfo[M],
-) <-chan LiveResult[*M] {
+) *LiveQuery[*M] {
 	out := make(chan LiveResult[*M], 1)
 
 	go func() {
 		defer close(out)
 
-		for {
-			select {
-
-			case <-ctx.Done():
-				return
-
-			case data, open := <-in:
-				if !open {
-					return
-				}
-
-				out <- toLiveResult(data, info)
-			}
+		for data := range handle.Events {
+			out <- toLiveResult(data, info)
 		}
 	}()
 
-	return out
+	return &LiveQuery[*M]{
+		events: out,
+		kill:   handle.Kill,
+	}
 }
 
 func toLiveResult[M any](
@@ -285,6 +320,9 @@ func toLiveResult[M any](
 			liveResult: out,
 		}
 
+	case "killed":
+		return &liveKilled[*M]{}
+
 	default:
 		return &liveResult[*M]{
 			err: fmt.Errorf("unknown action type %s", response.Action),
@@ -311,6 +349,10 @@ type LiveDelete[M any] interface {
 	delete()
 }
 
+type LiveKilled[M any] interface {
+	killed()
+}
+
 type liveCreate[M any] struct {
 	liveResult[M]
 }
@@ -328,6 +370,12 @@ type liveDelete[M any] struct {
 }
 
 func (*liveDelete[M]) delete() {}
+
+type liveKilled[M any] struct {
+	liveResult[M]
+}
+
+func (*liveKilled[M]) killed() {}
 
 type liveResult[M any] struct {
 	res M
