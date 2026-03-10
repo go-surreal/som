@@ -11,18 +11,9 @@ import (
 	"som.test/gen/som/internal/cbor"
 )
 
-// LiveHandle is the transport-level handle returned by the Database interface.
-// It carries the raw notification channel, a function to kill the live query,
-// and a done channel that is closed when the live query is killed.
-type LiveHandle struct {
-	Events <-chan []byte
-	Kill   func(ctx context.Context) error
-	Done   <-chan struct{}
-}
-
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
-	Live(ctx context.Context, statement string, vars map[string]any) (*LiveHandle, error)
+	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
 }
 
 // recordID represents a SurrealDB record ID for query results.
@@ -202,48 +193,11 @@ func unmarshalOne[M, C any](data []byte, convert func(*C) *M) (*M, error) {
 // -- LIVE
 //
 
-// LiveQuery wraps a live query channel and provides a way to explicitly
-// kill the live query on the server.
-type LiveQuery[M any] struct {
-	events <-chan LiveResult[M]
-	kill   func(ctx context.Context) error
-	done   <-chan struct{}
-}
-
-// Events returns the channel receiving live query notifications.
-// The channel is closed when the live query is killed or the context is cancelled.
-func (lq *LiveQuery[M]) Events() <-chan LiveResult[M] {
-	return lq.events
-}
-
-// Kill explicitly terminates the live query on the server and closes the events channel.
-func (lq *LiveQuery[M]) Kill(ctx context.Context) error {
-	return lq.kill(ctx)
-}
-
-// LiveCountQuery wraps a live count query and provides a way to explicitly
-// kill the underlying live query on the server.
-type LiveCountQuery struct {
-	counts <-chan int
-	kill   func(ctx context.Context) error
-}
-
-// Count returns the channel receiving updated count values.
-// The channel is closed when the live query is killed or the context is cancelled.
-func (lq *LiveCountQuery) Count() <-chan int {
-	return lq.counts
-}
-
-// Kill explicitly terminates the underlying live query on the server
-// and closes the count channel.
-func (lq *LiveCountQuery) Kill(ctx context.Context) error {
-	return lq.kill(ctx)
-}
-
 func live[M any](
-	handle *LiveHandle,
+	ctx context.Context,
+	in <-chan []byte,
 	info modelInfo[M],
-) *LiveQuery[*M] {
+) <-chan LiveResult[*M] {
 	out := make(chan LiveResult[*M], 1)
 
 	go func() {
@@ -251,14 +205,17 @@ func live[M any](
 
 		for {
 			select {
-			case <-handle.Done:
+
+			case <-ctx.Done():
 				return
-			case data, ok := <-handle.Events:
+
+			case data, ok := <-in:
 				if !ok {
 					return
 				}
+
 				select {
-				case <-handle.Done:
+				case <-ctx.Done():
 					return
 				case out <- toLiveResult(data, info):
 				}
@@ -266,11 +223,7 @@ func live[M any](
 		}
 	}()
 
-	return &LiveQuery[*M]{
-		events: out,
-		kill:   handle.Kill,
-		done:   handle.Done,
-	}
+	return out
 }
 
 func toLiveResult[M any](

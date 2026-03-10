@@ -8,13 +8,11 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	som "som.test/gen/som"
 	"som.test/gen/som/internal"
 	"som.test/gen/som/internal/cbor"
-	"som.test/gen/som/query"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
@@ -212,7 +210,7 @@ func (c *dbConn) Query(ctx context.Context, statement string, vars map[string]an
 	return cbor.Marshal(result)
 }
 
-func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any) (*query.LiveHandle, error) {
+func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
 	if internal.TxActive(ctx) {
 		return nil, som.ErrLiveNotSupportedInTx
 	}
@@ -238,23 +236,6 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 		return nil, fmt.Errorf("failed to get live notifications: %w", err)
 	}
 
-	var killOnce sync.Once
-	killed := make(chan struct{})
-
-	killFn := func(killCtx context.Context) error {
-		var killErr error
-		killOnce.Do(func() {
-			if _, hasDeadline := killCtx.Deadline(); !hasDeadline {
-				var cancel context.CancelFunc
-				killCtx, cancel = context.WithTimeout(killCtx, 5*time.Second)
-				defer cancel()
-			}
-			killErr = killLiveQuery(killCtx, c.conn, liveID)
-			close(killed)
-		})
-		return killErr
-	}
-
 	out := make(chan []byte)
 
 	go func() {
@@ -262,7 +243,7 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 
 		for {
 			select {
-			case <-killed:
+			case <-ctx.Done():
 				return
 			case notif, ok := <-notifications:
 				if !ok {
@@ -274,7 +255,7 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 					continue
 				}
 				select {
-				case <-killed:
+				case <-ctx.Done():
 					return
 				case out <- data:
 				}
@@ -283,20 +264,15 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	}()
 
 	go func() {
-		select {
-		case <-ctx.Done():
-			if err := killFn(context.Background()); err != nil {
-				slog.ErrorContext(ctx, "failed to kill live query on context cancel", "error", err)
-			}
-		case <-killed:
+		<-ctx.Done()
+		killCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := killLiveQuery(killCtx, c.conn, liveID); err != nil {
+			slog.ErrorContext(ctx, "failed to kill live query", "error", err)
 		}
 	}()
 
-	return &query.LiveHandle{
-		Events: out,
-		Kill:   killFn,
-		Done:   killed,
-	}, nil
+	return out, nil
 }
 
 // killLiveQuery sends a kill RPC and closes the notification channel.

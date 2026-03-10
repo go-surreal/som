@@ -67,7 +67,7 @@ func TestLiveQueries(t *testing.T) {
 		FieldMonth:      time.January,
 	}
 
-	lq, err := client.AllTypesRepo().Query().Live(ctx)
+	liveChan, err := client.AllTypesRepo().Query().Live(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,9 +94,9 @@ func TestLiveQueries(t *testing.T) {
 	var more bool
 
 	select {
-	case liveRes, more = <-lq.Events():
+	case liveRes, more = <-liveChan:
 		if !more {
-			t.Fatal("events channel closed unexpectedly")
+			t.Fatal("liveChan closed unexpectedly")
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("timeout waiting for CREATE event")
@@ -117,9 +117,9 @@ func TestLiveQueries(t *testing.T) {
 	// LIVE UPDATE
 
 	select {
-	case liveRes, more = <-lq.Events():
+	case liveRes, more = <-liveChan:
 		if !more {
-			t.Fatal("events channel closed unexpectedly")
+			t.Fatal("liveChan closed unexpectedly")
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("timeout waiting for UPDATE event")
@@ -140,9 +140,9 @@ func TestLiveQueries(t *testing.T) {
 	// LIVE DELETE
 
 	select {
-	case liveRes, more = <-lq.Events():
+	case liveRes, more = <-liveChan:
 		if !more {
-			t.Fatal("events channel closed unexpectedly")
+			t.Fatal("liveChan closed unexpectedly")
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("timeout waiting for DELETE event")
@@ -160,19 +160,19 @@ func TestLiveQueries(t *testing.T) {
 
 	assert.Check(t, is.Equal(newModel.ID(), deleted.ID()))
 
-	// Test the automatic closing of the events channel when the context is canceled:
+	// Test the automatic closing of the live channel when the context is canceled:
 
 	cancel()
 
 	select {
 
-	case _, more := <-lq.Events():
+	case _, more := <-liveChan:
 		if more {
-			t.Fatal("events channel did not close after context was canceled")
+			t.Fatal("liveChan did not close after context was canceled")
 		}
 
 	case <-time.After(1 * time.Second):
-		t.Fatal("timeout waiting for events channel to close after context was canceled")
+		t.Fatal("timeout waiting for live channel to close after context was canceled")
 	}
 }
 
@@ -182,7 +182,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	lq, err := client.AllTypesRepo().Query().
+	liveChan, err := client.AllTypesRepo().Query().
 		Where(
 			filter.AllTypes.FieldHookStatus.In([]string{"[created]some value", "[created]some other value"}),
 		).
@@ -230,15 +230,15 @@ func TestLiveQueriesFilter(t *testing.T) {
 	for _, status := range expected {
 		select {
 
-		case liveRes, more := <-lq.Events():
+		case liveRes, more := <-liveChan:
 			{
 				if !more {
-					t.Fatal("events channel closed unexpectedly")
+					t.Fatal("liveChan closed unexpectedly")
 				}
 
 				liveCreate, ok := liveRes.(query.LiveCreate[*model.AllTypes])
 				if !ok {
-					t.Fatal("events channel did not receive a create event")
+					t.Fatal("liveChan did not receive a create event")
 				}
 
 				created, err := liveCreate.Get()
@@ -264,7 +264,7 @@ func TestLiveQueryCount(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	lcq, err := client.AllTypesRepo().Query().LiveCount(ctx)
+	liveCount, err := client.AllTypesRepo().Query().LiveCount(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +288,7 @@ func TestLiveQueryCount(t *testing.T) {
 	}
 
 	for i := 0; i <= count; i++ {
-		assert.Equal(t, i, <-lcq.Count())
+		assert.Equal(t, i, <-liveCount)
 	}
 
 	for _, delModel := range models {
@@ -298,30 +298,30 @@ func TestLiveQueryCount(t *testing.T) {
 	}
 
 	for i := count; i > 0; i-- {
-		assert.Equal(t, i-1, <-lcq.Count())
+		assert.Equal(t, i-1, <-liveCount)
 	}
 
 	select {
 
-	case <-lcq.Count():
-		t.Fatal("count channel should not receive any more messages")
+	case <-liveCount:
+		t.Fatal("liveCount should not receive any more messages")
 
 	case <-time.After(1 * time.Second):
 	}
 
-	// Test the automatic closing of the count channel when the context is canceled:
+	// Test the automatic closing of the live channel when the context is canceled:
 
 	cancel()
 
 	select {
 
-	case _, more := <-lcq.Count():
+	case _, more := <-liveCount:
 		if more {
-			t.Fatal("count channel did not close after context was canceled")
+			t.Fatal("liveCount did not close after context was canceled")
 		}
 
 	case <-time.After(1 * time.Second):
-		t.Fatal("timeout waiting for count channel to close after context was canceled")
+		t.Fatal("timeout waiting for live channel to close after context was canceled")
 	}
 }
 
@@ -344,7 +344,7 @@ func TestLiveQueryWithFetch(t *testing.T) {
 	}
 
 	// Start live query with Fetch
-	lq, err := client.AllTypesRepo().Query().
+	liveChan, err := client.AllTypesRepo().Query().
 		Fetch(with.AllTypes.FieldNode()).
 		Live(ctx)
 	if err != nil {
@@ -366,9 +366,9 @@ func TestLiveQueryWithFetch(t *testing.T) {
 
 	// Receive the live create event
 	select {
-	case liveRes, more := <-lq.Events():
+	case liveRes, more := <-liveChan:
 		if !more {
-			t.Fatal("events channel closed unexpectedly")
+			t.Fatal("liveChan closed unexpectedly")
 		}
 
 		liveCreate, ok := liveRes.(query.LiveCreate[*model.AllTypes])
