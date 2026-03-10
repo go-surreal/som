@@ -401,7 +401,11 @@ func (b Builder[M]) LiveCount(ctx context.Context) (*LiveCountQuery, error) {
 				continue
 			}
 
-			countChan <- count
+			select {
+			case <-lq.done:
+				return
+			case countChan <- count:
+			}
 		}
 	}()
 

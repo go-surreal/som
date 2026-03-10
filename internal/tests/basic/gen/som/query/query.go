@@ -12,10 +12,12 @@ import (
 )
 
 // LiveHandle is the transport-level handle returned by the Database interface.
-// It carries the raw notification channel and a function to kill the live query.
+// It carries the raw notification channel, a function to kill the live query,
+// and a done channel that is closed when the live query is killed.
 type LiveHandle struct {
 	Events <-chan []byte
 	Kill   func(ctx context.Context) error
+	Done   <-chan struct{}
 }
 
 type Database interface {
@@ -205,6 +207,7 @@ func unmarshalOne[M, C any](data []byte, convert func(*C) *M) (*M, error) {
 type LiveQuery[M any] struct {
 	events <-chan LiveResult[M]
 	kill   func(ctx context.Context) error
+	done   <-chan struct{}
 }
 
 // Events returns the channel receiving live query notifications.
@@ -246,14 +249,27 @@ func live[M any](
 	go func() {
 		defer close(out)
 
-		for data := range handle.Events {
-			out <- toLiveResult(data, info)
+		for {
+			select {
+			case <-handle.Done:
+				return
+			case data, ok := <-handle.Events:
+				if !ok {
+					return
+				}
+				select {
+				case <-handle.Done:
+					return
+				case out <- toLiveResult(data, info):
+				}
+			}
 		}
 	}()
 
 	return &LiveQuery[*M]{
 		events: out,
 		kill:   handle.Kill,
+		done:   handle.Done,
 	}
 }
 
