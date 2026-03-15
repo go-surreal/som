@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"time"
 
 	som "som.test/gen/som"
 	"som.test/gen/som/internal"
@@ -236,24 +237,56 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	}
 
 	out := make(chan []byte)
+
 	go func() {
 		defer close(out)
 
-		for notif := range notifications {
-			data, err := cbor.Marshal(notif)
-			if err != nil {
-				slog.ErrorContext(ctx, "failed to marshal live notification", "error", err)
-				continue
-			}
+		for {
 			select {
 			case <-ctx.Done():
 				return
-			case out <- data:
+			case notif, ok := <-notifications:
+				if !ok {
+					return
+				}
+				data, err := cbor.Marshal(notif)
+				if err != nil {
+					slog.ErrorContext(ctx, "failed to marshal live notification", "error", err)
+					continue
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case out <- data:
+				}
 			}
 		}
 	}()
 
+	go func() {
+		<-ctx.Done()
+		killCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := killLiveQuery(killCtx, c.conn, liveID); err != nil {
+			slog.ErrorContext(ctx, "failed to kill live query", "error", err)
+		}
+	}()
+
 	return out, nil
+}
+
+// killLiveQuery sends a kill RPC to the server. On success, the SDK
+// internally closes the notification channel. It recovers from panics
+// caused by the SDK when the connection is already closed, falling back
+// to closing the notification channel directly.
+func killLiveQuery(ctx context.Context, conn *surrealdb.DB, liveID string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			_ = conn.CloseLiveNotifications(liveID)
+			err = fmt.Errorf("live query kill recovered from panic: %v", r)
+		}
+	}()
+	return surrealdb.Kill(ctx, conn, liveID)
 }
 
 var minVersion = [3]int{3, 0, 2}
