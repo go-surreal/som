@@ -1,0 +1,134 @@
+//go:build embed
+
+package repo
+
+import (
+	"sync"
+)
+
+// liveRegistry deduplicates active live queries so that identical
+// queries (same statement + variables) are only registered once
+// with the database. Multiple subscribers share the same underlying
+// live query and each receive a copy of every notification.
+type liveRegistry struct {
+	mu      sync.Mutex
+	entries map[string]*liveEntry
+}
+
+type liveEntry struct {
+	mu          sync.Mutex
+	ready       chan struct{}
+	err         error
+	liveID      string
+	subscribers map[*liveSub]struct{}
+}
+
+type liveSub struct {
+	ch  chan []byte
+	ctx interface{ Done() <-chan struct{} } // context.Context without importing context
+}
+
+func newLiveRegistry() *liveRegistry {
+	return &liveRegistry{
+		entries: make(map[string]*liveEntry),
+	}
+}
+
+// getOrCreate returns an existing entry for the key or creates a new one.
+// The boolean indicates whether a new entry was created (true = caller
+// must initialise it by registering the live query with the database).
+func (r *liveRegistry) getOrCreate(key string) (*liveEntry, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if e, ok := r.entries[key]; ok {
+		return e, false
+	}
+
+	e := &liveEntry{
+		ready:       make(chan struct{}),
+		subscribers: make(map[*liveSub]struct{}),
+	}
+	r.entries[key] = e
+
+	return e, true
+}
+
+// addSubscriber adds a new subscriber to the entry and returns it.
+func (e *liveEntry) addSubscriber(ctx interface{ Done() <-chan struct{} }) *liveSub {
+	s := &liveSub{
+		ch:  make(chan []byte, 1),
+		ctx: ctx,
+	}
+
+	e.mu.Lock()
+	e.subscribers[s] = struct{}{}
+	e.mu.Unlock()
+
+	return s
+}
+
+// removeSubscriber removes a subscriber from the entry and closes its
+// channel. It returns true if the entry has no remaining subscribers,
+// meaning the caller should kill the underlying live query.
+func (r *liveRegistry) removeSubscriber(key string, e *liveEntry, s *liveSub) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if _, ok := e.subscribers[s]; !ok {
+		return false
+	}
+
+	delete(e.subscribers, s)
+	close(s.ch)
+
+	if len(e.subscribers) == 0 {
+		delete(r.entries, key)
+		return true
+	}
+
+	return false
+}
+
+// fanOut sends a copy of data to every active subscriber.
+// Slow subscribers whose buffer is full are skipped to prevent
+// one slow consumer from blocking all others.
+func (e *liveEntry) fanOut(data []byte) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	for s := range e.subscribers {
+		select {
+		case <-s.ctx.Done():
+		case s.ch <- data:
+		default:
+		}
+	}
+}
+
+// closeAll closes all subscriber channels and clears the entry.
+// Used when the underlying notification channel is closed externally.
+func (r *liveRegistry) closeAll(key string, e *liveEntry) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	for s := range e.subscribers {
+		close(s.ch)
+		delete(e.subscribers, s)
+	}
+
+	delete(r.entries, key)
+}
+
+// remove deletes the entry from the registry without touching subscribers.
+func (r *liveRegistry) remove(key string) {
+	r.mu.Lock()
+	delete(r.entries, key)
+	r.mu.Unlock()
+}
