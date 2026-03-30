@@ -165,6 +165,10 @@ func (n Not[M]) build(ctx *context, t M) string {
 		return ""
 	}
 
+	if !strings.HasPrefix(inner, "(") {
+		return "!(" + inner + ")"
+	}
+
 	return "!" + inner
 }
 

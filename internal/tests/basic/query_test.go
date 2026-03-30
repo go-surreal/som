@@ -52,6 +52,52 @@ func TestQuery(t *testing.T) {
 	)
 }
 
+func TestQueryNot(t *testing.T) {
+	client := &repo.ClientImpl{}
+
+	query := client.AllTypesRepo().Query().
+		Where(
+			filter.Not[model.AllTypes](
+				filter.AllTypes.FieldString.Equal("hello"),
+			),
+		)
+
+	assert.Equal(t,
+		"SELECT * FROM all_types WHERE (!(field_string = $A))",
+		query.Describe(),
+	)
+
+	query = client.AllTypesRepo().Query().
+		Where(
+			filter.Not[model.AllTypes](
+				filter.All[model.AllTypes](
+					filter.AllTypes.FieldInt.GreaterThan(10),
+					filter.AllTypes.FieldString.Equal("hello"),
+				),
+			),
+		)
+
+	assert.Equal(t,
+		"SELECT * FROM all_types WHERE (!(field_int > $A AND field_string = $B))",
+		query.Describe(),
+	)
+
+	query = client.AllTypesRepo().Query().
+		Where(
+			filter.Not[model.AllTypes](
+				filter.Any[model.AllTypes](
+					filter.AllTypes.FieldInt.Equal(1),
+					filter.AllTypes.FieldInt.Equal(2),
+				),
+			),
+		)
+
+	assert.Equal(t,
+		"SELECT * FROM all_types WHERE (!(field_int = $A OR field_int = $B))",
+		query.Describe(),
+	)
+}
+
 func TestQueryLimitOffset(t *testing.T) {
 	ctx := context.Background()
 
