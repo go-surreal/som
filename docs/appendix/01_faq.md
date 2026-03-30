@@ -18,7 +18,7 @@ Go 1.25 or later is required due to heavy use of generics and iterators.
 
 ### What SurrealDB version is supported?
 
-SOM is tested against SurrealDB [3.0.3](https://surrealdb.com/releases#v3-0-3). Compatibility with older versions is not guaranteed.
+SOM is tested against SurrealDB [3.0.5](https://surrealdb.com/releases#v3-0-5). Compatibility with older versions is not guaranteed.
 
 ## Technical
 

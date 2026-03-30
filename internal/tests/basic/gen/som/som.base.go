@@ -38,7 +38,7 @@ var ErrEmptyResponse = errors.New("empty response")
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
 // ErrUnsupportedVersion is returned when the connected SurrealDB instance
-// is running a version older than the minimum required (3.0.3), or when
+// is running a version older than the minimum required (3.0.5), or when
 // the version string returned by the server cannot be parsed.
 var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
 
