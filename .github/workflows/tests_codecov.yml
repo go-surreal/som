@@ -13,23 +13,23 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Mise
-        uses: jdx/mise-action@v3
+        uses: jdx/mise-action@v4
         with:
           working_directory: internal/tests/basic
           install: true
           cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/go/pkg/mod
           key: go-modules-tests-v1
 
       - name: Cache Go Build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/go-build
           key: go-build-tests-v1
@@ -46,7 +46,7 @@ jobs:
           -v ./...
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./internal/tests/basic/coverage.txt
