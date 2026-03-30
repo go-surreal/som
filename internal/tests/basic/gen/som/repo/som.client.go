@@ -268,12 +268,15 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	go func() {
 		select {
 		case <-ctx.Done():
+		case <-done:
+		}
+
+		if ctx.Err() != nil {
 			killCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			if err := killLiveQuery(killCtx, c.conn, liveID); err != nil {
 				slog.ErrorContext(ctx, "failed to kill live query", "error", err)
 			}
-		case <-done:
 		}
 	}()
 
