@@ -209,12 +209,16 @@ func live[M any](
 			case <-ctx.Done():
 				return
 
-			case data, open := <-in:
-				if !open {
+			case data, ok := <-in:
+				if !ok {
 					return
 				}
 
-				out <- toLiveResult(data, info)
+				select {
+				case <-ctx.Done():
+					return
+				case out <- toLiveResult(data, info):
+				}
 			}
 		}
 	}()
@@ -284,6 +288,9 @@ func toLiveResult[M any](
 			liveResult: out,
 		}
 
+	case "killed":
+		return &liveKilled[*M]{}
+
 	default:
 		return &liveResult[*M]{
 			err: fmt.Errorf("unknown action type %s", response.Action),
@@ -310,6 +317,10 @@ type LiveDelete[M any] interface {
 	delete()
 }
 
+type LiveKilled[M any] interface {
+	killed()
+}
+
 type liveCreate[M any] struct {
 	liveResult[M]
 }
@@ -327,6 +338,12 @@ type liveDelete[M any] struct {
 }
 
 func (*liveDelete[M]) delete() {}
+
+type liveKilled[M any] struct{}
+
+func (*liveKilled[M]) live() {}
+
+func (*liveKilled[M]) killed() {}
 
 type liveResult[M any] struct {
 	res M

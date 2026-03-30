@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"som.test/gen/som/query"
 	"som.test/gen/som/filter"
+	"som.test/gen/som/query"
 	"som.test/gen/som/with"
 	"som.test/model"
 	"gotest.tools/v3/assert"
@@ -322,6 +322,45 @@ func TestLiveQueryCount(t *testing.T) {
 
 	case <-time.After(1 * time.Second):
 		t.Fatal("timeout waiting for live channel to close after context was canceled")
+	}
+}
+
+func TestLiveQueryKilled(t *testing.T) {
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	liveChan, err := client.AllTypesRepo().Query().Live(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Remove the table to trigger a server-side kill of the live query.
+	_, err = client.Raw(ctx, "REMOVE TABLE all_types", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+
+	case res, more := <-liveChan:
+		if !more {
+			// Channel closed without a killed event is also acceptable,
+			// since the server may close the connection instead.
+			return
+		}
+
+		_, ok := res.(query.LiveKilled[*model.AllTypes])
+		if !ok {
+			t.Fatalf("expected LiveKilled event, got %T", res)
+		}
+
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for killed event after REMOVE TABLE")
 	}
 }
 

@@ -346,7 +346,8 @@ func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[stri
 // Live registers the constructed query as a live query.
 // Whenever something in the database changes that matches the
 // query conditions, the result channel will receive an update.
-// If the context is canceled, the result channel will be closed.
+// If the context is canceled, a best-effort attempt is made to kill
+// the live query on the server and the result channel will be closed.
 //
 // Note: If you want both the current result set and live updates,
 // it is advised to execute the live query first. This is to ensure
@@ -376,6 +377,7 @@ func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
 	}
 
 	countChan := make(chan int, 1)
+	countChan <- count
 
 	go func() {
 		defer close(countChan)
@@ -386,8 +388,8 @@ func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
 			case <-ctx.Done():
 				return
 
-			case res, open := <-resChan:
-				if !open {
+			case res, ok := <-resChan:
+				if !ok {
 					return
 				}
 
@@ -398,14 +400,22 @@ func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
 
 				case LiveDelete[*M]:
 					count--
+
+				case LiveKilled[*M]:
+					return
+
+				default:
+					continue
 				}
 
-				countChan <- count
+				select {
+				case <-ctx.Done():
+					return
+				case countChan <- count:
+				}
 			}
 		}
 	}()
-
-	countChan <- count
 
 	return countChan, nil
 }
