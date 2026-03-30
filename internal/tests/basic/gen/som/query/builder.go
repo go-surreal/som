@@ -345,8 +345,8 @@ func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[stri
 // Live registers the constructed query as a live query.
 // Whenever something in the database changes that matches the
 // query conditions, the result channel will receive an update.
-// If the context is canceled, the live query is automatically killed
-// on the server and the result channel will be closed.
+// If the context is canceled, a best-effort attempt is made to kill
+// the live query on the server and the result channel will be closed.
 //
 // Note: If you want both the current result set and live updates,
 // it is advised to execute the live query first. This is to ensure

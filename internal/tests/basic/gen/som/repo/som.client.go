@@ -290,8 +290,8 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 func killLiveQuery(ctx context.Context, conn *surrealdb.DB, liveID string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
+			// Expected when the connection is already closed during shutdown.
 			_ = conn.CloseLiveNotifications(liveID)
-			err = fmt.Errorf("live query kill recovered from panic: %v", r)
 		}
 	}()
 	return surrealdb.Kill(ctx, conn, liveID)
