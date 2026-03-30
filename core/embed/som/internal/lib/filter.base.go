@@ -154,6 +154,24 @@ func (a All[M]) build(ctx *context, t M) string {
 	return "(" + strings.Join(parts, " "+string(OpAnd)+" ") + ")"
 }
 
+type Not[M any] struct {
+	Filter Filter[M]
+}
+
+//nolint:unused
+func (n Not[M]) build(ctx *context, t M) string {
+	inner := n.Filter.build(ctx, t)
+	if inner == "" {
+		return ""
+	}
+
+	if !strings.HasPrefix(inner, "(") {
+		return "!(" + inner + ")"
+	}
+
+	return "!" + inner
+}
+
 type Any[M any] []Filter[M]
 
 //nolint:unused
