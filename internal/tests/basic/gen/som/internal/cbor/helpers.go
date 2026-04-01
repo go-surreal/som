@@ -4,6 +4,7 @@ package cbor
 import (
 	"bytes"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/surrealdb/surrealdb.go/pkg/models"
@@ -93,6 +94,30 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 		return nil, err
 	}
 	return &d, nil
+}
+
+// URL marshaling helpers
+func UnmarshalURL(data []byte) (url.URL, error) {
+	var s string
+	if err := Unmarshal(data, &s); err != nil {
+		return url.URL{}, err
+	}
+	parsed, err := url.Parse(s)
+	if err != nil {
+		return url.URL{}, err
+	}
+	return *parsed, nil
+}
+
+func UnmarshalURLPtr(data []byte) (*url.URL, error) {
+	if IsNoneOrNull(data) {
+		return nil, nil
+	}
+	u, err := UnmarshalURL(data)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
 }
 
 // none is the canonical CBOR Tag 6 + null (0xc6 0xf6) encoding.

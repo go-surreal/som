@@ -48,6 +48,12 @@ type CodeGen struct {
 
 	cborMarshal   CodeGenFunc
 	cborUnmarshal CodeGenFunc
+
+	// selectDecode generates a custom decode function for SelectField.
+	// When set, the generated select method provides a decodeFn that
+	// handles types requiring conversion (e.g. time.Time, url.URL).
+	// The function should return jen.Code for a func([]byte) ([]T, error).
+	selectDecode CodeGenFunc
 }
 
 func (g *CodeGen) FilterDefine(ctx Context) jen.Code {
@@ -104,4 +110,41 @@ func (g *CodeGen) CBORMarshal(ctx Context) jen.Code {
 
 func (g *CodeGen) CBORUnmarshal(ctx Context) jen.Code {
 	return g.cborUnmarshal.Exec(ctx)
+}
+
+func (g *CodeGen) SelectDecode(ctx Context) jen.Code {
+	return g.selectDecode.Exec(ctx)
+}
+
+// selectDecodeWithHelper generates a decodeFn that unmarshals SELECT VALUE results
+// as cbor.RawMessage and converts each element using the given cbor helper function.
+// The helper must have signature: func([]byte) (T, error).
+func selectDecodeWithHelper(ctx Context, goType jen.Code, cborPkg, helperName string) jen.Code {
+	return jen.Func().Params(
+		jen.Id("data").Index().Byte(),
+	).Params(
+		jen.Index().Add(goType), jen.Error(),
+	).BlockFunc(func(g *jen.Group) {
+		g.Var().Id("rawResult").Index().Qual(ctx.pkgInternal(), "QueryResult").Types(
+			jen.Qual(cborPkg, "RawMessage"),
+		)
+		g.If(
+			jen.Id("err").Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawResult")),
+			jen.Id("err").Op("!=").Nil(),
+		).Block(jen.Return(jen.Nil(), jen.Id("err")))
+
+		g.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
+			jen.Return(jen.Nil(), jen.Nil()),
+		)
+
+		g.Id("out").Op(":=").Make(jen.Index().Add(goType), jen.Lit(0), jen.Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")))
+		g.For(jen.Id("_").Op(",").Id("raw").Op(":=").Range().Id("rawResult").Index(jen.Lit(0)).Dot("Result")).BlockFunc(func(inner *jen.Group) {
+			inner.List(jen.Id("v"), jen.Id("err")).Op(":=").Qual(cborPkg, helperName).Call(jen.Id("raw"))
+			inner.If(jen.Id("err").Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Id("err")),
+			)
+			inner.Id("out").Op("=").Append(jen.Id("out"), jen.Id("v"))
+		})
+		g.Return(jen.Id("out"), jen.Nil())
+	})
 }

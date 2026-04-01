@@ -162,9 +162,35 @@ func (b *queryBuilder) generateSelectFieldMethod(
 	f *jen.File, fld field.Field,
 	pkgLib string, modelType jen.Code, selectTypeName string,
 ) {
+	ctx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
+	}
+
 	fieldGoType := fld.TypeGo()
 	fieldDBName := fld.NameDatabase()
 	fieldGoName := fld.NameGo()
+
+	selectDecodeCode := fld.CodeGen().SelectDecode(ctx)
+
+	dict := jen.Dict{
+		jen.Id("db"): jen.Id("s").Dot("db"),
+		jen.Id("buildFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
+			jen.Return(jen.Id("q").Dot("BuildAsSelectValue").Call(jen.Lit(fieldDBName))),
+		),
+		jen.Id("distFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
+			jen.Return(jen.Id("q").Dot("BuildAsSelectDistinct").Call(jen.Lit(fieldDBName))),
+		),
+		jen.Id("firstFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").BlockFunc(func(g *jen.Group) {
+			g.Id("fq").Op(":=").Id("q")
+			g.Id("fq").Dot("Limit").Op("=").Lit(1)
+			g.Return(jen.Id("fq").Dot("BuildAsSelectValue").Call(jen.Lit(fieldDBName)))
+		}),
+	}
+
+	if selectDecodeCode != nil {
+		dict[jen.Id("decodeFn")] = selectDecodeCode
+	}
 
 	f.Line()
 	f.Commentf("%s returns a SelectField for the %s field.", fieldGoName, fieldDBName)
@@ -175,20 +201,7 @@ func (b *queryBuilder) generateSelectFieldMethod(
 		Id("SelectField").Types(fieldGoType).
 		Block(
 			jen.Id("q").Op(":=").Id("s").Dot("query"),
-			jen.Return(jen.Id("SelectField").Types(fieldGoType).Values(jen.Dict{
-				jen.Id("db"): jen.Id("s").Dot("db"),
-				jen.Id("buildFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
-					jen.Return(jen.Id("q").Dot("BuildAsSelectValue").Call(jen.Lit(fieldDBName))),
-				),
-				jen.Id("distFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
-					jen.Return(jen.Id("q").Dot("BuildAsSelectDistinct").Call(jen.Lit(fieldDBName))),
-				),
-				jen.Id("firstFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").BlockFunc(func(g *jen.Group) {
-					g.Id("fq").Op(":=").Id("q")
-					g.Id("fq").Dot("Limit").Op("=").Lit(1)
-					g.Return(jen.Id("fq").Dot("BuildAsSelectValue").Call(jen.Lit(fieldDBName)))
-				}),
-			})),
+			jen.Return(jen.Id("SelectField").Types(fieldGoType).Values(dict)),
 		)
 }
 

@@ -195,19 +195,19 @@ func main() {
 
 ### Known limitations
 
-### Select() not available on SearchBuilder
+#### Select() not available on SearchBuilder
 
 `Select()` for retrieving individual field values is not available on search queries.
 This is because `SELECT VALUE` queries cannot include the search score projections 
 required by score-based sorting. Use `All()`, `First()`, or `AllMatches()` instead.
 
-### Select() does not support the ID field
+#### Select() does not support the ID field
 
 The `Select()` builder does not generate a method for the `id` field because SurrealDB 
 returns record IDs in a special format that requires dedicated decoding. 
 Use `AllIDs()` or `FirstID()` for ID selection instead.
 
-### Unsupported native go types
+#### Unsupported native go types
 
 Currently, the native go types `uint`, `uint64` and `uintptr` are not supported.
 Reason for this is that working with very big integers is not yet fully working with the 

@@ -7,6 +7,8 @@ import (
 	gogeom "github.com/twpayne/go-geom"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
+	internal "som.test/gen/som/internal"
+	cbor "som.test/gen/som/internal/cbor"
 	lib "som.test/gen/som/internal/lib"
 	model "som.test/model"
 	"time"
@@ -57,6 +59,24 @@ func (s locationSelect) CreatedAt() SelectField[time.Time] {
 			return q.BuildAsSelectValue("created_at")
 		},
 		db: s.db,
+		decodeFn: func(data []byte) ([]time.Time, error) {
+			var rawResult []internal.QueryResult[cbor.RawMessage]
+			if err := cbor.Unmarshal(data, &rawResult); err != nil {
+				return nil, err
+			}
+			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+				return nil, nil
+			}
+			out := make([]time.Time, 0, len(rawResult[0].Result))
+			for _, raw := range rawResult[0].Result {
+				v, err := cbor.UnmarshalDateTime(raw)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, v)
+			}
+			return out, nil
+		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("created_at")
 		},
@@ -76,6 +96,24 @@ func (s locationSelect) UpdatedAt() SelectField[time.Time] {
 			return q.BuildAsSelectValue("updated_at")
 		},
 		db: s.db,
+		decodeFn: func(data []byte) ([]time.Time, error) {
+			var rawResult []internal.QueryResult[cbor.RawMessage]
+			if err := cbor.Unmarshal(data, &rawResult); err != nil {
+				return nil, err
+			}
+			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+				return nil, nil
+			}
+			out := make([]time.Time, 0, len(rawResult[0].Result))
+			for _, raw := range rawResult[0].Result {
+				v, err := cbor.UnmarshalDateTime(raw)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, v)
+			}
+			return out, nil
+		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("updated_at")
 		},

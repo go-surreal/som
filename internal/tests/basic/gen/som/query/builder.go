@@ -150,7 +150,17 @@ func (b builder[M, S]) TempFiles(tempFiles bool) BuilderNoLive[M, S] {
 
 // Select returns a model-specific select builder that allows
 // selecting individual field values from the query results.
-func (b builder[M, S]) Select() S {
+// Not available on SearchBuilder because SELECT VALUE queries
+// cannot include search score projections.
+func (b Builder[M, S]) Select() S {
+	return b.selectFn(b.db, b.query)
+}
+
+// Select returns a model-specific select builder that allows
+// selecting individual field values from the query results.
+// Not available on SearchBuilder because SELECT VALUE queries
+// cannot include search score projections.
+func (b BuilderNoLive[M, S]) Select() S {
 	return b.selectFn(b.db, b.query)
 }
 
@@ -681,10 +691,19 @@ func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, conve
 // SelectField represents a selected field from a query, providing
 // terminal methods to execute the query and retrieve typed results.
 type SelectField[T any] struct {
-	db      Database
-	buildFn func() *lib.Result
-	distFn  func() *lib.Result
-	firstFn func() *lib.Result
+	db       Database
+	buildFn  func() *lib.Result
+	distFn   func() *lib.Result
+	firstFn  func() *lib.Result
+	decodeFn func([]byte) ([]T, error)
+}
+
+func (sf SelectField[T]) decode(data []byte) ([]T, error) {
+	if sf.decodeFn != nil {
+		return sf.decodeFn(data)
+	}
+
+	return unmarshalSelectValue[T](data)
 }
 
 // All executes the query and returns all values for the selected field.
@@ -695,7 +714,7 @@ func (sf SelectField[T]) All(ctx context.Context) ([]T, error) {
 		return nil, fmt.Errorf("could not select values: %w", err)
 	}
 
-	return unmarshalSelectValue[T](raw)
+	return sf.decode(raw)
 }
 
 // First executes the query and returns the first value for the selected field.
@@ -707,7 +726,7 @@ func (sf SelectField[T]) First(ctx context.Context) (T, bool, error) {
 		return zero, false, fmt.Errorf("could not select value: %w", err)
 	}
 
-	values, err := unmarshalSelectValue[T](raw)
+	values, err := sf.decode(raw)
 	if err != nil {
 		var zero T
 		return zero, false, err
