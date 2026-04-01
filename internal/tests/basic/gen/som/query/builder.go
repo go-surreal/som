@@ -739,7 +739,7 @@ func unmarshalSelectValue[T any](data []byte) ([]T, error) {
 		return nil, fmt.Errorf("could not unmarshal select value: %w", err)
 	}
 
-	if len(rawResult) < 1 {
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
 		return nil, nil
 	}
 
