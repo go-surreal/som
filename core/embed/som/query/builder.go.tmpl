@@ -151,7 +151,17 @@ func (b builder[M, S]) TempFiles(tempFiles bool) BuilderNoLive[M, S] {
 
 // Select returns a model-specific select builder that allows
 // selecting individual field values from the query results.
-func (b builder[M, S]) Select() S {
+// Not available on SearchBuilder because SELECT VALUE queries
+// cannot include search score projections.
+func (b Builder[M, S]) Select() S {
+	return b.selectFn(b.db, b.query)
+}
+
+// Select returns a model-specific select builder that allows
+// selecting individual field values from the query results.
+// Not available on SearchBuilder because SELECT VALUE queries
+// cannot include search score projections.
+func (b BuilderNoLive[M, S]) Select() S {
 	return b.selectFn(b.db, b.query)
 }
 
