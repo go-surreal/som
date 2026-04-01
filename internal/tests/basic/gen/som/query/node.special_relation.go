@@ -47,24 +47,6 @@ type specialRelationSelect struct {
 	query lib.Query[model.SpecialRelation]
 }
 
-// ID returns a SelectField for the id field.
-func (s specialRelationSelect) ID() SelectField[string] {
-	q := s.query
-	return SelectField[string]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("id")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("id")
-		},
-		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("id")
-		},
-	}
-}
-
 // DeletedAt returns a SelectField for the deleted_at field.
 func (s specialRelationSelect) DeletedAt() SelectField[*time.Time] {
 	q := s.query
@@ -77,8 +59,9 @@ func (s specialRelationSelect) DeletedAt() SelectField[*time.Time] {
 			return q.BuildAsSelectDistinct("deleted_at")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("deleted_at")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("deleted_at")
 		},
 	}
 }
@@ -95,8 +78,9 @@ func (s specialRelationSelect) Title() SelectField[string] {
 			return q.BuildAsSelectDistinct("title")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("title")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("title")
 		},
 	}
 }
@@ -113,8 +97,9 @@ func (s specialRelationSelect) Author() SelectField[*model.SpecialTypes] {
 			return q.BuildAsSelectDistinct("author")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("author")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("author")
 		},
 	}
 }
@@ -131,8 +116,9 @@ func (s specialRelationSelect) Authors() SelectField[[]*model.SpecialTypes] {
 			return q.BuildAsSelectDistinct("authors")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("authors")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("authors")
 		},
 	}
 }

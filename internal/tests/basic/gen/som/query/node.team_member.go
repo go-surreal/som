@@ -49,24 +49,6 @@ type teamMemberSelect struct {
 	query lib.Query[model.TeamMember]
 }
 
-// ID returns a SelectField for the id field.
-func (s teamMemberSelect) ID() SelectField[model.TeamMemberKey] {
-	q := s.query
-	return SelectField[model.TeamMemberKey]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("id")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("id")
-		},
-		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("id")
-		},
-	}
-}
-
 // Role returns a SelectField for the role field.
 func (s teamMemberSelect) Role() SelectField[string] {
 	q := s.query
@@ -79,8 +61,9 @@ func (s teamMemberSelect) Role() SelectField[string] {
 			return q.BuildAsSelectDistinct("role")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("role")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("role")
 		},
 	}
 }

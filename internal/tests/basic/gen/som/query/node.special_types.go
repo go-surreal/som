@@ -47,24 +47,6 @@ type specialTypesSelect struct {
 	query lib.Query[model.SpecialTypes]
 }
 
-// ID returns a SelectField for the id field.
-func (s specialTypesSelect) ID() SelectField[string] {
-	q := s.query
-	return SelectField[string]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("id")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("id")
-		},
-		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("id")
-		},
-	}
-}
-
 // DeletedAt returns a SelectField for the deleted_at field.
 func (s specialTypesSelect) DeletedAt() SelectField[*time.Time] {
 	q := s.query
@@ -77,8 +59,9 @@ func (s specialTypesSelect) DeletedAt() SelectField[*time.Time] {
 			return q.BuildAsSelectDistinct("deleted_at")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("deleted_at")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("deleted_at")
 		},
 	}
 }
@@ -95,8 +78,9 @@ func (s specialTypesSelect) Name() SelectField[string] {
 			return q.BuildAsSelectDistinct("name")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("name")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("name")
 		},
 	}
 }
@@ -113,8 +97,9 @@ func (s specialTypesSelect) Version() SelectField[int] {
 			return q.BuildAsSelectDistinct("__som_lock_version")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("__som_lock_version")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("__som_lock_version")
 		},
 	}
 }

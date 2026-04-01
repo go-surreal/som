@@ -49,24 +49,6 @@ type allTypesSelect struct {
 	query lib.Query[model.AllTypes]
 }
 
-// ID returns a SelectField for the id field.
-func (s allTypesSelect) ID() SelectField[string] {
-	q := s.query
-	return SelectField[string]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("id")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("id")
-		},
-		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("id")
-		},
-	}
-}
-
 // CreatedAt returns a SelectField for the created_at field.
 func (s allTypesSelect) CreatedAt() SelectField[time.Time] {
 	q := s.query
@@ -79,8 +61,9 @@ func (s allTypesSelect) CreatedAt() SelectField[time.Time] {
 			return q.BuildAsSelectDistinct("created_at")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("created_at")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("created_at")
 		},
 	}
 }
@@ -97,8 +80,9 @@ func (s allTypesSelect) UpdatedAt() SelectField[time.Time] {
 			return q.BuildAsSelectDistinct("updated_at")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("updated_at")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("updated_at")
 		},
 	}
 }
@@ -115,8 +99,9 @@ func (s allTypesSelect) FieldString() SelectField[string] {
 			return q.BuildAsSelectDistinct("field_string")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_string")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_string")
 		},
 	}
 }
@@ -133,8 +118,9 @@ func (s allTypesSelect) FieldStringPtr() SelectField[*string] {
 			return q.BuildAsSelectDistinct("field_string_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_string_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_string_ptr")
 		},
 	}
 }
@@ -151,8 +137,9 @@ func (s allTypesSelect) FieldOther() SelectField[[]string] {
 			return q.BuildAsSelectDistinct("field_other")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_other")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_other")
 		},
 	}
 }
@@ -169,8 +156,9 @@ func (s allTypesSelect) FieldStringPtrSlice() SelectField[[]*string] {
 			return q.BuildAsSelectDistinct("field_string_ptr_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_string_ptr_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_string_ptr_slice")
 		},
 	}
 }
@@ -187,8 +175,9 @@ func (s allTypesSelect) FieldStringSlicePtr() SelectField[*[]string] {
 			return q.BuildAsSelectDistinct("field_string_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_string_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_string_slice_ptr")
 		},
 	}
 }
@@ -205,8 +194,9 @@ func (s allTypesSelect) FieldStringPtrSlicePtr() SelectField[*[]*string] {
 			return q.BuildAsSelectDistinct("field_string_ptr_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_string_ptr_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_string_ptr_slice_ptr")
 		},
 	}
 }
@@ -223,8 +213,9 @@ func (s allTypesSelect) FieldInt() SelectField[int] {
 			return q.BuildAsSelectDistinct("field_int")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int")
 		},
 	}
 }
@@ -241,8 +232,9 @@ func (s allTypesSelect) FieldIntPtr() SelectField[*int] {
 			return q.BuildAsSelectDistinct("field_int_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_ptr")
 		},
 	}
 }
@@ -259,8 +251,9 @@ func (s allTypesSelect) FieldIntSlice() SelectField[[]int] {
 			return q.BuildAsSelectDistinct("field_int_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_slice")
 		},
 	}
 }
@@ -277,8 +270,9 @@ func (s allTypesSelect) FieldIntPtrSlice() SelectField[[]*int] {
 			return q.BuildAsSelectDistinct("field_int_ptr_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_ptr_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_ptr_slice")
 		},
 	}
 }
@@ -295,8 +289,9 @@ func (s allTypesSelect) FieldIntSlicePtr() SelectField[*[]int] {
 			return q.BuildAsSelectDistinct("field_int_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_slice_ptr")
 		},
 	}
 }
@@ -313,8 +308,9 @@ func (s allTypesSelect) FieldIntPtrSlicePtr() SelectField[*[]*int] {
 			return q.BuildAsSelectDistinct("field_int_ptr_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_ptr_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_ptr_slice_ptr")
 		},
 	}
 }
@@ -331,8 +327,9 @@ func (s allTypesSelect) FieldInt8() SelectField[int8] {
 			return q.BuildAsSelectDistinct("field_int_8")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_8")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_8")
 		},
 	}
 }
@@ -349,8 +346,9 @@ func (s allTypesSelect) FieldInt8Ptr() SelectField[*int8] {
 			return q.BuildAsSelectDistinct("field_int_8_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_8_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_8_ptr")
 		},
 	}
 }
@@ -367,8 +365,9 @@ func (s allTypesSelect) FieldInt16() SelectField[int16] {
 			return q.BuildAsSelectDistinct("field_int_16")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_16")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_16")
 		},
 	}
 }
@@ -385,8 +384,9 @@ func (s allTypesSelect) FieldInt16Ptr() SelectField[*int16] {
 			return q.BuildAsSelectDistinct("field_int_16_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_16_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_16_ptr")
 		},
 	}
 }
@@ -403,8 +403,9 @@ func (s allTypesSelect) FieldInt32() SelectField[int32] {
 			return q.BuildAsSelectDistinct("field_int_32")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_32")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_32")
 		},
 	}
 }
@@ -421,8 +422,9 @@ func (s allTypesSelect) FieldInt32Ptr() SelectField[*int32] {
 			return q.BuildAsSelectDistinct("field_int_32_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_32_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_32_ptr")
 		},
 	}
 }
@@ -439,8 +441,9 @@ func (s allTypesSelect) FieldInt64() SelectField[int64] {
 			return q.BuildAsSelectDistinct("field_int_64")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_64")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_64")
 		},
 	}
 }
@@ -457,8 +460,9 @@ func (s allTypesSelect) FieldInt64Ptr() SelectField[*int64] {
 			return q.BuildAsSelectDistinct("field_int_64_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_int_64_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_int_64_ptr")
 		},
 	}
 }
@@ -475,8 +479,9 @@ func (s allTypesSelect) FieldUint8() SelectField[uint8] {
 			return q.BuildAsSelectDistinct("field_uint_8")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uint_8")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uint_8")
 		},
 	}
 }
@@ -493,8 +498,9 @@ func (s allTypesSelect) FieldUint8Ptr() SelectField[*uint8] {
 			return q.BuildAsSelectDistinct("field_uint_8_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uint_8_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uint_8_ptr")
 		},
 	}
 }
@@ -511,8 +517,9 @@ func (s allTypesSelect) FieldUint16() SelectField[uint16] {
 			return q.BuildAsSelectDistinct("field_uint_16")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uint_16")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uint_16")
 		},
 	}
 }
@@ -529,8 +536,9 @@ func (s allTypesSelect) FieldUint16Ptr() SelectField[*uint16] {
 			return q.BuildAsSelectDistinct("field_uint_16_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uint_16_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uint_16_ptr")
 		},
 	}
 }
@@ -547,8 +555,9 @@ func (s allTypesSelect) FieldUint32() SelectField[uint32] {
 			return q.BuildAsSelectDistinct("field_uint_32")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uint_32")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uint_32")
 		},
 	}
 }
@@ -565,8 +574,9 @@ func (s allTypesSelect) FieldUint32Ptr() SelectField[*uint32] {
 			return q.BuildAsSelectDistinct("field_uint_32_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uint_32_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uint_32_ptr")
 		},
 	}
 }
@@ -583,8 +593,9 @@ func (s allTypesSelect) FieldFloat32() SelectField[float32] {
 			return q.BuildAsSelectDistinct("field_float_32")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_float_32")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_float_32")
 		},
 	}
 }
@@ -601,8 +612,9 @@ func (s allTypesSelect) FieldFloat32Slice() SelectField[[]float32] {
 			return q.BuildAsSelectDistinct("field_float_32_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_float_32_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_float_32_slice")
 		},
 	}
 }
@@ -619,8 +631,9 @@ func (s allTypesSelect) FieldFloat32SlicePtr() SelectField[*[]float32] {
 			return q.BuildAsSelectDistinct("field_float_32_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_float_32_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_float_32_slice_ptr")
 		},
 	}
 }
@@ -637,8 +650,9 @@ func (s allTypesSelect) FieldFloat32PtrSlice() SelectField[[]*float32] {
 			return q.BuildAsSelectDistinct("field_float_32_ptr_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_float_32_ptr_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_float_32_ptr_slice")
 		},
 	}
 }
@@ -655,8 +669,9 @@ func (s allTypesSelect) FieldFloat32PtrSlicePtr() SelectField[*[]*float32] {
 			return q.BuildAsSelectDistinct("field_float_32_ptr_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_float_32_ptr_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_float_32_ptr_slice_ptr")
 		},
 	}
 }
@@ -673,8 +688,9 @@ func (s allTypesSelect) FieldFloat64() SelectField[float64] {
 			return q.BuildAsSelectDistinct("field_float_64")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_float_64")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_float_64")
 		},
 	}
 }
@@ -691,8 +707,9 @@ func (s allTypesSelect) FieldRune() SelectField[rune] {
 			return q.BuildAsSelectDistinct("field_rune")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_rune")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_rune")
 		},
 	}
 }
@@ -709,8 +726,9 @@ func (s allTypesSelect) FieldRuneSlice() SelectField[[]rune] {
 			return q.BuildAsSelectDistinct("field_rune_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_rune_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_rune_slice")
 		},
 	}
 }
@@ -727,8 +745,9 @@ func (s allTypesSelect) FieldBool() SelectField[bool] {
 			return q.BuildAsSelectDistinct("field_bool")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_bool")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_bool")
 		},
 	}
 }
@@ -745,8 +764,9 @@ func (s allTypesSelect) FieldBoolPtr() SelectField[*bool] {
 			return q.BuildAsSelectDistinct("field_bool_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_bool_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_bool_ptr")
 		},
 	}
 }
@@ -763,8 +783,9 @@ func (s allTypesSelect) FieldBoolSlice() SelectField[[]bool] {
 			return q.BuildAsSelectDistinct("field_bool_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_bool_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_bool_slice")
 		},
 	}
 }
@@ -781,8 +802,9 @@ func (s allTypesSelect) FieldTime() SelectField[time.Time] {
 			return q.BuildAsSelectDistinct("field_time")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_time")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_time")
 		},
 	}
 }
@@ -799,8 +821,9 @@ func (s allTypesSelect) FieldTimePtr() SelectField[*time.Time] {
 			return q.BuildAsSelectDistinct("field_time_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_time_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_time_ptr")
 		},
 	}
 }
@@ -817,8 +840,9 @@ func (s allTypesSelect) FieldTimeNil() SelectField[*time.Time] {
 			return q.BuildAsSelectDistinct("field_time_nil")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_time_nil")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_time_nil")
 		},
 	}
 }
@@ -835,8 +859,9 @@ func (s allTypesSelect) FieldTimeSlice() SelectField[[]time.Time] {
 			return q.BuildAsSelectDistinct("field_time_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_time_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_time_slice")
 		},
 	}
 }
@@ -853,8 +878,9 @@ func (s allTypesSelect) FieldTimeSliceSlice() SelectField[[][]time.Time] {
 			return q.BuildAsSelectDistinct("field_time_slice_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_time_slice_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_time_slice_slice")
 		},
 	}
 }
@@ -871,8 +897,9 @@ func (s allTypesSelect) FieldDuration() SelectField[time.Duration] {
 			return q.BuildAsSelectDistinct("field_duration")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_duration")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_duration")
 		},
 	}
 }
@@ -889,8 +916,9 @@ func (s allTypesSelect) FieldDurationPtr() SelectField[*time.Duration] {
 			return q.BuildAsSelectDistinct("field_duration_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_duration_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_duration_ptr")
 		},
 	}
 }
@@ -907,8 +935,9 @@ func (s allTypesSelect) FieldDurationNil() SelectField[*time.Duration] {
 			return q.BuildAsSelectDistinct("field_duration_nil")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_duration_nil")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_duration_nil")
 		},
 	}
 }
@@ -925,8 +954,9 @@ func (s allTypesSelect) FieldDurationSlice() SelectField[[]time.Duration] {
 			return q.BuildAsSelectDistinct("field_duration_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_duration_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_duration_slice")
 		},
 	}
 }
@@ -943,8 +973,9 @@ func (s allTypesSelect) FieldMonth() SelectField[time.Month] {
 			return q.BuildAsSelectDistinct("field_month")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_month")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_month")
 		},
 	}
 }
@@ -961,8 +992,9 @@ func (s allTypesSelect) FieldMonthPtr() SelectField[*time.Month] {
 			return q.BuildAsSelectDistinct("field_month_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_month_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_month_ptr")
 		},
 	}
 }
@@ -979,8 +1011,9 @@ func (s allTypesSelect) FieldWeekday() SelectField[time.Weekday] {
 			return q.BuildAsSelectDistinct("field_weekday")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_weekday")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_weekday")
 		},
 	}
 }
@@ -997,8 +1030,9 @@ func (s allTypesSelect) FieldWeekdayPtr() SelectField[*time.Weekday] {
 			return q.BuildAsSelectDistinct("field_weekday_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_weekday_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_weekday_ptr")
 		},
 	}
 }
@@ -1015,8 +1049,9 @@ func (s allTypesSelect) FieldUUID() SelectField[uuid.UUID] {
 			return q.BuildAsSelectDistinct("field_uuid")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uuid")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uuid")
 		},
 	}
 }
@@ -1033,8 +1068,9 @@ func (s allTypesSelect) FieldUUIDPtr() SelectField[*uuid.UUID] {
 			return q.BuildAsSelectDistinct("field_uuid_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uuid_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uuid_ptr")
 		},
 	}
 }
@@ -1051,8 +1087,9 @@ func (s allTypesSelect) FieldUUIDNil() SelectField[*uuid.UUID] {
 			return q.BuildAsSelectDistinct("field_uuid_nil")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uuid_nil")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uuid_nil")
 		},
 	}
 }
@@ -1069,8 +1106,9 @@ func (s allTypesSelect) FieldUUIDSlice() SelectField[[]uuid.UUID] {
 			return q.BuildAsSelectDistinct("field_uuid_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uuid_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uuid_slice")
 		},
 	}
 }
@@ -1087,8 +1125,9 @@ func (s allTypesSelect) FieldUUIDGofrs() SelectField[uuid1.UUID] {
 			return q.BuildAsSelectDistinct("field_uuid_gofrs")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uuid_gofrs")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uuid_gofrs")
 		},
 	}
 }
@@ -1105,8 +1144,9 @@ func (s allTypesSelect) FieldUUIDGofrsPtr() SelectField[*uuid1.UUID] {
 			return q.BuildAsSelectDistinct("field_uuid_gofrs_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uuid_gofrs_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uuid_gofrs_ptr")
 		},
 	}
 }
@@ -1123,8 +1163,9 @@ func (s allTypesSelect) FieldUUIDGofrsNil() SelectField[*uuid1.UUID] {
 			return q.BuildAsSelectDistinct("field_uuid_gofrs_nil")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uuid_gofrs_nil")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uuid_gofrs_nil")
 		},
 	}
 }
@@ -1141,8 +1182,9 @@ func (s allTypesSelect) FieldUUIDGofrsSlice() SelectField[[]uuid1.UUID] {
 			return q.BuildAsSelectDistinct("field_uuid_gofrs_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_uuid_gofrs_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_uuid_gofrs_slice")
 		},
 	}
 }
@@ -1159,8 +1201,9 @@ func (s allTypesSelect) FieldURL() SelectField[url.URL] {
 			return q.BuildAsSelectDistinct("field_url")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_url")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_url")
 		},
 	}
 }
@@ -1177,8 +1220,9 @@ func (s allTypesSelect) FieldURLPtr() SelectField[*url.URL] {
 			return q.BuildAsSelectDistinct("field_url_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_url_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_url_ptr")
 		},
 	}
 }
@@ -1195,8 +1239,9 @@ func (s allTypesSelect) FieldURLNil() SelectField[*url.URL] {
 			return q.BuildAsSelectDistinct("field_url_nil")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_url_nil")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_url_nil")
 		},
 	}
 }
@@ -1213,8 +1258,9 @@ func (s allTypesSelect) FieldURLSlice() SelectField[[]url.URL] {
 			return q.BuildAsSelectDistinct("field_url_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_url_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_url_slice")
 		},
 	}
 }
@@ -1231,8 +1277,9 @@ func (s allTypesSelect) FieldEmail() SelectField[som.Email] {
 			return q.BuildAsSelectDistinct("field_email")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_email")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_email")
 		},
 	}
 }
@@ -1249,8 +1296,9 @@ func (s allTypesSelect) FieldEmailPtr() SelectField[*som.Email] {
 			return q.BuildAsSelectDistinct("field_email_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_email_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_email_ptr")
 		},
 	}
 }
@@ -1267,8 +1315,9 @@ func (s allTypesSelect) FieldEmailNil() SelectField[*som.Email] {
 			return q.BuildAsSelectDistinct("field_email_nil")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_email_nil")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_email_nil")
 		},
 	}
 }
@@ -1285,8 +1334,9 @@ func (s allTypesSelect) FieldEmailSlice() SelectField[[]som.Email] {
 			return q.BuildAsSelectDistinct("field_email_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_email_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_email_slice")
 		},
 	}
 }
@@ -1303,8 +1353,9 @@ func (s allTypesSelect) FieldSemVer() SelectField[som.SemVer] {
 			return q.BuildAsSelectDistinct("field_sem_ver")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_sem_ver")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_sem_ver")
 		},
 	}
 }
@@ -1321,8 +1372,9 @@ func (s allTypesSelect) FieldSemVerPtr() SelectField[*som.SemVer] {
 			return q.BuildAsSelectDistinct("field_sem_ver_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_sem_ver_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_sem_ver_ptr")
 		},
 	}
 }
@@ -1339,8 +1391,9 @@ func (s allTypesSelect) FieldSemVerNil() SelectField[*som.SemVer] {
 			return q.BuildAsSelectDistinct("field_sem_ver_nil")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_sem_ver_nil")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_sem_ver_nil")
 		},
 	}
 }
@@ -1357,8 +1410,9 @@ func (s allTypesSelect) FieldSemVerSlice() SelectField[[]som.SemVer] {
 			return q.BuildAsSelectDistinct("field_sem_ver_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_sem_ver_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_sem_ver_slice")
 		},
 	}
 }
@@ -1375,8 +1429,9 @@ func (s allTypesSelect) FieldEnum() SelectField[model.Role] {
 			return q.BuildAsSelectDistinct("field_enum")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_enum")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_enum")
 		},
 	}
 }
@@ -1393,8 +1448,9 @@ func (s allTypesSelect) FieldEnumPtr() SelectField[*model.Role] {
 			return q.BuildAsSelectDistinct("field_enum_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_enum_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_enum_ptr")
 		},
 	}
 }
@@ -1411,8 +1467,9 @@ func (s allTypesSelect) FieldEnumSlice() SelectField[[]model.Role] {
 			return q.BuildAsSelectDistinct("field_enum_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_enum_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_enum_slice")
 		},
 	}
 }
@@ -1429,8 +1486,9 @@ func (s allTypesSelect) FieldEnumPtrSlice() SelectField[[]*model.Role] {
 			return q.BuildAsSelectDistinct("field_enum_ptr_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_enum_ptr_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_enum_ptr_slice")
 		},
 	}
 }
@@ -1447,8 +1505,9 @@ func (s allTypesSelect) FieldEnumPtrSlicePtr() SelectField[*[]*model.Role] {
 			return q.BuildAsSelectDistinct("field_enum_ptr_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_enum_ptr_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_enum_ptr_slice_ptr")
 		},
 	}
 }
@@ -1465,8 +1524,9 @@ func (s allTypesSelect) FieldCredentials() SelectField[model.Credentials] {
 			return q.BuildAsSelectDistinct("field_credentials")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_credentials")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_credentials")
 		},
 	}
 }
@@ -1483,8 +1543,9 @@ func (s allTypesSelect) FieldNestedDataPtr() SelectField[*model.NestedData] {
 			return q.BuildAsSelectDistinct("field_nested_data_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_nested_data_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_nested_data_ptr")
 		},
 	}
 }
@@ -1501,8 +1562,9 @@ func (s allTypesSelect) FieldNestedDataSlice() SelectField[[]model.NestedData] {
 			return q.BuildAsSelectDistinct("field_nested_data_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_nested_data_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_nested_data_slice")
 		},
 	}
 }
@@ -1519,8 +1581,9 @@ func (s allTypesSelect) FieldNestedDataPtrSlice() SelectField[[]*model.NestedDat
 			return q.BuildAsSelectDistinct("field_nested_data_ptr_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_nested_data_ptr_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_nested_data_ptr_slice")
 		},
 	}
 }
@@ -1537,8 +1600,9 @@ func (s allTypesSelect) FieldNestedDataPtrSlicePtr() SelectField[*[]*model.Neste
 			return q.BuildAsSelectDistinct("field_nested_data_ptr_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_nested_data_ptr_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_nested_data_ptr_slice_ptr")
 		},
 	}
 }
@@ -1555,8 +1619,9 @@ func (s allTypesSelect) FieldNode() SelectField[model.SpecialTypes] {
 			return q.BuildAsSelectDistinct("field_node")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_node")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_node")
 		},
 	}
 }
@@ -1573,8 +1638,9 @@ func (s allTypesSelect) FieldNodePtr() SelectField[*model.SpecialTypes] {
 			return q.BuildAsSelectDistinct("field_node_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_node_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_node_ptr")
 		},
 	}
 }
@@ -1591,8 +1657,9 @@ func (s allTypesSelect) FieldNodeSlice() SelectField[[]model.SpecialTypes] {
 			return q.BuildAsSelectDistinct("field_node_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_node_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_node_slice")
 		},
 	}
 }
@@ -1609,8 +1676,9 @@ func (s allTypesSelect) FieldNodeSliceSlice() SelectField[[][]model.SpecialTypes
 			return q.BuildAsSelectDistinct("field_node_slice_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_node_slice_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_node_slice_slice")
 		},
 	}
 }
@@ -1627,8 +1695,9 @@ func (s allTypesSelect) FieldNodePtrSlice() SelectField[[]*model.SpecialTypes] {
 			return q.BuildAsSelectDistinct("field_node_ptr_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_node_ptr_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_node_ptr_slice")
 		},
 	}
 }
@@ -1645,8 +1714,9 @@ func (s allTypesSelect) FieldNodePtrSlicePtr() SelectField[*[]*model.SpecialType
 			return q.BuildAsSelectDistinct("field_node_ptr_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_node_ptr_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_node_ptr_slice_ptr")
 		},
 	}
 }
@@ -1663,8 +1733,9 @@ func (s allTypesSelect) FieldEdgeRelations() SelectField[[]model.EdgeRelation] {
 			return q.BuildAsSelectDistinct("field_edge_relations")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_edge_relations")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_edge_relations")
 		},
 	}
 }
@@ -1681,8 +1752,9 @@ func (s allTypesSelect) FieldSliceSlice() SelectField[[][]string] {
 			return q.BuildAsSelectDistinct("field_slice_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_slice_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_slice_slice")
 		},
 	}
 }
@@ -1699,8 +1771,9 @@ func (s allTypesSelect) FieldSliceSliceSlice() SelectField[[][][]string] {
 			return q.BuildAsSelectDistinct("field_slice_slice_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_slice_slice_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_slice_slice_slice")
 		},
 	}
 }
@@ -1717,8 +1790,9 @@ func (s allTypesSelect) FieldSliceSliceSlice2() SelectField[[][][]model.NestedDa
 			return q.BuildAsSelectDistinct("field_slice_slice_slice_2")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_slice_slice_slice_2")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_slice_slice_slice_2")
 		},
 	}
 }
@@ -1735,8 +1809,9 @@ func (s allTypesSelect) FieldByte() SelectField[byte] {
 			return q.BuildAsSelectDistinct("field_byte")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_byte")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_byte")
 		},
 	}
 }
@@ -1753,8 +1828,9 @@ func (s allTypesSelect) FieldBytePtr() SelectField[*byte] {
 			return q.BuildAsSelectDistinct("field_byte_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_byte_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_byte_ptr")
 		},
 	}
 }
@@ -1771,8 +1847,9 @@ func (s allTypesSelect) FieldByteSlice() SelectField[[]byte] {
 			return q.BuildAsSelectDistinct("field_byte_slice")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_byte_slice")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_byte_slice")
 		},
 	}
 }
@@ -1789,8 +1866,9 @@ func (s allTypesSelect) FieldByteSlicePtr() SelectField[*[]byte] {
 			return q.BuildAsSelectDistinct("field_byte_slice_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_byte_slice_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_byte_slice_ptr")
 		},
 	}
 }
@@ -1807,8 +1885,9 @@ func (s allTypesSelect) FieldRenamed() SelectField[string] {
 			return q.BuildAsSelectDistinct("custom_name")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("custom_name")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("custom_name")
 		},
 	}
 }
@@ -1825,8 +1904,9 @@ func (s allTypesSelect) FieldHookStatus() SelectField[string] {
 			return q.BuildAsSelectDistinct("field_hook_status")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_hook_status")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_hook_status")
 		},
 	}
 }
@@ -1843,8 +1923,9 @@ func (s allTypesSelect) FieldHookDetail() SelectField[string] {
 			return q.BuildAsSelectDistinct("field_hook_detail")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("field_hook_detail")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("field_hook_detail")
 		},
 	}
 }

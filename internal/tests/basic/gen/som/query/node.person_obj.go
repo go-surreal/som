@@ -47,24 +47,6 @@ type personObjSelect struct {
 	query lib.Query[model.PersonObj]
 }
 
-// ID returns a SelectField for the id field.
-func (s personObjSelect) ID() SelectField[model.PersonKey] {
-	q := s.query
-	return SelectField[model.PersonKey]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("id")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("id")
-		},
-		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("id")
-		},
-	}
-}
-
 // Email returns a SelectField for the email field.
 func (s personObjSelect) Email() SelectField[string] {
 	q := s.query
@@ -77,8 +59,9 @@ func (s personObjSelect) Email() SelectField[string] {
 			return q.BuildAsSelectDistinct("email")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("email")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("email")
 		},
 	}
 }

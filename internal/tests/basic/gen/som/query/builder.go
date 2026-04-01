@@ -722,6 +722,7 @@ func (sf SelectField[T]) First(ctx context.Context) (T, bool, error) {
 }
 
 // Distinct executes the query and returns all distinct values for the selected field.
+// The underlying query uses GROUP ALL with array::distinct, which returns a nested array.
 func (sf SelectField[T]) Distinct(ctx context.Context) ([]T, error) {
 	req := sf.distFn()
 	raw, err := sf.db.Query(ctx, req.Statement, req.Variables)
@@ -729,7 +730,7 @@ func (sf SelectField[T]) Distinct(ctx context.Context) ([]T, error) {
 		return nil, fmt.Errorf("could not select distinct values: %w", err)
 	}
 
-	return unmarshalSelectValue[T](raw)
+	return unmarshalSelectDistinct[T](raw)
 }
 
 func unmarshalSelectValue[T any](data []byte) ([]T, error) {
@@ -743,4 +744,20 @@ func unmarshalSelectValue[T any](data []byte) ([]T, error) {
 	}
 
 	return rawResult[0].Result, nil
+}
+
+// unmarshalSelectDistinct handles the nested array result from
+// SELECT VALUE array::distinct(array::group(field)) ... GROUP ALL,
+// which returns result: [[val1, val2, ...]] instead of result: [val1, val2, ...].
+func unmarshalSelectDistinct[T any](data []byte) ([]T, error) {
+	var rawResult []internal.QueryResult[[]T]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+	}
+
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+
+	return rawResult[0].Result[0], nil
 }

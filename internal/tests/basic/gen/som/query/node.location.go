@@ -49,24 +49,6 @@ type locationSelect struct {
 	query lib.Query[model.Location]
 }
 
-// ID returns a SelectField for the id field.
-func (s locationSelect) ID() SelectField[string] {
-	q := s.query
-	return SelectField[string]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("id")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("id")
-		},
-		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("id")
-		},
-	}
-}
-
 // CreatedAt returns a SelectField for the created_at field.
 func (s locationSelect) CreatedAt() SelectField[time.Time] {
 	q := s.query
@@ -79,8 +61,9 @@ func (s locationSelect) CreatedAt() SelectField[time.Time] {
 			return q.BuildAsSelectDistinct("created_at")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("created_at")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("created_at")
 		},
 	}
 }
@@ -97,8 +80,9 @@ func (s locationSelect) UpdatedAt() SelectField[time.Time] {
 			return q.BuildAsSelectDistinct("updated_at")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("updated_at")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("updated_at")
 		},
 	}
 }
@@ -115,8 +99,9 @@ func (s locationSelect) Name() SelectField[string] {
 			return q.BuildAsSelectDistinct("name")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("name")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("name")
 		},
 	}
 }
@@ -133,8 +118,9 @@ func (s locationSelect) Point() SelectField[orb.Point] {
 			return q.BuildAsSelectDistinct("point")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("point")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("point")
 		},
 	}
 }
@@ -151,8 +137,9 @@ func (s locationSelect) PointPtr() SelectField[*orb.Point] {
 			return q.BuildAsSelectDistinct("point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("point_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("point_ptr")
 		},
 	}
 }
@@ -169,8 +156,9 @@ func (s locationSelect) LineString() SelectField[orb.LineString] {
 			return q.BuildAsSelectDistinct("line_string")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("line_string")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("line_string")
 		},
 	}
 }
@@ -187,8 +175,9 @@ func (s locationSelect) LineStringPtr() SelectField[*orb.LineString] {
 			return q.BuildAsSelectDistinct("line_string_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("line_string_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("line_string_ptr")
 		},
 	}
 }
@@ -205,8 +194,9 @@ func (s locationSelect) Polygon() SelectField[orb.Polygon] {
 			return q.BuildAsSelectDistinct("polygon")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("polygon")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("polygon")
 		},
 	}
 }
@@ -223,8 +213,9 @@ func (s locationSelect) PolygonPtr() SelectField[*orb.Polygon] {
 			return q.BuildAsSelectDistinct("polygon_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("polygon_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("polygon_ptr")
 		},
 	}
 }
@@ -241,8 +232,9 @@ func (s locationSelect) MultiPoint() SelectField[orb.MultiPoint] {
 			return q.BuildAsSelectDistinct("multi_point")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("multi_point")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("multi_point")
 		},
 	}
 }
@@ -259,8 +251,9 @@ func (s locationSelect) MultiPointPtr() SelectField[*orb.MultiPoint] {
 			return q.BuildAsSelectDistinct("multi_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("multi_point_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("multi_point_ptr")
 		},
 	}
 }
@@ -277,8 +270,9 @@ func (s locationSelect) MultiLineString() SelectField[orb.MultiLineString] {
 			return q.BuildAsSelectDistinct("multi_line_string")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("multi_line_string")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("multi_line_string")
 		},
 	}
 }
@@ -295,8 +289,9 @@ func (s locationSelect) MultiPolygon() SelectField[orb.MultiPolygon] {
 			return q.BuildAsSelectDistinct("multi_polygon")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("multi_polygon")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("multi_polygon")
 		},
 	}
 }
@@ -313,8 +308,9 @@ func (s locationSelect) Collection() SelectField[orb.Collection] {
 			return q.BuildAsSelectDistinct("collection")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("collection")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("collection")
 		},
 	}
 }
@@ -331,8 +327,9 @@ func (s locationSelect) GGPoint() SelectField[gogeom.Point] {
 			return q.BuildAsSelectDistinct("gg_point")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_point")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_point")
 		},
 	}
 }
@@ -349,8 +346,9 @@ func (s locationSelect) GGPointPtr() SelectField[*gogeom.Point] {
 			return q.BuildAsSelectDistinct("gg_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_point_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_point_ptr")
 		},
 	}
 }
@@ -367,8 +365,9 @@ func (s locationSelect) GGLineString() SelectField[gogeom.LineString] {
 			return q.BuildAsSelectDistinct("gg_line_string")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_line_string")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_line_string")
 		},
 	}
 }
@@ -385,8 +384,9 @@ func (s locationSelect) GGLineStringPtr() SelectField[*gogeom.LineString] {
 			return q.BuildAsSelectDistinct("gg_line_string_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_line_string_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_line_string_ptr")
 		},
 	}
 }
@@ -403,8 +403,9 @@ func (s locationSelect) GGPolygon() SelectField[gogeom.Polygon] {
 			return q.BuildAsSelectDistinct("gg_polygon")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_polygon")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_polygon")
 		},
 	}
 }
@@ -421,8 +422,9 @@ func (s locationSelect) GGPolygonPtr() SelectField[*gogeom.Polygon] {
 			return q.BuildAsSelectDistinct("gg_polygon_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_polygon_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_polygon_ptr")
 		},
 	}
 }
@@ -439,8 +441,9 @@ func (s locationSelect) GGMultiPoint() SelectField[gogeom.MultiPoint] {
 			return q.BuildAsSelectDistinct("gg_multi_point")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_multi_point")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_multi_point")
 		},
 	}
 }
@@ -457,8 +460,9 @@ func (s locationSelect) GGMultiPointPtr() SelectField[*gogeom.MultiPoint] {
 			return q.BuildAsSelectDistinct("gg_multi_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_multi_point_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_multi_point_ptr")
 		},
 	}
 }
@@ -475,8 +479,9 @@ func (s locationSelect) GGMultiLineString() SelectField[gogeom.MultiLineString] 
 			return q.BuildAsSelectDistinct("gg_multi_line_string")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_multi_line_string")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_multi_line_string")
 		},
 	}
 }
@@ -493,8 +498,9 @@ func (s locationSelect) GGMultiPolygon() SelectField[gogeom.MultiPolygon] {
 			return q.BuildAsSelectDistinct("gg_multi_polygon")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("gg_multi_polygon")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("gg_multi_polygon")
 		},
 	}
 }
@@ -511,8 +517,9 @@ func (s locationSelect) SFPoint() SelectField[geom.Point] {
 			return q.BuildAsSelectDistinct("sf_point")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_point")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_point")
 		},
 	}
 }
@@ -529,8 +536,9 @@ func (s locationSelect) SFPointPtr() SelectField[*geom.Point] {
 			return q.BuildAsSelectDistinct("sf_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_point_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_point_ptr")
 		},
 	}
 }
@@ -547,8 +555,9 @@ func (s locationSelect) SFLineString() SelectField[geom.LineString] {
 			return q.BuildAsSelectDistinct("sf_line_string")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_line_string")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_line_string")
 		},
 	}
 }
@@ -565,8 +574,9 @@ func (s locationSelect) SFLineStringPtr() SelectField[*geom.LineString] {
 			return q.BuildAsSelectDistinct("sf_line_string_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_line_string_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_line_string_ptr")
 		},
 	}
 }
@@ -583,8 +593,9 @@ func (s locationSelect) SFPolygon() SelectField[geom.Polygon] {
 			return q.BuildAsSelectDistinct("sf_polygon")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_polygon")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_polygon")
 		},
 	}
 }
@@ -601,8 +612,9 @@ func (s locationSelect) SFPolygonPtr() SelectField[*geom.Polygon] {
 			return q.BuildAsSelectDistinct("sf_polygon_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_polygon_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_polygon_ptr")
 		},
 	}
 }
@@ -619,8 +631,9 @@ func (s locationSelect) SFMultiPoint() SelectField[geom.MultiPoint] {
 			return q.BuildAsSelectDistinct("sf_multi_point")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_multi_point")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_multi_point")
 		},
 	}
 }
@@ -637,8 +650,9 @@ func (s locationSelect) SFMultiPointPtr() SelectField[*geom.MultiPoint] {
 			return q.BuildAsSelectDistinct("sf_multi_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_multi_point_ptr")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_multi_point_ptr")
 		},
 	}
 }
@@ -655,8 +669,9 @@ func (s locationSelect) SFMultiLineString() SelectField[geom.MultiLineString] {
 			return q.BuildAsSelectDistinct("sf_multi_line_string")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_multi_line_string")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_multi_line_string")
 		},
 	}
 }
@@ -673,8 +688,9 @@ func (s locationSelect) SFMultiPolygon() SelectField[geom.MultiPolygon] {
 			return q.BuildAsSelectDistinct("sf_multi_polygon")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("sf_multi_polygon")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("sf_multi_polygon")
 		},
 	}
 }

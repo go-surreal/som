@@ -148,8 +148,12 @@ func (b *queryBuilder) generateSelectStruct(
 		jen.Id("query").Qual(pkgLib, "Query").Types(modelType),
 	)
 
-	// Generate a method per field
+	// Generate a method per field (except id)
 	for _, fld := range node.Fields {
+		if fld.NameDatabase() == "id" {
+			continue
+		}
+
 		b.generateSelectFieldMethod(f, fld, pkgLib, modelType, selectTypeName)
 	}
 }
@@ -180,8 +184,9 @@ func (b *queryBuilder) generateSelectFieldMethod(
 					jen.Return(jen.Id("q").Dot("BuildAsSelectDistinct").Call(jen.Lit(fieldDBName))),
 				),
 				jen.Id("firstFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").BlockFunc(func(g *jen.Group) {
-					g.Id("q").Dot("Limit").Op("=").Lit(1)
-					g.Return(jen.Id("q").Dot("BuildAsSelectValue").Call(jen.Lit(fieldDBName)))
+					g.Id("fq").Op(":=").Id("q")
+					g.Id("fq").Dot("Limit").Op("=").Lit(1)
+					g.Return(jen.Id("fq").Dot("BuildAsSelectValue").Call(jen.Lit(fieldDBName)))
 				}),
 			})),
 		)

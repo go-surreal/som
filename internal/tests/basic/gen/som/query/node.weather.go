@@ -48,24 +48,6 @@ type weatherSelect struct {
 	query lib.Query[model.Weather]
 }
 
-// ID returns a SelectField for the id field.
-func (s weatherSelect) ID() SelectField[model.WeatherKey] {
-	q := s.query
-	return SelectField[model.WeatherKey]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("id")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("id")
-		},
-		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("id")
-		},
-	}
-}
-
 // Temperature returns a SelectField for the temperature field.
 func (s weatherSelect) Temperature() SelectField[float64] {
 	q := s.query
@@ -78,8 +60,9 @@ func (s weatherSelect) Temperature() SelectField[float64] {
 			return q.BuildAsSelectDistinct("temperature")
 		},
 		firstFn: func() *lib.Result {
-			q.Limit = 1
-			return q.BuildAsSelectValue("temperature")
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue("temperature")
 		},
 	}
 }
