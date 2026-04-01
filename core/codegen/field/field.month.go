@@ -14,12 +14,12 @@ type Month struct {
 	source *parser.FieldMonth
 }
 
-func (f *Month) typeGo() jen.Code {
+func (f *Month) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Month")
 }
 
 func (f *Month) typeConv(_ Context) jen.Code {
-	return f.typeGo()
+	return f.TypeGo()
 }
 
 func (f *Month) TypeDatabase() string {

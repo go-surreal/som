@@ -20,7 +20,7 @@ import (
 type LocationRepo interface {
 	// Query returns a new query builder for the Location model.
 
-	Query() query.Builder[model.Location]
+	Query() query.LocationQuery
 	// Create creates a new record for the Location model.
 
 	Create(ctx context.Context, location *model.Location) error
@@ -354,7 +354,7 @@ func (r *location) OnAfterDelete(fn func(ctx context.Context, node *model.Locati
 }
 
 // Query returns a new query builder for the Location model.
-func (r *location) Query() query.Builder[model.Location] {
+func (r *location) Query() query.LocationQuery {
 	return query.NewLocation(r.db)
 }
 

@@ -16,8 +16,8 @@ type Slice struct {
 	element Field
 }
 
-func (f *Slice) typeGo() jen.Code {
-	return jen.Add(f.ptr()).Index().Add(f.element.typeGo())
+func (f *Slice) TypeGo() jen.Code {
+	return jen.Add(f.ptr()).Index().Add(f.element.TypeGo())
 }
 
 func (f *Slice) typeConv(ctx Context) jen.Code {
@@ -171,7 +171,7 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 			}
 
 			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).
-				Types(def.TypeModel, element.typeGo())
+				Types(def.TypeModel, element.TypeGo())
 		}
 
 	case *Byte:
@@ -190,7 +190,7 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 
 	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(
 		def.TypeModel,
-		f.element.typeGo(),
+		f.element.TypeGo(),
 		elemFilter,
 	)
 }
@@ -279,7 +279,7 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 				filter += fnSuffixPtr
 			}
 
-			return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, element.typeGo()),
+			return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, element.TypeGo()),
 				jen.Call(
 					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 				)
@@ -312,7 +312,7 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.element.typeGo(), elemFilter).
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.element.TypeGo(), elemFilter).
 			Call(makeElemFilter),
 		jen.Call(
 			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
@@ -514,13 +514,13 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 					Types(jen.Qual(f.SourcePkg, element.element.NameGo())),
 			).
 			Op("*").Qual(ctx.pkgLib(), sliceType).
-			Types(def.TypeModel, f.element.typeGo(), elemFilter).
+			Types(def.TypeModel, f.element.TypeGo(), elemFilter).
 			Block(
 				jen.Id("key").Op(":=").Qual(ctx.pkgLib(), "StructField").Call(
 					jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase()), jen.Id("filters"),
 				),
 				jen.Return(jen.Qual(ctx.pkgLib(), newFunc).
-					Types(def.TypeModel, f.element.typeGo(), elemFilter).
+					Types(def.TypeModel, f.element.TypeGo(), elemFilter).
 					Call(jen.Id("key"), makeElemFilter)),
 			)
 
@@ -707,7 +707,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		if structElem.source.Pointer() {
 			// For pointer element slices, unmarshal each element individually
 			// to correctly handle NONE/null as nil pointers.
-			innerSliceType := jen.Index().Add(f.element.typeGo())
+			innerSliceType := jen.Index().Add(f.element.TypeGo())
 
 			var assignStmt jen.Code
 			if f.source.Pointer() {
@@ -728,7 +728,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 			} else {
 				assignStmt = jen.Block(
 					jen.Id("c").Dot(f.NameGo()).Op("=").Make(
-						f.typeGo(),
+						f.TypeGo(),
 						jen.Len(jen.Id("rawSlice")),
 					),
 					jen.For(
@@ -756,7 +756,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 
 		// Non-pointer struct elements: unmarshal directly into typed slice.
 		sliceElemType := jen.Index().Id(structElem.element.NameGoLower())
-		innerSliceType := jen.Index().Add(f.element.typeGo())
+		innerSliceType := jen.Index().Add(f.element.TypeGo())
 
 		var assignStmt jen.Code
 		if f.source.Pointer() {
@@ -774,7 +774,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		} else {
 			assignStmt = jen.Block(
 				jen.Id("c").Dot(f.NameGo()).Op("=").Make(
-					f.typeGo(),
+					f.TypeGo(),
 					jen.Len(jen.Id("convSlice")),
 				),
 				jen.For(
@@ -806,7 +806,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		sliceElemType := jen.Index().Op("*").Id(nodeElem.table.NameGoLower() + "Link")
 
 		// Determine the inner slice type (the model slice type)
-		innerSliceType := jen.Index().Add(f.element.typeGo())
+		innerSliceType := jen.Index().Add(f.element.TypeGo())
 
 		// Build the assignment statement - handle pointer-to-slice case
 		var assignStmt jen.Code
@@ -825,7 +825,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		} else {
 			assignStmt = jen.Block(
 				jen.Id("c").Dot(f.NameGo()).Op("=").Make(
-					f.typeGo(),
+					f.TypeGo(),
 					jen.Len(jen.Id("convSlice")),
 				),
 				jen.For(

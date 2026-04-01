@@ -42,13 +42,64 @@ var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], fr
 	return expr
 })
 
+// weatherSelect provides field selection for Weather queries.
+type weatherSelect struct {
+	db    Database
+	query lib.Query[model.Weather]
+}
+
+// ID returns a SelectField for the id field.
+func (s weatherSelect) ID() SelectField[model.WeatherKey] {
+	q := s.query
+	return SelectField[model.WeatherKey]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("id")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("id")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("id")
+		},
+	}
+}
+
+// Temperature returns a SelectField for the temperature field.
+func (s weatherSelect) Temperature() SelectField[float64] {
+	q := s.query
+	return SelectField[float64]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("temperature")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("temperature")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("temperature")
+		},
+	}
+}
+
+// WeatherQuery is a type alias for the Weather query builder.
+type WeatherQuery = Builder[model.Weather, weatherSelect]
+
 // NewWeather creates a new query builder for Weather models.
-func NewWeather(db Database) Builder[model.Weather] {
+func NewWeather(db Database) Builder[model.Weather, weatherSelect] {
 	q := lib.NewQuery[model.Weather]("weather")
-	return Builder[model.Weather]{builder[model.Weather]{
+	return Builder[model.Weather, weatherSelect]{builder[model.Weather, weatherSelect]{
 		db:      db,
 		info:    weatherModelInfo,
 		query:   q,
 		rangeFn: weatherRangeFn,
+		selectFn: func(db Database, q lib.Query[model.Weather]) weatherSelect {
+			return weatherSelect{
+				db:    db,
+				query: q,
+			}
+		},
 	}}
 }

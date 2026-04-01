@@ -43,13 +43,64 @@ var teamMemberRangeFn = rangeFn[model.TeamMember](func(q *lib.Query[model.TeamMe
 	return expr
 })
 
+// teamMemberSelect provides field selection for TeamMember queries.
+type teamMemberSelect struct {
+	db    Database
+	query lib.Query[model.TeamMember]
+}
+
+// ID returns a SelectField for the id field.
+func (s teamMemberSelect) ID() SelectField[model.TeamMemberKey] {
+	q := s.query
+	return SelectField[model.TeamMemberKey]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("id")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("id")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("id")
+		},
+	}
+}
+
+// Role returns a SelectField for the role field.
+func (s teamMemberSelect) Role() SelectField[string] {
+	q := s.query
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("role")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("role")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("role")
+		},
+	}
+}
+
+// TeamMemberQuery is a type alias for the TeamMember query builder.
+type TeamMemberQuery = Builder[model.TeamMember, teamMemberSelect]
+
 // NewTeamMember creates a new query builder for TeamMember models.
-func NewTeamMember(db Database) Builder[model.TeamMember] {
+func NewTeamMember(db Database) Builder[model.TeamMember, teamMemberSelect] {
 	q := lib.NewQuery[model.TeamMember]("team_member")
-	return Builder[model.TeamMember]{builder[model.TeamMember]{
+	return Builder[model.TeamMember, teamMemberSelect]{builder[model.TeamMember, teamMemberSelect]{
 		db:      db,
 		info:    teamMemberModelInfo,
 		query:   q,
 		rangeFn: teamMemberRangeFn,
+		selectFn: func(db Database, q lib.Query[model.TeamMember]) teamMemberSelect {
+			return teamMemberSelect{
+				db:    db,
+				query: q,
+			}
+		},
 	}}
 }

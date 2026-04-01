@@ -7,6 +7,7 @@ import (
 	filter "som.test/gen/som/filter"
 	lib "som.test/gen/som/internal/lib"
 	model "som.test/model"
+	"time"
 )
 
 // specialRelationModelInfo holds the model-specific unmarshal functions for SpecialRelation.
@@ -40,15 +41,120 @@ var specialRelationRangeFn = rangeFn[model.SpecialRelation](func(q *lib.Query[mo
 	return expr
 })
 
+// specialRelationSelect provides field selection for SpecialRelation queries.
+type specialRelationSelect struct {
+	db    Database
+	query lib.Query[model.SpecialRelation]
+}
+
+// ID returns a SelectField for the id field.
+func (s specialRelationSelect) ID() SelectField[string] {
+	q := s.query
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("id")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("id")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("id")
+		},
+	}
+}
+
+// DeletedAt returns a SelectField for the deleted_at field.
+func (s specialRelationSelect) DeletedAt() SelectField[*time.Time] {
+	q := s.query
+	return SelectField[*time.Time]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("deleted_at")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("deleted_at")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("deleted_at")
+		},
+	}
+}
+
+// Title returns a SelectField for the title field.
+func (s specialRelationSelect) Title() SelectField[string] {
+	q := s.query
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("title")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("title")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("title")
+		},
+	}
+}
+
+// Author returns a SelectField for the author field.
+func (s specialRelationSelect) Author() SelectField[*model.SpecialTypes] {
+	q := s.query
+	return SelectField[*model.SpecialTypes]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("author")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("author")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("author")
+		},
+	}
+}
+
+// Authors returns a SelectField for the authors field.
+func (s specialRelationSelect) Authors() SelectField[[]*model.SpecialTypes] {
+	q := s.query
+	return SelectField[[]*model.SpecialTypes]{
+		buildFn: func() *lib.Result {
+			return q.BuildAsSelectValue("authors")
+		},
+		db: s.db,
+		distFn: func() *lib.Result {
+			return q.BuildAsSelectDistinct("authors")
+		},
+		firstFn: func() *lib.Result {
+			q.Limit = 1
+			return q.BuildAsSelectValue("authors")
+		},
+	}
+}
+
+// SpecialRelationQuery is a type alias for the SpecialRelation query builder.
+type SpecialRelationQuery = Builder[model.SpecialRelation, specialRelationSelect]
+
 // NewSpecialRelation creates a new query builder for SpecialRelation models.
-func NewSpecialRelation(db Database) Builder[model.SpecialRelation] {
+func NewSpecialRelation(db Database) Builder[model.SpecialRelation, specialRelationSelect] {
 	q := lib.NewQuery[model.SpecialRelation]("special_relation")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialRelation.DeletedAt.Nil(true)
-	return Builder[model.SpecialRelation]{builder[model.SpecialRelation]{
+	return Builder[model.SpecialRelation, specialRelationSelect]{builder[model.SpecialRelation, specialRelationSelect]{
 		db:      db,
 		info:    specialRelationModelInfo,
 		query:   q,
 		rangeFn: specialRelationRangeFn,
+		selectFn: func(db Database, q lib.Query[model.SpecialRelation]) specialRelationSelect {
+			return specialRelationSelect{
+				db:    db,
+				query: q,
+			}
+		},
 	}}
 }

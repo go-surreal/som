@@ -44,6 +44,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	modelInfoVarName := node.NameGoLower() + "ModelInfo"
 	rangeFnVarName := node.NameGoLower() + "RangeFn"
+	selectTypeName := node.NameGoLower() + "Select"
 
 	convFn := jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr")
 
@@ -74,13 +75,22 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		b.generateStringIDRangeFn(f, node, pkgLib, somPkg, modelType, rangeFnVarName)
 	}
 
+	// Generate select struct and field methods
+	b.generateSelectStruct(f, node, pkgLib, modelType, selectTypeName)
+
+	// Generate exported type alias for use in repo interfaces
+	queryAliasName := node.NameGo() + "Query"
+	f.Line()
+	f.Commentf("%s is a type alias for the %s query builder.", queryAliasName, node.NameGo())
+	f.Type().Id(queryAliasName).Op("=").Id("Builder").Types(modelType, jen.Id(selectTypeName))
+
 	f.Line()
 	f.Commentf("New%s creates a new query builder for %s models.", node.NameGo(), node.NameGo())
 	f.Func().Id("New"+node.Name).
 		Params(
 			jen.Id("db").Id("Database"),
 		).
-		Id("Builder").Types(modelType).
+		Id("Builder").Types(modelType, jen.Id(selectTypeName)).
 		BlockFunc(func(g *jen.Group) {
 			g.Id("q").Op(":=").Qual(pkgLib, "NewQuery").Types(modelType).Call(jen.Lit(node.NameDatabase()))
 
@@ -95,6 +105,15 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 				jen.Id("db"):    jen.Id("db"),
 				jen.Id("query"): jen.Id("q"),
 				jen.Id("info"):  jen.Id(modelInfoVarName),
+				jen.Id("selectFn"): jen.Func().Params(
+					jen.Id("db").Id("Database"),
+					jen.Id("q").Qual(pkgLib, "Query").Types(modelType),
+				).Id(selectTypeName).Block(
+					jen.Return(jen.Id(selectTypeName).Values(jen.Dict{
+						jen.Id("db"):    jen.Id("db"),
+						jen.Id("query"): jen.Id("q"),
+					})),
+				),
 			}
 
 			if node.HasComplexID() || node.HasStringID() {
@@ -102,9 +121,9 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			}
 
 			g.Return(
-				jen.Id("Builder").Types(modelType).
+				jen.Id("Builder").Types(modelType, jen.Id(selectTypeName)).
 					Values(
-						jen.Id("builder").Types(modelType).
+						jen.Id("builder").Types(modelType, jen.Id(selectTypeName)).
 							Values(builderDict),
 					),
 			)
@@ -115,6 +134,57 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	}
 
 	return nil
+}
+
+func (b *queryBuilder) generateSelectStruct(
+	f *jen.File, node *field.NodeTable,
+	pkgLib string, modelType jen.Code, selectTypeName string,
+) {
+	// Generate the select struct type
+	f.Line()
+	f.Commentf("%s provides field selection for %s queries.", selectTypeName, node.NameGo())
+	f.Type().Id(selectTypeName).Struct(
+		jen.Id("db").Id("Database"),
+		jen.Id("query").Qual(pkgLib, "Query").Types(modelType),
+	)
+
+	// Generate a method per field
+	for _, fld := range node.Fields {
+		b.generateSelectFieldMethod(f, fld, pkgLib, modelType, selectTypeName)
+	}
+}
+
+func (b *queryBuilder) generateSelectFieldMethod(
+	f *jen.File, fld field.Field,
+	pkgLib string, modelType jen.Code, selectTypeName string,
+) {
+	fieldGoType := fld.TypeGo()
+	fieldDBName := fld.NameDatabase()
+	fieldGoName := fld.NameGo()
+
+	f.Line()
+	f.Commentf("%s returns a SelectField for the %s field.", fieldGoName, fieldDBName)
+	f.Func().
+		Params(jen.Id("s").Id(selectTypeName)).
+		Id(fieldGoName).
+		Params().
+		Id("SelectField").Types(fieldGoType).
+		Block(
+			jen.Id("q").Op(":=").Id("s").Dot("query"),
+			jen.Return(jen.Id("SelectField").Types(fieldGoType).Values(jen.Dict{
+				jen.Id("db"): jen.Id("s").Dot("db"),
+				jen.Id("buildFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
+					jen.Return(jen.Id("q").Dot("BuildAsSelectValue").Call(jen.Lit(fieldDBName))),
+				),
+				jen.Id("distFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
+					jen.Return(jen.Id("q").Dot("BuildAsSelectDistinct").Call(jen.Lit(fieldDBName))),
+				),
+				jen.Id("firstFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").BlockFunc(func(g *jen.Group) {
+					g.Id("q").Dot("Limit").Op("=").Lit(1)
+					g.Return(jen.Id("q").Dot("BuildAsSelectValue").Call(jen.Lit(fieldDBName)))
+				}),
+			})),
+		)
 }
 
 func (b *queryBuilder) generateRangeFn(

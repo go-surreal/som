@@ -14,12 +14,12 @@ type Weekday struct {
 	source *parser.FieldWeekday
 }
 
-func (f *Weekday) typeGo() jen.Code {
+func (f *Weekday) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Weekday")
 }
 
 func (f *Weekday) typeConv(_ Context) jen.Code {
-	return f.typeGo()
+	return f.TypeGo()
 }
 
 func (f *Weekday) TypeDatabase() string {

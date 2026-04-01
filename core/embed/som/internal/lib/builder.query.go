@@ -53,6 +53,8 @@ type Query[T any] struct {
 	SearchClauses []SearchClause
 	SearchWhere   string
 
+	valueField string // when set, renders SELECT VALUE <field> instead of SELECT <fields>
+
 	// Soft delete support for main queries (not fetched relations)
 	SoftDeleteFilter Filter[T] // Injected at initialization
 	IncludeDeleted   bool      // Flag to skip soft delete filter
@@ -120,6 +122,29 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 	}
 }
 
+func (q Query[T]) BuildAsSelectValue(field string) *Result {
+	q.valueField = field
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+func (q Query[T]) BuildAsSelectDistinct(field string) *Result {
+	q.valueField = field
+	q.groupAll = true
+
+	q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
+		return "(" + field + " != NONE AND " + field + " != NULL)"
+	}))
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
 func (q Query[T]) BuildDistinct(field string) *Result {
 	q.fields = []string{"array::distinct(array::group(" + field + ")) AS values"}
 	q.groupAll = true
@@ -143,35 +168,43 @@ func (q Query[T]) render() string {
 		out.WriteString("LIVE ")
 	}
 
-	fields := q.fields
-
-	// Add search score, highlight, and offset projections
-	for _, sc := range q.SearchClauses {
-		ref := strconv.Itoa(sc.Ref)
-		fields = append(fields, "search::score("+ref+") AS "+searchScorePrefix+ref)
-		if sc.Highlights {
-			fields = append(fields,
-				"search::highlight("+q.context.asVar(sc.HLPrefix)+", "+q.context.asVar(sc.HLSuffix)+", "+ref+") AS "+searchHighlightPrefix+ref)
+	if q.valueField != "" {
+		if q.groupAll {
+			out.WriteString("SELECT VALUE array::distinct(array::group(" + q.valueField + "))")
+		} else {
+			out.WriteString("SELECT VALUE " + q.valueField)
 		}
-		if sc.Offsets {
-			fields = append(fields, "search::offsets("+ref+") AS "+searchOffsetsPrefix+ref)
-		}
-	}
+	} else {
+		fields := q.fields
 
-	// Add score projection for each score sort
-	for _, s := range q.Sort {
-		if s.IsScore && len(s.ScoreRefs) > 0 {
-			expr := renderScoreCombination(s.ScoreRefs, s.ScoreMode, s.ScoreWeights)
-			refStrs := make([]string, len(s.ScoreRefs))
-			for i, ref := range s.ScoreRefs {
-				refStrs[i] = strconv.Itoa(ref)
+		// Add search score, highlight, and offset projections
+		for _, sc := range q.SearchClauses {
+			ref := strconv.Itoa(sc.Ref)
+			fields = append(fields, "search::score("+ref+") AS "+searchScorePrefix+ref)
+			if sc.Highlights {
+				fields = append(fields,
+					"search::highlight("+q.context.asVar(sc.HLPrefix)+", "+q.context.asVar(sc.HLSuffix)+", "+ref+") AS "+searchHighlightPrefix+ref)
 			}
-			alias := searchScorePrefix + strings.Join(refStrs, "_")
-			fields = append(fields, expr+" AS "+alias)
+			if sc.Offsets {
+				fields = append(fields, "search::offsets("+ref+") AS "+searchOffsetsPrefix+ref)
+			}
 		}
-	}
 
-	out.WriteString("SELECT " + strings.Join(fields, ", "))
+		// Add score projection for each score sort
+		for _, s := range q.Sort {
+			if s.IsScore && len(s.ScoreRefs) > 0 {
+				expr := renderScoreCombination(s.ScoreRefs, s.ScoreMode, s.ScoreWeights)
+				refStrs := make([]string, len(s.ScoreRefs))
+				for i, ref := range s.ScoreRefs {
+					refStrs[i] = strconv.Itoa(ref)
+				}
+				alias := searchScorePrefix + strings.Join(refStrs, "_")
+				fields = append(fields, expr+" AS "+alias)
+			}
+		}
+
+		out.WriteString("SELECT " + strings.Join(fields, ", "))
+	}
 
 	// TODO: not working, but more a optimisation than anything else
 	//if len(q.Sort) > 0 {

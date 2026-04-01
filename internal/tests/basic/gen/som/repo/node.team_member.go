@@ -20,7 +20,7 @@ import (
 type TeamMemberRepo interface {
 	// Query returns a new query builder for the TeamMember model.
 
-	Query() query.Builder[model.TeamMember]
+	Query() query.TeamMemberQuery
 	// CreateWithID creates a new record with the given key for the TeamMember model.
 
 	CreateWithID(ctx context.Context, teamMember *model.TeamMember) error
@@ -345,7 +345,7 @@ func (r *teamMember) OnAfterDelete(fn func(ctx context.Context, node *model.Team
 }
 
 // Query returns a new query builder for the TeamMember model.
-func (r *teamMember) Query() query.Builder[model.TeamMember] {
+func (r *teamMember) Query() query.TeamMemberQuery {
 	return query.NewTeamMember(r.db)
 }
 

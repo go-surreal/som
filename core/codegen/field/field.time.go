@@ -15,7 +15,7 @@ type Time struct {
 	source *parser.FieldTime
 }
 
-func (f *Time) typeGo() jen.Code {
+func (f *Time) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Time")
 }
 

@@ -15,7 +15,7 @@ type Struct struct {
 	element Table
 }
 
-func (f *Struct) typeGo() jen.Code {
+func (f *Struct) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.element.NameGo())
 }
 

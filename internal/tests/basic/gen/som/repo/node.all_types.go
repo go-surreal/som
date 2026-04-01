@@ -20,7 +20,7 @@ import (
 type AllTypesRepo interface {
 	// Query returns a new query builder for the AllTypes model.
 
-	Query() query.Builder[model.AllTypes]
+	Query() query.AllTypesQuery
 	// Create creates a new record for the AllTypes model.
 
 	Create(ctx context.Context, allTypes *model.AllTypes) error
@@ -354,7 +354,7 @@ func (r *allTypes) OnAfterDelete(fn func(ctx context.Context, node *model.AllTyp
 }
 
 // Query returns a new query builder for the AllTypes model.
-func (r *allTypes) Query() query.Builder[model.AllTypes] {
+func (r *allTypes) Query() query.AllTypesQuery {
 	return query.NewAllTypes(r.db)
 }
 
