@@ -691,11 +691,12 @@ func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, conve
 // SelectField represents a selected field from a query, providing
 // terminal methods to execute the query and retrieve typed results.
 type SelectField[T any] struct {
-	db       Database
-	buildFn  func() *lib.Result
-	distFn   func() *lib.Result
-	firstFn  func() *lib.Result
-	decodeFn func([]byte) ([]T, error)
+	db           Database
+	buildFn      func() *lib.Result
+	distFn       func() *lib.Result
+	firstFn      func() *lib.Result
+	decodeFn     func([]byte) ([]T, error)
+	distDecodeFn func([]byte) ([]T, error)
 }
 
 func (sf SelectField[T]) decode(data []byte) ([]T, error) {
@@ -747,6 +748,10 @@ func (sf SelectField[T]) Distinct(ctx context.Context) ([]T, error) {
 	raw, err := sf.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
 		return nil, fmt.Errorf("could not select distinct values: %w", err)
+	}
+
+	if sf.distDecodeFn != nil {
+		return sf.distDecodeFn(raw)
 	}
 
 	return unmarshalSelectDistinct[T](raw)

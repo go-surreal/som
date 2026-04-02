@@ -75,6 +75,24 @@ func (s specialRelationSelect) DeletedAt() SelectField[*time.Time] {
 			}
 			return out, nil
 		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			var rawResult []internal.QueryResult[[]cbor.RawMessage]
+			if err := cbor.Unmarshal(data, &rawResult); err != nil {
+				return nil, err
+			}
+			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+				return nil, nil
+			}
+			out := make([]*time.Time, 0, len(rawResult[0].Result[0]))
+			for _, raw := range rawResult[0].Result[0] {
+				v, err := cbor.UnmarshalDateTimePtr(raw)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, v)
+			}
+			return out, nil
+		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("deleted_at")
 		},

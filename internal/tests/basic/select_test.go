@@ -250,10 +250,14 @@ func TestSelectDistinct(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
+	dur1 := time.Minute
+	dur2 := time.Hour
+	dur3 := time.Hour
+
 	records := []*model.AllTypes{
-		{FieldString: "alpha", FieldInt: 10, FieldCredentials: model.Credentials{Username: "a", Password: "p"}, FieldMonth: 1},
-		{FieldString: "alpha", FieldInt: 20, FieldCredentials: model.Credentials{Username: "b", Password: "p"}, FieldMonth: 1},
-		{FieldString: "bravo", FieldInt: 30, FieldCredentials: model.Credentials{Username: "c", Password: "p"}, FieldMonth: 1},
+		{FieldString: "alpha", FieldInt: 10, FieldDuration: dur1, FieldCredentials: model.Credentials{Username: "a", Password: "p"}, FieldMonth: 1},
+		{FieldString: "alpha", FieldInt: 20, FieldDuration: dur2, FieldCredentials: model.Credentials{Username: "b", Password: "p"}, FieldMonth: 1},
+		{FieldString: "bravo", FieldInt: 30, FieldDuration: dur3, FieldCredentials: model.Credentials{Username: "c", Password: "p"}, FieldMonth: 1},
 	}
 
 	for _, r := range records {
@@ -274,6 +278,13 @@ func TestSelectDistinct(t *testing.T) {
 		assert.NilError(t, err)
 		sort.Ints(vals)
 		assert.DeepEqual(t, []int{10, 20, 30}, vals)
+	})
+
+	t.Run("Duration", func(t *testing.T) {
+		vals, err := client.AllTypesRepo().Query().Select().FieldDuration().Distinct(ctx)
+		assert.NilError(t, err)
+		sort.Slice(vals, func(i, j int) bool { return vals[i] < vals[j] })
+		assert.DeepEqual(t, []time.Duration{dur1, dur2}, vals)
 	})
 
 	t.Run("WithFilter", func(t *testing.T) {

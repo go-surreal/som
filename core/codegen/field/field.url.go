@@ -62,8 +62,13 @@ func (f *URL) CodeGen() *CodeGen {
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 
-		selectDecode: f.selectDecode,
+		selectDecode:        f.selectDecode,
+		selectDistinctDecode: f.selectDistinctDecode,
 	}
+}
+
+func (f *URL) SelectCBORHelper(ctx Context) (string, string, string) {
+	return ctx.pkgCBOR(), "UnmarshalURL", "UnmarshalURLPtr"
 }
 
 func (f *URL) selectDecode(ctx Context) jen.Code {
@@ -74,6 +79,16 @@ func (f *URL) selectDecode(ctx Context) jen.Code {
 	}
 
 	return selectDecodeWithHelper(ctx, f.TypeGo(), cborPkg, helper)
+}
+
+func (f *URL) selectDistinctDecode(ctx Context) jen.Code {
+	cborPkg := ctx.pkgCBOR()
+	helper := "UnmarshalURL"
+	if f.source.Pointer() {
+		helper = "UnmarshalURLPtr"
+	}
+
+	return selectDistinctDecodeWithHelper(ctx, f.TypeGo(), cborPkg, helper)
 }
 
 func (f *URL) fieldDefine(ctx Context) jen.Code {

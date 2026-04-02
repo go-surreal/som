@@ -207,9 +207,9 @@ The `Select()` builder does not generate a method for the `id` field because Sur
 returns record IDs in a special format that requires dedicated decoding. 
 Use `AllIDs()` or `FirstID()` for ID selection instead.
 
-#### Unsupported native go types
+#### Unsupported native Go types
 
-Currently, the native go types `uint`, `uint64` and `uintptr` are not supported.
+Currently, the native Go types `uint`, `uint64` and `uintptr` are not supported.
 Reason for this is that working with very big integers is not yet fully working with the 
 current version of SurrealDB (as of writing: 1.4.2). This should be fixed in a future release of SurrealDB.
 As soon as this is fixed, Som will support these types as well.

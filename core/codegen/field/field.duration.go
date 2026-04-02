@@ -52,8 +52,13 @@ func (f *Duration) CodeGen() *CodeGen {
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 
-		selectDecode: f.selectDecode,
+		selectDecode:        f.selectDecode,
+		selectDistinctDecode: f.selectDistinctDecode,
 	}
+}
+
+func (f *Duration) SelectCBORHelper(ctx Context) (string, string, string) {
+	return ctx.pkgCBOR(), "UnmarshalDuration", "UnmarshalDurationPtr"
 }
 
 func (f *Duration) selectDecode(ctx Context) jen.Code {
@@ -64,6 +69,16 @@ func (f *Duration) selectDecode(ctx Context) jen.Code {
 	}
 
 	return selectDecodeWithHelper(ctx, f.TypeGo(), cborPkg, helper)
+}
+
+func (f *Duration) selectDistinctDecode(ctx Context) jen.Code {
+	cborPkg := ctx.pkgCBOR()
+	helper := "UnmarshalDuration"
+	if f.source.Pointer() {
+		helper = "UnmarshalDurationPtr"
+	}
+
+	return selectDistinctDecodeWithHelper(ctx, f.TypeGo(), cborPkg, helper)
 }
 
 func (f *Duration) filterDefine(ctx Context) jen.Code {

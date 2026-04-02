@@ -192,6 +192,11 @@ func (b *queryBuilder) generateSelectFieldMethod(
 		dict[jen.Id("decodeFn")] = selectDecodeCode
 	}
 
+	selectDistinctDecodeCode := fld.CodeGen().SelectDistinctDecode(ctx)
+	if selectDistinctDecodeCode != nil {
+		dict[jen.Id("distDecodeFn")] = selectDistinctDecodeCode
+	}
+
 	f.Line()
 	f.Commentf("%s returns a SelectField for the %s field.", fieldGoName, fieldDBName)
 	f.Func().
