@@ -5,7 +5,10 @@ package repo
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -15,6 +18,7 @@ import (
 	"{{.GenerateOutPath}}/internal"
 	"{{.GenerateOutPath}}/internal/cbor"
 	"github.com/surrealdb/surrealdb.go"
+	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
@@ -28,7 +32,8 @@ type Config struct {
 }
 
 type dbConn struct {
-	conn *surrealdb.DB
+	conn    *surrealdb.DB
+	liveReg *liveRegistry
 }
 
 func (c *dbConn) ensureTx(ctx context.Context) (*surrealdb.Transaction, error) {
@@ -216,72 +221,111 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 		return nil, som.ErrLiveNotSupportedInTx
 	}
 
-	result, err := surrealdb.Query[models.UUID](ctx, c.conn, statement, vars)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute live query: %w", err)
-	}
+	key := liveQueryKey(statement, vars)
 
-	if result == nil || len(*result) == 0 {
-		return nil, som.ErrEmptyResponse
-	}
+	entry, isNew := c.liveReg.getOrCreate(key)
+	sub := entry.addSubscriber(ctx)
 
-	lastResult := (*result)[0]
-	if lastResult.Error != nil {
-		return nil, fmt.Errorf("live query error: %w", lastResult.Error)
-	}
-
-	liveID := lastResult.Result.String()
-
-	notifications, err := c.conn.LiveNotifications(liveID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get live notifications: %w", err)
-	}
-
-	out := make(chan []byte)
-	done := make(chan struct{})
-
+	// Monitor this subscriber's context and unsubscribe when done.
 	go func() {
-		defer close(out)
-		defer close(done)
+		<-ctx.Done()
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case notif, ok := <-notifications:
-				if !ok {
-					return
-				}
-				data, err := cbor.Marshal(notif)
-				if err != nil {
-					slog.ErrorContext(ctx, "failed to marshal live notification", "error", err)
-					continue
-				}
-				select {
-				case <-ctx.Done():
-					return
-				case out <- data:
-				}
-			}
-		}
-	}()
-
-	go func() {
-		select {
-		case <-ctx.Done():
-		case <-done:
-		}
-
-		if ctx.Err() != nil {
+		if last := c.liveReg.removeSubscriber(key, entry, sub); last {
 			killCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			if err := killLiveQuery(killCtx, c.conn, liveID); err != nil {
+
+			if err := killLiveQuery(killCtx, c.conn, entry.liveID); err != nil {
 				slog.ErrorContext(ctx, "failed to kill live query", "error", err)
 			}
 		}
 	}()
 
-	return out, nil
+	if !isNew {
+		// Another goroutine is initialising this entry; wait for it.
+		<-entry.ready
+
+		if entry.err != nil {
+			c.liveReg.removeSubscriber(key, entry, sub)
+			return nil, entry.err
+		}
+
+		return sub.ch, nil
+	}
+
+	// We are the creator — register the live query with SurrealDB.
+	liveID, notifications, err := c.registerLiveQuery(ctx, statement, vars)
+	if err != nil {
+		entry.err = err
+		close(entry.ready)
+		c.liveReg.removeSubscriber(key, entry, sub)
+		return nil, err
+	}
+
+	entry.liveID = liveID
+	close(entry.ready)
+
+	// Fan out notifications to all current and future subscribers.
+	go func() {
+		for notif := range notifications {
+			data, err := cbor.Marshal(notif)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to marshal live notification", "error", err)
+				continue
+			}
+			entry.fanOut(data)
+		}
+		// Notification channel closed (connection lost or server killed the query).
+		c.liveReg.closeAll(key, entry)
+	}()
+
+	return sub.ch, nil
+}
+
+// liveQueryKey builds a deterministic key from a statement and its
+// variables using CBOR Core Deterministic Encoding (RFC 8949).
+func liveQueryKey(statement string, vars map[string]any) string {
+	h := sha256.New()
+	_, _ = io.WriteString(h, statement)
+
+	if len(vars) > 0 {
+		data, err := cbor.MarshalDet(vars)
+		if err == nil {
+			h.Write(data)
+		}
+	}
+
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// registerLiveQuery executes a LIVE SELECT on the database and
+// subscribes to the resulting notification channel.
+func (c *dbConn) registerLiveQuery(
+	ctx context.Context,
+	statement string,
+	vars map[string]any,
+) (string, chan connection.Notification, error) {
+	result, err := surrealdb.Query[models.UUID](ctx, c.conn, statement, vars)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to execute live query: %w", err)
+	}
+
+	if result == nil || len(*result) == 0 {
+		return "", nil, som.ErrEmptyResponse
+	}
+
+	qr := (*result)[0]
+	if qr.Error != nil {
+		return "", nil, fmt.Errorf("live query error: %w", qr.Error)
+	}
+
+	liveID := qr.Result.String()
+
+	notifications, err := c.conn.LiveNotifications(liveID)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get live notifications: %w", err)
+	}
+
+	return liveID, notifications, nil
 }
 
 // killLiveQuery sends a kill RPC to the server. On success, the SDK
@@ -399,7 +443,10 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	}
 
 	return &ClientImpl{
-		db: &dbConn{conn: db},
+		db: &dbConn{
+			conn:    db,
+			liveReg: newLiveRegistry(),
+		},
 	}, nil
 }
 

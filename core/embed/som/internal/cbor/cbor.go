@@ -11,6 +11,11 @@ var (
 	// immutable and safe for concurrent use.
 	defaultEncMode cbor.EncMode
 	defaultDecMode cbor.DecMode
+
+	// detEncMode uses RFC 8949 Core Deterministic Encoding so that
+	// identical Go values always produce the exact same bytes.
+	// Used for hashing/keying purposes (e.g. live query dedup).
+	detEncMode cbor.EncMode
 )
 
 func init() {
@@ -27,6 +32,13 @@ func init() {
 	if err != nil {
 		panic("cbor: failed to create default DecMode: " + err.Error())
 	}
+
+	// Create deterministic encoding mode (RFC 8949 Core Deterministic).
+	// Map keys are sorted, producing canonical output for identical values.
+	detEncMode, err = cbor.CoreDetEncOptions().EncMode()
+	if err != nil {
+		panic("cbor: failed to create deterministic EncMode: " + err.Error())
+	}
 }
 
 // Marshal encodes v to CBOR format using a cached EncMode.
@@ -41,6 +53,13 @@ func Marshal(v any) ([]byte, error) {
 // due to mode reuse. It is safe for concurrent use.
 func Unmarshal(data []byte, v any) error {
 	return defaultDecMode.Unmarshal(data, v)
+}
+
+// MarshalDet encodes v to CBOR using RFC 8949 Core Deterministic Encoding.
+// Identical Go values always produce identical bytes, making the output
+// suitable for hashing and equality comparisons.
+func MarshalDet(v any) ([]byte, error) {
+	return detEncMode.Marshal(v)
 }
 
 // Re-export commonly used types for convenience
