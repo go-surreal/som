@@ -189,6 +189,18 @@ func TestSelectAll(t *testing.T) {
 		assert.DeepEqual(t, []model.Role{model.RoleAdmin, model.RoleUser, model.RoleUser}, vals)
 	})
 
+	// Struct type
+
+	t.Run("Credentials", func(t *testing.T) {
+		vals, err := client.AllTypesRepo().Query().Select().FieldCredentials().All(ctx)
+		assert.NilError(t, err)
+		assert.Equal(t, 3, len(vals))
+		sort.Slice(vals, func(i, j int) bool { return vals[i].Username < vals[j].Username })
+		assert.Equal(t, "alice", vals[0].Username)
+		assert.Equal(t, "bob", vals[1].Username)
+		assert.Equal(t, "charlie", vals[2].Username)
+	})
+
 	// With filter
 
 	t.Run("WithFilter", func(t *testing.T) {

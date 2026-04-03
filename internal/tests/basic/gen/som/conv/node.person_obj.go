@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
@@ -83,6 +84,35 @@ func ToPersonObjPtr(data *PersonObj) *model.PersonObj {
 	}
 	result := data.PersonObj
 	return &result
+}
+
+func SelectDecodePersonObj(data []byte) ([]model.PersonObj, error) {
+	var rawResult []internal.QueryResult[PersonObj]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.PersonObj, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToPersonObj(v)
+	}
+	return out, nil
+}
+func SelectDecodePersonObjPtr(data []byte) ([]*model.PersonObj, error) {
+	var rawResult []internal.QueryResult[*PersonObj]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.PersonObj, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToPersonObjPtr(v)
+	}
+	return out, nil
 }
 
 type personObjLink struct {

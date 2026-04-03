@@ -2049,7 +2049,8 @@ func (s allTypesSelect) FieldCredentials() SelectField[model.Credentials] {
 		buildFn: func() *lib.Result {
 			return q.BuildAsSelectValue("field_credentials")
 		},
-		db: s.db,
+		db:       s.db,
+		decodeFn: conv.SelectDecodeCredentials,
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_credentials")
 		},
@@ -2068,7 +2069,8 @@ func (s allTypesSelect) FieldNestedDataPtr() SelectField[*model.NestedData] {
 		buildFn: func() *lib.Result {
 			return q.BuildAsSelectValue("field_nested_data_ptr")
 		},
-		db: s.db,
+		db:       s.db,
+		decodeFn: conv.SelectDecodeNestedDataPtr,
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_nested_data_ptr")
 		},
@@ -2133,44 +2135,6 @@ func (s allTypesSelect) FieldNestedDataPtrSlicePtr() SelectField[*[]*model.Neste
 			fq := q
 			fq.Limit = 1
 			return fq.BuildAsSelectValue("field_nested_data_ptr_slice_ptr")
-		},
-	}
-}
-
-// FieldNode returns a SelectField for the field_node field.
-func (s allTypesSelect) FieldNode() SelectField[model.SpecialTypes] {
-	q := s.query
-	return SelectField[model.SpecialTypes]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("field_node")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("field_node")
-		},
-		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("field_node")
-		},
-	}
-}
-
-// FieldNodePtr returns a SelectField for the field_node_ptr field.
-func (s allTypesSelect) FieldNodePtr() SelectField[*model.SpecialTypes] {
-	q := s.query
-	return SelectField[*model.SpecialTypes]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("field_node_ptr")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("field_node_ptr")
-		},
-		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("field_node_ptr")
 		},
 	}
 }

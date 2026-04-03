@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
@@ -125,6 +126,35 @@ func ToTeamMemberPtr(data *TeamMember) *model.TeamMember {
 	}
 	result := data.TeamMember
 	return &result
+}
+
+func SelectDecodeTeamMember(data []byte) ([]model.TeamMember, error) {
+	var rawResult []internal.QueryResult[TeamMember]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.TeamMember, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToTeamMember(v)
+	}
+	return out, nil
+}
+func SelectDecodeTeamMemberPtr(data []byte) ([]*model.TeamMember, error) {
+	var rawResult []internal.QueryResult[*TeamMember]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.TeamMember, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToTeamMemberPtr(v)
+	}
+	return out, nil
 }
 
 type teamMemberLink struct {

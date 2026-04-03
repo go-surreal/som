@@ -2,6 +2,7 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
@@ -63,4 +64,33 @@ func toCredentialsPtr(data *credentials) *model.Credentials {
 	}
 	result := data.Credentials
 	return &result
+}
+
+func SelectDecodeCredentials(data []byte) ([]model.Credentials, error) {
+	var rawResult []internal.QueryResult[credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.Credentials, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toCredentials(v)
+	}
+	return out, nil
+}
+func SelectDecodeCredentialsPtr(data []byte) ([]*model.Credentials, error) {
+	var rawResult []internal.QueryResult[*credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.Credentials, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toCredentialsPtr(v)
+	}
+	return out, nil
 }

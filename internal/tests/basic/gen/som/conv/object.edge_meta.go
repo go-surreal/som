@@ -2,6 +2,7 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
@@ -57,4 +58,33 @@ func toEdgeMetaPtr(data *edgeMeta) *model.EdgeMeta {
 	}
 	result := data.EdgeMeta
 	return &result
+}
+
+func SelectDecodeEdgeMeta(data []byte) ([]model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[edgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.EdgeMeta, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toEdgeMeta(v)
+	}
+	return out, nil
+}
+func SelectDecodeEdgeMetaPtr(data []byte) ([]*model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[*edgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.EdgeMeta, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toEdgeMetaPtr(v)
+	}
+	return out, nil
 }

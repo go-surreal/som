@@ -2,6 +2,7 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
@@ -75,4 +76,33 @@ func toNestedDataPtr(data *nestedData) *model.NestedData {
 	}
 	result := data.NestedData
 	return &result
+}
+
+func SelectDecodeNestedData(data []byte) ([]model.NestedData, error) {
+	var rawResult []internal.QueryResult[nestedData]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.NestedData, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toNestedData(v)
+	}
+	return out, nil
+}
+func SelectDecodeNestedDataPtr(data []byte) ([]*model.NestedData, error) {
+	var rawResult []internal.QueryResult[*nestedData]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.NestedData, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toNestedDataPtr(v)
+	}
+	return out, nil
 }

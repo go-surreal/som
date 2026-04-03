@@ -148,9 +148,15 @@ func (b *queryBuilder) generateSelectStruct(
 		jen.Id("query").Qual(pkgLib, "Query").Types(modelType),
 	)
 
-	// Generate a method per field (except id)
+	// Generate a method per field.
+	// Skip: id (RecordID format), nodes (record links), edges (record links).
 	for _, fld := range node.Fields {
 		if fld.NameDatabase() == "id" {
+			continue
+		}
+
+		switch fld.(type) {
+		case *field.Node, *field.Edge:
 			continue
 		}
 

@@ -2,6 +2,7 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
@@ -57,4 +58,33 @@ func toPersonKeyPtr(data *personKey) *model.PersonKey {
 	}
 	result := data.PersonKey
 	return &result
+}
+
+func SelectDecodePersonKey(data []byte) ([]model.PersonKey, error) {
+	var rawResult []internal.QueryResult[personKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.PersonKey, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toPersonKey(v)
+	}
+	return out, nil
+}
+func SelectDecodePersonKeyPtr(data []byte) ([]*model.PersonKey, error) {
+	var rawResult []internal.QueryResult[*personKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.PersonKey, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toPersonKeyPtr(v)
+	}
+	return out, nil
 }

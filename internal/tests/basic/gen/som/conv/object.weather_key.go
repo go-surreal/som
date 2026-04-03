@@ -2,6 +2,7 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
@@ -58,4 +59,33 @@ func toWeatherKeyPtr(data *weatherKey) *model.WeatherKey {
 	}
 	result := data.WeatherKey
 	return &result
+}
+
+func SelectDecodeWeatherKey(data []byte) ([]model.WeatherKey, error) {
+	var rawResult []internal.QueryResult[weatherKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.WeatherKey, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toWeatherKey(v)
+	}
+	return out, nil
+}
+func SelectDecodeWeatherKeyPtr(data []byte) ([]*model.WeatherKey, error) {
+	var rawResult []internal.QueryResult[*weatherKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.WeatherKey, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = toWeatherKeyPtr(v)
+	}
+	return out, nil
 }

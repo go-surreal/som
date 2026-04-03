@@ -96,3 +96,32 @@ func ToEdgeRelationPtr(data *EdgeRelation) *model.EdgeRelation {
 	result := data.EdgeRelation
 	return &result
 }
+
+func SelectDecodeEdgeRelation(data []byte) ([]model.EdgeRelation, error) {
+	var rawResult []internal.QueryResult[EdgeRelation]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.EdgeRelation, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToEdgeRelation(&v)
+	}
+	return out, nil
+}
+func SelectDecodeEdgeRelationPtr(data []byte) ([]*model.EdgeRelation, error) {
+	var rawResult []internal.QueryResult[*EdgeRelation]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.EdgeRelation, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToEdgeRelationPtr(v)
+	}
+	return out, nil
+}
