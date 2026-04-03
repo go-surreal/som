@@ -11,6 +11,8 @@ import (
 )
 
 func TestIterate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
@@ -111,6 +113,8 @@ func TestIterate(t *testing.T) {
 }
 
 func TestIterateID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()

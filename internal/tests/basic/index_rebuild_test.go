@@ -9,6 +9,8 @@ import (
 )
 
 func TestIndexRebuildCount(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -30,6 +32,8 @@ func TestIndexRebuildCount(t *testing.T) {
 }
 
 func TestIndexRebuildSearch(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -52,6 +56,8 @@ func TestIndexRebuildSearch(t *testing.T) {
 }
 
 func TestIndexRebuildRegularIndex(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -76,6 +82,8 @@ func TestIndexRebuildRegularIndex(t *testing.T) {
 }
 
 func TestIndexRebuildSoftDeleteIndex(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -88,6 +96,8 @@ func TestIndexRebuildSoftDeleteIndex(t *testing.T) {
 }
 
 func TestIndexRebuildMultiple(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -124,6 +134,8 @@ func TestIndexRebuildMultiple(t *testing.T) {
 }
 
 func TestIndexRebuildMinimalNode(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

@@ -2,18 +2,18 @@ package basic
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"regexp"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/docker/docker/api/types/container"
-	"som.test/gen/som/repo"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"som.test/gen/som/repo"
 )
 
 const (
@@ -29,22 +29,26 @@ var errAlreadyInProgress = regexp.MustCompile(`removal of container .* is alread
 // error for a container that does not exist.
 var errNoSuchContainer = regexp.MustCompile(`No such container`)
 
-func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
-	tb.Helper()
+var sharedEndpoint string
+var sharedUsername string
+var sharedPassword string
 
-	username := gofakeit.Username()
-	password := gofakeit.Password(true, true, true, true, true, 32)
-	namespace := gofakeit.FirstName()
-	database := gofakeit.LastName()
+func TestMain(m *testing.M) {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
+
+	ctx := context.Background()
+
+	sharedUsername = gofakeit.Username()
+	sharedPassword = gofakeit.Password(true, true, true, true, true, 32)
 
 	req := testcontainers.ContainerRequest{
-		Name:  "som_" + toSlug(tb.Name()),
+		Name:  "som_test_shared",
 		Image: "surrealdb/surrealdb:v" + surrealDBVersion,
 		Env: map[string]string{
 			"SURREAL_PATH":   "memory",
 			"SURREAL_STRICT": "true",
-			"SURREAL_USER":   username,
-			"SURREAL_PASS":   password,
+			"SURREAL_USER":   sharedUsername,
+			"SURREAL_PASS":   sharedPassword,
 		},
 		Cmd: []string{
 			"start", "--allow-funcs", "--log", "trace",
@@ -64,25 +68,45 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		},
 	)
 	if err != nil {
-		tb.Fatal(err)
+		fmt.Fprintf(os.Stderr, "failed to start shared container: %v\n", err)
+		os.Exit(1)
 	}
 
 	endpoint, err := surreal.Endpoint(ctx, "")
 	if err != nil {
-		tb.Fatal(err)
+		fmt.Fprintf(os.Stderr, "failed to get container endpoint: %v\n", err)
+		os.Exit(1)
 	}
 
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
+	sharedEndpoint = endpoint
+
+	code := m.Run()
+
+	if err := surreal.Terminate(ctx); err != nil {
+		if !errAlreadyInProgress.MatchString(err.Error()) && !errNoSuchContainer.MatchString(err.Error()) {
+			fmt.Fprintf(os.Stderr, "failed to terminate container: %v\n", err)
+		}
+	}
+
+	os.Exit(code)
+}
+
+func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
+	tb.Helper()
+
+	namespace := gofakeit.FirstName()
+	database := gofakeit.LastName()
 
 	config := repo.Config{
-		Address:   "ws://" + endpoint,
-		Username:  username,
-		Password:  password,
+		Address:   "ws://" + sharedEndpoint,
+		Username:  sharedUsername,
+		Password:  sharedPassword,
 		Namespace: namespace,
 		Database:  database,
 	}
 
 	var client *repo.ClientImpl
+	var err error
 	for range 5 {
 		client, err = repo.NewClient(ctx, config)
 		if err == nil {
@@ -100,35 +124,8 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 
 	cleanup := func() {
 		client.Close()
-
-		if err := surreal.Terminate(ctx); err != nil {
-			if errAlreadyInProgress.MatchString(err.Error()) || errNoSuchContainer.MatchString(err.Error()) {
-				return // this "error" is not caught by the Terminate method even though it is safe to ignore
-			}
-
-			tb.Fatalf("failed to terminate container: %s", err.Error())
-		}
 	}
 
 	return client, cleanup
 }
 
-func toSlug(input string) string {
-	// Remove special characters
-	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
-	if err != nil {
-		panic(err)
-	}
-	processedString := reg.ReplaceAllString(input, " ")
-
-	// Remove leading and trailing spaces
-	processedString = strings.TrimSpace(processedString)
-
-	// Replace spaces with dashes
-	slug := strings.ReplaceAll(processedString, " ", "-")
-
-	// Convert to lowercase
-	slug = strings.ToLower(slug)
-
-	return slug
-}
