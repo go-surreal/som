@@ -285,13 +285,16 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 			// send, so a concurrent close is unsynchronized.
 			//
 			// Instead, we send a raw KILL query to stop the server
-			// from emitting further notifications and skip the
-			// channel close entirely. The channel is cleaned up
-			// when the connection is closed.
-			_, _ = surrealdb.Query[any](killCtx, c.conn,
+			// from emitting further notifications, then wait for the
+			// forwarding goroutine to exit and drain any remaining
+			// notifications before closing the channel ourselves.
+			if _, err := surrealdb.Query[any](killCtx, c.conn,
 				"KILL $liveID", map[string]any{"liveID": liveID},
-			)
+			); err != nil {
+				slog.ErrorContext(ctx, "failed to kill live query", "error", err)
+			}
 		}
+
 	}()
 
 	return out, nil
