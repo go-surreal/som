@@ -13,6 +13,8 @@ import (
 )
 
 func TestBetweenDescribe(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	t.Run("default both inclusive", func(t *testing.T) {
@@ -111,6 +113,8 @@ func TestBetweenDescribe(t *testing.T) {
 }
 
 func TestBetweenQuery(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

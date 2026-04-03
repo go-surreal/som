@@ -12,6 +12,8 @@ import (
 )
 
 func TestRawQuery_Scan(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -36,6 +38,8 @@ func TestRawQuery_Scan(t *testing.T) {
 }
 
 func TestRawQuery_ScanOne(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -58,6 +62,8 @@ func TestRawQuery_ScanOne(t *testing.T) {
 }
 
 func TestRawQuery_ScanOne_NotFound(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -72,6 +78,8 @@ func TestRawQuery_ScanOne_NotFound(t *testing.T) {
 }
 
 func TestRawQuery_NoParams(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -87,6 +95,8 @@ func TestRawQuery_NoParams(t *testing.T) {
 }
 
 func TestRawQuery_DDL(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -100,6 +110,8 @@ func TestRawQuery_DDL(t *testing.T) {
 }
 
 func TestRawQuery_ParamBinding(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -125,6 +137,8 @@ func TestRawQuery_ParamBinding(t *testing.T) {
 }
 
 func TestRawQuery_InvalidQuery(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

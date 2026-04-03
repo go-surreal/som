@@ -11,6 +11,8 @@ import (
 )
 
 func TestServerError_OptimisticLockUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -41,6 +43,8 @@ func TestServerError_OptimisticLockUpdate(t *testing.T) {
 }
 
 func TestServerError_OptimisticLockSoftDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -63,6 +67,8 @@ func TestServerError_OptimisticLockSoftDelete(t *testing.T) {
 }
 
 func TestServerError_AlreadyDeleted(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -82,6 +88,8 @@ func TestServerError_AlreadyDeleted(t *testing.T) {
 }
 
 func TestServerError_OptimisticLockRestore(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

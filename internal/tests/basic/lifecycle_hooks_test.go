@@ -14,6 +14,8 @@ import (
 )
 
 func TestHookBeforeCreate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -36,6 +38,8 @@ func TestHookBeforeCreate(t *testing.T) {
 }
 
 func TestHookAfterCreate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -60,6 +64,8 @@ func TestHookAfterCreate(t *testing.T) {
 }
 
 func TestHookBeforeCreateAbort(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -84,6 +90,8 @@ func TestHookBeforeCreateAbort(t *testing.T) {
 }
 
 func TestHookBeforeUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -110,6 +118,8 @@ func TestHookBeforeUpdate(t *testing.T) {
 }
 
 func TestHookAfterUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -134,6 +144,8 @@ func TestHookAfterUpdate(t *testing.T) {
 }
 
 func TestHookBeforeDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -159,6 +171,8 @@ func TestHookBeforeDelete(t *testing.T) {
 }
 
 func TestHookAfterDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -188,6 +202,8 @@ func TestHookAfterDelete(t *testing.T) {
 }
 
 func TestHookCleanup(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -209,6 +225,8 @@ func TestHookCleanup(t *testing.T) {
 }
 
 func TestHookMultiple(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -237,6 +255,8 @@ func TestHookMultiple(t *testing.T) {
 }
 
 func TestModelHookBeforeCreate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -253,6 +273,8 @@ func TestModelHookBeforeCreate(t *testing.T) {
 }
 
 func TestModelHookAfterCreate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -266,6 +288,8 @@ func TestModelHookAfterCreate(t *testing.T) {
 }
 
 func TestModelHookBeforeUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -286,6 +310,8 @@ func TestModelHookBeforeUpdate(t *testing.T) {
 }
 
 func TestModelHookAfterUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -302,6 +328,8 @@ func TestModelHookAfterUpdate(t *testing.T) {
 }
 
 func TestModelHookBeforeDeleteAbort(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -323,6 +351,8 @@ func TestModelHookBeforeDeleteAbort(t *testing.T) {
 }
 
 func TestModelHookAfterDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -346,6 +376,8 @@ func TestModelHookAfterDelete(t *testing.T) {
 }
 
 func TestModelHookAndRepoHookOrder(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

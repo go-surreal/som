@@ -13,6 +13,8 @@ import (
 )
 
 func TestQuery(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	query := client.AllTypesRepo().Query().
@@ -53,6 +55,8 @@ func TestQuery(t *testing.T) {
 }
 
 func TestQueryNot(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	query := client.AllTypesRepo().Query().
@@ -99,6 +103,8 @@ func TestQueryNot(t *testing.T) {
 }
 
 func TestQueryLimitOffset(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -150,6 +156,8 @@ func TestQueryLimitOffset(t *testing.T) {
 }
 
 func TestQueryIDs(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -182,6 +190,8 @@ func TestQueryIDs(t *testing.T) {
 }
 
 func TestOrderRandom(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

@@ -13,6 +13,8 @@ import (
 )
 
 func TestCacheLazy(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -39,6 +41,8 @@ func TestCacheLazy(t *testing.T) {
 }
 
 func TestCacheLazyExplicit(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -65,6 +69,8 @@ func TestCacheLazyExplicit(t *testing.T) {
 }
 
 func TestCacheEager(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -108,6 +114,8 @@ func TestCacheEager(t *testing.T) {
 }
 
 func TestCacheEagerWithMaxSize(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -127,6 +135,8 @@ func TestCacheEagerWithMaxSize(t *testing.T) {
 }
 
 func TestCacheCleanup(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -150,6 +160,8 @@ func TestCacheCleanup(t *testing.T) {
 }
 
 func TestCacheCleanupThenNewCache(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -184,6 +196,8 @@ func TestCacheCleanupThenNewCache(t *testing.T) {
 }
 
 func TestCacheIsolation(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -226,6 +240,8 @@ func TestCacheIsolation(t *testing.T) {
 }
 
 func TestCacheConcurrent(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -278,6 +294,8 @@ func TestCacheConcurrent(t *testing.T) {
 }
 
 func TestCacheLazyPopulation(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -313,6 +331,8 @@ func TestCacheLazyPopulation(t *testing.T) {
 }
 
 func TestCacheWithTTL(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -344,6 +364,8 @@ func TestCacheWithTTL(t *testing.T) {
 }
 
 func TestCacheEagerWithTTLRefresh(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
