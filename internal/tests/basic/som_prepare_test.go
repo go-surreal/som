@@ -74,17 +74,19 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	terminateContainer := func() {
+	terminateContainer := func() error {
 		if err := surreal.Terminate(ctx); err != nil {
 			if !errAlreadyInProgress.MatchString(err.Error()) && !errNoSuchContainer.MatchString(err.Error()) {
 				fmt.Fprintf(os.Stderr, "failed to terminate container: %v\n", err)
+				return err
 			}
 		}
+		return nil
 	}
 
 	endpoint, err := surreal.Endpoint(ctx, "")
 	if err != nil {
-		terminateContainer()
+		_ = terminateContainer()
 		fmt.Fprintf(os.Stderr, "failed to get container endpoint: %v\n", err)
 		os.Exit(1)
 	}
@@ -93,7 +95,9 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	terminateContainer()
+	if terminateContainer() != nil && code == 0 {
+		os.Exit(1)
+	}
 
 	os.Exit(code)
 }
@@ -131,6 +135,8 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 	}
 
 	cleanup := func() {
+		_, _ = client.Raw(context.Background(), fmt.Sprintf("REMOVE DATABASE %s", database), nil)
+		_, _ = client.Raw(context.Background(), fmt.Sprintf("REMOVE NAMESPACE %s", namespace), nil)
 		client.Close()
 	}
 
