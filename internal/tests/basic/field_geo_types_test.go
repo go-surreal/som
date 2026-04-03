@@ -59,6 +59,8 @@ func sfNewPolygon(rings [][]float64) sfgeom.Polygon {
 }
 
 func TestGeoPoint(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -98,6 +100,8 @@ func TestGeoPoint(t *testing.T) {
 }
 
 func TestGeoLineString(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -138,6 +142,8 @@ func TestGeoLineString(t *testing.T) {
 }
 
 func TestGeoPolygon(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -182,6 +188,8 @@ func TestGeoPolygon(t *testing.T) {
 }
 
 func TestGeoMultiTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -230,6 +238,8 @@ func TestGeoMultiTypes(t *testing.T) {
 }
 
 func TestGeoCollection(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -269,6 +279,8 @@ func TestGeoCollection(t *testing.T) {
 }
 
 func TestGeoNilPointers(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -316,6 +328,8 @@ func TestGeoNilPointers(t *testing.T) {
 }
 
 func TestGeoAllTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -404,6 +418,8 @@ func TestGeoAllTypes(t *testing.T) {
 // go-geom specific tests
 
 func TestGoGeomPoint(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -434,6 +450,8 @@ func TestGoGeomPoint(t *testing.T) {
 }
 
 func TestGoGeomLineString(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -463,6 +481,8 @@ func TestGoGeomLineString(t *testing.T) {
 }
 
 func TestGoGeomPolygon(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -498,6 +518,8 @@ func TestGoGeomPolygon(t *testing.T) {
 }
 
 func TestGoGeomMultiTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -540,6 +562,8 @@ func TestGoGeomMultiTypes(t *testing.T) {
 // simplefeatures specific tests
 
 func TestSFPoint(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -575,6 +599,8 @@ func TestSFPoint(t *testing.T) {
 }
 
 func TestSFLineString(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -604,6 +630,8 @@ func TestSFLineString(t *testing.T) {
 }
 
 func TestSFPolygon(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -638,6 +666,8 @@ func TestSFPolygon(t *testing.T) {
 }
 
 func TestSFMultiTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

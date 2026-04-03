@@ -14,6 +14,8 @@ import (
 )
 
 func TestRangeQueryDescribe(t *testing.T) {
+	t.Parallel()
+
 	start := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 	end := time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC)
 
@@ -93,6 +95,8 @@ func TestRangeQueryDescribe(t *testing.T) {
 }
 
 func TestRangeQueryStringIDDescribe(t *testing.T) {
+	t.Parallel()
+
 	t.Run("ULID full range", func(t *testing.T) {
 		desc := query.NewAllTypes(nil).Range(
 			som.From(som.ULID("01HY5E8ZQA1BCD2EF3GH4JK5MN")),
@@ -143,6 +147,8 @@ func TestRangeQueryStringIDDescribe(t *testing.T) {
 }
 
 func TestRangeQueryArrayID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -260,6 +266,8 @@ func TestRangeQueryArrayID(t *testing.T) {
 }
 
 func TestRangeQueryObjectID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

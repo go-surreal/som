@@ -13,6 +13,8 @@ import (
 )
 
 func TestComplexIDObjectKey(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -62,6 +64,8 @@ func TestComplexIDObjectKey(t *testing.T) {
 }
 
 func TestComplexIDArrayKey(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -112,6 +116,8 @@ func TestComplexIDArrayKey(t *testing.T) {
 }
 
 func TestComplexIDZeroKeyErrors(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -173,6 +179,8 @@ func TestComplexIDZeroKeyErrors(t *testing.T) {
 }
 
 func TestComplexIDMultipleRecords(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -208,6 +216,8 @@ func TestComplexIDMultipleRecords(t *testing.T) {
 }
 
 func TestComplexIDNodeRef(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -275,6 +285,8 @@ func TestComplexIDNodeRef(t *testing.T) {
 }
 
 func TestComplexIDCacheNotSupported(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -289,6 +301,8 @@ func TestComplexIDCacheNotSupported(t *testing.T) {
 }
 
 func TestComplexIDQueryAll(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -320,6 +334,8 @@ func TestComplexIDQueryAll(t *testing.T) {
 }
 
 func TestComplexIDQueryFilter(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -356,6 +372,8 @@ func TestComplexIDQueryFilter(t *testing.T) {
 }
 
 func TestComplexIDQuerySort(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -395,6 +413,8 @@ func TestComplexIDQuerySort(t *testing.T) {
 }
 
 func TestComplexIDQueryLimitOffset(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -436,6 +456,8 @@ func TestComplexIDQueryLimitOffset(t *testing.T) {
 }
 
 func TestComplexIDQueryFirst(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -465,6 +487,8 @@ func TestComplexIDQueryFirst(t *testing.T) {
 }
 
 func TestComplexIDFilterByObjectIDField(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -503,6 +527,8 @@ func TestComplexIDFilterByObjectIDField(t *testing.T) {
 }
 
 func TestComplexIDFilterByArrayIDField(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -544,6 +570,8 @@ func TestComplexIDFilterByArrayIDField(t *testing.T) {
 }
 
 func TestComplexIDQueryNodeRef(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
