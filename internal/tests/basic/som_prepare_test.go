@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"regexp"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -33,6 +34,8 @@ var sharedEndpoint string
 var sharedUsername string
 var sharedPassword string
 
+var dbCounter atomic.Uint64
+
 func TestMain(m *testing.M) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
 
@@ -42,7 +45,6 @@ func TestMain(m *testing.M) {
 	sharedPassword = gofakeit.Password(true, true, true, true, true, 32)
 
 	req := testcontainers.ContainerRequest{
-		Name:  "som_test_shared",
 		Image: "surrealdb/surrealdb:v" + surrealDBVersion,
 		Env: map[string]string{
 			"SURREAL_PATH":   "memory",
@@ -72,8 +74,17 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	terminateContainer := func() {
+		if err := surreal.Terminate(ctx); err != nil {
+			if !errAlreadyInProgress.MatchString(err.Error()) && !errNoSuchContainer.MatchString(err.Error()) {
+				fmt.Fprintf(os.Stderr, "failed to terminate container: %v\n", err)
+			}
+		}
+	}
+
 	endpoint, err := surreal.Endpoint(ctx, "")
 	if err != nil {
+		terminateContainer()
 		fmt.Fprintf(os.Stderr, "failed to get container endpoint: %v\n", err)
 		os.Exit(1)
 	}
@@ -82,11 +93,7 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	if err := surreal.Terminate(ctx); err != nil {
-		if !errAlreadyInProgress.MatchString(err.Error()) && !errNoSuchContainer.MatchString(err.Error()) {
-			fmt.Fprintf(os.Stderr, "failed to terminate container: %v\n", err)
-		}
-	}
+	terminateContainer()
 
 	os.Exit(code)
 }
@@ -94,8 +101,9 @@ func TestMain(m *testing.M) {
 func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 	tb.Helper()
 
-	namespace := gofakeit.FirstName()
-	database := gofakeit.LastName()
+	id := dbCounter.Add(1)
+	namespace := fmt.Sprintf("ns_%d", id)
+	database := fmt.Sprintf("db_%d", id)
 
 	config := repo.Config{
 		Address:   "ws://" + sharedEndpoint,
@@ -128,4 +136,3 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 
 	return client, cleanup
 }
-
