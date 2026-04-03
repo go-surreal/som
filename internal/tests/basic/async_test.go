@@ -11,6 +11,8 @@ import (
 )
 
 func TestAsync(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -42,6 +44,8 @@ func TestAsync(t *testing.T) {
 }
 
 func TestAsyncQueries(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

@@ -11,6 +11,8 @@ import (
 )
 
 func TestTransactionCommit(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -34,6 +36,8 @@ func TestTransactionCommit(t *testing.T) {
 }
 
 func TestTransactionCancel(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -54,6 +58,8 @@ func TestTransactionCancel(t *testing.T) {
 }
 
 func TestTransactionMultipleOperations(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -94,6 +100,8 @@ func TestTransactionMultipleOperations(t *testing.T) {
 }
 
 func TestTransactionMultipleRepos(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -125,6 +133,8 @@ func TestTransactionMultipleRepos(t *testing.T) {
 }
 
 func TestTransactionCancelMultipleRepos(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -152,6 +162,8 @@ func TestTransactionCancelMultipleRepos(t *testing.T) {
 }
 
 func TestTransactionCommitWithoutOperations(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	txCtx, cancel := som.TxStart(ctx)
@@ -162,6 +174,8 @@ func TestTransactionCommitWithoutOperations(t *testing.T) {
 }
 
 func TestTransactionCancelWithoutOperations(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	_, cancel := som.TxStart(ctx)
@@ -170,6 +184,8 @@ func TestTransactionCancelWithoutOperations(t *testing.T) {
 }
 
 func TestTransactionCommitThenCommitFails(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -190,6 +206,8 @@ func TestTransactionCommitThenCommitFails(t *testing.T) {
 }
 
 func TestTransactionCancelAfterCommit(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -210,6 +228,8 @@ func TestTransactionCancelAfterCommit(t *testing.T) {
 }
 
 func TestTransactionCancelIdempotent(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -228,6 +248,8 @@ func TestTransactionCancelIdempotent(t *testing.T) {
 }
 
 func TestTransactionOperationAfterCommitFails(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -249,6 +271,8 @@ func TestTransactionOperationAfterCommitFails(t *testing.T) {
 }
 
 func TestTransactionOperationAfterCancelFails(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -268,6 +292,8 @@ func TestTransactionOperationAfterCancelFails(t *testing.T) {
 }
 
 func TestTxStartPanicsIfAlreadyActive(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	txCtx, cancel := som.TxStart(ctx)
@@ -285,6 +311,8 @@ func TestTxStartPanicsIfAlreadyActive(t *testing.T) {
 }
 
 func TestTransactionReadBypassesCache(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -314,6 +342,8 @@ func TestTransactionReadBypassesCache(t *testing.T) {
 }
 
 func TestCommitWithoutTransaction(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	err := som.TxCommit(ctx)
@@ -321,6 +351,8 @@ func TestCommitWithoutTransaction(t *testing.T) {
 }
 
 func TestCancelWithoutTransaction(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	err := som.TxCancel(ctx)
@@ -328,6 +360,8 @@ func TestCancelWithoutTransaction(t *testing.T) {
 }
 
 func TestTransactionConcurrentEnsureTx(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -359,6 +393,8 @@ func TestTransactionConcurrentEnsureTx(t *testing.T) {
 }
 
 func TestTransactionSoftDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -385,6 +421,8 @@ func TestTransactionSoftDelete(t *testing.T) {
 }
 
 func TestTransactionSoftDeleteCancelled(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

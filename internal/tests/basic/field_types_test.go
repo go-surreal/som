@@ -17,6 +17,8 @@ import (
 )
 
 func TestNumerics(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -114,6 +116,8 @@ func TestNumerics(t *testing.T) {
 }
 
 func TestSlice(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -462,6 +466,8 @@ func TestSlice(t *testing.T) {
 }
 
 func TestSliceNilElements(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -601,6 +607,8 @@ func TestSliceNilElements(t *testing.T) {
 }
 
 func TestTimestamps(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -632,6 +640,8 @@ func TestTimestamps(t *testing.T) {
 }
 
 func TestURLTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -698,6 +708,8 @@ func TestURLTypes(t *testing.T) {
 }
 
 func TestDuration(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -754,6 +766,8 @@ func TestDuration(t *testing.T) {
 }
 
 func TestUUID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -810,6 +824,8 @@ func TestUUID(t *testing.T) {
 }
 
 func TestUUIDGofrs(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -866,6 +882,8 @@ func TestUUIDGofrs(t *testing.T) {
 }
 
 func TestPassword(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -952,6 +970,8 @@ func TestPassword(t *testing.T) {
 }
 
 func TestEmail(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

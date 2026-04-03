@@ -15,6 +15,8 @@ import (
 )
 
 func TestCreateWithAllTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -54,6 +56,8 @@ func TestCreateWithAllTypes(t *testing.T) {
 }
 
 func TestLiveQueries(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -177,6 +181,8 @@ func TestLiveQueries(t *testing.T) {
 }
 
 func TestLiveQueriesFilter(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -256,6 +262,8 @@ func TestLiveQueriesFilter(t *testing.T) {
 }
 
 func TestLiveQueryCount(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -326,6 +334,8 @@ func TestLiveQueryCount(t *testing.T) {
 }
 
 func TestLiveQueryKilled(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -365,6 +375,8 @@ func TestLiveQueryKilled(t *testing.T) {
 }
 
 func TestLiveQueryWithFetch(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

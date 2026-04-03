@@ -15,6 +15,8 @@ import (
 )
 
 func TestFullTextSearchBasic(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -41,6 +43,8 @@ func TestFullTextSearchBasic(t *testing.T) {
 }
 
 func TestFullTextSearchNoMatch(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -66,6 +70,8 @@ func TestFullTextSearchNoMatch(t *testing.T) {
 }
 
 func TestFullTextSearchMultipleResults(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -99,6 +105,8 @@ func TestFullTextSearchMultipleResults(t *testing.T) {
 }
 
 func TestFullTextSearchWithFilter(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -136,6 +144,8 @@ func TestFullTextSearchWithFilter(t *testing.T) {
 }
 
 func TestFullTextSearchQueryDescribe(t *testing.T) {
+	t.Parallel()
+
 	client, cleanup := prepareDatabase(t.Context(), t)
 	defer cleanup()
 
@@ -149,6 +159,8 @@ func TestFullTextSearchQueryDescribe(t *testing.T) {
 }
 
 func TestFullTextSearchWithRef(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -174,6 +186,8 @@ func TestFullTextSearchWithRef(t *testing.T) {
 }
 
 func TestFullTextSearchWithHighlights(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -201,6 +215,8 @@ func TestFullTextSearchWithHighlights(t *testing.T) {
 // TestFullTextSearchOrDefault tests that Search() combines conditions with OR by default.
 // This is the standard search engine behavior where any matching term is sufficient.
 func TestFullTextSearchOrDefault(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -248,6 +264,8 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 // TestFullTextSearchAndExplicit tests that SearchAll() combines conditions with AND.
 // Use this when documents must match ALL search terms.
 func TestFullTextSearchAndExplicit(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -295,6 +313,8 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 }
 
 func TestFullTextSearchFirstMatch(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -329,6 +349,8 @@ func TestFullTextSearchFirstMatch(t *testing.T) {
 }
 
 func TestFullTextSearchFirstMatchNoResult(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -346,6 +368,8 @@ func TestFullTextSearchFirstMatchNoResult(t *testing.T) {
 }
 
 func TestFullTextSearchAll(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -372,6 +396,8 @@ func TestFullTextSearchAll(t *testing.T) {
 }
 
 func TestFullTextSearchScore(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -401,6 +427,8 @@ func TestFullTextSearchScore(t *testing.T) {
 }
 
 func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -441,6 +469,8 @@ func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
 }
 
 func TestFulltextSearchOrder(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	// Test 1: Score sort first, then field sort
@@ -461,6 +491,8 @@ func TestFulltextSearchOrder(t *testing.T) {
 }
 
 func TestFulltextSearchScoreCombination(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	// Test Sum (default)
@@ -500,6 +532,8 @@ func TestFulltextSearchScoreCombination(t *testing.T) {
 }
 
 func TestSearchWithOffsets(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	q := client.AllTypesRepo().Query().
@@ -510,6 +544,8 @@ func TestSearchWithOffsets(t *testing.T) {
 }
 
 func TestSearchWithHighlightsAndOffsets(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	q := client.AllTypesRepo().Query().
@@ -523,6 +559,8 @@ func TestSearchWithHighlightsAndOffsets(t *testing.T) {
 }
 
 func TestFulltextSearchValidTypes(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	// Test string
@@ -557,6 +595,8 @@ func TestFulltextSearchValidTypes(t *testing.T) {
 }
 
 func TestFulltextSearchMatchesAnySQL(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	// Test MatchesAny generates @ref,OR@ syntax for all field types
@@ -586,6 +626,8 @@ func TestFulltextSearchMatchesAnySQL(t *testing.T) {
 }
 
 func TestFulltextSearchMatchesAnyWithRef(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	q := client.AllTypesRepo().Query().
@@ -594,6 +636,8 @@ func TestFulltextSearchMatchesAnyWithRef(t *testing.T) {
 }
 
 func TestFullTextSearchMatchesAnyIntegration(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
