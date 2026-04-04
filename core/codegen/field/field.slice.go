@@ -98,6 +98,51 @@ func (f *Slice) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
+
+		selectDecode: f.selectDecode,
+	}
+}
+
+func (f *Slice) selectDecode(ctx Context) jen.Code {
+	elemConv := f.element.typeConv(ctx)
+	elemGoType := f.element.TypeGo()
+
+	// Only handle direct conversion elements (Time, Duration, URL).
+	switch f.element.(type) {
+	case *Time, *Duration, *URL:
+	default:
+		return nil
+	}
+
+	goType := f.TypeGo()
+
+	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Add(goType), jen.Error()).Block(
+		jen.Return(jen.Id("unmarshalSelectConvert").Call(
+			jen.Id("data"),
+			jen.Func().Params(jen.Id("vals").Index().Add(elemConv)).Add(goType).BlockFunc(func(g *jen.Group) {
+				g.Id("out").Op(":=").Make(jen.Index().Add(elemGoType), jen.Len(jen.Id("vals")))
+				g.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("vals")).Block(
+					jen.Id("out").Index(jen.Id("i")).Op("=").Add(f.elemConvertExpr()),
+				)
+				g.Return(jen.Id("out"))
+			}),
+		)),
+	)
+}
+
+func (f *Slice) elemConvertExpr() jen.Code {
+	switch f.element.(type) {
+	case *Time:
+		return jen.Id("v").Dot("Time")
+	case *Duration:
+		return jen.Id("v").Dot("Duration")
+	case *URL:
+		return jen.Func().Params().Qual(def.PkgURL, "URL").Block(
+			jen.List(jen.Id("u"), jen.Id("_")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Id("v")),
+			jen.Return(jen.Op("*").Id("u")),
+		).Call()
+	default:
+		return jen.Id("v")
 	}
 }
 

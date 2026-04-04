@@ -48,6 +48,12 @@ type CodeGen struct {
 
 	cborMarshal   CodeGenFunc
 	cborUnmarshal CodeGenFunc
+
+	// selectDecode/selectDistDecode generate decodeFn/distDecodeFn closures
+	// for SelectField. Each returns complete jennifer code for a
+	// func([]byte) ([]T, error). When nil, the default CBOR unmarshal is used.
+	selectDecode     CodeGenFunc
+	selectDistDecode CodeGenFunc
 }
 
 func (g *CodeGen) FilterDefine(ctx Context) jen.Code {
@@ -104,4 +110,12 @@ func (g *CodeGen) CBORMarshal(ctx Context) jen.Code {
 
 func (g *CodeGen) CBORUnmarshal(ctx Context) jen.Code {
 	return g.cborUnmarshal.Exec(ctx)
+}
+
+func (g *CodeGen) SelectDecode(ctx Context) jen.Code {
+	return g.selectDecode.Exec(ctx)
+}
+
+func (g *CodeGen) SelectDistDecode(ctx Context) jen.Code {
+	return g.selectDistDecode.Exec(ctx)
 }

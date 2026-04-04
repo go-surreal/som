@@ -853,8 +853,8 @@ func (s allTypesSelect) FieldTimePtr() SelectField[*time.Time] {
 				if v == nil {
 					return nil
 				}
-				val := v.Time
-				return &val
+				t := v.Time
+				return &t
 			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Time, error) {
@@ -862,8 +862,8 @@ func (s allTypesSelect) FieldTimePtr() SelectField[*time.Time] {
 				if v == nil {
 					return nil
 				}
-				val := v.Time
-				return &val
+				t := v.Time
+				return &t
 			})
 		},
 		distFn: func() *lib.Result {
@@ -890,8 +890,8 @@ func (s allTypesSelect) FieldTimeNil() SelectField[*time.Time] {
 				if v == nil {
 					return nil
 				}
-				val := v.Time
-				return &val
+				t := v.Time
+				return &t
 			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Time, error) {
@@ -899,8 +899,8 @@ func (s allTypesSelect) FieldTimeNil() SelectField[*time.Time] {
 				if v == nil {
 					return nil
 				}
-				val := v.Time
-				return &val
+				t := v.Time
+				return &t
 			})
 		},
 		distFn: func() *lib.Result {
@@ -923,10 +923,10 @@ func (s allTypesSelect) FieldTimeSlice() SelectField[[]time.Time] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([][]time.Time, error) {
-			return unmarshalSelectConvert(data, func(v []types.DateTime) []time.Time {
-				out := make([]time.Time, len(v))
-				for i, cv := range v {
-					out[i] = cv.Time
+			return unmarshalSelectConvert(data, func(vals []types.DateTime) []time.Time {
+				out := make([]time.Time, len(vals))
+				for i, v := range vals {
+					out[i] = v.Time
 				}
 				return out
 			})
@@ -1003,8 +1003,8 @@ func (s allTypesSelect) FieldDurationPtr() SelectField[*time.Duration] {
 				if v == nil {
 					return nil
 				}
-				val := v.Duration
-				return &val
+				d := v.Duration
+				return &d
 			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Duration, error) {
@@ -1012,8 +1012,8 @@ func (s allTypesSelect) FieldDurationPtr() SelectField[*time.Duration] {
 				if v == nil {
 					return nil
 				}
-				val := v.Duration
-				return &val
+				d := v.Duration
+				return &d
 			})
 		},
 		distFn: func() *lib.Result {
@@ -1040,8 +1040,8 @@ func (s allTypesSelect) FieldDurationNil() SelectField[*time.Duration] {
 				if v == nil {
 					return nil
 				}
-				val := v.Duration
-				return &val
+				d := v.Duration
+				return &d
 			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Duration, error) {
@@ -1049,8 +1049,8 @@ func (s allTypesSelect) FieldDurationNil() SelectField[*time.Duration] {
 				if v == nil {
 					return nil
 				}
-				val := v.Duration
-				return &val
+				d := v.Duration
+				return &d
 			})
 		},
 		distFn: func() *lib.Result {
@@ -1073,10 +1073,10 @@ func (s allTypesSelect) FieldDurationSlice() SelectField[[]time.Duration] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([][]time.Duration, error) {
-			return unmarshalSelectConvert(data, func(v []types.Duration) []time.Duration {
-				out := make([]time.Duration, len(v))
-				for i, cv := range v {
-					out[i] = cv.Duration
+			return unmarshalSelectConvert(data, func(vals []types.Duration) []time.Duration {
+				out := make([]time.Duration, len(vals))
+				for i, v := range vals {
+					out[i] = v.Duration
 				}
 				return out
 			})
@@ -1434,11 +1434,11 @@ func (s allTypesSelect) FieldURLSlice() SelectField[[]url.URL] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([][]url.URL, error) {
-			return unmarshalSelectConvert(data, func(v []string) []url.URL {
-				out := make([]url.URL, len(v))
-				for i, cv := range v {
+			return unmarshalSelectConvert(data, func(vals []string) []url.URL {
+				out := make([]url.URL, len(vals))
+				for i, v := range vals {
 					out[i] = func() url.URL {
-						u, _ := url.Parse(cv)
+						u, _ := url.Parse(v)
 						return *u
 					}()
 				}

@@ -90,10 +90,6 @@ type baseField struct {
 	source parser.Field
 }
 
-func (f *baseField) IsPointer() bool {
-	return f.source.Pointer()
-}
-
 func (f *baseField) ptr() jen.Code {
 	if f.source.Pointer() {
 		return jen.Op("*")

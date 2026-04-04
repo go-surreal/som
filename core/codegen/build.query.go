@@ -168,8 +168,10 @@ func (b *queryBuilder) generateSelectFieldMethod(
 	f *jen.File, fld field.Field,
 	pkgLib string, _ jen.Code, selectTypeName string,
 ) {
-	pkgTypes := path.Join(b.basePkg, def.PkgTypes)
-	pkgConv := b.relativePkgPath(def.PkgConv)
+	ctx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
+	}
 
 	fieldGoType := fld.TypeGo()
 	fieldDBName := fld.NameDatabase()
@@ -190,12 +192,12 @@ func (b *queryBuilder) generateSelectFieldMethod(
 		}),
 	}
 
-	// Generate decodeFn/distDecodeFn for types that need conversion.
-	if decode, distDecode := b.selectDecodeFns(fld, pkgTypes, pkgConv); decode != nil {
-		dict[jen.Id("decodeFn")] = decode
-		if distDecode != nil {
-			dict[jen.Id("distDecodeFn")] = distDecode
-		}
+	if code := fld.CodeGen().SelectDecode(ctx); code != nil {
+		dict[jen.Id("decodeFn")] = code
+	}
+
+	if code := fld.CodeGen().SelectDistDecode(ctx); code != nil {
+		dict[jen.Id("distDecodeFn")] = code
 	}
 
 	f.Line()
@@ -209,133 +211,6 @@ func (b *queryBuilder) generateSelectFieldMethod(
 			jen.Id("q").Op(":=").Id("s").Dot("query"),
 			jen.Return(jen.Id("SelectField").Types(fieldGoType).Values(dict)),
 		)
-}
-
-// selectDecodeFns returns the decodeFn and distDecodeFn for a field, or nil if
-// the default CBOR unmarshal works directly.
-func (b *queryBuilder) selectDecodeFns(fld field.Field, pkgTypes, pkgConv string) (decode, distDecode jen.Code) {
-	switch f := fld.(type) {
-	case *field.Time:
-		conv := jen.Qual(pkgTypes, "DateTime")
-		expr := jen.Id("v").Dot("Time")
-		return selectWrapConvert("unmarshalSelectConvert", fld.TypeGo(), conv, expr, f.IsPointer()),
-			selectWrapConvert("unmarshalSelectDistinctConvert", fld.TypeGo(), conv, expr, f.IsPointer())
-
-	case *field.Duration:
-		conv := jen.Qual(pkgTypes, "Duration")
-		expr := jen.Id("v").Dot("Duration")
-		return selectWrapConvert("unmarshalSelectConvert", fld.TypeGo(), conv, expr, f.IsPointer()),
-			selectWrapConvert("unmarshalSelectDistinctConvert", fld.TypeGo(), conv, expr, f.IsPointer())
-
-	case *field.URL:
-		return selectURLDecode("unmarshalSelectConvert", fld.TypeGo(), f.IsPointer()),
-			selectURLDecode("unmarshalSelectDistinctConvert", fld.TypeGo(), f.IsPointer())
-
-	case *field.Struct:
-		name := f.Table().NameGo()
-		if f.IsPointer() {
-			name += "Ptr"
-		}
-		return jen.Qual(pkgConv, "SelectDecode"+name),
-			jen.Qual(pkgConv, "SelectDistinctDecode"+name)
-
-	case *field.Slice:
-		return b.selectSliceDecodeFns(f, pkgTypes)
-
-	default:
-		return nil, nil
-	}
-}
-
-// selectWrapConvert generates a decode function that uses the named unmarshal
-// helper (unmarshalSelectConvert or unmarshalSelectDistinctConvert) with a
-// converter from convType to goType using extractExpr.
-func selectWrapConvert(unmarshalFn string, goType, convType, extractExpr jen.Code, isPtr bool) jen.Code {
-	if isPtr {
-		return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Add(goType), jen.Error()).Block(
-			jen.Return(jen.Id(unmarshalFn).Call(
-				jen.Id("data"),
-				jen.Func().Params(jen.Id("v").Op("*").Add(convType)).Add(goType).Block(
-					jen.If(jen.Id("v").Op("==").Nil()).Block(jen.Return(jen.Nil())),
-					jen.Id("val").Op(":=").Add(extractExpr),
-					jen.Return(jen.Op("&").Id("val")),
-				),
-			)),
-		)
-	}
-
-	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Add(goType), jen.Error()).Block(
-		jen.Return(jen.Id(unmarshalFn).Call(
-			jen.Id("data"),
-			jen.Func().Params(jen.Id("v").Add(convType)).Add(goType).Block(
-				jen.Return(extractExpr),
-			),
-		)),
-	)
-}
-
-func selectURLDecode(unmarshalFn string, goType jen.Code, isPtr bool) jen.Code {
-	if isPtr {
-		return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Add(goType), jen.Error()).Block(
-			jen.Return(jen.Id(unmarshalFn).Call(
-				jen.Id("data"),
-				jen.Func().Params(jen.Id("v").Op("*").String()).Op("*").Qual(def.PkgURL, "URL").Block(
-					jen.If(jen.Id("v").Op("==").Nil()).Block(jen.Return(jen.Nil())),
-					jen.List(jen.Id("u"), jen.Id("_")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Op("*").Id("v")),
-					jen.Return(jen.Id("u")),
-				),
-			)),
-		)
-	}
-
-	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Add(goType), jen.Error()).Block(
-		jen.Return(jen.Id(unmarshalFn).Call(
-			jen.Id("data"),
-			jen.Func().Params(jen.Id("v").String()).Qual(def.PkgURL, "URL").Block(
-				jen.List(jen.Id("u"), jen.Id("_")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Id("v")),
-				jen.Return(jen.Op("*").Id("u")),
-			),
-		)),
-	)
-}
-
-// selectSliceDecodeFns handles slices of conversion types (e.g. []time.Time).
-func (b *queryBuilder) selectSliceDecodeFns(f *field.Slice, pkgTypes string) (jen.Code, jen.Code) {
-	elem := f.Element()
-
-	var convType, extractExpr jen.Code
-
-	switch elem.(type) {
-	case *field.Time:
-		convType = jen.Qual(pkgTypes, "DateTime")
-		extractExpr = jen.Id("cv").Dot("Time")
-	case *field.Duration:
-		convType = jen.Qual(pkgTypes, "Duration")
-		extractExpr = jen.Id("cv").Dot("Duration")
-	case *field.URL:
-		convType = jen.String()
-		extractExpr = jen.Func().Params().Qual(def.PkgURL, "URL").Block(
-			jen.List(jen.Id("u"), jen.Id("_")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Id("cv")),
-			jen.Return(jen.Op("*").Id("u")),
-		).Call()
-	default:
-		return nil, nil
-	}
-
-	decode := jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Add(f.TypeGo()), jen.Error()).Block(
-		jen.Return(jen.Id("unmarshalSelectConvert").Call(
-			jen.Id("data"),
-			jen.Func().Params(jen.Id("v").Index().Add(convType)).Add(f.TypeGo()).BlockFunc(func(g *jen.Group) {
-				g.Id("out").Op(":=").Make(jen.Index().Add(elem.TypeGo()), jen.Len(jen.Id("v")))
-				g.For(jen.Id("i").Op(",").Id("cv").Op(":=").Range().Id("v")).Block(
-					jen.Id("out").Index(jen.Id("i")).Op("=").Add(extractExpr),
-				)
-				g.Return(jen.Id("out"))
-			}),
-		)),
-	)
-
-	return decode, nil
 }
 
 func (b *queryBuilder) generateRangeFn(

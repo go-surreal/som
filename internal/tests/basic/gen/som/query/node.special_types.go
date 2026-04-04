@@ -61,8 +61,8 @@ func (s specialTypesSelect) DeletedAt() SelectField[*time.Time] {
 				if v == nil {
 					return nil
 				}
-				val := v.Time
-				return &val
+				t := v.Time
+				return &t
 			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Time, error) {
@@ -70,8 +70,8 @@ func (s specialTypesSelect) DeletedAt() SelectField[*time.Time] {
 				if v == nil {
 					return nil
 				}
-				val := v.Time
-				return &val
+				t := v.Time
+				return &t
 			})
 		},
 		distFn: func() *lib.Result {
