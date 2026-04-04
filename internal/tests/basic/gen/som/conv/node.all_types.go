@@ -799,6 +799,37 @@ func SelectDecodeAllTypesPtr(data []byte) ([]*model.AllTypes, error) {
 	return out, nil
 }
 
+func SelectDistinctDecodeAllTypes(data []byte) ([]model.AllTypes, error) {
+	var rawResult []internal.QueryResult[[]AllTypes]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.AllTypes, len(inner))
+	for i, v := range inner {
+		out[i] = ToAllTypes(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeAllTypesPtr(data []byte) ([]*model.AllTypes, error) {
+	var rawResult []internal.QueryResult[[]*AllTypes]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.AllTypes, len(inner))
+	for i, v := range inner {
+		out[i] = ToAllTypesPtr(v)
+	}
+	return out, nil
+}
+
 type allTypesLink struct {
 	AllTypes
 	ID *models.RecordID

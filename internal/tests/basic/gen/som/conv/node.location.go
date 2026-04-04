@@ -341,6 +341,37 @@ func SelectDecodeLocationPtr(data []byte) ([]*model.Location, error) {
 	return out, nil
 }
 
+func SelectDistinctDecodeLocation(data []byte) ([]model.Location, error) {
+	var rawResult []internal.QueryResult[[]Location]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.Location, len(inner))
+	for i, v := range inner {
+		out[i] = ToLocation(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeLocationPtr(data []byte) ([]*model.Location, error) {
+	var rawResult []internal.QueryResult[[]*Location]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.Location, len(inner))
+	for i, v := range inner {
+		out[i] = ToLocationPtr(v)
+	}
+	return out, nil
+}
+
 type locationLink struct {
 	Location
 	ID *models.RecordID

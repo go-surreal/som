@@ -2,7 +2,6 @@ package field
 
 import (
 	"fmt"
-	"path"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -68,24 +67,7 @@ func (f *Struct) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-
-		selectDecode:        f.selectDecode,
-		selectDistinctDecode: f.selectDistinctDecode,
 	}
-}
-
-func (f *Struct) selectDecode(ctx Context) jen.Code {
-	convPkg := path.Join(ctx.TargetPkg, def.PkgConv)
-	funcName := "SelectDecode" + f.element.NameGo()
-	if f.source.Pointer() {
-		funcName += "Ptr"
-	}
-
-	return jen.Qual(convPkg, funcName)
-}
-
-func (f *Struct) selectDistinctDecode(_ Context) jen.Code {
-	return nil
 }
 
 func (f *Struct) filterDefine(_ Context) jen.Code {

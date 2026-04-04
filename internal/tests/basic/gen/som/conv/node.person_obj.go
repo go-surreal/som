@@ -115,6 +115,37 @@ func SelectDecodePersonObjPtr(data []byte) ([]*model.PersonObj, error) {
 	return out, nil
 }
 
+func SelectDistinctDecodePersonObj(data []byte) ([]model.PersonObj, error) {
+	var rawResult []internal.QueryResult[[]PersonObj]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.PersonObj, len(inner))
+	for i, v := range inner {
+		out[i] = ToPersonObj(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodePersonObjPtr(data []byte) ([]*model.PersonObj, error) {
+	var rawResult []internal.QueryResult[[]*PersonObj]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.PersonObj, len(inner))
+	for i, v := range inner {
+		out[i] = ToPersonObjPtr(v)
+	}
+	return out, nil
+}
+
 type personObjLink struct {
 	PersonObj
 	ID *models.RecordID

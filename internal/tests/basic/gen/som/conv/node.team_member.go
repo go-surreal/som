@@ -157,6 +157,37 @@ func SelectDecodeTeamMemberPtr(data []byte) ([]*model.TeamMember, error) {
 	return out, nil
 }
 
+func SelectDistinctDecodeTeamMember(data []byte) ([]model.TeamMember, error) {
+	var rawResult []internal.QueryResult[[]TeamMember]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.TeamMember, len(inner))
+	for i, v := range inner {
+		out[i] = ToTeamMember(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeTeamMemberPtr(data []byte) ([]*model.TeamMember, error) {
+	var rawResult []internal.QueryResult[[]*TeamMember]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.TeamMember, len(inner))
+	for i, v := range inner {
+		out[i] = ToTeamMemberPtr(v)
+	}
+	return out, nil
+}
+
 type teamMemberLink struct {
 	TeamMember
 	ID *models.RecordID

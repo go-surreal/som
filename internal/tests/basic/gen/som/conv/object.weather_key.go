@@ -89,3 +89,34 @@ func SelectDecodeWeatherKeyPtr(data []byte) ([]*model.WeatherKey, error) {
 	}
 	return out, nil
 }
+
+func SelectDistinctDecodeWeatherKey(data []byte) ([]model.WeatherKey, error) {
+	var rawResult []internal.QueryResult[[]weatherKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.WeatherKey, len(inner))
+	for i, v := range inner {
+		out[i] = toWeatherKey(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeWeatherKeyPtr(data []byte) ([]*model.WeatherKey, error) {
+	var rawResult []internal.QueryResult[[]*weatherKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.WeatherKey, len(inner))
+	for i, v := range inner {
+		out[i] = toWeatherKeyPtr(v)
+	}
+	return out, nil
+}

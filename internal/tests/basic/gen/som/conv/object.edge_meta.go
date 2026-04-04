@@ -88,3 +88,34 @@ func SelectDecodeEdgeMetaPtr(data []byte) ([]*model.EdgeMeta, error) {
 	}
 	return out, nil
 }
+
+func SelectDistinctDecodeEdgeMeta(data []byte) ([]model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[[]edgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.EdgeMeta, len(inner))
+	for i, v := range inner {
+		out[i] = toEdgeMeta(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeEdgeMetaPtr(data []byte) ([]*model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[[]*edgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.EdgeMeta, len(inner))
+	for i, v := range inner {
+		out[i] = toEdgeMetaPtr(v)
+	}
+	return out, nil
+}

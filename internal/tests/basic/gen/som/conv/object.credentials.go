@@ -94,3 +94,34 @@ func SelectDecodeCredentialsPtr(data []byte) ([]*model.Credentials, error) {
 	}
 	return out, nil
 }
+
+func SelectDistinctDecodeCredentials(data []byte) ([]model.Credentials, error) {
+	var rawResult []internal.QueryResult[[]credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.Credentials, len(inner))
+	for i, v := range inner {
+		out[i] = toCredentials(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeCredentialsPtr(data []byte) ([]*model.Credentials, error) {
+	var rawResult []internal.QueryResult[[]*credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.Credentials, len(inner))
+	for i, v := range inner {
+		out[i] = toCredentialsPtr(v)
+	}
+	return out, nil
+}

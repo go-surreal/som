@@ -144,6 +144,37 @@ func SelectDecodeSpecialRelationPtr(data []byte) ([]*model.SpecialRelation, erro
 	return out, nil
 }
 
+func SelectDistinctDecodeSpecialRelation(data []byte) ([]model.SpecialRelation, error) {
+	var rawResult []internal.QueryResult[[]SpecialRelation]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.SpecialRelation, len(inner))
+	for i, v := range inner {
+		out[i] = ToSpecialRelation(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeSpecialRelationPtr(data []byte) ([]*model.SpecialRelation, error) {
+	var rawResult []internal.QueryResult[[]*SpecialRelation]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.SpecialRelation, len(inner))
+	for i, v := range inner {
+		out[i] = ToSpecialRelationPtr(v)
+	}
+	return out, nil
+}
+
 type specialRelationLink struct {
 	SpecialRelation
 	ID *models.RecordID

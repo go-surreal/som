@@ -122,6 +122,37 @@ func SelectDecodeWeatherPtr(data []byte) ([]*model.Weather, error) {
 	return out, nil
 }
 
+func SelectDistinctDecodeWeather(data []byte) ([]model.Weather, error) {
+	var rawResult []internal.QueryResult[[]Weather]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.Weather, len(inner))
+	for i, v := range inner {
+		out[i] = ToWeather(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeWeatherPtr(data []byte) ([]*model.Weather, error) {
+	var rawResult []internal.QueryResult[[]*Weather]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.Weather, len(inner))
+	for i, v := range inner {
+		out[i] = ToWeatherPtr(v)
+	}
+	return out, nil
+}
+
 type weatherLink struct {
 	Weather
 	ID *models.RecordID

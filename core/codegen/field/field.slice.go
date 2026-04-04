@@ -98,32 +98,7 @@ func (f *Slice) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-
-		selectDecode:         f.selectDecode,
-		selectDistinctDecode: f.selectDistinctDecode,
 	}
-}
-
-func (f *Slice) selectDecode(ctx Context) jen.Code {
-	conv, ok := f.element.(SelectConvertible)
-	if !ok {
-		return nil
-	}
-
-	cborPkg, helper, _ := conv.SelectCBORHelper(ctx)
-
-	return selectSliceDecodeWithHelper(ctx, f.TypeGo(), f.element.TypeGo(), cborPkg, helper)
-}
-
-func (f *Slice) selectDistinctDecode(ctx Context) jen.Code {
-	conv, ok := f.element.(SelectConvertible)
-	if !ok {
-		return nil
-	}
-
-	cborPkg, helper, _ := conv.SelectCBORHelper(ctx)
-
-	return selectSliceDistinctDecodeWithHelper(ctx, f.TypeGo(), f.element.TypeGo(), cborPkg, helper)
 }
 
 func (f *Slice) filterDefine(ctx Context) jen.Code {

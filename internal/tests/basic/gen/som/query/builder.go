@@ -691,10 +691,13 @@ func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, conve
 // SelectField represents a selected field from a query, providing
 // terminal methods to execute the query and retrieve typed results.
 type SelectField[T any] struct {
-	db           Database
-	buildFn      func() *lib.Result
-	distFn       func() *lib.Result
-	firstFn      func() *lib.Result
+	db      Database
+	buildFn func() *lib.Result
+	distFn  func() *lib.Result
+	firstFn func() *lib.Result
+	// decodeFn/distDecodeFn are optional custom decoders for types that need
+	// conversion (e.g. time.Time via types.DateTime, structs via conv layer).
+	// When nil, the default CBOR unmarshal into T is used.
 	decodeFn     func([]byte) ([]T, error)
 	distDecodeFn func([]byte) ([]T, error)
 }
@@ -742,7 +745,6 @@ func (sf SelectField[T]) First(ctx context.Context) (T, bool, error) {
 }
 
 // Distinct executes the query and returns all distinct values for the selected field.
-// The underlying query uses GROUP ALL with array::distinct, which returns a nested array.
 func (sf SelectField[T]) Distinct(ctx context.Context) ([]T, error) {
 	req := sf.distFn()
 	raw, err := sf.db.Query(ctx, req.Statement, req.Variables)
@@ -784,4 +786,46 @@ func unmarshalSelectDistinct[T any](data []byte) ([]T, error) {
 	}
 
 	return rawResult[0].Result[0], nil
+}
+
+// unmarshalSelectConvert unmarshals SELECT VALUE results through an intermediate
+// CBOR type C and converts each element to the target type T.
+// Used for types like time.Time (via types.DateTime) that need conversion.
+func unmarshalSelectConvert[C, T any](data []byte, convert func(C) T) ([]T, error) {
+	var rawResult []internal.QueryResult[C]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, fmt.Errorf("could not unmarshal select value: %w", err)
+	}
+
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+
+	out := make([]T, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = convert(v)
+	}
+
+	return out, nil
+}
+
+// unmarshalSelectDistinctConvert is the distinct variant of unmarshalSelectConvert.
+// Distinct queries return result: [[val1, val2, ...]] (nested array).
+func unmarshalSelectDistinctConvert[C, T any](data []byte, convert func(C) T) ([]T, error) {
+	var rawResult []internal.QueryResult[[]C]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
+	}
+
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+
+	inner := rawResult[0].Result[0]
+	out := make([]T, len(inner))
+	for i, v := range inner {
+		out[i] = convert(v)
+	}
+
+	return out, nil
 }

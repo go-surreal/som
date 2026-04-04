@@ -5,9 +5,8 @@ import (
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	filter "som.test/gen/som/filter"
-	internal "som.test/gen/som/internal"
-	cbor "som.test/gen/som/internal/cbor"
 	lib "som.test/gen/som/internal/lib"
+	types "som.test/gen/som/internal/types"
 	model "som.test/model"
 	"time"
 )
@@ -58,40 +57,22 @@ func (s specialRelationSelect) DeletedAt() SelectField[*time.Time] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]*time.Time, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Time, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDateTimePtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Time
+				return &val
+			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Time, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Time, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDateTimePtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Time
+				return &val
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("deleted_at")

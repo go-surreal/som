@@ -7,9 +7,8 @@ import (
 	"net/url"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
-	internal "som.test/gen/som/internal"
-	cbor "som.test/gen/som/internal/cbor"
 	lib "som.test/gen/som/internal/lib"
+	types "som.test/gen/som/internal/types"
 	model "som.test/model"
 	"time"
 )
@@ -60,40 +59,14 @@ func (s allTypesSelect) CreatedAt() SelectField[time.Time] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]time.Time, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]time.Time, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDateTime(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
 		},
 		distDecodeFn: func(data []byte) ([]time.Time, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]time.Time, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDateTime(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("created_at")
@@ -115,40 +88,14 @@ func (s allTypesSelect) UpdatedAt() SelectField[time.Time] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]time.Time, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]time.Time, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDateTime(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
 		},
 		distDecodeFn: func(data []byte) ([]time.Time, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]time.Time, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDateTime(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("updated_at")
@@ -873,40 +820,14 @@ func (s allTypesSelect) FieldTime() SelectField[time.Time] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]time.Time, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]time.Time, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDateTime(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
 		},
 		distDecodeFn: func(data []byte) ([]time.Time, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]time.Time, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDateTime(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_time")
@@ -928,40 +849,22 @@ func (s allTypesSelect) FieldTimePtr() SelectField[*time.Time] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]*time.Time, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Time, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDateTimePtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Time
+				return &val
+			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Time, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Time, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDateTimePtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Time
+				return &val
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_time_ptr")
@@ -983,40 +886,22 @@ func (s allTypesSelect) FieldTimeNil() SelectField[*time.Time] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]*time.Time, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Time, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDateTimePtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Time
+				return &val
+			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Time, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Time, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDateTimePtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Time
+				return &val
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_time_nil")
@@ -1038,48 +923,13 @@ func (s allTypesSelect) FieldTimeSlice() SelectField[[]time.Time] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([][]time.Time, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([][]time.Time, len(rawResult[0].Result))
-			for i, rawElems := range rawResult[0].Result {
-				converted := make([]time.Time, 0, len(rawElems))
-				for _, raw := range rawElems {
-					v, err := cbor.UnmarshalDateTime(raw)
-					if err != nil {
-						return nil, err
-					}
-					converted = append(converted, v)
+			return unmarshalSelectConvert(data, func(v []types.DateTime) []time.Time {
+				out := make([]time.Time, len(v))
+				for i, cv := range v {
+					out[i] = cv.Time
 				}
-				out[i] = converted
-			}
-			return out, nil
-		},
-		distDecodeFn: func(data []byte) ([][]time.Time, error) {
-			var rawResult []internal.QueryResult[[][]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([][]time.Time, 0, len(rawResult[0].Result[0]))
-			for _, rawElems := range rawResult[0].Result[0] {
-				converted := make([]time.Time, 0, len(rawElems))
-				for _, raw := range rawElems {
-					v, err := cbor.UnmarshalDateTime(raw)
-					if err != nil {
-						return nil, err
-					}
-					converted = append(converted, v)
-				}
-				out = append(out, converted)
-			}
-			return out, nil
+				return out
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_time_slice")
@@ -1120,40 +970,14 @@ func (s allTypesSelect) FieldDuration() SelectField[time.Duration] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]time.Duration, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]time.Duration, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDuration(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectConvert(data, func(v types.Duration) time.Duration {
+				return v.Duration
+			})
 		},
 		distDecodeFn: func(data []byte) ([]time.Duration, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]time.Duration, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDuration(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectDistinctConvert(data, func(v types.Duration) time.Duration {
+				return v.Duration
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_duration")
@@ -1175,40 +999,22 @@ func (s allTypesSelect) FieldDurationPtr() SelectField[*time.Duration] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]*time.Duration, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Duration, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDurationPtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Duration
+				return &val
+			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Duration, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Duration, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDurationPtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectDistinctConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Duration
+				return &val
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_duration_ptr")
@@ -1230,40 +1036,22 @@ func (s allTypesSelect) FieldDurationNil() SelectField[*time.Duration] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]*time.Duration, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Duration, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalDurationPtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Duration
+				return &val
+			})
 		},
 		distDecodeFn: func(data []byte) ([]*time.Duration, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*time.Duration, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalDurationPtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectDistinctConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				val := v.Duration
+				return &val
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_duration_nil")
@@ -1285,48 +1073,13 @@ func (s allTypesSelect) FieldDurationSlice() SelectField[[]time.Duration] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([][]time.Duration, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([][]time.Duration, len(rawResult[0].Result))
-			for i, rawElems := range rawResult[0].Result {
-				converted := make([]time.Duration, 0, len(rawElems))
-				for _, raw := range rawElems {
-					v, err := cbor.UnmarshalDuration(raw)
-					if err != nil {
-						return nil, err
-					}
-					converted = append(converted, v)
+			return unmarshalSelectConvert(data, func(v []types.Duration) []time.Duration {
+				out := make([]time.Duration, len(v))
+				for i, cv := range v {
+					out[i] = cv.Duration
 				}
-				out[i] = converted
-			}
-			return out, nil
-		},
-		distDecodeFn: func(data []byte) ([][]time.Duration, error) {
-			var rawResult []internal.QueryResult[[][]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([][]time.Duration, 0, len(rawResult[0].Result[0]))
-			for _, rawElems := range rawResult[0].Result[0] {
-				converted := make([]time.Duration, 0, len(rawElems))
-				for _, raw := range rawElems {
-					v, err := cbor.UnmarshalDuration(raw)
-					if err != nil {
-						return nil, err
-					}
-					converted = append(converted, v)
-				}
-				out = append(out, converted)
-			}
-			return out, nil
+				return out
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_duration_slice")
@@ -1576,40 +1329,16 @@ func (s allTypesSelect) FieldURL() SelectField[url.URL] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]url.URL, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]url.URL, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalURL(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectConvert(data, func(v string) url.URL {
+				u, _ := url.Parse(v)
+				return *u
+			})
 		},
 		distDecodeFn: func(data []byte) ([]url.URL, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]url.URL, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalURL(raw)
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, v)
-			}
-			return out, nil
+			return unmarshalSelectDistinctConvert(data, func(v string) url.URL {
+				u, _ := url.Parse(v)
+				return *u
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_url")
@@ -1631,40 +1360,22 @@ func (s allTypesSelect) FieldURLPtr() SelectField[*url.URL] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]*url.URL, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*url.URL, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalURLPtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				u, _ := url.Parse(*v)
+				return u
+			})
 		},
 		distDecodeFn: func(data []byte) ([]*url.URL, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*url.URL, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalURLPtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectDistinctConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				u, _ := url.Parse(*v)
+				return u
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_url_ptr")
@@ -1686,40 +1397,22 @@ func (s allTypesSelect) FieldURLNil() SelectField[*url.URL] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([]*url.URL, error) {
-			var rawResult []internal.QueryResult[cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*url.URL, 0, len(rawResult[0].Result))
-			for _, raw := range rawResult[0].Result {
-				v, err := cbor.UnmarshalURLPtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				u, _ := url.Parse(*v)
+				return u
+			})
 		},
 		distDecodeFn: func(data []byte) ([]*url.URL, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([]*url.URL, 0, len(rawResult[0].Result[0]))
-			for _, raw := range rawResult[0].Result[0] {
-				v, err := cbor.UnmarshalURLPtr(raw)
-				if err != nil {
-					return nil, err
+			return unmarshalSelectDistinctConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
 				}
-				out = append(out, v)
-			}
-			return out, nil
+				u, _ := url.Parse(*v)
+				return u
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_url_nil")
@@ -1741,48 +1434,16 @@ func (s allTypesSelect) FieldURLSlice() SelectField[[]url.URL] {
 		},
 		db: s.db,
 		decodeFn: func(data []byte) ([][]url.URL, error) {
-			var rawResult []internal.QueryResult[[]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([][]url.URL, len(rawResult[0].Result))
-			for i, rawElems := range rawResult[0].Result {
-				converted := make([]url.URL, 0, len(rawElems))
-				for _, raw := range rawElems {
-					v, err := cbor.UnmarshalURL(raw)
-					if err != nil {
-						return nil, err
-					}
-					converted = append(converted, v)
+			return unmarshalSelectConvert(data, func(v []string) []url.URL {
+				out := make([]url.URL, len(v))
+				for i, cv := range v {
+					out[i] = func() url.URL {
+						u, _ := url.Parse(cv)
+						return *u
+					}()
 				}
-				out[i] = converted
-			}
-			return out, nil
-		},
-		distDecodeFn: func(data []byte) ([][]url.URL, error) {
-			var rawResult []internal.QueryResult[[][]cbor.RawMessage]
-			if err := cbor.Unmarshal(data, &rawResult); err != nil {
-				return nil, err
-			}
-			if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
-				return nil, nil
-			}
-			out := make([][]url.URL, 0, len(rawResult[0].Result[0]))
-			for _, rawElems := range rawResult[0].Result[0] {
-				converted := make([]url.URL, 0, len(rawElems))
-				for _, raw := range rawElems {
-					v, err := cbor.UnmarshalURL(raw)
-					if err != nil {
-						return nil, err
-					}
-					converted = append(converted, v)
-				}
-				out = append(out, converted)
-			}
-			return out, nil
+				return out
+			})
 		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_url_slice")
@@ -2049,8 +1710,9 @@ func (s allTypesSelect) FieldCredentials() SelectField[model.Credentials] {
 		buildFn: func() *lib.Result {
 			return q.BuildAsSelectValue("field_credentials")
 		},
-		db:       s.db,
-		decodeFn: conv.SelectDecodeCredentials,
+		db:           s.db,
+		decodeFn:     conv.SelectDecodeCredentials,
+		distDecodeFn: conv.SelectDistinctDecodeCredentials,
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_credentials")
 		},
@@ -2069,8 +1731,9 @@ func (s allTypesSelect) FieldNestedDataPtr() SelectField[*model.NestedData] {
 		buildFn: func() *lib.Result {
 			return q.BuildAsSelectValue("field_nested_data_ptr")
 		},
-		db:       s.db,
-		decodeFn: conv.SelectDecodeNestedDataPtr,
+		db:           s.db,
+		decodeFn:     conv.SelectDecodeNestedDataPtr,
+		distDecodeFn: conv.SelectDistinctDecodeNestedDataPtr,
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_nested_data_ptr")
 		},
