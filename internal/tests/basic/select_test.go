@@ -201,6 +201,20 @@ func TestSelectAll(t *testing.T) {
 		assert.Equal(t, "charlie", vals[2].Username)
 	})
 
+	// Slice of conversion types
+
+	t.Run("TimeSlice", func(t *testing.T) {
+		vals, err := client.AllTypesRepo().Query().Select().FieldTimeSlice().All(ctx)
+		assert.NilError(t, err)
+		assert.Equal(t, 3, len(vals))
+	})
+
+	t.Run("URLSlice", func(t *testing.T) {
+		vals, err := client.AllTypesRepo().Query().Select().FieldURLSlice().All(ctx)
+		assert.NilError(t, err)
+		assert.Equal(t, 3, len(vals))
+	})
+
 	// With filter
 
 	t.Run("WithFilter", func(t *testing.T) {

@@ -57,10 +57,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
 
-	typeName := elem.NameGoLower()
-	if isNode || isEdge {
-		typeName = elem.NameGo()
-	}
+	typeName := elem.NameGo()
 
 	f.Line()
 	f.Type().Id(typeName).Struct(
@@ -151,15 +148,9 @@ func (b *convBuilder) buildSelectDecode(elem field.Element, convTypeName string)
 	cborPkg := path.Join(b.basePkg, "internal/cbor")
 	modelType := b.SourceQual(elem.NameGo())
 
-	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
 
-	toFunc := "to" + elem.NameGo()
-	if isNode || isEdge {
-		toFunc = "To" + elem.NameGo()
-	}
-
-	// Edge's To function takes *EdgeRelation (pointer receiver)
+	toFunc := "To" + elem.NameGo()
 	toArg := jen.Id("v")
 	if isEdge {
 		toArg = jen.Op("&").Id("v")
@@ -217,14 +208,9 @@ func (b *convBuilder) buildSelectDistinctDecode(elem field.Element, convTypeName
 	cborPkg := path.Join(b.basePkg, "internal/cbor")
 	modelType := b.SourceQual(elem.NameGo())
 
-	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
 
-	toFunc := "to" + elem.NameGo()
-	if isNode || isEdge {
-		toFunc = "To" + elem.NameGo()
-	}
-
+	toFunc := "To" + elem.NameGo()
 	toArg := jen.Id("v")
 	if isEdge {
 		toArg = jen.Op("&").Id("v")
@@ -498,16 +484,8 @@ func (b *convBuilder) marshalFieldValue(sf parser.ComplexIDField, varName string
 }
 
 func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
-	localName := elem.NameGoLower()
-	methodPrefix := "from"
-
-	_, isNode := elem.(*field.NodeTable)
-	_, isEdge := elem.(*field.EdgeTable)
-
-	if isNode || isEdge {
-		localName = elem.NameGo()
-		methodPrefix = "From"
-	}
+	localName := elem.NameGo()
+	methodPrefix := "From"
 
 	return jen.Add(
 		// NO PTR - shallow wrapper: just embed
@@ -682,16 +660,10 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 }
 
 func (b *convBuilder) buildTo(elem field.Element) jen.Code {
-	localName := elem.NameGoLower()
-	methodPrefix := "to"
+	localName := elem.NameGo()
+	methodPrefix := "To"
 
-	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
-
-	if isNode || isEdge {
-		localName = elem.NameGo()
-		methodPrefix = "To"
-	}
 
 	ptr := jen.Empty()
 	if isEdge {

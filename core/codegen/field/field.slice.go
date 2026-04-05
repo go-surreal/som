@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/dave/jennifer/jen"
@@ -99,39 +100,65 @@ func (f *Slice) CodeGen() *CodeGen {
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 
-		selectDecode: f.selectDecode,
+		selectDecode:     f.selectDecode,
+		selectDistDecode: f.selectDistDecode,
 	}
 }
 
-func (f *Slice) selectDecode(ctx Context) jen.Code {
-	elemConv := f.element.typeConv(ctx)
-	elemGoType := f.element.TypeGo()
-
-	// Only handle direct conversion elements (Time, Duration, URL).
-	switch f.element.(type) {
+func (f *Slice) selectElemConv(ctx Context) jen.Code {
+	switch elem := f.element.(type) {
 	case *Time, *Duration, *URL:
+		return f.element.typeConv(ctx)
+	case *Struct:
+		convName := jen.Qual(path.Join(ctx.TargetPkg, def.PkgConv), elem.Table().NameGo())
+		if elem.source.Pointer() {
+			return jen.Op("*").Add(convName)
+		}
+
+		return convName
 	default:
+		return nil
+	}
+}
+
+func (f *Slice) selectSliceConvertFn(unmarshalFn string, ctx Context) jen.Code {
+	elemConv := f.selectElemConv(ctx)
+	if elemConv == nil {
 		return nil
 	}
 
 	goType := f.TypeGo()
+	innerType := jen.Index().Add(f.element.TypeGo())
+
+	retStmt := jen.Return(jen.Id("out"))
+	if f.source.Pointer() {
+		retStmt = jen.Return(jen.Op("&").Id("out"))
+	}
 
 	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Add(goType), jen.Error()).Block(
-		jen.Return(jen.Id("unmarshalSelectConvert").Call(
+		jen.Return(jen.Id(unmarshalFn).Call(
 			jen.Id("data"),
 			jen.Func().Params(jen.Id("vals").Index().Add(elemConv)).Add(goType).BlockFunc(func(g *jen.Group) {
-				g.Id("out").Op(":=").Make(jen.Index().Add(elemGoType), jen.Len(jen.Id("vals")))
+				g.Id("out").Op(":=").Make(innerType, jen.Len(jen.Id("vals")))
 				g.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("vals")).Block(
 					jen.Id("out").Index(jen.Id("i")).Op("=").Add(f.elemConvertExpr()),
 				)
-				g.Return(jen.Id("out"))
+				g.Add(retStmt)
 			}),
 		)),
 	)
 }
 
+func (f *Slice) selectDecode(ctx Context) jen.Code {
+	return f.selectSliceConvertFn("unmarshalSelectConvert", ctx)
+}
+
+func (f *Slice) selectDistDecode(ctx Context) jen.Code {
+	return f.selectSliceConvertFn("unmarshalSelectDistinctConvert", ctx)
+}
+
 func (f *Slice) elemConvertExpr() jen.Code {
-	switch f.element.(type) {
+	switch elem := f.element.(type) {
 	case *Time:
 		return jen.Id("v").Dot("Time")
 	case *Duration:
@@ -141,6 +168,13 @@ func (f *Slice) elemConvertExpr() jen.Code {
 			jen.List(jen.Id("u"), jen.Id("_")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Id("v")),
 			jen.Return(jen.Op("*").Id("u")),
 		).Call()
+	case *Struct:
+		funcName := "To" + elem.Table().NameGo()
+		if elem.source.Pointer() {
+			funcName += "Ptr"
+		}
+
+		return jen.Qual(path.Join(f.TargetPkg, def.PkgConv), funcName).Call(jen.Id("v"))
 	default:
 		return jen.Id("v")
 	}
@@ -656,7 +690,7 @@ func (f *Slice) cborMarshal(ctx Context) jen.Code {
 	// For struct slices, we need to convert each element through the conv wrapper
 	// to get proper snake_case field names in the CBOR output.
 	if structElem, ok := f.element.(*Struct); ok {
-		convFuncName := "from" + structElem.element.NameGo()
+		convFuncName := "From" + structElem.element.NameGo()
 		if structElem.source.Pointer() {
 			convFuncName += "Ptr"
 		}
@@ -687,7 +721,7 @@ func (f *Slice) cborMarshal(ctx Context) jen.Code {
 		}
 
 		// Determine the slice element type for non-pointer struct elements
-		sliceElemType := jen.Index().Id(structElem.element.NameGoLower())
+		sliceElemType := jen.Index().Id(structElem.element.NameGo())
 
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("convSlice").Op(":=").Make(
@@ -744,7 +778,7 @@ func (f *Slice) cborMarshal(ctx Context) jen.Code {
 func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 	// For struct slices, we need to unmarshal into the conv wrapper and then convert back.
 	if structElem, ok := f.element.(*Struct); ok {
-		convFuncName := "to" + structElem.element.NameGo()
+		convFuncName := "To" + structElem.element.NameGo()
 		if structElem.source.Pointer() {
 			convFuncName += "Ptr"
 		}
@@ -764,7 +798,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 						fg.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("elem"))).Block(
 							jen.Continue(),
 						)
-						fg.Var().Id("v").Id(structElem.element.NameGoLower())
+						fg.Var().Id("v").Id(structElem.element.NameGo())
 						fg.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("elem"), jen.Op("&").Id("v"))
 						fg.Id("result").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Op("&").Id("v"))
 					})
@@ -782,7 +816,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 						fg.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("elem"))).Block(
 							jen.Continue(),
 						)
-						fg.Var().Id("v").Id(structElem.element.NameGoLower())
+						fg.Var().Id("v").Id(structElem.element.NameGo())
 						fg.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("elem"), jen.Op("&").Id("v"))
 						fg.Id("c").Dot(f.NameGo()).Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Op("&").Id("v"))
 					}),
@@ -800,7 +834,7 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		}
 
 		// Non-pointer struct elements: unmarshal directly into typed slice.
-		sliceElemType := jen.Index().Id(structElem.element.NameGoLower())
+		sliceElemType := jen.Index().Id(structElem.element.NameGo())
 		innerSliceType := jen.Index().Add(f.element.TypeGo())
 
 		var assignStmt jen.Code

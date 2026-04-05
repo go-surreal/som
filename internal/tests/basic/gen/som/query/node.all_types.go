@@ -931,6 +931,15 @@ func (s allTypesSelect) FieldTimeSlice() SelectField[[]time.Time] {
 				return out
 			})
 		},
+		distDecodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []types.DateTime) []time.Time {
+				out := make([]time.Time, len(vals))
+				for i, v := range vals {
+					out[i] = v.Time
+				}
+				return out
+			})
+		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_time_slice")
 		},
@@ -1074,6 +1083,15 @@ func (s allTypesSelect) FieldDurationSlice() SelectField[[]time.Duration] {
 		db: s.db,
 		decodeFn: func(data []byte) ([][]time.Duration, error) {
 			return unmarshalSelectConvert(data, func(vals []types.Duration) []time.Duration {
+				out := make([]time.Duration, len(vals))
+				for i, v := range vals {
+					out[i] = v.Duration
+				}
+				return out
+			})
+		},
+		distDecodeFn: func(data []byte) ([][]time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []types.Duration) []time.Duration {
 				out := make([]time.Duration, len(vals))
 				for i, v := range vals {
 					out[i] = v.Duration
@@ -1445,6 +1463,18 @@ func (s allTypesSelect) FieldURLSlice() SelectField[[]url.URL] {
 				return out
 			})
 		},
+		distDecodeFn: func(data []byte) ([][]url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []string) []url.URL {
+				out := make([]url.URL, len(vals))
+				for i, v := range vals {
+					out[i] = func() url.URL {
+						u, _ := url.Parse(v)
+						return *u
+					}()
+				}
+				return out
+			})
+		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_url_slice")
 		},
@@ -1753,6 +1783,24 @@ func (s allTypesSelect) FieldNestedDataSlice() SelectField[[]model.NestedData] {
 			return q.BuildAsSelectValue("field_nested_data_slice")
 		},
 		db: s.db,
+		decodeFn: func(data []byte) ([][]model.NestedData, error) {
+			return unmarshalSelectConvert(data, func(vals []conv.NestedData) []model.NestedData {
+				out := make([]model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedData(v)
+				}
+				return out
+			})
+		},
+		distDecodeFn: func(data []byte) ([][]model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []conv.NestedData) []model.NestedData {
+				out := make([]model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedData(v)
+				}
+				return out
+			})
+		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_nested_data_slice")
 		},
@@ -1772,6 +1820,24 @@ func (s allTypesSelect) FieldNestedDataPtrSlice() SelectField[[]*model.NestedDat
 			return q.BuildAsSelectValue("field_nested_data_ptr_slice")
 		},
 		db: s.db,
+		decodeFn: func(data []byte) ([][]*model.NestedData, error) {
+			return unmarshalSelectConvert(data, func(vals []*conv.NestedData) []*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return out
+			})
+		},
+		distDecodeFn: func(data []byte) ([][]*model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []*conv.NestedData) []*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return out
+			})
+		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_nested_data_ptr_slice")
 		},
@@ -1791,6 +1857,24 @@ func (s allTypesSelect) FieldNestedDataPtrSlicePtr() SelectField[*[]*model.Neste
 			return q.BuildAsSelectValue("field_nested_data_ptr_slice_ptr")
 		},
 		db: s.db,
+		decodeFn: func(data []byte) ([]*[]*model.NestedData, error) {
+			return unmarshalSelectConvert(data, func(vals []*conv.NestedData) *[]*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return &out
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*[]*model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []*conv.NestedData) *[]*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return &out
+			})
+		},
 		distFn: func() *lib.Result {
 			return q.BuildAsSelectDistinct("field_nested_data_ptr_slice_ptr")
 		},
@@ -1798,25 +1882,6 @@ func (s allTypesSelect) FieldNestedDataPtrSlicePtr() SelectField[*[]*model.Neste
 			fq := q
 			fq.Limit = 1
 			return fq.BuildAsSelectValue("field_nested_data_ptr_slice_ptr")
-		},
-	}
-}
-
-// FieldNodeSlice returns a SelectField for the field_node_slice field.
-func (s allTypesSelect) FieldNodeSlice() SelectField[[]model.SpecialTypes] {
-	q := s.query
-	return SelectField[[]model.SpecialTypes]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("field_node_slice")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("field_node_slice")
-		},
-		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("field_node_slice")
 		},
 	}
 }
@@ -1836,63 +1901,6 @@ func (s allTypesSelect) FieldNodeSliceSlice() SelectField[[][]model.SpecialTypes
 			fq := q
 			fq.Limit = 1
 			return fq.BuildAsSelectValue("field_node_slice_slice")
-		},
-	}
-}
-
-// FieldNodePtrSlice returns a SelectField for the field_node_ptr_slice field.
-func (s allTypesSelect) FieldNodePtrSlice() SelectField[[]*model.SpecialTypes] {
-	q := s.query
-	return SelectField[[]*model.SpecialTypes]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("field_node_ptr_slice")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("field_node_ptr_slice")
-		},
-		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("field_node_ptr_slice")
-		},
-	}
-}
-
-// FieldNodePtrSlicePtr returns a SelectField for the field_node_ptr_slice_ptr field.
-func (s allTypesSelect) FieldNodePtrSlicePtr() SelectField[*[]*model.SpecialTypes] {
-	q := s.query
-	return SelectField[*[]*model.SpecialTypes]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("field_node_ptr_slice_ptr")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("field_node_ptr_slice_ptr")
-		},
-		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("field_node_ptr_slice_ptr")
-		},
-	}
-}
-
-// FieldEdgeRelations returns a SelectField for the field_edge_relations field.
-func (s allTypesSelect) FieldEdgeRelations() SelectField[[]model.EdgeRelation] {
-	q := s.query
-	return SelectField[[]model.EdgeRelation]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("field_edge_relations")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("field_edge_relations")
-		},
-		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("field_edge_relations")
 		},
 	}
 }

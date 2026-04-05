@@ -31,7 +31,7 @@ func (c *EdgeRelation) MarshalCBOR() ([]byte, error) {
 	if !c.UpdatedAt().IsZero() {
 		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
 	}
-	data["meta"] = fromEdgeMeta(c.Meta)
+	data["meta"] = FromEdgeMeta(c.Meta)
 
 	return cbor.Marshal(data)
 }
@@ -68,9 +68,9 @@ func (c *EdgeRelation) UnmarshalCBOR(data []byte) error {
 		internal.SetUpdatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["meta"]; ok {
-		var convVal edgeMeta
+		var convVal EdgeMeta
 		cbor.Unmarshal(raw, &convVal)
-		c.Meta = toEdgeMeta(convVal)
+		c.Meta = ToEdgeMeta(convVal)
 	}
 
 	return nil

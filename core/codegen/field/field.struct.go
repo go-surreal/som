@@ -21,7 +21,7 @@ func (f *Struct) TypeGo() jen.Code {
 }
 
 func (f *Struct) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).Id(f.element.NameGoLower())
+	return jen.Add(f.ptr()).Id(f.element.NameGo())
 }
 
 func (f *Struct) TypeDatabase() string {
@@ -134,7 +134,7 @@ func (f *Struct) fieldFieldFunc(ctx Context) jen.Code {
 
 func (f *Struct) cborMarshal(_ Context) jen.Code {
 	// Convert to conv wrapper which has proper MarshalCBOR
-	convFuncName := "from" + f.element.NameGo()
+	convFuncName := "From" + f.element.NameGo()
 	if f.source.Pointer() {
 		convFuncName += "Ptr"
 	}
@@ -155,9 +155,9 @@ func (f *Struct) cborUnmarshal(ctx Context) jen.Code {
 			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 			jen.Id("ok"),
 		).BlockFunc(func(g *jen.Group) {
-			g.Var().Id("convVal").Op("*").Id(f.element.NameGoLower())
+			g.Var().Id("convVal").Op("*").Id(f.element.NameGo())
 			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-			g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + f.element.NameGo() + "Ptr").Call(jen.Id("convVal"))
+			g.Id("c").Dot(f.NameGo()).Op("=").Id("To" + f.element.NameGo() + "Ptr").Call(jen.Id("convVal"))
 		})
 	}
 
@@ -165,8 +165,8 @@ func (f *Struct) cborUnmarshal(ctx Context) jen.Code {
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
 	).BlockFunc(func(g *jen.Group) {
-		g.Var().Id("convVal").Id(f.element.NameGoLower())
+		g.Var().Id("convVal").Id(f.element.NameGo())
 		g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-		g.Id("c").Dot(f.NameGo()).Op("=").Id("to" + f.element.NameGo()).Call(jen.Id("convVal"))
+		g.Id("c").Dot(f.NameGo()).Op("=").Id("To" + f.element.NameGo()).Call(jen.Id("convVal"))
 	})
 }

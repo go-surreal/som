@@ -149,7 +149,8 @@ func (b *queryBuilder) generateSelectStruct(
 	)
 
 	// Generate a method per field.
-	// Skip: id (RecordID format), nodes (record links), edges (record links).
+	// Skip: id (RecordID format), nodes/edges (record links),
+	// and slices of nodes/edges.
 	for _, fld := range node.Fields {
 		if fld.NameDatabase() == "id" {
 			continue
@@ -158,6 +159,13 @@ func (b *queryBuilder) generateSelectStruct(
 		switch fld.(type) {
 		case *field.Node, *field.Edge:
 			continue
+		}
+
+		if s, ok := fld.(*field.Slice); ok {
+			switch s.Element().(type) {
+			case *field.Node, *field.Edge:
+				continue
+			}
 		}
 
 		b.generateSelectFieldMethod(f, fld, pkgLib, modelType, selectTypeName)

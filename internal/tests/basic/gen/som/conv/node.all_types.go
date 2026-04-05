@@ -223,14 +223,14 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldEnumPtrSlicePtr != nil {
 		data["field_enum_ptr_slice_ptr"] = c.FieldEnumPtrSlicePtr
 	}
-	data["field_credentials"] = fromCredentials(c.FieldCredentials)
+	data["field_credentials"] = FromCredentials(c.FieldCredentials)
 	if c.FieldNestedDataPtr != nil {
-		data["field_nested_data_ptr"] = fromNestedDataPtr(c.FieldNestedDataPtr)
+		data["field_nested_data_ptr"] = FromNestedDataPtr(c.FieldNestedDataPtr)
 	}
 	if c.FieldNestedDataSlice != nil {
-		convSlice := make([]nestedData, len(c.FieldNestedDataSlice))
+		convSlice := make([]NestedData, len(c.FieldNestedDataSlice))
 		for i, v := range c.FieldNestedDataSlice {
-			convSlice[i] = fromNestedData(v)
+			convSlice[i] = FromNestedData(v)
 		}
 		data["field_nested_data_slice"] = convSlice
 	}
@@ -240,7 +240,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 			if v == nil {
 				convSlice[i] = cbor.None()
 			} else {
-				convSlice[i] = fromNestedDataPtr(v)
+				convSlice[i] = FromNestedDataPtr(v)
 			}
 		}
 		data["field_nested_data_ptr_slice"] = convSlice
@@ -251,7 +251,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 			if v == nil {
 				convSlice[i] = cbor.None()
 			} else {
-				convSlice[i] = fromNestedDataPtr(v)
+				convSlice[i] = FromNestedDataPtr(v)
 			}
 		}
 		data["field_nested_data_ptr_slice_ptr"] = convSlice
@@ -614,22 +614,22 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.FieldEnumPtrSlicePtr)
 	}
 	if raw, ok := rawMap["field_credentials"]; ok {
-		var convVal credentials
+		var convVal Credentials
 		cbor.Unmarshal(raw, &convVal)
-		c.FieldCredentials = toCredentials(convVal)
+		c.FieldCredentials = ToCredentials(convVal)
 	}
 	if raw, ok := rawMap["field_nested_data_ptr"]; ok {
-		var convVal *nestedData
+		var convVal *NestedData
 		cbor.Unmarshal(raw, &convVal)
-		c.FieldNestedDataPtr = toNestedDataPtr(convVal)
+		c.FieldNestedDataPtr = ToNestedDataPtr(convVal)
 	}
 	if raw, ok := rawMap["field_nested_data_slice"]; ok {
-		var convSlice []nestedData
+		var convSlice []NestedData
 		cbor.Unmarshal(raw, &convSlice)
 		{
 			c.FieldNestedDataSlice = make([]model.NestedData, len(convSlice))
 			for i, v := range convSlice {
-				c.FieldNestedDataSlice[i] = toNestedData(v)
+				c.FieldNestedDataSlice[i] = ToNestedData(v)
 			}
 		}
 	}
@@ -642,9 +642,9 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 				if cbor.IsNoneOrNull(elem) {
 					continue
 				}
-				var v nestedData
+				var v NestedData
 				cbor.Unmarshal(elem, &v)
-				c.FieldNestedDataPtrSlice[i] = toNestedDataPtr(&v)
+				c.FieldNestedDataPtrSlice[i] = ToNestedDataPtr(&v)
 			}
 		}
 	}
@@ -659,9 +659,9 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 				if cbor.IsNoneOrNull(elem) {
 					continue
 				}
-				var v nestedData
+				var v NestedData
 				cbor.Unmarshal(elem, &v)
-				result[i] = toNestedDataPtr(&v)
+				result[i] = ToNestedDataPtr(&v)
 			}
 			c.FieldNestedDataPtrSlicePtr = &result
 		}

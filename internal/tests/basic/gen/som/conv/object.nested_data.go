@@ -8,11 +8,11 @@ import (
 	model "som.test/model"
 )
 
-type nestedData struct {
+type NestedData struct {
 	model.NestedData
 }
 
-func (c *nestedData) MarshalCBOR() ([]byte, error) {
+func (c *NestedData) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
@@ -35,7 +35,7 @@ func (c *nestedData) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(data)
 }
 
-func (c *nestedData) UnmarshalCBOR(data []byte) error {
+func (c *NestedData) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
@@ -57,20 +57,20 @@ func (c *nestedData) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
-func fromNestedData(data model.NestedData) nestedData {
-	return nestedData{NestedData: data}
+func FromNestedData(data model.NestedData) NestedData {
+	return NestedData{NestedData: data}
 }
-func fromNestedDataPtr(data *model.NestedData) *nestedData {
+func FromNestedDataPtr(data *model.NestedData) *NestedData {
 	if data == nil {
 		return nil
 	}
-	return &nestedData{NestedData: *data}
+	return &NestedData{NestedData: *data}
 }
 
-func toNestedData(data nestedData) model.NestedData {
+func ToNestedData(data NestedData) model.NestedData {
 	return data.NestedData
 }
-func toNestedDataPtr(data *nestedData) *model.NestedData {
+func ToNestedDataPtr(data *NestedData) *model.NestedData {
 	if data == nil {
 		return nil
 	}
@@ -79,7 +79,7 @@ func toNestedDataPtr(data *nestedData) *model.NestedData {
 }
 
 func SelectDecodeNestedData(data []byte) ([]model.NestedData, error) {
-	var rawResult []internal.QueryResult[nestedData]
+	var rawResult []internal.QueryResult[NestedData]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
 		return nil, err
 	}
@@ -88,12 +88,12 @@ func SelectDecodeNestedData(data []byte) ([]model.NestedData, error) {
 	}
 	out := make([]model.NestedData, len(rawResult[0].Result))
 	for i, v := range rawResult[0].Result {
-		out[i] = toNestedData(v)
+		out[i] = ToNestedData(v)
 	}
 	return out, nil
 }
 func SelectDecodeNestedDataPtr(data []byte) ([]*model.NestedData, error) {
-	var rawResult []internal.QueryResult[*nestedData]
+	var rawResult []internal.QueryResult[*NestedData]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
 		return nil, err
 	}
@@ -102,13 +102,13 @@ func SelectDecodeNestedDataPtr(data []byte) ([]*model.NestedData, error) {
 	}
 	out := make([]*model.NestedData, len(rawResult[0].Result))
 	for i, v := range rawResult[0].Result {
-		out[i] = toNestedDataPtr(v)
+		out[i] = ToNestedDataPtr(v)
 	}
 	return out, nil
 }
 
 func SelectDistinctDecodeNestedData(data []byte) ([]model.NestedData, error) {
-	var rawResult []internal.QueryResult[[]nestedData]
+	var rawResult []internal.QueryResult[[]NestedData]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
 		return nil, err
 	}
@@ -118,12 +118,12 @@ func SelectDistinctDecodeNestedData(data []byte) ([]model.NestedData, error) {
 	inner := rawResult[0].Result[0]
 	out := make([]model.NestedData, len(inner))
 	for i, v := range inner {
-		out[i] = toNestedData(v)
+		out[i] = ToNestedData(v)
 	}
 	return out, nil
 }
 func SelectDistinctDecodeNestedDataPtr(data []byte) ([]*model.NestedData, error) {
-	var rawResult []internal.QueryResult[[]*nestedData]
+	var rawResult []internal.QueryResult[[]*NestedData]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func SelectDistinctDecodeNestedDataPtr(data []byte) ([]*model.NestedData, error)
 	inner := rawResult[0].Result[0]
 	out := make([]*model.NestedData, len(inner))
 	for i, v := range inner {
-		out[i] = toNestedDataPtr(v)
+		out[i] = ToNestedDataPtr(v)
 	}
 	return out, nil
 }

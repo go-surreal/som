@@ -104,25 +104,6 @@ func (s specialRelationSelect) Title() SelectField[string] {
 	}
 }
 
-// Authors returns a SelectField for the authors field.
-func (s specialRelationSelect) Authors() SelectField[[]*model.SpecialTypes] {
-	q := s.query
-	return SelectField[[]*model.SpecialTypes]{
-		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("authors")
-		},
-		db: s.db,
-		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("authors")
-		},
-		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("authors")
-		},
-	}
-}
-
 // SpecialRelationQuery is a type alias for the SpecialRelation query builder.
 type SpecialRelationQuery = Builder[model.SpecialRelation, specialRelationSelect]
 
