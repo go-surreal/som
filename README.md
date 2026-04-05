@@ -209,10 +209,7 @@ Use `AllIDs()` or `FirstID()` for ID selection instead.
 
 #### Unsupported native Go types
 
-Currently, the native Go types `uint`, `uint64` and `uintptr` are not supported.
-Reason for this is that working with very big integers is not yet fully working with the 
-current version of SurrealDB (minimum supported version at the time of writing: 3.0.5). This should be fixed in a future release of SurrealDB.
-As soon as this is fixed, Som will support these types as well.
+Currently, the native Go type `uintptr` is not supported.
 
 ## Overview
 

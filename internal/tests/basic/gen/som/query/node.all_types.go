@@ -1348,13 +1348,19 @@ func (s allTypesSelect) FieldURL() SelectField[url.URL] {
 		db: s.db,
 		decodeFn: func(data []byte) ([]url.URL, error) {
 			return unmarshalSelectConvert(data, func(v string) url.URL {
-				u, _ := url.Parse(v)
+				u, err := url.Parse(v)
+				if err != nil || u == nil {
+					return url.URL{}
+				}
 				return *u
 			})
 		},
 		distDecodeFn: func(data []byte) ([]url.URL, error) {
 			return unmarshalSelectDistinctConvert(data, func(v string) url.URL {
-				u, _ := url.Parse(v)
+				u, err := url.Parse(v)
+				if err != nil || u == nil {
+					return url.URL{}
+				}
 				return *u
 			})
 		},
@@ -1456,7 +1462,10 @@ func (s allTypesSelect) FieldURLSlice() SelectField[[]url.URL] {
 				out := make([]url.URL, len(vals))
 				for i, v := range vals {
 					out[i] = func() url.URL {
-						u, _ := url.Parse(v)
+						u, err := url.Parse(v)
+						if err != nil || u == nil {
+							return url.URL{}
+						}
 						return *u
 					}()
 				}
@@ -1468,7 +1477,10 @@ func (s allTypesSelect) FieldURLSlice() SelectField[[]url.URL] {
 				out := make([]url.URL, len(vals))
 				for i, v := range vals {
 					out[i] = func() url.URL {
-						u, _ := url.Parse(v)
+						u, err := url.Parse(v)
+						if err != nil || u == nil {
+							return url.URL{}
+						}
 						return *u
 					}()
 				}

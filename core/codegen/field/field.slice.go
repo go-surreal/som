@@ -165,7 +165,10 @@ func (f *Slice) elemConvertExpr() jen.Code {
 		return jen.Id("v").Dot("Duration")
 	case *URL:
 		return jen.Func().Params().Qual(def.PkgURL, "URL").Block(
-			jen.List(jen.Id("u"), jen.Id("_")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Id("v")),
+			jen.List(jen.Id("u"), jen.Id("err")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Id("v")),
+			jen.If(jen.Id("err").Op("!=").Nil().Op("||").Id("u").Op("==").Nil()).Block(
+				jen.Return(jen.Qual(def.PkgURL, "URL").Values()),
+			),
 			jen.Return(jen.Op("*").Id("u")),
 		).Call()
 	case *Struct:
