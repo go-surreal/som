@@ -786,7 +786,12 @@ func unmarshalSelectDistinct[T any](data []byte) ([]T, error) {
 		return nil, nil
 	}
 
-	return rawResult[0].Result[0], nil
+	result := rawResult[0].Result[0]
+	if len(result) < 1 {
+		return nil, nil
+	}
+
+	return result, nil
 }
 
 // unmarshalSelectConvert unmarshals SELECT VALUE results through an intermediate

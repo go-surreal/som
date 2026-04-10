@@ -198,13 +198,13 @@ func main() {
 #### Select() not available on SearchBuilder
 
 `Select()` for retrieving individual field values is not available on search queries.
-This is because `SELECT VALUE` queries cannot include the search score projections 
+This is because `SELECT VALUE` queries cannot include the search score projections
 required by score-based sorting. Use `All()`, `First()`, or `AllMatches()` instead.
 
 #### Select() does not support the ID field
 
-The `Select()` builder does not generate a method for the `id` field because SurrealDB 
-returns record IDs in a special format that requires dedicated decoding. 
+The `Select()` builder does not generate a method for the `id` field because SurrealDB
+returns record IDs in a special format that requires dedicated decoding.
 Use `AllIDs()` or `FirstID()` for ID selection instead.
 
 #### Unsupported native Go types

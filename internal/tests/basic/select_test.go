@@ -40,9 +40,12 @@ func TestSelectAll(t *testing.T) {
 	uuid2 := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 	uuid3 := uuid.MustParse("00000000-0000-0000-0000-000000000003")
 
-	url1, _ := url.Parse("https://example.com/alpha")
-	url2, _ := url.Parse("https://example.com/bravo")
-	url3, _ := url.Parse("https://example.com/charlie")
+	url1, err := url.Parse("https://example.com/alpha")
+	assert.NilError(t, err)
+	url2, err := url.Parse("https://example.com/bravo")
+	assert.NilError(t, err)
+	url3, err := url.Parse("https://example.com/charlie")
+	assert.NilError(t, err)
 
 	records := []*model.AllTypes{
 		{
