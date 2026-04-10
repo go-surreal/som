@@ -2,15 +2,16 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
 
-type credentials struct {
+type Credentials struct {
 	model.Credentials
 }
 
-func (c *credentials) MarshalCBOR() ([]byte, error) {
+func (c *Credentials) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
@@ -25,7 +26,7 @@ func (c *credentials) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(data)
 }
 
-func (c *credentials) UnmarshalCBOR(data []byte) error {
+func (c *Credentials) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
@@ -44,23 +45,83 @@ func (c *credentials) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
-func fromCredentials(data model.Credentials) credentials {
-	return credentials{Credentials: data}
+func FromCredentials(data model.Credentials) Credentials {
+	return Credentials{Credentials: data}
 }
-func fromCredentialsPtr(data *model.Credentials) *credentials {
+func FromCredentialsPtr(data *model.Credentials) *Credentials {
 	if data == nil {
 		return nil
 	}
-	return &credentials{Credentials: *data}
+	return &Credentials{Credentials: *data}
 }
 
-func toCredentials(data credentials) model.Credentials {
+func ToCredentials(data Credentials) model.Credentials {
 	return data.Credentials
 }
-func toCredentialsPtr(data *credentials) *model.Credentials {
+func ToCredentialsPtr(data *Credentials) *model.Credentials {
 	if data == nil {
 		return nil
 	}
 	result := data.Credentials
 	return &result
+}
+
+func SelectDecodeCredentials(data []byte) ([]model.Credentials, error) {
+	var rawResult []internal.QueryResult[Credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.Credentials, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToCredentials(v)
+	}
+	return out, nil
+}
+func SelectDecodeCredentialsPtr(data []byte) ([]*model.Credentials, error) {
+	var rawResult []internal.QueryResult[*Credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.Credentials, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToCredentialsPtr(v)
+	}
+	return out, nil
+}
+
+func SelectDistinctDecodeCredentials(data []byte) ([]model.Credentials, error) {
+	var rawResult []internal.QueryResult[[]Credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.Credentials, len(inner))
+	for i, v := range inner {
+		out[i] = ToCredentials(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeCredentialsPtr(data []byte) ([]*model.Credentials, error) {
+	var rawResult []internal.QueryResult[[]*Credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.Credentials, len(inner))
+	for i, v := range inner {
+		out[i] = ToCredentialsPtr(v)
+	}
+	return out, nil
 }

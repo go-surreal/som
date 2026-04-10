@@ -15,12 +15,12 @@ type Byte struct {
 	source *parser.FieldByte
 }
 
-func (f *Byte) typeGo() jen.Code {
+func (f *Byte) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Byte()
 }
 
 func (f *Byte) typeConv(_ Context) jen.Code {
-	return f.typeGo()
+	return f.TypeGo()
 }
 
 func (f *Byte) TypeDatabase() string {

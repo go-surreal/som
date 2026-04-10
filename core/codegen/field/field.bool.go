@@ -14,12 +14,12 @@ type Bool struct {
 	source *parser.FieldBool
 }
 
-func (f *Bool) typeGo() jen.Code {
+func (f *Bool) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Bool()
 }
 
 func (f *Bool) typeConv(_ Context) jen.Code {
-	return f.typeGo()
+	return f.TypeGo()
 }
 
 func (f *Bool) TypeDatabase() string {

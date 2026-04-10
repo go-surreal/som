@@ -32,7 +32,7 @@ func (f *UUID) uuidTypeName() string {
 	}
 }
 
-func (f *UUID) typeGo() jen.Code {
+func (f *UUID) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.uuidPkg(), "UUID")
 }
 

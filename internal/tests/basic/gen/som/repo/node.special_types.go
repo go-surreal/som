@@ -21,7 +21,7 @@ import (
 type SpecialTypesRepo interface {
 	// Query returns a new query builder for the SpecialTypes model.
 
-	Query() query.Builder[model.SpecialTypes]
+	Query() query.SpecialTypesQuery
 	// Create creates a new record for the SpecialTypes model.
 
 	Create(ctx context.Context, specialTypes *model.SpecialTypes) error
@@ -361,7 +361,7 @@ func (r *specialTypes) OnAfterDelete(fn func(ctx context.Context, node *model.Sp
 }
 
 // Query returns a new query builder for the SpecialTypes model.
-func (r *specialTypes) Query() query.Builder[model.SpecialTypes] {
+func (r *specialTypes) Query() query.SpecialTypesQuery {
 	return query.NewSpecialTypes(r.db)
 }
 

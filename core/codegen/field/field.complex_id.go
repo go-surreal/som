@@ -15,12 +15,12 @@ type ComplexID struct {
 	element Table
 }
 
-func (f *ComplexID) typeGo() jen.Code {
+func (f *ComplexID) TypeGo() jen.Code {
 	return jen.Qual(f.SourcePkg, f.source.StructName)
 }
 
 func (f *ComplexID) typeConv(_ Context) jen.Code {
-	return f.typeGo()
+	return f.TypeGo()
 }
 
 func (f *ComplexID) TypeDatabase() string {

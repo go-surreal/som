@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
@@ -90,6 +91,66 @@ func ToWeatherPtr(data *Weather) *model.Weather {
 	}
 	result := data.Weather
 	return &result
+}
+
+func SelectDecodeWeather(data []byte) ([]model.Weather, error) {
+	var rawResult []internal.QueryResult[Weather]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.Weather, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToWeather(v)
+	}
+	return out, nil
+}
+func SelectDecodeWeatherPtr(data []byte) ([]*model.Weather, error) {
+	var rawResult []internal.QueryResult[*Weather]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.Weather, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToWeatherPtr(v)
+	}
+	return out, nil
+}
+
+func SelectDistinctDecodeWeather(data []byte) ([]model.Weather, error) {
+	var rawResult []internal.QueryResult[[]Weather]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.Weather, len(inner))
+	for i, v := range inner {
+		out[i] = ToWeather(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeWeatherPtr(data []byte) ([]*model.Weather, error) {
+	var rawResult []internal.QueryResult[[]*Weather]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.Weather, len(inner))
+	for i, v := range inner {
+		out[i] = ToWeatherPtr(v)
+	}
+	return out, nil
 }
 
 type weatherLink struct {

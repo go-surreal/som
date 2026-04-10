@@ -2,15 +2,16 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
 
-type personKey struct {
+type PersonKey struct {
 	model.PersonKey
 }
 
-func (c *personKey) MarshalCBOR() ([]byte, error) {
+func (c *PersonKey) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
@@ -22,7 +23,7 @@ func (c *personKey) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(data)
 }
 
-func (c *personKey) UnmarshalCBOR(data []byte) error {
+func (c *PersonKey) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
@@ -38,23 +39,83 @@ func (c *personKey) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
-func fromPersonKey(data model.PersonKey) personKey {
-	return personKey{PersonKey: data}
+func FromPersonKey(data model.PersonKey) PersonKey {
+	return PersonKey{PersonKey: data}
 }
-func fromPersonKeyPtr(data *model.PersonKey) *personKey {
+func FromPersonKeyPtr(data *model.PersonKey) *PersonKey {
 	if data == nil {
 		return nil
 	}
-	return &personKey{PersonKey: *data}
+	return &PersonKey{PersonKey: *data}
 }
 
-func toPersonKey(data personKey) model.PersonKey {
+func ToPersonKey(data PersonKey) model.PersonKey {
 	return data.PersonKey
 }
-func toPersonKeyPtr(data *personKey) *model.PersonKey {
+func ToPersonKeyPtr(data *PersonKey) *model.PersonKey {
 	if data == nil {
 		return nil
 	}
 	result := data.PersonKey
 	return &result
+}
+
+func SelectDecodePersonKey(data []byte) ([]model.PersonKey, error) {
+	var rawResult []internal.QueryResult[PersonKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.PersonKey, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToPersonKey(v)
+	}
+	return out, nil
+}
+func SelectDecodePersonKeyPtr(data []byte) ([]*model.PersonKey, error) {
+	var rawResult []internal.QueryResult[*PersonKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.PersonKey, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToPersonKeyPtr(v)
+	}
+	return out, nil
+}
+
+func SelectDistinctDecodePersonKey(data []byte) ([]model.PersonKey, error) {
+	var rawResult []internal.QueryResult[[]PersonKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.PersonKey, len(inner))
+	for i, v := range inner {
+		out[i] = ToPersonKey(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodePersonKeyPtr(data []byte) ([]*model.PersonKey, error) {
+	var rawResult []internal.QueryResult[[]*PersonKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.PersonKey, len(inner))
+	for i, v := range inner {
+		out[i] = ToPersonKeyPtr(v)
+	}
+	return out, nil
 }

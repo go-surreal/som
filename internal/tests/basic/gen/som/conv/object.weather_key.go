@@ -2,16 +2,17 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
 )
 
-type weatherKey struct {
+type WeatherKey struct {
 	model.WeatherKey
 }
 
-func (c *weatherKey) MarshalCBOR() ([]byte, error) {
+func (c *WeatherKey) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
@@ -23,7 +24,7 @@ func (c *weatherKey) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(data)
 }
 
-func (c *weatherKey) UnmarshalCBOR(data []byte) error {
+func (c *WeatherKey) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
@@ -39,23 +40,83 @@ func (c *weatherKey) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
-func fromWeatherKey(data model.WeatherKey) weatherKey {
-	return weatherKey{WeatherKey: data}
+func FromWeatherKey(data model.WeatherKey) WeatherKey {
+	return WeatherKey{WeatherKey: data}
 }
-func fromWeatherKeyPtr(data *model.WeatherKey) *weatherKey {
+func FromWeatherKeyPtr(data *model.WeatherKey) *WeatherKey {
 	if data == nil {
 		return nil
 	}
-	return &weatherKey{WeatherKey: *data}
+	return &WeatherKey{WeatherKey: *data}
 }
 
-func toWeatherKey(data weatherKey) model.WeatherKey {
+func ToWeatherKey(data WeatherKey) model.WeatherKey {
 	return data.WeatherKey
 }
-func toWeatherKeyPtr(data *weatherKey) *model.WeatherKey {
+func ToWeatherKeyPtr(data *WeatherKey) *model.WeatherKey {
 	if data == nil {
 		return nil
 	}
 	result := data.WeatherKey
 	return &result
+}
+
+func SelectDecodeWeatherKey(data []byte) ([]model.WeatherKey, error) {
+	var rawResult []internal.QueryResult[WeatherKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.WeatherKey, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToWeatherKey(v)
+	}
+	return out, nil
+}
+func SelectDecodeWeatherKeyPtr(data []byte) ([]*model.WeatherKey, error) {
+	var rawResult []internal.QueryResult[*WeatherKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.WeatherKey, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToWeatherKeyPtr(v)
+	}
+	return out, nil
+}
+
+func SelectDistinctDecodeWeatherKey(data []byte) ([]model.WeatherKey, error) {
+	var rawResult []internal.QueryResult[[]WeatherKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.WeatherKey, len(inner))
+	for i, v := range inner {
+		out[i] = ToWeatherKey(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeWeatherKeyPtr(data []byte) ([]*model.WeatherKey, error) {
+	var rawResult []internal.QueryResult[[]*WeatherKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.WeatherKey, len(inner))
+	for i, v := range inner {
+		out[i] = ToWeatherKeyPtr(v)
+	}
+	return out, nil
 }

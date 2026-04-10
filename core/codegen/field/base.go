@@ -27,7 +27,7 @@ type Field interface {
 	NameGoLower() string
 	NameDatabase() string
 
-	typeGo() jen.Code
+	TypeGo() jen.Code
 	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
 

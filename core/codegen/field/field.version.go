@@ -20,7 +20,7 @@ func (f *Version) NameDatabase() string {
 	return versionDBField
 }
 
-func (f *Version) typeGo() jen.Code {
+func (f *Version) TypeGo() jen.Code {
 	return jen.Int()
 }
 

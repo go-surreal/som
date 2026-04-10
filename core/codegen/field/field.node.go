@@ -15,7 +15,7 @@ type Node struct {
 	table  *NodeTable
 }
 
-func (f *Node) typeGo() jen.Code {
+func (f *Node) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }
 

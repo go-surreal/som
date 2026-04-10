@@ -15,7 +15,7 @@ type Duration struct {
 	source *parser.FieldDuration
 }
 
-func (f *Duration) typeGo() jen.Code {
+func (f *Duration) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Duration")
 }
 
@@ -51,7 +51,46 @@ func (f *Duration) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
+
+		selectDecode:     f.selectDecode,
+		selectDistDecode: f.selectDistDecode,
 	}
+}
+
+func (f *Duration) selectDecode(ctx Context) jen.Code {
+	dt := jen.Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration")
+
+	if f.source.Pointer() {
+		return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Op("*").Qual("time", "Duration"), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalSelectConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Op("*").Add(dt)).Op("*").Qual("time", "Duration").Block(
+				jen.If(jen.Id("v").Op("==").Nil()).Block(jen.Return(jen.Nil())),
+				jen.Id("d").Op(":=").Id("v").Dot("Duration"),
+				jen.Return(jen.Op("&").Id("d")),
+			))))
+	}
+
+	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Qual("time", "Duration"), jen.Error()).Block(
+		jen.Return(jen.Id("unmarshalSelectConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Add(dt)).Qual("time", "Duration").Block(
+			jen.Return(jen.Id("v").Dot("Duration")),
+		))))
+}
+
+func (f *Duration) selectDistDecode(ctx Context) jen.Code {
+	dt := jen.Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "Duration")
+
+	if f.source.Pointer() {
+		return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Op("*").Qual("time", "Duration"), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalSelectDistinctConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Op("*").Add(dt)).Op("*").Qual("time", "Duration").Block(
+				jen.If(jen.Id("v").Op("==").Nil()).Block(jen.Return(jen.Nil())),
+				jen.Id("d").Op(":=").Id("v").Dot("Duration"),
+				jen.Return(jen.Op("&").Id("d")),
+			))))
+	}
+
+	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Qual("time", "Duration"), jen.Error()).Block(
+		jen.Return(jen.Id("unmarshalSelectDistinctConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Add(dt)).Qual("time", "Duration").Block(
+			jen.Return(jen.Id("v").Dot("Duration")),
+		))))
 }
 
 func (f *Duration) filterDefine(ctx Context) jen.Code {

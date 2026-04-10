@@ -9,7 +9,7 @@ import (
 	"som.test/gen/som/internal/distinct"
 )
 
-func Distinct[M any, T any](ctx context.Context, b Builder[M], f distinct.Field[M, T]) ([]T, error) {
+func Distinct[M any, S any, T any](ctx context.Context, b Builder[M, S], f distinct.Field[M, T]) ([]T, error) {
 	if f.Decode == nil {
 		return nil, fmt.Errorf("distinct field has no decode function")
 	}

@@ -312,6 +312,66 @@ func ToLocationPtr(data *Location) *model.Location {
 	return &result
 }
 
+func SelectDecodeLocation(data []byte) ([]model.Location, error) {
+	var rawResult []internal.QueryResult[Location]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.Location, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToLocation(v)
+	}
+	return out, nil
+}
+func SelectDecodeLocationPtr(data []byte) ([]*model.Location, error) {
+	var rawResult []internal.QueryResult[*Location]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.Location, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToLocationPtr(v)
+	}
+	return out, nil
+}
+
+func SelectDistinctDecodeLocation(data []byte) ([]model.Location, error) {
+	var rawResult []internal.QueryResult[[]Location]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.Location, len(inner))
+	for i, v := range inner {
+		out[i] = ToLocation(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeLocationPtr(data []byte) ([]*model.Location, error) {
+	var rawResult []internal.QueryResult[[]*Location]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.Location, len(inner))
+	for i, v := range inner {
+		out[i] = ToLocationPtr(v)
+	}
+	return out, nil
+}
+
 type locationLink struct {
 	Location
 	ID *models.RecordID

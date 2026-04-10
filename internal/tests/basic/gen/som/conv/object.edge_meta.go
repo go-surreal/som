@@ -2,15 +2,16 @@
 package conv
 
 import (
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
 
-type edgeMeta struct {
+type EdgeMeta struct {
 	model.EdgeMeta
 }
 
-func (c *edgeMeta) MarshalCBOR() ([]byte, error) {
+func (c *EdgeMeta) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
@@ -22,7 +23,7 @@ func (c *edgeMeta) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(data)
 }
 
-func (c *edgeMeta) UnmarshalCBOR(data []byte) error {
+func (c *EdgeMeta) UnmarshalCBOR(data []byte) error {
 	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
@@ -38,23 +39,83 @@ func (c *edgeMeta) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
-func fromEdgeMeta(data model.EdgeMeta) edgeMeta {
-	return edgeMeta{EdgeMeta: data}
+func FromEdgeMeta(data model.EdgeMeta) EdgeMeta {
+	return EdgeMeta{EdgeMeta: data}
 }
-func fromEdgeMetaPtr(data *model.EdgeMeta) *edgeMeta {
+func FromEdgeMetaPtr(data *model.EdgeMeta) *EdgeMeta {
 	if data == nil {
 		return nil
 	}
-	return &edgeMeta{EdgeMeta: *data}
+	return &EdgeMeta{EdgeMeta: *data}
 }
 
-func toEdgeMeta(data edgeMeta) model.EdgeMeta {
+func ToEdgeMeta(data EdgeMeta) model.EdgeMeta {
 	return data.EdgeMeta
 }
-func toEdgeMetaPtr(data *edgeMeta) *model.EdgeMeta {
+func ToEdgeMetaPtr(data *EdgeMeta) *model.EdgeMeta {
 	if data == nil {
 		return nil
 	}
 	result := data.EdgeMeta
 	return &result
+}
+
+func SelectDecodeEdgeMeta(data []byte) ([]model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[EdgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.EdgeMeta, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToEdgeMeta(v)
+	}
+	return out, nil
+}
+func SelectDecodeEdgeMetaPtr(data []byte) ([]*model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[*EdgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.EdgeMeta, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToEdgeMetaPtr(v)
+	}
+	return out, nil
+}
+
+func SelectDistinctDecodeEdgeMeta(data []byte) ([]model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[[]EdgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.EdgeMeta, len(inner))
+	for i, v := range inner {
+		out[i] = ToEdgeMeta(v)
+	}
+	return out, nil
+}
+func SelectDistinctDecodeEdgeMetaPtr(data []byte) ([]*model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[[]*EdgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.EdgeMeta, len(inner))
+	for i, v := range inner {
+		out[i] = ToEdgeMetaPtr(v)
+	}
+	return out, nil
 }
