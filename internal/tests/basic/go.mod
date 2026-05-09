@@ -1,6 +1,6 @@
 module som.test
 
-go 1.25.7
+go 1.26.3
 
 replace github.com/go-surreal/som => ../../../
 
