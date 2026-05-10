@@ -158,3 +158,41 @@ func SelectDistinctDecodeEdgeRelationPtr(data []byte) ([]*model.EdgeRelation, er
 	}
 	return out, nil
 }
+
+func SelectArrayDecodeEdgeRelation(data []byte) ([][]model.EdgeRelation, error) {
+	var rawResult []internal.QueryResult[[]EdgeRelation]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.EdgeRelation, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.EdgeRelation, len(row))
+		for j, v := range row {
+			inner[j] = ToEdgeRelation(&v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeEdgeRelationPtr(data []byte) ([][]*model.EdgeRelation, error) {
+	var rawResult []internal.QueryResult[[]*EdgeRelation]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.EdgeRelation, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.EdgeRelation, len(row))
+		for j, v := range row {
+			inner[j] = ToEdgeRelationPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}

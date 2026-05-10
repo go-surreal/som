@@ -62,9 +62,30 @@ func (f *URL) CodeGen() *CodeGen {
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 
-		selectDecode:     f.selectDecode,
-		selectDistDecode: f.selectDistDecode,
+		selectDecode:      f.selectDecode,
+		selectDistDecode:  f.selectDistDecode,
+		selectArrayDecode: f.selectArrayDecode,
 	}
+}
+
+func (f *URL) selectArrayDecode(_ Context) jen.Code {
+	if f.source.Pointer() {
+		return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Index().Op("*").Qual(def.PkgURL, "URL"), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalSelectArrayConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Op("*").String()).Op("*").Qual(def.PkgURL, "URL").Block(
+				jen.If(jen.Id("v").Op("==").Nil()).Block(jen.Return(jen.Nil())),
+				jen.List(jen.Id("u"), jen.Id("_")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Op("*").Id("v")),
+				jen.Return(jen.Id("u")),
+			))))
+	}
+
+	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Index().Qual(def.PkgURL, "URL"), jen.Error()).Block(
+		jen.Return(jen.Id("unmarshalSelectArrayConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").String()).Qual(def.PkgURL, "URL").Block(
+			jen.List(jen.Id("u"), jen.Id("err")).Op(":=").Qual(def.PkgURL, "Parse").Call(jen.Id("v")),
+			jen.If(jen.Id("err").Op("!=").Nil().Op("||").Id("u").Op("==").Nil()).Block(
+				jen.Return(jen.Qual(def.PkgURL, "URL").Values()),
+			),
+			jen.Return(jen.Op("*").Id("u")),
+		))))
 }
 
 func (f *URL) selectDecode(_ Context) jen.Code {

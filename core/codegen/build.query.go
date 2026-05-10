@@ -224,7 +224,11 @@ func (b *queryBuilder) generateSelectFieldMethod(
 		),
 	}
 
-	if !arrayWrap {
+	if arrayWrap {
+		if code := fld.CodeGen().SelectArrayDecode(ctx); code != nil {
+			dict[jen.Id("decodeFn")] = code
+		}
+	} else {
 		if code := fld.CodeGen().SelectDecode(ctx); code != nil {
 			dict[jen.Id("decodeFn")] = code
 		}

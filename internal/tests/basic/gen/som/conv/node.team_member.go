@@ -190,6 +190,44 @@ func SelectDistinctDecodeTeamMemberPtr(data []byte) ([]*model.TeamMember, error)
 	return out, nil
 }
 
+func SelectArrayDecodeTeamMember(data []byte) ([][]model.TeamMember, error) {
+	var rawResult []internal.QueryResult[[]TeamMember]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.TeamMember, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.TeamMember, len(row))
+		for j, v := range row {
+			inner[j] = ToTeamMember(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeTeamMemberPtr(data []byte) ([][]*model.TeamMember, error) {
+	var rawResult []internal.QueryResult[[]*TeamMember]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.TeamMember, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.TeamMember, len(row))
+		for j, v := range row {
+			inner[j] = ToTeamMemberPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
 type teamMemberLink struct {
 	TeamMember
 	ID *models.RecordID

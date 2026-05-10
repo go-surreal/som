@@ -625,6 +625,11 @@ func (s locationSelectArray) CreatedAt() SelectField[[]time.Time] {
 			return s.BuildFn("created_at")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("created_at", true)
 		},
@@ -641,6 +646,11 @@ func (s locationSelectArray) UpdatedAt() SelectField[[]time.Time] {
 			return s.BuildFn("updated_at")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("updated_at", true)
 		},

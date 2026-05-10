@@ -64,6 +64,22 @@ func (q *Query[T]) AsVar(val any) string {
 	return q.context.asVar(val)
 }
 
+// cloneContext returns a copy of q with an isolated context (fresh vars map and
+// independent varIndex). Each BuildAs* call uses this to ensure repeated builds
+// of the same captured query value (e.g. via Select() closures) do not share
+// or overwrite each other's variable bindings.
+func (q Query[T]) cloneContext() Query[T] {
+	vars := make(map[string]any, len(q.context.vars))
+	for k, v := range q.context.vars {
+		vars[k] = v
+	}
+	q.context = context{
+		varIndex: q.context.varIndex,
+		vars:     vars,
+	}
+	return q
+}
+
 func NewQuery[T any](node string) Query[T] {
 	return Query[T]{
 		context: context{
@@ -75,6 +91,7 @@ func NewQuery[T any](node string) Query[T] {
 }
 
 func (q Query[T]) BuildAsAll() *Result {
+	q = q.cloneContext()
 	q.fields = []string{"*"}
 
 	return &Result{
@@ -84,6 +101,7 @@ func (q Query[T]) BuildAsAll() *Result {
 }
 
 func (q Query[T]) BuildAsAllIDs() *Result {
+	q = q.cloneContext()
 	q.fields = []string{"id"}
 
 	return &Result{
@@ -93,6 +111,7 @@ func (q Query[T]) BuildAsAllIDs() *Result {
 }
 
 func (q Query[T]) BuildAsCount() *Result {
+	q = q.cloneContext()
 	q.fields = []string{"count()"}
 	q.groupAll = true
 
@@ -103,6 +122,7 @@ func (q Query[T]) BuildAsCount() *Result {
 }
 
 func (q Query[T]) BuildAsLive() *Result {
+	q = q.cloneContext()
 	q.live = true
 	q.fields = []string{"*"}
 
@@ -113,6 +133,7 @@ func (q Query[T]) BuildAsLive() *Result {
 }
 
 func (q Query[T]) BuildAsLiveDiff() *Result {
+	q = q.cloneContext()
 	q.live = true
 	q.fields = []string{"DIFF"}
 
@@ -123,6 +144,7 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 }
 
 func (q Query[T]) BuildAsSelectValue(field string) *Result {
+	q = q.cloneContext()
 	q.valueField = field
 
 	return &Result{
@@ -136,6 +158,7 @@ func (q Query[T]) BuildAsSelectValue(field string) *Result {
 // fields where null values would represent data corruption). When false, null is preserved
 // as a distinct value so callers can observe it in nullable fields.
 func (q Query[T]) BuildAsSelectDistinct(field string, excludeNull bool) *Result {
+	q = q.cloneContext()
 	q.valueField = field
 	q.groupAll = true
 
@@ -152,6 +175,7 @@ func (q Query[T]) BuildAsSelectDistinct(field string, excludeNull bool) *Result 
 }
 
 func (q Query[T]) BuildDistinct(field string) *Result {
+	q = q.cloneContext()
 	q.fields = []string{"array::distinct(array::group(" + field + ")) AS values"}
 	q.groupAll = true
 

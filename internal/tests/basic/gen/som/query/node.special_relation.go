@@ -114,6 +114,15 @@ func (s specialRelationSelectArray) DeletedAt() SelectField[[]*time.Time] {
 			return s.BuildFn("deleted_at")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("deleted_at", false)
 		},

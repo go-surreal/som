@@ -54,6 +54,11 @@ type CodeGen struct {
 	// func([]byte) ([]T, error). When nil, the default CBOR unmarshal is used.
 	selectDecode     CodeGenFunc
 	selectDistDecode CodeGenFunc
+	// selectArrayDecode is the edge-traversal variant of selectDecode. The closure
+	// returns func([]byte) ([][]T, error) because each source row yields an array of
+	// values. nil falls back to default CBOR unmarshal into [][]T (only valid when no
+	// per-element conversion is required).
+	selectArrayDecode CodeGenFunc
 }
 
 func (g *CodeGen) FilterDefine(ctx Context) jen.Code {
@@ -118,4 +123,8 @@ func (g *CodeGen) SelectDecode(ctx Context) jen.Code {
 
 func (g *CodeGen) SelectDistDecode(ctx Context) jen.Code {
 	return g.selectDistDecode.Exec(ctx)
+}
+
+func (g *CodeGen) SelectArrayDecode(ctx Context) jen.Code {
+	return g.selectArrayDecode.Exec(ctx)
 }

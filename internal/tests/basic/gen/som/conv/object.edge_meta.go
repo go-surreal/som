@@ -121,3 +121,41 @@ func SelectDistinctDecodeEdgeMetaPtr(data []byte) ([]*model.EdgeMeta, error) {
 	}
 	return out, nil
 }
+
+func SelectArrayDecodeEdgeMeta(data []byte) ([][]model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[[]EdgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.EdgeMeta, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.EdgeMeta, len(row))
+		for j, v := range row {
+			inner[j] = ToEdgeMeta(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeEdgeMetaPtr(data []byte) ([][]*model.EdgeMeta, error) {
+	var rawResult []internal.QueryResult[[]*EdgeMeta]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.EdgeMeta, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.EdgeMeta, len(row))
+		for j, v := range row {
+			inner[j] = ToEdgeMetaPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}

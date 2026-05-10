@@ -857,6 +857,32 @@ func unmarshalSelectConvert[C, T any](data []byte, convert func(C) T) ([]T, erro
 	return out, nil
 }
 
+// unmarshalSelectArrayConvert handles edge-traversal SELECT VALUE results.
+// Each source row yields an array of intermediate values (e.g. ->edge->target.field
+// returns []C per source row), so the result shape is `result: [[...], [...]]` and
+// the output is a slice of converted slices.
+func unmarshalSelectArrayConvert[C, T any](data []byte, convert func(C) T) ([][]T, error) {
+	var rawResult []internal.QueryResult[[]C]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, fmt.Errorf("could not unmarshal select array value: %w", err)
+	}
+
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+
+	out := make([][]T, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]T, len(row))
+		for j, v := range row {
+			inner[j] = convert(v)
+		}
+		out[i] = inner
+	}
+
+	return out, nil
+}
+
 // unmarshalSelectDistinctConvert is the distinct variant of unmarshalSelectConvert.
 // Distinct queries return result: [[val1, val2, ...]] (nested array).
 func unmarshalSelectDistinctConvert[C, T any](data []byte, convert func(C) T) ([]T, error) {

@@ -102,6 +102,9 @@ func (f *Slice) CodeGen() *CodeGen {
 
 		selectDecode:     f.selectDecode,
 		selectDistDecode: f.selectDistDecode,
+		// selectArrayDecode left nil: default CBOR works for primitive-element
+		// slices in edge traversal; conversion-element slices via traversal are
+		// out of scope until a 3-deep convert helper is added.
 	}
 }
 

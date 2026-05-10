@@ -177,6 +177,44 @@ func SelectDistinctDecodeSpecialRelationPtr(data []byte) ([]*model.SpecialRelati
 	return out, nil
 }
 
+func SelectArrayDecodeSpecialRelation(data []byte) ([][]model.SpecialRelation, error) {
+	var rawResult []internal.QueryResult[[]SpecialRelation]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.SpecialRelation, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.SpecialRelation, len(row))
+		for j, v := range row {
+			inner[j] = ToSpecialRelation(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeSpecialRelationPtr(data []byte) ([][]*model.SpecialRelation, error) {
+	var rawResult []internal.QueryResult[[]*SpecialRelation]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.SpecialRelation, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.SpecialRelation, len(row))
+		for j, v := range row {
+			inner[j] = ToSpecialRelationPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
 type specialRelationLink struct {
 	SpecialRelation
 	ID *models.RecordID

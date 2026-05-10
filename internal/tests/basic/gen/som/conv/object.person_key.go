@@ -121,3 +121,41 @@ func SelectDistinctDecodePersonKeyPtr(data []byte) ([]*model.PersonKey, error) {
 	}
 	return out, nil
 }
+
+func SelectArrayDecodePersonKey(data []byte) ([][]model.PersonKey, error) {
+	var rawResult []internal.QueryResult[[]PersonKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.PersonKey, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.PersonKey, len(row))
+		for j, v := range row {
+			inner[j] = ToPersonKey(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodePersonKeyPtr(data []byte) ([][]*model.PersonKey, error) {
+	var rawResult []internal.QueryResult[[]*PersonKey]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.PersonKey, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.PersonKey, len(row))
+		for j, v := range row {
+			inner[j] = ToPersonKeyPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}

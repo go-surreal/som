@@ -155,6 +155,44 @@ func SelectDistinctDecodeWeatherPtr(data []byte) ([]*model.Weather, error) {
 	return out, nil
 }
 
+func SelectArrayDecodeWeather(data []byte) ([][]model.Weather, error) {
+	var rawResult []internal.QueryResult[[]Weather]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.Weather, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.Weather, len(row))
+		for j, v := range row {
+			inner[j] = ToWeather(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeWeatherPtr(data []byte) ([][]*model.Weather, error) {
+	var rawResult []internal.QueryResult[[]*Weather]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.Weather, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.Weather, len(row))
+		for j, v := range row {
+			inner[j] = ToWeatherPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
 type weatherLink struct {
 	Weather
 	ID *models.RecordID

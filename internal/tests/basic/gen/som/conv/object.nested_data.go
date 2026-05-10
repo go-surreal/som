@@ -139,3 +139,41 @@ func SelectDistinctDecodeNestedDataPtr(data []byte) ([]*model.NestedData, error)
 	}
 	return out, nil
 }
+
+func SelectArrayDecodeNestedData(data []byte) ([][]model.NestedData, error) {
+	var rawResult []internal.QueryResult[[]NestedData]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.NestedData, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.NestedData, len(row))
+		for j, v := range row {
+			inner[j] = ToNestedData(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeNestedDataPtr(data []byte) ([][]*model.NestedData, error) {
+	var rawResult []internal.QueryResult[[]*NestedData]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.NestedData, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.NestedData, len(row))
+		for j, v := range row {
+			inner[j] = ToNestedDataPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}

@@ -127,3 +127,41 @@ func SelectDistinctDecodeCredentialsPtr(data []byte) ([]*model.Credentials, erro
 	}
 	return out, nil
 }
+
+func SelectArrayDecodeCredentials(data []byte) ([][]model.Credentials, error) {
+	var rawResult []internal.QueryResult[[]Credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.Credentials, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.Credentials, len(row))
+		for j, v := range row {
+			inner[j] = ToCredentials(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeCredentialsPtr(data []byte) ([][]*model.Credentials, error) {
+	var rawResult []internal.QueryResult[[]*Credentials]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.Credentials, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.Credentials, len(row))
+		for j, v := range row {
+			inner[j] = ToCredentialsPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}

@@ -374,6 +374,44 @@ func SelectDistinctDecodeLocationPtr(data []byte) ([]*model.Location, error) {
 	return out, nil
 }
 
+func SelectArrayDecodeLocation(data []byte) ([][]model.Location, error) {
+	var rawResult []internal.QueryResult[[]Location]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.Location, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.Location, len(row))
+		for j, v := range row {
+			inner[j] = ToLocation(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeLocationPtr(data []byte) ([][]*model.Location, error) {
+	var rawResult []internal.QueryResult[[]*Location]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.Location, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.Location, len(row))
+		for j, v := range row {
+			inner[j] = ToLocationPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
 type locationLink struct {
 	Location
 	ID *models.RecordID

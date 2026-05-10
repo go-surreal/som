@@ -1854,6 +1854,11 @@ func (s allTypesSelectArray) CreatedAt() SelectField[[]time.Time] {
 			return s.BuildFn("created_at")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("created_at", true)
 		},
@@ -1870,6 +1875,11 @@ func (s allTypesSelectArray) UpdatedAt() SelectField[[]time.Time] {
 			return s.BuildFn("updated_at")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("updated_at", true)
 		},
@@ -2478,6 +2488,11 @@ func (s allTypesSelectArray) FieldTime() SelectField[[]time.Time] {
 			return s.BuildFn("field_time")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_time", true)
 		},
@@ -2494,6 +2509,15 @@ func (s allTypesSelectArray) FieldTimePtr() SelectField[[]*time.Time] {
 			return s.BuildFn("field_time_ptr")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_time_ptr", false)
 		},
@@ -2510,6 +2534,15 @@ func (s allTypesSelectArray) FieldTimeNil() SelectField[[]*time.Time] {
 			return s.BuildFn("field_time_nil")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_time_nil", false)
 		},
@@ -2558,6 +2591,11 @@ func (s allTypesSelectArray) FieldDuration() SelectField[[]time.Duration] {
 			return s.BuildFn("field_duration")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Duration, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.Duration) time.Duration {
+				return v.Duration
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_duration", true)
 		},
@@ -2574,6 +2612,15 @@ func (s allTypesSelectArray) FieldDurationPtr() SelectField[[]*time.Duration] {
 			return s.BuildFn("field_duration_ptr")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Duration, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_duration_ptr", false)
 		},
@@ -2590,6 +2637,15 @@ func (s allTypesSelectArray) FieldDurationNil() SelectField[[]*time.Duration] {
 			return s.BuildFn("field_duration_nil")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Duration, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_duration_nil", false)
 		},
@@ -2814,6 +2870,15 @@ func (s allTypesSelectArray) FieldURL() SelectField[[]url.URL] {
 			return s.BuildFn("field_url")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]url.URL, error) {
+			return unmarshalSelectArrayConvert(data, func(v string) url.URL {
+				u, err := url.Parse(v)
+				if err != nil || u == nil {
+					return url.URL{}
+				}
+				return *u
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_url", true)
 		},
@@ -2830,6 +2895,15 @@ func (s allTypesSelectArray) FieldURLPtr() SelectField[[]*url.URL] {
 			return s.BuildFn("field_url_ptr")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]*url.URL, error) {
+			return unmarshalSelectArrayConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_url_ptr", false)
 		},
@@ -2846,6 +2920,15 @@ func (s allTypesSelectArray) FieldURLNil() SelectField[[]*url.URL] {
 			return s.BuildFn("field_url_nil")
 		},
 		db: s.DB,
+		decodeFn: func(data []byte) ([][]*url.URL, error) {
+			return unmarshalSelectArrayConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
 		distFn: func() *lib.Result {
 			return s.DistFn("field_url_nil", false)
 		},
@@ -3085,7 +3168,8 @@ func (s allTypesSelectArray) FieldCredentials() SelectField[[]model.Credentials]
 		buildFn: func() *lib.Result {
 			return s.BuildFn("field_credentials")
 		},
-		db: s.DB,
+		db:       s.DB,
+		decodeFn: conv.SelectArrayDecodeCredentials,
 		distFn: func() *lib.Result {
 			return s.DistFn("field_credentials", true)
 		},
@@ -3101,7 +3185,8 @@ func (s allTypesSelectArray) FieldNestedDataPtr() SelectField[[]*model.NestedDat
 		buildFn: func() *lib.Result {
 			return s.BuildFn("field_nested_data_ptr")
 		},
-		db: s.DB,
+		db:       s.DB,
+		decodeFn: conv.SelectArrayDecodeNestedDataPtr,
 		distFn: func() *lib.Result {
 			return s.DistFn("field_nested_data_ptr", false)
 		},

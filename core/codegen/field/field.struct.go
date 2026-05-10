@@ -69,9 +69,20 @@ func (f *Struct) CodeGen() *CodeGen {
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 
-		selectDecode:     f.selectDecode,
-		selectDistDecode: f.selectDistDecode,
+		selectDecode:      f.selectDecode,
+		selectDistDecode:  f.selectDistDecode,
+		selectArrayDecode: f.selectArrayDecode,
 	}
+}
+
+func (f *Struct) selectArrayDecode(ctx Context) jen.Code {
+	convPkg := path.Join(ctx.TargetPkg, def.PkgConv)
+	name := f.element.NameGo()
+	if f.source.Pointer() {
+		name += "Ptr"
+	}
+
+	return jen.Qual(convPkg, "SelectArrayDecode"+name)
 }
 
 func (f *Struct) selectDecode(ctx Context) jen.Code {
