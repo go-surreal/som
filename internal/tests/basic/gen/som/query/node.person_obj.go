@@ -54,7 +54,7 @@ func (s personObjSelect) Email() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("email")
+			return s.DistFn("email", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("email")
@@ -75,7 +75,7 @@ func (s personObjSelectArray) Email() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("email")
+			return s.DistFn("email", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("email")

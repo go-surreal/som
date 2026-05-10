@@ -67,7 +67,7 @@ func (s locationSelect) CreatedAt() SelectField[time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("created_at")
+			return s.DistFn("created_at", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("created_at")
@@ -93,7 +93,7 @@ func (s locationSelect) UpdatedAt() SelectField[time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("updated_at")
+			return s.DistFn("updated_at", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("updated_at")
@@ -109,7 +109,7 @@ func (s locationSelect) Name() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("name")
+			return s.DistFn("name", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("name")
@@ -125,7 +125,7 @@ func (s locationSelect) Point() SelectField[orb.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("point")
+			return s.DistFn("point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("point")
@@ -141,7 +141,7 @@ func (s locationSelect) PointPtr() SelectField[*orb.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("point_ptr")
+			return s.DistFn("point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("point_ptr")
@@ -157,7 +157,7 @@ func (s locationSelect) LineString() SelectField[orb.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("line_string")
+			return s.DistFn("line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("line_string")
@@ -173,7 +173,7 @@ func (s locationSelect) LineStringPtr() SelectField[*orb.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("line_string_ptr")
+			return s.DistFn("line_string_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("line_string_ptr")
@@ -189,7 +189,7 @@ func (s locationSelect) Polygon() SelectField[orb.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("polygon")
+			return s.DistFn("polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("polygon")
@@ -205,7 +205,7 @@ func (s locationSelect) PolygonPtr() SelectField[*orb.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("polygon_ptr")
+			return s.DistFn("polygon_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("polygon_ptr")
@@ -221,7 +221,7 @@ func (s locationSelect) MultiPoint() SelectField[orb.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("multi_point")
+			return s.DistFn("multi_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("multi_point")
@@ -237,7 +237,7 @@ func (s locationSelect) MultiPointPtr() SelectField[*orb.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("multi_point_ptr")
+			return s.DistFn("multi_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("multi_point_ptr")
@@ -253,7 +253,7 @@ func (s locationSelect) MultiLineString() SelectField[orb.MultiLineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("multi_line_string")
+			return s.DistFn("multi_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("multi_line_string")
@@ -269,7 +269,7 @@ func (s locationSelect) MultiPolygon() SelectField[orb.MultiPolygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("multi_polygon")
+			return s.DistFn("multi_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("multi_polygon")
@@ -285,7 +285,7 @@ func (s locationSelect) Collection() SelectField[orb.Collection] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("collection")
+			return s.DistFn("collection", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("collection")
@@ -301,7 +301,7 @@ func (s locationSelect) GGPoint() SelectField[gogeom.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_point")
+			return s.DistFn("gg_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_point")
@@ -317,7 +317,7 @@ func (s locationSelect) GGPointPtr() SelectField[*gogeom.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_point_ptr")
+			return s.DistFn("gg_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_point_ptr")
@@ -333,7 +333,7 @@ func (s locationSelect) GGLineString() SelectField[gogeom.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_line_string")
+			return s.DistFn("gg_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_line_string")
@@ -349,7 +349,7 @@ func (s locationSelect) GGLineStringPtr() SelectField[*gogeom.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_line_string_ptr")
+			return s.DistFn("gg_line_string_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_line_string_ptr")
@@ -365,7 +365,7 @@ func (s locationSelect) GGPolygon() SelectField[gogeom.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_polygon")
+			return s.DistFn("gg_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_polygon")
@@ -381,7 +381,7 @@ func (s locationSelect) GGPolygonPtr() SelectField[*gogeom.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_polygon_ptr")
+			return s.DistFn("gg_polygon_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_polygon_ptr")
@@ -397,7 +397,7 @@ func (s locationSelect) GGMultiPoint() SelectField[gogeom.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_multi_point")
+			return s.DistFn("gg_multi_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_multi_point")
@@ -413,7 +413,7 @@ func (s locationSelect) GGMultiPointPtr() SelectField[*gogeom.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_multi_point_ptr")
+			return s.DistFn("gg_multi_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_multi_point_ptr")
@@ -429,7 +429,7 @@ func (s locationSelect) GGMultiLineString() SelectField[gogeom.MultiLineString] 
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_multi_line_string")
+			return s.DistFn("gg_multi_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_multi_line_string")
@@ -445,7 +445,7 @@ func (s locationSelect) GGMultiPolygon() SelectField[gogeom.MultiPolygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_multi_polygon")
+			return s.DistFn("gg_multi_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_multi_polygon")
@@ -461,7 +461,7 @@ func (s locationSelect) SFPoint() SelectField[geom.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_point")
+			return s.DistFn("sf_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_point")
@@ -477,7 +477,7 @@ func (s locationSelect) SFPointPtr() SelectField[*geom.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_point_ptr")
+			return s.DistFn("sf_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_point_ptr")
@@ -493,7 +493,7 @@ func (s locationSelect) SFLineString() SelectField[geom.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_line_string")
+			return s.DistFn("sf_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_line_string")
@@ -509,7 +509,7 @@ func (s locationSelect) SFLineStringPtr() SelectField[*geom.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_line_string_ptr")
+			return s.DistFn("sf_line_string_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_line_string_ptr")
@@ -525,7 +525,7 @@ func (s locationSelect) SFPolygon() SelectField[geom.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_polygon")
+			return s.DistFn("sf_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_polygon")
@@ -541,7 +541,7 @@ func (s locationSelect) SFPolygonPtr() SelectField[*geom.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_polygon_ptr")
+			return s.DistFn("sf_polygon_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_polygon_ptr")
@@ -557,7 +557,7 @@ func (s locationSelect) SFMultiPoint() SelectField[geom.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_multi_point")
+			return s.DistFn("sf_multi_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_multi_point")
@@ -573,7 +573,7 @@ func (s locationSelect) SFMultiPointPtr() SelectField[*geom.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_multi_point_ptr")
+			return s.DistFn("sf_multi_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_multi_point_ptr")
@@ -589,7 +589,7 @@ func (s locationSelect) SFMultiLineString() SelectField[geom.MultiLineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_multi_line_string")
+			return s.DistFn("sf_multi_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_multi_line_string")
@@ -605,7 +605,7 @@ func (s locationSelect) SFMultiPolygon() SelectField[geom.MultiPolygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_multi_polygon")
+			return s.DistFn("sf_multi_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_multi_polygon")
@@ -626,7 +626,7 @@ func (s locationSelectArray) CreatedAt() SelectField[[]time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("created_at")
+			return s.DistFn("created_at", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("created_at")
@@ -642,7 +642,7 @@ func (s locationSelectArray) UpdatedAt() SelectField[[]time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("updated_at")
+			return s.DistFn("updated_at", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("updated_at")
@@ -658,7 +658,7 @@ func (s locationSelectArray) Name() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("name")
+			return s.DistFn("name", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("name")
@@ -674,7 +674,7 @@ func (s locationSelectArray) Point() SelectField[[]orb.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("point")
+			return s.DistFn("point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("point")
@@ -690,7 +690,7 @@ func (s locationSelectArray) PointPtr() SelectField[[]*orb.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("point_ptr")
+			return s.DistFn("point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("point_ptr")
@@ -706,7 +706,7 @@ func (s locationSelectArray) LineString() SelectField[[]orb.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("line_string")
+			return s.DistFn("line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("line_string")
@@ -722,7 +722,7 @@ func (s locationSelectArray) LineStringPtr() SelectField[[]*orb.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("line_string_ptr")
+			return s.DistFn("line_string_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("line_string_ptr")
@@ -738,7 +738,7 @@ func (s locationSelectArray) Polygon() SelectField[[]orb.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("polygon")
+			return s.DistFn("polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("polygon")
@@ -754,7 +754,7 @@ func (s locationSelectArray) PolygonPtr() SelectField[[]*orb.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("polygon_ptr")
+			return s.DistFn("polygon_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("polygon_ptr")
@@ -770,7 +770,7 @@ func (s locationSelectArray) MultiPoint() SelectField[[]orb.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("multi_point")
+			return s.DistFn("multi_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("multi_point")
@@ -786,7 +786,7 @@ func (s locationSelectArray) MultiPointPtr() SelectField[[]*orb.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("multi_point_ptr")
+			return s.DistFn("multi_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("multi_point_ptr")
@@ -802,7 +802,7 @@ func (s locationSelectArray) MultiLineString() SelectField[[]orb.MultiLineString
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("multi_line_string")
+			return s.DistFn("multi_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("multi_line_string")
@@ -818,7 +818,7 @@ func (s locationSelectArray) MultiPolygon() SelectField[[]orb.MultiPolygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("multi_polygon")
+			return s.DistFn("multi_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("multi_polygon")
@@ -834,7 +834,7 @@ func (s locationSelectArray) Collection() SelectField[[]orb.Collection] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("collection")
+			return s.DistFn("collection", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("collection")
@@ -850,7 +850,7 @@ func (s locationSelectArray) GGPoint() SelectField[[]gogeom.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_point")
+			return s.DistFn("gg_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_point")
@@ -866,7 +866,7 @@ func (s locationSelectArray) GGPointPtr() SelectField[[]*gogeom.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_point_ptr")
+			return s.DistFn("gg_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_point_ptr")
@@ -882,7 +882,7 @@ func (s locationSelectArray) GGLineString() SelectField[[]gogeom.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_line_string")
+			return s.DistFn("gg_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_line_string")
@@ -898,7 +898,7 @@ func (s locationSelectArray) GGLineStringPtr() SelectField[[]*gogeom.LineString]
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_line_string_ptr")
+			return s.DistFn("gg_line_string_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_line_string_ptr")
@@ -914,7 +914,7 @@ func (s locationSelectArray) GGPolygon() SelectField[[]gogeom.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_polygon")
+			return s.DistFn("gg_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_polygon")
@@ -930,7 +930,7 @@ func (s locationSelectArray) GGPolygonPtr() SelectField[[]*gogeom.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_polygon_ptr")
+			return s.DistFn("gg_polygon_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_polygon_ptr")
@@ -946,7 +946,7 @@ func (s locationSelectArray) GGMultiPoint() SelectField[[]gogeom.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_multi_point")
+			return s.DistFn("gg_multi_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_multi_point")
@@ -962,7 +962,7 @@ func (s locationSelectArray) GGMultiPointPtr() SelectField[[]*gogeom.MultiPoint]
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_multi_point_ptr")
+			return s.DistFn("gg_multi_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_multi_point_ptr")
@@ -978,7 +978,7 @@ func (s locationSelectArray) GGMultiLineString() SelectField[[]gogeom.MultiLineS
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_multi_line_string")
+			return s.DistFn("gg_multi_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_multi_line_string")
@@ -994,7 +994,7 @@ func (s locationSelectArray) GGMultiPolygon() SelectField[[]gogeom.MultiPolygon]
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("gg_multi_polygon")
+			return s.DistFn("gg_multi_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("gg_multi_polygon")
@@ -1010,7 +1010,7 @@ func (s locationSelectArray) SFPoint() SelectField[[]geom.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_point")
+			return s.DistFn("sf_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_point")
@@ -1026,7 +1026,7 @@ func (s locationSelectArray) SFPointPtr() SelectField[[]*geom.Point] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_point_ptr")
+			return s.DistFn("sf_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_point_ptr")
@@ -1042,7 +1042,7 @@ func (s locationSelectArray) SFLineString() SelectField[[]geom.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_line_string")
+			return s.DistFn("sf_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_line_string")
@@ -1058,7 +1058,7 @@ func (s locationSelectArray) SFLineStringPtr() SelectField[[]*geom.LineString] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_line_string_ptr")
+			return s.DistFn("sf_line_string_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_line_string_ptr")
@@ -1074,7 +1074,7 @@ func (s locationSelectArray) SFPolygon() SelectField[[]geom.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_polygon")
+			return s.DistFn("sf_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_polygon")
@@ -1090,7 +1090,7 @@ func (s locationSelectArray) SFPolygonPtr() SelectField[[]*geom.Polygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_polygon_ptr")
+			return s.DistFn("sf_polygon_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_polygon_ptr")
@@ -1106,7 +1106,7 @@ func (s locationSelectArray) SFMultiPoint() SelectField[[]geom.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_multi_point")
+			return s.DistFn("sf_multi_point", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_multi_point")
@@ -1122,7 +1122,7 @@ func (s locationSelectArray) SFMultiPointPtr() SelectField[[]*geom.MultiPoint] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_multi_point_ptr")
+			return s.DistFn("sf_multi_point_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_multi_point_ptr")
@@ -1138,7 +1138,7 @@ func (s locationSelectArray) SFMultiLineString() SelectField[[]geom.MultiLineStr
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_multi_line_string")
+			return s.DistFn("sf_multi_line_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_multi_line_string")
@@ -1154,7 +1154,7 @@ func (s locationSelectArray) SFMultiPolygon() SelectField[[]geom.MultiPolygon] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("sf_multi_polygon")
+			return s.DistFn("sf_multi_polygon", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("sf_multi_polygon")

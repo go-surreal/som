@@ -129,6 +129,7 @@ func SelectDecodeSpecialRelation(data []byte) ([]model.SpecialRelation, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodeSpecialRelationPtr(data []byte) ([]*model.SpecialRelation, error) {
 	var rawResult []internal.QueryResult[*SpecialRelation]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -159,6 +160,7 @@ func SelectDistinctDecodeSpecialRelation(data []byte) ([]model.SpecialRelation, 
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodeSpecialRelationPtr(data []byte) ([]*model.SpecialRelation, error) {
 	var rawResult []internal.QueryResult[[]*SpecialRelation]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {

@@ -75,6 +75,7 @@ func SelectDecodeWeatherKey(data []byte) ([]model.WeatherKey, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodeWeatherKeyPtr(data []byte) ([]*model.WeatherKey, error) {
 	var rawResult []internal.QueryResult[*WeatherKey]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -105,6 +106,7 @@ func SelectDistinctDecodeWeatherKey(data []byte) ([]model.WeatherKey, error) {
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodeWeatherKeyPtr(data []byte) ([]*model.WeatherKey, error) {
 	var rawResult []internal.QueryResult[[]*WeatherKey]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {

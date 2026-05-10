@@ -37,7 +37,7 @@ type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) st
 type SelectContext struct {
 	DB      Database
 	BuildFn func(field string) *lib.Result
-	DistFn  func(field string) *lib.Result
+	DistFn  func(field string, excludeNull bool) *lib.Result
 	FirstFn func(field string) *lib.Result
 }
 
@@ -48,8 +48,8 @@ func (sc SelectContext) Prefixed(prefix string) SelectContext {
 		BuildFn: func(field string) *lib.Result {
 			return sc.BuildFn(prefix + field)
 		},
-		DistFn: func(field string) *lib.Result {
-			return sc.DistFn(prefix + field)
+		DistFn: func(field string, excludeNull bool) *lib.Result {
+			return sc.DistFn(prefix+field, excludeNull)
 		},
 		FirstFn: func(field string) *lib.Result {
 			return sc.FirstFn(prefix + field)
@@ -196,8 +196,8 @@ func (b builder[M, S]) buildSelectContext() SelectContext {
 		BuildFn: func(field string) *lib.Result {
 			return q.BuildAsSelectValue(field)
 		},
-		DistFn: func(field string) *lib.Result {
-			return q.BuildAsSelectDistinct(field)
+		DistFn: func(field string, excludeNull bool) *lib.Result {
+			return q.BuildAsSelectDistinct(field, excludeNull)
 		},
 		FirstFn: func(field string) *lib.Result {
 			fq := q

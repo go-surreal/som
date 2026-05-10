@@ -110,6 +110,12 @@ func TestSelectAll(t *testing.T) {
 		assert.DeepEqual(t, []string{"alpha", "bravo", "charlie"}, vals)
 	})
 
+	t.Run("LimitBeforeSelect", func(t *testing.T) {
+		vals, err := client.AllTypesRepo().Query().Limit(2).Select().FieldString().All(ctx)
+		assert.NilError(t, err)
+		assert.Equal(t, 2, len(vals))
+	})
+
 	t.Run("Int", func(t *testing.T) {
 		vals, err := client.AllTypesRepo().Query().Select().FieldInt().All(ctx)
 		assert.NilError(t, err)

@@ -73,7 +73,7 @@ func (s specialRelationSelect) DeletedAt() SelectField[*time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("deleted_at")
+			return s.DistFn("deleted_at", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("deleted_at")
@@ -89,7 +89,7 @@ func (s specialRelationSelect) Title() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("title")
+			return s.DistFn("title", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("title")
@@ -115,7 +115,7 @@ func (s specialRelationSelectArray) DeletedAt() SelectField[[]*time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("deleted_at")
+			return s.DistFn("deleted_at", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("deleted_at")
@@ -131,7 +131,7 @@ func (s specialRelationSelectArray) Title() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("title")
+			return s.DistFn("title", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("title")

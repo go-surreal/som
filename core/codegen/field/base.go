@@ -31,6 +31,8 @@ type Field interface {
 	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
 
+	Pointer() bool
+
 	SchemaStatements(table string, prefix string) []string
 
 	CodeGen() *CodeGen
@@ -96,6 +98,14 @@ func (f *baseField) ptr() jen.Code {
 	}
 
 	return jen.Empty()
+}
+
+func (f *baseField) Pointer() bool {
+	if f.source == nil {
+		return false
+	}
+
+	return f.source.Pointer()
 }
 
 // optionWrap wraps the given value in an option type if the field is a pointer.

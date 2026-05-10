@@ -80,6 +80,7 @@ func SelectDecodeCredentials(data []byte) ([]model.Credentials, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodeCredentialsPtr(data []byte) ([]*model.Credentials, error) {
 	var rawResult []internal.QueryResult[*Credentials]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -110,6 +111,7 @@ func SelectDistinctDecodeCredentials(data []byte) ([]model.Credentials, error) {
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodeCredentialsPtr(data []byte) ([]*model.Credentials, error) {
 	var rawResult []internal.QueryResult[[]*Credentials]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {

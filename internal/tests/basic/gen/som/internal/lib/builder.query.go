@@ -131,13 +131,19 @@ func (q Query[T]) BuildAsSelectValue(field string) *Result {
 	}
 }
 
-func (q Query[T]) BuildAsSelectDistinct(field string) *Result {
+// BuildAsSelectDistinct renders a SELECT VALUE array::distinct(array::group(field)) query.
+// When excludeNull is true, NONE/NULL values are filtered out (use this for non-nullable
+// fields where null values would represent data corruption). When false, null is preserved
+// as a distinct value so callers can observe it in nullable fields.
+func (q Query[T]) BuildAsSelectDistinct(field string, excludeNull bool) *Result {
 	q.valueField = field
 	q.groupAll = true
 
-	q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
-		return "(" + field + " != NONE AND " + field + " != NULL)"
-	}))
+	if excludeNull {
+		q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
+			return "(" + field + " != NONE AND " + field + " != NULL)"
+		}))
+	}
 
 	return &Result{
 		Statement: q.render(),

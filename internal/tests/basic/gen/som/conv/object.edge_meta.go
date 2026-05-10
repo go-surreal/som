@@ -74,6 +74,7 @@ func SelectDecodeEdgeMeta(data []byte) ([]model.EdgeMeta, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodeEdgeMetaPtr(data []byte) ([]*model.EdgeMeta, error) {
 	var rawResult []internal.QueryResult[*EdgeMeta]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -104,6 +105,7 @@ func SelectDistinctDecodeEdgeMeta(data []byte) ([]model.EdgeMeta, error) {
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodeEdgeMetaPtr(data []byte) ([]*model.EdgeMeta, error) {
 	var rawResult []internal.QueryResult[[]*EdgeMeta]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {

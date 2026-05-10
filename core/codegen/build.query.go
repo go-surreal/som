@@ -209,13 +209,15 @@ func (b *queryBuilder) generateSelectFieldMethod(
 	fieldDBName := fld.NameDatabase()
 	fieldGoName := fld.NameGo()
 
+	excludeNull := !fld.Pointer()
+
 	dict := jen.Dict{
 		jen.Id("db"): jen.Id("s").Dot("DB"),
 		jen.Id("buildFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
 			jen.Return(jen.Id("s").Dot("BuildFn").Call(jen.Lit(fieldDBName))),
 		),
 		jen.Id("distFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
-			jen.Return(jen.Id("s").Dot("DistFn").Call(jen.Lit(fieldDBName))),
+			jen.Return(jen.Id("s").Dot("DistFn").Call(jen.Lit(fieldDBName), jen.Lit(excludeNull))),
 		),
 		jen.Id("firstFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
 			jen.Return(jen.Id("s").Dot("FirstFn").Call(jen.Lit(fieldDBName))),

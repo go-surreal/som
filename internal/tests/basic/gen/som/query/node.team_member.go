@@ -56,7 +56,7 @@ func (s teamMemberSelect) Role() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("role")
+			return s.DistFn("role", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("role")
@@ -77,7 +77,7 @@ func (s teamMemberSelectArray) Role() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("role")
+			return s.DistFn("role", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("role")

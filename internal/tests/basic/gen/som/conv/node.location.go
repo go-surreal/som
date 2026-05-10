@@ -326,6 +326,7 @@ func SelectDecodeLocation(data []byte) ([]model.Location, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodeLocationPtr(data []byte) ([]*model.Location, error) {
 	var rawResult []internal.QueryResult[*Location]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -356,6 +357,7 @@ func SelectDistinctDecodeLocation(data []byte) ([]model.Location, error) {
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodeLocationPtr(data []byte) ([]*model.Location, error) {
 	var rawResult []internal.QueryResult[[]*Location]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {

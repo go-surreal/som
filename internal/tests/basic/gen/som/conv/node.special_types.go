@@ -108,6 +108,7 @@ func SelectDecodeSpecialTypes(data []byte) ([]model.SpecialTypes, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodeSpecialTypesPtr(data []byte) ([]*model.SpecialTypes, error) {
 	var rawResult []internal.QueryResult[*SpecialTypes]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -138,6 +139,7 @@ func SelectDistinctDecodeSpecialTypes(data []byte) ([]model.SpecialTypes, error)
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodeSpecialTypesPtr(data []byte) ([]*model.SpecialTypes, error) {
 	var rawResult []internal.QueryResult[[]*SpecialTypes]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {

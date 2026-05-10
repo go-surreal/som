@@ -55,7 +55,7 @@ func (s weatherSelect) Temperature() SelectField[float64] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("temperature")
+			return s.DistFn("temperature", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("temperature")
@@ -76,7 +76,7 @@ func (s weatherSelectArray) Temperature() SelectField[[]float64] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("temperature")
+			return s.DistFn("temperature", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("temperature")

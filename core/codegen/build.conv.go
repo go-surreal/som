@@ -77,10 +77,14 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	f.Add(b.buildTo(elem))
 
 	f.Line()
-	f.Add(b.buildSelectDecode(elem, typeName))
+	f.Add(b.buildSelectDecodeFunc(elem, typeName, false))
+	f.Line()
+	f.Add(b.buildSelectDecodeFunc(elem, typeName, true))
 
 	f.Line()
-	f.Add(b.buildSelectDistinctDecode(elem, typeName))
+	f.Add(b.buildSelectDistinctDecodeFunc(elem, typeName, false))
+	f.Line()
+	f.Add(b.buildSelectDistinctDecodeFunc(elem, typeName, true))
 
 	if node, ok := elem.(*field.NodeTable); ok {
 		f.Line()
@@ -143,7 +147,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	return nil
 }
 
-func (b *convBuilder) buildSelectDecode(elem field.Element, convTypeName string) jen.Code {
+func (b *convBuilder) buildSelectDecodeFunc(elem field.Element, convTypeName string, ptr bool) jen.Code {
 	internalPkg := path.Join(b.basePkg, "internal")
 	cborPkg := path.Join(b.basePkg, "internal/cbor")
 	modelType := b.SourceQual(elem.NameGo())
@@ -151,59 +155,52 @@ func (b *convBuilder) buildSelectDecode(elem field.Element, convTypeName string)
 	_, isEdge := elem.(*field.EdgeTable)
 
 	toFunc := "To" + elem.NameGo()
+	if ptr {
+		toFunc += "Ptr"
+	}
+
 	toArg := jen.Id("v")
-	if isEdge {
+	if !ptr && isEdge {
 		toArg = jen.Op("&").Id("v")
 	}
 
 	funcName := "SelectDecode" + elem.NameGo()
+	if ptr {
+		funcName += "Ptr"
+	}
 
-	return jen.Add(
-		jen.Func().Id(funcName).Params(
-			jen.Id("data").Index().Byte(),
-		).Params(
-			jen.Index().Add(modelType), jen.Error(),
-		).BlockFunc(func(g *jen.Group) {
-			g.Var().Id("rawResult").Index().Qual(internalPkg, "QueryResult").Types(jen.Id(convTypeName))
-			g.If(
-				jen.Id("err").Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawResult")),
-				jen.Id("err").Op("!=").Nil(),
-			).Block(jen.Return(jen.Nil(), jen.Id("err")))
-			g.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Nil(), jen.Nil()),
-			)
-			g.Id("out").Op(":=").Make(jen.Index().Add(modelType), jen.Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")))
-			g.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Block(
-				jen.Id("out").Index(jen.Id("i")).Op("=").Id(toFunc).Call(toArg),
-			)
-			g.Return(jen.Id("out"), jen.Nil())
-		}),
+	resultType := jen.Index().Add(modelType)
+	if ptr {
+		resultType = jen.Index().Op("*").Add(modelType)
+	}
 
-		jen.Line(),
+	rawElemType := jen.Id(convTypeName)
+	if ptr {
+		rawElemType = jen.Op("*").Id(convTypeName)
+	}
 
-		jen.Func().Id(funcName+"Ptr").Params(
-			jen.Id("data").Index().Byte(),
-		).Params(
-			jen.Index().Op("*").Add(modelType), jen.Error(),
-		).BlockFunc(func(g *jen.Group) {
-			g.Var().Id("rawResult").Index().Qual(internalPkg, "QueryResult").Types(jen.Op("*").Id(convTypeName))
-			g.If(
-				jen.Id("err").Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawResult")),
-				jen.Id("err").Op("!=").Nil(),
-			).Block(jen.Return(jen.Nil(), jen.Id("err")))
-			g.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Nil(), jen.Nil()),
-			)
-			g.Id("out").Op(":=").Make(jen.Index().Op("*").Add(modelType), jen.Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")))
-			g.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Block(
-				jen.Id("out").Index(jen.Id("i")).Op("=").Id(toFunc+"Ptr").Call(jen.Id("v")),
-			)
-			g.Return(jen.Id("out"), jen.Nil())
-		}),
-	)
+	return jen.Func().Id(funcName).Params(
+		jen.Id("data").Index().Byte(),
+	).Params(
+		resultType, jen.Error(),
+	).BlockFunc(func(g *jen.Group) {
+		g.Var().Id("rawResult").Index().Qual(internalPkg, "QueryResult").Types(rawElemType)
+		g.If(
+			jen.Id("err").Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawResult")),
+			jen.Id("err").Op("!=").Nil(),
+		).Block(jen.Return(jen.Nil(), jen.Id("err")))
+		g.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
+			jen.Return(jen.Nil(), jen.Nil()),
+		)
+		g.Id("out").Op(":=").Make(resultType, jen.Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")))
+		g.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Block(
+			jen.Id("out").Index(jen.Id("i")).Op("=").Id(toFunc).Call(toArg),
+		)
+		g.Return(jen.Id("out"), jen.Nil())
+	})
 }
 
-func (b *convBuilder) buildSelectDistinctDecode(elem field.Element, convTypeName string) jen.Code {
+func (b *convBuilder) buildSelectDistinctDecodeFunc(elem field.Element, convTypeName string, ptr bool) jen.Code {
 	internalPkg := path.Join(b.basePkg, "internal")
 	cborPkg := path.Join(b.basePkg, "internal/cbor")
 	modelType := b.SourceQual(elem.NameGo())
@@ -211,58 +208,50 @@ func (b *convBuilder) buildSelectDistinctDecode(elem field.Element, convTypeName
 	_, isEdge := elem.(*field.EdgeTable)
 
 	toFunc := "To" + elem.NameGo()
+	if ptr {
+		toFunc += "Ptr"
+	}
+
 	toArg := jen.Id("v")
-	if isEdge {
+	if !ptr && isEdge {
 		toArg = jen.Op("&").Id("v")
 	}
 
 	funcName := "SelectDistinctDecode" + elem.NameGo()
+	if ptr {
+		funcName += "Ptr"
+	}
 
-	return jen.Add(
-		jen.Func().Id(funcName).Params(
-			jen.Id("data").Index().Byte(),
-		).Params(
-			jen.Index().Add(modelType), jen.Error(),
-		).BlockFunc(func(g *jen.Group) {
-			g.Var().Id("rawResult").Index().Qual(internalPkg, "QueryResult").Types(jen.Index().Id(convTypeName))
-			g.If(
-				jen.Id("err").Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawResult")),
-				jen.Id("err").Op("!=").Nil(),
-			).Block(jen.Return(jen.Nil(), jen.Id("err")))
-			g.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Nil(), jen.Nil()),
-			)
-			g.Id("inner").Op(":=").Id("rawResult").Index(jen.Lit(0)).Dot("Result").Index(jen.Lit(0))
-			g.Id("out").Op(":=").Make(jen.Index().Add(modelType), jen.Len(jen.Id("inner")))
-			g.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("inner")).Block(
-				jen.Id("out").Index(jen.Id("i")).Op("=").Id(toFunc).Call(toArg),
-			)
-			g.Return(jen.Id("out"), jen.Nil())
-		}),
+	resultType := jen.Index().Add(modelType)
+	if ptr {
+		resultType = jen.Index().Op("*").Add(modelType)
+	}
 
-		jen.Line(),
+	rawElemType := jen.Index().Id(convTypeName)
+	if ptr {
+		rawElemType = jen.Index().Op("*").Id(convTypeName)
+	}
 
-		jen.Func().Id(funcName+"Ptr").Params(
-			jen.Id("data").Index().Byte(),
-		).Params(
-			jen.Index().Op("*").Add(modelType), jen.Error(),
-		).BlockFunc(func(g *jen.Group) {
-			g.Var().Id("rawResult").Index().Qual(internalPkg, "QueryResult").Types(jen.Index().Op("*").Id(convTypeName))
-			g.If(
-				jen.Id("err").Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawResult")),
-				jen.Id("err").Op("!=").Nil(),
-			).Block(jen.Return(jen.Nil(), jen.Id("err")))
-			g.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
-				jen.Return(jen.Nil(), jen.Nil()),
-			)
-			g.Id("inner").Op(":=").Id("rawResult").Index(jen.Lit(0)).Dot("Result").Index(jen.Lit(0))
-			g.Id("out").Op(":=").Make(jen.Index().Op("*").Add(modelType), jen.Len(jen.Id("inner")))
-			g.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("inner")).Block(
-				jen.Id("out").Index(jen.Id("i")).Op("=").Id(toFunc+"Ptr").Call(jen.Id("v")),
-			)
-			g.Return(jen.Id("out"), jen.Nil())
-		}),
-	)
+	return jen.Func().Id(funcName).Params(
+		jen.Id("data").Index().Byte(),
+	).Params(
+		resultType, jen.Error(),
+	).BlockFunc(func(g *jen.Group) {
+		g.Var().Id("rawResult").Index().Qual(internalPkg, "QueryResult").Types(rawElemType)
+		g.If(
+			jen.Id("err").Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("rawResult")),
+			jen.Id("err").Op("!=").Nil(),
+		).Block(jen.Return(jen.Nil(), jen.Id("err")))
+		g.If(jen.Len(jen.Id("rawResult")).Op("<").Lit(1).Op("||").Len(jen.Id("rawResult").Index(jen.Lit(0)).Dot("Result")).Op("<").Lit(1)).Block(
+			jen.Return(jen.Nil(), jen.Nil()),
+		)
+		g.Id("inner").Op(":=").Id("rawResult").Index(jen.Lit(0)).Dot("Result").Index(jen.Lit(0))
+		g.Id("out").Op(":=").Make(resultType, jen.Len(jen.Id("inner")))
+		g.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("inner")).Block(
+			jen.Id("out").Index(jen.Id("i")).Op("=").Id(toFunc).Call(toArg),
+		)
+		g.Return(jen.Id("out"), jen.Nil())
+	})
 }
 
 func (b *convBuilder) nodeIDValue(node *field.NodeTable, varName string) jen.Code {

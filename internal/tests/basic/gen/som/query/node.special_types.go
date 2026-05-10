@@ -73,7 +73,7 @@ func (s specialTypesSelect) DeletedAt() SelectField[*time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("deleted_at")
+			return s.DistFn("deleted_at", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("deleted_at")
@@ -89,7 +89,7 @@ func (s specialTypesSelect) Name() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("name")
+			return s.DistFn("name", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("name")
@@ -105,7 +105,7 @@ func (s specialTypesSelect) Version() SelectField[int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("__som_lock_version")
+			return s.DistFn("__som_lock_version", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("__som_lock_version")
@@ -126,7 +126,7 @@ func (s specialTypesSelectArray) DeletedAt() SelectField[[]*time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("deleted_at")
+			return s.DistFn("deleted_at", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("deleted_at")
@@ -142,7 +142,7 @@ func (s specialTypesSelectArray) Name() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("name")
+			return s.DistFn("name", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("name")
@@ -158,7 +158,7 @@ func (s specialTypesSelectArray) Version() SelectField[[]int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("__som_lock_version")
+			return s.DistFn("__som_lock_version", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("__som_lock_version")

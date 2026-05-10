@@ -67,7 +67,7 @@ func (s allTypesSelect) CreatedAt() SelectField[time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("created_at")
+			return s.DistFn("created_at", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("created_at")
@@ -93,7 +93,7 @@ func (s allTypesSelect) UpdatedAt() SelectField[time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("updated_at")
+			return s.DistFn("updated_at", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("updated_at")
@@ -109,7 +109,7 @@ func (s allTypesSelect) FieldString() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string")
+			return s.DistFn("field_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string")
@@ -125,7 +125,7 @@ func (s allTypesSelect) FieldStringPtr() SelectField[*string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string_ptr")
+			return s.DistFn("field_string_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string_ptr")
@@ -141,7 +141,7 @@ func (s allTypesSelect) FieldOther() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_other")
+			return s.DistFn("field_other", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_other")
@@ -157,7 +157,7 @@ func (s allTypesSelect) FieldStringPtrSlice() SelectField[[]*string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string_ptr_slice")
+			return s.DistFn("field_string_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string_ptr_slice")
@@ -173,7 +173,7 @@ func (s allTypesSelect) FieldStringSlicePtr() SelectField[*[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string_slice_ptr")
+			return s.DistFn("field_string_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string_slice_ptr")
@@ -189,7 +189,7 @@ func (s allTypesSelect) FieldStringPtrSlicePtr() SelectField[*[]*string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string_ptr_slice_ptr")
+			return s.DistFn("field_string_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string_ptr_slice_ptr")
@@ -205,7 +205,7 @@ func (s allTypesSelect) FieldInt() SelectField[int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int")
+			return s.DistFn("field_int", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int")
@@ -221,7 +221,7 @@ func (s allTypesSelect) FieldIntPtr() SelectField[*int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_ptr")
+			return s.DistFn("field_int_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_ptr")
@@ -237,7 +237,7 @@ func (s allTypesSelect) FieldIntSlice() SelectField[[]int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_slice")
+			return s.DistFn("field_int_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_slice")
@@ -253,7 +253,7 @@ func (s allTypesSelect) FieldIntPtrSlice() SelectField[[]*int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_ptr_slice")
+			return s.DistFn("field_int_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_ptr_slice")
@@ -269,7 +269,7 @@ func (s allTypesSelect) FieldIntSlicePtr() SelectField[*[]int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_slice_ptr")
+			return s.DistFn("field_int_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_slice_ptr")
@@ -285,7 +285,7 @@ func (s allTypesSelect) FieldIntPtrSlicePtr() SelectField[*[]*int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_ptr_slice_ptr")
+			return s.DistFn("field_int_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_ptr_slice_ptr")
@@ -301,7 +301,7 @@ func (s allTypesSelect) FieldInt8() SelectField[int8] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_8")
+			return s.DistFn("field_int_8", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_8")
@@ -317,7 +317,7 @@ func (s allTypesSelect) FieldInt8Ptr() SelectField[*int8] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_8_ptr")
+			return s.DistFn("field_int_8_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_8_ptr")
@@ -333,7 +333,7 @@ func (s allTypesSelect) FieldInt16() SelectField[int16] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_16")
+			return s.DistFn("field_int_16", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_16")
@@ -349,7 +349,7 @@ func (s allTypesSelect) FieldInt16Ptr() SelectField[*int16] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_16_ptr")
+			return s.DistFn("field_int_16_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_16_ptr")
@@ -365,7 +365,7 @@ func (s allTypesSelect) FieldInt32() SelectField[int32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_32")
+			return s.DistFn("field_int_32", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_32")
@@ -381,7 +381,7 @@ func (s allTypesSelect) FieldInt32Ptr() SelectField[*int32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_32_ptr")
+			return s.DistFn("field_int_32_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_32_ptr")
@@ -397,7 +397,7 @@ func (s allTypesSelect) FieldInt64() SelectField[int64] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_64")
+			return s.DistFn("field_int_64", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_64")
@@ -413,7 +413,7 @@ func (s allTypesSelect) FieldInt64Ptr() SelectField[*int64] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_64_ptr")
+			return s.DistFn("field_int_64_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_64_ptr")
@@ -429,7 +429,7 @@ func (s allTypesSelect) FieldUint8() SelectField[uint8] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_8")
+			return s.DistFn("field_uint_8", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_8")
@@ -445,7 +445,7 @@ func (s allTypesSelect) FieldUint8Ptr() SelectField[*uint8] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_8_ptr")
+			return s.DistFn("field_uint_8_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_8_ptr")
@@ -461,7 +461,7 @@ func (s allTypesSelect) FieldUint16() SelectField[uint16] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_16")
+			return s.DistFn("field_uint_16", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_16")
@@ -477,7 +477,7 @@ func (s allTypesSelect) FieldUint16Ptr() SelectField[*uint16] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_16_ptr")
+			return s.DistFn("field_uint_16_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_16_ptr")
@@ -493,7 +493,7 @@ func (s allTypesSelect) FieldUint32() SelectField[uint32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_32")
+			return s.DistFn("field_uint_32", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_32")
@@ -509,7 +509,7 @@ func (s allTypesSelect) FieldUint32Ptr() SelectField[*uint32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_32_ptr")
+			return s.DistFn("field_uint_32_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_32_ptr")
@@ -525,7 +525,7 @@ func (s allTypesSelect) FieldFloat32() SelectField[float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32")
+			return s.DistFn("field_float_32", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32")
@@ -541,7 +541,7 @@ func (s allTypesSelect) FieldFloat32Slice() SelectField[[]float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32_slice")
+			return s.DistFn("field_float_32_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32_slice")
@@ -557,7 +557,7 @@ func (s allTypesSelect) FieldFloat32SlicePtr() SelectField[*[]float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32_slice_ptr")
+			return s.DistFn("field_float_32_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32_slice_ptr")
@@ -573,7 +573,7 @@ func (s allTypesSelect) FieldFloat32PtrSlice() SelectField[[]*float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32_ptr_slice")
+			return s.DistFn("field_float_32_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32_ptr_slice")
@@ -589,7 +589,7 @@ func (s allTypesSelect) FieldFloat32PtrSlicePtr() SelectField[*[]*float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32_ptr_slice_ptr")
+			return s.DistFn("field_float_32_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32_ptr_slice_ptr")
@@ -605,7 +605,7 @@ func (s allTypesSelect) FieldFloat64() SelectField[float64] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_64")
+			return s.DistFn("field_float_64", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_64")
@@ -621,7 +621,7 @@ func (s allTypesSelect) FieldRune() SelectField[rune] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_rune")
+			return s.DistFn("field_rune", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_rune")
@@ -637,7 +637,7 @@ func (s allTypesSelect) FieldRuneSlice() SelectField[[]rune] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_rune_slice")
+			return s.DistFn("field_rune_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_rune_slice")
@@ -653,7 +653,7 @@ func (s allTypesSelect) FieldBool() SelectField[bool] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_bool")
+			return s.DistFn("field_bool", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_bool")
@@ -669,7 +669,7 @@ func (s allTypesSelect) FieldBoolPtr() SelectField[*bool] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_bool_ptr")
+			return s.DistFn("field_bool_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_bool_ptr")
@@ -685,7 +685,7 @@ func (s allTypesSelect) FieldBoolSlice() SelectField[[]bool] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_bool_slice")
+			return s.DistFn("field_bool_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_bool_slice")
@@ -711,7 +711,7 @@ func (s allTypesSelect) FieldTime() SelectField[time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time")
+			return s.DistFn("field_time", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time")
@@ -745,7 +745,7 @@ func (s allTypesSelect) FieldTimePtr() SelectField[*time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time_ptr")
+			return s.DistFn("field_time_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time_ptr")
@@ -779,7 +779,7 @@ func (s allTypesSelect) FieldTimeNil() SelectField[*time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time_nil")
+			return s.DistFn("field_time_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time_nil")
@@ -813,7 +813,7 @@ func (s allTypesSelect) FieldTimeSlice() SelectField[[]time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time_slice")
+			return s.DistFn("field_time_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time_slice")
@@ -829,7 +829,7 @@ func (s allTypesSelect) FieldTimeSliceSlice() SelectField[[][]time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time_slice_slice")
+			return s.DistFn("field_time_slice_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time_slice_slice")
@@ -855,7 +855,7 @@ func (s allTypesSelect) FieldDuration() SelectField[time.Duration] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_duration")
+			return s.DistFn("field_duration", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_duration")
@@ -889,7 +889,7 @@ func (s allTypesSelect) FieldDurationPtr() SelectField[*time.Duration] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_duration_ptr")
+			return s.DistFn("field_duration_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_duration_ptr")
@@ -923,7 +923,7 @@ func (s allTypesSelect) FieldDurationNil() SelectField[*time.Duration] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_duration_nil")
+			return s.DistFn("field_duration_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_duration_nil")
@@ -957,7 +957,7 @@ func (s allTypesSelect) FieldDurationSlice() SelectField[[]time.Duration] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_duration_slice")
+			return s.DistFn("field_duration_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_duration_slice")
@@ -973,7 +973,7 @@ func (s allTypesSelect) FieldMonth() SelectField[time.Month] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_month")
+			return s.DistFn("field_month", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_month")
@@ -989,7 +989,7 @@ func (s allTypesSelect) FieldMonthPtr() SelectField[*time.Month] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_month_ptr")
+			return s.DistFn("field_month_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_month_ptr")
@@ -1005,7 +1005,7 @@ func (s allTypesSelect) FieldWeekday() SelectField[time.Weekday] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_weekday")
+			return s.DistFn("field_weekday", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_weekday")
@@ -1021,7 +1021,7 @@ func (s allTypesSelect) FieldWeekdayPtr() SelectField[*time.Weekday] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_weekday_ptr")
+			return s.DistFn("field_weekday_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_weekday_ptr")
@@ -1037,7 +1037,7 @@ func (s allTypesSelect) FieldUUID() SelectField[uuid.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid")
+			return s.DistFn("field_uuid", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid")
@@ -1053,7 +1053,7 @@ func (s allTypesSelect) FieldUUIDPtr() SelectField[*uuid.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_ptr")
+			return s.DistFn("field_uuid_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_ptr")
@@ -1069,7 +1069,7 @@ func (s allTypesSelect) FieldUUIDNil() SelectField[*uuid.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_nil")
+			return s.DistFn("field_uuid_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_nil")
@@ -1085,7 +1085,7 @@ func (s allTypesSelect) FieldUUIDSlice() SelectField[[]uuid.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_slice")
+			return s.DistFn("field_uuid_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_slice")
@@ -1101,7 +1101,7 @@ func (s allTypesSelect) FieldUUIDGofrs() SelectField[uuid1.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_gofrs")
+			return s.DistFn("field_uuid_gofrs", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_gofrs")
@@ -1117,7 +1117,7 @@ func (s allTypesSelect) FieldUUIDGofrsPtr() SelectField[*uuid1.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_gofrs_ptr")
+			return s.DistFn("field_uuid_gofrs_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_gofrs_ptr")
@@ -1133,7 +1133,7 @@ func (s allTypesSelect) FieldUUIDGofrsNil() SelectField[*uuid1.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_gofrs_nil")
+			return s.DistFn("field_uuid_gofrs_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_gofrs_nil")
@@ -1149,7 +1149,7 @@ func (s allTypesSelect) FieldUUIDGofrsSlice() SelectField[[]uuid1.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_gofrs_slice")
+			return s.DistFn("field_uuid_gofrs_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_gofrs_slice")
@@ -1183,7 +1183,7 @@ func (s allTypesSelect) FieldURL() SelectField[url.URL] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_url")
+			return s.DistFn("field_url", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_url")
@@ -1217,7 +1217,7 @@ func (s allTypesSelect) FieldURLPtr() SelectField[*url.URL] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_url_ptr")
+			return s.DistFn("field_url_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_url_ptr")
@@ -1251,7 +1251,7 @@ func (s allTypesSelect) FieldURLNil() SelectField[*url.URL] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_url_nil")
+			return s.DistFn("field_url_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_url_nil")
@@ -1297,7 +1297,7 @@ func (s allTypesSelect) FieldURLSlice() SelectField[[]url.URL] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_url_slice")
+			return s.DistFn("field_url_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_url_slice")
@@ -1313,7 +1313,7 @@ func (s allTypesSelect) FieldEmail() SelectField[som.Email] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_email")
+			return s.DistFn("field_email", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_email")
@@ -1329,7 +1329,7 @@ func (s allTypesSelect) FieldEmailPtr() SelectField[*som.Email] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_email_ptr")
+			return s.DistFn("field_email_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_email_ptr")
@@ -1345,7 +1345,7 @@ func (s allTypesSelect) FieldEmailNil() SelectField[*som.Email] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_email_nil")
+			return s.DistFn("field_email_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_email_nil")
@@ -1361,7 +1361,7 @@ func (s allTypesSelect) FieldEmailSlice() SelectField[[]som.Email] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_email_slice")
+			return s.DistFn("field_email_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_email_slice")
@@ -1377,7 +1377,7 @@ func (s allTypesSelect) FieldSemVer() SelectField[som.SemVer] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_sem_ver")
+			return s.DistFn("field_sem_ver", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_sem_ver")
@@ -1393,7 +1393,7 @@ func (s allTypesSelect) FieldSemVerPtr() SelectField[*som.SemVer] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_sem_ver_ptr")
+			return s.DistFn("field_sem_ver_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_sem_ver_ptr")
@@ -1409,7 +1409,7 @@ func (s allTypesSelect) FieldSemVerNil() SelectField[*som.SemVer] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_sem_ver_nil")
+			return s.DistFn("field_sem_ver_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_sem_ver_nil")
@@ -1425,7 +1425,7 @@ func (s allTypesSelect) FieldSemVerSlice() SelectField[[]som.SemVer] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_sem_ver_slice")
+			return s.DistFn("field_sem_ver_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_sem_ver_slice")
@@ -1441,7 +1441,7 @@ func (s allTypesSelect) FieldEnum() SelectField[model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum")
+			return s.DistFn("field_enum", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum")
@@ -1457,7 +1457,7 @@ func (s allTypesSelect) FieldEnumPtr() SelectField[*model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum_ptr")
+			return s.DistFn("field_enum_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum_ptr")
@@ -1473,7 +1473,7 @@ func (s allTypesSelect) FieldEnumSlice() SelectField[[]model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum_slice")
+			return s.DistFn("field_enum_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum_slice")
@@ -1489,7 +1489,7 @@ func (s allTypesSelect) FieldEnumPtrSlice() SelectField[[]*model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum_ptr_slice")
+			return s.DistFn("field_enum_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum_ptr_slice")
@@ -1505,7 +1505,7 @@ func (s allTypesSelect) FieldEnumPtrSlicePtr() SelectField[*[]*model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum_ptr_slice_ptr")
+			return s.DistFn("field_enum_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum_ptr_slice_ptr")
@@ -1523,7 +1523,7 @@ func (s allTypesSelect) FieldCredentials() SelectField[model.Credentials] {
 		decodeFn:     conv.SelectDecodeCredentials,
 		distDecodeFn: conv.SelectDistinctDecodeCredentials,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_credentials")
+			return s.DistFn("field_credentials", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_credentials")
@@ -1541,7 +1541,7 @@ func (s allTypesSelect) FieldNestedDataPtr() SelectField[*model.NestedData] {
 		decodeFn:     conv.SelectDecodeNestedDataPtr,
 		distDecodeFn: conv.SelectDistinctDecodeNestedDataPtr,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_nested_data_ptr")
+			return s.DistFn("field_nested_data_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_nested_data_ptr")
@@ -1575,7 +1575,7 @@ func (s allTypesSelect) FieldNestedDataSlice() SelectField[[]model.NestedData] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_nested_data_slice")
+			return s.DistFn("field_nested_data_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_nested_data_slice")
@@ -1609,7 +1609,7 @@ func (s allTypesSelect) FieldNestedDataPtrSlice() SelectField[[]*model.NestedDat
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_nested_data_ptr_slice")
+			return s.DistFn("field_nested_data_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_nested_data_ptr_slice")
@@ -1643,7 +1643,7 @@ func (s allTypesSelect) FieldNestedDataPtrSlicePtr() SelectField[*[]*model.Neste
 			})
 		},
 		distFn: func() *lib.Result {
-			return s.DistFn("field_nested_data_ptr_slice_ptr")
+			return s.DistFn("field_nested_data_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_nested_data_ptr_slice_ptr")
@@ -1669,7 +1669,7 @@ func (s allTypesSelect) FieldNodeSliceSlice() SelectField[[][]model.SpecialTypes
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_node_slice_slice")
+			return s.DistFn("field_node_slice_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_node_slice_slice")
@@ -1690,7 +1690,7 @@ func (s allTypesSelect) FieldSliceSlice() SelectField[[][]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_slice_slice")
+			return s.DistFn("field_slice_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_slice_slice")
@@ -1706,7 +1706,7 @@ func (s allTypesSelect) FieldSliceSliceSlice() SelectField[[][][]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_slice_slice_slice")
+			return s.DistFn("field_slice_slice_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_slice_slice_slice")
@@ -1722,7 +1722,7 @@ func (s allTypesSelect) FieldSliceSliceSlice2() SelectField[[][][]model.NestedDa
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_slice_slice_slice_2")
+			return s.DistFn("field_slice_slice_slice_2", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_slice_slice_slice_2")
@@ -1738,7 +1738,7 @@ func (s allTypesSelect) FieldByte() SelectField[byte] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_byte")
+			return s.DistFn("field_byte", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_byte")
@@ -1754,7 +1754,7 @@ func (s allTypesSelect) FieldBytePtr() SelectField[*byte] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_byte_ptr")
+			return s.DistFn("field_byte_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_byte_ptr")
@@ -1770,7 +1770,7 @@ func (s allTypesSelect) FieldByteSlice() SelectField[[]byte] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_byte_slice")
+			return s.DistFn("field_byte_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_byte_slice")
@@ -1786,7 +1786,7 @@ func (s allTypesSelect) FieldByteSlicePtr() SelectField[*[]byte] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_byte_slice_ptr")
+			return s.DistFn("field_byte_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_byte_slice_ptr")
@@ -1802,7 +1802,7 @@ func (s allTypesSelect) FieldRenamed() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("custom_name")
+			return s.DistFn("custom_name", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("custom_name")
@@ -1818,7 +1818,7 @@ func (s allTypesSelect) FieldHookStatus() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_hook_status")
+			return s.DistFn("field_hook_status", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_hook_status")
@@ -1834,7 +1834,7 @@ func (s allTypesSelect) FieldHookDetail() SelectField[string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_hook_detail")
+			return s.DistFn("field_hook_detail", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_hook_detail")
@@ -1855,7 +1855,7 @@ func (s allTypesSelectArray) CreatedAt() SelectField[[]time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("created_at")
+			return s.DistFn("created_at", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("created_at")
@@ -1871,7 +1871,7 @@ func (s allTypesSelectArray) UpdatedAt() SelectField[[]time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("updated_at")
+			return s.DistFn("updated_at", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("updated_at")
@@ -1887,7 +1887,7 @@ func (s allTypesSelectArray) FieldString() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string")
+			return s.DistFn("field_string", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string")
@@ -1903,7 +1903,7 @@ func (s allTypesSelectArray) FieldStringPtr() SelectField[[]*string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string_ptr")
+			return s.DistFn("field_string_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string_ptr")
@@ -1919,7 +1919,7 @@ func (s allTypesSelectArray) FieldOther() SelectField[[][]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_other")
+			return s.DistFn("field_other", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_other")
@@ -1935,7 +1935,7 @@ func (s allTypesSelectArray) FieldStringPtrSlice() SelectField[[][]*string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string_ptr_slice")
+			return s.DistFn("field_string_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string_ptr_slice")
@@ -1951,7 +1951,7 @@ func (s allTypesSelectArray) FieldStringSlicePtr() SelectField[[]*[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string_slice_ptr")
+			return s.DistFn("field_string_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string_slice_ptr")
@@ -1967,7 +1967,7 @@ func (s allTypesSelectArray) FieldStringPtrSlicePtr() SelectField[[]*[]*string] 
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_string_ptr_slice_ptr")
+			return s.DistFn("field_string_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_string_ptr_slice_ptr")
@@ -1983,7 +1983,7 @@ func (s allTypesSelectArray) FieldInt() SelectField[[]int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int")
+			return s.DistFn("field_int", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int")
@@ -1999,7 +1999,7 @@ func (s allTypesSelectArray) FieldIntPtr() SelectField[[]*int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_ptr")
+			return s.DistFn("field_int_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_ptr")
@@ -2015,7 +2015,7 @@ func (s allTypesSelectArray) FieldIntSlice() SelectField[[][]int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_slice")
+			return s.DistFn("field_int_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_slice")
@@ -2031,7 +2031,7 @@ func (s allTypesSelectArray) FieldIntPtrSlice() SelectField[[][]*int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_ptr_slice")
+			return s.DistFn("field_int_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_ptr_slice")
@@ -2047,7 +2047,7 @@ func (s allTypesSelectArray) FieldIntSlicePtr() SelectField[[]*[]int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_slice_ptr")
+			return s.DistFn("field_int_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_slice_ptr")
@@ -2063,7 +2063,7 @@ func (s allTypesSelectArray) FieldIntPtrSlicePtr() SelectField[[]*[]*int] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_ptr_slice_ptr")
+			return s.DistFn("field_int_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_ptr_slice_ptr")
@@ -2079,7 +2079,7 @@ func (s allTypesSelectArray) FieldInt8() SelectField[[]int8] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_8")
+			return s.DistFn("field_int_8", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_8")
@@ -2095,7 +2095,7 @@ func (s allTypesSelectArray) FieldInt8Ptr() SelectField[[]*int8] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_8_ptr")
+			return s.DistFn("field_int_8_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_8_ptr")
@@ -2111,7 +2111,7 @@ func (s allTypesSelectArray) FieldInt16() SelectField[[]int16] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_16")
+			return s.DistFn("field_int_16", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_16")
@@ -2127,7 +2127,7 @@ func (s allTypesSelectArray) FieldInt16Ptr() SelectField[[]*int16] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_16_ptr")
+			return s.DistFn("field_int_16_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_16_ptr")
@@ -2143,7 +2143,7 @@ func (s allTypesSelectArray) FieldInt32() SelectField[[]int32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_32")
+			return s.DistFn("field_int_32", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_32")
@@ -2159,7 +2159,7 @@ func (s allTypesSelectArray) FieldInt32Ptr() SelectField[[]*int32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_32_ptr")
+			return s.DistFn("field_int_32_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_32_ptr")
@@ -2175,7 +2175,7 @@ func (s allTypesSelectArray) FieldInt64() SelectField[[]int64] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_64")
+			return s.DistFn("field_int_64", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_64")
@@ -2191,7 +2191,7 @@ func (s allTypesSelectArray) FieldInt64Ptr() SelectField[[]*int64] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_int_64_ptr")
+			return s.DistFn("field_int_64_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_int_64_ptr")
@@ -2207,7 +2207,7 @@ func (s allTypesSelectArray) FieldUint8() SelectField[[]uint8] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_8")
+			return s.DistFn("field_uint_8", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_8")
@@ -2223,7 +2223,7 @@ func (s allTypesSelectArray) FieldUint8Ptr() SelectField[[]*uint8] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_8_ptr")
+			return s.DistFn("field_uint_8_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_8_ptr")
@@ -2239,7 +2239,7 @@ func (s allTypesSelectArray) FieldUint16() SelectField[[]uint16] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_16")
+			return s.DistFn("field_uint_16", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_16")
@@ -2255,7 +2255,7 @@ func (s allTypesSelectArray) FieldUint16Ptr() SelectField[[]*uint16] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_16_ptr")
+			return s.DistFn("field_uint_16_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_16_ptr")
@@ -2271,7 +2271,7 @@ func (s allTypesSelectArray) FieldUint32() SelectField[[]uint32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_32")
+			return s.DistFn("field_uint_32", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_32")
@@ -2287,7 +2287,7 @@ func (s allTypesSelectArray) FieldUint32Ptr() SelectField[[]*uint32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uint_32_ptr")
+			return s.DistFn("field_uint_32_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uint_32_ptr")
@@ -2303,7 +2303,7 @@ func (s allTypesSelectArray) FieldFloat32() SelectField[[]float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32")
+			return s.DistFn("field_float_32", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32")
@@ -2319,7 +2319,7 @@ func (s allTypesSelectArray) FieldFloat32Slice() SelectField[[][]float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32_slice")
+			return s.DistFn("field_float_32_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32_slice")
@@ -2335,7 +2335,7 @@ func (s allTypesSelectArray) FieldFloat32SlicePtr() SelectField[[]*[]float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32_slice_ptr")
+			return s.DistFn("field_float_32_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32_slice_ptr")
@@ -2351,7 +2351,7 @@ func (s allTypesSelectArray) FieldFloat32PtrSlice() SelectField[[][]*float32] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32_ptr_slice")
+			return s.DistFn("field_float_32_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32_ptr_slice")
@@ -2367,7 +2367,7 @@ func (s allTypesSelectArray) FieldFloat32PtrSlicePtr() SelectField[[]*[]*float32
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_32_ptr_slice_ptr")
+			return s.DistFn("field_float_32_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_32_ptr_slice_ptr")
@@ -2383,7 +2383,7 @@ func (s allTypesSelectArray) FieldFloat64() SelectField[[]float64] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_float_64")
+			return s.DistFn("field_float_64", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_float_64")
@@ -2399,7 +2399,7 @@ func (s allTypesSelectArray) FieldRune() SelectField[[]rune] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_rune")
+			return s.DistFn("field_rune", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_rune")
@@ -2415,7 +2415,7 @@ func (s allTypesSelectArray) FieldRuneSlice() SelectField[[][]rune] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_rune_slice")
+			return s.DistFn("field_rune_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_rune_slice")
@@ -2431,7 +2431,7 @@ func (s allTypesSelectArray) FieldBool() SelectField[[]bool] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_bool")
+			return s.DistFn("field_bool", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_bool")
@@ -2447,7 +2447,7 @@ func (s allTypesSelectArray) FieldBoolPtr() SelectField[[]*bool] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_bool_ptr")
+			return s.DistFn("field_bool_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_bool_ptr")
@@ -2463,7 +2463,7 @@ func (s allTypesSelectArray) FieldBoolSlice() SelectField[[][]bool] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_bool_slice")
+			return s.DistFn("field_bool_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_bool_slice")
@@ -2479,7 +2479,7 @@ func (s allTypesSelectArray) FieldTime() SelectField[[]time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time")
+			return s.DistFn("field_time", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time")
@@ -2495,7 +2495,7 @@ func (s allTypesSelectArray) FieldTimePtr() SelectField[[]*time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time_ptr")
+			return s.DistFn("field_time_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time_ptr")
@@ -2511,7 +2511,7 @@ func (s allTypesSelectArray) FieldTimeNil() SelectField[[]*time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time_nil")
+			return s.DistFn("field_time_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time_nil")
@@ -2527,7 +2527,7 @@ func (s allTypesSelectArray) FieldTimeSlice() SelectField[[][]time.Time] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time_slice")
+			return s.DistFn("field_time_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time_slice")
@@ -2543,7 +2543,7 @@ func (s allTypesSelectArray) FieldTimeSliceSlice() SelectField[[][][]time.Time] 
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_time_slice_slice")
+			return s.DistFn("field_time_slice_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_time_slice_slice")
@@ -2559,7 +2559,7 @@ func (s allTypesSelectArray) FieldDuration() SelectField[[]time.Duration] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_duration")
+			return s.DistFn("field_duration", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_duration")
@@ -2575,7 +2575,7 @@ func (s allTypesSelectArray) FieldDurationPtr() SelectField[[]*time.Duration] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_duration_ptr")
+			return s.DistFn("field_duration_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_duration_ptr")
@@ -2591,7 +2591,7 @@ func (s allTypesSelectArray) FieldDurationNil() SelectField[[]*time.Duration] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_duration_nil")
+			return s.DistFn("field_duration_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_duration_nil")
@@ -2607,7 +2607,7 @@ func (s allTypesSelectArray) FieldDurationSlice() SelectField[[][]time.Duration]
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_duration_slice")
+			return s.DistFn("field_duration_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_duration_slice")
@@ -2623,7 +2623,7 @@ func (s allTypesSelectArray) FieldMonth() SelectField[[]time.Month] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_month")
+			return s.DistFn("field_month", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_month")
@@ -2639,7 +2639,7 @@ func (s allTypesSelectArray) FieldMonthPtr() SelectField[[]*time.Month] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_month_ptr")
+			return s.DistFn("field_month_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_month_ptr")
@@ -2655,7 +2655,7 @@ func (s allTypesSelectArray) FieldWeekday() SelectField[[]time.Weekday] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_weekday")
+			return s.DistFn("field_weekday", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_weekday")
@@ -2671,7 +2671,7 @@ func (s allTypesSelectArray) FieldWeekdayPtr() SelectField[[]*time.Weekday] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_weekday_ptr")
+			return s.DistFn("field_weekday_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_weekday_ptr")
@@ -2687,7 +2687,7 @@ func (s allTypesSelectArray) FieldUUID() SelectField[[]uuid.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid")
+			return s.DistFn("field_uuid", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid")
@@ -2703,7 +2703,7 @@ func (s allTypesSelectArray) FieldUUIDPtr() SelectField[[]*uuid.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_ptr")
+			return s.DistFn("field_uuid_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_ptr")
@@ -2719,7 +2719,7 @@ func (s allTypesSelectArray) FieldUUIDNil() SelectField[[]*uuid.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_nil")
+			return s.DistFn("field_uuid_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_nil")
@@ -2735,7 +2735,7 @@ func (s allTypesSelectArray) FieldUUIDSlice() SelectField[[][]uuid.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_slice")
+			return s.DistFn("field_uuid_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_slice")
@@ -2751,7 +2751,7 @@ func (s allTypesSelectArray) FieldUUIDGofrs() SelectField[[]uuid1.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_gofrs")
+			return s.DistFn("field_uuid_gofrs", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_gofrs")
@@ -2767,7 +2767,7 @@ func (s allTypesSelectArray) FieldUUIDGofrsPtr() SelectField[[]*uuid1.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_gofrs_ptr")
+			return s.DistFn("field_uuid_gofrs_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_gofrs_ptr")
@@ -2783,7 +2783,7 @@ func (s allTypesSelectArray) FieldUUIDGofrsNil() SelectField[[]*uuid1.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_gofrs_nil")
+			return s.DistFn("field_uuid_gofrs_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_gofrs_nil")
@@ -2799,7 +2799,7 @@ func (s allTypesSelectArray) FieldUUIDGofrsSlice() SelectField[[][]uuid1.UUID] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_uuid_gofrs_slice")
+			return s.DistFn("field_uuid_gofrs_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_uuid_gofrs_slice")
@@ -2815,7 +2815,7 @@ func (s allTypesSelectArray) FieldURL() SelectField[[]url.URL] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_url")
+			return s.DistFn("field_url", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_url")
@@ -2831,7 +2831,7 @@ func (s allTypesSelectArray) FieldURLPtr() SelectField[[]*url.URL] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_url_ptr")
+			return s.DistFn("field_url_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_url_ptr")
@@ -2847,7 +2847,7 @@ func (s allTypesSelectArray) FieldURLNil() SelectField[[]*url.URL] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_url_nil")
+			return s.DistFn("field_url_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_url_nil")
@@ -2863,7 +2863,7 @@ func (s allTypesSelectArray) FieldURLSlice() SelectField[[][]url.URL] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_url_slice")
+			return s.DistFn("field_url_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_url_slice")
@@ -2879,7 +2879,7 @@ func (s allTypesSelectArray) FieldEmail() SelectField[[]som.Email] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_email")
+			return s.DistFn("field_email", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_email")
@@ -2895,7 +2895,7 @@ func (s allTypesSelectArray) FieldEmailPtr() SelectField[[]*som.Email] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_email_ptr")
+			return s.DistFn("field_email_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_email_ptr")
@@ -2911,7 +2911,7 @@ func (s allTypesSelectArray) FieldEmailNil() SelectField[[]*som.Email] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_email_nil")
+			return s.DistFn("field_email_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_email_nil")
@@ -2927,7 +2927,7 @@ func (s allTypesSelectArray) FieldEmailSlice() SelectField[[][]som.Email] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_email_slice")
+			return s.DistFn("field_email_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_email_slice")
@@ -2943,7 +2943,7 @@ func (s allTypesSelectArray) FieldSemVer() SelectField[[]som.SemVer] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_sem_ver")
+			return s.DistFn("field_sem_ver", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_sem_ver")
@@ -2959,7 +2959,7 @@ func (s allTypesSelectArray) FieldSemVerPtr() SelectField[[]*som.SemVer] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_sem_ver_ptr")
+			return s.DistFn("field_sem_ver_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_sem_ver_ptr")
@@ -2975,7 +2975,7 @@ func (s allTypesSelectArray) FieldSemVerNil() SelectField[[]*som.SemVer] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_sem_ver_nil")
+			return s.DistFn("field_sem_ver_nil", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_sem_ver_nil")
@@ -2991,7 +2991,7 @@ func (s allTypesSelectArray) FieldSemVerSlice() SelectField[[][]som.SemVer] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_sem_ver_slice")
+			return s.DistFn("field_sem_ver_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_sem_ver_slice")
@@ -3007,7 +3007,7 @@ func (s allTypesSelectArray) FieldEnum() SelectField[[]model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum")
+			return s.DistFn("field_enum", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum")
@@ -3023,7 +3023,7 @@ func (s allTypesSelectArray) FieldEnumPtr() SelectField[[]*model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum_ptr")
+			return s.DistFn("field_enum_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum_ptr")
@@ -3039,7 +3039,7 @@ func (s allTypesSelectArray) FieldEnumSlice() SelectField[[][]model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum_slice")
+			return s.DistFn("field_enum_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum_slice")
@@ -3055,7 +3055,7 @@ func (s allTypesSelectArray) FieldEnumPtrSlice() SelectField[[][]*model.Role] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum_ptr_slice")
+			return s.DistFn("field_enum_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum_ptr_slice")
@@ -3071,7 +3071,7 @@ func (s allTypesSelectArray) FieldEnumPtrSlicePtr() SelectField[[]*[]*model.Role
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_enum_ptr_slice_ptr")
+			return s.DistFn("field_enum_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_enum_ptr_slice_ptr")
@@ -3087,7 +3087,7 @@ func (s allTypesSelectArray) FieldCredentials() SelectField[[]model.Credentials]
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_credentials")
+			return s.DistFn("field_credentials", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_credentials")
@@ -3103,7 +3103,7 @@ func (s allTypesSelectArray) FieldNestedDataPtr() SelectField[[]*model.NestedDat
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_nested_data_ptr")
+			return s.DistFn("field_nested_data_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_nested_data_ptr")
@@ -3119,7 +3119,7 @@ func (s allTypesSelectArray) FieldNestedDataSlice() SelectField[[][]model.Nested
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_nested_data_slice")
+			return s.DistFn("field_nested_data_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_nested_data_slice")
@@ -3135,7 +3135,7 @@ func (s allTypesSelectArray) FieldNestedDataPtrSlice() SelectField[[][]*model.Ne
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_nested_data_ptr_slice")
+			return s.DistFn("field_nested_data_ptr_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_nested_data_ptr_slice")
@@ -3151,7 +3151,7 @@ func (s allTypesSelectArray) FieldNestedDataPtrSlicePtr() SelectField[[]*[]*mode
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_nested_data_ptr_slice_ptr")
+			return s.DistFn("field_nested_data_ptr_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_nested_data_ptr_slice_ptr")
@@ -3177,7 +3177,7 @@ func (s allTypesSelectArray) FieldNodeSliceSlice() SelectField[[][][]model.Speci
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_node_slice_slice")
+			return s.DistFn("field_node_slice_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_node_slice_slice")
@@ -3198,7 +3198,7 @@ func (s allTypesSelectArray) FieldSliceSlice() SelectField[[][][]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_slice_slice")
+			return s.DistFn("field_slice_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_slice_slice")
@@ -3214,7 +3214,7 @@ func (s allTypesSelectArray) FieldSliceSliceSlice() SelectField[[][][][]string] 
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_slice_slice_slice")
+			return s.DistFn("field_slice_slice_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_slice_slice_slice")
@@ -3230,7 +3230,7 @@ func (s allTypesSelectArray) FieldSliceSliceSlice2() SelectField[[][][][]model.N
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_slice_slice_slice_2")
+			return s.DistFn("field_slice_slice_slice_2", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_slice_slice_slice_2")
@@ -3246,7 +3246,7 @@ func (s allTypesSelectArray) FieldByte() SelectField[[]byte] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_byte")
+			return s.DistFn("field_byte", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_byte")
@@ -3262,7 +3262,7 @@ func (s allTypesSelectArray) FieldBytePtr() SelectField[[]*byte] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_byte_ptr")
+			return s.DistFn("field_byte_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_byte_ptr")
@@ -3278,7 +3278,7 @@ func (s allTypesSelectArray) FieldByteSlice() SelectField[[][]byte] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_byte_slice")
+			return s.DistFn("field_byte_slice", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_byte_slice")
@@ -3294,7 +3294,7 @@ func (s allTypesSelectArray) FieldByteSlicePtr() SelectField[[]*[]byte] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_byte_slice_ptr")
+			return s.DistFn("field_byte_slice_ptr", false)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_byte_slice_ptr")
@@ -3310,7 +3310,7 @@ func (s allTypesSelectArray) FieldRenamed() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("custom_name")
+			return s.DistFn("custom_name", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("custom_name")
@@ -3326,7 +3326,7 @@ func (s allTypesSelectArray) FieldHookStatus() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_hook_status")
+			return s.DistFn("field_hook_status", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_hook_status")
@@ -3342,7 +3342,7 @@ func (s allTypesSelectArray) FieldHookDetail() SelectField[[]string] {
 		},
 		db: s.DB,
 		distFn: func() *lib.Result {
-			return s.DistFn("field_hook_detail")
+			return s.DistFn("field_hook_detail", true)
 		},
 		firstFn: func() *lib.Result {
 			return s.FirstFn("field_hook_detail")

@@ -92,6 +92,7 @@ func SelectDecodeNestedData(data []byte) ([]model.NestedData, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodeNestedDataPtr(data []byte) ([]*model.NestedData, error) {
 	var rawResult []internal.QueryResult[*NestedData]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -122,6 +123,7 @@ func SelectDistinctDecodeNestedData(data []byte) ([]model.NestedData, error) {
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodeNestedDataPtr(data []byte) ([]*model.NestedData, error) {
 	var rawResult []internal.QueryResult[[]*NestedData]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {

@@ -100,6 +100,7 @@ func SelectDecodePersonObj(data []byte) ([]model.PersonObj, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodePersonObjPtr(data []byte) ([]*model.PersonObj, error) {
 	var rawResult []internal.QueryResult[*PersonObj]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -130,6 +131,7 @@ func SelectDistinctDecodePersonObj(data []byte) ([]model.PersonObj, error) {
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodePersonObjPtr(data []byte) ([]*model.PersonObj, error) {
 	var rawResult []internal.QueryResult[[]*PersonObj]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {

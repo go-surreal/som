@@ -111,6 +111,7 @@ func SelectDecodeEdgeRelation(data []byte) ([]model.EdgeRelation, error) {
 	}
 	return out, nil
 }
+
 func SelectDecodeEdgeRelationPtr(data []byte) ([]*model.EdgeRelation, error) {
 	var rawResult []internal.QueryResult[*EdgeRelation]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
@@ -141,6 +142,7 @@ func SelectDistinctDecodeEdgeRelation(data []byte) ([]model.EdgeRelation, error)
 	}
 	return out, nil
 }
+
 func SelectDistinctDecodeEdgeRelationPtr(data []byte) ([]*model.EdgeRelation, error) {
 	var rawResult []internal.QueryResult[[]*EdgeRelation]
 	if err := cbor.Unmarshal(data, &rawResult); err != nil {
