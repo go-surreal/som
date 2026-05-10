@@ -15,7 +15,6 @@ const (
 	minSupportedGoVersion = "1.24"    // suffix '.0' omitted on purpose!
 	maxSupportedGoVersion = "1.26.99" // allow for future patch versions
 
-	pkgSOM    = "github.com/go-surreal/som"
 	pkgDriver = "github.com/surrealdb/surrealdb.go"
 
 	pkgGoogleWire = "github.com/google/wire"
@@ -28,7 +27,6 @@ const (
 	PkgUUIDGoogle = "github.com/google/uuid"
 	PkgUUIDGofrs  = "github.com/gofrs/uuid"
 
-	requiredSOMVersion    = "v0.18.0"
 	requiredDriverVersion = "v1.4.1-0.20260430110252-aef39d3a439f"
 
 	MinGeoOrbVersion            = "v0.12.0"
@@ -111,53 +109,6 @@ func (m *GoMod) CheckGoVersion() (string, error) {
 
 	if goVersion > maxSupportedVersion {
 		return fmt.Sprintf("generated code might not work as expected for go version %s (max supported: %s)", m.file.Go.Version, maxSupportedGoVersion), nil
-	}
-
-	return "", nil
-}
-
-func (m *GoMod) CheckSOMVersion(checkLatest bool) (string, error) {
-	for _, require := range m.file.Require {
-		if require.Mod.Path != pkgSOM {
-			continue
-		}
-
-		somVersion, err := versionOrdinal(require.Mod.Version)
-		if err != nil {
-			return "", fmt.Errorf("could not parse som version: %w", err)
-		}
-
-		reqVersion, err := versionOrdinal(requiredSOMVersion)
-		if err != nil {
-			return "", fmt.Errorf("could not parse required som version: %w", err)
-		}
-
-		if somVersion != reqVersion {
-			fmt.Printf("go.mod: setting som version to %s\n", requiredSOMVersion)
-
-			if err := m.file.AddRequire(pkgSOM, requiredSOMVersion); err != nil {
-				return "", err
-			}
-		}
-
-		if checkLatest {
-			latestVersion, err := SOMVersion()
-			if err != nil {
-				return "", fmt.Errorf("could not check latest som version: %w", err)
-			}
-
-			if somVersion < latestVersion {
-				return fmt.Sprintf("newer version of som available: %s (currently: %s)", latestVersion, somVersion), nil
-			}
-		}
-
-		return "", nil
-	}
-
-	fmt.Printf("go.mod: adding som version %s\n", requiredSOMVersion)
-
-	if err := m.file.AddRequire(pkgSOM, requiredSOMVersion); err != nil {
-		return "", err
 	}
 
 	return "", nil
