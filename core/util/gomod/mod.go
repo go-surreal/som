@@ -29,7 +29,7 @@ const (
 	PkgUUIDGofrs  = "github.com/gofrs/uuid"
 
 	requiredSOMVersion    = "v0.18.0"
-	requiredDriverVersion = "v1.4.0"
+	requiredDriverVersion = "v1.4.1-0.20260430110252-aef39d3a439f"
 
 	MinGeoOrbVersion            = "v0.12.0"
 	MinGeoSimplefeaturesVersion = "v0.58.0"
