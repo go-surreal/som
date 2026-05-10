@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/docker/docker/api/types/container"
+	"github.com/moby/moby/api/types/container"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"som.test/gen/som/repo"

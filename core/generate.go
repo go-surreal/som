@@ -36,17 +36,6 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		}
 	}
 
-	if check {
-		info, err := mod.CheckSOMVersion(verbose)
-		if err != nil {
-			return err
-		}
-
-		if verbose && info != "" {
-			fmt.Println("ⓘ ", info)
-		}
-	}
-
 	info, err := mod.CheckDriverVersion()
 	if err != nil {
 		return err
