@@ -274,26 +274,10 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 		if ctx.Err() != nil {
 			killCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-
-			// Workaround for a data race in surrealdb.go v1.4.0:
-			// surrealdb.Kill() calls CloseLiveNotifications() which
-			// closes the notification channel while the driver's
-			// readLoop goroutine may still be sending on it
-			// (gorillaws/connection.go:549). The race occurs because
-			// GetNotificationChannel releases its RLock before the
-			// send, so a concurrent close is unsynchronized.
-			//
-			// Instead, we send a raw KILL query to stop the server
-			// from emitting further notifications and skip the
-			// channel close entirely. The channel is cleaned up
-			// when the connection is closed.
-			if _, err := surrealdb.Query[any](killCtx, c.conn,
-				"KILL $liveID", map[string]any{"liveID": liveID},
-			); err != nil {
+			if err := surrealdb.Kill(killCtx, c.conn, liveID); err != nil {
 				slog.ErrorContext(ctx, "failed to kill live query", "error", err)
 			}
 		}
-
 	}()
 
 	return out, nil
