@@ -43,25 +43,42 @@ var personObjRangeFn = rangeFn[model.PersonObj](func(q *lib.Query[model.PersonOb
 
 // personObjSelect provides field selection for PersonObj queries.
 type personObjSelect struct {
-	db    Database
-	query lib.Query[model.PersonObj]
+	SelectContext
 }
 
 // Email returns a SelectField for the email field.
 func (s personObjSelect) Email() SelectField[string] {
-	q := s.query
 	return SelectField[string]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("email")
+			return s.BuildFn("email")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("email")
+			return s.DistFn("email")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("email")
+			return s.FirstFn("email")
+		},
+	}
+}
+
+// personObjSelectArray is the array variant of personObjSelect for edge traversal results.
+type personObjSelectArray struct {
+	SelectContext
+}
+
+// Email returns a SelectField for the email field.
+func (s personObjSelectArray) Email() SelectField[[]string] {
+	return SelectField[[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("email")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("email")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("email")
 		},
 	}
 }
@@ -77,11 +94,8 @@ func NewPersonObj(db Database) Builder[model.PersonObj, personObjSelect] {
 		info:    personObjModelInfo,
 		query:   q,
 		rangeFn: personObjRangeFn,
-		selectFn: func(db Database, q lib.Query[model.PersonObj]) personObjSelect {
-			return personObjSelect{
-				db:    db,
-				query: q,
-			}
+		selectFn: func(sc SelectContext) personObjSelect {
+			return personObjSelect{SelectContext: sc}
 		},
 	}}
 }

@@ -44,25 +44,42 @@ var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], fr
 
 // weatherSelect provides field selection for Weather queries.
 type weatherSelect struct {
-	db    Database
-	query lib.Query[model.Weather]
+	SelectContext
 }
 
 // Temperature returns a SelectField for the temperature field.
 func (s weatherSelect) Temperature() SelectField[float64] {
-	q := s.query
 	return SelectField[float64]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("temperature")
+			return s.BuildFn("temperature")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("temperature")
+			return s.DistFn("temperature")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("temperature")
+			return s.FirstFn("temperature")
+		},
+	}
+}
+
+// weatherSelectArray is the array variant of weatherSelect for edge traversal results.
+type weatherSelectArray struct {
+	SelectContext
+}
+
+// Temperature returns a SelectField for the temperature field.
+func (s weatherSelectArray) Temperature() SelectField[[]float64] {
+	return SelectField[[]float64]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("temperature")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("temperature")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("temperature")
 		},
 	}
 }
@@ -78,11 +95,8 @@ func NewWeather(db Database) Builder[model.Weather, weatherSelect] {
 		info:    weatherModelInfo,
 		query:   q,
 		rangeFn: weatherRangeFn,
-		selectFn: func(db Database, q lib.Query[model.Weather]) weatherSelect {
-			return weatherSelect{
-				db:    db,
-				query: q,
-			}
+		selectFn: func(sc SelectContext) weatherSelect {
+			return weatherSelect{SelectContext: sc}
 		},
 	}}
 }

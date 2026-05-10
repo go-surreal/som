@@ -45,25 +45,42 @@ var teamMemberRangeFn = rangeFn[model.TeamMember](func(q *lib.Query[model.TeamMe
 
 // teamMemberSelect provides field selection for TeamMember queries.
 type teamMemberSelect struct {
-	db    Database
-	query lib.Query[model.TeamMember]
+	SelectContext
 }
 
 // Role returns a SelectField for the role field.
 func (s teamMemberSelect) Role() SelectField[string] {
-	q := s.query
 	return SelectField[string]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("role")
+			return s.BuildFn("role")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("role")
+			return s.DistFn("role")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("role")
+			return s.FirstFn("role")
+		},
+	}
+}
+
+// teamMemberSelectArray is the array variant of teamMemberSelect for edge traversal results.
+type teamMemberSelectArray struct {
+	SelectContext
+}
+
+// Role returns a SelectField for the role field.
+func (s teamMemberSelectArray) Role() SelectField[[]string] {
+	return SelectField[[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("role")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("role")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("role")
 		},
 	}
 }
@@ -79,11 +96,8 @@ func NewTeamMember(db Database) Builder[model.TeamMember, teamMemberSelect] {
 		info:    teamMemberModelInfo,
 		query:   q,
 		rangeFn: teamMemberRangeFn,
-		selectFn: func(db Database, q lib.Query[model.TeamMember]) teamMemberSelect {
-			return teamMemberSelect{
-				db:    db,
-				query: q,
-			}
+		selectFn: func(sc SelectContext) teamMemberSelect {
+			return teamMemberSelect{SelectContext: sc}
 		},
 	}}
 }

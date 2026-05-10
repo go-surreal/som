@@ -44,18 +44,16 @@ var specialRelationRangeFn = rangeFn[model.SpecialRelation](func(q *lib.Query[mo
 
 // specialRelationSelect provides field selection for SpecialRelation queries.
 type specialRelationSelect struct {
-	db    Database
-	query lib.Query[model.SpecialRelation]
+	SelectContext
 }
 
 // DeletedAt returns a SelectField for the deleted_at field.
 func (s specialRelationSelect) DeletedAt() SelectField[*time.Time] {
-	q := s.query
 	return SelectField[*time.Time]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("deleted_at")
+			return s.BuildFn("deleted_at")
 		},
-		db: s.db,
+		db: s.DB,
 		decodeFn: func(data []byte) ([]*time.Time, error) {
 			return unmarshalSelectConvert(data, func(v *types.DateTime) *time.Time {
 				if v == nil {
@@ -75,33 +73,75 @@ func (s specialRelationSelect) DeletedAt() SelectField[*time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("deleted_at")
+			return s.DistFn("deleted_at")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("deleted_at")
+			return s.FirstFn("deleted_at")
 		},
 	}
 }
 
 // Title returns a SelectField for the title field.
 func (s specialRelationSelect) Title() SelectField[string] {
-	q := s.query
 	return SelectField[string]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("title")
+			return s.BuildFn("title")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("title")
+			return s.DistFn("title")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("title")
+			return s.FirstFn("title")
 		},
 	}
+}
+
+// Author returns a select builder for traversing the author record link.
+func (s specialRelationSelect) Author() specialTypesSelect {
+	return specialTypesSelect{SelectContext: s.Prefixed("author.")}
+}
+
+// specialRelationSelectArray is the array variant of specialRelationSelect for edge traversal results.
+type specialRelationSelectArray struct {
+	SelectContext
+}
+
+// DeletedAt returns a SelectField for the deleted_at field.
+func (s specialRelationSelectArray) DeletedAt() SelectField[[]*time.Time] {
+	return SelectField[[]*time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("deleted_at")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("deleted_at")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("deleted_at")
+		},
+	}
+}
+
+// Title returns a SelectField for the title field.
+func (s specialRelationSelectArray) Title() SelectField[[]string] {
+	return SelectField[[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("title")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("title")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("title")
+		},
+	}
+}
+
+// Author returns a select builder for traversing the author record link.
+func (s specialRelationSelectArray) Author() specialTypesSelectArray {
+	return specialTypesSelectArray{SelectContext: s.Prefixed("author.")}
 }
 
 // SpecialRelationQuery is a type alias for the SpecialRelation query builder.
@@ -117,11 +157,8 @@ func NewSpecialRelation(db Database) Builder[model.SpecialRelation, specialRelat
 		info:    specialRelationModelInfo,
 		query:   q,
 		rangeFn: specialRelationRangeFn,
-		selectFn: func(db Database, q lib.Query[model.SpecialRelation]) specialRelationSelect {
-			return specialRelationSelect{
-				db:    db,
-				query: q,
-			}
+		selectFn: func(sc SelectContext) specialRelationSelect {
+			return specialRelationSelect{SelectContext: sc}
 		},
 	}}
 }

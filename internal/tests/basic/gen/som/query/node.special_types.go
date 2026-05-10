@@ -44,18 +44,16 @@ var specialTypesRangeFn = rangeFn[model.SpecialTypes](func(q *lib.Query[model.Sp
 
 // specialTypesSelect provides field selection for SpecialTypes queries.
 type specialTypesSelect struct {
-	db    Database
-	query lib.Query[model.SpecialTypes]
+	SelectContext
 }
 
 // DeletedAt returns a SelectField for the deleted_at field.
 func (s specialTypesSelect) DeletedAt() SelectField[*time.Time] {
-	q := s.query
 	return SelectField[*time.Time]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("deleted_at")
+			return s.BuildFn("deleted_at")
 		},
-		db: s.db,
+		db: s.DB,
 		decodeFn: func(data []byte) ([]*time.Time, error) {
 			return unmarshalSelectConvert(data, func(v *types.DateTime) *time.Time {
 				if v == nil {
@@ -75,50 +73,95 @@ func (s specialTypesSelect) DeletedAt() SelectField[*time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("deleted_at")
+			return s.DistFn("deleted_at")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("deleted_at")
+			return s.FirstFn("deleted_at")
 		},
 	}
 }
 
 // Name returns a SelectField for the name field.
 func (s specialTypesSelect) Name() SelectField[string] {
-	q := s.query
 	return SelectField[string]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("name")
+			return s.BuildFn("name")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("name")
+			return s.DistFn("name")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("name")
+			return s.FirstFn("name")
 		},
 	}
 }
 
 // Version returns a SelectField for the __som_lock_version field.
 func (s specialTypesSelect) Version() SelectField[int] {
-	q := s.query
 	return SelectField[int]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("__som_lock_version")
+			return s.BuildFn("__som_lock_version")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("__som_lock_version")
+			return s.DistFn("__som_lock_version")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("__som_lock_version")
+			return s.FirstFn("__som_lock_version")
+		},
+	}
+}
+
+// specialTypesSelectArray is the array variant of specialTypesSelect for edge traversal results.
+type specialTypesSelectArray struct {
+	SelectContext
+}
+
+// DeletedAt returns a SelectField for the deleted_at field.
+func (s specialTypesSelectArray) DeletedAt() SelectField[[]*time.Time] {
+	return SelectField[[]*time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("deleted_at")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("deleted_at")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("deleted_at")
+		},
+	}
+}
+
+// Name returns a SelectField for the name field.
+func (s specialTypesSelectArray) Name() SelectField[[]string] {
+	return SelectField[[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("name")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("name")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("name")
+		},
+	}
+}
+
+// Version returns a SelectField for the __som_lock_version field.
+func (s specialTypesSelectArray) Version() SelectField[[]int] {
+	return SelectField[[]int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("__som_lock_version")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("__som_lock_version")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("__som_lock_version")
 		},
 	}
 }
@@ -136,11 +179,8 @@ func NewSpecialTypes(db Database) Builder[model.SpecialTypes, specialTypesSelect
 		info:    specialTypesModelInfo,
 		query:   q,
 		rangeFn: specialTypesRangeFn,
-		selectFn: func(db Database, q lib.Query[model.SpecialTypes]) specialTypesSelect {
-			return specialTypesSelect{
-				db:    db,
-				query: q,
-			}
+		selectFn: func(sc SelectContext) specialTypesSelect {
+			return specialTypesSelect{SelectContext: sc}
 		},
 	}}
 }

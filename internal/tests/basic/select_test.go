@@ -218,6 +218,23 @@ func TestSelectAll(t *testing.T) {
 		assert.Equal(t, 3, len(vals))
 	})
 
+	// Node traversal
+
+	t.Run("NodeTraversal", func(t *testing.T) {
+		vals, err := client.AllTypesRepo().Query().Select().FieldNode().Name().All(ctx)
+		assert.NilError(t, err)
+		assert.Equal(t, 3, len(vals))
+	})
+
+	// Edge traversal (returns [][]T because edges are many-to-many)
+
+	t.Run("EdgeTraversal", func(t *testing.T) {
+		vals, err := client.AllTypesRepo().Query().Select().FieldEdgeRelations().Name().All(ctx)
+		assert.NilError(t, err)
+		// Each record has an array of target names (empty since no edges created)
+		assert.Equal(t, 3, len(vals))
+	})
+
 	// With filter
 
 	t.Run("WithFilter", func(t *testing.T) {

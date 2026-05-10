@@ -46,18 +46,16 @@ var locationRangeFn = rangeFn[model.Location](func(q *lib.Query[model.Location],
 
 // locationSelect provides field selection for Location queries.
 type locationSelect struct {
-	db    Database
-	query lib.Query[model.Location]
+	SelectContext
 }
 
 // CreatedAt returns a SelectField for the created_at field.
 func (s locationSelect) CreatedAt() SelectField[time.Time] {
-	q := s.query
 	return SelectField[time.Time]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("created_at")
+			return s.BuildFn("created_at")
 		},
-		db: s.db,
+		db: s.DB,
 		decodeFn: func(data []byte) ([]time.Time, error) {
 			return unmarshalSelectConvert(data, func(v types.DateTime) time.Time {
 				return v.Time
@@ -69,24 +67,21 @@ func (s locationSelect) CreatedAt() SelectField[time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("created_at")
+			return s.DistFn("created_at")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("created_at")
+			return s.FirstFn("created_at")
 		},
 	}
 }
 
 // UpdatedAt returns a SelectField for the updated_at field.
 func (s locationSelect) UpdatedAt() SelectField[time.Time] {
-	q := s.query
 	return SelectField[time.Time]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("updated_at")
+			return s.BuildFn("updated_at")
 		},
-		db: s.db,
+		db: s.DB,
 		decodeFn: func(data []byte) ([]time.Time, error) {
 			return unmarshalSelectConvert(data, func(v types.DateTime) time.Time {
 				return v.Time
@@ -98,620 +93,1071 @@ func (s locationSelect) UpdatedAt() SelectField[time.Time] {
 			})
 		},
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("updated_at")
+			return s.DistFn("updated_at")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("updated_at")
+			return s.FirstFn("updated_at")
 		},
 	}
 }
 
 // Name returns a SelectField for the name field.
 func (s locationSelect) Name() SelectField[string] {
-	q := s.query
 	return SelectField[string]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("name")
+			return s.BuildFn("name")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("name")
+			return s.DistFn("name")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("name")
+			return s.FirstFn("name")
 		},
 	}
 }
 
 // Point returns a SelectField for the point field.
 func (s locationSelect) Point() SelectField[orb.Point] {
-	q := s.query
 	return SelectField[orb.Point]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("point")
+			return s.BuildFn("point")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("point")
+			return s.DistFn("point")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("point")
+			return s.FirstFn("point")
 		},
 	}
 }
 
 // PointPtr returns a SelectField for the point_ptr field.
 func (s locationSelect) PointPtr() SelectField[*orb.Point] {
-	q := s.query
 	return SelectField[*orb.Point]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("point_ptr")
+			return s.BuildFn("point_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("point_ptr")
+			return s.DistFn("point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("point_ptr")
+			return s.FirstFn("point_ptr")
 		},
 	}
 }
 
 // LineString returns a SelectField for the line_string field.
 func (s locationSelect) LineString() SelectField[orb.LineString] {
-	q := s.query
 	return SelectField[orb.LineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("line_string")
+			return s.BuildFn("line_string")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("line_string")
+			return s.DistFn("line_string")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("line_string")
+			return s.FirstFn("line_string")
 		},
 	}
 }
 
 // LineStringPtr returns a SelectField for the line_string_ptr field.
 func (s locationSelect) LineStringPtr() SelectField[*orb.LineString] {
-	q := s.query
 	return SelectField[*orb.LineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("line_string_ptr")
+			return s.BuildFn("line_string_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("line_string_ptr")
+			return s.DistFn("line_string_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("line_string_ptr")
+			return s.FirstFn("line_string_ptr")
 		},
 	}
 }
 
 // Polygon returns a SelectField for the polygon field.
 func (s locationSelect) Polygon() SelectField[orb.Polygon] {
-	q := s.query
 	return SelectField[orb.Polygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("polygon")
+			return s.BuildFn("polygon")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("polygon")
+			return s.DistFn("polygon")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("polygon")
+			return s.FirstFn("polygon")
 		},
 	}
 }
 
 // PolygonPtr returns a SelectField for the polygon_ptr field.
 func (s locationSelect) PolygonPtr() SelectField[*orb.Polygon] {
-	q := s.query
 	return SelectField[*orb.Polygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("polygon_ptr")
+			return s.BuildFn("polygon_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("polygon_ptr")
+			return s.DistFn("polygon_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("polygon_ptr")
+			return s.FirstFn("polygon_ptr")
 		},
 	}
 }
 
 // MultiPoint returns a SelectField for the multi_point field.
 func (s locationSelect) MultiPoint() SelectField[orb.MultiPoint] {
-	q := s.query
 	return SelectField[orb.MultiPoint]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("multi_point")
+			return s.BuildFn("multi_point")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("multi_point")
+			return s.DistFn("multi_point")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("multi_point")
+			return s.FirstFn("multi_point")
 		},
 	}
 }
 
 // MultiPointPtr returns a SelectField for the multi_point_ptr field.
 func (s locationSelect) MultiPointPtr() SelectField[*orb.MultiPoint] {
-	q := s.query
 	return SelectField[*orb.MultiPoint]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("multi_point_ptr")
+			return s.BuildFn("multi_point_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("multi_point_ptr")
+			return s.DistFn("multi_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("multi_point_ptr")
+			return s.FirstFn("multi_point_ptr")
 		},
 	}
 }
 
 // MultiLineString returns a SelectField for the multi_line_string field.
 func (s locationSelect) MultiLineString() SelectField[orb.MultiLineString] {
-	q := s.query
 	return SelectField[orb.MultiLineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("multi_line_string")
+			return s.BuildFn("multi_line_string")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("multi_line_string")
+			return s.DistFn("multi_line_string")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("multi_line_string")
+			return s.FirstFn("multi_line_string")
 		},
 	}
 }
 
 // MultiPolygon returns a SelectField for the multi_polygon field.
 func (s locationSelect) MultiPolygon() SelectField[orb.MultiPolygon] {
-	q := s.query
 	return SelectField[orb.MultiPolygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("multi_polygon")
+			return s.BuildFn("multi_polygon")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("multi_polygon")
+			return s.DistFn("multi_polygon")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("multi_polygon")
+			return s.FirstFn("multi_polygon")
 		},
 	}
 }
 
 // Collection returns a SelectField for the collection field.
 func (s locationSelect) Collection() SelectField[orb.Collection] {
-	q := s.query
 	return SelectField[orb.Collection]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("collection")
+			return s.BuildFn("collection")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("collection")
+			return s.DistFn("collection")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("collection")
+			return s.FirstFn("collection")
 		},
 	}
 }
 
 // GGPoint returns a SelectField for the gg_point field.
 func (s locationSelect) GGPoint() SelectField[gogeom.Point] {
-	q := s.query
 	return SelectField[gogeom.Point]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_point")
+			return s.BuildFn("gg_point")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_point")
+			return s.DistFn("gg_point")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_point")
+			return s.FirstFn("gg_point")
 		},
 	}
 }
 
 // GGPointPtr returns a SelectField for the gg_point_ptr field.
 func (s locationSelect) GGPointPtr() SelectField[*gogeom.Point] {
-	q := s.query
 	return SelectField[*gogeom.Point]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_point_ptr")
+			return s.BuildFn("gg_point_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_point_ptr")
+			return s.DistFn("gg_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_point_ptr")
+			return s.FirstFn("gg_point_ptr")
 		},
 	}
 }
 
 // GGLineString returns a SelectField for the gg_line_string field.
 func (s locationSelect) GGLineString() SelectField[gogeom.LineString] {
-	q := s.query
 	return SelectField[gogeom.LineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_line_string")
+			return s.BuildFn("gg_line_string")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_line_string")
+			return s.DistFn("gg_line_string")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_line_string")
+			return s.FirstFn("gg_line_string")
 		},
 	}
 }
 
 // GGLineStringPtr returns a SelectField for the gg_line_string_ptr field.
 func (s locationSelect) GGLineStringPtr() SelectField[*gogeom.LineString] {
-	q := s.query
 	return SelectField[*gogeom.LineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_line_string_ptr")
+			return s.BuildFn("gg_line_string_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_line_string_ptr")
+			return s.DistFn("gg_line_string_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_line_string_ptr")
+			return s.FirstFn("gg_line_string_ptr")
 		},
 	}
 }
 
 // GGPolygon returns a SelectField for the gg_polygon field.
 func (s locationSelect) GGPolygon() SelectField[gogeom.Polygon] {
-	q := s.query
 	return SelectField[gogeom.Polygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_polygon")
+			return s.BuildFn("gg_polygon")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_polygon")
+			return s.DistFn("gg_polygon")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_polygon")
+			return s.FirstFn("gg_polygon")
 		},
 	}
 }
 
 // GGPolygonPtr returns a SelectField for the gg_polygon_ptr field.
 func (s locationSelect) GGPolygonPtr() SelectField[*gogeom.Polygon] {
-	q := s.query
 	return SelectField[*gogeom.Polygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_polygon_ptr")
+			return s.BuildFn("gg_polygon_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_polygon_ptr")
+			return s.DistFn("gg_polygon_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_polygon_ptr")
+			return s.FirstFn("gg_polygon_ptr")
 		},
 	}
 }
 
 // GGMultiPoint returns a SelectField for the gg_multi_point field.
 func (s locationSelect) GGMultiPoint() SelectField[gogeom.MultiPoint] {
-	q := s.query
 	return SelectField[gogeom.MultiPoint]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_multi_point")
+			return s.BuildFn("gg_multi_point")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_multi_point")
+			return s.DistFn("gg_multi_point")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_multi_point")
+			return s.FirstFn("gg_multi_point")
 		},
 	}
 }
 
 // GGMultiPointPtr returns a SelectField for the gg_multi_point_ptr field.
 func (s locationSelect) GGMultiPointPtr() SelectField[*gogeom.MultiPoint] {
-	q := s.query
 	return SelectField[*gogeom.MultiPoint]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_multi_point_ptr")
+			return s.BuildFn("gg_multi_point_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_multi_point_ptr")
+			return s.DistFn("gg_multi_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_multi_point_ptr")
+			return s.FirstFn("gg_multi_point_ptr")
 		},
 	}
 }
 
 // GGMultiLineString returns a SelectField for the gg_multi_line_string field.
 func (s locationSelect) GGMultiLineString() SelectField[gogeom.MultiLineString] {
-	q := s.query
 	return SelectField[gogeom.MultiLineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_multi_line_string")
+			return s.BuildFn("gg_multi_line_string")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_multi_line_string")
+			return s.DistFn("gg_multi_line_string")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_multi_line_string")
+			return s.FirstFn("gg_multi_line_string")
 		},
 	}
 }
 
 // GGMultiPolygon returns a SelectField for the gg_multi_polygon field.
 func (s locationSelect) GGMultiPolygon() SelectField[gogeom.MultiPolygon] {
-	q := s.query
 	return SelectField[gogeom.MultiPolygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("gg_multi_polygon")
+			return s.BuildFn("gg_multi_polygon")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("gg_multi_polygon")
+			return s.DistFn("gg_multi_polygon")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("gg_multi_polygon")
+			return s.FirstFn("gg_multi_polygon")
 		},
 	}
 }
 
 // SFPoint returns a SelectField for the sf_point field.
 func (s locationSelect) SFPoint() SelectField[geom.Point] {
-	q := s.query
 	return SelectField[geom.Point]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_point")
+			return s.BuildFn("sf_point")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_point")
+			return s.DistFn("sf_point")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_point")
+			return s.FirstFn("sf_point")
 		},
 	}
 }
 
 // SFPointPtr returns a SelectField for the sf_point_ptr field.
 func (s locationSelect) SFPointPtr() SelectField[*geom.Point] {
-	q := s.query
 	return SelectField[*geom.Point]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_point_ptr")
+			return s.BuildFn("sf_point_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_point_ptr")
+			return s.DistFn("sf_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_point_ptr")
+			return s.FirstFn("sf_point_ptr")
 		},
 	}
 }
 
 // SFLineString returns a SelectField for the sf_line_string field.
 func (s locationSelect) SFLineString() SelectField[geom.LineString] {
-	q := s.query
 	return SelectField[geom.LineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_line_string")
+			return s.BuildFn("sf_line_string")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_line_string")
+			return s.DistFn("sf_line_string")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_line_string")
+			return s.FirstFn("sf_line_string")
 		},
 	}
 }
 
 // SFLineStringPtr returns a SelectField for the sf_line_string_ptr field.
 func (s locationSelect) SFLineStringPtr() SelectField[*geom.LineString] {
-	q := s.query
 	return SelectField[*geom.LineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_line_string_ptr")
+			return s.BuildFn("sf_line_string_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_line_string_ptr")
+			return s.DistFn("sf_line_string_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_line_string_ptr")
+			return s.FirstFn("sf_line_string_ptr")
 		},
 	}
 }
 
 // SFPolygon returns a SelectField for the sf_polygon field.
 func (s locationSelect) SFPolygon() SelectField[geom.Polygon] {
-	q := s.query
 	return SelectField[geom.Polygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_polygon")
+			return s.BuildFn("sf_polygon")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_polygon")
+			return s.DistFn("sf_polygon")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_polygon")
+			return s.FirstFn("sf_polygon")
 		},
 	}
 }
 
 // SFPolygonPtr returns a SelectField for the sf_polygon_ptr field.
 func (s locationSelect) SFPolygonPtr() SelectField[*geom.Polygon] {
-	q := s.query
 	return SelectField[*geom.Polygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_polygon_ptr")
+			return s.BuildFn("sf_polygon_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_polygon_ptr")
+			return s.DistFn("sf_polygon_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_polygon_ptr")
+			return s.FirstFn("sf_polygon_ptr")
 		},
 	}
 }
 
 // SFMultiPoint returns a SelectField for the sf_multi_point field.
 func (s locationSelect) SFMultiPoint() SelectField[geom.MultiPoint] {
-	q := s.query
 	return SelectField[geom.MultiPoint]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_multi_point")
+			return s.BuildFn("sf_multi_point")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_multi_point")
+			return s.DistFn("sf_multi_point")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_multi_point")
+			return s.FirstFn("sf_multi_point")
 		},
 	}
 }
 
 // SFMultiPointPtr returns a SelectField for the sf_multi_point_ptr field.
 func (s locationSelect) SFMultiPointPtr() SelectField[*geom.MultiPoint] {
-	q := s.query
 	return SelectField[*geom.MultiPoint]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_multi_point_ptr")
+			return s.BuildFn("sf_multi_point_ptr")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_multi_point_ptr")
+			return s.DistFn("sf_multi_point_ptr")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_multi_point_ptr")
+			return s.FirstFn("sf_multi_point_ptr")
 		},
 	}
 }
 
 // SFMultiLineString returns a SelectField for the sf_multi_line_string field.
 func (s locationSelect) SFMultiLineString() SelectField[geom.MultiLineString] {
-	q := s.query
 	return SelectField[geom.MultiLineString]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_multi_line_string")
+			return s.BuildFn("sf_multi_line_string")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_multi_line_string")
+			return s.DistFn("sf_multi_line_string")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_multi_line_string")
+			return s.FirstFn("sf_multi_line_string")
 		},
 	}
 }
 
 // SFMultiPolygon returns a SelectField for the sf_multi_polygon field.
 func (s locationSelect) SFMultiPolygon() SelectField[geom.MultiPolygon] {
-	q := s.query
 	return SelectField[geom.MultiPolygon]{
 		buildFn: func() *lib.Result {
-			return q.BuildAsSelectValue("sf_multi_polygon")
+			return s.BuildFn("sf_multi_polygon")
 		},
-		db: s.db,
+		db: s.DB,
 		distFn: func() *lib.Result {
-			return q.BuildAsSelectDistinct("sf_multi_polygon")
+			return s.DistFn("sf_multi_polygon")
 		},
 		firstFn: func() *lib.Result {
-			fq := q
-			fq.Limit = 1
-			return fq.BuildAsSelectValue("sf_multi_polygon")
+			return s.FirstFn("sf_multi_polygon")
+		},
+	}
+}
+
+// locationSelectArray is the array variant of locationSelect for edge traversal results.
+type locationSelectArray struct {
+	SelectContext
+}
+
+// CreatedAt returns a SelectField for the created_at field.
+func (s locationSelectArray) CreatedAt() SelectField[[]time.Time] {
+	return SelectField[[]time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("created_at")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("created_at")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("created_at")
+		},
+	}
+}
+
+// UpdatedAt returns a SelectField for the updated_at field.
+func (s locationSelectArray) UpdatedAt() SelectField[[]time.Time] {
+	return SelectField[[]time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("updated_at")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("updated_at")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("updated_at")
+		},
+	}
+}
+
+// Name returns a SelectField for the name field.
+func (s locationSelectArray) Name() SelectField[[]string] {
+	return SelectField[[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("name")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("name")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("name")
+		},
+	}
+}
+
+// Point returns a SelectField for the point field.
+func (s locationSelectArray) Point() SelectField[[]orb.Point] {
+	return SelectField[[]orb.Point]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("point")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("point")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("point")
+		},
+	}
+}
+
+// PointPtr returns a SelectField for the point_ptr field.
+func (s locationSelectArray) PointPtr() SelectField[[]*orb.Point] {
+	return SelectField[[]*orb.Point]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("point_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("point_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("point_ptr")
+		},
+	}
+}
+
+// LineString returns a SelectField for the line_string field.
+func (s locationSelectArray) LineString() SelectField[[]orb.LineString] {
+	return SelectField[[]orb.LineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("line_string")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("line_string")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("line_string")
+		},
+	}
+}
+
+// LineStringPtr returns a SelectField for the line_string_ptr field.
+func (s locationSelectArray) LineStringPtr() SelectField[[]*orb.LineString] {
+	return SelectField[[]*orb.LineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("line_string_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("line_string_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("line_string_ptr")
+		},
+	}
+}
+
+// Polygon returns a SelectField for the polygon field.
+func (s locationSelectArray) Polygon() SelectField[[]orb.Polygon] {
+	return SelectField[[]orb.Polygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("polygon")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("polygon")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("polygon")
+		},
+	}
+}
+
+// PolygonPtr returns a SelectField for the polygon_ptr field.
+func (s locationSelectArray) PolygonPtr() SelectField[[]*orb.Polygon] {
+	return SelectField[[]*orb.Polygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("polygon_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("polygon_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("polygon_ptr")
+		},
+	}
+}
+
+// MultiPoint returns a SelectField for the multi_point field.
+func (s locationSelectArray) MultiPoint() SelectField[[]orb.MultiPoint] {
+	return SelectField[[]orb.MultiPoint]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("multi_point")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("multi_point")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("multi_point")
+		},
+	}
+}
+
+// MultiPointPtr returns a SelectField for the multi_point_ptr field.
+func (s locationSelectArray) MultiPointPtr() SelectField[[]*orb.MultiPoint] {
+	return SelectField[[]*orb.MultiPoint]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("multi_point_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("multi_point_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("multi_point_ptr")
+		},
+	}
+}
+
+// MultiLineString returns a SelectField for the multi_line_string field.
+func (s locationSelectArray) MultiLineString() SelectField[[]orb.MultiLineString] {
+	return SelectField[[]orb.MultiLineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("multi_line_string")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("multi_line_string")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("multi_line_string")
+		},
+	}
+}
+
+// MultiPolygon returns a SelectField for the multi_polygon field.
+func (s locationSelectArray) MultiPolygon() SelectField[[]orb.MultiPolygon] {
+	return SelectField[[]orb.MultiPolygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("multi_polygon")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("multi_polygon")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("multi_polygon")
+		},
+	}
+}
+
+// Collection returns a SelectField for the collection field.
+func (s locationSelectArray) Collection() SelectField[[]orb.Collection] {
+	return SelectField[[]orb.Collection]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("collection")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("collection")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("collection")
+		},
+	}
+}
+
+// GGPoint returns a SelectField for the gg_point field.
+func (s locationSelectArray) GGPoint() SelectField[[]gogeom.Point] {
+	return SelectField[[]gogeom.Point]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_point")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_point")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_point")
+		},
+	}
+}
+
+// GGPointPtr returns a SelectField for the gg_point_ptr field.
+func (s locationSelectArray) GGPointPtr() SelectField[[]*gogeom.Point] {
+	return SelectField[[]*gogeom.Point]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_point_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_point_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_point_ptr")
+		},
+	}
+}
+
+// GGLineString returns a SelectField for the gg_line_string field.
+func (s locationSelectArray) GGLineString() SelectField[[]gogeom.LineString] {
+	return SelectField[[]gogeom.LineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_line_string")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_line_string")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_line_string")
+		},
+	}
+}
+
+// GGLineStringPtr returns a SelectField for the gg_line_string_ptr field.
+func (s locationSelectArray) GGLineStringPtr() SelectField[[]*gogeom.LineString] {
+	return SelectField[[]*gogeom.LineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_line_string_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_line_string_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_line_string_ptr")
+		},
+	}
+}
+
+// GGPolygon returns a SelectField for the gg_polygon field.
+func (s locationSelectArray) GGPolygon() SelectField[[]gogeom.Polygon] {
+	return SelectField[[]gogeom.Polygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_polygon")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_polygon")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_polygon")
+		},
+	}
+}
+
+// GGPolygonPtr returns a SelectField for the gg_polygon_ptr field.
+func (s locationSelectArray) GGPolygonPtr() SelectField[[]*gogeom.Polygon] {
+	return SelectField[[]*gogeom.Polygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_polygon_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_polygon_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_polygon_ptr")
+		},
+	}
+}
+
+// GGMultiPoint returns a SelectField for the gg_multi_point field.
+func (s locationSelectArray) GGMultiPoint() SelectField[[]gogeom.MultiPoint] {
+	return SelectField[[]gogeom.MultiPoint]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_multi_point")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_multi_point")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_multi_point")
+		},
+	}
+}
+
+// GGMultiPointPtr returns a SelectField for the gg_multi_point_ptr field.
+func (s locationSelectArray) GGMultiPointPtr() SelectField[[]*gogeom.MultiPoint] {
+	return SelectField[[]*gogeom.MultiPoint]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_multi_point_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_multi_point_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_multi_point_ptr")
+		},
+	}
+}
+
+// GGMultiLineString returns a SelectField for the gg_multi_line_string field.
+func (s locationSelectArray) GGMultiLineString() SelectField[[]gogeom.MultiLineString] {
+	return SelectField[[]gogeom.MultiLineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_multi_line_string")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_multi_line_string")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_multi_line_string")
+		},
+	}
+}
+
+// GGMultiPolygon returns a SelectField for the gg_multi_polygon field.
+func (s locationSelectArray) GGMultiPolygon() SelectField[[]gogeom.MultiPolygon] {
+	return SelectField[[]gogeom.MultiPolygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("gg_multi_polygon")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("gg_multi_polygon")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("gg_multi_polygon")
+		},
+	}
+}
+
+// SFPoint returns a SelectField for the sf_point field.
+func (s locationSelectArray) SFPoint() SelectField[[]geom.Point] {
+	return SelectField[[]geom.Point]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_point")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_point")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_point")
+		},
+	}
+}
+
+// SFPointPtr returns a SelectField for the sf_point_ptr field.
+func (s locationSelectArray) SFPointPtr() SelectField[[]*geom.Point] {
+	return SelectField[[]*geom.Point]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_point_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_point_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_point_ptr")
+		},
+	}
+}
+
+// SFLineString returns a SelectField for the sf_line_string field.
+func (s locationSelectArray) SFLineString() SelectField[[]geom.LineString] {
+	return SelectField[[]geom.LineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_line_string")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_line_string")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_line_string")
+		},
+	}
+}
+
+// SFLineStringPtr returns a SelectField for the sf_line_string_ptr field.
+func (s locationSelectArray) SFLineStringPtr() SelectField[[]*geom.LineString] {
+	return SelectField[[]*geom.LineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_line_string_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_line_string_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_line_string_ptr")
+		},
+	}
+}
+
+// SFPolygon returns a SelectField for the sf_polygon field.
+func (s locationSelectArray) SFPolygon() SelectField[[]geom.Polygon] {
+	return SelectField[[]geom.Polygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_polygon")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_polygon")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_polygon")
+		},
+	}
+}
+
+// SFPolygonPtr returns a SelectField for the sf_polygon_ptr field.
+func (s locationSelectArray) SFPolygonPtr() SelectField[[]*geom.Polygon] {
+	return SelectField[[]*geom.Polygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_polygon_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_polygon_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_polygon_ptr")
+		},
+	}
+}
+
+// SFMultiPoint returns a SelectField for the sf_multi_point field.
+func (s locationSelectArray) SFMultiPoint() SelectField[[]geom.MultiPoint] {
+	return SelectField[[]geom.MultiPoint]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_multi_point")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_multi_point")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_multi_point")
+		},
+	}
+}
+
+// SFMultiPointPtr returns a SelectField for the sf_multi_point_ptr field.
+func (s locationSelectArray) SFMultiPointPtr() SelectField[[]*geom.MultiPoint] {
+	return SelectField[[]*geom.MultiPoint]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_multi_point_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_multi_point_ptr")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_multi_point_ptr")
+		},
+	}
+}
+
+// SFMultiLineString returns a SelectField for the sf_multi_line_string field.
+func (s locationSelectArray) SFMultiLineString() SelectField[[]geom.MultiLineString] {
+	return SelectField[[]geom.MultiLineString]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_multi_line_string")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_multi_line_string")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_multi_line_string")
+		},
+	}
+}
+
+// SFMultiPolygon returns a SelectField for the sf_multi_polygon field.
+func (s locationSelectArray) SFMultiPolygon() SelectField[[]geom.MultiPolygon] {
+	return SelectField[[]geom.MultiPolygon]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("sf_multi_polygon")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("sf_multi_polygon")
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("sf_multi_polygon")
 		},
 	}
 }
@@ -727,11 +1173,8 @@ func NewLocation(db Database) Builder[model.Location, locationSelect] {
 		info:    locationModelInfo,
 		query:   q,
 		rangeFn: locationRangeFn,
-		selectFn: func(db Database, q lib.Query[model.Location]) locationSelect {
-			return locationSelect{
-				db:    db,
-				query: q,
-			}
+		selectFn: func(sc SelectContext) locationSelect {
+			return locationSelect{SelectContext: sc}
 		},
 	}}
 }

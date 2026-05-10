@@ -33,6 +33,31 @@ type modelInfo[M any] struct {
 
 type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) string
 
+// SelectContext holds the builder closures needed by select structs.
+// This allows select structs to be model-agnostic, enabling record link traversal.
+type SelectContext struct {
+	DB      Database
+	BuildFn func(field string) *lib.Result
+	DistFn  func(field string) *lib.Result
+	FirstFn func(field string) *lib.Result
+}
+
+// Prefixed returns a new SelectContext that prepends the given prefix to all field names.
+func (sc SelectContext) Prefixed(prefix string) SelectContext {
+	return SelectContext{
+		DB: sc.DB,
+		BuildFn: func(field string) *lib.Result {
+			return sc.BuildFn(prefix + field)
+		},
+		DistFn: func(field string) *lib.Result {
+			return sc.DistFn(prefix + field)
+		},
+		FirstFn: func(field string) *lib.Result {
+			return sc.FirstFn(prefix + field)
+		},
+	}
+}
+
 // M is a placeholder for the model type.
 // S is the select builder type, provided by codegen for each model.
 type builder[M, S any] struct {
@@ -40,7 +65,7 @@ type builder[M, S any] struct {
 	query    lib.Query[M]
 	info     modelInfo[M]
 	rangeFn  rangeFn[M]
-	selectFn func(Database, lib.Query[M]) S
+	selectFn func(SelectContext) S
 }
 
 type Builder[M, S any] struct {
@@ -154,7 +179,7 @@ func (b builder[M, S]) TempFiles(tempFiles bool) BuilderNoLive[M, S] {
 // Not available on SearchBuilder because SELECT VALUE queries
 // cannot include search score projections.
 func (b Builder[M, S]) Select() S {
-	return b.selectFn(b.db, b.query)
+	return b.selectFn(b.buildSelectContext())
 }
 
 // Select returns a model-specific select builder that allows
@@ -162,7 +187,25 @@ func (b Builder[M, S]) Select() S {
 // Not available on SearchBuilder because SELECT VALUE queries
 // cannot include search score projections.
 func (b BuilderNoLive[M, S]) Select() S {
-	return b.selectFn(b.db, b.query)
+	return b.selectFn(b.buildSelectContext())
+}
+
+func (b builder[M, S]) buildSelectContext() SelectContext {
+	q := b.query
+	return SelectContext{
+		DB: b.db,
+		BuildFn: func(field string) *lib.Result {
+			return q.BuildAsSelectValue(field)
+		},
+		DistFn: func(field string) *lib.Result {
+			return q.BuildAsSelectDistinct(field)
+		},
+		FirstFn: func(field string) *lib.Result {
+			fq := q
+			fq.Limit = 1
+			return fq.BuildAsSelectValue(field)
+		},
+	}
 }
 
 // Count returns the size of the result set, in other words, the
