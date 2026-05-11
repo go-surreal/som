@@ -69,9 +69,9 @@ type teamMemberSelectArray struct {
 	SelectContext
 }
 
-// Role returns a SelectField for the role field.
-func (s teamMemberSelectArray) Role() SelectField[[]string] {
-	return SelectField[[]string]{
+// Role returns a SelectArrayField for the role field.
+func (s teamMemberSelectArray) Role() SelectArrayField[string] {
+	return SelectArrayField[string]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("role")
 		},

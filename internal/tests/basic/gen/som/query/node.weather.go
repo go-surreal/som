@@ -68,9 +68,9 @@ type weatherSelectArray struct {
 	SelectContext
 }
 
-// Temperature returns a SelectField for the temperature field.
-func (s weatherSelectArray) Temperature() SelectField[[]float64] {
-	return SelectField[[]float64]{
+// Temperature returns a SelectArrayField for the temperature field.
+func (s weatherSelectArray) Temperature() SelectArrayField[float64] {
+	return SelectArrayField[float64]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("temperature")
 		},

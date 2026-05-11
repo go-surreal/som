@@ -35,21 +35,35 @@ type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) st
 
 // SelectContext holds the builder closures needed by select structs.
 // This allows select structs to be model-agnostic, enabling record link traversal.
+//
+// PathNullable tracks whether the traversal path passes through a nullable
+// record link or edge. When true, leaf-level NONE/NULL is a legitimate value
+// (the link/edge was missing for that source row), so DistFn must not filter
+// it out even when the leaf field itself is non-pointer.
 type SelectContext struct {
-	DB      Database
-	BuildFn func(field string) *lib.Result
-	DistFn  func(field string, excludeNull bool) *lib.Result
-	FirstFn func(field string) *lib.Result
+	DB           Database
+	PathNullable bool
+	BuildFn      func(field string) *lib.Result
+	DistFn       func(field string, excludeNull bool) *lib.Result
+	FirstFn      func(field string) *lib.Result
 }
 
-// Prefixed returns a new SelectContext that prepends the given prefix to all field names.
-func (sc SelectContext) Prefixed(prefix string) SelectContext {
+// Prefixed returns a new SelectContext that prepends the given prefix to all field
+// names. throughNullable should be true when the prefix traverses a nullable record
+// link or an edge (edges always optional). Once nullable, the path stays nullable
+// for any further traversal.
+func (sc SelectContext) Prefixed(prefix string, throughNullable bool) SelectContext {
+	pathNullable := sc.PathNullable || throughNullable
 	return SelectContext{
-		DB: sc.DB,
+		DB:           sc.DB,
+		PathNullable: pathNullable,
 		BuildFn: func(field string) *lib.Result {
 			return sc.BuildFn(prefix + field)
 		},
 		DistFn: func(field string, excludeNull bool) *lib.Result {
+			if pathNullable {
+				excludeNull = false
+			}
 			return sc.DistFn(prefix+field, excludeNull)
 		},
 		FirstFn: func(field string) *lib.Result {
@@ -790,6 +804,90 @@ func (sf SelectField[T]) First(ctx context.Context) (T, bool, error) {
 
 // Distinct executes the query and returns all distinct values for the selected field.
 func (sf SelectField[T]) Distinct(ctx context.Context) ([]T, error) {
+	req := sf.distFn()
+	raw, err := sf.db.Query(ctx, req.Statement, req.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("could not select distinct values: %w", err)
+	}
+
+	if sf.distDecodeFn != nil {
+		return sf.distDecodeFn(raw)
+	}
+
+	return unmarshalSelectDistinct[T](raw)
+}
+
+// SelectArrayField is the edge-traversal variant of SelectField. Each source row
+// yields an array of values (e.g. ->edge->target.field), so All returns [][]T
+// and First returns []T (the array for the first source row). Distinct uses
+// SurrealQL's array::group to flatten across all source rows and dedup, so it
+// returns a flat []T.
+type SelectArrayField[T any] struct {
+	db      Database
+	buildFn func() *lib.Result
+	distFn  func() *lib.Result
+	firstFn func() *lib.Result
+	// decodeFn returns [][]T (per-source-row arrays). nil falls back to default
+	// CBOR unmarshal into [][]T (only valid when no per-element conversion is
+	// needed).
+	decodeFn func([]byte) ([][]T, error)
+	// distDecodeFn returns a flat []T of distinct values. nil falls back to
+	// default CBOR distinct unmarshal.
+	distDecodeFn func([]byte) ([]T, error)
+}
+
+func (sf SelectArrayField[T]) decode(data []byte) ([][]T, error) {
+	if sf.decodeFn != nil {
+		return sf.decodeFn(data)
+	}
+
+	var rawResult []internal.QueryResult[[]T]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, fmt.Errorf("could not unmarshal select array value: %w", err)
+	}
+
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+
+	return rawResult[0].Result, nil
+}
+
+// All executes the query and returns the per-source-row arrays for the selected field.
+func (sf SelectArrayField[T]) All(ctx context.Context) ([][]T, error) {
+	req := sf.buildFn()
+	raw, err := sf.db.Query(ctx, req.Statement, req.Variables)
+	if err != nil {
+		return nil, fmt.Errorf("could not select array values: %w", err)
+	}
+
+	return sf.decode(raw)
+}
+
+// First executes the query and returns the first source row's array for the selected field.
+func (sf SelectArrayField[T]) First(ctx context.Context) ([]T, bool, error) {
+	req := sf.firstFn()
+	raw, err := sf.db.Query(ctx, req.Statement, req.Variables)
+	if err != nil {
+		return nil, false, fmt.Errorf("could not select array value: %w", err)
+	}
+
+	values, err := sf.decode(raw)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if len(values) < 1 {
+		return nil, false, nil
+	}
+
+	return values[0], true, nil
+}
+
+// Distinct executes the query and returns the flat list of distinct values across
+// all source rows. SurrealQL's array::group flattens the per-row arrays before
+// deduplicating, so the result is []T (not [][]T).
+func (sf SelectArrayField[T]) Distinct(ctx context.Context) ([]T, error) {
 	req := sf.distFn()
 	raw, err := sf.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {

@@ -67,9 +67,9 @@ type personObjSelectArray struct {
 	SelectContext
 }
 
-// Email returns a SelectField for the email field.
-func (s personObjSelectArray) Email() SelectField[[]string] {
-	return SelectField[[]string]{
+// Email returns a SelectArrayField for the email field.
+func (s personObjSelectArray) Email() SelectArrayField[string] {
+	return SelectArrayField[string]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("email")
 		},

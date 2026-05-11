@@ -99,7 +99,7 @@ func (s specialRelationSelect) Title() SelectField[string] {
 
 // Author returns a select builder for traversing the author record link.
 func (s specialRelationSelect) Author() specialTypesSelect {
-	return specialTypesSelect{SelectContext: s.Prefixed("author.")}
+	return specialTypesSelect{SelectContext: s.Prefixed("author.", true)}
 }
 
 // specialRelationSelectArray is the array variant of specialRelationSelect for edge traversal results.
@@ -107,15 +107,24 @@ type specialRelationSelectArray struct {
 	SelectContext
 }
 
-// DeletedAt returns a SelectField for the deleted_at field.
-func (s specialRelationSelectArray) DeletedAt() SelectField[[]*time.Time] {
-	return SelectField[[]*time.Time]{
+// DeletedAt returns a SelectArrayField for the deleted_at field.
+func (s specialRelationSelectArray) DeletedAt() SelectArrayField[*time.Time] {
+	return SelectArrayField[*time.Time]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("deleted_at")
 		},
 		db: s.DB,
 		decodeFn: func(data []byte) ([][]*time.Time, error) {
 			return unmarshalSelectArrayConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
 				if v == nil {
 					return nil
 				}
@@ -132,9 +141,9 @@ func (s specialRelationSelectArray) DeletedAt() SelectField[[]*time.Time] {
 	}
 }
 
-// Title returns a SelectField for the title field.
-func (s specialRelationSelectArray) Title() SelectField[[]string] {
-	return SelectField[[]string]{
+// Title returns a SelectArrayField for the title field.
+func (s specialRelationSelectArray) Title() SelectArrayField[string] {
+	return SelectArrayField[string]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("title")
 		},
@@ -150,7 +159,7 @@ func (s specialRelationSelectArray) Title() SelectField[[]string] {
 
 // Author returns a select builder for traversing the author record link.
 func (s specialRelationSelectArray) Author() specialTypesSelectArray {
-	return specialTypesSelectArray{SelectContext: s.Prefixed("author.")}
+	return specialTypesSelectArray{SelectContext: s.Prefixed("author.", true)}
 }
 
 // SpecialRelationQuery is a type alias for the SpecialRelation query builder.

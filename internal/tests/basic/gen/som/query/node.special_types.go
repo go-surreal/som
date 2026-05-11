@@ -118,15 +118,24 @@ type specialTypesSelectArray struct {
 	SelectContext
 }
 
-// DeletedAt returns a SelectField for the deleted_at field.
-func (s specialTypesSelectArray) DeletedAt() SelectField[[]*time.Time] {
-	return SelectField[[]*time.Time]{
+// DeletedAt returns a SelectArrayField for the deleted_at field.
+func (s specialTypesSelectArray) DeletedAt() SelectArrayField[*time.Time] {
+	return SelectArrayField[*time.Time]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("deleted_at")
 		},
 		db: s.DB,
 		decodeFn: func(data []byte) ([][]*time.Time, error) {
 			return unmarshalSelectArrayConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
 				if v == nil {
 					return nil
 				}
@@ -143,9 +152,9 @@ func (s specialTypesSelectArray) DeletedAt() SelectField[[]*time.Time] {
 	}
 }
 
-// Name returns a SelectField for the name field.
-func (s specialTypesSelectArray) Name() SelectField[[]string] {
-	return SelectField[[]string]{
+// Name returns a SelectArrayField for the name field.
+func (s specialTypesSelectArray) Name() SelectArrayField[string] {
+	return SelectArrayField[string]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("name")
 		},
@@ -159,9 +168,9 @@ func (s specialTypesSelectArray) Name() SelectField[[]string] {
 	}
 }
 
-// Version returns a SelectField for the __som_lock_version field.
-func (s specialTypesSelectArray) Version() SelectField[[]int] {
-	return SelectField[[]int]{
+// Version returns a SelectArrayField for the __som_lock_version field.
+func (s specialTypesSelectArray) Version() SelectArrayField[int] {
+	return SelectArrayField[int]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("__som_lock_version")
 		},

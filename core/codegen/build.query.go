@@ -202,10 +202,6 @@ func (b *queryBuilder) generateSelectFieldMethod(
 	}
 
 	fieldGoType := fld.TypeGo()
-	if arrayWrap {
-		fieldGoType = jen.Index().Add(fieldGoType)
-	}
-
 	fieldDBName := fld.NameDatabase()
 	fieldGoName := fld.NameGo()
 
@@ -216,17 +212,26 @@ func (b *queryBuilder) generateSelectFieldMethod(
 		jen.Id("buildFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
 			jen.Return(jen.Id("s").Dot("BuildFn").Call(jen.Lit(fieldDBName))),
 		),
-		jen.Id("distFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
-			jen.Return(jen.Id("s").Dot("DistFn").Call(jen.Lit(fieldDBName), jen.Lit(excludeNull))),
-		),
 		jen.Id("firstFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
 			jen.Return(jen.Id("s").Dot("FirstFn").Call(jen.Lit(fieldDBName))),
 		),
+		jen.Id("distFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
+			jen.Return(jen.Id("s").Dot("DistFn").Call(jen.Lit(fieldDBName), jen.Lit(excludeNull))),
+		),
 	}
 
+	selectType := "SelectField"
 	if arrayWrap {
+		selectType = "SelectArrayField"
+
 		if code := fld.CodeGen().SelectArrayDecode(ctx); code != nil {
 			dict[jen.Id("decodeFn")] = code
+		}
+
+		// Distinct on traversal flattens to []T (single field type, no extra
+		// wrap). Reuse the scalar selectDistDecode which returns []T.
+		if code := fld.CodeGen().SelectDistDecode(ctx); code != nil {
+			dict[jen.Id("distDecodeFn")] = code
 		}
 	} else {
 		if code := fld.CodeGen().SelectDecode(ctx); code != nil {
@@ -239,14 +244,14 @@ func (b *queryBuilder) generateSelectFieldMethod(
 	}
 
 	f.Line()
-	f.Commentf("%s returns a SelectField for the %s field.", fieldGoName, fieldDBName)
+	f.Commentf("%s returns a %s for the %s field.", fieldGoName, selectType, fieldDBName)
 	f.Func().
 		Params(jen.Id("s").Id(selectTypeName)).
 		Id(fieldGoName).
 		Params().
-		Id("SelectField").Types(fieldGoType).
+		Id(selectType).Types(fieldGoType).
 		Block(
-			jen.Return(jen.Id("SelectField").Types(fieldGoType).Values(dict)),
+			jen.Return(jen.Id(selectType).Types(fieldGoType).Values(dict)),
 		)
 }
 
@@ -260,6 +265,10 @@ func (b *queryBuilder) generateSelectNodeMethod(
 		linkedSelectType += "Array"
 	}
 
+	// A nullable record link can be NONE at runtime; downstream Distinct must
+	// not filter out NULL leaves once the path passes through it.
+	throughNullable := fld.Pointer()
+
 	f.Line()
 	f.Commentf("%s returns a select builder for traversing the %s record link.", fieldGoName, fieldDBName)
 	f.Func().
@@ -269,7 +278,7 @@ func (b *queryBuilder) generateSelectNodeMethod(
 		Id(linkedSelectType).
 		Block(
 			jen.Return(jen.Id(linkedSelectType).Values(jen.Dict{
-				jen.Id("SelectContext"): jen.Id("s").Dot("Prefixed").Call(jen.Lit(fieldDBName + ".")),
+				jen.Id("SelectContext"): jen.Id("s").Dot("Prefixed").Call(jen.Lit(fieldDBName+"."), jen.Lit(throughNullable)),
 			})),
 		)
 }
@@ -292,7 +301,9 @@ func (b *queryBuilder) generateSelectEdgeMethod(
 		Id(linkedSelectType).
 		Block(
 			jen.Return(jen.Id(linkedSelectType).Values(jen.Dict{
-				jen.Id("SelectContext"): jen.Id("s").Dot("Prefixed").Call(jen.Lit(prefix)),
+				// Edge traversal is always nullable: a source row may have zero
+				// matching edges, so the leaf can be NONE for that row.
+				jen.Id("SelectContext"): jen.Id("s").Dot("Prefixed").Call(jen.Lit(prefix), jen.Lit(true)),
 			})),
 		)
 }

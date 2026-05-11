@@ -618,15 +618,20 @@ type locationSelectArray struct {
 	SelectContext
 }
 
-// CreatedAt returns a SelectField for the created_at field.
-func (s locationSelectArray) CreatedAt() SelectField[[]time.Time] {
-	return SelectField[[]time.Time]{
+// CreatedAt returns a SelectArrayField for the created_at field.
+func (s locationSelectArray) CreatedAt() SelectArrayField[time.Time] {
+	return SelectArrayField[time.Time]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("created_at")
 		},
 		db: s.DB,
 		decodeFn: func(data []byte) ([][]time.Time, error) {
 			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
 				return v.Time
 			})
 		},
@@ -639,15 +644,20 @@ func (s locationSelectArray) CreatedAt() SelectField[[]time.Time] {
 	}
 }
 
-// UpdatedAt returns a SelectField for the updated_at field.
-func (s locationSelectArray) UpdatedAt() SelectField[[]time.Time] {
-	return SelectField[[]time.Time]{
+// UpdatedAt returns a SelectArrayField for the updated_at field.
+func (s locationSelectArray) UpdatedAt() SelectArrayField[time.Time] {
+	return SelectArrayField[time.Time]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("updated_at")
 		},
 		db: s.DB,
 		decodeFn: func(data []byte) ([][]time.Time, error) {
 			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
 				return v.Time
 			})
 		},
@@ -660,9 +670,9 @@ func (s locationSelectArray) UpdatedAt() SelectField[[]time.Time] {
 	}
 }
 
-// Name returns a SelectField for the name field.
-func (s locationSelectArray) Name() SelectField[[]string] {
-	return SelectField[[]string]{
+// Name returns a SelectArrayField for the name field.
+func (s locationSelectArray) Name() SelectArrayField[string] {
+	return SelectArrayField[string]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("name")
 		},
@@ -676,9 +686,9 @@ func (s locationSelectArray) Name() SelectField[[]string] {
 	}
 }
 
-// Point returns a SelectField for the point field.
-func (s locationSelectArray) Point() SelectField[[]orb.Point] {
-	return SelectField[[]orb.Point]{
+// Point returns a SelectArrayField for the point field.
+func (s locationSelectArray) Point() SelectArrayField[orb.Point] {
+	return SelectArrayField[orb.Point]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("point")
 		},
@@ -692,9 +702,9 @@ func (s locationSelectArray) Point() SelectField[[]orb.Point] {
 	}
 }
 
-// PointPtr returns a SelectField for the point_ptr field.
-func (s locationSelectArray) PointPtr() SelectField[[]*orb.Point] {
-	return SelectField[[]*orb.Point]{
+// PointPtr returns a SelectArrayField for the point_ptr field.
+func (s locationSelectArray) PointPtr() SelectArrayField[*orb.Point] {
+	return SelectArrayField[*orb.Point]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("point_ptr")
 		},
@@ -708,9 +718,9 @@ func (s locationSelectArray) PointPtr() SelectField[[]*orb.Point] {
 	}
 }
 
-// LineString returns a SelectField for the line_string field.
-func (s locationSelectArray) LineString() SelectField[[]orb.LineString] {
-	return SelectField[[]orb.LineString]{
+// LineString returns a SelectArrayField for the line_string field.
+func (s locationSelectArray) LineString() SelectArrayField[orb.LineString] {
+	return SelectArrayField[orb.LineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("line_string")
 		},
@@ -724,9 +734,9 @@ func (s locationSelectArray) LineString() SelectField[[]orb.LineString] {
 	}
 }
 
-// LineStringPtr returns a SelectField for the line_string_ptr field.
-func (s locationSelectArray) LineStringPtr() SelectField[[]*orb.LineString] {
-	return SelectField[[]*orb.LineString]{
+// LineStringPtr returns a SelectArrayField for the line_string_ptr field.
+func (s locationSelectArray) LineStringPtr() SelectArrayField[*orb.LineString] {
+	return SelectArrayField[*orb.LineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("line_string_ptr")
 		},
@@ -740,9 +750,9 @@ func (s locationSelectArray) LineStringPtr() SelectField[[]*orb.LineString] {
 	}
 }
 
-// Polygon returns a SelectField for the polygon field.
-func (s locationSelectArray) Polygon() SelectField[[]orb.Polygon] {
-	return SelectField[[]orb.Polygon]{
+// Polygon returns a SelectArrayField for the polygon field.
+func (s locationSelectArray) Polygon() SelectArrayField[orb.Polygon] {
+	return SelectArrayField[orb.Polygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("polygon")
 		},
@@ -756,9 +766,9 @@ func (s locationSelectArray) Polygon() SelectField[[]orb.Polygon] {
 	}
 }
 
-// PolygonPtr returns a SelectField for the polygon_ptr field.
-func (s locationSelectArray) PolygonPtr() SelectField[[]*orb.Polygon] {
-	return SelectField[[]*orb.Polygon]{
+// PolygonPtr returns a SelectArrayField for the polygon_ptr field.
+func (s locationSelectArray) PolygonPtr() SelectArrayField[*orb.Polygon] {
+	return SelectArrayField[*orb.Polygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("polygon_ptr")
 		},
@@ -772,9 +782,9 @@ func (s locationSelectArray) PolygonPtr() SelectField[[]*orb.Polygon] {
 	}
 }
 
-// MultiPoint returns a SelectField for the multi_point field.
-func (s locationSelectArray) MultiPoint() SelectField[[]orb.MultiPoint] {
-	return SelectField[[]orb.MultiPoint]{
+// MultiPoint returns a SelectArrayField for the multi_point field.
+func (s locationSelectArray) MultiPoint() SelectArrayField[orb.MultiPoint] {
+	return SelectArrayField[orb.MultiPoint]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("multi_point")
 		},
@@ -788,9 +798,9 @@ func (s locationSelectArray) MultiPoint() SelectField[[]orb.MultiPoint] {
 	}
 }
 
-// MultiPointPtr returns a SelectField for the multi_point_ptr field.
-func (s locationSelectArray) MultiPointPtr() SelectField[[]*orb.MultiPoint] {
-	return SelectField[[]*orb.MultiPoint]{
+// MultiPointPtr returns a SelectArrayField for the multi_point_ptr field.
+func (s locationSelectArray) MultiPointPtr() SelectArrayField[*orb.MultiPoint] {
+	return SelectArrayField[*orb.MultiPoint]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("multi_point_ptr")
 		},
@@ -804,9 +814,9 @@ func (s locationSelectArray) MultiPointPtr() SelectField[[]*orb.MultiPoint] {
 	}
 }
 
-// MultiLineString returns a SelectField for the multi_line_string field.
-func (s locationSelectArray) MultiLineString() SelectField[[]orb.MultiLineString] {
-	return SelectField[[]orb.MultiLineString]{
+// MultiLineString returns a SelectArrayField for the multi_line_string field.
+func (s locationSelectArray) MultiLineString() SelectArrayField[orb.MultiLineString] {
+	return SelectArrayField[orb.MultiLineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("multi_line_string")
 		},
@@ -820,9 +830,9 @@ func (s locationSelectArray) MultiLineString() SelectField[[]orb.MultiLineString
 	}
 }
 
-// MultiPolygon returns a SelectField for the multi_polygon field.
-func (s locationSelectArray) MultiPolygon() SelectField[[]orb.MultiPolygon] {
-	return SelectField[[]orb.MultiPolygon]{
+// MultiPolygon returns a SelectArrayField for the multi_polygon field.
+func (s locationSelectArray) MultiPolygon() SelectArrayField[orb.MultiPolygon] {
+	return SelectArrayField[orb.MultiPolygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("multi_polygon")
 		},
@@ -836,9 +846,9 @@ func (s locationSelectArray) MultiPolygon() SelectField[[]orb.MultiPolygon] {
 	}
 }
 
-// Collection returns a SelectField for the collection field.
-func (s locationSelectArray) Collection() SelectField[[]orb.Collection] {
-	return SelectField[[]orb.Collection]{
+// Collection returns a SelectArrayField for the collection field.
+func (s locationSelectArray) Collection() SelectArrayField[orb.Collection] {
+	return SelectArrayField[orb.Collection]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("collection")
 		},
@@ -852,9 +862,9 @@ func (s locationSelectArray) Collection() SelectField[[]orb.Collection] {
 	}
 }
 
-// GGPoint returns a SelectField for the gg_point field.
-func (s locationSelectArray) GGPoint() SelectField[[]gogeom.Point] {
-	return SelectField[[]gogeom.Point]{
+// GGPoint returns a SelectArrayField for the gg_point field.
+func (s locationSelectArray) GGPoint() SelectArrayField[gogeom.Point] {
+	return SelectArrayField[gogeom.Point]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_point")
 		},
@@ -868,9 +878,9 @@ func (s locationSelectArray) GGPoint() SelectField[[]gogeom.Point] {
 	}
 }
 
-// GGPointPtr returns a SelectField for the gg_point_ptr field.
-func (s locationSelectArray) GGPointPtr() SelectField[[]*gogeom.Point] {
-	return SelectField[[]*gogeom.Point]{
+// GGPointPtr returns a SelectArrayField for the gg_point_ptr field.
+func (s locationSelectArray) GGPointPtr() SelectArrayField[*gogeom.Point] {
+	return SelectArrayField[*gogeom.Point]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_point_ptr")
 		},
@@ -884,9 +894,9 @@ func (s locationSelectArray) GGPointPtr() SelectField[[]*gogeom.Point] {
 	}
 }
 
-// GGLineString returns a SelectField for the gg_line_string field.
-func (s locationSelectArray) GGLineString() SelectField[[]gogeom.LineString] {
-	return SelectField[[]gogeom.LineString]{
+// GGLineString returns a SelectArrayField for the gg_line_string field.
+func (s locationSelectArray) GGLineString() SelectArrayField[gogeom.LineString] {
+	return SelectArrayField[gogeom.LineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_line_string")
 		},
@@ -900,9 +910,9 @@ func (s locationSelectArray) GGLineString() SelectField[[]gogeom.LineString] {
 	}
 }
 
-// GGLineStringPtr returns a SelectField for the gg_line_string_ptr field.
-func (s locationSelectArray) GGLineStringPtr() SelectField[[]*gogeom.LineString] {
-	return SelectField[[]*gogeom.LineString]{
+// GGLineStringPtr returns a SelectArrayField for the gg_line_string_ptr field.
+func (s locationSelectArray) GGLineStringPtr() SelectArrayField[*gogeom.LineString] {
+	return SelectArrayField[*gogeom.LineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_line_string_ptr")
 		},
@@ -916,9 +926,9 @@ func (s locationSelectArray) GGLineStringPtr() SelectField[[]*gogeom.LineString]
 	}
 }
 
-// GGPolygon returns a SelectField for the gg_polygon field.
-func (s locationSelectArray) GGPolygon() SelectField[[]gogeom.Polygon] {
-	return SelectField[[]gogeom.Polygon]{
+// GGPolygon returns a SelectArrayField for the gg_polygon field.
+func (s locationSelectArray) GGPolygon() SelectArrayField[gogeom.Polygon] {
+	return SelectArrayField[gogeom.Polygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_polygon")
 		},
@@ -932,9 +942,9 @@ func (s locationSelectArray) GGPolygon() SelectField[[]gogeom.Polygon] {
 	}
 }
 
-// GGPolygonPtr returns a SelectField for the gg_polygon_ptr field.
-func (s locationSelectArray) GGPolygonPtr() SelectField[[]*gogeom.Polygon] {
-	return SelectField[[]*gogeom.Polygon]{
+// GGPolygonPtr returns a SelectArrayField for the gg_polygon_ptr field.
+func (s locationSelectArray) GGPolygonPtr() SelectArrayField[*gogeom.Polygon] {
+	return SelectArrayField[*gogeom.Polygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_polygon_ptr")
 		},
@@ -948,9 +958,9 @@ func (s locationSelectArray) GGPolygonPtr() SelectField[[]*gogeom.Polygon] {
 	}
 }
 
-// GGMultiPoint returns a SelectField for the gg_multi_point field.
-func (s locationSelectArray) GGMultiPoint() SelectField[[]gogeom.MultiPoint] {
-	return SelectField[[]gogeom.MultiPoint]{
+// GGMultiPoint returns a SelectArrayField for the gg_multi_point field.
+func (s locationSelectArray) GGMultiPoint() SelectArrayField[gogeom.MultiPoint] {
+	return SelectArrayField[gogeom.MultiPoint]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_multi_point")
 		},
@@ -964,9 +974,9 @@ func (s locationSelectArray) GGMultiPoint() SelectField[[]gogeom.MultiPoint] {
 	}
 }
 
-// GGMultiPointPtr returns a SelectField for the gg_multi_point_ptr field.
-func (s locationSelectArray) GGMultiPointPtr() SelectField[[]*gogeom.MultiPoint] {
-	return SelectField[[]*gogeom.MultiPoint]{
+// GGMultiPointPtr returns a SelectArrayField for the gg_multi_point_ptr field.
+func (s locationSelectArray) GGMultiPointPtr() SelectArrayField[*gogeom.MultiPoint] {
+	return SelectArrayField[*gogeom.MultiPoint]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_multi_point_ptr")
 		},
@@ -980,9 +990,9 @@ func (s locationSelectArray) GGMultiPointPtr() SelectField[[]*gogeom.MultiPoint]
 	}
 }
 
-// GGMultiLineString returns a SelectField for the gg_multi_line_string field.
-func (s locationSelectArray) GGMultiLineString() SelectField[[]gogeom.MultiLineString] {
-	return SelectField[[]gogeom.MultiLineString]{
+// GGMultiLineString returns a SelectArrayField for the gg_multi_line_string field.
+func (s locationSelectArray) GGMultiLineString() SelectArrayField[gogeom.MultiLineString] {
+	return SelectArrayField[gogeom.MultiLineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_multi_line_string")
 		},
@@ -996,9 +1006,9 @@ func (s locationSelectArray) GGMultiLineString() SelectField[[]gogeom.MultiLineS
 	}
 }
 
-// GGMultiPolygon returns a SelectField for the gg_multi_polygon field.
-func (s locationSelectArray) GGMultiPolygon() SelectField[[]gogeom.MultiPolygon] {
-	return SelectField[[]gogeom.MultiPolygon]{
+// GGMultiPolygon returns a SelectArrayField for the gg_multi_polygon field.
+func (s locationSelectArray) GGMultiPolygon() SelectArrayField[gogeom.MultiPolygon] {
+	return SelectArrayField[gogeom.MultiPolygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("gg_multi_polygon")
 		},
@@ -1012,9 +1022,9 @@ func (s locationSelectArray) GGMultiPolygon() SelectField[[]gogeom.MultiPolygon]
 	}
 }
 
-// SFPoint returns a SelectField for the sf_point field.
-func (s locationSelectArray) SFPoint() SelectField[[]geom.Point] {
-	return SelectField[[]geom.Point]{
+// SFPoint returns a SelectArrayField for the sf_point field.
+func (s locationSelectArray) SFPoint() SelectArrayField[geom.Point] {
+	return SelectArrayField[geom.Point]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_point")
 		},
@@ -1028,9 +1038,9 @@ func (s locationSelectArray) SFPoint() SelectField[[]geom.Point] {
 	}
 }
 
-// SFPointPtr returns a SelectField for the sf_point_ptr field.
-func (s locationSelectArray) SFPointPtr() SelectField[[]*geom.Point] {
-	return SelectField[[]*geom.Point]{
+// SFPointPtr returns a SelectArrayField for the sf_point_ptr field.
+func (s locationSelectArray) SFPointPtr() SelectArrayField[*geom.Point] {
+	return SelectArrayField[*geom.Point]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_point_ptr")
 		},
@@ -1044,9 +1054,9 @@ func (s locationSelectArray) SFPointPtr() SelectField[[]*geom.Point] {
 	}
 }
 
-// SFLineString returns a SelectField for the sf_line_string field.
-func (s locationSelectArray) SFLineString() SelectField[[]geom.LineString] {
-	return SelectField[[]geom.LineString]{
+// SFLineString returns a SelectArrayField for the sf_line_string field.
+func (s locationSelectArray) SFLineString() SelectArrayField[geom.LineString] {
+	return SelectArrayField[geom.LineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_line_string")
 		},
@@ -1060,9 +1070,9 @@ func (s locationSelectArray) SFLineString() SelectField[[]geom.LineString] {
 	}
 }
 
-// SFLineStringPtr returns a SelectField for the sf_line_string_ptr field.
-func (s locationSelectArray) SFLineStringPtr() SelectField[[]*geom.LineString] {
-	return SelectField[[]*geom.LineString]{
+// SFLineStringPtr returns a SelectArrayField for the sf_line_string_ptr field.
+func (s locationSelectArray) SFLineStringPtr() SelectArrayField[*geom.LineString] {
+	return SelectArrayField[*geom.LineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_line_string_ptr")
 		},
@@ -1076,9 +1086,9 @@ func (s locationSelectArray) SFLineStringPtr() SelectField[[]*geom.LineString] {
 	}
 }
 
-// SFPolygon returns a SelectField for the sf_polygon field.
-func (s locationSelectArray) SFPolygon() SelectField[[]geom.Polygon] {
-	return SelectField[[]geom.Polygon]{
+// SFPolygon returns a SelectArrayField for the sf_polygon field.
+func (s locationSelectArray) SFPolygon() SelectArrayField[geom.Polygon] {
+	return SelectArrayField[geom.Polygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_polygon")
 		},
@@ -1092,9 +1102,9 @@ func (s locationSelectArray) SFPolygon() SelectField[[]geom.Polygon] {
 	}
 }
 
-// SFPolygonPtr returns a SelectField for the sf_polygon_ptr field.
-func (s locationSelectArray) SFPolygonPtr() SelectField[[]*geom.Polygon] {
-	return SelectField[[]*geom.Polygon]{
+// SFPolygonPtr returns a SelectArrayField for the sf_polygon_ptr field.
+func (s locationSelectArray) SFPolygonPtr() SelectArrayField[*geom.Polygon] {
+	return SelectArrayField[*geom.Polygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_polygon_ptr")
 		},
@@ -1108,9 +1118,9 @@ func (s locationSelectArray) SFPolygonPtr() SelectField[[]*geom.Polygon] {
 	}
 }
 
-// SFMultiPoint returns a SelectField for the sf_multi_point field.
-func (s locationSelectArray) SFMultiPoint() SelectField[[]geom.MultiPoint] {
-	return SelectField[[]geom.MultiPoint]{
+// SFMultiPoint returns a SelectArrayField for the sf_multi_point field.
+func (s locationSelectArray) SFMultiPoint() SelectArrayField[geom.MultiPoint] {
+	return SelectArrayField[geom.MultiPoint]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_multi_point")
 		},
@@ -1124,9 +1134,9 @@ func (s locationSelectArray) SFMultiPoint() SelectField[[]geom.MultiPoint] {
 	}
 }
 
-// SFMultiPointPtr returns a SelectField for the sf_multi_point_ptr field.
-func (s locationSelectArray) SFMultiPointPtr() SelectField[[]*geom.MultiPoint] {
-	return SelectField[[]*geom.MultiPoint]{
+// SFMultiPointPtr returns a SelectArrayField for the sf_multi_point_ptr field.
+func (s locationSelectArray) SFMultiPointPtr() SelectArrayField[*geom.MultiPoint] {
+	return SelectArrayField[*geom.MultiPoint]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_multi_point_ptr")
 		},
@@ -1140,9 +1150,9 @@ func (s locationSelectArray) SFMultiPointPtr() SelectField[[]*geom.MultiPoint] {
 	}
 }
 
-// SFMultiLineString returns a SelectField for the sf_multi_line_string field.
-func (s locationSelectArray) SFMultiLineString() SelectField[[]geom.MultiLineString] {
-	return SelectField[[]geom.MultiLineString]{
+// SFMultiLineString returns a SelectArrayField for the sf_multi_line_string field.
+func (s locationSelectArray) SFMultiLineString() SelectArrayField[geom.MultiLineString] {
+	return SelectArrayField[geom.MultiLineString]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_multi_line_string")
 		},
@@ -1156,9 +1166,9 @@ func (s locationSelectArray) SFMultiLineString() SelectField[[]geom.MultiLineStr
 	}
 }
 
-// SFMultiPolygon returns a SelectField for the sf_multi_polygon field.
-func (s locationSelectArray) SFMultiPolygon() SelectField[[]geom.MultiPolygon] {
-	return SelectField[[]geom.MultiPolygon]{
+// SFMultiPolygon returns a SelectArrayField for the sf_multi_polygon field.
+func (s locationSelectArray) SFMultiPolygon() SelectArrayField[geom.MultiPolygon] {
+	return SelectArrayField[geom.MultiPolygon]{
 		buildFn: func() *lib.Result {
 			return s.BuildFn("sf_multi_polygon")
 		},
