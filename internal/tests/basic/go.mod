@@ -7,12 +7,12 @@ replace github.com/go-surreal/som => ../../../
 tool github.com/go-surreal/som
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.14.1
+	github.com/brianvoe/gofakeit/v7 v7.15.0
 	github.com/fxamacker/cbor/v2 v2.9.2
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/moby/moby/api v1.54.1
+	github.com/moby/moby/api v1.54.2
 	github.com/paulmach/orb v0.13.0
 	github.com/peterstace/simplefeatures v0.59.0
 	github.com/testcontainers/testcontainers-go v0.42.0
@@ -30,9 +30,9 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/moby/moby/client v0.4.0 // indirect
-	github.com/urfave/cli/v3 v3.8.0 // indirect
+	github.com/urfave/cli/v3 v3.9.0 // indirect
 	github.com/wzshiming/gotype v0.8.0 // indirect
-	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a // indirect
+	golang.org/x/exp v0.0.0-20260527015227-08cc5374adb3 // indirect
 	golang.org/x/mod v0.36.0 // indirect
 )
 
