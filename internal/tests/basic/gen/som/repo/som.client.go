@@ -283,7 +283,7 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	return out, nil
 }
 
-var minVersion = [3]int{3, 0, 2}
+var minVersion = [3]int{3, 1, 0}
 
 func parseVersion(raw string) ([3]int, error) {
 	s := strings.TrimPrefix(raw, "v")
