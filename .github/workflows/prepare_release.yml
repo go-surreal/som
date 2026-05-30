@@ -53,6 +53,10 @@ jobs:
           fi
           NEW_BOUND="v${MAJOR}.${PREV}.99"
           sed -i -E "s|^retract \[v0\.0\.0, v[0-9]+\.[0-9]+\.[0-9]+\]|retract [v0.0.0, ${NEW_BOUND}]|" go.mod
+          if git diff --quiet -- go.mod; then
+            echo "retract directive in go.mod did not change; expected '[v0.0.0, vX.Y.Z]' single-line form."
+            exit 1
+          fi
           echo "Updated retract directive:"
           grep "^retract" go.mod
 

@@ -25,7 +25,7 @@ Before partaking in the development on Som, we do ask you to read through our co
 * Use a descriptive title no more than 64 characters long.
 * For changes and feature requests, please include an example of what you are trying to solve and an example of the markup. It is preferred that you create an issue first however, as that will allow the team to review your proposal before you start.
 * Please reference the issue # that the PR resolves, something like `Fixes #1234` or `Resolves #6458` (See [closing issues using keywords](https://help.github.com/articles/closing-issues-using-keywords/)).
-* Releases will be drafted in release branches following the convention `release/version`, e.g. `release/1.2.3`. Critical bug fixes should be merged directly into release branches, which will be merged back into main once the release is completed.
+* Releases will be drafted in release branches following the convention `release/version`, e.g. `release/v1.2.3`. Critical bug fixes should be merged directly into release branches, which will be merged back into main once the release is completed.
 
 ## Final words
 
