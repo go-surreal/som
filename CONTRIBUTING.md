@@ -20,7 +20,7 @@ Before partaking in the development on Som, we do ask you to read through our co
 ## Pull Requests
 
 * We ask you to use [Conventional Commits](https://www.conventionalcommits.org/) for your commit messages as to keep these consistent and concise.
-    * Primarily use the `feat`, `fix`, `change`, `refactor`, and `chore` types, only deviate when necessary.
+    * Primarily use the `feat`, `fix`, `refactor`, and `chore` types, only deviate when necessary.
 * Always work on a feature branch. You should follow the convention `<cc-type>/branch-name`, e.g. `feat/tab-renaming` (See [The beginner's guide to contributing to a GitHub project](https://akrabat.com/the-beginners-guide-to-contributing-to-a-github-project/))
 * Use a descriptive title no more than 64 characters long.
 * For changes and feature requests, please include an example of what you are trying to solve and an example of the markup. It is preferred that you create an issue first however, as that will allow the team to review your proposal before you start.
