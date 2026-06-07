@@ -75,7 +75,7 @@ type Follows struct {
 
 1. Verify SurrealDB is running:
    ```bash
-   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.1.0 \
+   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.1.3 \
        start --user root --pass root
    ```
 
