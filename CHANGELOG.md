@@ -5,367 +5,522 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.19.0] - 2026-06-21
+
+
+### Added
+
+- Require surrealdb v3.0.3 (#477)
+- Require surrealdb v3.0.5 (#483)
+- Optimise live query handling (#478)
+- Not filter for query builder (#485)
+- Run against surrealdb v3.1.0 (#499)
+- Run against surrealdb v3.1.3 (#502)
+- Run against surrealdb v3.1.5 (#505)
+
+### Fixed
+
+- Circumvent surrealdb.go live query race condition (#488)
+- Bump surrealdb.go and drop live query race workaround (#495)
+- Remove unnecessary som version checks (#496)
 
 ## [v0.18.0] - 2026-03-09
 
+
 ### Added
-- DB version verification when connecting (#474)
-- Where field value between query filter (#472)
-- Range query for string ID nodes (#471)
+
+- Add support for client-side transactions (#463)
+- Surrealdb v3 structured server errors (#465)
 - Raw queries (#466)
-- SurrealDB v3 structured server errors (#465)
-- Client-side transactions (#463)
+- Range query for string id nodes (#471)
+- Where field value between (#472)
+- Verify db version when connecting (#474)
 
 ### Changed
-- Remove DB client wrapper & CBOR round-trip (#468)
-- Optimise test package module name (#473)
-- Remove Docker Compose file (#467)
+
+- Remove db client wrapper & cbor round-trip (#468)
 
 ### Fixed
-- SurrealDB v3.0.3 query search same field (#462)
+
+- Surrealdb v3.0.2 query search same field  (#462)
+
+### Documentation
+
+- Prepare release v0.18.0 (#475)
 
 ## [v0.17.0] - 2026-03-01
 
+
 ### Added
-- Geo types support via `github.com/twpayne/go-geom` (#404)
-- Semver type with proper query filters (#457)
-- Custom field name override via Go struct tag (#456)
-- Proper struct sub-filter queries (#453)
-- Insert method for bulk record creation (#452)
-- Index rebuild method for repos (#451)
+
+- Add count index to all tables (#445)
 - Fulltext search any (or) match (#449)
-- Support for `time.Month` and `time.Weekday` types (#448)
-- Count index added to all table schemas (#445)
-
-### Fixed
-- Go tags syntax alignment (#455)
-- Datetime CBOR handling (#450)
-- Query rename offset alignment (#447)
-- Remove live query variable support workaround (#446)
-
-### Changed
+- Add index rebuild to repo methods (#451)
+- Add insert method to repo for bulk create (#452)
+- Add support for time.Month and time.Weekday (#448)
+- Support proper struct sub-filter queries (#453)
+- Add semver type with proper query filters (#457)
+- Allow explicit custom field names via go tag (#456)
+- Add geo types support (#404)
 - Require surrealdb.go client version 1.3.0 (#458)
 
+### Fixed
+
+- Remove live query variable support workaround (#446)
+- Align query rename offset to start (#447)
+- Datetime cbor handling (#450)
+- Properly align go tags syntax (#455)
+
 ### Documentation
-- Comprehensive documentation overhaul (#460)
+
+- Update deprecated and add missing doc files (#460)
 
 ## [v0.16.0] - 2026-02-23
 
+
 ### Added
-- Support for complex ID types (array and object IDs) (#430)
-- Complex ID range queries (#443)
+
+- Add support for complex id types (#430)
+- Optimise cli command and flags (#442)
+- Complex id range queries  (#443)
 
 ### Changed
-- **Breaking:** Overhaul of parser setup (#441)
-- Optimised CLI command and flags (#442)
-- Internal refactor of `subPkg` to `relativePkgPath` (#440)
+
+- SubPkg to relativePkgPath (#440)
+- Overhaul parser setup (#441)
 
 ## [v0.15.0] - 2026-02-21
 
+
 ### Added
-- SurrealDB v3.0 compatibility (#438)
-- String record ID with configurable generator (#428)
+
+- Optimise table id handling (#427)
+- String record id with configurable generator (#428)
+- Surrealdb v3.0 compatibility (#438)
 
 ### Changed
-- Optimised table ID handling (#427)
-- Optimised Go template handling (#433)
+
+- Code cleanup & more tests (#426)
+- Optimise go template handling (#433)
 
 ## [v0.14.0] - 2026-01-30
 
+
 ### Added
-- Lifecycle hooks for repo and model (#423)
-- Query fetch for distinct field values (#422)
-- **Breaking:** Query builder wording aligned with official SurrealQL (#418)
+
+- Align query builder wording with official query lang (#418)
+- Query fetch distinct field values (#422)
+- Add lifecycle hooks to repo and model (#423)
 
 ### Fixed
+
+- Expose errors properly (#419)
+- Prevent nil pointer deref in repo read for missing records (#421)
 - Slices with nil values (#425)
-- Nil pointer dereference in repo read for missing records (#421)
-- Errors not exposed properly (#419)
 
 ## [v0.13.0] - 2026-01-26
 
+
 ### Added
+
+- Add most missing field filter functions (#402)
+- Add support for github.com/gofrs/uuid (#403)
+- Allow fetch for live queries (#406)
+- Add opt-in context cache for database reads (#409)
 - Optional soft-delete handling for nodes (#410)
-- Opt-in context cache for database reads (#409)
-- Wire dependency injection setup generation (#417)
-- Fetch support for live queries (#406)
-- Support for `github.com/gofrs/uuid` (#403)
-- Most missing field filter functions (#402)
+- Generate wire setup if used by project (#417)
+
+### Changed
+
+- Cleanup query builder type (#416)
 
 ## [v0.12.0] - 2025-11-30
 
+
 ### Added
-- Indexing, unique constraints and fulltext search (#153)
-- Fulltext search features for query builder (#397)
-- Tempfiles statement for query builder (#399)
+
+- Add indexing, unique and fulltext (#153)
+- Add fulltext search features to query builder (#397)
+- Add tempfiles statement to query builder (#399)
+
+### Documentation
+
+- Add fulltext search features (#398)
 
 ## [v0.11.0] - 2025-11-26
 
+
 ### Added
+
+- Use readonly for created_at fields (#385)
+- Make most field types sortable (#387)
+- Add email field type (#390)
+- Add iterator methods to query builder output (#389)
+- Add smart password field type (#300)
 - Optimistic locking feature for models (#99)
-- Smart password field type (#300)
-- Email field type (#390)
-- Iterator methods for query builder output (#389)
-- Most field types are now sortable (#387)
-- Code coverage analysis (#219)
-- Initial GitBook documentation (#305)
 
 ### Changed
-- `created_at` fields now use `readonly` in schema (#385)
+
+- Remove unused fieldDef methods from fields (#393)
+
+### Fixed
+
+- Navigation and summary (#391)
+
+### Documentation
+
+- Initial documentation setup (#305)
+- Add new features to gitbook (#394)
 
 ## [v0.10.0] - 2025-11-23
 
+
 ### Added
-- Empty slice filter, schema and marshal support (#373)
+
+- Empty filter, schema and marshal fixup, testing (#373)
 
 ### Changed
-- **Breaking:** Better conversion layer with direct CBOR marshal/unmarshal (#374)
-- Cleanup of legacy conversion methods (#381)
-- Switched from asdf to mise for version management (#372)
+
+- Better conv layer with direct cbor (un)marshal (#374)
+- Cleanup legacy conv methods (#381)
 
 ### Fixed
+
 - Schema generation for deeply nested fields (#382)
-- Live query race condition (#377)
 
 ## [v0.9.0] - 2025-11-18
 
-### Changed
-- **Breaking:** Switch driver from sdbc to official surrealdb.go client (#371)
+
+### Added
+
+- Switch driver from sdbc to official surrealdb go client (#371)
+
+### Fixed
+
+- Main workflow wrong working dir (#362)
 
 ## [v0.8.0] - 2025-05-21
 
-### Changed
-- **Breaking:** SOM is now a compile-time only dependency (#359)
-- **Breaking:** CLI command moved to root package (#361)
-- Upgraded `github.com/urfave/cli` to v3 (#354)
+
+### Added
+
+- Make som a compile-time only dependency (#359)
+- Move cmd to root (#361)
 
 ### Fixed
-- Config type alias to sdbc (#358)
-- `go.mod` commands failing with embedded template files (#357)
+
+- Go.mod commands fail with embedded template files (#357)
+- Make config type alias to sdbc (#358)
 
 ## [v0.7.1] - 2025-05-04
 
-### Added
-- DB 2.0 enforced relations, enum string literals and more functions (#328)
 
-### Changed
-- Required Go version updated to v1.23.x (#350)
-- Required sdbc version updated to v0.9.2 (#349)
+### Added
+
+- Db 2.0 enforced relations, enum string literals & more funcs (#328)
 
 ## [v0.7.0] - 2024-12-11
 
-### Added
-- Support for SurrealDB 2.0 (#321)
 
-### Changed
-- **Breaking:** Updated for SurrealDB 2.0 compatibility (#321)
-- Required sdbc v0.9.0 (#326)
+### Added
+
+- Support for surrealdb 2.0 (#321)
 
 ## [v0.6.4] - 2024-11-30
 
-### Changed
-- Updated to sdbc v0.9.0 (#306)
+
+### Fixed
+
+- Testcontainers terminate does not ignore unnecessary error (#323)
 
 ## [v0.6.3] - 2024-09-05
 
+
 ### Fixed
-- Codegen for pointer and non-pointer node/edge types (#316)
+
+- Codegen for (no-)pointer node/edge types (#316)
 
 ## [v0.6.2] - 2024-08-28
 
-### Changed
-- **Breaking:** `sdbc.ID` renamed to `som.ID` (#311)
-- Tests moved to internal package (#310)
 
-## [v0.6.1] - 2024-08-28
+### Changed
+
+- Hide tests in internal package (#310)
+- Sdbc.ID to som.ID (#311)
+
+## [v0.6.1] - 2024-08-27
+
 
 ### Fixed
+
 - Generated files not written correctly (#309)
 
-## [v0.6.0] - 2024-08-28
+## [v0.6.0] - 2024-08-27
+
 
 ### Added
-- Field-to-field comparison filters (#302)
-- `DescribeWithVars` and `Debug` methods for query builder (#304)
-- Missing filter functions (#303)
+
+- Filter by direct field to field comparisons (#302)
+- Add DescribeWithVars and Debug methods to query builder (#304)
+- Add missing filter functions (#303)
 
 ### Changed
-- Static param names in generated code (#301)
+
+- Static param name in generated code (#301)
 
 ## [v0.5.0] - 2024-08-14
 
+
 ### Added
-- Go, SOM and sdbc version checks before code generation (#266)
-- `time.Duration` type support (#164)
-- Filter functions and optimisation (#291)
-- Table types in generated schema definition (#264)
+
+- Add table types to generated schema definition (#264)
+- Optimise schema definition for timestamps (#265)
+- Update sdbc & switch to cbor protocol (#289)
+- Support time.duration type (#164)
+- Implement filter functions and optimisation (#291)
 - In-memory file system for codegen (#293)
+- Check go, som and sdbc version before generate (#266)
 
 ### Changed
-- **Breaking:** Switched to CBOR protocol via sdbc update (#289)
-- Optimised schema definition for timestamps (#265)
-- Optimised CLI setup (#221)
+
+- Optimise cli setup (#221)
+- Code cleanup (#292)
+- Embedded gen files handling (#298)
 
 ### Fixed
+
 - Hardcoded import path in embedded file (#263)
-- Embedded file using local import (#296)
+- Embedded file uses local import (#296)
 
 ## [v0.4.0] - 2024-05-02
 
+
 ### Added
-- Live count method (#234)
-- Generated comments for repo methods (#247)
+
+- Implement live count method (#234)
+- Generate comments for repo methods (#247)
 
 ### Fixed
+
 - Filter for live queries (#259)
 
 ## [v0.3.0] - 2023-11-27
 
+
 ### Added
-- Refresh method for repos (#237)
-- Support for `byte` and `[]byte` fields (#119)
-- Support for `net/url.URL` type (#163)
-- Support for missing native numeric types (#174)
+
+- Add support for byte and []byte fields (#119)
+- Add support for net/url.URL type (#163)
+- Add support for missing native numeric types (#174)
+- Implement refresh method for repos (#237)
 
 ### Changed
-- Reduced codegen by making query builder generic (#245)
-- Moved generic CRUD methods to embed (#246)
+
+- Reduce codegen by making query builder generic (#245)
+- Move generic crud methods to embed (#246)
 
 ## [v0.2.0] - 2023-11-13
 
+
 ### Fixed
-- Generated filters missing methods for edges (#243)
-- Generated names for types and fields (#238)
-- Duplicates in generated code (#240)
+
+- Dependabot bump google.golang.org/grpc to 1.57.1 (#231)
+- Dependabot bump github.com/docker/docker to 24.0.7 (#233)
+- Nil deref due to invalid use of anonymous struct field type (#239)
 - Edge field conversion (#241)
-- Nil dereference due to invalid use of anonymous struct field type (#239)
+- Remove duplicates from generated code (#240)
+- Generated names for types & fields (#238)
+- Generated filters missing methods for edges (#243)
 
 ## [v0.1.2] - 2023-10-16
 
+
 ### Fixed
-- Timestamps zero value dereference nil pointer (#227)
+
+- Timestamps zero value deref nil pointer (#227)
 
 ## [v0.1.1] - 2023-10-09
 
+
 ### Added
-- Client options passthrough to sdbc (#222)
+
+- Add client options and pass to sdbc (#222)
 
 ## [v0.1.0] - 2023-09-17
 
+
 ### Added
-- ULID as primary key option for nodes (#204)
-- License file (#208)
-- Security policy (#172)
+
+- Create nodes with ulid as primary key (#204)
 
 ### Changed
-- **Breaking:** Repository moved to `go-surreal` org (#194)
-- **Breaking:** sdbc (SurrealDB client) extracted to own repo (#203)
-- Timestamp handling moved to database schema layer (#197)
-- Tested against SurrealDB v1.0.0 (#207)
+
+- Move repo to go-surreal org (#194)
+- Move sdbc code to own repo (#203)
+- Move timestamp handling to database schema layer (#197)
+
+### Fixed
+
+- Codegen bugs & streamline tests (#210)
+
+### Documentation
+
+- Update readme (#201)
+- Update readme & add ideas (#160)
 
 ## [v0.0.11] - 2023-09-05
 
+
 ### Added
-- Live queries support (#167)
-- SurrealDB strict-mode compatibility (#175)
-- Custom SurrealDB client implementation (#152)
-- Support for SurrealDB beta.11 (#200)
+
+- Add surrealdb strict-mode compatibility (#175)
+- Implement custom surrealdb client (#152)
+- Optimise sdbc close & cleanup handling (#191)
+- Add support for surrealdb beta.11 (#200)
+- Add support for live queries (#167)
+
+### Changed
+
+- Let conv functions use pointers (#198)
 
 ### Fixed
-- Enum and struct fields handling (#199)
-- Schema with transaction broken (#186)
+
+- Apply schema with transaction is broken (#186)
+- Apply latest surrealdb nightly changes (#187)
+- Enum & struct fields handling (#199)
 
 ## [v0.0.10] - 2023-08-04
 
+
 ### Added
-- Async methods for query builder (#171)
-- Transaction wrapping for schema definition (#156)
-- ID field definition in generated schema (#165)
-- UUID field assertion in schema (#162)
+
+- Add transaction wrapping to schema definition (#156)
+- Add assert for uuid fields to schema (#162)
+- Add id field definition to generated schema (#165)
+- Add async methods to query builder (#171)
 
 ### Changed
-- Moved static code to embed files (#170)
+
+- Simplify conv of uuid type (#166)
+- Move static code to embed files (#170)
+- Optimise query builder string concat (#173)
 
 ### Fixed
-- Schema needs `option<?>` types for nilable fields (#161)
-- Count query and result mapping (#130)
-- Unexpected DB response structure for unmarshal (#131)
-- Query variable index breaks after 26 variables (#75)
 
-### Performance
-- Optimised query builder string concatenation (#173)
+- Count query and result mapping (#130)
+- Unexpected db response structure for unmarshal (#131)
+- Dependabot alert by bumping google.golang.org/grpc to 1.53.0 (#145)
+- Tests (#157)
+- Schema needs to set option<?> types for nilable fields (#161)
 
 ## [v0.0.9] - 2023-04-09
 
-### Changed
-- Updated for SurrealDB beta.9 (#129)
-- Updated surrealdb.go client to v0.2.0 (#125)
+
+### Added
+
+- Utilize new features of surrealdb.go client update v0.2.0 (#125)
+- Update for surrealdb version beta.9 (#129)
+
+### Fixed
+
+- Dependabot alert by updating opencontainers/runc to 1.1.5 (#123)
 
 ## [v0.0.8] - 2023-03-29
 
+
 ### Added
-- Generated code is now mockable via interfaces (#112)
-- Lib package moved into generated sources via embed (#118)
+
+- Make generated code mockable by using interfaces (#112)
+- Small gen updates, more tests and examples (#106)
+- Move lib package into generated sources via embed (#118)
+
+### Documentation
+
+- Update readme & faq (#124)
 
 ## [v0.0.7] - 2023-02-13
 
+
 ### Fixed
+
 - Record links (#98)
 
-## [v0.0.6] - 2023-01-25
+### Documentation
+
+- Add ideas document (#92)
+
+## [v0.0.6] - 2023-01-24
+
 
 ### Added
-- Sub-queries for nodes and edges (#84)
+
+- Implement sub-queries for nodes and edges (#84)
 
 ## [v0.0.5] - 2023-01-19
 
+
 ### Added
-- Schema asserts for enum values (#83)
-- Asserts for database schema definition (#82)
+
+- Add asserts to database schema definition (#82)
+- Schema assert for enum values (#83)
+
+### Documentation
+
+- Update readme (#72)
 
 ## [v0.0.4] - 2022-12-29
 
+
 ### Added
-- Auto timestamps on create/update (#79)
-- Query describe method (#74)
-- Reusable query builder (#76)
+
+- Implement query describe method (#74)
+- Make query builder reusable (#76)
+- Implement auto timestamps on create/update (#79)
 
 ### Changed
-- **Breaking:** Separate `CreateWithID` method provided (#80)
+
+- Provide separate create-with-id method (#80)
+
+### Fixed
+
+- Query variable index breaks after 26 variables (#75)
 
 ## [v0.0.3] - 2022-12-26
 
+
 ### Added
-- Database schema generation for strict mode (#44)
-- Select, update and delete operations (#57)
-- Pointer field support (#64)
-- Custom record IDs (#68)
-- "Do not edit" comment in generated code (#63)
-- Testcontainers integration testing (#62)
+
+- Implement select, update and delete (#57)
+- Add "do not edit" comment to generated code (#63)
+- Allow custom record ids (#68)
+- Support pointer fields (#64)
+- Generate database schema for strict usage (#44)
+
+### Changed
+
+- Update database interface (#58)
+- Code generator for better extensibility (#66)
+- Code generation streamlining (#67)
 
 ## [v0.0.2] - 2022-12-08
 
+
 ### Added
-- CI workflow for pull requests (#43)
-- Conventional commits enforcement (#37)
-- Golangci-lint integration (#51)
+
+- Enforce conventional commits spec via PR workflow (#37)
 
 ### Fixed
-- Lint issues in example/gen (#56)
+
+- Golangci-lint issues (#52)
+- Lint example/gen and handle existing issues (#56)
+
+### Documentation
+
+- Update README (#55)
 
 ## [v0.0.1] - 2022-12-03
 
-Initial release.
-
-### Added
-- Basic code generation from Go struct models
-- Parser for `som.Node` and `som.Edge` types
-- Query builder with fetch statement
-- Edge (graph) connection support
-- CLI tool for code generation
-
-[Unreleased]: https://github.com/go-surreal/som/compare/v0.18.0...HEAD
+[v0.19.0]: https://github.com/go-surreal/som/compare/v0.18.0...v0.19.0
 [v0.18.0]: https://github.com/go-surreal/som/compare/v0.17.0...v0.18.0
 [v0.17.0]: https://github.com/go-surreal/som/compare/v0.16.0...v0.17.0
 [v0.16.0]: https://github.com/go-surreal/som/compare/v0.15.0...v0.16.0
@@ -401,4 +556,4 @@ Initial release.
 [v0.0.4]: https://github.com/go-surreal/som/compare/v0.0.3...v0.0.4
 [v0.0.3]: https://github.com/go-surreal/som/compare/v0.0.2...v0.0.3
 [v0.0.2]: https://github.com/go-surreal/som/compare/v0.0.1...v0.0.2
-[v0.0.1]: https://github.com/go-surreal/som/releases/tag/v0.0.1
+
