@@ -2,7 +2,7 @@
 
 This guide walks you through creating your first SOM-powered application.
 
-> **Note**: This package is currently tested against SurrealDB version [3.1.3](https://surrealdb.com/releases).
+> **Note**: This package is currently tested against SurrealDB version [3.1.5](https://surrealdb.com/releases).
 
 ## Disclaimer
 

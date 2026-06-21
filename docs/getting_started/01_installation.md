@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - **Go 1.25 or later** - SOM uses generics and iterators extensively
-- **SurrealDB 3.x** - Tested against version 3.1.3
+- **SurrealDB 3.x** - Tested against version 3.1.5
 
 ## Install SOM Generator
 
@@ -110,7 +110,7 @@ import (
 ### Using Docker (Recommended)
 
 ```bash
-docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.1.3 \
+docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.1.5 \
     start --user root --pass root
 ```
 
@@ -128,7 +128,7 @@ surreal start --user root --pass root --bind 0.0.0.0:8000
 version: '3'
 services:
   surrealdb:
-    image: surrealdb/surrealdb:v3.1.3
+    image: surrealdb/surrealdb:v3.1.5
     ports:
       - "8000:8000"
     command: start --user root --pass root
