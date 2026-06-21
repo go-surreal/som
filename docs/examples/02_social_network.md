@@ -237,7 +237,7 @@ func WatchFollowers(ctx context.Context, client *som.Client, user *model.User) {
 ## Running the Example
 
 ```bash
-docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.1.0 \
+docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.1.5 \
     start --user root --pass root
 go run main.go
 ```
