@@ -41,13 +41,61 @@ var personObjRangeFn = rangeFn[model.PersonObj](func(q *lib.Query[model.PersonOb
 	return expr
 })
 
+// personObjSelect provides field selection for PersonObj queries.
+type personObjSelect struct {
+	SelectContext
+}
+
+// Email returns a SelectField for the email field.
+func (s personObjSelect) Email() SelectField[string] {
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("email")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("email", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("email")
+		},
+	}
+}
+
+// personObjSelectArray is the array variant of personObjSelect for edge traversal results.
+type personObjSelectArray struct {
+	SelectContext
+}
+
+// Email returns a SelectArrayField for the email field.
+func (s personObjSelectArray) Email() SelectArrayField[string] {
+	return SelectArrayField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("email")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("email", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("email")
+		},
+	}
+}
+
+// PersonObjQuery is a type alias for the PersonObj query builder.
+type PersonObjQuery = Builder[model.PersonObj, personObjSelect]
+
 // NewPersonObj creates a new query builder for PersonObj models.
-func NewPersonObj(db Database) Builder[model.PersonObj] {
+func NewPersonObj(db Database) Builder[model.PersonObj, personObjSelect] {
 	q := lib.NewQuery[model.PersonObj]("person_obj")
-	return Builder[model.PersonObj]{builder[model.PersonObj]{
+	return Builder[model.PersonObj, personObjSelect]{builder[model.PersonObj, personObjSelect]{
 		db:      db,
 		info:    personObjModelInfo,
 		query:   q,
 		rangeFn: personObjRangeFn,
+		selectFn: func(sc SelectContext) personObjSelect {
+			return personObjSelect{SelectContext: sc}
+		},
 	}}
 }

@@ -53,6 +53,8 @@ type Query[T any] struct {
 	SearchClauses []SearchClause
 	SearchWhere   string
 
+	valueField string // when set, renders SELECT VALUE <field> instead of SELECT <fields>
+
 	// Soft delete support for main queries (not fetched relations)
 	SoftDeleteFilter Filter[T] // Injected at initialization
 	IncludeDeleted   bool      // Flag to skip soft delete filter
@@ -60,6 +62,22 @@ type Query[T any] struct {
 
 func (q *Query[T]) AsVar(val any) string {
 	return q.context.asVar(val)
+}
+
+// cloneContext returns a copy of q with an isolated context (fresh vars map and
+// independent varIndex). Each BuildAs* call uses this to ensure repeated builds
+// of the same captured query value (e.g. via Select() closures) do not share
+// or overwrite each other's variable bindings.
+func (q Query[T]) cloneContext() Query[T] {
+	vars := make(map[string]any, len(q.context.vars))
+	for k, v := range q.context.vars {
+		vars[k] = v
+	}
+	q.context = context{
+		varIndex: q.context.varIndex,
+		vars:     vars,
+	}
+	return q
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -73,6 +91,7 @@ func NewQuery[T any](node string) Query[T] {
 }
 
 func (q Query[T]) BuildAsAll() *Result {
+	q = q.cloneContext()
 	q.fields = []string{"*"}
 
 	return &Result{
@@ -82,6 +101,7 @@ func (q Query[T]) BuildAsAll() *Result {
 }
 
 func (q Query[T]) BuildAsAllIDs() *Result {
+	q = q.cloneContext()
 	q.fields = []string{"id"}
 
 	return &Result{
@@ -91,6 +111,7 @@ func (q Query[T]) BuildAsAllIDs() *Result {
 }
 
 func (q Query[T]) BuildAsCount() *Result {
+	q = q.cloneContext()
 	q.fields = []string{"count()"}
 	q.groupAll = true
 
@@ -101,6 +122,7 @@ func (q Query[T]) BuildAsCount() *Result {
 }
 
 func (q Query[T]) BuildAsLive() *Result {
+	q = q.cloneContext()
 	q.live = true
 	q.fields = []string{"*"}
 
@@ -111,6 +133,7 @@ func (q Query[T]) BuildAsLive() *Result {
 }
 
 func (q Query[T]) BuildAsLiveDiff() *Result {
+	q = q.cloneContext()
 	q.live = true
 	q.fields = []string{"DIFF"}
 
@@ -120,7 +143,39 @@ func (q Query[T]) BuildAsLiveDiff() *Result {
 	}
 }
 
+func (q Query[T]) BuildAsSelectValue(field string) *Result {
+	q = q.cloneContext()
+	q.valueField = field
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+// BuildAsSelectDistinct renders a SELECT VALUE array::distinct(array::group(field)) query.
+// When excludeNull is true, NONE/NULL values are filtered out (use this for non-nullable
+// fields where null values would represent data corruption). When false, null is preserved
+// as a distinct value so callers can observe it in nullable fields.
+func (q Query[T]) BuildAsSelectDistinct(field string, excludeNull bool) *Result {
+	q = q.cloneContext()
+	q.valueField = field
+	q.groupAll = true
+
+	if excludeNull {
+		q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
+			return "(" + field + " != NONE AND " + field + " != NULL)"
+		}))
+	}
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
 func (q Query[T]) BuildDistinct(field string) *Result {
+	q = q.cloneContext()
 	q.fields = []string{"array::distinct(array::group(" + field + ")) AS values"}
 	q.groupAll = true
 
@@ -143,35 +198,43 @@ func (q Query[T]) render() string {
 		out.WriteString("LIVE ")
 	}
 
-	fields := q.fields
-
-	// Add search score, highlight, and offset projections
-	for _, sc := range q.SearchClauses {
-		ref := strconv.Itoa(sc.Ref)
-		fields = append(fields, "search::score("+ref+") AS "+searchScorePrefix+ref)
-		if sc.Highlights {
-			fields = append(fields,
-				"search::highlight("+q.context.asVar(sc.HLPrefix)+", "+q.context.asVar(sc.HLSuffix)+", "+ref+") AS "+searchHighlightPrefix+ref)
+	if q.valueField != "" {
+		if q.groupAll {
+			out.WriteString("SELECT VALUE array::distinct(array::group(" + q.valueField + "))")
+		} else {
+			out.WriteString("SELECT VALUE " + q.valueField)
 		}
-		if sc.Offsets {
-			fields = append(fields, "search::offsets("+ref+") AS "+searchOffsetsPrefix+ref)
-		}
-	}
+	} else {
+		fields := q.fields
 
-	// Add score projection for each score sort
-	for _, s := range q.Sort {
-		if s.IsScore && len(s.ScoreRefs) > 0 {
-			expr := renderScoreCombination(s.ScoreRefs, s.ScoreMode, s.ScoreWeights)
-			refStrs := make([]string, len(s.ScoreRefs))
-			for i, ref := range s.ScoreRefs {
-				refStrs[i] = strconv.Itoa(ref)
+		// Add search score, highlight, and offset projections
+		for _, sc := range q.SearchClauses {
+			ref := strconv.Itoa(sc.Ref)
+			fields = append(fields, "search::score("+ref+") AS "+searchScorePrefix+ref)
+			if sc.Highlights {
+				fields = append(fields,
+					"search::highlight("+q.context.asVar(sc.HLPrefix)+", "+q.context.asVar(sc.HLSuffix)+", "+ref+") AS "+searchHighlightPrefix+ref)
 			}
-			alias := searchScorePrefix + strings.Join(refStrs, "_")
-			fields = append(fields, expr+" AS "+alias)
+			if sc.Offsets {
+				fields = append(fields, "search::offsets("+ref+") AS "+searchOffsetsPrefix+ref)
+			}
 		}
-	}
 
-	out.WriteString("SELECT " + strings.Join(fields, ", "))
+		// Add score projection for each score sort
+		for _, s := range q.Sort {
+			if s.IsScore && len(s.ScoreRefs) > 0 {
+				expr := renderScoreCombination(s.ScoreRefs, s.ScoreMode, s.ScoreWeights)
+				refStrs := make([]string, len(s.ScoreRefs))
+				for i, ref := range s.ScoreRefs {
+					refStrs[i] = strconv.Itoa(ref)
+				}
+				alias := searchScorePrefix + strings.Join(refStrs, "_")
+				fields = append(fields, expr+" AS "+alias)
+			}
+		}
+
+		out.WriteString("SELECT " + strings.Join(fields, ", "))
+	}
 
 	// TODO: not working, but more a optimisation than anything else
 	//if len(q.Sort) > 0 {

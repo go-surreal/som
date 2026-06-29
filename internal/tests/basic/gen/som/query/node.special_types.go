@@ -6,7 +6,9 @@ import (
 	conv "som.test/gen/som/conv"
 	filter "som.test/gen/som/filter"
 	lib "som.test/gen/som/internal/lib"
+	types "som.test/gen/som/internal/types"
 	model "som.test/model"
+	"time"
 )
 
 // specialTypesModelInfo holds the model-specific unmarshal functions for SpecialTypes.
@@ -40,15 +42,163 @@ var specialTypesRangeFn = rangeFn[model.SpecialTypes](func(q *lib.Query[model.Sp
 	return expr
 })
 
+// specialTypesSelect provides field selection for SpecialTypes queries.
+type specialTypesSelect struct {
+	SelectContext
+}
+
+// DeletedAt returns a SelectField for the deleted_at field.
+func (s specialTypesSelect) DeletedAt() SelectField[*time.Time] {
+	return SelectField[*time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("deleted_at")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("deleted_at", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("deleted_at")
+		},
+	}
+}
+
+// Name returns a SelectField for the name field.
+func (s specialTypesSelect) Name() SelectField[string] {
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("name")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("name", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("name")
+		},
+	}
+}
+
+// Version returns a SelectField for the __som_lock_version field.
+func (s specialTypesSelect) Version() SelectField[int] {
+	return SelectField[int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("__som_lock_version")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("__som_lock_version", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("__som_lock_version")
+		},
+	}
+}
+
+// specialTypesSelectArray is the array variant of specialTypesSelect for edge traversal results.
+type specialTypesSelectArray struct {
+	SelectContext
+}
+
+// DeletedAt returns a SelectArrayField for the deleted_at field.
+func (s specialTypesSelectArray) DeletedAt() SelectArrayField[*time.Time] {
+	return SelectArrayField[*time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("deleted_at")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("deleted_at", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("deleted_at")
+		},
+	}
+}
+
+// Name returns a SelectArrayField for the name field.
+func (s specialTypesSelectArray) Name() SelectArrayField[string] {
+	return SelectArrayField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("name")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("name", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("name")
+		},
+	}
+}
+
+// Version returns a SelectArrayField for the __som_lock_version field.
+func (s specialTypesSelectArray) Version() SelectArrayField[int] {
+	return SelectArrayField[int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("__som_lock_version")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("__som_lock_version", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("__som_lock_version")
+		},
+	}
+}
+
+// SpecialTypesQuery is a type alias for the SpecialTypes query builder.
+type SpecialTypesQuery = Builder[model.SpecialTypes, specialTypesSelect]
+
 // NewSpecialTypes creates a new query builder for SpecialTypes models.
-func NewSpecialTypes(db Database) Builder[model.SpecialTypes] {
+func NewSpecialTypes(db Database) Builder[model.SpecialTypes, specialTypesSelect] {
 	q := lib.NewQuery[model.SpecialTypes]("special_types")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialTypes.DeletedAt.Nil(true)
-	return Builder[model.SpecialTypes]{builder[model.SpecialTypes]{
+	return Builder[model.SpecialTypes, specialTypesSelect]{builder[model.SpecialTypes, specialTypesSelect]{
 		db:      db,
 		info:    specialTypesModelInfo,
 		query:   q,
 		rangeFn: specialTypesRangeFn,
+		selectFn: func(sc SelectContext) specialTypesSelect {
+			return specialTypesSelect{SelectContext: sc}
+		},
 	}}
 }

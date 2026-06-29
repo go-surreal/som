@@ -20,7 +20,7 @@ import (
 type WeatherRepo interface {
 	// Query returns a new query builder for the Weather model.
 
-	Query() query.Builder[model.Weather]
+	Query() query.WeatherQuery
 	// CreateWithID creates a new record with the given key for the Weather model.
 
 	CreateWithID(ctx context.Context, weather *model.Weather) error
@@ -342,7 +342,7 @@ func (r *weather) OnAfterDelete(fn func(ctx context.Context, node *model.Weather
 }
 
 // Query returns a new query builder for the Weather model.
-func (r *weather) Query() query.Builder[model.Weather] {
+func (r *weather) Query() query.WeatherQuery {
 	return query.NewWeather(r.db)
 }
 

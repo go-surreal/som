@@ -220,7 +220,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	//
 	f.Line().Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
 		g.Add(comment("Query returns a new query builder for the " + node.NameGo() + " model."))
-		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
+		g.Id("Query").Call().Qual(pkgQuery, node.NameGo()+"Query")
 
 		if !node.HasComplexID() {
 			g.Add(comment("Create creates a new record for the " + node.NameGo() + " model."))
@@ -554,7 +554,7 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Query").Params().
-		Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo())).
+		Qual(pkgQuery, node.NameGo()+"Query").
 		Block(
 			jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()).Call(
 				jen.Id("r").Dot("db"),

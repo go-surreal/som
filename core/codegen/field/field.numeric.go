@@ -15,7 +15,7 @@ type Numeric struct {
 	source *parser.FieldNumeric
 }
 
-func (f *Numeric) typeGo() jen.Code {
+func (f *Numeric) TypeGo() jen.Code {
 	switch f.source.Type {
 	case parser.NumberInt:
 		return jen.Add(f.ptr()).Int()
@@ -70,7 +70,7 @@ func (f *Numeric) typeConv(_ Context) jen.Code {
 	//	}
 
 	default:
-		return f.typeGo()
+		return f.TypeGo()
 	}
 }
 
@@ -167,7 +167,7 @@ func (f *Numeric) filterDefine(ctx Context) jen.Code {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo())
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.TypeGo())
 }
 
 func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
@@ -191,7 +191,7 @@ func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo()),
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.TypeGo()),
 		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 

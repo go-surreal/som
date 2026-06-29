@@ -2,10 +2,15 @@
 package query
 
 import (
+	uuid1 "github.com/gofrs/uuid"
+	uuid "github.com/google/uuid"
+	"net/url"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
+	types "som.test/gen/som/internal/types"
 	model "som.test/model"
+	"time"
 )
 
 // allTypesModelInfo holds the model-specific unmarshal functions for AllTypes.
@@ -39,13 +44,3555 @@ var allTypesRangeFn = rangeFn[model.AllTypes](func(q *lib.Query[model.AllTypes],
 	return expr
 })
 
+// allTypesSelect provides field selection for AllTypes queries.
+type allTypesSelect struct {
+	SelectContext
+}
+
+// CreatedAt returns a SelectField for the created_at field.
+func (s allTypesSelect) CreatedAt() SelectField[time.Time] {
+	return SelectField[time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("created_at")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("created_at", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("created_at")
+		},
+	}
+}
+
+// UpdatedAt returns a SelectField for the updated_at field.
+func (s allTypesSelect) UpdatedAt() SelectField[time.Time] {
+	return SelectField[time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("updated_at")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("updated_at", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("updated_at")
+		},
+	}
+}
+
+// FieldString returns a SelectField for the field_string field.
+func (s allTypesSelect) FieldString() SelectField[string] {
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string")
+		},
+	}
+}
+
+// FieldStringPtr returns a SelectField for the field_string_ptr field.
+func (s allTypesSelect) FieldStringPtr() SelectField[*string] {
+	return SelectField[*string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string_ptr")
+		},
+	}
+}
+
+// FieldOther returns a SelectField for the field_other field.
+func (s allTypesSelect) FieldOther() SelectField[[]string] {
+	return SelectField[[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_other")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_other", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_other")
+		},
+	}
+}
+
+// FieldStringPtrSlice returns a SelectField for the field_string_ptr_slice field.
+func (s allTypesSelect) FieldStringPtrSlice() SelectField[[]*string] {
+	return SelectField[[]*string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string_ptr_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string_ptr_slice")
+		},
+	}
+}
+
+// FieldStringSlicePtr returns a SelectField for the field_string_slice_ptr field.
+func (s allTypesSelect) FieldStringSlicePtr() SelectField[*[]string] {
+	return SelectField[*[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string_slice_ptr")
+		},
+	}
+}
+
+// FieldStringPtrSlicePtr returns a SelectField for the field_string_ptr_slice_ptr field.
+func (s allTypesSelect) FieldStringPtrSlicePtr() SelectField[*[]*string] {
+	return SelectField[*[]*string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldInt returns a SelectField for the field_int field.
+func (s allTypesSelect) FieldInt() SelectField[int] {
+	return SelectField[int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int")
+		},
+	}
+}
+
+// FieldIntPtr returns a SelectField for the field_int_ptr field.
+func (s allTypesSelect) FieldIntPtr() SelectField[*int] {
+	return SelectField[*int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_ptr")
+		},
+	}
+}
+
+// FieldIntSlice returns a SelectField for the field_int_slice field.
+func (s allTypesSelect) FieldIntSlice() SelectField[[]int] {
+	return SelectField[[]int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_slice")
+		},
+	}
+}
+
+// FieldIntPtrSlice returns a SelectField for the field_int_ptr_slice field.
+func (s allTypesSelect) FieldIntPtrSlice() SelectField[[]*int] {
+	return SelectField[[]*int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_ptr_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_ptr_slice")
+		},
+	}
+}
+
+// FieldIntSlicePtr returns a SelectField for the field_int_slice_ptr field.
+func (s allTypesSelect) FieldIntSlicePtr() SelectField[*[]int] {
+	return SelectField[*[]int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_slice_ptr")
+		},
+	}
+}
+
+// FieldIntPtrSlicePtr returns a SelectField for the field_int_ptr_slice_ptr field.
+func (s allTypesSelect) FieldIntPtrSlicePtr() SelectField[*[]*int] {
+	return SelectField[*[]*int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldInt8 returns a SelectField for the field_int_8 field.
+func (s allTypesSelect) FieldInt8() SelectField[int8] {
+	return SelectField[int8]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_8")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_8", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_8")
+		},
+	}
+}
+
+// FieldInt8Ptr returns a SelectField for the field_int_8_ptr field.
+func (s allTypesSelect) FieldInt8Ptr() SelectField[*int8] {
+	return SelectField[*int8]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_8_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_8_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_8_ptr")
+		},
+	}
+}
+
+// FieldInt16 returns a SelectField for the field_int_16 field.
+func (s allTypesSelect) FieldInt16() SelectField[int16] {
+	return SelectField[int16]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_16")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_16", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_16")
+		},
+	}
+}
+
+// FieldInt16Ptr returns a SelectField for the field_int_16_ptr field.
+func (s allTypesSelect) FieldInt16Ptr() SelectField[*int16] {
+	return SelectField[*int16]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_16_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_16_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_16_ptr")
+		},
+	}
+}
+
+// FieldInt32 returns a SelectField for the field_int_32 field.
+func (s allTypesSelect) FieldInt32() SelectField[int32] {
+	return SelectField[int32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_32")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_32", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_32")
+		},
+	}
+}
+
+// FieldInt32Ptr returns a SelectField for the field_int_32_ptr field.
+func (s allTypesSelect) FieldInt32Ptr() SelectField[*int32] {
+	return SelectField[*int32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_32_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_32_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_32_ptr")
+		},
+	}
+}
+
+// FieldInt64 returns a SelectField for the field_int_64 field.
+func (s allTypesSelect) FieldInt64() SelectField[int64] {
+	return SelectField[int64]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_64")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_64", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_64")
+		},
+	}
+}
+
+// FieldInt64Ptr returns a SelectField for the field_int_64_ptr field.
+func (s allTypesSelect) FieldInt64Ptr() SelectField[*int64] {
+	return SelectField[*int64]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_64_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_64_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_64_ptr")
+		},
+	}
+}
+
+// FieldUint8 returns a SelectField for the field_uint_8 field.
+func (s allTypesSelect) FieldUint8() SelectField[uint8] {
+	return SelectField[uint8]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_8")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_8", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_8")
+		},
+	}
+}
+
+// FieldUint8Ptr returns a SelectField for the field_uint_8_ptr field.
+func (s allTypesSelect) FieldUint8Ptr() SelectField[*uint8] {
+	return SelectField[*uint8]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_8_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_8_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_8_ptr")
+		},
+	}
+}
+
+// FieldUint16 returns a SelectField for the field_uint_16 field.
+func (s allTypesSelect) FieldUint16() SelectField[uint16] {
+	return SelectField[uint16]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_16")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_16", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_16")
+		},
+	}
+}
+
+// FieldUint16Ptr returns a SelectField for the field_uint_16_ptr field.
+func (s allTypesSelect) FieldUint16Ptr() SelectField[*uint16] {
+	return SelectField[*uint16]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_16_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_16_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_16_ptr")
+		},
+	}
+}
+
+// FieldUint32 returns a SelectField for the field_uint_32 field.
+func (s allTypesSelect) FieldUint32() SelectField[uint32] {
+	return SelectField[uint32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_32")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_32", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_32")
+		},
+	}
+}
+
+// FieldUint32Ptr returns a SelectField for the field_uint_32_ptr field.
+func (s allTypesSelect) FieldUint32Ptr() SelectField[*uint32] {
+	return SelectField[*uint32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_32_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_32_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_32_ptr")
+		},
+	}
+}
+
+// FieldFloat32 returns a SelectField for the field_float_32 field.
+func (s allTypesSelect) FieldFloat32() SelectField[float32] {
+	return SelectField[float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32")
+		},
+	}
+}
+
+// FieldFloat32Slice returns a SelectField for the field_float_32_slice field.
+func (s allTypesSelect) FieldFloat32Slice() SelectField[[]float32] {
+	return SelectField[[]float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32_slice")
+		},
+	}
+}
+
+// FieldFloat32SlicePtr returns a SelectField for the field_float_32_slice_ptr field.
+func (s allTypesSelect) FieldFloat32SlicePtr() SelectField[*[]float32] {
+	return SelectField[*[]float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32_slice_ptr")
+		},
+	}
+}
+
+// FieldFloat32PtrSlice returns a SelectField for the field_float_32_ptr_slice field.
+func (s allTypesSelect) FieldFloat32PtrSlice() SelectField[[]*float32] {
+	return SelectField[[]*float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32_ptr_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32_ptr_slice")
+		},
+	}
+}
+
+// FieldFloat32PtrSlicePtr returns a SelectField for the field_float_32_ptr_slice_ptr field.
+func (s allTypesSelect) FieldFloat32PtrSlicePtr() SelectField[*[]*float32] {
+	return SelectField[*[]*float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldFloat64 returns a SelectField for the field_float_64 field.
+func (s allTypesSelect) FieldFloat64() SelectField[float64] {
+	return SelectField[float64]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_64")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_64", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_64")
+		},
+	}
+}
+
+// FieldRune returns a SelectField for the field_rune field.
+func (s allTypesSelect) FieldRune() SelectField[rune] {
+	return SelectField[rune]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_rune")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_rune", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_rune")
+		},
+	}
+}
+
+// FieldRuneSlice returns a SelectField for the field_rune_slice field.
+func (s allTypesSelect) FieldRuneSlice() SelectField[[]rune] {
+	return SelectField[[]rune]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_rune_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_rune_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_rune_slice")
+		},
+	}
+}
+
+// FieldBool returns a SelectField for the field_bool field.
+func (s allTypesSelect) FieldBool() SelectField[bool] {
+	return SelectField[bool]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_bool")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_bool", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_bool")
+		},
+	}
+}
+
+// FieldBoolPtr returns a SelectField for the field_bool_ptr field.
+func (s allTypesSelect) FieldBoolPtr() SelectField[*bool] {
+	return SelectField[*bool]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_bool_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_bool_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_bool_ptr")
+		},
+	}
+}
+
+// FieldBoolSlice returns a SelectField for the field_bool_slice field.
+func (s allTypesSelect) FieldBoolSlice() SelectField[[]bool] {
+	return SelectField[[]bool]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_bool_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_bool_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_bool_slice")
+		},
+	}
+}
+
+// FieldTime returns a SelectField for the field_time field.
+func (s allTypesSelect) FieldTime() SelectField[time.Time] {
+	return SelectField[time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time")
+		},
+	}
+}
+
+// FieldTimePtr returns a SelectField for the field_time_ptr field.
+func (s allTypesSelect) FieldTimePtr() SelectField[*time.Time] {
+	return SelectField[*time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time_ptr")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time_ptr")
+		},
+	}
+}
+
+// FieldTimeNil returns a SelectField for the field_time_nil field.
+func (s allTypesSelect) FieldTimeNil() SelectField[*time.Time] {
+	return SelectField[*time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time_nil")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time_nil")
+		},
+	}
+}
+
+// FieldTimeSlice returns a SelectField for the field_time_slice field.
+func (s allTypesSelect) FieldTimeSlice() SelectField[[]time.Time] {
+	return SelectField[[]time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time_slice")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectConvert(data, func(vals []types.DateTime) []time.Time {
+				out := make([]time.Time, len(vals))
+				for i, v := range vals {
+					out[i] = v.Time
+				}
+				return out
+			})
+		},
+		distDecodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []types.DateTime) []time.Time {
+				out := make([]time.Time, len(vals))
+				for i, v := range vals {
+					out[i] = v.Time
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time_slice")
+		},
+	}
+}
+
+// FieldTimeSliceSlice returns a SelectField for the field_time_slice_slice field.
+func (s allTypesSelect) FieldTimeSliceSlice() SelectField[[][]time.Time] {
+	return SelectField[[][]time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time_slice_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time_slice_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time_slice_slice")
+		},
+	}
+}
+
+// FieldDuration returns a SelectField for the field_duration field.
+func (s allTypesSelect) FieldDuration() SelectField[time.Duration] {
+	return SelectField[time.Duration]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_duration")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]time.Duration, error) {
+			return unmarshalSelectConvert(data, func(v types.Duration) time.Duration {
+				return v.Duration
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.Duration) time.Duration {
+				return v.Duration
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_duration", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_duration")
+		},
+	}
+}
+
+// FieldDurationPtr returns a SelectField for the field_duration_ptr field.
+func (s allTypesSelect) FieldDurationPtr() SelectField[*time.Duration] {
+	return SelectField[*time.Duration]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_duration_ptr")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]*time.Duration, error) {
+			return unmarshalSelectConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_duration_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_duration_ptr")
+		},
+	}
+}
+
+// FieldDurationNil returns a SelectField for the field_duration_nil field.
+func (s allTypesSelect) FieldDurationNil() SelectField[*time.Duration] {
+	return SelectField[*time.Duration]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_duration_nil")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]*time.Duration, error) {
+			return unmarshalSelectConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_duration_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_duration_nil")
+		},
+	}
+}
+
+// FieldDurationSlice returns a SelectField for the field_duration_slice field.
+func (s allTypesSelect) FieldDurationSlice() SelectField[[]time.Duration] {
+	return SelectField[[]time.Duration]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_duration_slice")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Duration, error) {
+			return unmarshalSelectConvert(data, func(vals []types.Duration) []time.Duration {
+				out := make([]time.Duration, len(vals))
+				for i, v := range vals {
+					out[i] = v.Duration
+				}
+				return out
+			})
+		},
+		distDecodeFn: func(data []byte) ([][]time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []types.Duration) []time.Duration {
+				out := make([]time.Duration, len(vals))
+				for i, v := range vals {
+					out[i] = v.Duration
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_duration_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_duration_slice")
+		},
+	}
+}
+
+// FieldMonth returns a SelectField for the field_month field.
+func (s allTypesSelect) FieldMonth() SelectField[time.Month] {
+	return SelectField[time.Month]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_month")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_month", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_month")
+		},
+	}
+}
+
+// FieldMonthPtr returns a SelectField for the field_month_ptr field.
+func (s allTypesSelect) FieldMonthPtr() SelectField[*time.Month] {
+	return SelectField[*time.Month]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_month_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_month_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_month_ptr")
+		},
+	}
+}
+
+// FieldWeekday returns a SelectField for the field_weekday field.
+func (s allTypesSelect) FieldWeekday() SelectField[time.Weekday] {
+	return SelectField[time.Weekday]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_weekday")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_weekday", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_weekday")
+		},
+	}
+}
+
+// FieldWeekdayPtr returns a SelectField for the field_weekday_ptr field.
+func (s allTypesSelect) FieldWeekdayPtr() SelectField[*time.Weekday] {
+	return SelectField[*time.Weekday]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_weekday_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_weekday_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_weekday_ptr")
+		},
+	}
+}
+
+// FieldUUID returns a SelectField for the field_uuid field.
+func (s allTypesSelect) FieldUUID() SelectField[uuid.UUID] {
+	return SelectField[uuid.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid")
+		},
+	}
+}
+
+// FieldUUIDPtr returns a SelectField for the field_uuid_ptr field.
+func (s allTypesSelect) FieldUUIDPtr() SelectField[*uuid.UUID] {
+	return SelectField[*uuid.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_ptr")
+		},
+	}
+}
+
+// FieldUUIDNil returns a SelectField for the field_uuid_nil field.
+func (s allTypesSelect) FieldUUIDNil() SelectField[*uuid.UUID] {
+	return SelectField[*uuid.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_nil")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_nil")
+		},
+	}
+}
+
+// FieldUUIDSlice returns a SelectField for the field_uuid_slice field.
+func (s allTypesSelect) FieldUUIDSlice() SelectField[[]uuid.UUID] {
+	return SelectField[[]uuid.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_slice")
+		},
+	}
+}
+
+// FieldUUIDGofrs returns a SelectField for the field_uuid_gofrs field.
+func (s allTypesSelect) FieldUUIDGofrs() SelectField[uuid1.UUID] {
+	return SelectField[uuid1.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_gofrs")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_gofrs", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_gofrs")
+		},
+	}
+}
+
+// FieldUUIDGofrsPtr returns a SelectField for the field_uuid_gofrs_ptr field.
+func (s allTypesSelect) FieldUUIDGofrsPtr() SelectField[*uuid1.UUID] {
+	return SelectField[*uuid1.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_gofrs_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_gofrs_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_gofrs_ptr")
+		},
+	}
+}
+
+// FieldUUIDGofrsNil returns a SelectField for the field_uuid_gofrs_nil field.
+func (s allTypesSelect) FieldUUIDGofrsNil() SelectField[*uuid1.UUID] {
+	return SelectField[*uuid1.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_gofrs_nil")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_gofrs_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_gofrs_nil")
+		},
+	}
+}
+
+// FieldUUIDGofrsSlice returns a SelectField for the field_uuid_gofrs_slice field.
+func (s allTypesSelect) FieldUUIDGofrsSlice() SelectField[[]uuid1.UUID] {
+	return SelectField[[]uuid1.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_gofrs_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_gofrs_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_gofrs_slice")
+		},
+	}
+}
+
+// FieldURL returns a SelectField for the field_url field.
+func (s allTypesSelect) FieldURL() SelectField[url.URL] {
+	return SelectField[url.URL]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_url")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]url.URL, error) {
+			return unmarshalSelectConvert(data, func(v string) url.URL {
+				u, err := url.Parse(v)
+				if err != nil || u == nil {
+					return url.URL{}
+				}
+				return *u
+			})
+		},
+		distDecodeFn: func(data []byte) ([]url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(v string) url.URL {
+				u, err := url.Parse(v)
+				if err != nil || u == nil {
+					return url.URL{}
+				}
+				return *u
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_url", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_url")
+		},
+	}
+}
+
+// FieldURLPtr returns a SelectField for the field_url_ptr field.
+func (s allTypesSelect) FieldURLPtr() SelectField[*url.URL] {
+	return SelectField[*url.URL]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_url_ptr")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]*url.URL, error) {
+			return unmarshalSelectConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_url_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_url_ptr")
+		},
+	}
+}
+
+// FieldURLNil returns a SelectField for the field_url_nil field.
+func (s allTypesSelect) FieldURLNil() SelectField[*url.URL] {
+	return SelectField[*url.URL]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_url_nil")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]*url.URL, error) {
+			return unmarshalSelectConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_url_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_url_nil")
+		},
+	}
+}
+
+// FieldURLSlice returns a SelectField for the field_url_slice field.
+func (s allTypesSelect) FieldURLSlice() SelectField[[]url.URL] {
+	return SelectField[[]url.URL]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_url_slice")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]url.URL, error) {
+			return unmarshalSelectConvert(data, func(vals []string) []url.URL {
+				out := make([]url.URL, len(vals))
+				for i, v := range vals {
+					out[i] = func() url.URL {
+						u, err := url.Parse(v)
+						if err != nil || u == nil {
+							return url.URL{}
+						}
+						return *u
+					}()
+				}
+				return out
+			})
+		},
+		distDecodeFn: func(data []byte) ([][]url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []string) []url.URL {
+				out := make([]url.URL, len(vals))
+				for i, v := range vals {
+					out[i] = func() url.URL {
+						u, err := url.Parse(v)
+						if err != nil || u == nil {
+							return url.URL{}
+						}
+						return *u
+					}()
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_url_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_url_slice")
+		},
+	}
+}
+
+// FieldEmail returns a SelectField for the field_email field.
+func (s allTypesSelect) FieldEmail() SelectField[som.Email] {
+	return SelectField[som.Email]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_email")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_email", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_email")
+		},
+	}
+}
+
+// FieldEmailPtr returns a SelectField for the field_email_ptr field.
+func (s allTypesSelect) FieldEmailPtr() SelectField[*som.Email] {
+	return SelectField[*som.Email]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_email_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_email_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_email_ptr")
+		},
+	}
+}
+
+// FieldEmailNil returns a SelectField for the field_email_nil field.
+func (s allTypesSelect) FieldEmailNil() SelectField[*som.Email] {
+	return SelectField[*som.Email]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_email_nil")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_email_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_email_nil")
+		},
+	}
+}
+
+// FieldEmailSlice returns a SelectField for the field_email_slice field.
+func (s allTypesSelect) FieldEmailSlice() SelectField[[]som.Email] {
+	return SelectField[[]som.Email]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_email_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_email_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_email_slice")
+		},
+	}
+}
+
+// FieldSemVer returns a SelectField for the field_sem_ver field.
+func (s allTypesSelect) FieldSemVer() SelectField[som.SemVer] {
+	return SelectField[som.SemVer]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_sem_ver")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_sem_ver", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_sem_ver")
+		},
+	}
+}
+
+// FieldSemVerPtr returns a SelectField for the field_sem_ver_ptr field.
+func (s allTypesSelect) FieldSemVerPtr() SelectField[*som.SemVer] {
+	return SelectField[*som.SemVer]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_sem_ver_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_sem_ver_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_sem_ver_ptr")
+		},
+	}
+}
+
+// FieldSemVerNil returns a SelectField for the field_sem_ver_nil field.
+func (s allTypesSelect) FieldSemVerNil() SelectField[*som.SemVer] {
+	return SelectField[*som.SemVer]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_sem_ver_nil")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_sem_ver_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_sem_ver_nil")
+		},
+	}
+}
+
+// FieldSemVerSlice returns a SelectField for the field_sem_ver_slice field.
+func (s allTypesSelect) FieldSemVerSlice() SelectField[[]som.SemVer] {
+	return SelectField[[]som.SemVer]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_sem_ver_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_sem_ver_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_sem_ver_slice")
+		},
+	}
+}
+
+// FieldEnum returns a SelectField for the field_enum field.
+func (s allTypesSelect) FieldEnum() SelectField[model.Role] {
+	return SelectField[model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum")
+		},
+	}
+}
+
+// FieldEnumPtr returns a SelectField for the field_enum_ptr field.
+func (s allTypesSelect) FieldEnumPtr() SelectField[*model.Role] {
+	return SelectField[*model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum_ptr")
+		},
+	}
+}
+
+// FieldEnumSlice returns a SelectField for the field_enum_slice field.
+func (s allTypesSelect) FieldEnumSlice() SelectField[[]model.Role] {
+	return SelectField[[]model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum_slice")
+		},
+	}
+}
+
+// FieldEnumPtrSlice returns a SelectField for the field_enum_ptr_slice field.
+func (s allTypesSelect) FieldEnumPtrSlice() SelectField[[]*model.Role] {
+	return SelectField[[]*model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum_ptr_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum_ptr_slice")
+		},
+	}
+}
+
+// FieldEnumPtrSlicePtr returns a SelectField for the field_enum_ptr_slice_ptr field.
+func (s allTypesSelect) FieldEnumPtrSlicePtr() SelectField[*[]*model.Role] {
+	return SelectField[*[]*model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldCredentials returns a SelectField for the field_credentials field.
+func (s allTypesSelect) FieldCredentials() SelectField[model.Credentials] {
+	return SelectField[model.Credentials]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_credentials")
+		},
+		db:           s.DB,
+		decodeFn:     conv.SelectDecodeCredentials,
+		distDecodeFn: conv.SelectDistinctDecodeCredentials,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_credentials", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_credentials")
+		},
+	}
+}
+
+// FieldNestedDataPtr returns a SelectField for the field_nested_data_ptr field.
+func (s allTypesSelect) FieldNestedDataPtr() SelectField[*model.NestedData] {
+	return SelectField[*model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_nested_data_ptr")
+		},
+		db:           s.DB,
+		decodeFn:     conv.SelectDecodeNestedDataPtr,
+		distDecodeFn: conv.SelectDistinctDecodeNestedDataPtr,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_nested_data_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_nested_data_ptr")
+		},
+	}
+}
+
+// FieldNestedDataSlice returns a SelectField for the field_nested_data_slice field.
+func (s allTypesSelect) FieldNestedDataSlice() SelectField[[]model.NestedData] {
+	return SelectField[[]model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_nested_data_slice")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]model.NestedData, error) {
+			return unmarshalSelectConvert(data, func(vals []conv.NestedData) []model.NestedData {
+				out := make([]model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedData(v)
+				}
+				return out
+			})
+		},
+		distDecodeFn: func(data []byte) ([][]model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []conv.NestedData) []model.NestedData {
+				out := make([]model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedData(v)
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_nested_data_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_nested_data_slice")
+		},
+	}
+}
+
+// FieldNestedDataPtrSlice returns a SelectField for the field_nested_data_ptr_slice field.
+func (s allTypesSelect) FieldNestedDataPtrSlice() SelectField[[]*model.NestedData] {
+	return SelectField[[]*model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_nested_data_ptr_slice")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]*model.NestedData, error) {
+			return unmarshalSelectConvert(data, func(vals []*conv.NestedData) []*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return out
+			})
+		},
+		distDecodeFn: func(data []byte) ([][]*model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []*conv.NestedData) []*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_nested_data_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_nested_data_ptr_slice")
+		},
+	}
+}
+
+// FieldNestedDataPtrSlicePtr returns a SelectField for the field_nested_data_ptr_slice_ptr field.
+func (s allTypesSelect) FieldNestedDataPtrSlicePtr() SelectField[*[]*model.NestedData] {
+	return SelectField[*[]*model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_nested_data_ptr_slice_ptr")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([]*[]*model.NestedData, error) {
+			return unmarshalSelectConvert(data, func(vals []*conv.NestedData) *[]*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return &out
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*[]*model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []*conv.NestedData) *[]*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return &out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_nested_data_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_nested_data_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldNode returns a select builder for traversing the field_node record link.
+func (s allTypesSelect) FieldNode() specialTypesSelect {
+	return specialTypesSelect{SelectContext: s.Prefixed("field_node.", false)}
+}
+
+// FieldNodePtr returns a select builder for traversing the field_node_ptr record link.
+func (s allTypesSelect) FieldNodePtr() specialTypesSelect {
+	return specialTypesSelect{SelectContext: s.Prefixed("field_node_ptr.", true)}
+}
+
+// FieldNodeSliceSlice returns a SelectField for the field_node_slice_slice field.
+func (s allTypesSelect) FieldNodeSliceSlice() SelectField[[][]model.SpecialTypes] {
+	return SelectField[[][]model.SpecialTypes]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_node_slice_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_node_slice_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_node_slice_slice")
+		},
+	}
+}
+
+// FieldEdgeRelations returns a select builder for traversing the edge_relation edge to SpecialTypes.
+func (s allTypesSelect) FieldEdgeRelations() specialTypesSelectArray {
+	return specialTypesSelectArray{SelectContext: s.Prefixed("->edge_relation->special_types.", true)}
+}
+
+// FieldSliceSlice returns a SelectField for the field_slice_slice field.
+func (s allTypesSelect) FieldSliceSlice() SelectField[[][]string] {
+	return SelectField[[][]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_slice_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_slice_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_slice_slice")
+		},
+	}
+}
+
+// FieldSliceSliceSlice returns a SelectField for the field_slice_slice_slice field.
+func (s allTypesSelect) FieldSliceSliceSlice() SelectField[[][][]string] {
+	return SelectField[[][][]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_slice_slice_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_slice_slice_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_slice_slice_slice")
+		},
+	}
+}
+
+// FieldSliceSliceSlice2 returns a SelectField for the field_slice_slice_slice_2 field.
+func (s allTypesSelect) FieldSliceSliceSlice2() SelectField[[][][]model.NestedData] {
+	return SelectField[[][][]model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_slice_slice_slice_2")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_slice_slice_slice_2", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_slice_slice_slice_2")
+		},
+	}
+}
+
+// FieldByte returns a SelectField for the field_byte field.
+func (s allTypesSelect) FieldByte() SelectField[byte] {
+	return SelectField[byte]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_byte")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_byte", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_byte")
+		},
+	}
+}
+
+// FieldBytePtr returns a SelectField for the field_byte_ptr field.
+func (s allTypesSelect) FieldBytePtr() SelectField[*byte] {
+	return SelectField[*byte]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_byte_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_byte_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_byte_ptr")
+		},
+	}
+}
+
+// FieldByteSlice returns a SelectField for the field_byte_slice field.
+func (s allTypesSelect) FieldByteSlice() SelectField[[]byte] {
+	return SelectField[[]byte]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_byte_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_byte_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_byte_slice")
+		},
+	}
+}
+
+// FieldByteSlicePtr returns a SelectField for the field_byte_slice_ptr field.
+func (s allTypesSelect) FieldByteSlicePtr() SelectField[*[]byte] {
+	return SelectField[*[]byte]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_byte_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_byte_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_byte_slice_ptr")
+		},
+	}
+}
+
+// FieldRenamed returns a SelectField for the custom_name field.
+func (s allTypesSelect) FieldRenamed() SelectField[string] {
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("custom_name")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("custom_name", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("custom_name")
+		},
+	}
+}
+
+// FieldHookStatus returns a SelectField for the field_hook_status field.
+func (s allTypesSelect) FieldHookStatus() SelectField[string] {
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_hook_status")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_hook_status", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_hook_status")
+		},
+	}
+}
+
+// FieldHookDetail returns a SelectField for the field_hook_detail field.
+func (s allTypesSelect) FieldHookDetail() SelectField[string] {
+	return SelectField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_hook_detail")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_hook_detail", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_hook_detail")
+		},
+	}
+}
+
+// allTypesSelectArray is the array variant of allTypesSelect for edge traversal results.
+type allTypesSelectArray struct {
+	SelectContext
+}
+
+// CreatedAt returns a SelectArrayField for the created_at field.
+func (s allTypesSelectArray) CreatedAt() SelectArrayField[time.Time] {
+	return SelectArrayField[time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("created_at")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("created_at", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("created_at")
+		},
+	}
+}
+
+// UpdatedAt returns a SelectArrayField for the updated_at field.
+func (s allTypesSelectArray) UpdatedAt() SelectArrayField[time.Time] {
+	return SelectArrayField[time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("updated_at")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("updated_at", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("updated_at")
+		},
+	}
+}
+
+// FieldString returns a SelectArrayField for the field_string field.
+func (s allTypesSelectArray) FieldString() SelectArrayField[string] {
+	return SelectArrayField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string")
+		},
+	}
+}
+
+// FieldStringPtr returns a SelectArrayField for the field_string_ptr field.
+func (s allTypesSelectArray) FieldStringPtr() SelectArrayField[*string] {
+	return SelectArrayField[*string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string_ptr")
+		},
+	}
+}
+
+// FieldOther returns a SelectArrayField for the field_other field.
+func (s allTypesSelectArray) FieldOther() SelectArrayField[[]string] {
+	return SelectArrayField[[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_other")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_other", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_other")
+		},
+	}
+}
+
+// FieldStringPtrSlice returns a SelectArrayField for the field_string_ptr_slice field.
+func (s allTypesSelectArray) FieldStringPtrSlice() SelectArrayField[[]*string] {
+	return SelectArrayField[[]*string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string_ptr_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string_ptr_slice")
+		},
+	}
+}
+
+// FieldStringSlicePtr returns a SelectArrayField for the field_string_slice_ptr field.
+func (s allTypesSelectArray) FieldStringSlicePtr() SelectArrayField[*[]string] {
+	return SelectArrayField[*[]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string_slice_ptr")
+		},
+	}
+}
+
+// FieldStringPtrSlicePtr returns a SelectArrayField for the field_string_ptr_slice_ptr field.
+func (s allTypesSelectArray) FieldStringPtrSlicePtr() SelectArrayField[*[]*string] {
+	return SelectArrayField[*[]*string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_string_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_string_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_string_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldInt returns a SelectArrayField for the field_int field.
+func (s allTypesSelectArray) FieldInt() SelectArrayField[int] {
+	return SelectArrayField[int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int")
+		},
+	}
+}
+
+// FieldIntPtr returns a SelectArrayField for the field_int_ptr field.
+func (s allTypesSelectArray) FieldIntPtr() SelectArrayField[*int] {
+	return SelectArrayField[*int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_ptr")
+		},
+	}
+}
+
+// FieldIntSlice returns a SelectArrayField for the field_int_slice field.
+func (s allTypesSelectArray) FieldIntSlice() SelectArrayField[[]int] {
+	return SelectArrayField[[]int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_slice")
+		},
+	}
+}
+
+// FieldIntPtrSlice returns a SelectArrayField for the field_int_ptr_slice field.
+func (s allTypesSelectArray) FieldIntPtrSlice() SelectArrayField[[]*int] {
+	return SelectArrayField[[]*int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_ptr_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_ptr_slice")
+		},
+	}
+}
+
+// FieldIntSlicePtr returns a SelectArrayField for the field_int_slice_ptr field.
+func (s allTypesSelectArray) FieldIntSlicePtr() SelectArrayField[*[]int] {
+	return SelectArrayField[*[]int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_slice_ptr")
+		},
+	}
+}
+
+// FieldIntPtrSlicePtr returns a SelectArrayField for the field_int_ptr_slice_ptr field.
+func (s allTypesSelectArray) FieldIntPtrSlicePtr() SelectArrayField[*[]*int] {
+	return SelectArrayField[*[]*int]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldInt8 returns a SelectArrayField for the field_int_8 field.
+func (s allTypesSelectArray) FieldInt8() SelectArrayField[int8] {
+	return SelectArrayField[int8]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_8")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_8", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_8")
+		},
+	}
+}
+
+// FieldInt8Ptr returns a SelectArrayField for the field_int_8_ptr field.
+func (s allTypesSelectArray) FieldInt8Ptr() SelectArrayField[*int8] {
+	return SelectArrayField[*int8]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_8_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_8_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_8_ptr")
+		},
+	}
+}
+
+// FieldInt16 returns a SelectArrayField for the field_int_16 field.
+func (s allTypesSelectArray) FieldInt16() SelectArrayField[int16] {
+	return SelectArrayField[int16]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_16")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_16", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_16")
+		},
+	}
+}
+
+// FieldInt16Ptr returns a SelectArrayField for the field_int_16_ptr field.
+func (s allTypesSelectArray) FieldInt16Ptr() SelectArrayField[*int16] {
+	return SelectArrayField[*int16]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_16_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_16_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_16_ptr")
+		},
+	}
+}
+
+// FieldInt32 returns a SelectArrayField for the field_int_32 field.
+func (s allTypesSelectArray) FieldInt32() SelectArrayField[int32] {
+	return SelectArrayField[int32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_32")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_32", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_32")
+		},
+	}
+}
+
+// FieldInt32Ptr returns a SelectArrayField for the field_int_32_ptr field.
+func (s allTypesSelectArray) FieldInt32Ptr() SelectArrayField[*int32] {
+	return SelectArrayField[*int32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_32_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_32_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_32_ptr")
+		},
+	}
+}
+
+// FieldInt64 returns a SelectArrayField for the field_int_64 field.
+func (s allTypesSelectArray) FieldInt64() SelectArrayField[int64] {
+	return SelectArrayField[int64]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_64")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_64", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_64")
+		},
+	}
+}
+
+// FieldInt64Ptr returns a SelectArrayField for the field_int_64_ptr field.
+func (s allTypesSelectArray) FieldInt64Ptr() SelectArrayField[*int64] {
+	return SelectArrayField[*int64]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_int_64_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_int_64_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_int_64_ptr")
+		},
+	}
+}
+
+// FieldUint8 returns a SelectArrayField for the field_uint_8 field.
+func (s allTypesSelectArray) FieldUint8() SelectArrayField[uint8] {
+	return SelectArrayField[uint8]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_8")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_8", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_8")
+		},
+	}
+}
+
+// FieldUint8Ptr returns a SelectArrayField for the field_uint_8_ptr field.
+func (s allTypesSelectArray) FieldUint8Ptr() SelectArrayField[*uint8] {
+	return SelectArrayField[*uint8]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_8_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_8_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_8_ptr")
+		},
+	}
+}
+
+// FieldUint16 returns a SelectArrayField for the field_uint_16 field.
+func (s allTypesSelectArray) FieldUint16() SelectArrayField[uint16] {
+	return SelectArrayField[uint16]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_16")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_16", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_16")
+		},
+	}
+}
+
+// FieldUint16Ptr returns a SelectArrayField for the field_uint_16_ptr field.
+func (s allTypesSelectArray) FieldUint16Ptr() SelectArrayField[*uint16] {
+	return SelectArrayField[*uint16]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_16_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_16_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_16_ptr")
+		},
+	}
+}
+
+// FieldUint32 returns a SelectArrayField for the field_uint_32 field.
+func (s allTypesSelectArray) FieldUint32() SelectArrayField[uint32] {
+	return SelectArrayField[uint32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_32")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_32", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_32")
+		},
+	}
+}
+
+// FieldUint32Ptr returns a SelectArrayField for the field_uint_32_ptr field.
+func (s allTypesSelectArray) FieldUint32Ptr() SelectArrayField[*uint32] {
+	return SelectArrayField[*uint32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uint_32_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uint_32_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uint_32_ptr")
+		},
+	}
+}
+
+// FieldFloat32 returns a SelectArrayField for the field_float_32 field.
+func (s allTypesSelectArray) FieldFloat32() SelectArrayField[float32] {
+	return SelectArrayField[float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32")
+		},
+	}
+}
+
+// FieldFloat32Slice returns a SelectArrayField for the field_float_32_slice field.
+func (s allTypesSelectArray) FieldFloat32Slice() SelectArrayField[[]float32] {
+	return SelectArrayField[[]float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32_slice")
+		},
+	}
+}
+
+// FieldFloat32SlicePtr returns a SelectArrayField for the field_float_32_slice_ptr field.
+func (s allTypesSelectArray) FieldFloat32SlicePtr() SelectArrayField[*[]float32] {
+	return SelectArrayField[*[]float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32_slice_ptr")
+		},
+	}
+}
+
+// FieldFloat32PtrSlice returns a SelectArrayField for the field_float_32_ptr_slice field.
+func (s allTypesSelectArray) FieldFloat32PtrSlice() SelectArrayField[[]*float32] {
+	return SelectArrayField[[]*float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32_ptr_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32_ptr_slice")
+		},
+	}
+}
+
+// FieldFloat32PtrSlicePtr returns a SelectArrayField for the field_float_32_ptr_slice_ptr field.
+func (s allTypesSelectArray) FieldFloat32PtrSlicePtr() SelectArrayField[*[]*float32] {
+	return SelectArrayField[*[]*float32]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_32_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_32_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_32_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldFloat64 returns a SelectArrayField for the field_float_64 field.
+func (s allTypesSelectArray) FieldFloat64() SelectArrayField[float64] {
+	return SelectArrayField[float64]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_float_64")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_float_64", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_float_64")
+		},
+	}
+}
+
+// FieldRune returns a SelectArrayField for the field_rune field.
+func (s allTypesSelectArray) FieldRune() SelectArrayField[rune] {
+	return SelectArrayField[rune]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_rune")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_rune", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_rune")
+		},
+	}
+}
+
+// FieldRuneSlice returns a SelectArrayField for the field_rune_slice field.
+func (s allTypesSelectArray) FieldRuneSlice() SelectArrayField[[]rune] {
+	return SelectArrayField[[]rune]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_rune_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_rune_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_rune_slice")
+		},
+	}
+}
+
+// FieldBool returns a SelectArrayField for the field_bool field.
+func (s allTypesSelectArray) FieldBool() SelectArrayField[bool] {
+	return SelectArrayField[bool]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_bool")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_bool", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_bool")
+		},
+	}
+}
+
+// FieldBoolPtr returns a SelectArrayField for the field_bool_ptr field.
+func (s allTypesSelectArray) FieldBoolPtr() SelectArrayField[*bool] {
+	return SelectArrayField[*bool]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_bool_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_bool_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_bool_ptr")
+		},
+	}
+}
+
+// FieldBoolSlice returns a SelectArrayField for the field_bool_slice field.
+func (s allTypesSelectArray) FieldBoolSlice() SelectArrayField[[]bool] {
+	return SelectArrayField[[]bool]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_bool_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_bool_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_bool_slice")
+		},
+	}
+}
+
+// FieldTime returns a SelectArrayField for the field_time field.
+func (s allTypesSelectArray) FieldTime() SelectArrayField[time.Time] {
+	return SelectArrayField[time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.DateTime) time.Time {
+				return v.Time
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time")
+		},
+	}
+}
+
+// FieldTimePtr returns a SelectArrayField for the field_time_ptr field.
+func (s allTypesSelectArray) FieldTimePtr() SelectArrayField[*time.Time] {
+	return SelectArrayField[*time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time_ptr")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time_ptr")
+		},
+	}
+}
+
+// FieldTimeNil returns a SelectArrayField for the field_time_nil field.
+func (s allTypesSelectArray) FieldTimeNil() SelectArrayField[*time.Time] {
+	return SelectArrayField[*time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time_nil")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Time, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.DateTime) *time.Time {
+				if v == nil {
+					return nil
+				}
+				t := v.Time
+				return &t
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time_nil")
+		},
+	}
+}
+
+// FieldTimeSlice returns a SelectArrayField for the field_time_slice field.
+func (s allTypesSelectArray) FieldTimeSlice() SelectArrayField[[]time.Time] {
+	return SelectArrayField[[]time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time_slice")
+		},
+		db: s.DB,
+		distDecodeFn: func(data []byte) ([][]time.Time, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []types.DateTime) []time.Time {
+				out := make([]time.Time, len(vals))
+				for i, v := range vals {
+					out[i] = v.Time
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time_slice")
+		},
+	}
+}
+
+// FieldTimeSliceSlice returns a SelectArrayField for the field_time_slice_slice field.
+func (s allTypesSelectArray) FieldTimeSliceSlice() SelectArrayField[[][]time.Time] {
+	return SelectArrayField[[][]time.Time]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_time_slice_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_time_slice_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_time_slice_slice")
+		},
+	}
+}
+
+// FieldDuration returns a SelectArrayField for the field_duration field.
+func (s allTypesSelectArray) FieldDuration() SelectArrayField[time.Duration] {
+	return SelectArrayField[time.Duration]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_duration")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]time.Duration, error) {
+			return unmarshalSelectArrayConvert(data, func(v types.Duration) time.Duration {
+				return v.Duration
+			})
+		},
+		distDecodeFn: func(data []byte) ([]time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(v types.Duration) time.Duration {
+				return v.Duration
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_duration", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_duration")
+		},
+	}
+}
+
+// FieldDurationPtr returns a SelectArrayField for the field_duration_ptr field.
+func (s allTypesSelectArray) FieldDurationPtr() SelectArrayField[*time.Duration] {
+	return SelectArrayField[*time.Duration]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_duration_ptr")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Duration, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_duration_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_duration_ptr")
+		},
+	}
+}
+
+// FieldDurationNil returns a SelectArrayField for the field_duration_nil field.
+func (s allTypesSelectArray) FieldDurationNil() SelectArrayField[*time.Duration] {
+	return SelectArrayField[*time.Duration]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_duration_nil")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]*time.Duration, error) {
+			return unmarshalSelectArrayConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *types.Duration) *time.Duration {
+				if v == nil {
+					return nil
+				}
+				d := v.Duration
+				return &d
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_duration_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_duration_nil")
+		},
+	}
+}
+
+// FieldDurationSlice returns a SelectArrayField for the field_duration_slice field.
+func (s allTypesSelectArray) FieldDurationSlice() SelectArrayField[[]time.Duration] {
+	return SelectArrayField[[]time.Duration]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_duration_slice")
+		},
+		db: s.DB,
+		distDecodeFn: func(data []byte) ([][]time.Duration, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []types.Duration) []time.Duration {
+				out := make([]time.Duration, len(vals))
+				for i, v := range vals {
+					out[i] = v.Duration
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_duration_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_duration_slice")
+		},
+	}
+}
+
+// FieldMonth returns a SelectArrayField for the field_month field.
+func (s allTypesSelectArray) FieldMonth() SelectArrayField[time.Month] {
+	return SelectArrayField[time.Month]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_month")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_month", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_month")
+		},
+	}
+}
+
+// FieldMonthPtr returns a SelectArrayField for the field_month_ptr field.
+func (s allTypesSelectArray) FieldMonthPtr() SelectArrayField[*time.Month] {
+	return SelectArrayField[*time.Month]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_month_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_month_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_month_ptr")
+		},
+	}
+}
+
+// FieldWeekday returns a SelectArrayField for the field_weekday field.
+func (s allTypesSelectArray) FieldWeekday() SelectArrayField[time.Weekday] {
+	return SelectArrayField[time.Weekday]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_weekday")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_weekday", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_weekday")
+		},
+	}
+}
+
+// FieldWeekdayPtr returns a SelectArrayField for the field_weekday_ptr field.
+func (s allTypesSelectArray) FieldWeekdayPtr() SelectArrayField[*time.Weekday] {
+	return SelectArrayField[*time.Weekday]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_weekday_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_weekday_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_weekday_ptr")
+		},
+	}
+}
+
+// FieldUUID returns a SelectArrayField for the field_uuid field.
+func (s allTypesSelectArray) FieldUUID() SelectArrayField[uuid.UUID] {
+	return SelectArrayField[uuid.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid")
+		},
+	}
+}
+
+// FieldUUIDPtr returns a SelectArrayField for the field_uuid_ptr field.
+func (s allTypesSelectArray) FieldUUIDPtr() SelectArrayField[*uuid.UUID] {
+	return SelectArrayField[*uuid.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_ptr")
+		},
+	}
+}
+
+// FieldUUIDNil returns a SelectArrayField for the field_uuid_nil field.
+func (s allTypesSelectArray) FieldUUIDNil() SelectArrayField[*uuid.UUID] {
+	return SelectArrayField[*uuid.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_nil")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_nil")
+		},
+	}
+}
+
+// FieldUUIDSlice returns a SelectArrayField for the field_uuid_slice field.
+func (s allTypesSelectArray) FieldUUIDSlice() SelectArrayField[[]uuid.UUID] {
+	return SelectArrayField[[]uuid.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_slice")
+		},
+	}
+}
+
+// FieldUUIDGofrs returns a SelectArrayField for the field_uuid_gofrs field.
+func (s allTypesSelectArray) FieldUUIDGofrs() SelectArrayField[uuid1.UUID] {
+	return SelectArrayField[uuid1.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_gofrs")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_gofrs", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_gofrs")
+		},
+	}
+}
+
+// FieldUUIDGofrsPtr returns a SelectArrayField for the field_uuid_gofrs_ptr field.
+func (s allTypesSelectArray) FieldUUIDGofrsPtr() SelectArrayField[*uuid1.UUID] {
+	return SelectArrayField[*uuid1.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_gofrs_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_gofrs_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_gofrs_ptr")
+		},
+	}
+}
+
+// FieldUUIDGofrsNil returns a SelectArrayField for the field_uuid_gofrs_nil field.
+func (s allTypesSelectArray) FieldUUIDGofrsNil() SelectArrayField[*uuid1.UUID] {
+	return SelectArrayField[*uuid1.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_gofrs_nil")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_gofrs_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_gofrs_nil")
+		},
+	}
+}
+
+// FieldUUIDGofrsSlice returns a SelectArrayField for the field_uuid_gofrs_slice field.
+func (s allTypesSelectArray) FieldUUIDGofrsSlice() SelectArrayField[[]uuid1.UUID] {
+	return SelectArrayField[[]uuid1.UUID]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_uuid_gofrs_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_uuid_gofrs_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_uuid_gofrs_slice")
+		},
+	}
+}
+
+// FieldURL returns a SelectArrayField for the field_url field.
+func (s allTypesSelectArray) FieldURL() SelectArrayField[url.URL] {
+	return SelectArrayField[url.URL]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_url")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]url.URL, error) {
+			return unmarshalSelectArrayConvert(data, func(v string) url.URL {
+				u, err := url.Parse(v)
+				if err != nil || u == nil {
+					return url.URL{}
+				}
+				return *u
+			})
+		},
+		distDecodeFn: func(data []byte) ([]url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(v string) url.URL {
+				u, err := url.Parse(v)
+				if err != nil || u == nil {
+					return url.URL{}
+				}
+				return *u
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_url", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_url")
+		},
+	}
+}
+
+// FieldURLPtr returns a SelectArrayField for the field_url_ptr field.
+func (s allTypesSelectArray) FieldURLPtr() SelectArrayField[*url.URL] {
+	return SelectArrayField[*url.URL]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_url_ptr")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]*url.URL, error) {
+			return unmarshalSelectArrayConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_url_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_url_ptr")
+		},
+	}
+}
+
+// FieldURLNil returns a SelectArrayField for the field_url_nil field.
+func (s allTypesSelectArray) FieldURLNil() SelectArrayField[*url.URL] {
+	return SelectArrayField[*url.URL]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_url_nil")
+		},
+		db: s.DB,
+		decodeFn: func(data []byte) ([][]*url.URL, error) {
+			return unmarshalSelectArrayConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
+		distDecodeFn: func(data []byte) ([]*url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(v *string) *url.URL {
+				if v == nil {
+					return nil
+				}
+				u, _ := url.Parse(*v)
+				return u
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_url_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_url_nil")
+		},
+	}
+}
+
+// FieldURLSlice returns a SelectArrayField for the field_url_slice field.
+func (s allTypesSelectArray) FieldURLSlice() SelectArrayField[[]url.URL] {
+	return SelectArrayField[[]url.URL]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_url_slice")
+		},
+		db: s.DB,
+		distDecodeFn: func(data []byte) ([][]url.URL, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []string) []url.URL {
+				out := make([]url.URL, len(vals))
+				for i, v := range vals {
+					out[i] = func() url.URL {
+						u, err := url.Parse(v)
+						if err != nil || u == nil {
+							return url.URL{}
+						}
+						return *u
+					}()
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_url_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_url_slice")
+		},
+	}
+}
+
+// FieldEmail returns a SelectArrayField for the field_email field.
+func (s allTypesSelectArray) FieldEmail() SelectArrayField[som.Email] {
+	return SelectArrayField[som.Email]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_email")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_email", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_email")
+		},
+	}
+}
+
+// FieldEmailPtr returns a SelectArrayField for the field_email_ptr field.
+func (s allTypesSelectArray) FieldEmailPtr() SelectArrayField[*som.Email] {
+	return SelectArrayField[*som.Email]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_email_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_email_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_email_ptr")
+		},
+	}
+}
+
+// FieldEmailNil returns a SelectArrayField for the field_email_nil field.
+func (s allTypesSelectArray) FieldEmailNil() SelectArrayField[*som.Email] {
+	return SelectArrayField[*som.Email]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_email_nil")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_email_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_email_nil")
+		},
+	}
+}
+
+// FieldEmailSlice returns a SelectArrayField for the field_email_slice field.
+func (s allTypesSelectArray) FieldEmailSlice() SelectArrayField[[]som.Email] {
+	return SelectArrayField[[]som.Email]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_email_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_email_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_email_slice")
+		},
+	}
+}
+
+// FieldSemVer returns a SelectArrayField for the field_sem_ver field.
+func (s allTypesSelectArray) FieldSemVer() SelectArrayField[som.SemVer] {
+	return SelectArrayField[som.SemVer]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_sem_ver")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_sem_ver", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_sem_ver")
+		},
+	}
+}
+
+// FieldSemVerPtr returns a SelectArrayField for the field_sem_ver_ptr field.
+func (s allTypesSelectArray) FieldSemVerPtr() SelectArrayField[*som.SemVer] {
+	return SelectArrayField[*som.SemVer]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_sem_ver_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_sem_ver_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_sem_ver_ptr")
+		},
+	}
+}
+
+// FieldSemVerNil returns a SelectArrayField for the field_sem_ver_nil field.
+func (s allTypesSelectArray) FieldSemVerNil() SelectArrayField[*som.SemVer] {
+	return SelectArrayField[*som.SemVer]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_sem_ver_nil")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_sem_ver_nil", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_sem_ver_nil")
+		},
+	}
+}
+
+// FieldSemVerSlice returns a SelectArrayField for the field_sem_ver_slice field.
+func (s allTypesSelectArray) FieldSemVerSlice() SelectArrayField[[]som.SemVer] {
+	return SelectArrayField[[]som.SemVer]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_sem_ver_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_sem_ver_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_sem_ver_slice")
+		},
+	}
+}
+
+// FieldEnum returns a SelectArrayField for the field_enum field.
+func (s allTypesSelectArray) FieldEnum() SelectArrayField[model.Role] {
+	return SelectArrayField[model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum")
+		},
+	}
+}
+
+// FieldEnumPtr returns a SelectArrayField for the field_enum_ptr field.
+func (s allTypesSelectArray) FieldEnumPtr() SelectArrayField[*model.Role] {
+	return SelectArrayField[*model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum_ptr")
+		},
+	}
+}
+
+// FieldEnumSlice returns a SelectArrayField for the field_enum_slice field.
+func (s allTypesSelectArray) FieldEnumSlice() SelectArrayField[[]model.Role] {
+	return SelectArrayField[[]model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum_slice")
+		},
+	}
+}
+
+// FieldEnumPtrSlice returns a SelectArrayField for the field_enum_ptr_slice field.
+func (s allTypesSelectArray) FieldEnumPtrSlice() SelectArrayField[[]*model.Role] {
+	return SelectArrayField[[]*model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum_ptr_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum_ptr_slice")
+		},
+	}
+}
+
+// FieldEnumPtrSlicePtr returns a SelectArrayField for the field_enum_ptr_slice_ptr field.
+func (s allTypesSelectArray) FieldEnumPtrSlicePtr() SelectArrayField[*[]*model.Role] {
+	return SelectArrayField[*[]*model.Role]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_enum_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_enum_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_enum_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldCredentials returns a SelectArrayField for the field_credentials field.
+func (s allTypesSelectArray) FieldCredentials() SelectArrayField[model.Credentials] {
+	return SelectArrayField[model.Credentials]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_credentials")
+		},
+		db:           s.DB,
+		decodeFn:     conv.SelectArrayDecodeCredentials,
+		distDecodeFn: conv.SelectDistinctDecodeCredentials,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_credentials", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_credentials")
+		},
+	}
+}
+
+// FieldNestedDataPtr returns a SelectArrayField for the field_nested_data_ptr field.
+func (s allTypesSelectArray) FieldNestedDataPtr() SelectArrayField[*model.NestedData] {
+	return SelectArrayField[*model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_nested_data_ptr")
+		},
+		db:           s.DB,
+		decodeFn:     conv.SelectArrayDecodeNestedDataPtr,
+		distDecodeFn: conv.SelectDistinctDecodeNestedDataPtr,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_nested_data_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_nested_data_ptr")
+		},
+	}
+}
+
+// FieldNestedDataSlice returns a SelectArrayField for the field_nested_data_slice field.
+func (s allTypesSelectArray) FieldNestedDataSlice() SelectArrayField[[]model.NestedData] {
+	return SelectArrayField[[]model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_nested_data_slice")
+		},
+		db: s.DB,
+		distDecodeFn: func(data []byte) ([][]model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []conv.NestedData) []model.NestedData {
+				out := make([]model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedData(v)
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_nested_data_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_nested_data_slice")
+		},
+	}
+}
+
+// FieldNestedDataPtrSlice returns a SelectArrayField for the field_nested_data_ptr_slice field.
+func (s allTypesSelectArray) FieldNestedDataPtrSlice() SelectArrayField[[]*model.NestedData] {
+	return SelectArrayField[[]*model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_nested_data_ptr_slice")
+		},
+		db: s.DB,
+		distDecodeFn: func(data []byte) ([][]*model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []*conv.NestedData) []*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_nested_data_ptr_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_nested_data_ptr_slice")
+		},
+	}
+}
+
+// FieldNestedDataPtrSlicePtr returns a SelectArrayField for the field_nested_data_ptr_slice_ptr field.
+func (s allTypesSelectArray) FieldNestedDataPtrSlicePtr() SelectArrayField[*[]*model.NestedData] {
+	return SelectArrayField[*[]*model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_nested_data_ptr_slice_ptr")
+		},
+		db: s.DB,
+		distDecodeFn: func(data []byte) ([]*[]*model.NestedData, error) {
+			return unmarshalSelectDistinctConvert(data, func(vals []*conv.NestedData) *[]*model.NestedData {
+				out := make([]*model.NestedData, len(vals))
+				for i, v := range vals {
+					out[i] = conv.ToNestedDataPtr(v)
+				}
+				return &out
+			})
+		},
+		distFn: func() *lib.Result {
+			return s.DistFn("field_nested_data_ptr_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_nested_data_ptr_slice_ptr")
+		},
+	}
+}
+
+// FieldNode returns a select builder for traversing the field_node record link.
+func (s allTypesSelectArray) FieldNode() specialTypesSelectArray {
+	return specialTypesSelectArray{SelectContext: s.Prefixed("field_node.", false)}
+}
+
+// FieldNodePtr returns a select builder for traversing the field_node_ptr record link.
+func (s allTypesSelectArray) FieldNodePtr() specialTypesSelectArray {
+	return specialTypesSelectArray{SelectContext: s.Prefixed("field_node_ptr.", true)}
+}
+
+// FieldNodeSliceSlice returns a SelectArrayField for the field_node_slice_slice field.
+func (s allTypesSelectArray) FieldNodeSliceSlice() SelectArrayField[[][]model.SpecialTypes] {
+	return SelectArrayField[[][]model.SpecialTypes]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_node_slice_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_node_slice_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_node_slice_slice")
+		},
+	}
+}
+
+// FieldEdgeRelations returns a select builder for traversing the edge_relation edge to SpecialTypes.
+func (s allTypesSelectArray) FieldEdgeRelations() specialTypesSelectArray {
+	return specialTypesSelectArray{SelectContext: s.Prefixed("->edge_relation->special_types.", true)}
+}
+
+// FieldSliceSlice returns a SelectArrayField for the field_slice_slice field.
+func (s allTypesSelectArray) FieldSliceSlice() SelectArrayField[[][]string] {
+	return SelectArrayField[[][]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_slice_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_slice_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_slice_slice")
+		},
+	}
+}
+
+// FieldSliceSliceSlice returns a SelectArrayField for the field_slice_slice_slice field.
+func (s allTypesSelectArray) FieldSliceSliceSlice() SelectArrayField[[][][]string] {
+	return SelectArrayField[[][][]string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_slice_slice_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_slice_slice_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_slice_slice_slice")
+		},
+	}
+}
+
+// FieldSliceSliceSlice2 returns a SelectArrayField for the field_slice_slice_slice_2 field.
+func (s allTypesSelectArray) FieldSliceSliceSlice2() SelectArrayField[[][][]model.NestedData] {
+	return SelectArrayField[[][][]model.NestedData]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_slice_slice_slice_2")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_slice_slice_slice_2", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_slice_slice_slice_2")
+		},
+	}
+}
+
+// FieldByte returns a SelectArrayField for the field_byte field.
+func (s allTypesSelectArray) FieldByte() SelectArrayField[byte] {
+	return SelectArrayField[byte]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_byte")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_byte", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_byte")
+		},
+	}
+}
+
+// FieldBytePtr returns a SelectArrayField for the field_byte_ptr field.
+func (s allTypesSelectArray) FieldBytePtr() SelectArrayField[*byte] {
+	return SelectArrayField[*byte]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_byte_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_byte_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_byte_ptr")
+		},
+	}
+}
+
+// FieldByteSlice returns a SelectArrayField for the field_byte_slice field.
+func (s allTypesSelectArray) FieldByteSlice() SelectArrayField[[]byte] {
+	return SelectArrayField[[]byte]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_byte_slice")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_byte_slice", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_byte_slice")
+		},
+	}
+}
+
+// FieldByteSlicePtr returns a SelectArrayField for the field_byte_slice_ptr field.
+func (s allTypesSelectArray) FieldByteSlicePtr() SelectArrayField[*[]byte] {
+	return SelectArrayField[*[]byte]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_byte_slice_ptr")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_byte_slice_ptr", false)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_byte_slice_ptr")
+		},
+	}
+}
+
+// FieldRenamed returns a SelectArrayField for the custom_name field.
+func (s allTypesSelectArray) FieldRenamed() SelectArrayField[string] {
+	return SelectArrayField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("custom_name")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("custom_name", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("custom_name")
+		},
+	}
+}
+
+// FieldHookStatus returns a SelectArrayField for the field_hook_status field.
+func (s allTypesSelectArray) FieldHookStatus() SelectArrayField[string] {
+	return SelectArrayField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_hook_status")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_hook_status", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_hook_status")
+		},
+	}
+}
+
+// FieldHookDetail returns a SelectArrayField for the field_hook_detail field.
+func (s allTypesSelectArray) FieldHookDetail() SelectArrayField[string] {
+	return SelectArrayField[string]{
+		buildFn: func() *lib.Result {
+			return s.BuildFn("field_hook_detail")
+		},
+		db: s.DB,
+		distFn: func() *lib.Result {
+			return s.DistFn("field_hook_detail", true)
+		},
+		firstFn: func() *lib.Result {
+			return s.FirstFn("field_hook_detail")
+		},
+	}
+}
+
+// AllTypesQuery is a type alias for the AllTypes query builder.
+type AllTypesQuery = Builder[model.AllTypes, allTypesSelect]
+
 // NewAllTypes creates a new query builder for AllTypes models.
-func NewAllTypes(db Database) Builder[model.AllTypes] {
+func NewAllTypes(db Database) Builder[model.AllTypes, allTypesSelect] {
 	q := lib.NewQuery[model.AllTypes]("all_types")
-	return Builder[model.AllTypes]{builder[model.AllTypes]{
+	return Builder[model.AllTypes, allTypesSelect]{builder[model.AllTypes, allTypesSelect]{
 		db:      db,
 		info:    allTypesModelInfo,
 		query:   q,
 		rangeFn: allTypesRangeFn,
+		selectFn: func(sc SelectContext) allTypesSelect {
+			return allTypesSelect{SelectContext: sc}
+		},
 	}}
 }

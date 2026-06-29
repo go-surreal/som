@@ -14,7 +14,7 @@ type ID struct {
 	source *parser.FieldID
 }
 
-func (f *ID) typeGo() jen.Code {
+func (f *ID) TypeGo() jen.Code {
 	return jen.String()
 }
 

@@ -15,7 +15,7 @@ type Time struct {
 	source *parser.FieldTime
 }
 
-func (f *Time) typeGo() jen.Code {
+func (f *Time) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Time")
 }
 
@@ -65,7 +65,65 @@ func (f *Time) CodeGen() *CodeGen {
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
+
+		selectDecode:      f.selectDecode,
+		selectDistDecode:  f.selectDistDecode,
+		selectArrayDecode: f.selectArrayDecode,
 	}
+}
+
+func (f *Time) selectArrayDecode(ctx Context) jen.Code {
+	dt := jen.Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime")
+
+	if f.source.Pointer() {
+		return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Index().Op("*").Qual("time", "Time"), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalSelectArrayConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Op("*").Add(dt)).Op("*").Qual("time", "Time").Block(
+				jen.If(jen.Id("v").Op("==").Nil()).Block(jen.Return(jen.Nil())),
+				jen.Id("t").Op(":=").Id("v").Dot("Time"),
+				jen.Return(jen.Op("&").Id("t")),
+			))))
+	}
+
+	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Index().Qual("time", "Time"), jen.Error()).Block(
+		jen.Return(jen.Id("unmarshalSelectArrayConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Add(dt)).Qual("time", "Time").Block(
+			jen.Return(jen.Id("v").Dot("Time")),
+		))))
+}
+
+func (f *Time) selectDecode(ctx Context) jen.Code {
+	dt := jen.Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime")
+
+	if f.source.Pointer() {
+		return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Op("*").Qual("time", "Time"), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalSelectConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Op("*").Add(dt)).Op("*").Qual("time", "Time").Block(
+				jen.If(jen.Id("v").Op("==").Nil()).Block(jen.Return(jen.Nil())),
+				jen.Id("t").Op(":=").Id("v").Dot("Time"),
+				jen.Return(jen.Op("&").Id("t")),
+			))))
+	}
+
+	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Qual("time", "Time"), jen.Error()).Block(
+		jen.Return(jen.Id("unmarshalSelectConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Add(dt)).Qual("time", "Time").Block(
+			jen.Return(jen.Id("v").Dot("Time")),
+		))))
+}
+
+func (f *Time) selectDistDecode(ctx Context) jen.Code {
+	dt := jen.Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime")
+
+	if f.source.Pointer() {
+		return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Op("*").Qual("time", "Time"), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalSelectDistinctConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Op("*").Add(dt)).Op("*").Qual("time", "Time").Block(
+				jen.If(jen.Id("v").Op("==").Nil()).Block(jen.Return(jen.Nil())),
+				jen.Id("t").Op(":=").Id("v").Dot("Time"),
+				jen.Return(jen.Op("&").Id("t")),
+			))))
+	}
+
+	return jen.Func().Params(jen.Id("data").Index().Byte()).Params(jen.Index().Qual("time", "Time"), jen.Error()).Block(
+		jen.Return(jen.Id("unmarshalSelectDistinctConvert").Call(jen.Id("data"), jen.Func().Params(jen.Id("v").Add(dt)).Qual("time", "Time").Block(
+			jen.Return(jen.Id("v").Dot("Time")),
+		))))
 }
 
 func (f *Time) filterDefine(ctx Context) jen.Code {

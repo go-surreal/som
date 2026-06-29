@@ -19,7 +19,7 @@ import (
 type PersonObjRepo interface {
 	// Query returns a new query builder for the PersonObj model.
 
-	Query() query.Builder[model.PersonObj]
+	Query() query.PersonObjQuery
 	// CreateWithID creates a new record with the given key for the PersonObj model.
 
 	CreateWithID(ctx context.Context, personObj *model.PersonObj) error
@@ -344,7 +344,7 @@ func (r *personObj) OnAfterDelete(fn func(ctx context.Context, node *model.Perso
 }
 
 // Query returns a new query builder for the PersonObj model.
-func (r *personObj) Query() query.Builder[model.PersonObj] {
+func (r *personObj) Query() query.PersonObjQuery {
 	return query.NewPersonObj(r.db)
 }
 

@@ -14,12 +14,12 @@ type String struct {
 	source *parser.FieldString
 }
 
-func (f *String) typeGo() jen.Code {
+func (f *String) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).String()
 }
 
 func (f *String) typeConv(_ Context) jen.Code {
-	return f.typeGo()
+	return f.TypeGo()
 }
 
 func (f *String) TypeDatabase() string {

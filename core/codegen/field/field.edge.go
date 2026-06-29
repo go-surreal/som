@@ -13,7 +13,7 @@ type Edge struct {
 	table  *EdgeTable
 }
 
-func (f *Edge) typeGo() jen.Code {
+func (f *Edge) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.table.NameGo())
 }
 

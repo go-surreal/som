@@ -14,7 +14,7 @@ type SemVer struct {
 	source *parser.FieldSemVer
 }
 
-func (f *SemVer) typeGo() jen.Code {
+func (f *SemVer) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.TargetPkg, "SemVer")
 }
 

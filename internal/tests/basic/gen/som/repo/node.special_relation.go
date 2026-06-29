@@ -21,7 +21,7 @@ import (
 type SpecialRelationRepo interface {
 	// Query returns a new query builder for the SpecialRelation model.
 
-	Query() query.Builder[model.SpecialRelation]
+	Query() query.SpecialRelationQuery
 	// Create creates a new record for the SpecialRelation model.
 
 	Create(ctx context.Context, specialRelation *model.SpecialRelation) error
@@ -361,7 +361,7 @@ func (r *specialRelation) OnAfterDelete(fn func(ctx context.Context, node *model
 }
 
 // Query returns a new query builder for the SpecialRelation model.
-func (r *specialRelation) Query() query.Builder[model.SpecialRelation] {
+func (r *specialRelation) Query() query.SpecialRelationQuery {
 	return query.NewSpecialRelation(r.db)
 }
 

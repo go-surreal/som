@@ -14,7 +14,7 @@ type Email struct {
 	source *parser.FieldEmail
 }
 
-func (f *Email) typeGo() jen.Code {
+func (f *Email) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.TargetPkg, "Email")
 }
 

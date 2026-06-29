@@ -19,7 +19,7 @@ type Enum struct {
 	values []string
 }
 
-func (f *Enum) typeGo() jen.Code {
+func (f *Enum) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo())
 }
 

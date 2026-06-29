@@ -62,7 +62,7 @@ func (f *Geometry) geoFilterTypeName() string {
 	}
 }
 
-func (f *Geometry) typeGo() jen.Code {
+func (f *Geometry) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.geoPkg(), f.geoGoTypeName())
 }
 

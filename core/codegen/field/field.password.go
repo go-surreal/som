@@ -14,7 +14,7 @@ type Password struct {
 	source *parser.FieldPassword
 }
 
-func (f *Password) typeGo() jen.Code {
+func (f *Password) TypeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, "Password").Types(jen.Qual(f.SourcePkg, string(f.source.Algorithm)))
 }
 

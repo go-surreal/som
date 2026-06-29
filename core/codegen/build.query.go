@@ -44,6 +44,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	modelInfoVarName := node.NameGoLower() + "ModelInfo"
 	rangeFnVarName := node.NameGoLower() + "RangeFn"
+	selectTypeName := node.NameGoLower() + "Select"
 
 	convFn := jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr")
 
@@ -74,13 +75,22 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		b.generateStringIDRangeFn(f, node, pkgLib, somPkg, modelType, rangeFnVarName)
 	}
 
+	// Generate select struct and field methods
+	b.generateSelectStruct(f, node, pkgLib, modelType, selectTypeName)
+
+	// Generate exported type alias for use in repo interfaces
+	queryAliasName := node.NameGo() + "Query"
+	f.Line()
+	f.Commentf("%s is a type alias for the %s query builder.", queryAliasName, node.NameGo())
+	f.Type().Id(queryAliasName).Op("=").Id("Builder").Types(modelType, jen.Id(selectTypeName))
+
 	f.Line()
 	f.Commentf("New%s creates a new query builder for %s models.", node.NameGo(), node.NameGo())
 	f.Func().Id("New"+node.Name).
 		Params(
 			jen.Id("db").Id("Database"),
 		).
-		Id("Builder").Types(modelType).
+		Id("Builder").Types(modelType, jen.Id(selectTypeName)).
 		BlockFunc(func(g *jen.Group) {
 			g.Id("q").Op(":=").Qual(pkgLib, "NewQuery").Types(modelType).Call(jen.Lit(node.NameDatabase()))
 
@@ -95,6 +105,13 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 				jen.Id("db"):    jen.Id("db"),
 				jen.Id("query"): jen.Id("q"),
 				jen.Id("info"):  jen.Id(modelInfoVarName),
+				jen.Id("selectFn"): jen.Func().Params(
+					jen.Id("sc").Id("SelectContext"),
+				).Id(selectTypeName).Block(
+					jen.Return(jen.Id(selectTypeName).Values(jen.Dict{
+						jen.Id("SelectContext"): jen.Id("sc"),
+					})),
+				),
 			}
 
 			if node.HasComplexID() || node.HasStringID() {
@@ -102,9 +119,9 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			}
 
 			g.Return(
-				jen.Id("Builder").Types(modelType).
+				jen.Id("Builder").Types(modelType, jen.Id(selectTypeName)).
 					Values(
-						jen.Id("builder").Types(modelType).
+						jen.Id("builder").Types(modelType, jen.Id(selectTypeName)).
 							Values(builderDict),
 					),
 			)
@@ -115,6 +132,180 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	}
 
 	return nil
+}
+
+func (b *queryBuilder) generateSelectStruct(
+	f *jen.File, node *field.NodeTable,
+	pkgLib string, modelType jen.Code, selectTypeName string,
+) {
+	// Generate the select struct type
+	f.Line()
+	f.Commentf("%s provides field selection for %s queries.", selectTypeName, node.NameGo())
+	f.Type().Id(selectTypeName).Struct(
+		jen.Id("SelectContext"),
+	)
+
+	b.generateSelectMethods(f, node, pkgLib, modelType, selectTypeName, false)
+
+	// Generate array variant for edge traversal results.
+	// Edge traversal is many-to-many, so every field is wrapped in a slice.
+	arraySelectTypeName := selectTypeName + "Array"
+	f.Line()
+	f.Commentf("%s is the array variant of %s for edge traversal results.", arraySelectTypeName, selectTypeName)
+	f.Type().Id(arraySelectTypeName).Struct(
+		jen.Id("SelectContext"),
+	)
+
+	b.generateSelectMethods(f, node, pkgLib, modelType, arraySelectTypeName, true)
+}
+
+func (b *queryBuilder) generateSelectMethods(
+	f *jen.File, node *field.NodeTable,
+	pkgLib string, modelType jen.Code, selectTypeName string, arrayWrap bool,
+) {
+	for _, fld := range node.Fields {
+		if fld.NameDatabase() == "id" {
+			continue
+		}
+
+		switch typedFld := fld.(type) {
+		case *field.Node:
+			b.generateSelectNodeMethod(f, typedFld, selectTypeName, arrayWrap)
+			continue
+		case *field.Edge:
+			b.generateSelectEdgeMethod(f, typedFld, fld.NameGo(), selectTypeName)
+			continue
+		}
+
+		if s, ok := fld.(*field.Slice); ok {
+			switch elem := s.Element().(type) {
+			case *field.Node:
+				_ = elem
+				continue
+			case *field.Edge:
+				b.generateSelectEdgeMethod(f, elem, fld.NameGo(), selectTypeName)
+				continue
+			}
+		}
+
+		b.generateSelectFieldMethod(f, fld, pkgLib, modelType, selectTypeName, arrayWrap)
+	}
+}
+
+func (b *queryBuilder) generateSelectFieldMethod(
+	f *jen.File, fld field.Field,
+	pkgLib string, _ jen.Code, selectTypeName string, arrayWrap bool,
+) {
+	ctx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
+	}
+
+	fieldGoType := fld.TypeGo()
+	fieldDBName := fld.NameDatabase()
+	fieldGoName := fld.NameGo()
+
+	excludeNull := !fld.Pointer()
+
+	dict := jen.Dict{
+		jen.Id("db"): jen.Id("s").Dot("DB"),
+		jen.Id("buildFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
+			jen.Return(jen.Id("s").Dot("BuildFn").Call(jen.Lit(fieldDBName))),
+		),
+		jen.Id("firstFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
+			jen.Return(jen.Id("s").Dot("FirstFn").Call(jen.Lit(fieldDBName))),
+		),
+		jen.Id("distFn"): jen.Func().Params().Op("*").Qual(pkgLib, "Result").Block(
+			jen.Return(jen.Id("s").Dot("DistFn").Call(jen.Lit(fieldDBName), jen.Lit(excludeNull))),
+		),
+	}
+
+	selectType := "SelectField"
+	if arrayWrap {
+		selectType = "SelectArrayField"
+
+		if code := fld.CodeGen().SelectArrayDecode(ctx); code != nil {
+			dict[jen.Id("decodeFn")] = code
+		}
+
+		// Distinct on traversal flattens to []T (single field type, no extra
+		// wrap). Reuse the scalar selectDistDecode which returns []T.
+		if code := fld.CodeGen().SelectDistDecode(ctx); code != nil {
+			dict[jen.Id("distDecodeFn")] = code
+		}
+	} else {
+		if code := fld.CodeGen().SelectDecode(ctx); code != nil {
+			dict[jen.Id("decodeFn")] = code
+		}
+
+		if code := fld.CodeGen().SelectDistDecode(ctx); code != nil {
+			dict[jen.Id("distDecodeFn")] = code
+		}
+	}
+
+	f.Line()
+	f.Commentf("%s returns a %s for the %s field.", fieldGoName, selectType, fieldDBName)
+	f.Func().
+		Params(jen.Id("s").Id(selectTypeName)).
+		Id(fieldGoName).
+		Params().
+		Id(selectType).Types(fieldGoType).
+		Block(
+			jen.Return(jen.Id(selectType).Types(fieldGoType).Values(dict)),
+		)
+}
+
+func (b *queryBuilder) generateSelectNodeMethod(
+	f *jen.File, fld *field.Node, selectTypeName string, arrayWrap bool,
+) {
+	fieldDBName := fld.NameDatabase()
+	fieldGoName := fld.NameGo()
+	linkedSelectType := fld.Table().NameGoLower() + "Select"
+	if arrayWrap {
+		linkedSelectType += "Array"
+	}
+
+	// A nullable record link can be NONE at runtime; downstream Distinct must
+	// not filter out NULL leaves once the path passes through it.
+	throughNullable := fld.Pointer()
+
+	f.Line()
+	f.Commentf("%s returns a select builder for traversing the %s record link.", fieldGoName, fieldDBName)
+	f.Func().
+		Params(jen.Id("s").Id(selectTypeName)).
+		Id(fieldGoName).
+		Params().
+		Id(linkedSelectType).
+		Block(
+			jen.Return(jen.Id(linkedSelectType).Values(jen.Dict{
+				jen.Id("SelectContext"): jen.Id("s").Dot("Prefixed").Call(jen.Lit(fieldDBName+"."), jen.Lit(throughNullable)),
+			})),
+		)
+}
+
+func (b *queryBuilder) generateSelectEdgeMethod(
+	f *jen.File, fld *field.Edge, fieldGoName, selectTypeName string,
+) {
+	edge := fld.Table()
+	outTable := edge.Out.Table()
+	// Edge traversal always produces array results, so use the array variant.
+	linkedSelectType := outTable.NameGoLower() + "SelectArray"
+	prefix := "->" + edge.NameDatabase() + "->" + outTable.NameDatabase() + "."
+
+	f.Line()
+	f.Commentf("%s returns a select builder for traversing the %s edge to %s.", fieldGoName, edge.NameDatabase(), outTable.NameGo())
+	f.Func().
+		Params(jen.Id("s").Id(selectTypeName)).
+		Id(fieldGoName).
+		Params().
+		Id(linkedSelectType).
+		Block(
+			jen.Return(jen.Id(linkedSelectType).Values(jen.Dict{
+				// Edge traversal is always nullable: a source row may have zero
+				// matching edges, so the leaf can be NONE for that row.
+				jen.Id("SelectContext"): jen.Id("s").Dot("Prefixed").Call(jen.Lit(prefix), jen.Lit(true)),
+			})),
+		)
 }
 
 func (b *queryBuilder) generateRangeFn(

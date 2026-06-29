@@ -94,6 +94,106 @@ func ToSpecialTypesPtr(data *SpecialTypes) *model.SpecialTypes {
 	return &result
 }
 
+func SelectDecodeSpecialTypes(data []byte) ([]model.SpecialTypes, error) {
+	var rawResult []internal.QueryResult[SpecialTypes]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]model.SpecialTypes, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToSpecialTypes(v)
+	}
+	return out, nil
+}
+
+func SelectDecodeSpecialTypesPtr(data []byte) ([]*model.SpecialTypes, error) {
+	var rawResult []internal.QueryResult[*SpecialTypes]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([]*model.SpecialTypes, len(rawResult[0].Result))
+	for i, v := range rawResult[0].Result {
+		out[i] = ToSpecialTypesPtr(v)
+	}
+	return out, nil
+}
+
+func SelectDistinctDecodeSpecialTypes(data []byte) ([]model.SpecialTypes, error) {
+	var rawResult []internal.QueryResult[[]SpecialTypes]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]model.SpecialTypes, len(inner))
+	for i, v := range inner {
+		out[i] = ToSpecialTypes(v)
+	}
+	return out, nil
+}
+
+func SelectDistinctDecodeSpecialTypesPtr(data []byte) ([]*model.SpecialTypes, error) {
+	var rawResult []internal.QueryResult[[]*SpecialTypes]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	inner := rawResult[0].Result[0]
+	out := make([]*model.SpecialTypes, len(inner))
+	for i, v := range inner {
+		out[i] = ToSpecialTypesPtr(v)
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeSpecialTypes(data []byte) ([][]model.SpecialTypes, error) {
+	var rawResult []internal.QueryResult[[]SpecialTypes]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]model.SpecialTypes, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]model.SpecialTypes, len(row))
+		for j, v := range row {
+			inner[j] = ToSpecialTypes(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
+func SelectArrayDecodeSpecialTypesPtr(data []byte) ([][]*model.SpecialTypes, error) {
+	var rawResult []internal.QueryResult[[]*SpecialTypes]
+	if err := cbor.Unmarshal(data, &rawResult); err != nil {
+		return nil, err
+	}
+	if len(rawResult) < 1 || len(rawResult[0].Result) < 1 {
+		return nil, nil
+	}
+	out := make([][]*model.SpecialTypes, len(rawResult[0].Result))
+	for i, row := range rawResult[0].Result {
+		inner := make([]*model.SpecialTypes, len(row))
+		for j, v := range row {
+			inner[j] = ToSpecialTypesPtr(v)
+		}
+		out[i] = inner
+	}
+	return out, nil
+}
+
 type specialTypesLink struct {
 	SpecialTypes
 	ID *models.RecordID
