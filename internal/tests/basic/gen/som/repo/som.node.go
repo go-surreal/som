@@ -100,48 +100,46 @@ func (r *repo[N, K]) registerHook(kind hookKind, fn func(ctx context.Context, no
 	}
 }
 
+// invokeIface calls the model's optional lifecycle-hook interface for the given
+// event, if the model implements it.
+func (r *repo[N, K]) invokeIface(ctx context.Context, kind hookKind, node *N) error {
+	switch kind {
+	case beforeCreate:
+		if h, ok := any(node).(som.OnBeforeCreateHook); ok {
+			return h.OnBeforeCreate(ctx)
+		}
+	case afterCreate:
+		if h, ok := any(node).(som.OnAfterCreateHook); ok {
+			return h.OnAfterCreate(ctx)
+		}
+	case beforeUpdate:
+		if h, ok := any(node).(som.OnBeforeUpdateHook); ok {
+			return h.OnBeforeUpdate(ctx)
+		}
+	case afterUpdate:
+		if h, ok := any(node).(som.OnAfterUpdateHook); ok {
+			return h.OnAfterUpdate(ctx)
+		}
+	case beforeDelete:
+		if h, ok := any(node).(som.OnBeforeDeleteHook); ok {
+			return h.OnBeforeDelete(ctx)
+		}
+	case afterDelete:
+		if h, ok := any(node).(som.OnAfterDeleteHook); ok {
+			return h.OnAfterDelete(ctx)
+		}
+	}
+
+	return nil
+}
+
 // runHooks invokes the model's optional lifecycle-hook interface for the given
 // event, followed by every hook registered on the repository. It aborts on the
 // first error. Registered hooks are snapshotted under the lock so that mutating
 // the hook set from within a hook does not affect the current invocation.
 func (r *repo[N, K]) runHooks(ctx context.Context, kind hookKind, node *N) error {
-	switch kind {
-	case beforeCreate:
-		if h, ok := any(node).(som.OnBeforeCreateHook); ok {
-			if err := h.OnBeforeCreate(ctx); err != nil {
-				return err
-			}
-		}
-	case afterCreate:
-		if h, ok := any(node).(som.OnAfterCreateHook); ok {
-			if err := h.OnAfterCreate(ctx); err != nil {
-				return err
-			}
-		}
-	case beforeUpdate:
-		if h, ok := any(node).(som.OnBeforeUpdateHook); ok {
-			if err := h.OnBeforeUpdate(ctx); err != nil {
-				return err
-			}
-		}
-	case afterUpdate:
-		if h, ok := any(node).(som.OnAfterUpdateHook); ok {
-			if err := h.OnAfterUpdate(ctx); err != nil {
-				return err
-			}
-		}
-	case beforeDelete:
-		if h, ok := any(node).(som.OnBeforeDeleteHook); ok {
-			if err := h.OnBeforeDelete(ctx); err != nil {
-				return err
-			}
-		}
-	case afterDelete:
-		if h, ok := any(node).(som.OnAfterDeleteHook); ok {
-			if err := h.OnAfterDelete(ctx); err != nil {
-				return err
-			}
-		}
+	if err := r.invokeIface(ctx, kind, node); err != nil {
+		return err
 	}
 
 	r.hookMu.RLock()
@@ -151,6 +149,29 @@ func (r *repo[N, K]) runHooks(ctx context.Context, kind hookKind, node *N) error
 	for _, h := range hooks {
 		if err := h.fn(ctx, node); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// runHooksAll invokes the given hook event for every node in the batch. The
+// registered repository hooks are snapshotted once for the whole batch, so
+// mutating the hook set from within a hook does not affect the current call.
+func (r *repo[N, K]) runHooksAll(ctx context.Context, kind hookKind, nodes []*N) error {
+	r.hookMu.RLock()
+	hooks := slices.Clone(r.hooks[kind])
+	r.hookMu.RUnlock()
+
+	for _, node := range nodes {
+		if err := r.invokeIface(ctx, kind, node); err != nil {
+			return err
+		}
+
+		for _, h := range hooks {
+			if err := h.fn(ctx, node); err != nil {
+				return err
+			}
 		}
 	}
 

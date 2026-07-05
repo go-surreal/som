@@ -601,17 +601,17 @@ Before- and after-create hooks are invoked.
 						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node already has an id"))))
 				})
 
-				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
-					b.addRunHooks(inner, jen.Id("n"), "beforeCreate")
-				})
+				g.If(jen.Err().Op(":=").Id("r").Dot("runHooksAll").Call(
+					jen.Id("ctx"), jen.Id("beforeCreate"), jen.Id("nodes"),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 				g.If(jen.Err().Op(":=").Id("r").Dot("insert").Call(
 					jen.Id("ctx"), jen.Id("nodes"),
 				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
-				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
-					b.addRunHooks(inner, jen.Id("n"), "afterCreate")
-				})
+				g.If(jen.Err().Op(":=").Id("r").Dot("runHooksAll").Call(
+					jen.Id("ctx"), jen.Id("afterCreate"), jen.Id("nodes"),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 				g.Return(jen.Nil())
 			})

@@ -252,18 +252,14 @@ func (r *specialTypes) Insert(ctx context.Context, nodes []*model.SpecialTypes) 
 			return errors.New("node already has an id")
 		}
 	}
-	for _, n := range nodes {
-		if err := r.runHooks(ctx, beforeCreate, n); err != nil {
-			return err
-		}
+	if err := r.runHooksAll(ctx, beforeCreate, nodes); err != nil {
+		return err
 	}
 	if err := r.insert(ctx, nodes); err != nil {
 		return err
 	}
-	for _, n := range nodes {
-		if err := r.runHooks(ctx, afterCreate, n); err != nil {
-			return err
-		}
+	if err := r.runHooksAll(ctx, afterCreate, nodes); err != nil {
+		return err
 	}
 	return nil
 }
