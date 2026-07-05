@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
@@ -13,8 +12,6 @@ import (
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
 	model "som.test/model"
-	"sync"
-	"sync/atomic"
 )
 
 type AllTypesRepo interface {
@@ -181,176 +178,6 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 
 type allTypes struct {
 	*repo[model.AllTypes, string]
-	mu           sync.RWMutex
-	beforeCreate []allTypesHook
-	afterCreate  []allTypesHook
-	beforeUpdate []allTypesHook
-	afterUpdate  []allTypesHook
-	beforeDelete []allTypesHook
-	afterDelete  []allTypesHook
-}
-
-type allTypesHook struct {
-	id uint64
-	fn func(ctx context.Context, node *model.AllTypes) error
-}
-
-var allTypesHookCounter atomic.Uint64
-
-// OnBeforeCreate registers a hook that runs before a record is created.
-// If the hook returns an error, the create operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *allTypes) OnBeforeCreate(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeCreate = append(r.beforeCreate, allTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeCreate {
-			if h.id == id {
-				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterCreate registers a hook that runs after a record has been created.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *allTypes) OnAfterCreate(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterCreate = append(r.afterCreate, allTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterCreate {
-			if h.id == id {
-				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeUpdate registers a hook that runs before a record is updated.
-// If the hook returns an error, the update operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *allTypes) OnBeforeUpdate(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeUpdate = append(r.beforeUpdate, allTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeUpdate {
-			if h.id == id {
-				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterUpdate registers a hook that runs after a record has been updated.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *allTypes) OnAfterUpdate(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterUpdate = append(r.afterUpdate, allTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterUpdate {
-			if h.id == id {
-				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeDelete registers a hook that runs before a record is deleted.
-// If the hook returns an error, the delete operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *allTypes) OnBeforeDelete(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeDelete = append(r.beforeDelete, allTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeDelete {
-			if h.id == id {
-				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterDelete registers a hook that runs after a record has been deleted.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *allTypes) OnAfterDelete(fn func(ctx context.Context, node *model.AllTypes) error) func() {
-	id := allTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterDelete = append(r.afterDelete, allTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterDelete {
-			if h.id == id {
-				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
-				return
-			}
-		}
-	}
 }
 
 // Query returns a new query builder for the AllTypes model.
@@ -368,36 +195,14 @@ func (r *allTypes) Create(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(allTypes).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]allTypesHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, allTypes); err != nil {
+		return err
 	}
 	if err := r.create(ctx, allTypes); err != nil {
 		return err
 	}
-	if h, ok := any(allTypes).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]allTypesHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, allTypes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -414,36 +219,14 @@ func (r *allTypes) CreateWithID(ctx context.Context, id string, allTypes *model.
 	if allTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(allTypes).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]allTypesHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, allTypes); err != nil {
+		return err
 	}
 	if err := r.createWithID(ctx, id, allTypes); err != nil {
 		return err
 	}
-	if h, ok := any(allTypes).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]allTypesHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, allTypes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -462,40 +245,14 @@ func (r *allTypes) Insert(ctx context.Context, nodes []*model.AllTypes) error {
 			return errors.New("node already has an id")
 		}
 	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]allTypesHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
-			if err := h.OnBeforeCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range beforeCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
+	if err := r.runHooksAll(ctx, beforeCreate, nodes); err != nil {
+		return err
 	}
 	if err := r.insert(ctx, nodes); err != nil {
 		return err
 	}
-	r.mu.RLock()
-	afterCreateHooks := make([]allTypesHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnAfterCreateHook); ok {
-			if err := h.OnAfterCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range afterCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
+	if err := r.runHooksAll(ctx, afterCreate, nodes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -543,36 +300,14 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes.ID() == "" {
 		return errors.New("cannot update AllTypes without existing record ID")
 	}
-	if h, ok := any(allTypes).(som.OnBeforeUpdateHook); ok {
-		if err := h.OnBeforeUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeUpdateHooks := make([]allTypesHook, len(r.beforeUpdate))
-	copy(beforeUpdateHooks, r.beforeUpdate)
-	r.mu.RUnlock()
-	for _, h := range beforeUpdateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeUpdate, allTypes); err != nil {
+		return err
 	}
 	if err := r.update(ctx, r.recordID(string(allTypes.ID())), allTypes); err != nil {
 		return err
 	}
-	if h, ok := any(allTypes).(som.OnAfterUpdateHook); ok {
-		if err := h.OnAfterUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterUpdateHooks := make([]allTypesHook, len(r.afterUpdate))
-	copy(afterUpdateHooks, r.afterUpdate)
-	r.mu.RUnlock()
-	for _, h := range afterUpdateHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterUpdate, allTypes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -586,36 +321,14 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes.ID() == "" {
 		return errors.New("cannot delete AllTypes without existing record ID")
 	}
-	if h, ok := any(allTypes).(som.OnBeforeDeleteHook); ok {
-		if err := h.OnBeforeDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeDeleteHooks := make([]allTypesHook, len(r.beforeDelete))
-	copy(beforeDeleteHooks, r.beforeDelete)
-	r.mu.RUnlock()
-	for _, h := range beforeDeleteHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeDelete, allTypes); err != nil {
+		return err
 	}
 	if err := r.delete(ctx, r.recordID(string(allTypes.ID())), allTypes, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(allTypes).(som.OnAfterDeleteHook); ok {
-		if err := h.OnAfterDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterDeleteHooks := make([]allTypesHook, len(r.afterDelete))
-	copy(afterDeleteHooks, r.afterDelete)
-	r.mu.RUnlock()
-	for _, h := range afterDeleteHooks {
-		if err := h.fn(ctx, allTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterDelete, allTypes); err != nil {
+		return err
 	}
 	return nil
 }

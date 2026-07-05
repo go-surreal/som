@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
@@ -13,8 +12,6 @@ import (
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
 	model "som.test/model"
-	"sync"
-	"sync/atomic"
 )
 
 type LocationRepo interface {
@@ -181,176 +178,6 @@ func (c *ClientImpl) LocationRepo() LocationRepo {
 
 type location struct {
 	*repo[model.Location, string]
-	mu           sync.RWMutex
-	beforeCreate []locationHook
-	afterCreate  []locationHook
-	beforeUpdate []locationHook
-	afterUpdate  []locationHook
-	beforeDelete []locationHook
-	afterDelete  []locationHook
-}
-
-type locationHook struct {
-	id uint64
-	fn func(ctx context.Context, node *model.Location) error
-}
-
-var locationHookCounter atomic.Uint64
-
-// OnBeforeCreate registers a hook that runs before a record is created.
-// If the hook returns an error, the create operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *location) OnBeforeCreate(fn func(ctx context.Context, node *model.Location) error) func() {
-	id := locationHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeCreate = append(r.beforeCreate, locationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeCreate {
-			if h.id == id {
-				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterCreate registers a hook that runs after a record has been created.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *location) OnAfterCreate(fn func(ctx context.Context, node *model.Location) error) func() {
-	id := locationHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterCreate = append(r.afterCreate, locationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterCreate {
-			if h.id == id {
-				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeUpdate registers a hook that runs before a record is updated.
-// If the hook returns an error, the update operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *location) OnBeforeUpdate(fn func(ctx context.Context, node *model.Location) error) func() {
-	id := locationHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeUpdate = append(r.beforeUpdate, locationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeUpdate {
-			if h.id == id {
-				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterUpdate registers a hook that runs after a record has been updated.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *location) OnAfterUpdate(fn func(ctx context.Context, node *model.Location) error) func() {
-	id := locationHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterUpdate = append(r.afterUpdate, locationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterUpdate {
-			if h.id == id {
-				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeDelete registers a hook that runs before a record is deleted.
-// If the hook returns an error, the delete operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *location) OnBeforeDelete(fn func(ctx context.Context, node *model.Location) error) func() {
-	id := locationHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeDelete = append(r.beforeDelete, locationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeDelete {
-			if h.id == id {
-				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterDelete registers a hook that runs after a record has been deleted.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *location) OnAfterDelete(fn func(ctx context.Context, node *model.Location) error) func() {
-	id := locationHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterDelete = append(r.afterDelete, locationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterDelete {
-			if h.id == id {
-				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
-				return
-			}
-		}
-	}
 }
 
 // Query returns a new query builder for the Location model.
@@ -368,36 +195,14 @@ func (r *location) Create(ctx context.Context, location *model.Location) error {
 	if location.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(location).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]locationHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, location); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, location); err != nil {
+		return err
 	}
 	if err := r.create(ctx, location); err != nil {
 		return err
 	}
-	if h, ok := any(location).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]locationHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, location); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, location); err != nil {
+		return err
 	}
 	return nil
 }
@@ -414,36 +219,14 @@ func (r *location) CreateWithID(ctx context.Context, id string, location *model.
 	if location.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(location).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]locationHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, location); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, location); err != nil {
+		return err
 	}
 	if err := r.createWithID(ctx, id, location); err != nil {
 		return err
 	}
-	if h, ok := any(location).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]locationHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, location); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, location); err != nil {
+		return err
 	}
 	return nil
 }
@@ -462,40 +245,14 @@ func (r *location) Insert(ctx context.Context, nodes []*model.Location) error {
 			return errors.New("node already has an id")
 		}
 	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]locationHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
-			if err := h.OnBeforeCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range beforeCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
+	if err := r.runHooksAll(ctx, beforeCreate, nodes); err != nil {
+		return err
 	}
 	if err := r.insert(ctx, nodes); err != nil {
 		return err
 	}
-	r.mu.RLock()
-	afterCreateHooks := make([]locationHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnAfterCreateHook); ok {
-			if err := h.OnAfterCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range afterCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
+	if err := r.runHooksAll(ctx, afterCreate, nodes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -543,36 +300,14 @@ func (r *location) Update(ctx context.Context, location *model.Location) error {
 	if location.ID() == "" {
 		return errors.New("cannot update Location without existing record ID")
 	}
-	if h, ok := any(location).(som.OnBeforeUpdateHook); ok {
-		if err := h.OnBeforeUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeUpdateHooks := make([]locationHook, len(r.beforeUpdate))
-	copy(beforeUpdateHooks, r.beforeUpdate)
-	r.mu.RUnlock()
-	for _, h := range beforeUpdateHooks {
-		if err := h.fn(ctx, location); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeUpdate, location); err != nil {
+		return err
 	}
 	if err := r.update(ctx, r.recordID(string(location.ID())), location); err != nil {
 		return err
 	}
-	if h, ok := any(location).(som.OnAfterUpdateHook); ok {
-		if err := h.OnAfterUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterUpdateHooks := make([]locationHook, len(r.afterUpdate))
-	copy(afterUpdateHooks, r.afterUpdate)
-	r.mu.RUnlock()
-	for _, h := range afterUpdateHooks {
-		if err := h.fn(ctx, location); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterUpdate, location); err != nil {
+		return err
 	}
 	return nil
 }
@@ -586,36 +321,14 @@ func (r *location) Delete(ctx context.Context, location *model.Location) error {
 	if location.ID() == "" {
 		return errors.New("cannot delete Location without existing record ID")
 	}
-	if h, ok := any(location).(som.OnBeforeDeleteHook); ok {
-		if err := h.OnBeforeDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeDeleteHooks := make([]locationHook, len(r.beforeDelete))
-	copy(beforeDeleteHooks, r.beforeDelete)
-	r.mu.RUnlock()
-	for _, h := range beforeDeleteHooks {
-		if err := h.fn(ctx, location); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeDelete, location); err != nil {
+		return err
 	}
 	if err := r.delete(ctx, r.recordID(string(location.ID())), location, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(location).(som.OnAfterDeleteHook); ok {
-		if err := h.OnAfterDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterDeleteHooks := make([]locationHook, len(r.afterDelete))
-	copy(afterDeleteHooks, r.afterDelete)
-	r.mu.RUnlock()
-	for _, h := range afterDeleteHooks {
-		if err := h.fn(ctx, location); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterDelete, location); err != nil {
+		return err
 	}
 	return nil
 }

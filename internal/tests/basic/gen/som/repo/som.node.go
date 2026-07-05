@@ -6,7 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	som "som.test/gen/som"
 	"som.test/gen/som/internal"
@@ -48,6 +51,24 @@ type RepoInfo[N any] struct {
 	MarshalOne func(node *N) any
 }
 
+// hookKind enumerates the lifecycle events a hook may be registered for.
+type hookKind int
+
+const (
+	beforeCreate hookKind = iota
+	afterCreate
+	beforeUpdate
+	afterUpdate
+	beforeDelete
+	afterDelete
+	numHookKinds
+)
+
+type hook[N any] struct {
+	id uint64
+	fn func(ctx context.Context, node *N) error
+}
+
 type repo[N any, K any] struct {
 	db *dbConn
 
@@ -56,6 +77,129 @@ type repo[N any, K any] struct {
 	newID    func(string) string
 	idFunc   string
 	recordID func(K) *models.RecordID
+
+	hookMu      sync.RWMutex
+	hookCounter atomic.Uint64
+	hooks       [numHookKinds][]hook[N]
+}
+
+func (r *repo[N, K]) registerHook(kind hookKind, fn func(ctx context.Context, node *N) error) func() {
+	id := r.hookCounter.Add(1)
+	r.hookMu.Lock()
+	r.hooks[kind] = append(r.hooks[kind], hook[N]{id: id, fn: fn})
+	r.hookMu.Unlock()
+	return func() {
+		r.hookMu.Lock()
+		defer r.hookMu.Unlock()
+		for i, h := range r.hooks[kind] {
+			if h.id == id {
+				r.hooks[kind] = slices.Delete(r.hooks[kind], i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// invokeIface calls the model's optional lifecycle-hook interface for the given
+// event, if the model implements it.
+func (r *repo[N, K]) invokeIface(ctx context.Context, kind hookKind, node *N) error {
+	switch kind {
+	case beforeCreate:
+		if h, ok := any(node).(som.OnBeforeCreateHook); ok {
+			return h.OnBeforeCreate(ctx)
+		}
+	case afterCreate:
+		if h, ok := any(node).(som.OnAfterCreateHook); ok {
+			return h.OnAfterCreate(ctx)
+		}
+	case beforeUpdate:
+		if h, ok := any(node).(som.OnBeforeUpdateHook); ok {
+			return h.OnBeforeUpdate(ctx)
+		}
+	case afterUpdate:
+		if h, ok := any(node).(som.OnAfterUpdateHook); ok {
+			return h.OnAfterUpdate(ctx)
+		}
+	case beforeDelete:
+		if h, ok := any(node).(som.OnBeforeDeleteHook); ok {
+			return h.OnBeforeDelete(ctx)
+		}
+	case afterDelete:
+		if h, ok := any(node).(som.OnAfterDeleteHook); ok {
+			return h.OnAfterDelete(ctx)
+		}
+	}
+
+	return nil
+}
+
+// runHooks invokes the model's optional lifecycle-hook interface for the given
+// event, followed by every hook registered on the repository. It aborts on the
+// first error. Registered hooks are snapshotted under the lock so that mutating
+// the hook set from within a hook does not affect the current invocation.
+func (r *repo[N, K]) runHooks(ctx context.Context, kind hookKind, node *N) error {
+	if err := r.invokeIface(ctx, kind, node); err != nil {
+		return err
+	}
+
+	r.hookMu.RLock()
+	hooks := slices.Clone(r.hooks[kind])
+	r.hookMu.RUnlock()
+
+	for _, h := range hooks {
+		if err := h.fn(ctx, node); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// runHooksAll invokes the given hook event for every node in the batch. The
+// registered repository hooks are snapshotted once for the whole batch, so
+// mutating the hook set from within a hook does not affect the current call.
+func (r *repo[N, K]) runHooksAll(ctx context.Context, kind hookKind, nodes []*N) error {
+	r.hookMu.RLock()
+	hooks := slices.Clone(r.hooks[kind])
+	r.hookMu.RUnlock()
+
+	for _, node := range nodes {
+		if err := r.invokeIface(ctx, kind, node); err != nil {
+			return err
+		}
+
+		for _, h := range hooks {
+			if err := h.fn(ctx, node); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *repo[N, K]) OnBeforeCreate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeCreate, fn)
+}
+
+func (r *repo[N, K]) OnAfterCreate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterCreate, fn)
+}
+
+func (r *repo[N, K]) OnBeforeUpdate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeUpdate, fn)
+}
+
+func (r *repo[N, K]) OnAfterUpdate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterUpdate, fn)
+}
+
+func (r *repo[N, K]) OnBeforeDelete(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeDelete, fn)
+}
+
+func (r *repo[N, K]) OnAfterDelete(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterDelete, fn)
 }
 
 func (r *repo[N, K]) create(ctx context.Context, node *N) error {

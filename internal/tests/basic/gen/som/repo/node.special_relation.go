@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
@@ -14,8 +13,6 @@ import (
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
 	model "som.test/model"
-	"sync"
-	"sync/atomic"
 )
 
 type SpecialRelationRepo interface {
@@ -188,176 +185,6 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 
 type specialRelation struct {
 	*repo[model.SpecialRelation, string]
-	mu           sync.RWMutex
-	beforeCreate []specialRelationHook
-	afterCreate  []specialRelationHook
-	beforeUpdate []specialRelationHook
-	afterUpdate  []specialRelationHook
-	beforeDelete []specialRelationHook
-	afterDelete  []specialRelationHook
-}
-
-type specialRelationHook struct {
-	id uint64
-	fn func(ctx context.Context, node *model.SpecialRelation) error
-}
-
-var specialRelationHookCounter atomic.Uint64
-
-// OnBeforeCreate registers a hook that runs before a record is created.
-// If the hook returns an error, the create operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialRelation) OnBeforeCreate(fn func(ctx context.Context, node *model.SpecialRelation) error) func() {
-	id := specialRelationHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeCreate = append(r.beforeCreate, specialRelationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeCreate {
-			if h.id == id {
-				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterCreate registers a hook that runs after a record has been created.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialRelation) OnAfterCreate(fn func(ctx context.Context, node *model.SpecialRelation) error) func() {
-	id := specialRelationHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterCreate = append(r.afterCreate, specialRelationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterCreate {
-			if h.id == id {
-				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeUpdate registers a hook that runs before a record is updated.
-// If the hook returns an error, the update operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialRelation) OnBeforeUpdate(fn func(ctx context.Context, node *model.SpecialRelation) error) func() {
-	id := specialRelationHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeUpdate = append(r.beforeUpdate, specialRelationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeUpdate {
-			if h.id == id {
-				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterUpdate registers a hook that runs after a record has been updated.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialRelation) OnAfterUpdate(fn func(ctx context.Context, node *model.SpecialRelation) error) func() {
-	id := specialRelationHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterUpdate = append(r.afterUpdate, specialRelationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterUpdate {
-			if h.id == id {
-				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeDelete registers a hook that runs before a record is deleted.
-// If the hook returns an error, the delete operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialRelation) OnBeforeDelete(fn func(ctx context.Context, node *model.SpecialRelation) error) func() {
-	id := specialRelationHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeDelete = append(r.beforeDelete, specialRelationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeDelete {
-			if h.id == id {
-				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterDelete registers a hook that runs after a record has been deleted.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialRelation) OnAfterDelete(fn func(ctx context.Context, node *model.SpecialRelation) error) func() {
-	id := specialRelationHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterDelete = append(r.afterDelete, specialRelationHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterDelete {
-			if h.id == id {
-				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
-				return
-			}
-		}
-	}
 }
 
 // Query returns a new query builder for the SpecialRelation model.
@@ -375,36 +202,14 @@ func (r *specialRelation) Create(ctx context.Context, specialRelation *model.Spe
 	if specialRelation.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(specialRelation).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]specialRelationHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, specialRelation); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, specialRelation); err != nil {
+		return err
 	}
 	if err := r.create(ctx, specialRelation); err != nil {
 		return err
 	}
-	if h, ok := any(specialRelation).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]specialRelationHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, specialRelation); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, specialRelation); err != nil {
+		return err
 	}
 	return nil
 }
@@ -421,36 +226,14 @@ func (r *specialRelation) CreateWithID(ctx context.Context, id string, specialRe
 	if specialRelation.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(specialRelation).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]specialRelationHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, specialRelation); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, specialRelation); err != nil {
+		return err
 	}
 	if err := r.createWithID(ctx, id, specialRelation); err != nil {
 		return err
 	}
-	if h, ok := any(specialRelation).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]specialRelationHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, specialRelation); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, specialRelation); err != nil {
+		return err
 	}
 	return nil
 }
@@ -469,40 +252,14 @@ func (r *specialRelation) Insert(ctx context.Context, nodes []*model.SpecialRela
 			return errors.New("node already has an id")
 		}
 	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]specialRelationHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
-			if err := h.OnBeforeCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range beforeCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
+	if err := r.runHooksAll(ctx, beforeCreate, nodes); err != nil {
+		return err
 	}
 	if err := r.insert(ctx, nodes); err != nil {
 		return err
 	}
-	r.mu.RLock()
-	afterCreateHooks := make([]specialRelationHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnAfterCreateHook); ok {
-			if err := h.OnAfterCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range afterCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
+	if err := r.runHooksAll(ctx, afterCreate, nodes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -550,36 +307,14 @@ func (r *specialRelation) Update(ctx context.Context, specialRelation *model.Spe
 	if specialRelation.ID() == "" {
 		return errors.New("cannot update SpecialRelation without existing record ID")
 	}
-	if h, ok := any(specialRelation).(som.OnBeforeUpdateHook); ok {
-		if err := h.OnBeforeUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeUpdateHooks := make([]specialRelationHook, len(r.beforeUpdate))
-	copy(beforeUpdateHooks, r.beforeUpdate)
-	r.mu.RUnlock()
-	for _, h := range beforeUpdateHooks {
-		if err := h.fn(ctx, specialRelation); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeUpdate, specialRelation); err != nil {
+		return err
 	}
 	if err := r.update(ctx, r.recordID(string(specialRelation.ID())), specialRelation); err != nil {
 		return err
 	}
-	if h, ok := any(specialRelation).(som.OnAfterUpdateHook); ok {
-		if err := h.OnAfterUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterUpdateHooks := make([]specialRelationHook, len(r.afterUpdate))
-	copy(afterUpdateHooks, r.afterUpdate)
-	r.mu.RUnlock()
-	for _, h := range afterUpdateHooks {
-		if err := h.fn(ctx, specialRelation); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterUpdate, specialRelation); err != nil {
+		return err
 	}
 	return nil
 }
@@ -596,36 +331,14 @@ func (r *specialRelation) Delete(ctx context.Context, specialRelation *model.Spe
 	if specialRelation.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
-	if h, ok := any(specialRelation).(som.OnBeforeDeleteHook); ok {
-		if err := h.OnBeforeDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeDeleteHooks := make([]specialRelationHook, len(r.beforeDelete))
-	copy(beforeDeleteHooks, r.beforeDelete)
-	r.mu.RUnlock()
-	for _, h := range beforeDeleteHooks {
-		if err := h.fn(ctx, specialRelation); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeDelete, specialRelation); err != nil {
+		return err
 	}
 	if err := r.delete(ctx, r.recordID(string(specialRelation.ID())), specialRelation, true, nil); err != nil {
 		return err
 	}
-	if h, ok := any(specialRelation).(som.OnAfterDeleteHook); ok {
-		if err := h.OnAfterDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterDeleteHooks := make([]specialRelationHook, len(r.afterDelete))
-	copy(afterDeleteHooks, r.afterDelete)
-	r.mu.RUnlock()
-	for _, h := range afterDeleteHooks {
-		if err := h.fn(ctx, specialRelation); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterDelete, specialRelation); err != nil {
+		return err
 	}
 	return nil
 }
