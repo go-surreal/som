@@ -1,0 +1,279 @@
+# Troubleshooting
+
+Common issues and solutions when working with SOM.
+
+## Code Generation Issues
+
+### "No models found"
+
+**Problem**: The generator doesn't find any models.
+
+**Solution**: Ensure your structs embed `som.Node[T]` or `som.Edge`:
+
+```go
+type User struct {
+    som.Node[som.ULID]  // This is required
+    Name string
+}
+```
+
+Also check that:
+- Model files are in the input directory
+- Files have `.go` extension
+- Package compiles without errors
+
+### Import errors in generated code
+
+**Problem**: Generated code has broken imports.
+
+**Solution**:
+1. Delete the generated output directory completely
+2. Regenerate the code
+3. Run `go mod tidy` in your project
+
+```bash
+rm -rf ./gen/som
+go run github.com/go-surreal/som@latest -i ./model
+go mod tidy
+```
+
+### Generator crashes or panics
+
+**Problem**: The generator panics or crashes.
+
+**Solution**:
+1. Check for syntax errors in your model files
+2. Ensure all imports are valid
+3. Try with a minimal model to isolate the issue
+4. Check for unsupported types (see [Supported Types](../data_types/01_primitives.md))
+5. Report the issue on GitHub with reproduction steps
+
+### Edge missing In/Out fields
+
+**Problem**: Edge generates but doesn't have In/Out relationships.
+
+**Solution**: Ensure your edge has both fields with proper tags:
+
+```go
+type Follows struct {
+    som.Edge
+
+    In  *User `som:"in"`   // Must have som:"in" tag
+    Out *User `som:"out"`  // Must have som:"out" tag
+
+    // Additional fields...
+}
+```
+
+## Runtime Issues
+
+### Connection refused
+
+**Problem**: Cannot connect to SurrealDB.
+
+**Solution**:
+
+1. Verify SurrealDB is running:
+   ```bash
+   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.1.5 \
+       start --user root --pass root
+   ```
+
+2. Check the address format:
+   ```go
+   client, err := som.NewClient(ctx, som.Config{
+       Address:   "ws://localhost:8000",  // WebSocket protocol
+       // or
+       Address:   "http://localhost:8000", // HTTP protocol
+   })
+   ```
+
+3. Verify credentials match your SurrealDB setup
+
+4. Check namespace and database exist (SurrealDB creates them automatically, but verify names are correct)
+
+### Record not found after Create
+
+**Problem**: `Read` returns `exists=false` for a record you just created.
+
+**Solution**:
+
+1. Ensure Create succeeded:
+   ```go
+   err := client.UserRepo().Create(ctx, user)
+   if err != nil {
+       log.Fatal(err)  // Don't ignore errors
+   }
+   ```
+
+2. Use the correct ID reference:
+   ```go
+   // Correct - use ID() method, convert to string
+   retrieved, exists, err := client.UserRepo().Read(ctx, string(user.ID()))
+   ```
+
+3. Check you're using the same namespace/database
+
+### Type mismatch errors
+
+**Problem**: Errors when reading/writing certain fields.
+
+**Solution**:
+
+1. Regenerate code after any model changes
+2. Check for unsupported types:
+   - `uint`, `uint64`, `uintptr` - Not supported
+   - `complex64`, `complex128` - Not supported
+   - Channels, functions - Not supported
+
+3. Ensure pointer/non-pointer consistency between model and database
+
+### Timestamps not updating
+
+**Problem**: `CreatedAt` or `UpdatedAt` fields are not being set.
+
+**Solution**:
+
+1. Ensure you're embedding `som.Timestamps`:
+   ```go
+   type User struct {
+       som.Node[som.ULID]
+       som.Timestamps  // Must be embedded
+       Name string
+   }
+   ```
+
+2. Timestamps are readonly - don't try to set them manually
+3. Regenerate code if you just added `som.Timestamps`
+
+## Query Issues
+
+### Filter not matching expected records
+
+**Problem**: Query returns wrong results.
+
+**Solution**:
+
+1. Check filter logic - multiple filters are ANDed:
+   ```go
+   // This is AND (both must be true)
+   query.Where(
+       filter.User.IsActive.IsTrue(),
+       filter.User.Age.GreaterThan(18),
+   )
+
+   // Use filter.Any for OR
+   query.Where(
+       filter.Any(
+           filter.User.Role.Equal("admin"),
+           filter.User.Role.Equal("moderator"),
+       ),
+   )
+   ```
+
+2. Check comparison direction:
+   ```go
+   // "Age greater than 18" not "18 greater than age"
+   filter.User.Age.GreaterThan(18)
+   ```
+
+3. Check nil handling for optional fields:
+   ```go
+   // Optional fields might be nil
+   filter.User.DeletedAt.IsNil()  // Not deleted
+   ```
+
+### Live query not receiving updates
+
+**Problem**: Live query channel doesn't receive any updates.
+
+**Solution**:
+
+1. Check error handling:
+   ```go
+   updates, err := client.UserRepo().Query().Live(ctx)
+   if err != nil {
+       log.Fatal(err)  // Connection might have failed
+   }
+   ```
+
+2. Ensure context isn't cancelled:
+   ```go
+   ctx, cancel := context.WithCancel(context.Background())
+   // Don't call cancel() until you want to stop
+   ```
+
+3. Check that changes actually occur in the database after subscribing
+
+4. Verify filters match the records being changed
+
+## Performance Issues
+
+### Slow queries
+
+**Solution**:
+
+1. Add filters to reduce result sets:
+   ```go
+   // Bad - fetches all users
+   users, _ := client.UserRepo().Query().All(ctx)
+
+   // Good - fetches only what you need
+   users, _ := client.UserRepo().Query().
+       Where(filter.User.IsActive.IsTrue()).
+       Limit(100).
+       All(ctx)
+   ```
+
+2. Use `Count` or `Exists` when you don't need full records:
+   ```go
+   count, _ := client.UserRepo().Query().
+       Where(filter.User.IsActive.IsTrue()).
+       Count(ctx)
+   ```
+
+3. Consider indexing frequently queried fields in SurrealDB
+
+### High memory usage
+
+**Solution**:
+
+1. Use iterators for large result sets:
+   ```go
+   for user, err := range client.UserRepo().Query().Iterate(ctx, 100) {
+       if err != nil {
+           break
+       }
+       process(user)
+   }
+   ```
+
+2. Use `TempFiles(true)` for very large queries:
+   ```go
+   users, _ := client.UserRepo().Query().
+       TempFiles(true).
+       All(ctx)
+   ```
+
+3. Close unused live query subscriptions by cancelling their context
+
+4. Don't hold references to large result sets longer than needed
+
+### Connection pool exhaustion
+
+**Solution**:
+
+1. Limit concurrent live queries
+2. Cancel contexts when subscriptions are no longer needed
+3. Consider connection pooling at the infrastructure level
+
+## Getting Help
+
+1. Check existing [GitHub Issues](https://github.com/go-surreal/som/issues)
+2. Search [GitHub Discussions](https://github.com/go-surreal/som/discussions)
+3. Open a new issue with:
+   - SOM version
+   - Go version
+   - SurrealDB version
+   - Minimal reproduction code
+   - Expected vs actual behavior

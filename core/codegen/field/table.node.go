@@ -1,13 +1,14 @@
 package field
 
 import (
+	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
 )
 
 type NodeTable struct {
-	Name       string
-	Fields     []Field
-	Timestamps bool
+	Name   string
+	Fields []Field
+	Source *parser.Node // Reference to source parser.Node
 
 	// TODO: include source package path + method(s)
 }
@@ -32,6 +33,17 @@ func (t *NodeTable) NameDatabase() string {
 	return strcase.ToSnake(t.Name) // TODO
 }
 
-func (t *NodeTable) HasTimestamps() bool {
-	return t.Timestamps
+func (t *NodeTable) HasComplexID() bool {
+	return t.Source != nil && t.Source.ComplexID != nil
+}
+
+func (t *NodeTable) HasStringID() bool {
+	if t.Source == nil {
+		return false
+	}
+	switch t.Source.IDType {
+	case parser.IDTypeULID, parser.IDTypeUUID, parser.IDTypeRand:
+		return true
+	}
+	return false
 }

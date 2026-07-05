@@ -1,0 +1,33 @@
+//go:build embed
+
+package lib
+
+import "time"
+
+type Weekday[M any] struct {
+	*Base[M, time.Weekday, *Weekday[M], *Slice[M, time.Weekday, *Weekday[M]]]
+	*Comparable[M, time.Weekday, *Weekday[M]]
+}
+
+func NewWeekday[M any](key Key[M]) *Weekday[M] {
+	return &Weekday[M]{
+		Base:       NewBase[M, time.Weekday, *Weekday[M], *Slice[M, time.Weekday, *Weekday[M]]](key),
+		Comparable: NewComparable[M, time.Weekday, *Weekday[M]](key),
+	}
+}
+
+type WeekdayPtr[M any] struct {
+	*Weekday[M]
+	*Nillable[M]
+}
+
+func (w *Weekday[M]) key() Key[M] {
+	return w.Base.key()
+}
+
+func NewWeekdayPtr[M any](key Key[M]) *WeekdayPtr[M] {
+	return &WeekdayPtr[M]{
+		Weekday:  NewWeekday[M](key),
+		Nillable: NewNillable[M](key),
+	}
+}

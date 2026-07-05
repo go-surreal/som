@@ -4,6 +4,10 @@ package lib
 
 type Sort[T any] SortBuilder
 
+func (s *Sort[T]) SearchSort() *SortBuilder {
+	return (*SortBuilder)(s)
+}
+
 type BaseSort[T any] struct {
 	key string
 }

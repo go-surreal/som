@@ -5,7 +5,7 @@ package lib
 import (
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som/internal/types"
 )
 
 type Duration[M any] struct {

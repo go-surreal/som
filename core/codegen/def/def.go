@@ -4,26 +4,37 @@ import "github.com/dave/jennifer/jen"
 
 const (
 	PkgQuery  = "query"
-	PkgFilter = "where"
+	PkgFilter = "filter"
 	PkgSort   = "by"
 	PkgFetch  = "with"
 	PkgConv   = "conv"
 	PkgRelate = "relate"
-	PkgRepo   = "repo"
+	PkgIndex  = "index"
+	PkgField  = "field"
+	PkgRepo    = "repo"
+	PkgSomWire = "somwire"
 
-	PkgLib   = "internal/lib"
-	PkgTypes = "internal/types"
+	PkgInternal    = "internal"
+	PkgLib         = "internal/lib"
+	PkgTypes       = "internal/types"
 	PkgCBORHelpers = "internal/cbor"
+	PkgDistinct    = "internal/distinct"
+
+	IndexPrefix = "__som__"
 )
 
 const (
 	//PkgSom  = "github.com/go-surreal/som"
 	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"
 	PkgModels    = "github.com/surrealdb/surrealdb.go/pkg/models"
-	PkgCBOR      = "github.com/fxamacker/cbor/v2"
 
-	PkgURL  = "net/url"
-	PkgUUID = "github.com/google/uuid"
+	PkgURL        = "net/url"
+	PkgUUIDGoogle = "github.com/google/uuid"
+	PkgUUIDGofrs  = "github.com/gofrs/uuid"
+
+	PkgGeoOrb            = "github.com/paulmach/orb"
+	PkgGeoSimplefeatures = "github.com/peterstace/simplefeatures/geom"
+	PkgGeoGoGeom         = "github.com/twpayne/go-geom"
 )
 
 var (

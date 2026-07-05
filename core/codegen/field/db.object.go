@@ -5,8 +5,9 @@ import (
 )
 
 type DatabaseObject struct {
-	Name   string
-	Fields []Field
+	Name           string
+	Fields         []Field
+	IsArrayIndexed bool
 }
 
 func (o *DatabaseObject) NameGo() string {
@@ -27,8 +28,4 @@ func (o *DatabaseObject) FileName() string {
 
 func (o *DatabaseObject) GetFields() []Field {
 	return o.Fields
-}
-
-func (o *DatabaseObject) HasTimestamps() bool {
-	return false // TODO: not needed for objects
 }

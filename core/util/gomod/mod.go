@@ -12,14 +12,29 @@ import (
 const fileGoMod = "go.mod"
 
 const (
-	minSupportedGoVersion = "1.23"    // suffix '.0' omitted on purpose!
-	maxSupportedGoVersion = "1.23.99" // allow for future patch versions
+	minSupportedGoVersion = "1.24"    // suffix '.0' omitted on purpose!
+	maxSupportedGoVersion = "1.26.99" // allow for future patch versions
 
-	pkgSOM    = "github.com/go-surreal/som"
 	pkgDriver = "github.com/surrealdb/surrealdb.go"
 
-	requiredSOMVersion    = "v0.10.0"
-	requiredDriverVersion = "v1.0.0"
+	pkgGoogleWire = "github.com/google/wire"
+	pkgGoforjWire = "github.com/goforj/wire"
+
+	PkgGeoOrb            = "github.com/paulmach/orb"
+	PkgGeoSimplefeatures = "github.com/peterstace/simplefeatures"
+	PkgGeoGoGeom         = "github.com/twpayne/go-geom"
+
+	PkgUUIDGoogle = "github.com/google/uuid"
+	PkgUUIDGofrs  = "github.com/gofrs/uuid"
+
+	requiredDriverVersion = "v1.5.0"
+
+	MinGeoOrbVersion            = "v0.12.0"
+	MinGeoSimplefeaturesVersion = "v0.58.0"
+	MinGeoGoGeomVersion         = "v1.6.1"
+
+	MinUUIDGoogleVersion = "v1.6.0"
+	MinUUIDGofrsVersion  = "v4.4.0"
 )
 
 type GoMod struct {
@@ -99,53 +114,6 @@ func (m *GoMod) CheckGoVersion() (string, error) {
 	return "", nil
 }
 
-func (m *GoMod) CheckSOMVersion(checkLatest bool) (string, error) {
-	for _, require := range m.file.Require {
-		if require.Mod.Path != pkgSOM {
-			continue
-		}
-
-		somVersion, err := versionOrdinal(require.Mod.Version)
-		if err != nil {
-			return "", fmt.Errorf("could not parse som version: %w", err)
-		}
-
-		reqVersion, err := versionOrdinal(requiredSOMVersion)
-		if err != nil {
-			return "", fmt.Errorf("could not parse required som version: %w", err)
-		}
-
-		if somVersion != reqVersion {
-			fmt.Printf("go.mod: setting som version to %s\n", requiredSOMVersion)
-
-			if err := m.file.AddRequire(pkgSOM, requiredSOMVersion); err != nil {
-				return "", err
-			}
-		}
-
-		if checkLatest {
-			latestVersion, err := SOMVersion()
-			if err != nil {
-				return "", fmt.Errorf("could not check latest som version: %w", err)
-			}
-
-			if somVersion < latestVersion {
-				return fmt.Sprintf("newer version of som available: %s (currently: %s)", latestVersion, somVersion), nil
-			}
-		}
-
-		return "", nil
-	}
-
-	fmt.Printf("go.mod: adding som version %s\n", requiredSOMVersion)
-
-	if err := m.file.AddRequire(pkgSOM, requiredSOMVersion); err != nil {
-		return "", err
-	}
-
-	return "", nil
-}
-
 func (m *GoMod) CheckDriverVersion() (string, error) {
 	for _, require := range m.file.Require {
 		if require.Mod.Path != pkgDriver {
@@ -182,6 +150,60 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 	}
 
 	return "", nil
+}
+
+// CheckLibVersion checks that a library dependency in go.mod meets the minimum
+// required version. It returns an error if the library is present but too old.
+// If the library is not in go.mod at all, it adds it at the minimum version.
+func (m *GoMod) CheckLibVersion(pkg, minVersion string) error {
+	for _, require := range m.file.Require {
+		if require.Mod.Path != pkg {
+			continue
+		}
+
+		currentVersion, err := versionOrdinal(require.Mod.Version)
+		if err != nil {
+			return fmt.Errorf("could not parse %s version: %w", pkg, err)
+		}
+
+		minVer, err := versionOrdinal(minVersion)
+		if err != nil {
+			return fmt.Errorf("could not parse minimum %s version: %w", pkg, err)
+		}
+
+		if currentVersion < minVer {
+			return fmt.Errorf(
+				"%s version %s is below minimum required version %s",
+				pkg, require.Mod.Version, minVersion,
+			)
+		}
+
+		return nil
+	}
+
+	fmt.Printf("go.mod: adding %s version %s\n", pkg, minVersion)
+
+	if err := m.file.AddRequire(pkg, minVersion); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *GoMod) WirePackage() string {
+	for _, require := range m.file.Require {
+		if require.Mod.Path == pkgGoogleWire {
+			return pkgGoogleWire
+		}
+	}
+
+	for _, require := range m.file.Require {
+		if require.Mod.Path == pkgGoforjWire {
+			return pkgGoforjWire
+		}
+	}
+
+	return ""
 }
 
 func (m *GoMod) Save() error {

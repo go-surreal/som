@@ -46,9 +46,11 @@ func (f *Duration) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -68,7 +70,7 @@ func (f *Duration) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *Duration) sortDefine(ctx Context) jen.Code {
@@ -77,12 +79,20 @@ func (f *Duration) sortDefine(ctx Context) jen.Code {
 
 func (f *Duration) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
 }
 
-func (f *Duration) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+func (f *Duration) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual("time", "Duration"))
+}
+
+func (f *Duration) fieldInit(ctx Context) jen.Code {
+	factory := "NewDurationField"
+	if f.source.Pointer() {
+		factory = "NewDurationPtrField"
+	}
+	return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Duration) cborMarshal(ctx Context) jen.Code {

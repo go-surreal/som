@@ -1,12 +1,13 @@
 package codegen
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
 	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
 )
 
 type fetchBuilder struct {
@@ -34,29 +35,58 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(string(embed.CodegenComment))
 
-	f.Line()
-	f.Var().Id(node.Name).Op("=").Id(node.NameGoLower()).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+	typeName := node.NameGoLower()
 
 	f.Line()
-	f.Type().Id(node.NameGoLower()).
+	f.Var().Id(node.Name).Op("=").Id(typeName).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+
+	f.Line()
+	f.Type().Id(typeName).
 		Types(jen.Add(def.TypeModel).Any()).
 		String()
 
 	f.Line()
 	f.Func().
-		Params(jen.Id("n").Id(node.NameGoLower()).Types(def.TypeModel)).
+		Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
 		Id("fetch").Params(def.TypeModel).Block()
 
 	for _, fld := range node.GetFields() {
 		if nodeField, ok := fld.(*field.Node); ok {
+			relatedTable := nodeField.Table()
 			f.Line()
+			// Add comment for soft-delete relations
+			if relatedTable.Source != nil && relatedTable.Source.SoftDelete {
+				f.Comment(nodeField.NameGo() + " returns a fetch accessor for the " + nodeField.NameDatabase() + " relation.")
+				f.Comment("Note: Soft-delete filtering does not apply to fetched relations.")
+				f.Comment("All related records are returned regardless of their soft-delete status.")
+			}
 			f.Func().
-				Params(jen.Id("n").Id(node.NameGoLower()).Types(def.TypeModel)).
+				Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
 				Id(nodeField.NameGo()).Params().
-				Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
+				Id(relatedTable.NameGoLower()).Types(def.TypeModel).
 				Block(
-					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(def.TypeModel).
+					jen.Return(jen.Id(relatedTable.NameGoLower()).Types(def.TypeModel).
 						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
+		}
+
+		if sliceField, ok := fld.(*field.Slice); ok {
+			if nodeElement, ok := sliceField.Element().(*field.Node); ok {
+				relatedTable := nodeElement.Table()
+				f.Line()
+				// Add comment for soft-delete relations
+				if relatedTable.Source != nil && relatedTable.Source.SoftDelete {
+					f.Comment(sliceField.NameGo() + " returns a fetch accessor for the " + sliceField.NameDatabase() + " slice relation.")
+					f.Comment("Note: Soft-delete filtering does not apply to fetched relations.")
+					f.Comment("All related records are returned regardless of their soft-delete status.")
+				}
+				f.Func().
+					Params(jen.Id("n").Id(typeName).Types(def.TypeModel)).
+					Id(sliceField.NameGo()).Params().
+					Id(relatedTable.NameGoLower()).Types(def.TypeModel).
+					Block(
+						jen.Return(jen.Id(relatedTable.NameGoLower()).Types(def.TypeModel).
+							Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(sliceField.NameDatabase())))))
+			}
 		}
 	}
 

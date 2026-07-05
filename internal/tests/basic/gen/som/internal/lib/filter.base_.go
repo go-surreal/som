@@ -6,12 +6,12 @@ type field[M any] interface {
 	key() Key[M]
 }
 
-func (b *Base[M, T, F, S]) Equal_(field F) Filter[M] {
-	return b.op_(OpEqual, field.key())
+func (b *Base[M, T, F, S]) Equal_(f field[M]) Filter[M] {
+	return b.op_(OpEqual, f.key())
 }
 
-func (b *Base[M, T, F, S]) NotEqual_(field F) Filter[M] {
-	return b.op_(OpNotEqual, field.key())
+func (b *Base[M, T, F, S]) NotEqual_(f field[M]) Filter[M] {
+	return b.op_(OpNotEqual, f.key())
 }
 
 func (b *Base[M, T, F, S]) In_(field S) Filter[M] {

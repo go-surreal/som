@@ -5,28 +5,120 @@ package query
 import (
 	"context"
 	"fmt"
-	"github.com/fxamacker/cbor/v2"
 	"strings"
+
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
 )
 
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
 	Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error)
-	Unmarshal(buf []byte, val any) error
+}
+
+// recordID represents a SurrealDB record ID for query results.
+// It unmarshals from the CBOR tagged array format [table, id].
+type recordID struct {
+	Table string
+	ID    any
+}
+
+func (r *recordID) UnmarshalCBOR(data []byte) error {
+	var arr []any
+	if err := cbor.Unmarshal(data, &arr); err != nil {
+		return err
+	}
+	if len(arr) != 2 {
+		return fmt.Errorf("invalid record ID format: expected 2 elements, got %d", len(arr))
+	}
+	table, ok := arr[0].(string)
+	if !ok {
+		return fmt.Errorf("invalid record ID format: table must be a string")
+	}
+	r.Table = table
+	r.ID = arr[1]
+	return nil
+}
+
+func (r recordID) String() string {
+	return fmt.Sprintf("%s:%v", r.Table, r.ID)
 }
 
 type idNode struct {
-	ID string
+	ID recordID
 }
 
 type countResult struct {
 	Count int
 }
 
-type queryResult[M any] struct {
-	Result []M    `json:"result"`
-	Status string `json:"status"`
-	Time   string `json:"time"`
+// searchOffset represents a position offset for a matched search term.
+type searchOffset struct {
+	Start int `cbor:"s"`
+	End   int `cbor:"e"`
+}
+
+// searchRawResult holds the raw search result with embedded model and search metadata.
+// The model fields and search metadata are at the same level in the JSON/CBOR.
+type searchRawResult[M any] struct {
+	Model      M
+	Scores     []float64
+	Highlights map[int]string
+	Offsets    map[int][]searchOffset
+}
+
+func (s *searchRawResult[M]) UnmarshalCBOR(data []byte) error {
+	// First unmarshal the entire map to get access to all fields
+	var rawMap map[string]cbor.RawMessage
+	if err := cbor.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	// Extract search scores, highlights, and offsets
+	s.Highlights = make(map[int]string)
+	s.Offsets = make(map[int][]searchOffset)
+
+	// Look for __som__search_score_*, __som__search_highlight_N, and __som__search_offsets_N fields
+	for key, val := range rawMap {
+		if strings.HasPrefix(key, "__som__search_score_") {
+			var score float64
+			if err := cbor.Unmarshal(val, &score); err == nil {
+				s.Scores = append(s.Scores, score)
+			}
+		} else if strings.HasPrefix(key, "__som__search_highlight_") {
+			refStr := strings.TrimPrefix(key, "__som__search_highlight_")
+			var ref int
+			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
+				var hl string
+				if err := cbor.Unmarshal(val, &hl); err == nil {
+					s.Highlights[ref] = hl
+				}
+			}
+		} else if strings.HasPrefix(key, "__som__search_offsets_") {
+			refStr := strings.TrimPrefix(key, "__som__search_offsets_")
+			var ref int
+			if _, err := fmt.Sscanf(refStr, "%d", &ref); err == nil {
+				// Offsets come as: { "0": [{"s": 0, "e": 4}, ...] }
+				// The outer key is the field index (for array fields)
+				var rawOffsets map[string][]searchOffset
+				if err := cbor.Unmarshal(val, &rawOffsets); err == nil {
+					// Flatten: take all offsets regardless of field index
+					var offsets []searchOffset
+					for _, offs := range rawOffsets {
+						offsets = append(offsets, offs...)
+					}
+					s.Offsets[ref] = offsets
+				}
+			}
+		}
+	}
+
+	// Unmarshal the rest into the model
+	if err := cbor.Unmarshal(data, &s.Model); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type liveResponse struct {
@@ -71,16 +163,42 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 }
 
 //
+// -- UNMARSHAL
+//
+
+func unmarshalAll[M, C any](data []byte, convert func(*C) *M) ([]*M, error) {
+	var rawNodes []internal.QueryResult[*C]
+	if err := cbor.Unmarshal(data, &rawNodes); err != nil {
+		return nil, fmt.Errorf("could not unmarshal records: %w", err)
+	}
+	if len(rawNodes) < 1 {
+		return nil, nil
+	}
+	results := make([]*M, len(rawNodes[0].Result))
+	for i, raw := range rawNodes[0].Result {
+		results[i] = convert(raw)
+	}
+	return results, nil
+}
+
+func unmarshalOne[M, C any](data []byte, convert func(*C) *M) (*M, error) {
+	var raw *C
+	if err := cbor.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	return convert(raw), nil
+}
+
+//
 // -- LIVE
 //
 
-func live[C, M any](
+func live[M any](
 	ctx context.Context,
 	in <-chan []byte,
-	unmarshal func(buf []byte, val any) error,
-	convert func(C) M,
-) <-chan LiveResult[M] {
-	out := make(chan LiveResult[M], 1)
+	info modelInfo[M],
+) <-chan LiveResult[*M] {
+	out := make(chan LiveResult[*M], 1)
 
 	go func() {
 		defer close(out)
@@ -91,12 +209,16 @@ func live[C, M any](
 			case <-ctx.Done():
 				return
 
-			case data, open := <-in:
-				if !open {
+			case data, ok := <-in:
+				if !ok {
 					return
 				}
 
-				out <- toLiveResult[C, M](data, unmarshal, convert)
+				select {
+				case <-ctx.Done():
+					return
+				case out <- toLiveResult(data, info):
+				}
 			}
 		}
 	}()
@@ -104,15 +226,14 @@ func live[C, M any](
 	return out
 }
 
-func toLiveResult[C, M any](
+func toLiveResult[M any](
 	in []byte,
-	unmarshal func(buf []byte, val any) error,
-	convert func(C) M,
-) LiveResult[M] {
+	info modelInfo[M],
+) LiveResult[*M] {
 	var response liveResponse
 
-	if err := unmarshal(in, &response); err != nil {
-		return &liveResult[M]{
+	if err := cbor.Unmarshal(in, &response); err != nil {
+		return &liveResult[*M]{
 			err: fmt.Errorf("could not unmarshal live response: %w", err),
 		}
 	}
@@ -120,58 +241,58 @@ func toLiveResult[C, M any](
 	switch strings.ToLower(response.Action) {
 
 	case "create":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalOne(response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live create result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
+			out.res = result
 		}
 
-		return &liveCreate[M]{
+		return &liveCreate[*M]{
 			liveResult: out,
 		}
 
 	case "update":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalOne(response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live update result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
+			out.res = result
 		}
 
-		return &liveUpdate[M]{
+		return &liveUpdate[*M]{
 			liveResult: out,
 		}
 
 	case "delete":
-		var out liveResult[M]
+		var out liveResult[*M]
 
-		var result C
-
-		if err := unmarshal(response.Result, &result); err != nil {
+		result, err := info.UnmarshalOne(response.Result)
+		if err != nil {
 			out.err = fmt.Errorf("could not unmarshal live delete result: %w", err)
 		}
 
 		if out.err == nil {
-			out.res = convert(result)
+			out.res = result
 		}
 
-		return &liveDelete[M]{
+		return &liveDelete[*M]{
 			liveResult: out,
 		}
 
+	case "killed":
+		return &liveKilled[*M]{}
+
 	default:
-		return &liveResult[M]{
+		return &liveResult[*M]{
 			err: fmt.Errorf("unknown action type %s", response.Action),
 		}
 	}
@@ -196,6 +317,10 @@ type LiveDelete[M any] interface {
 	delete()
 }
 
+type LiveKilled[M any] interface {
+	killed()
+}
+
 type liveCreate[M any] struct {
 	liveResult[M]
 }
@@ -213,6 +338,12 @@ type liveDelete[M any] struct {
 }
 
 func (*liveDelete[M]) delete() {}
+
+type liveKilled[M any] struct{}
+
+func (*liveKilled[M]) live() {}
+
+func (*liveKilled[M]) killed() {}
 
 type liveResult[M any] struct {
 	res M

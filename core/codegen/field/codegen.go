@@ -34,15 +34,20 @@ type CodeGen struct {
 	filterDefine CodeGenFunc
 	filterInit   CodeGenTuple
 	filterFunc   CodeGenFunc
+	// filterExtra generates additional code (types, methods) without disabling filterDefine/filterInit.
+	// This is used for wrapper types that need both struct fields AND extra type definitions.
+	filterExtra CodeGenFunc
 
 	sortDefine CodeGenFunc
 	sortInit   CodeGenFunc
 	sortFunc   CodeGenFunc
 
+	fieldDefine CodeGenFunc
+	fieldInit   CodeGenFunc
+	fieldFunc   CodeGenFunc
+
 	cborMarshal   CodeGenFunc
 	cborUnmarshal CodeGenFunc
-
-	fieldDef CodeGenFunc
 }
 
 func (g *CodeGen) FilterDefine(ctx Context) jen.Code {
@@ -65,6 +70,10 @@ func (g *CodeGen) FilterFunc(ctx Context) jen.Code {
 	return g.filterFunc.Exec(ctx)
 }
 
+func (g *CodeGen) FilterExtra(ctx Context) jen.Code {
+	return g.filterExtra.Exec(ctx)
+}
+
 func (g *CodeGen) SortDefine(ctx Context) jen.Code {
 	return g.sortDefine.Exec(ctx)
 }
@@ -77,8 +86,16 @@ func (g *CodeGen) SortFunc(ctx Context) jen.Code {
 	return g.sortFunc.Exec(ctx)
 }
 
-func (g *CodeGen) FieldDef(ctx Context) jen.Code {
-	return g.fieldDef.Exec(ctx)
+func (g *CodeGen) FieldDefine(ctx Context) jen.Code {
+	return g.fieldDefine.Exec(ctx)
+}
+
+func (g *CodeGen) FieldInit(ctx Context) jen.Code {
+	return g.fieldInit.Exec(ctx)
+}
+
+func (g *CodeGen) FieldFunc(ctx Context) jen.Code {
+	return g.fieldFunc.Exec(ctx)
 }
 
 func (g *CodeGen) CBORMarshal(ctx Context) jen.Code {

@@ -281,13 +281,29 @@ func (s *Slice[M, E, F]) SortDesc() *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn("array::sort::desc"), s.makeElemFilter)
 }
 
-// TODO: Transpose
+func (s *Slice[M, E, F]) SortLexical() *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::sort_lexical"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) SortNatural() *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::sort_natural"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) SortNaturalLexical() *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::sort_natural_lexical"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) Shuffle() *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::shuffle"), s.makeElemFilter)
+}
+
+func (s *Slice[M, E, F]) Swap(from, to int) *Slice[M, E, F] {
+	return NewSlice[M, E, F](s.fn("array::swap", from, to), s.makeElemFilter)
+}
 
 func (s *Slice[M, E, F]) Union(val []E) *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn("array::union", val), s.makeElemFilter)
 }
-
-// TODO: Windows (v2.0.0)
 
 // TODO: https://surrealdb.com/docs/surrealdb/surrealql/functions/database/vector
 

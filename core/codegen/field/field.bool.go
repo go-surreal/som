@@ -39,15 +39,17 @@ func (f *Bool) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
-		filterFunc:   nil, // Bool does not need a filter function.
+		filterFunc:   nil,
 
 		sortDefine: f.sortDefine,
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -67,7 +69,7 @@ func (f *Bool) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *Bool) sortDefine(ctx Context) jen.Code {
@@ -76,12 +78,16 @@ func (f *Bool) sortDefine(ctx Context) jen.Code {
 
 func (f *Bool) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
 }
 
-func (f *Bool) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+func (f *Bool) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Bool())
+}
+
+func (f *Bool) fieldInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Bool()).
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Bool) cborMarshal(_ Context) jen.Code {

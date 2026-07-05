@@ -3,78 +3,200 @@
 package som
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	"context"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"strings"
+
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
+	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
-type ID = models.RecordID
+// ErrOptimisticLock is returned when an update fails due to a version mismatch.
+// This indicates another process has modified the record since it was read.
+var ErrOptimisticLock = errors.New("optimistic lock has version mismatch")
 
-// NewRecordID creates a new RecordID with the given table and ID.
-// This is a convenience wrapper to avoid importing surrealdb.go directly.
-func NewRecordID(table string, id any) ID {
-	return models.NewRecordID(table, id)
+// ErrAlreadyDeleted is returned when a soft delete is attempted on a record that is already deleted.
+var ErrAlreadyDeleted = errors.New("soft delete record is already deleted")
+
+// ErrNotFound is returned when a query or operation finds no matching record.
+var ErrNotFound = errors.New("not found")
+
+// ErrNilID is returned when a nil ID is passed to an operation that requires a valid ID.
+var ErrNilID = errors.New("id cannot be nil")
+
+// ErrEmptyID is returned when an empty ID string is passed to an operation that requires a valid ID.
+var ErrEmptyID = errors.New("id cannot be empty")
+
+// ErrEmptyResponse is returned when the database returns an unexpected empty response.
+var ErrEmptyResponse = errors.New("empty response")
+
+// ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
+var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
+
+// ErrUnsupportedVersion is returned when the connected SurrealDB instance
+// is running a version older than the minimum required (3.1.5), or when
+// the version string returned by the server cannot be parsed.
+var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
+
+// ServerError is a structured error from SurrealDB v3.
+// Use errors.As to extract structured details from errors returned by SOM:
+//
+//	var se som.ServerError
+//	if errors.As(err, &se) {
+//	    fmt.Println(se.Kind, se.Message, se.Details)
+//	}
+type ServerError = connection.ServerError
+
+// nodeID is a marker type for all ID types.
+type nodeID interface {
+    isNodeID()
 }
 
-// MakeID creates a pointer to a RecordID with the given table and ID.
-func MakeID(table string, id any) *ID {
-	recordID := NewRecordID(table, id)
-	return &recordID
+type ULID string
+
+type UUID string
+
+type Rand string
+
+func (ULID) isNodeID() {}
+
+func (UUID) isNodeID() {}
+
+func (Rand) isNodeID() {}
+
+// ArrayID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an array.
+type ArrayID struct{}
+
+func (ArrayID) isNodeID() {}
+
+// ObjectID is a marker type embedded in key structs to indicate
+// that the record ID should be encoded as an object.
+type ObjectID struct{}
+
+func (ObjectID) isNodeID() {}
+
+type rangeBound struct {
+	val       any
+	inclusive bool
+	open      bool
 }
 
-// Table creates a RecordID representing a table (for server-generated IDs).
-// This is a convenience wrapper to avoid importing surrealdb.go directly.
-func Table(name string) models.Table {
-	return models.Table(name)
+func (b rangeBound) Value() any {
+	return b.val
 }
 
-// type Record = Node // TODO: should we use this to clarify whether a model has edges (node) or not (record)?
-
-type Node struct {
-	id *ID
+func (b rangeBound) IsInclusive() bool {
+	return b.inclusive
 }
 
-func NewNode(id *ID) Node {
-	return Node{
-		id: id,
+func (b rangeBound) IsOpen() bool {
+	return b.open
+}
+
+type RangeFrom struct{ rangeBound }
+
+type RangeTo struct{ rangeBound }
+
+func From[T nodeID](val T) RangeFrom {
+	return RangeFrom{rangeBound{val: val, inclusive: true}}
+}
+
+func FromExclusive[T nodeID](val T) RangeFrom {
+	return RangeFrom{rangeBound{val: val, inclusive: false}}
+}
+
+func FromStart() RangeFrom {
+	return RangeFrom{rangeBound{open: true}}
+}
+
+func To[T nodeID](val T) RangeTo {
+	return RangeTo{rangeBound{val: val, inclusive: false}}
+}
+
+func ToInclusive[T nodeID](val T) RangeTo {
+	return RangeTo{rangeBound{val: val, inclusive: true}}
+}
+
+func ToEnd() RangeTo {
+	return RangeTo{rangeBound{open: true}}
+}
+
+func (u UUID) MarshalCBOR() ([]byte, error) {
+	if u == "" {
+		return nil, fmt.Errorf("cannot marshal empty UUID")
 	}
+	s := strings.ReplaceAll(string(u), "-", "")
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID hex: %w", err)
+	}
+	if len(b) != 16 {
+		return nil, fmt.Errorf("UUID must be 16 bytes, got %d", len(b))
+	}
+	return cbor.Marshal(cbor.Tag{Number: models.TagSpecBinaryUUID, Content: b})
 }
 
-func (n Node) ID() *ID {
+type Node[T nodeID] struct {
+	id T
+}
+
+func NewNode[T nodeID](id T) Node[T] {
+	return Node[T]{id: id}
+}
+
+func (n Node[T]) ID() T {
 	return n.id
 }
+
+func (Node[T]) isNode() {}
 
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
-	id *ID
+	id string
 }
 
-func NewEdge(id *ID) Edge {
+func NewEdge(id string) Edge {
 	return Edge{
 		id: id,
 	}
 }
 
-func (e Edge) ID() *ID {
+func (e Edge) ID() string {
 	return e.id
+}
+
+type node interface {
+	isNode()
+}
+
+func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
+	return internal.WithCache[T](ctx, opts...)
+}
+
+func TxStart(ctx context.Context) (context.Context, func()) {
+	txCtx := internal.TxStart(ctx)
+	return txCtx, func() { _ = internal.TxCancel(txCtx) }
+}
+
+func TxCommit(ctx context.Context) error {
+	return internal.TxCommit(ctx)
+}
+
+func TxCancel(ctx context.Context) error {
+	return internal.TxCancel(ctx)
 }
 
 type Timestamps = internal.Timestamps
 
-// TODO: implement soft delete feature
-// type SoftDelete struct {
-// 	deletedAt time.Time
-// }
-//
-// func NewSoftDelete(deletedAt time.Time) SoftDelete {
-// 	return SoftDelete{
-// 		deletedAt: deletedAt,
-// 	}
-// }
-//
-// func (t SoftDelete) DeletedAt() time.Time {
-// 	return t.deletedAt
-// }
+type OptimisticLock = internal.OptimisticLock
+
+type SoftDelete = internal.SoftDelete
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
@@ -82,17 +204,39 @@ type Enum string
 // Email describes a string field that should contain an email address.
 type Email string
 
-// Password describes a string field that should contain a password.
-type Password string
+// Password describes a string field that contains a password.
+// The type parameter A specifies the encryption algorithm to use.
+// Passwords are automatically encrypted when written to the database.
+// On read, password fields will be empty (for security).
+// Use the Compare method in queries to validate passwords.
+//
+// Example:
+//
+//	type User struct {
+//	    som.Node[som.ULID]
+//	    Password som.Password[som.Bcrypt]
+//	}
+type Password[A PasswordAlgorithm] string
+
+type PasswordAlgorithm interface {
+    isPasswordAlgorithm()
+}
+
+// Password encryption algorithm marker types.
+type (
+	Bcrypt struct{}
+	Argon2 struct{}
+	Pbkdf2 struct{}
+	Scrypt struct{}
+)
+
+func (Bcrypt) isPasswordAlgorithm() {}
+func (Argon2) isPasswordAlgorithm() {}
+func (Pbkdf2) isPasswordAlgorithm() {}
+func (Scrypt) isPasswordAlgorithm() {}
 
 // SemVer describes a string field that should contain a semantic version.
 type SemVer string
-
-// Password describes a special string field.
-// Regarding the generated database query operations, it can only be matched, but never read.
-// In a query result, the Password field will always be empty.
-// TODO: implement!
-// type Password string
 
 // Meta describes a model that is not related to any Node or Edge.
 // Instead, it is used to hold metadata that was queried from a Node or Edge.
@@ -125,12 +269,116 @@ type SemVer string
 // 	Message string
 // }
 
-// TODO: below needed?
-// type Entity interface {
-// 	entity()
-// }
+// OnBeforeCreateHook can be implemented by model structs to run logic
+// before a new record is created. If the hook returns an error,
+// the create operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeCreateHook interface {
+	OnBeforeCreate(ctx context.Context) error
+}
 
-// TODO: implement external types
-// type External struct {
-// 	ID string
-// }
+// OnAfterCreateHook can be implemented by model structs to run logic
+// after a new record has been created. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterCreateHook interface {
+	OnAfterCreate(ctx context.Context) error
+}
+
+// OnBeforeUpdateHook can be implemented by model structs to run logic
+// before an existing record is updated. If the hook returns an error,
+// the update operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeUpdateHook interface {
+	OnBeforeUpdate(ctx context.Context) error
+}
+
+// OnAfterUpdateHook can be implemented by model structs to run logic
+// after an existing record has been updated. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterUpdateHook interface {
+	OnAfterUpdate(ctx context.Context) error
+}
+
+// OnBeforeDeleteHook can be implemented by model structs to run logic
+// before a record is deleted. If the hook returns an error,
+// the delete operation is aborted.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnBeforeDeleteHook interface {
+	OnBeforeDelete(ctx context.Context) error
+}
+
+// OnAfterDeleteHook can be implemented by model structs to run logic
+// after a record has been deleted. If the hook returns an error,
+// the error is returned to the caller.
+//
+// Note: This hook only applies to the current application instance.
+// It is not distributed across multiple instances of the application.
+type OnAfterDeleteHook interface {
+	OnAfterDelete(ctx context.Context) error
+}
+
+// Params is a map of named parameters for raw queries.
+type Params map[string]any
+
+// RawResult holds the result of a raw query.
+// For multi-statement queries, only the first statement's result set is used.
+type RawResult struct {
+	data []byte
+}
+
+// NewRawResult creates a new RawResult from raw query response data.
+func NewRawResult(data []byte) *RawResult {
+	return &RawResult{data: data}
+}
+
+// Scan unmarshals the first statement's result set into dest.
+// dest should be a pointer to a slice for multi-row results.
+// For multi-statement queries, only the first statement's results are decoded.
+func (r *RawResult) Scan(dest any) error {
+	if r.data == nil {
+		return nil
+	}
+	var raw []internal.QueryResult[cbor.RawMessage]
+	if err := cbor.Unmarshal(r.data, &raw); err != nil {
+		return fmt.Errorf("could not decode raw query result: %w", err)
+	}
+	if len(raw) < 1 {
+		return nil
+	}
+	// Re-wrap the raw messages into a CBOR array so they can be
+	// unmarshalled into the caller's typed slice without reflection.
+	// This is cheap: Marshal on []RawMessage only prepends an array header.
+	resultBytes, err := cbor.Marshal(raw[0].Result)
+	if err != nil {
+		return fmt.Errorf("could not re-encode result: %w", err)
+	}
+	return cbor.Unmarshal(resultBytes, dest)
+}
+
+// ScanOne unmarshals the first row of the first statement's result set into dest.
+// Returns ErrNotFound if no results.
+func (r *RawResult) ScanOne(dest any) error {
+	if r.data == nil {
+		return ErrNotFound
+	}
+	var raw []internal.QueryResult[cbor.RawMessage]
+	if err := cbor.Unmarshal(r.data, &raw); err != nil {
+		return fmt.Errorf("could not decode raw query result: %w", err)
+	}
+	if len(raw) < 1 || len(raw[0].Result) < 1 {
+		return ErrNotFound
+	}
+	return cbor.Unmarshal(raw[0].Result[0], dest)
+}

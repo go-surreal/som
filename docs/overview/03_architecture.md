@@ -1,0 +1,199 @@
+# Architecture
+
+This page describes how SOM works internally.
+
+## Generation Pipeline
+
+SOM uses a code generation approach to provide type-safe database access. The generation workflow:
+
+```
+Input Models (Go structs)
+        │
+        ▼
+┌───────────────────┐
+│      Parser       │  Analyzes Go source using gotype
+│   (core/parser)   │  Identifies: Nodes, Edges, Structs, Enums
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│  Code Generator   │  Uses jennifer for Go code generation
+│  (core/codegen)   │  Produces type-safe builders
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│   Output Files    │  Complete database access layer
+│    (gen/som/)     │  Ready to use in your application
+└───────────────────┘
+```
+
+### 1. Parsing Phase
+
+The parser analyzes your Go source files to identify:
+
+- **Nodes**: Structs embedding `som.Node[T]` (where T is an ID type)
+- **Edges**: Structs embedding `som.Edge`
+- **Structs**: Regular structs used as fields (for nested types)
+- **Enums**: Types implementing `som.Enum` interface
+- **Fields**: All fields with their types, tags, and constraints
+
+### 2. Code Generation Phase
+
+Using the [jennifer](https://github.com/dave/jennifer) library, SOM generates idiomatic Go code:
+
+- Static library code (filters, builders, utilities)
+- Per-model repositories and query builders
+- Type converters for database serialization
+- Filter and sort definitions for each field type
+
+### 3. Output Phase
+
+Generated files are written to the output directory with their own `go.mod`, creating a self-contained package.
+
+## Generated Code Structure
+
+```
+gen/som/
+├── som.base.go           # ID types, Node[T], Edge, Timestamps
+├── som.client.go         # Client implementation
+├── som.interfaces.go     # Repository interfaces
+├── som.node.go           # Base repository pattern
+├── som.schema.go         # Schema utilities
+│
+├── repo/                 # Repository implementations
+│   └── node.{model}.go   # Per-model: Create, Read, Update, Delete, Insert, Query
+│
+├── query/                # Query builders
+│   ├── builder.go        # Generic builder with all methods
+│   ├── query.go          # Query execution, async, live
+│   └── node.{model}.go   # Per-model query factory
+│
+├── filter/               # Filter definitions
+│   ├── filter.go          # Initialization
+│   ├── node.{model}.go   # Per-model field filters
+│   └── object.{struct}.go # Nested struct filters
+│
+├── by/                   # Sort definitions
+│   └── node.{model}.go   # Per-model sortable fields
+│
+├── with/                 # Fetch/eager loading
+│   └── node.{model}.go   # Per-model fetchable relations
+│
+├── conv/                 # Type converters
+│   ├── node.{model}.go   # Model to/from database format
+│   └── edge.{edge}.go    # Edge conversions
+│
+├── relate/               # Edge creation
+│   └── edge.{edge}.go    # Per-edge RELATE builders
+│
+├── internal/
+│   ├── lib/              # Filter and sort implementation
+│   ├── cbor/             # CBOR marshaling utilities
+│   └── types/            # DateTime, Duration, UUID wrappers
+│
+└── constant/             # Math constants (PI, E, etc.)
+```
+
+## Key Components
+
+### Nodes
+
+Nodes represent database records. Any struct embedding `som.Node[T]` becomes a SurrealDB table:
+
+```go
+type User struct {
+    som.Node[som.ULID]  // Provides ID field (ULID type)
+    som.Timestamps      // Optional: CreatedAt, UpdatedAt
+    Name string
+}
+// Creates table: user
+```
+
+The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, or a custom struct with `som.ArrayID`/`som.ObjectID`).
+
+### Edges
+
+Edges represent graph relationships between nodes:
+
+```go
+type Follows struct {
+    som.Edge        // Provides ID, In, Out
+    Since time.Time // Edge metadata
+}
+// Creates edge table: follows
+// RELATE user:a->follows->user:b
+```
+
+### Repositories
+
+Generated for each model with full CRUD operations:
+
+```go
+type UserRepo interface {
+    Create(ctx, *User) error
+    CreateWithID(ctx, id string, *User) error
+    Insert(ctx, []*User) error
+    Read(ctx, string) (*User, bool, error)
+    Update(ctx, *User) error
+    Delete(ctx, *User) error
+    Refresh(ctx, *User) error
+    Index() *index.User
+    Query() Builder[User]
+}
+```
+
+### Query Builder
+
+Fluent API with method chaining:
+
+```go
+Builder[M]
+├── Where(filters...)     // WHERE conditions (keeps Live available)
+├── Fetch(relations...)   // FETCH (keeps Live available)
+├── WithDeleted()         // Include soft-deleted (keeps Live available)
+│
+├── Order(sorts...)       // ORDER BY (returns BuilderNoLive)
+├── OrderRandom()         // ORDER RAND() (returns BuilderNoLive)
+├── Start(n)              // START (returns BuilderNoLive)
+├── Limit(n)              // LIMIT (returns BuilderNoLive)
+├── Timeout(duration)     // Execution timeout (returns BuilderNoLive)
+├── Parallel(bool)        // Parallel execution (returns BuilderNoLive)
+├── TempFiles(bool)       // Disk-based processing (returns BuilderNoLive)
+├── Range(from, to)       // Range query (returns BuilderNoLive)
+│
+├── All(ctx)              // Get all results
+├── First(ctx)            // Get first result (or ErrNotFound)
+├── Count(ctx)            // Count results
+├── Exists(ctx)           // Check existence
+├── Live(ctx)             // Stream changes (only on Builder, not BuilderNoLive)
+│
+├── Iterate(ctx, batch)   // Stream records in batches
+├── IterateID(ctx, batch) // Stream record IDs
+│
+└── *Async variants       // AllAsync, FirstAsync, etc.
+```
+
+> **Note**: Methods like `Order`, `Limit`, `Start`, etc. return `BuilderNoLive`, which does not expose `Live()`. This prevents constructing invalid live queries with ordering or pagination.
+
+### Type Converters
+
+Handle transformation between Go types and SurrealDB format:
+
+```go
+// Generated in conv/
+func ToUser(model *model.User) *convUser { ... }
+func FromUser(conv *convUser) *model.User { ... }
+```
+
+## Database Communication
+
+### CBOR Protocol
+
+SOM uses CBOR (Concise Binary Object Representation) for SurrealDB communication. Custom types use CBOR tags:
+
+| Type | CBOR Tag | Format |
+|------|----------|--------|
+| DateTime | 12 | `[unix_seconds, nanoseconds]` |
+| Duration | 14 | Nanoseconds as int64 |
+| UUID | 37 | 16-byte binary |

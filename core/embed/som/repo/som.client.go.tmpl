@@ -1,0 +1,402 @@
+{{- /* gotype: github.com/go-surreal/som/core/embed.Template */ -}}
+//go:build embed
+
+package repo
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"strconv"
+	"strings"
+	"time"
+
+	som "{{.GenerateOutPath}}"
+	"{{.GenerateOutPath}}/internal"
+	"{{.GenerateOutPath}}/internal/cbor"
+	"github.com/surrealdb/surrealdb.go"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
+)
+
+// Config holds the configuration for connecting to the SurrealDB instance.
+type Config struct {
+	Address   string
+	Namespace string
+	Database  string
+	Username  string
+	Password  string
+}
+
+type dbConn struct {
+	conn *surrealdb.DB
+}
+
+func (c *dbConn) ensureTx(ctx context.Context) (*surrealdb.Transaction, error) {
+	state := internal.GetTxState(ctx)
+	if state == nil {
+		return nil, nil
+	}
+	raw, err := state.EnsureTx(func() (any, error) {
+		return c.conn.Begin(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+	tx, ok := raw.(*surrealdb.Transaction)
+	if !ok {
+		return nil, fmt.Errorf("unexpected transaction type: %T", raw)
+	}
+	return tx, nil
+}
+
+func dbSelect[T any](ctx context.Context, db *dbConn, id *models.RecordID) (*T, error) {
+	if id == nil {
+		return nil, som.ErrNilID
+	}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if tx != nil {
+		return surrealdb.Select[T](ctx, tx, *id)
+	}
+	return surrealdb.Select[T](ctx, db.conn, *id)
+}
+
+func dbCreate[T any](ctx context.Context, db *dbConn, id models.RecordID, data any) (*T, error) {
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if tx != nil {
+		return surrealdb.Create[T](ctx, tx, id, data)
+	}
+	return surrealdb.Create[T](ctx, db.conn, id, data)
+}
+
+func dbCreateNew[T any](ctx context.Context, db *dbConn, idExpr string, data any) (*T, error) {
+	statement := fmt.Sprintf("CREATE %s CONTENT $data", idExpr)
+	vars := map[string]any{"data": data}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var result *[]surrealdb.QueryResult[[]T]
+	if tx != nil {
+		result, err = surrealdb.Query[[]T](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]T](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result == nil || len(*result) == 0 {
+		return nil, som.ErrEmptyResponse
+	}
+	qr := (*result)[0]
+	if qr.Error != nil {
+		return nil, fmt.Errorf("create failed: %w", qr.Error)
+	}
+	if len(qr.Result) == 0 {
+		return nil, som.ErrEmptyResponse
+	}
+	return &qr.Result[0], nil
+}
+
+func dbUpdate[T any](ctx context.Context, db *dbConn, id *models.RecordID, data any) (*T, error) {
+	if id == nil {
+		return nil, som.ErrNilID
+	}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if tx != nil {
+		return surrealdb.Update[T](ctx, tx, *id, data)
+	}
+	return surrealdb.Update[T](ctx, db.conn, *id, data)
+}
+
+func dbDelete(ctx context.Context, db *dbConn, id *models.RecordID) error {
+	if id == nil {
+		return som.ErrNilID
+	}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return err
+	}
+	if tx != nil {
+		_, err = surrealdb.Delete[any](ctx, tx, *id)
+	} else {
+		_, err = surrealdb.Delete[any](ctx, db.conn, *id)
+	}
+	return err
+}
+
+func dbQueryOne[T any](ctx context.Context, db *dbConn, statement string, vars map[string]any) (*T, error) {
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var result *[]surrealdb.QueryResult[[]T]
+	if tx != nil {
+		result, err = surrealdb.Query[[]T](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]T](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result == nil || len(*result) == 0 {
+		return nil, nil
+	}
+	qr := (*result)[0]
+	if qr.Error != nil {
+		return nil, qr.Error
+	}
+	if len(qr.Result) == 0 {
+		return nil, nil
+	}
+	return &qr.Result[0], nil
+}
+
+func dbInsert[T any](ctx context.Context, db *dbConn, statement string, vars map[string]any) ([]*T, error) {
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var result *[]surrealdb.QueryResult[[]*T]
+	if tx != nil {
+		result, err = surrealdb.Query[[]*T](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]*T](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result == nil || len(*result) == 0 {
+		return nil, nil
+	}
+	qr := (*result)[0]
+	if qr.Error != nil {
+		return nil, fmt.Errorf("insert failed: %w", qr.Error)
+	}
+	return qr.Result, nil
+}
+
+func (c *dbConn) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
+	tx, err := c.ensureTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var result *[]surrealdb.QueryResult[any]
+	if tx != nil {
+		result, err = surrealdb.Query[any](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[any](ctx, c.conn, statement, vars)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if result != nil {
+		for i, qr := range *result {
+			if qr.Error != nil {
+				return nil, fmt.Errorf("query statement %d failed: %w", i, qr.Error)
+			}
+		}
+	}
+
+	return cbor.Marshal(result)
+}
+
+func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any) (<-chan []byte, error) {
+	if internal.TxActive(ctx) {
+		return nil, som.ErrLiveNotSupportedInTx
+	}
+
+	result, err := surrealdb.Query[models.UUID](ctx, c.conn, statement, vars)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute live query: %w", err)
+	}
+
+	if result == nil || len(*result) == 0 {
+		return nil, som.ErrEmptyResponse
+	}
+
+	lastResult := (*result)[0]
+	if lastResult.Error != nil {
+		return nil, fmt.Errorf("live query error: %w", lastResult.Error)
+	}
+
+	liveID := lastResult.Result.String()
+
+	notifications, err := c.conn.LiveNotifications(liveID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get live notifications: %w", err)
+	}
+
+	out := make(chan []byte)
+	done := make(chan struct{})
+
+	go func() {
+		defer close(out)
+		defer close(done)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case notif, ok := <-notifications:
+				if !ok {
+					return
+				}
+				data, err := cbor.Marshal(notif)
+				if err != nil {
+					slog.ErrorContext(ctx, "failed to marshal live notification", "error", err)
+					continue
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case out <- data:
+				}
+			}
+		}
+	}()
+
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-done:
+		}
+
+		if ctx.Err() != nil {
+			killCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := surrealdb.Kill(killCtx, c.conn, liveID); err != nil {
+				slog.ErrorContext(ctx, "failed to kill live query", "error", err)
+			}
+		}
+	}()
+
+	return out, nil
+}
+
+var minVersion = [3]int{3, 1, 5}
+
+func parseVersion(raw string) ([3]int, error) {
+	s := strings.TrimPrefix(raw, "v")
+
+	if idx := strings.IndexAny(s, "-+"); idx != -1 {
+		s = s[:idx]
+	}
+
+	parts := strings.SplitN(s, ".", 3)
+	if len(parts) != 3 {
+		return [3]int{}, fmt.Errorf("expected major.minor.patch, got %q", raw)
+	}
+
+	var v [3]int
+	for i, p := range parts {
+		n, err := strconv.Atoi(p)
+		if err != nil {
+			return [3]int{}, fmt.Errorf("non-numeric component in %q", raw)
+		}
+		v[i] = n
+	}
+
+	return v, nil
+}
+
+func checkVersion(ctx context.Context, db *surrealdb.DB) error {
+	ver, err := db.Version(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve SurrealDB version: %w", err)
+	}
+
+	parsed, err := parseVersion(ver.Version)
+	if err != nil {
+		return fmt.Errorf("%w: %s", som.ErrUnsupportedVersion, err)
+	}
+
+	if parsed[0] < minVersion[0] ||
+		(parsed[0] == minVersion[0] && parsed[1] < minVersion[1]) ||
+		(parsed[0] == minVersion[0] && parsed[1] == minVersion[1] && parsed[2] < minVersion[2]) {
+		return fmt.Errorf(
+			"%w: got %s, need %d.%d.%d or higher",
+			som.ErrUnsupportedVersion, ver.Version,
+			minVersion[0], minVersion[1], minVersion[2],
+		)
+	}
+
+	return nil
+}
+
+func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
+	db, err := surrealdb.FromEndpointURLString(ctx, conf.Address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to SurrealDB: %w", err)
+	}
+
+	if err := checkVersion(ctx, db); err != nil {
+		_ = db.Close(ctx)
+		return nil, err
+	}
+
+	if conf.Username != "" && conf.Password != "" {
+		_, err := db.SignIn(ctx, surrealdb.Auth{
+			Username: conf.Username,
+			Password: conf.Password,
+		})
+		if err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to authenticate: %w", err)
+		}
+	}
+
+	if conf.Namespace != "" && conf.Database != "" {
+		_, err := surrealdb.Query[any](ctx, db,
+			fmt.Sprintf("DEFINE NAMESPACE IF NOT EXISTS %s;", conf.Namespace),
+			nil)
+		if err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to create namespace: %w", err)
+		}
+
+		if err := db.Use(ctx, conf.Namespace, ""); err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to set namespace: %w", err)
+		}
+
+		_, err = surrealdb.Query[any](ctx, db,
+			fmt.Sprintf("DEFINE DATABASE IF NOT EXISTS %s;", conf.Database),
+			nil)
+		if err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to create database: %w", err)
+		}
+
+		if err := db.Use(ctx, conf.Namespace, conf.Database); err != nil {
+			_ = db.Close(ctx)
+			return nil, fmt.Errorf("failed to set namespace/database: %w", err)
+		}
+	}
+
+	return &ClientImpl{
+		db: &dbConn{conn: db},
+	}, nil
+}
+
+func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error) {
+	data, err := c.db.Query(ctx, query, map[string]any(params))
+	if err != nil {
+		return nil, err
+	}
+	return som.NewRawResult(data), nil
+}
+
+func (c *ClientImpl) Close() {
+	_ = c.db.conn.Close(context.Background())
+}

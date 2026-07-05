@@ -14,12 +14,30 @@ type UUID struct {
 	source *parser.FieldUUID
 }
 
+func (f *UUID) uuidPkg() string {
+	switch f.source.Package {
+	case parser.UUIDPackageGofrs:
+		return def.PkgUUIDGofrs
+	default:
+		return def.PkgUUIDGoogle
+	}
+}
+
+func (f *UUID) uuidTypeName() string {
+	switch f.source.Package {
+	case parser.UUIDPackageGofrs:
+		return "UUIDGofrs"
+	default:
+		return "UUIDGoogle"
+	}
+}
+
 func (f *UUID) typeGo() jen.Code {
-	return jen.Add(f.ptr()).Qual(def.PkgUUID, "UUID")
+	return jen.Add(f.ptr()).Qual(f.uuidPkg(), "UUID")
 }
 
 func (f *UUID) typeConv(ctx Context) jen.Code {
-	return jen.Add(f.ptr()).Qual(ctx.pkgTypes(), "UUID")
+	return jen.Add(f.ptr()).Qual(ctx.pkgTypes(), f.uuidTypeName())
 }
 
 func (f *UUID) TypeDatabase() string {
@@ -49,15 +67,16 @@ func (f *UUID) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-
-		fieldDef: f.fieldDef,
 	}
 }
 
 func (f *UUID) filterDefine(ctx Context) jen.Code {
-	filter := "UUID"
+	filter := f.uuidTypeName()
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
@@ -66,15 +85,13 @@ func (f *UUID) filterDefine(ctx Context) jen.Code {
 }
 
 func (f *UUID) filterInit(ctx Context) (jen.Code, jen.Code) {
-	filter := "NewUUID"
+	filter := "New" + f.uuidTypeName()
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(
-			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
-		)
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *UUID) sortDefine(ctx Context) jen.Code {
@@ -83,19 +100,27 @@ func (f *UUID) sortDefine(ctx Context) jen.Code {
 
 func (f *UUID) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
 }
 
-func (f *UUID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+func (f *UUID) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual(f.uuidPkg(), "UUID"))
+}
+
+func (f *UUID) fieldInit(ctx Context) jen.Code {
+	factory := "New" + f.uuidTypeName() + "Field"
+	if f.source.Pointer() {
+		factory = "New" + f.uuidTypeName() + "PtrField"
+	}
+	return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *UUID) cborMarshal(ctx Context) jen.Code {
-	// Using custom types.UUID with MarshalCBOR method.
+	typeName := f.uuidTypeName()
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).BlockFunc(func(bg *jen.Group) {
-			bg.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
+			bg.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), typeName).Call(
 				jen.Op("*").Id("c").Dot(f.NameGo()),
 			)
 			bg.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
@@ -103,7 +128,7 @@ func (f *UUID) cborMarshal(ctx Context) jen.Code {
 	}
 
 	return jen.BlockFunc(func(g *jen.Group) {
-		g.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), "UUID").Call(
+		g.Id("uuidVal").Op(":=").Qual(ctx.pkgTypes(), typeName).Call(
 			jen.Id("c").Dot(f.NameGo()),
 		)
 		g.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Id("uuidVal")
@@ -111,9 +136,9 @@ func (f *UUID) cborMarshal(ctx Context) jen.Code {
 }
 
 func (f *UUID) cborUnmarshal(ctx Context) jen.Code {
-	helper := "UnmarshalUUID"
+	helper := "Unmarshal" + f.uuidTypeName()
 	if f.source.Pointer() {
-		helper = "UnmarshalUUIDPtr"
+		helper += "Ptr"
 	}
 
 	return jen.If(

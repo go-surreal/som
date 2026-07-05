@@ -24,7 +24,7 @@ func (f *Time) typeConv(ctx Context) jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
-	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt || f.source.IsDeletedAt {
 		return "option<datetime>"
 	}
 
@@ -38,6 +38,8 @@ func (f *Time) SchemaStatements(table, prefix string) []string {
 		extend = "VALUE $before OR time::now() READONLY"
 	} else if f.source.IsUpdatedAt {
 		extend = "VALUE time::now()"
+	} else if f.source.IsDeletedAt {
+		extend = "DEFAULT NONE"
 	}
 
 	return []string{
@@ -58,10 +60,11 @@ func (f *Time) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-
-		fieldDef: f.fieldDef,
 	}
 }
 
@@ -81,7 +84,7 @@ func (f *Time) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *Time) sortDefine(ctx Context) jen.Code {
@@ -90,17 +93,20 @@ func (f *Time) sortDefine(ctx Context) jen.Code {
 
 func (f *Time) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
 }
 
-func (f *Time) fieldDef(ctx Context) jen.Code {
-	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
-		return jen.Id(f.NameGo()).Op("*").Add(f.typeConv(ctx)).
-			Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
-	}
+func (f *Time) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual("time", "Time"))
+}
 
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + f.omitEmptyIfPtr()})
+func (f *Time) fieldInit(ctx Context) jen.Code {
+	factory := "NewTimeField"
+	if f.source.Pointer() {
+		factory = "NewTimePtrField"
+	}
+	return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *Time) cborMarshal(ctx Context) jen.Code {
@@ -109,6 +115,15 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 		return jen.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
 				jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()).Call(),
+			),
+		)
+	}
+
+	// SoftDelete field handling - use getter method
+	if f.source.IsDeletedAt {
+		return jen.If(jen.Id("c").Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Id("c").Dot("SoftDelete").Dot("DeletedAt").Call(),
 			),
 		)
 	}
@@ -128,7 +143,7 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 }
 
 func (f *Time) cborUnmarshal(ctx Context) jen.Code {
-	// Timestamp fields use setter methods on embedded Timestamps.
+	// Timestamp fields use package-level setter functions to keep methods private.
 	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
 		setter := "SetCreatedAt"
 		if f.source.IsUpdatedAt {
@@ -139,7 +154,18 @@ func (f *Time) cborUnmarshal(ctx Context) jen.Code {
 			jen.Id("ok"),
 		).Block(
 			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
-			jen.Id("c").Dot("Timestamps").Dot(setter).Call(jen.Id("tm")),
+			jen.Qual(ctx.pkgInternal(), setter).Call(jen.Op("&").Id("c").Dot("Timestamps"), jen.Id("tm")),
+		)
+	}
+
+	// SoftDelete field handling - use package-level setter
+	if f.source.IsDeletedAt {
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Qual(ctx.pkgInternal(), "SetDeletedAt").Call(jen.Op("&").Id("c").Dot("SoftDelete"), jen.Id("tm")),
 		)
 	}
 

@@ -1,0 +1,6 @@
+---
+icon: diagram-project
+---
+
+# Relationships
+

@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-//go:embed schema/tables.surql
+//go:embed schema/schema.surql
 var schema string
 
 func (c *ClientImpl) ApplySchema(ctx context.Context) error {

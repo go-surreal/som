@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -32,9 +33,16 @@ func (f *Slice) TypeDatabase() string {
 		return "option<bytes>"
 	}
 
-	// Go treats empty slices as nil, but the custom marshaling
-	// ensures that they are stored as NONE in the database.
-	return fmt.Sprintf("option<array<%s>>", f.element.TypeDatabase())
+	elemType := f.element.TypeDatabase()
+
+	// Inside arrays, pointer elements produce NULL (not NONE) via CBOR.
+	// SurrealDB's option<T> only allows NONE, so use "T | null" instead.
+	if strings.HasPrefix(elemType, "option<") && strings.HasSuffix(elemType, ">") {
+		inner := elemType[len("option<") : len(elemType)-1]
+		elemType = inner + " | null"
+	}
+
+	return fmt.Sprintf("option<array<%s>>", elemType)
 }
 
 func (f *Slice) SchemaStatements(table, prefix string) []string {
@@ -43,17 +51,24 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 		return nil
 	}
 
-	// Generate own DEFINE FIELD statement.
+	structElem, isStruct := f.element.(*Struct)
+
+	dbType := f.TypeDatabase()
+
+	isPtrStruct := isStruct && structElem.source.Pointer()
+
+	if isPtrStruct {
+		dbType = "option<array<option<object>>>"
+	}
+
 	statements := []string{
 		fmt.Sprintf(
 			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+			prefix+f.NameDatabase(), table, dbType,
 		),
 	}
 
-	// Only recurse into struct elements, because for primitive
-	// elements the type is already part of the array definition.
-	if structElem, ok := f.element.(*Struct); ok {
+	if isStruct {
 		nestedPrefix := prefix + f.NameDatabase() + ".*."
 		for _, field := range structElem.Table().GetFields() {
 			statements = append(statements, field.SchemaStatements(table, nestedPrefix)...)
@@ -72,14 +87,17 @@ func (f *Slice) CodeGen() *CodeGen {
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
 		filterFunc:   f.filterFunc,
+		filterExtra:  f.filterExtra,
 
 		sortDefine: nil,
 		sortInit:   nil,
-		sortFunc:   nil, // sorting by slices has no real use case
+		sortFunc:   nil,
+
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
-		fieldDef:      f.fieldDef,
 	}
 }
 
@@ -113,6 +131,11 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 
 			if f.source.Pointer() {
 				filter += fnSuffixPtr
+			}
+
+			// For searchable string slices, we use a wrapper type (see filterExtra).
+			if f.SearchInfo() != nil {
+				return jen.Id(f.NameGo()).Id(ctx.Table.NameGoLower() + f.NameGo()).Types(def.TypeModel)
 			}
 
 			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).
@@ -201,19 +224,28 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	case *String:
 		{
-			filter := "NewString"
+			embeddedType := "String"
 
 			if element.source.Pointer() {
-				filter += fnSuffixPtr
+				embeddedType += fnSuffixPtr
 			}
 
-			filter += "Slice"
+			embeddedType += "Slice"
 
 			if f.source.Pointer() {
-				filter += fnSuffixPtr
+				embeddedType += fnSuffixPtr
 			}
 
-			return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+			// For searchable string slices, we use a wrapper type (see filterExtra).
+			if f.SearchInfo() != nil {
+				wrapperName := ctx.Table.NameGoLower() + f.NameGo()
+				return jen.Id(wrapperName).Types(def.TypeModel).Values(
+					jen.Qual(ctx.pkgLib(), "New"+embeddedType).Types(def.TypeModel).
+						Call(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase()))),
+				), jen.Empty()
+			}
+
+			return jen.Qual(ctx.pkgLib(), "New"+embeddedType).Types(def.TypeModel),
 				jen.Call(
 					jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 				)
@@ -255,9 +287,9 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	case *Struct:
 		{
-			//if !ctx.isFromSlice {
-			//	return nil, nil // handled by filterFunc
-			//}
+			if !ctx.isFromSlice {
+				return nil, nil // handled by filterFunc
+			}
 		}
 
 	case *Byte:
@@ -285,6 +317,86 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 		jen.Call(
 			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
 		)
+}
+
+// filterExtra generates the wrapper type and Matches() method for search-indexed string slices.
+func (f *Slice) filterExtra(ctx Context) jen.Code {
+	if f.SearchInfo() == nil {
+		return nil
+	}
+
+	// Only string slices support fulltext search.
+	stringElem, ok := f.element.(*String)
+	if !ok {
+		return nil
+	}
+
+	wrapperName := ctx.Table.NameGoLower() + f.NameGo()
+
+	// Determine the embedded type based on pointer variants.
+	// Use StringSlice, StringPtrSlice, StringSlicePtr, or StringPtrSlicePtr.
+	embeddedType := "String"
+	if stringElem.source.Pointer() {
+		embeddedType += fnSuffixPtr
+	}
+	embeddedType += "Slice"
+	if f.source.Pointer() {
+		embeddedType += fnSuffixPtr
+	}
+
+	// StringSlice embeds *Slice which embeds Key directly (not through Base).
+	// For SlicePtr variants, we access through .Slice.Key.
+	var keyAccess jen.Code
+	if f.source.Pointer() {
+		// StringSlicePtr and StringPtrSlicePtr embed *SlicePtr which has .Slice.Key
+		keyAccess = jen.Id("f").Dot(embeddedType).Dot("Slice").Dot("Key")
+	} else {
+		// StringSlice and StringPtrSlice embed *Slice which has .Key directly
+		keyAccess = jen.Id("f").Dot(embeddedType).Dot("Key")
+	}
+
+	return jen.Add(
+		jen.Type().Id(wrapperName).Types(jen.Add(def.TypeModel).Any()).Struct(
+			jen.Op("*").Qual(ctx.pkgLib(), embeddedType).Types(def.TypeModel),
+		),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("Matches").
+			Params(jen.Id("terms").String()).
+			Qual(ctx.pkgLib(), "Search").Types(def.TypeModel).
+			Block(
+				jen.Return(
+					jen.Qual(ctx.pkgLib(), "NewSearch").Types(def.TypeModel).Call(
+						keyAccess,
+						jen.Id("terms"),
+					),
+				),
+			),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("MatchesAny").
+			Params(jen.Id("terms").String()).
+			Qual(ctx.pkgLib(), "Search").Types(def.TypeModel).
+			Block(
+				jen.Return(
+					jen.Qual(ctx.pkgLib(), "NewSearchOr").Types(def.TypeModel).Call(
+						keyAccess,
+						jen.Id("terms"),
+					),
+				),
+			),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("key").
+			Params().
+			Qual(ctx.pkgLib(), "Key").Types(def.TypeModel).
+			Block(
+				jen.Return(keyAccess),
+			),
+	)
 }
 
 func (f *Slice) filterFunc(ctx Context) jen.Code {
@@ -387,36 +499,121 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 			return nil
 		}
 
+	case *Struct:
+		sliceType := "Slice"
+		newFunc := "NewSlice"
+		if f.source.Pointer() {
+			sliceType = "SlicePtr"
+			newFunc = "NewSlicePtr"
+		}
+
+		return jen.Func().
+			Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).Id(f.NameGo()).
+			Params(
+				jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
+					Types(jen.Qual(f.SourcePkg, element.element.NameGo())),
+			).
+			Op("*").Qual(ctx.pkgLib(), sliceType).
+			Types(def.TypeModel, f.element.typeGo(), elemFilter).
+			Block(
+				jen.Id("key").Op(":=").Qual(ctx.pkgLib(), "StructField").Call(
+					jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase()), jen.Id("filters"),
+				),
+				jen.Return(jen.Qual(ctx.pkgLib(), newFunc).
+					Types(def.TypeModel, f.element.typeGo(), elemFilter).
+					Call(jen.Id("key"), makeElemFilter)),
+			)
+
 	default:
 		return nil
 	}
 }
 
-func (f *Slice) fieldDef(ctx Context) jen.Code {
-	omitEmpty := ""
-	if _, isEdge := f.element.(*Edge); isEdge {
-		omitEmpty = ",omitempty"
+func (f *Slice) fieldDefine(ctx Context) jen.Code {
+	if _, ok := f.element.(*Byte); ok {
+		return nil
 	}
-
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + omitEmpty})
+	elemType := f.distinctElemType(ctx)
+	if elemType == nil {
+		return nil
+	}
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, elemType)
 }
 
-func (f *Slice) cborMarshal(_ Context) jen.Code {
+func (f *Slice) fieldInit(ctx Context) jen.Code {
+	if _, ok := f.element.(*Byte); ok {
+		return nil
+	}
+	factoryCode := f.distinctElemInit(ctx)
+	if factoryCode == nil {
+		return nil
+	}
+	return factoryCode
+}
+
+func (f *Slice) distinctElemType(ctx Context) jen.Code {
+	switch elem := f.element.(type) {
+	case *String:
+		return jen.String()
+	case *Bool:
+		return jen.Bool()
+	case *Numeric:
+		return elem.typeGoBase()
+	case *Enum:
+		return jen.Qual(ctx.SourcePkg, elem.model.NameGo())
+	case *Time:
+		return jen.Qual("time", "Time")
+	case *Duration:
+		return jen.Qual("time", "Duration")
+	case *UUID:
+		return jen.Qual(elem.uuidPkg(), "UUID")
+	case *URL:
+		return jen.Qual(def.PkgURL, "URL")
+	case *Email:
+		return jen.Qual(f.TargetPkg, "Email")
+	case *SemVer:
+		return jen.Qual(f.TargetPkg, "SemVer")
+	default:
+		return nil
+	}
+}
+
+func (f *Slice) distinctElemInit(ctx Context) jen.Code {
+	key := jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase()))
+	switch elem := f.element.(type) {
+	case *String:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.String()).Call(key)
+	case *Bool:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Bool()).Call(key)
+	case *Numeric:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, elem.typeGoBase()).Call(key)
+	case *Enum:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(ctx.SourcePkg, elem.model.NameGo())).Call(key)
+	case *Time:
+		return jen.Qual(ctx.pkgDistinct(), "NewTimeField").Types(def.TypeModel).Call(key)
+	case *Duration:
+		return jen.Qual(ctx.pkgDistinct(), "NewDurationField").Types(def.TypeModel).Call(key)
+	case *UUID:
+		factory := "New" + elem.uuidTypeName() + "Field"
+		return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).Call(key)
+	case *URL:
+		return jen.Qual(ctx.pkgDistinct(), "NewURLField").Types(def.TypeModel).Call(key)
+	case *Email:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email")).Call(key)
+	case *SemVer:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "SemVer")).Call(key)
+	default:
+		return nil
+	}
+}
+
+func (f *Slice) cborMarshal(ctx Context) jen.Code {
 	// For struct slices, we need to convert each element through the conv wrapper
 	// to get proper snake_case field names in the CBOR output.
 	if structElem, ok := f.element.(*Struct); ok {
-		convFuncName := "from" + structElem.table.NameGo()
+		convFuncName := "from" + structElem.element.NameGo()
 		if structElem.source.Pointer() {
 			convFuncName += "Ptr"
-		}
-
-		// Determine the slice element type based on whether the struct element is a pointer
-		var sliceElemType jen.Code
-		if structElem.source.Pointer() {
-			sliceElemType = jen.Index().Op("*").Id(structElem.table.NameGoLower())
-		} else {
-			sliceElemType = jen.Index().Id(structElem.table.NameGoLower())
 		}
 
 		// Handle pointer-to-slice case by dereferencing
@@ -424,6 +621,28 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 		if f.source.Pointer() {
 			srcSlice = jen.Op("*").Id("c").Dot(f.NameGo())
 		}
+
+		if structElem.source.Pointer() {
+			return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+				jen.Id("convSlice").Op(":=").Make(
+					jen.Index().Any(),
+					jen.Len(srcSlice),
+				),
+				jen.For(
+					jen.Id("i").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
+				).Block(
+					jen.If(jen.Id("v").Op("==").Nil()).Block(
+						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Qual(ctx.pkgCBOR(), "None").Call(),
+					).Else().Block(
+						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+					),
+				),
+				jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("convSlice"),
+			)
+		}
+
+		// Determine the slice element type for non-pointer struct elements
+		sliceElemType := jen.Index().Id(structElem.element.NameGoLower())
 
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 			jen.Id("convSlice").Op(":=").Make(
@@ -439,6 +658,39 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 		)
 	}
 
+	// For node slices, convert each element to a link (only ID, not full object)
+	if nodeElem, ok := f.element.(*Node); ok {
+		convFuncName := "to" + nodeElem.table.NameGo() + "Link"
+		if nodeElem.source.Pointer() {
+			convFuncName += "Ptr"
+		}
+
+		// Link type is always *nodeLink
+		sliceElemType := jen.Index().Op("*").Id(nodeElem.table.NameGoLower() + "Link")
+
+		// Handle pointer-to-slice case by dereferencing
+		srcSlice := jen.Id("c").Dot(f.NameGo())
+		if f.source.Pointer() {
+			srcSlice = jen.Op("*").Id("c").Dot(f.NameGo())
+		}
+
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("convSlice").Op(":=").Make(
+				sliceElemType,
+				jen.Lit(0),
+				jen.Len(srcSlice),
+			),
+			jen.For(
+				jen.Id("_").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
+			).Block(
+				jen.If(jen.Id("link").Op(":=").Id(convFuncName).Call(jen.Id("v")), jen.Id("link").Op("!=").Nil()).Block(
+					jen.Id("convSlice").Op("=").Append(jen.Id("convSlice"), jen.Id("link")),
+				),
+			),
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("convSlice"),
+		)
+	}
+
 	return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
 		jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
 	)
@@ -447,18 +699,111 @@ func (f *Slice) cborMarshal(_ Context) jen.Code {
 func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 	// For struct slices, we need to unmarshal into the conv wrapper and then convert back.
 	if structElem, ok := f.element.(*Struct); ok {
-		convFuncName := "to" + structElem.table.NameGo()
+		convFuncName := "to" + structElem.element.NameGo()
 		if structElem.source.Pointer() {
 			convFuncName += "Ptr"
 		}
 
-		// Determine the slice element type based on whether the struct element is a pointer
-		var sliceElemType jen.Code
 		if structElem.source.Pointer() {
-			sliceElemType = jen.Index().Op("*").Id(structElem.table.NameGoLower())
-		} else {
-			sliceElemType = jen.Index().Id(structElem.table.NameGoLower())
+			// For pointer element slices, unmarshal each element individually
+			// to correctly handle NONE/null as nil pointers.
+			innerSliceType := jen.Index().Add(f.element.typeGo())
+
+			var assignStmt jen.Code
+			if f.source.Pointer() {
+				assignStmt = jen.If(jen.Id("rawSlice").Op("==").Nil()).Block(
+					jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+				).Else().BlockFunc(func(bg *jen.Group) {
+					bg.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("rawSlice")))
+					bg.For(jen.Id("i").Op(",").Id("elem").Op(":=").Range().Id("rawSlice")).BlockFunc(func(fg *jen.Group) {
+						fg.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("elem"))).Block(
+							jen.Continue(),
+						)
+						fg.Var().Id("v").Id(structElem.element.NameGoLower())
+						fg.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("elem"), jen.Op("&").Id("v"))
+						fg.Id("result").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Op("&").Id("v"))
+					})
+					bg.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("result")
+				})
+			} else {
+				assignStmt = jen.Block(
+					jen.Id("c").Dot(f.NameGo()).Op("=").Make(
+						f.typeGo(),
+						jen.Len(jen.Id("rawSlice")),
+					),
+					jen.For(
+						jen.Id("i").Op(",").Id("elem").Op(":=").Range().Id("rawSlice"),
+					).BlockFunc(func(fg *jen.Group) {
+						fg.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("elem"))).Block(
+							jen.Continue(),
+						)
+						fg.Var().Id("v").Id(structElem.element.NameGoLower())
+						fg.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("elem"), jen.Op("&").Id("v"))
+						fg.Id("c").Dot(f.NameGo()).Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Op("&").Id("v"))
+					}),
+				)
+			}
+
+			return jen.If(
+				jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+				jen.Id("ok"),
+			).BlockFunc(func(g *jen.Group) {
+				g.Var().Id("rawSlice").Index().Qual(ctx.pkgCBOR(), "RawMessage")
+				g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("rawSlice"))
+				g.Add(assignStmt)
+			})
 		}
+
+		// Non-pointer struct elements: unmarshal directly into typed slice.
+		sliceElemType := jen.Index().Id(structElem.element.NameGoLower())
+		innerSliceType := jen.Index().Add(f.element.typeGo())
+
+		var assignStmt jen.Code
+		if f.source.Pointer() {
+			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+			).Else().Block(
+				jen.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("convSlice"))),
+				jen.For(
+					jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice"),
+				).Block(
+					jen.Id("result").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+				),
+				jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("result"),
+			)
+		} else {
+			assignStmt = jen.Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Make(
+					f.typeGo(),
+					jen.Len(jen.Id("convSlice")),
+				),
+				jen.For(
+					jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice"),
+				).Block(
+					jen.Id("c").Dot(f.NameGo()).Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
+				),
+			)
+		}
+
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).BlockFunc(func(g *jen.Group) {
+			g.Var().Id("convSlice").Add(sliceElemType)
+			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convSlice"))
+			g.Add(assignStmt)
+		})
+	}
+
+	// For node slices, unmarshal through link and convert back to model
+	if nodeElem, ok := f.element.(*Node); ok {
+		convFuncName := "from" + nodeElem.table.NameGo() + "Link"
+		if nodeElem.source.Pointer() {
+			convFuncName += "Ptr"
+		}
+
+		// Link type is always *nodeLink
+		sliceElemType := jen.Index().Op("*").Id(nodeElem.table.NameGoLower() + "Link")
 
 		// Determine the inner slice type (the model slice type)
 		innerSliceType := jen.Index().Add(f.element.typeGo())
@@ -466,7 +811,9 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 		// Build the assignment statement - handle pointer-to-slice case
 		var assignStmt jen.Code
 		if f.source.Pointer() {
-			assignStmt = jen.Block(
+			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+			).Else().Block(
 				jen.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("convSlice"))),
 				jen.For(
 					jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice"),

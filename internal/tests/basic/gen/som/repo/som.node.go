@@ -6,97 +6,501 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
+	"sync"
+	"sync/atomic"
 
+	som "som.test/gen/som"
+	"som.test/gen/som/internal"
+	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"golang.org/x/sync/singleflight"
 )
 
-// N is a placeholder for the node type.
-// C is a placeholder for the conversion type.
-type repo[N any, C any] struct {
-	db Database
+func containsError(err error, msg string) bool {
+	if err == nil {
+		return false
+	}
+	var se connection.ServerError
+	if errors.As(err, &se) {
+		for cur := &se; cur != nil; cur = cur.Cause {
+			if strings.Contains(cur.Message, msg) {
+				return true
+			}
+		}
+		return false
+	}
+	return strings.Contains(err.Error(), msg)
+}
+
+// cacheInitGroup deduplicates concurrent cache initialization requests.
+var cacheInitGroup singleflight.Group
+
+// cacheRefreshGroup deduplicates concurrent cache refresh requests.
+var cacheRefreshGroup singleflight.Group
+
+// RepoInfo holds type-specific conversion functions for repository operations.
+type RepoInfo[N any] struct {
+	ReadOne    func(ctx context.Context, db *dbConn, id *models.RecordID) (*N, error)
+	CreateOne  func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*N, error)
+	CreateNew  func(ctx context.Context, db *dbConn, idExpr string, data any) (*N, error)
+	UpdateOne  func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*N, error)
+	InsertAll  func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*N, error)
+	QueryOne   func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*N, error)
+	MarshalOne func(node *N) any
+}
+
+// hookKind enumerates the lifecycle events a hook may be registered for.
+type hookKind int
+
+const (
+	beforeCreate hookKind = iota
+	afterCreate
+	beforeUpdate
+	afterUpdate
+	beforeDelete
+	afterDelete
+	numHookKinds
+)
+
+type hook[N any] struct {
+	id uint64
+	fn func(ctx context.Context, node *N) error
+}
+
+type repo[N any, K any] struct {
+	db *dbConn
 
 	name     string
-	convFrom func(*N) *C
-	convTo   func(*C) *N
+	info     RepoInfo[N]
+	newID    func(string) string
+	idFunc   string
+	recordID func(K) *models.RecordID
+
+	hookMu      sync.RWMutex
+	hookCounter atomic.Uint64
+	hooks       [numHookKinds][]hook[N]
 }
 
-func (r *repo[N, C]) create(ctx context.Context, node *N) error {
-	data := r.convFrom(node)
-	raw, err := r.db.Create(ctx, newULID(r.name), data) // TODO: make ID type configurable
-	if err != nil {
-		return fmt.Errorf("could not create entity: %w", err)
+func (r *repo[N, K]) registerHook(kind hookKind, fn func(ctx context.Context, node *N) error) func() {
+	id := r.hookCounter.Add(1)
+	r.hookMu.Lock()
+	r.hooks[kind] = append(r.hooks[kind], hook[N]{id: id, fn: fn})
+	r.hookMu.Unlock()
+	return func() {
+		r.hookMu.Lock()
+		defer r.hookMu.Unlock()
+		for i, h := range r.hooks[kind] {
+			if h.id == id {
+				r.hooks[kind] = slices.Delete(r.hooks[kind], i, i+1)
+				return
+			}
+		}
 	}
-	var conv *C
-	err = r.db.Unmarshal(raw, &conv)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
+}
+
+// invokeIface calls the model's optional lifecycle-hook interface for the given
+// event, if the model implements it.
+func (r *repo[N, K]) invokeIface(ctx context.Context, kind hookKind, node *N) error {
+	switch kind {
+	case beforeCreate:
+		if h, ok := any(node).(som.OnBeforeCreateHook); ok {
+			return h.OnBeforeCreate(ctx)
+		}
+	case afterCreate:
+		if h, ok := any(node).(som.OnAfterCreateHook); ok {
+			return h.OnAfterCreate(ctx)
+		}
+	case beforeUpdate:
+		if h, ok := any(node).(som.OnBeforeUpdateHook); ok {
+			return h.OnBeforeUpdate(ctx)
+		}
+	case afterUpdate:
+		if h, ok := any(node).(som.OnAfterUpdateHook); ok {
+			return h.OnAfterUpdate(ctx)
+		}
+	case beforeDelete:
+		if h, ok := any(node).(som.OnBeforeDeleteHook); ok {
+			return h.OnBeforeDelete(ctx)
+		}
+	case afterDelete:
+		if h, ok := any(node).(som.OnAfterDeleteHook); ok {
+			return h.OnAfterDelete(ctx)
+		}
 	}
-	*node = *r.convTo(conv)
+
 	return nil
 }
 
-func (r *repo[N, C]) createWithID(ctx context.Context, id string, node *N) error {
-	data := r.convFrom(node)
-	res, err := r.db.Create(ctx, models.NewRecordID(r.name, id), data)
-	if err != nil {
-		return fmt.Errorf("could not create entity: %w", err)
+// runHooks invokes the model's optional lifecycle-hook interface for the given
+// event, followed by every hook registered on the repository. It aborts on the
+// first error. Registered hooks are snapshotted under the lock so that mutating
+// the hook set from within a hook does not affect the current invocation.
+func (r *repo[N, K]) runHooks(ctx context.Context, kind hookKind, node *N) error {
+	if err := r.invokeIface(ctx, kind, node); err != nil {
+		return err
 	}
-	var conv *C
-	err = r.db.Unmarshal(res, &conv)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
+
+	r.hookMu.RLock()
+	hooks := slices.Clone(r.hooks[kind])
+	r.hookMu.RUnlock()
+
+	for _, h := range hooks {
+		if err := h.fn(ctx, node); err != nil {
+			return err
+		}
 	}
-	*node = *r.convTo(conv)
+
 	return nil
 }
 
-func (r *repo[N, C]) read(ctx context.Context, id *ID) (*N, bool, error) {
-	res, err := r.db.Select(ctx, id)
+// runHooksAll invokes the given hook event for every node in the batch. The
+// registered repository hooks are snapshotted once for the whole batch, so
+// mutating the hook set from within a hook does not affect the current call.
+func (r *repo[N, K]) runHooksAll(ctx context.Context, kind hookKind, nodes []*N) error {
+	r.hookMu.RLock()
+	hooks := slices.Clone(r.hooks[kind])
+	r.hookMu.RUnlock()
+
+	for _, node := range nodes {
+		if err := r.invokeIface(ctx, kind, node); err != nil {
+			return err
+		}
+
+		for _, h := range hooks {
+			if err := h.fn(ctx, node); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *repo[N, K]) OnBeforeCreate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeCreate, fn)
+}
+
+func (r *repo[N, K]) OnAfterCreate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterCreate, fn)
+}
+
+func (r *repo[N, K]) OnBeforeUpdate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeUpdate, fn)
+}
+
+func (r *repo[N, K]) OnAfterUpdate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterUpdate, fn)
+}
+
+func (r *repo[N, K]) OnBeforeDelete(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeDelete, fn)
+}
+
+func (r *repo[N, K]) OnAfterDelete(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterDelete, fn)
+}
+
+func (r *repo[N, K]) create(ctx context.Context, node *N) error {
+	if r.newID == nil {
+		return fmt.Errorf("create without explicit ID is not supported for this model")
+	}
+	data := r.info.MarshalOne(node)
+	result, err := r.info.CreateNew(ctx, r.db, r.newID(r.name), data)
+	if err != nil {
+		return fmt.Errorf("could not create entity: %w", err)
+	}
+	*node = *result
+	return nil
+}
+
+func (r *repo[N, K]) createWithID(ctx context.Context, id K, node *N) error {
+	data := r.info.MarshalOne(node)
+	result, err := r.info.CreateOne(ctx, r.db, *r.recordID(id), data)
+	if err != nil {
+		return fmt.Errorf("could not create entity: %w", err)
+	}
+	*node = *result
+	return nil
+}
+
+func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
+	data := make([]any, len(nodes))
+	for i, node := range nodes {
+		data[i] = r.info.MarshalOne(node)
+	}
+	statement := "INSERT INTO " + r.name + " (SELECT *, " + r.idFunc + " AS id FROM $data)"
+	results, err := r.info.InsertAll(ctx, r.db, statement, map[string]any{"data": data})
+	if err != nil {
+		return fmt.Errorf("could not insert entities: %w", err)
+	}
+	if len(results) != len(nodes) {
+		return fmt.Errorf("insert returned %d results, expected %d", len(results), len(nodes))
+	}
+	for i, result := range results {
+		if result == nil {
+			return fmt.Errorf("insert returned nil result at index %d", i)
+		}
+		*nodes[i] = *result
+	}
+	return nil
+}
+
+func (r *repo[N, K]) read(ctx context.Context, id *models.RecordID) (*N, bool, error) {
+	result, err := r.info.ReadOne(ctx, r.db, id)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
 	}
-	var conv *C
-	err = r.db.Unmarshal(res, &conv)
-	if err != nil {
-		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
+	if result == nil {
+		return nil, false, nil
 	}
-	return r.convTo(conv), true, nil
+	return result, true, nil
 }
 
-func (r *repo[N, C]) update(ctx context.Context, id *ID, node *N) error {
-	data := r.convFrom(node)
-	res, err := r.db.Update(ctx, id, data)
+func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) error {
+	data := r.info.MarshalOne(node)
+	result, err := r.info.UpdateOne(ctx, r.db, id, data)
 	if err != nil {
+		if containsError(err, "optimistic_lock_failed") {
+			return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
+		}
 		return fmt.Errorf("could not update entity: %w", err)
 	}
-	var conv *C
-	err = r.db.Unmarshal(res, &conv)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
-	}
-	*node = *r.convTo(conv)
+	*node = *result
 	return nil
 }
 
-func (r *repo[N, C]) delete(ctx context.Context, id *ID, node *N) error {
-	_, err := r.db.Delete(ctx, id)
-	if err != nil {
+func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, softDelete bool, lockVersion *int) error {
+	if softDelete {
+		query := "UPDATE $id SET deleted_at = time::now()"
+		vars := map[string]any{
+			"id": id,
+		}
+		if lockVersion != nil {
+			query += ", __som_lock_version = $lock_version"
+			vars["lock_version"] = *lockVersion
+		}
+		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL"
+		result, err := r.info.QueryOne(ctx, r.db, query, vars)
+		if err != nil {
+			if lockVersion != nil && containsError(err, "optimistic_lock_failed") {
+				return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
+			}
+			return fmt.Errorf("could not soft delete entity: %w", err)
+		}
+		if result == nil {
+			return som.ErrAlreadyDeleted
+		}
+		*node = *result
+		return nil
+	}
+
+	if err := dbDelete(ctx, r.db, id); err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}
 	return nil
 }
 
-func (r *repo[N, C]) refresh(ctx context.Context, id *models.RecordID, node *N) error {
+func (r *repo[N, K]) refresh(ctx context.Context, id *models.RecordID, node *N) error {
 	read, exists, err := r.read(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to read node: %w", err)
 	}
 
 	if !exists {
-		return errors.New("given node does not exist")
+		return som.ErrNotFound
 	}
 
 	*node = *read
 
 	return nil
+}
+
+// eagerRefreshFuncs holds the functions needed to refresh an eager cache.
+type eagerRefreshFuncs[N any] struct {
+	cacheID  string
+	queryAll func(context.Context) ([]*N, error)
+	countAll func(context.Context) (int, error)
+	idFunc   func(*N) string
+}
+
+// loadEagerRecords loads all records for an eager cache with MaxSize validation.
+// It first counts records (if maxSize > 0) to fail fast before loading all data,
+// then performs a post-query size check to guard against TOCTOU race conditions.
+func loadEagerRecords[N any](
+	ctx context.Context,
+	countAll func(context.Context) (int, error),
+	queryAll func(context.Context) ([]*N, error),
+	maxSize int,
+) ([]*N, error) {
+	if maxSize > 0 {
+		count, err := countAll(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("could not count records: %w", err)
+		}
+		if count > maxSize {
+			return nil, som.ErrCacheSizeLimitExceeded
+		}
+	}
+
+	records, err := queryAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not load records: %w", err)
+	}
+
+	if maxSize > 0 && len(records) > maxSize {
+		return nil, som.ErrCacheSizeLimitExceeded
+	}
+
+	return records, nil
+}
+
+// readWithCache attempts to read from cache first, falling back to DB if needed.
+// If cache is in eager mode and record not found, returns (nil, false, nil).
+// If cache is in lazy mode and record not found, queries DB and populates cache.
+// For eager mode with TTL, expired caches are automatically refreshed.
+func (r *repo[N, K]) readWithCache(ctx context.Context, cacheKey string, rid *models.RecordID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
+	if c == nil {
+		return r.read(ctx, rid)
+	}
+
+	// Check if eager cache needs refresh due to TTL expiration
+	if c.isEager() && c.isLoaded() && c.isExpired() && refreshFuncs != nil {
+		if err := r.refreshEagerCache(ctx, c, refreshFuncs); err != nil {
+			return nil, false, err
+		}
+	}
+
+	if record, found := c.get(cacheKey); found {
+		return record, true, nil
+	}
+
+	if c.isEager() && c.isLoaded() {
+		return nil, false, nil
+	}
+
+	record, exists, err := r.read(ctx, rid)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if exists && record != nil {
+		c.set(cacheKey, record)
+	}
+
+	return record, exists, nil
+}
+
+// refreshEagerCache reloads all records for an expired eager cache.
+// Uses singleflight to prevent concurrent refresh operations.
+func (r *repo[N, K]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *eagerRefreshFuncs[N]) error {
+	_, err, _ := cacheRefreshGroup.Do(funcs.cacheID, func() (any, error) {
+		if !c.isExpired() {
+			return nil, nil
+		}
+
+		records, err := loadEagerRecords(ctx, funcs.countAll, funcs.queryAll, c.getMaxSize())
+		if err != nil {
+			return nil, err
+		}
+
+		c.refreshWith(records, funcs.idFunc)
+		return nil, nil
+	})
+	return err
+}
+
+// getOrCreateCache returns the cache for the given model type, creating it if needed.
+// The idFunc is used for eager cache population.
+// The queryAll function loads all records for eager mode.
+// The countAll function counts records to check against maxSize.
+// Returns ErrCacheAlreadyCleaned if the cache was previously cleaned up.
+func getOrCreateCache[N any](
+	ctx context.Context,
+	idFunc func(*N) string,
+	queryAll func(context.Context) ([]*N, error),
+	countAll func(context.Context) (int, error),
+) (*cache[N], error) {
+	if !internal.CacheEnabled[N](ctx) {
+		return nil, nil
+	}
+
+	opts := internal.GetCacheOptions[N](ctx)
+	if opts == nil {
+		return nil, nil
+	}
+
+	cacheID := internal.GetCacheKey[N](ctx)
+	if cacheID == "" {
+		return nil, nil
+	}
+
+	// Check if cache entry exists (could be placeholder nil or real cache)
+	cached, ok := internal.GetCache(cacheID)
+	if !ok {
+		// No entry = cache was cleaned up
+		return nil, som.ErrCacheAlreadyCleaned
+	}
+
+	// If it's already a real cache, return it
+	if c, ok := cached.(*cache[N]); ok && c != nil {
+		return c, nil
+	}
+
+	// Entry exists but is placeholder (nil) - need to create real cache
+	var mode cacheMode
+	switch opts.Mode {
+	case internal.CacheModeEager:
+		mode = cacheModeEager
+	default:
+		mode = cacheModeLazy
+	}
+
+	// Use singleflight to deduplicate concurrent cache initialization
+	result, err, _ := cacheInitGroup.Do(cacheID, func() (any, error) {
+		// Re-check if another goroutine already created the cache
+		if cached, ok := internal.GetCache(cacheID); ok {
+			if c, ok := cached.(*cache[N]); ok && c != nil {
+				return c, nil
+			}
+		} else {
+			// Cache was cleaned up while we were waiting
+			return nil, som.ErrCacheAlreadyCleaned
+		}
+
+		var c *cache[N]
+		if mode == cacheModeLazy {
+			c = newCache[N](mode, opts.TTL, opts.MaxSize)
+		} else {
+			records, err := loadEagerRecords(ctx, countAll, queryAll, opts.MaxSize)
+			if err != nil {
+				return nil, err
+			}
+
+			c = newCacheWithAll(records, idFunc, opts.TTL, opts.MaxSize)
+		}
+
+		if !internal.SetCache(cacheID, c) {
+			// Cache was cleaned up while we were initializing
+			return nil, som.ErrCacheAlreadyCleaned
+		}
+		return c, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, nil
+	}
+	return result.(*cache[N]), nil
+}
+
+func parseStringID(id string) any {
+	return id
+}
+
+func parseUUID(id string) any {
+	return som.UUID(id)
 }

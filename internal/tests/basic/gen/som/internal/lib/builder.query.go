@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+const (
+	somPrefix             = "__som__"
+	searchScorePrefix     = somPrefix + "search_score_"
+	searchHighlightPrefix = somPrefix + "search_highlight_"
+	searchOffsetsPrefix   = somPrefix + "search_offsets_"
+)
+
 type context struct {
 	varIndex int32
 	vars     map[string]any
@@ -29,17 +36,30 @@ type Query[T any] struct {
 	context
 	node       string
 	live       bool
-	fields     string
+	fields     []string
 	groupBy    string
 	groupAll   bool
 	Where      []Filter[T]
 	Sort       []*SortBuilder
 	SortRandom bool
 	Fetch      []string
-	Offset     int
+	Start      int
 	Limit      int
 	Timeout    time.Duration
 	Parallel   bool
+	TempFiles  bool
+	RangeExpr  string
+
+	SearchClauses []SearchClause
+	SearchWhere   string
+
+	// Soft delete support for main queries (not fetched relations)
+	SoftDeleteFilter Filter[T] // Injected at initialization
+	IncludeDeleted   bool      // Flag to skip soft delete filter
+}
+
+func (q *Query[T]) AsVar(val any) string {
+	return q.context.asVar(val)
 }
 
 func NewQuery[T any](node string) Query[T] {
@@ -53,7 +73,7 @@ func NewQuery[T any](node string) Query[T] {
 }
 
 func (q Query[T]) BuildAsAll() *Result {
-	q.fields = "*"
+	q.fields = []string{"*"}
 
 	return &Result{
 		Statement: q.render(),
@@ -62,7 +82,7 @@ func (q Query[T]) BuildAsAll() *Result {
 }
 
 func (q Query[T]) BuildAsAllIDs() *Result {
-	q.fields = "id"
+	q.fields = []string{"id"}
 
 	return &Result{
 		Statement: q.render(),
@@ -71,7 +91,7 @@ func (q Query[T]) BuildAsAllIDs() *Result {
 }
 
 func (q Query[T]) BuildAsCount() *Result {
-	q.fields = "count()"
+	q.fields = []string{"count()"}
 	q.groupAll = true
 
 	return &Result{
@@ -82,7 +102,7 @@ func (q Query[T]) BuildAsCount() *Result {
 
 func (q Query[T]) BuildAsLive() *Result {
 	q.live = true
-	q.fields = "*"
+	q.fields = []string{"*"}
 
 	return &Result{
 		Statement: q.render(),
@@ -92,7 +112,21 @@ func (q Query[T]) BuildAsLive() *Result {
 
 func (q Query[T]) BuildAsLiveDiff() *Result {
 	q.live = true
-	q.fields = "DIFF"
+	q.fields = []string{"DIFF"}
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+func (q Query[T]) BuildDistinct(field string) *Result {
+	q.fields = []string{"array::distinct(array::group(" + field + ")) AS values"}
+	q.groupAll = true
+
+	q.Where = append(q.Where, filter[T](func(_ *context, _ T) string {
+		return "(" + field + " != NONE AND " + field + " != NULL)"
+	}))
 
 	return &Result{
 		Statement: q.render(),
@@ -109,13 +143,74 @@ func (q Query[T]) render() string {
 		out.WriteString("LIVE ")
 	}
 
-	out.WriteString(strings.Join([]string{"SELECT", q.fields, "FROM", q.node}, " "))
+	fields := q.fields
 
+	// Add search score, highlight, and offset projections
+	for _, sc := range q.SearchClauses {
+		ref := strconv.Itoa(sc.Ref)
+		fields = append(fields, "search::score("+ref+") AS "+searchScorePrefix+ref)
+		if sc.Highlights {
+			fields = append(fields,
+				"search::highlight("+q.context.asVar(sc.HLPrefix)+", "+q.context.asVar(sc.HLSuffix)+", "+ref+") AS "+searchHighlightPrefix+ref)
+		}
+		if sc.Offsets {
+			fields = append(fields, "search::offsets("+ref+") AS "+searchOffsetsPrefix+ref)
+		}
+	}
+
+	// Add score projection for each score sort
+	for _, s := range q.Sort {
+		if s.IsScore && len(s.ScoreRefs) > 0 {
+			expr := renderScoreCombination(s.ScoreRefs, s.ScoreMode, s.ScoreWeights)
+			refStrs := make([]string, len(s.ScoreRefs))
+			for i, ref := range s.ScoreRefs {
+				refStrs[i] = strconv.Itoa(ref)
+			}
+			alias := searchScorePrefix + strings.Join(refStrs, "_")
+			fields = append(fields, expr+" AS "+alias)
+		}
+	}
+
+	out.WriteString("SELECT " + strings.Join(fields, ", "))
+
+	// TODO: not working, but more a optimisation than anything else
+	//if len(q.Sort) > 0 {
+	//	out.WriteString(" OMIT ")
+	//	var omitFields []string
+	//	for _, s := range q.Sort {
+	//		omitFields = append(omitFields, "__som_"+s.Field)
+	//	}
+	//	out.WriteString(strings.Join(omitFields, ", "))
+	//}
+
+	out.WriteString(" FROM " + q.node + q.RangeExpr)
+
+	// Build WHERE clause combining soft delete, search and regular filters
+	var whereParts []string
+
+	// 1. Inject soft delete filter FIRST (if enabled and not disabled)
+	if !q.IncludeDeleted && q.SoftDeleteFilter != nil {
+		var t T
+		if sdFilter := q.SoftDeleteFilter.build(&q.context, t); sdFilter != "" {
+			whereParts = append(whereParts, sdFilter)
+		}
+	}
+
+	// 2. Add search conditions
+	if q.SearchWhere != "" {
+		whereParts = append(whereParts, q.SearchWhere)
+	}
+
+	// 3. Add regular filters
 	var t T
-	whereStatement := All[T](q.Where).build(&q.context, t)
-	if whereStatement != "" {
+	filterWhere := All[T](q.Where).build(&q.context, t)
+	if filterWhere != "" {
+		whereParts = append(whereParts, filterWhere)
+	}
+
+	if len(whereParts) > 0 {
 		out.WriteString(" WHERE ")
-		out.WriteString(whereStatement)
+		out.WriteString(strings.Join(whereParts, " AND "))
 	}
 
 	if !q.live && q.groupBy != "" {
@@ -134,7 +229,6 @@ func (q Query[T]) render() string {
 		for _, s := range q.Sort {
 			sorts = append(sorts, s.render())
 		}
-
 		out.WriteString(" ORDER BY ")
 		out.WriteString(strings.Join(sorts, ", "))
 	}
@@ -146,13 +240,16 @@ func (q Query[T]) render() string {
 	}
 
 	// START must come after LIMIT.
-	if !q.live && q.Offset > 0 {
+	if !q.live && q.Start > 0 {
 		out.WriteString(" START ")
-		out.WriteString(strconv.Itoa(q.Offset))
+		out.WriteString(strconv.Itoa(q.Start))
 	}
 
 	if len(q.Fetch) > 0 {
 		out.WriteString(" FETCH ")
+		// Note: Soft-delete filtering does NOT apply to fetched relations.
+		// All related records are returned regardless of their soft-delete status.
+		// Users should filter manually using IsDeleted() if needed.
 		out.WriteString(strings.Join(q.Fetch, ", "))
 	}
 
@@ -161,8 +258,12 @@ func (q Query[T]) render() string {
 		out.WriteString(q.Timeout.Round(time.Second).String())
 	}
 
+	if !q.live && q.TempFiles {
+		out.WriteString(" TEMPFILES")
+	}
+
 	if !q.live && q.Parallel {
-		out.WriteString(" PARALLEL")
+		out.WriteString(" PARALLEL") // TODO: not mentioned in official docs anymore?
 	}
 
 	return out.String()
@@ -230,6 +331,29 @@ const (
 
 	OpModulo Operator = "%" // https://github.com/surrealdb/surrealdb/pull/4182
 )
+
+func renderScoreCombination(refs []int, mode ScoreCombineMode, weights []float64) string {
+	var scoreParts []string
+	for _, ref := range refs {
+		scoreParts = append(scoreParts, "search::score("+strconv.Itoa(ref)+")")
+	}
+
+	switch mode {
+	case ScoreCombineMax:
+		return "math::max(" + strings.Join(scoreParts, ", ") + ")"
+	case ScoreCombineAverage:
+		return "((" + strings.Join(scoreParts, " + ") + ") / " + strconv.Itoa(len(refs)) + ")"
+	case ScoreCombineWeighted:
+		var weightedParts []string
+		for i, ref := range refs {
+			weightedParts = append(weightedParts,
+				"search::score("+strconv.Itoa(ref)+") * "+strconv.FormatFloat(weights[i], 'f', -1, 64))
+		}
+		return "(" + strings.Join(weightedParts, " + ") + ")"
+	default: // ScoreCombineSum
+		return "(" + strings.Join(scoreParts, " + ") + ")"
+	}
+}
 
 //
 // -- HELPER

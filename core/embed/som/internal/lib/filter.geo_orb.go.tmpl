@@ -1,0 +1,191 @@
+//go:build embed
+
+package lib
+
+import (
+	"github.com/paulmach/orb"
+
+	"{{.GenerateOutPath}}/internal/types"
+)
+
+// GeoPointOrb is a filter for orb.Point fields.
+type GeoPointOrb[M any] struct {
+	*Geo[M, orb.Point, *GeoPointOrb[M]]
+}
+
+func NewGeoPointOrb[M any](key Key[M]) *GeoPointOrb[M] {
+	conv := func(val orb.Point) any {
+		return types.PointOrb(val)
+	}
+	return &GeoPointOrb[M]{
+		Geo: NewGeo[M, orb.Point, *GeoPointOrb[M]](key, conv),
+	}
+}
+
+type GeoPointOrbPtr[M any] struct {
+	*GeoPointOrb[M]
+	*Nillable[M]
+}
+
+func NewGeoPointOrbPtr[M any](key Key[M]) *GeoPointOrbPtr[M] {
+	return &GeoPointOrbPtr[M]{
+		GeoPointOrb: NewGeoPointOrb[M](key),
+		Nillable:    NewNillable[M](key),
+	}
+}
+
+// GeoLineStringOrb is a filter for orb.LineString fields.
+type GeoLineStringOrb[M any] struct {
+	*Geo[M, orb.LineString, *GeoLineStringOrb[M]]
+}
+
+func NewGeoLineStringOrb[M any](key Key[M]) *GeoLineStringOrb[M] {
+	conv := func(val orb.LineString) any {
+		return types.LineStringOrb(val)
+	}
+	return &GeoLineStringOrb[M]{
+		Geo: NewGeo[M, orb.LineString, *GeoLineStringOrb[M]](key, conv),
+	}
+}
+
+type GeoLineStringOrbPtr[M any] struct {
+	*GeoLineStringOrb[M]
+	*Nillable[M]
+}
+
+func NewGeoLineStringOrbPtr[M any](key Key[M]) *GeoLineStringOrbPtr[M] {
+	return &GeoLineStringOrbPtr[M]{
+		GeoLineStringOrb: NewGeoLineStringOrb[M](key),
+		Nillable:         NewNillable[M](key),
+	}
+}
+
+// GeoPolygonOrb is a filter for orb.Polygon fields.
+type GeoPolygonOrb[M any] struct {
+	*Geo[M, orb.Polygon, *GeoPolygonOrb[M]]
+}
+
+func NewGeoPolygonOrb[M any](key Key[M]) *GeoPolygonOrb[M] {
+	conv := func(val orb.Polygon) any {
+		return types.PolygonOrb(val)
+	}
+	return &GeoPolygonOrb[M]{
+		Geo: NewGeo[M, orb.Polygon, *GeoPolygonOrb[M]](key, conv),
+	}
+}
+
+type GeoPolygonOrbPtr[M any] struct {
+	*GeoPolygonOrb[M]
+	*Nillable[M]
+}
+
+func NewGeoPolygonOrbPtr[M any](key Key[M]) *GeoPolygonOrbPtr[M] {
+	return &GeoPolygonOrbPtr[M]{
+		GeoPolygonOrb: NewGeoPolygonOrb[M](key),
+		Nillable:      NewNillable[M](key),
+	}
+}
+
+// GeoMultiPointOrb is a filter for orb.MultiPoint fields.
+type GeoMultiPointOrb[M any] struct {
+	*Geo[M, orb.MultiPoint, *GeoMultiPointOrb[M]]
+}
+
+func NewGeoMultiPointOrb[M any](key Key[M]) *GeoMultiPointOrb[M] {
+	conv := func(val orb.MultiPoint) any {
+		return types.MultiPointOrb(val)
+	}
+	return &GeoMultiPointOrb[M]{
+		Geo: NewGeo[M, orb.MultiPoint, *GeoMultiPointOrb[M]](key, conv),
+	}
+}
+
+type GeoMultiPointOrbPtr[M any] struct {
+	*GeoMultiPointOrb[M]
+	*Nillable[M]
+}
+
+func NewGeoMultiPointOrbPtr[M any](key Key[M]) *GeoMultiPointOrbPtr[M] {
+	return &GeoMultiPointOrbPtr[M]{
+		GeoMultiPointOrb: NewGeoMultiPointOrb[M](key),
+		Nillable:         NewNillable[M](key),
+	}
+}
+
+// GeoMultiLineStringOrb is a filter for orb.MultiLineString fields.
+type GeoMultiLineStringOrb[M any] struct {
+	*Geo[M, orb.MultiLineString, *GeoMultiLineStringOrb[M]]
+}
+
+func NewGeoMultiLineStringOrb[M any](key Key[M]) *GeoMultiLineStringOrb[M] {
+	conv := func(val orb.MultiLineString) any {
+		return types.MultiLineStringOrb(val)
+	}
+	return &GeoMultiLineStringOrb[M]{
+		Geo: NewGeo[M, orb.MultiLineString, *GeoMultiLineStringOrb[M]](key, conv),
+	}
+}
+
+type GeoMultiLineStringOrbPtr[M any] struct {
+	*GeoMultiLineStringOrb[M]
+	*Nillable[M]
+}
+
+func NewGeoMultiLineStringOrbPtr[M any](key Key[M]) *GeoMultiLineStringOrbPtr[M] {
+	return &GeoMultiLineStringOrbPtr[M]{
+		GeoMultiLineStringOrb: NewGeoMultiLineStringOrb[M](key),
+		Nillable:              NewNillable[M](key),
+	}
+}
+
+// GeoMultiPolygonOrb is a filter for orb.MultiPolygon fields.
+type GeoMultiPolygonOrb[M any] struct {
+	*Geo[M, orb.MultiPolygon, *GeoMultiPolygonOrb[M]]
+}
+
+func NewGeoMultiPolygonOrb[M any](key Key[M]) *GeoMultiPolygonOrb[M] {
+	conv := func(val orb.MultiPolygon) any {
+		return types.MultiPolygonOrb(val)
+	}
+	return &GeoMultiPolygonOrb[M]{
+		Geo: NewGeo[M, orb.MultiPolygon, *GeoMultiPolygonOrb[M]](key, conv),
+	}
+}
+
+type GeoMultiPolygonOrbPtr[M any] struct {
+	*GeoMultiPolygonOrb[M]
+	*Nillable[M]
+}
+
+func NewGeoMultiPolygonOrbPtr[M any](key Key[M]) *GeoMultiPolygonOrbPtr[M] {
+	return &GeoMultiPolygonOrbPtr[M]{
+		GeoMultiPolygonOrb: NewGeoMultiPolygonOrb[M](key),
+		Nillable:           NewNillable[M](key),
+	}
+}
+
+// GeoCollectionOrb is a filter for orb.Collection fields.
+type GeoCollectionOrb[M any] struct {
+	*Geo[M, orb.Collection, *GeoCollectionOrb[M]]
+}
+
+func NewGeoCollectionOrb[M any](key Key[M]) *GeoCollectionOrb[M] {
+	conv := func(val orb.Collection) any {
+		return types.CollectionOrb(val)
+	}
+	return &GeoCollectionOrb[M]{
+		Geo: NewGeo[M, orb.Collection, *GeoCollectionOrb[M]](key, conv),
+	}
+}
+
+type GeoCollectionOrbPtr[M any] struct {
+	*GeoCollectionOrb[M]
+	*Nillable[M]
+}
+
+func NewGeoCollectionOrbPtr[M any](key Key[M]) *GeoCollectionOrbPtr[M] {
+	return &GeoCollectionOrbPtr[M]{
+		GeoCollectionOrb: NewGeoCollectionOrb[M](key),
+		Nillable:         NewNillable[M](key),
+	}
+}

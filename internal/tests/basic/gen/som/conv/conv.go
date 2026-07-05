@@ -3,208 +3,10 @@
 package conv
 
 import (
-	"encoding/json"
-	"github.com/google/uuid"
 	"net/url"
-	"strconv"
-	"strings"
-	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som"
 )
-
-func parseDatabaseID(node string, id string) string {
-	id = strings.TrimPrefix(id, node+":")
-	id = strings.TrimPrefix(id, "⟨")
-	id = strings.TrimSuffix(id, "⟩")
-	id, _ = strconv.Unquote("\"" + id + "\"")
-	return id
-}
-
-func buildDatabaseID(node string, id string) string {
-	return node + ":" + id
-}
-
-func mapEnum[I, O ~string](in I) O {
-	return O(in)
-}
-
-func mapSlice[I, O any](in []I, fn func(I) O) []O {
-	if in == nil {
-		return nil
-	}
-
-	out := make([]O, len(in))
-	for _, i := range in {
-		out = append(out, fn(i))
-	}
-	return out
-}
-
-func mapSlicePtr[I, O any](in *[]I, fn func(I) O) *[]O {
-	if in == nil {
-		return nil
-	}
-
-	out := make([]O, len(*in))
-	for _, i := range *in {
-		out = append(out, fn(i))
-	}
-	return &out
-}
-
-func mapPtrSlice[I, O any](in []*I, fn func(I) O) []*O {
-	if in == nil {
-		return nil
-	}
-
-	ptrFn := ptrFunc(fn)
-
-	out := make([]*O, len(in))
-	for _, i := range in {
-		out = append(out, ptrFn(i))
-	}
-
-	return out
-}
-
-func mapPtrSlicePtr[I, O any](in *[]*I, fn func(I) O) *[]*O {
-	if in == nil {
-		return nil
-	}
-
-	ptrFn := ptrFunc(fn)
-
-	out := make([]*O, len(*in))
-	for _, i := range *in {
-		out = append(out, ptrFn(i))
-	}
-
-	return &out
-}
-
-func mapSliceFn[I, O any](fn func(I) O) func([]I) []O {
-	return func(in []I) []O {
-		if in == nil {
-			return nil
-		}
-
-		out := make([]O, len(in))
-
-		for _, i := range in {
-			out = append(out, fn(i))
-		}
-
-		return out
-	}
-}
-
-func mapSliceFnPtr[I, O any](fn func(I) O) func(*[]I) *[]O {
-	return func(in *[]I) *[]O {
-		if in == nil {
-			return nil
-		}
-
-		out := make([]O, len(*in))
-
-		for _, i := range *in {
-			out = append(out, fn(i))
-		}
-
-		return &out
-	}
-}
-
-func noOp[I any](in I) I {
-	return in
-}
-
-func ptrFunc[I, O any](fn func(I) O) func(*I) *O {
-	return func(in *I) *O {
-		if in == nil {
-			return nil
-		}
-		out := fn(*in)
-		return &out
-	}
-}
-
-func noPtrFunc[I, O any](fn func(*I) *O) func(I) O {
-	return func(in I) O {
-		out := fn(&in)
-		if out == nil {
-			var o O
-			return o
-		}
-		return *out
-	}
-}
-
-//
-// -- TIME
-//
-
-func fromTime(val time.Time) types.DateTime {
-	return types.DateTime{Time: val}
-}
-
-func toTime(val types.DateTime) time.Time {
-	return val.Time
-}
-
-func fromTimePtr(val *time.Time) *types.DateTime {
-	if val == nil {
-		return nil
-	}
-
-	return &types.DateTime{Time: *val}
-}
-
-func toTimePtr(val *types.DateTime) *time.Time {
-	if val == nil {
-		return nil
-	}
-
-	return &val.Time
-}
-
-//
-// -- NUMBER
-//
-
-type unsignedNumber[T uint | uint64 | uintptr] struct {
-	val *T
-}
-
-func (n *unsignedNumber[T]) MarshalJSON() ([]byte, error) {
-	return json.Marshal(strconv.FormatUint(uint64(*n.val), 10) + "dec")
-}
-
-func (n *unsignedNumber[T]) UnmarshalJSON(data []byte) error {
-	if n == nil {
-		return nil
-	}
-
-	var raw string
-	err := json.Unmarshal(data, &raw)
-	if err != nil {
-		return err
-	}
-
-	if raw == "" {
-		return nil
-	}
-
-	res, err := strconv.ParseUint(raw, 10, 64)
-	if err != nil {
-		return err
-	}
-
-	val := T(res)
-	n.val = &val
-
-	return nil
-}
 
 //
 // -- URL
@@ -248,59 +50,57 @@ func toURLPtr(val *string) *url.URL {
 }
 
 //
-// -- DURATION
+// -- EMAIL
 //
 
-func fromDuration(val time.Duration) types.Duration {
-	return types.Duration{Duration: val}
+func fromEmail(val som.Email) string {
+	return string(val)
 }
 
-func fromDurationPtr(val *time.Duration) *types.Duration {
+func fromEmailPtr(val *som.Email) *string {
 	if val == nil {
 		return nil
 	}
-
-	return &types.Duration{Duration: *val}
+	str := string(*val)
+	return &str
 }
 
-func toDuration(val types.Duration) time.Duration {
-	return val.Duration
+func toEmail(val string) som.Email {
+	return som.Email(val)
 }
 
-func toDurationPtr(val *types.Duration) *time.Duration {
+func toEmailPtr(val *string) *som.Email {
 	if val == nil {
 		return nil
 	}
-
-	return &val.Duration
+	email := som.Email(*val)
+	return &email
 }
 
 //
-// -- UUID
+// -- SEMVER
 //
 
-func fromUUID(val uuid.UUID) types.UUID {
-	return types.UUID(val)
+func fromSemVer(val som.SemVer) string {
+	return string(val)
 }
 
-func fromUUIDPtr(val *uuid.UUID) *types.UUID {
+func fromSemVerPtr(val *som.SemVer) *string {
 	if val == nil {
 		return nil
 	}
-
-	u := types.UUID(*val)
-	return &u
+	str := string(*val)
+	return &str
 }
 
-func toUUID(val types.UUID) uuid.UUID {
-	return uuid.UUID(val)
+func toSemVer(val string) som.SemVer {
+	return som.SemVer(val)
 }
 
-func toUUIDPtr(val *types.UUID) *uuid.UUID {
+func toSemVerPtr(val *string) *som.SemVer {
 	if val == nil {
 		return nil
 	}
-
-	u := uuid.UUID(*val)
-	return &u
+	sv := som.SemVer(*val)
+	return &sv
 }

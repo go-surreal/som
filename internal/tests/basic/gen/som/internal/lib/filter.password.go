@@ -3,33 +3,62 @@
 package lib
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 )
+
+// PasswordAlgorithm represents the encryption algorithm used for password hashing.
+type PasswordAlgorithm interface {
+	cryptoFunc() string
+}
+
+// Algorithm marker types that implement PasswordAlgorithm.
+type (
+	Bcrypt struct{}
+	Argon2 struct{}
+	Pbkdf2 struct{}
+	Scrypt struct{}
+)
+
+func (Bcrypt) cryptoFunc() string { return "crypto::bcrypt::compare" }
+func (Argon2) cryptoFunc() string { return "crypto::argon2::compare" }
+func (Pbkdf2) cryptoFunc() string { return "crypto::pbkdf2::compare" }
+func (Scrypt) cryptoFunc() string { return "crypto::scrypt::compare" }
 
 // Password is a filter builder for password values.
 // M is the model this filter is for.
 type Password[M any] struct {
-	*Base[M, som.Password, *Password[M], *Slice[M, som.Password, *Password[M]]]
+	*Base[M, som.Password[som.Bcrypt], *Password[M], *Slice[M, som.Password[som.Bcrypt], *Password[M]]]
+	algo PasswordAlgorithm
 }
 
-func NewPassword[M any](key Key[M]) *Password[M] {
+func NewPassword[M any](key Key[M], algo PasswordAlgorithm) *Password[M] {
 	return &Password[M]{
-		Base: NewBase[M, som.Password, *Password[M], *Slice[M, som.Password, *Password[M]]](key),
+		Base: NewBase[M, som.Password[som.Bcrypt], *Password[M], *Slice[M, som.Password[som.Bcrypt], *Password[M]]](key),
+		algo: algo,
 	}
 }
 
-func (e *Email[M]) CompareArgon2(val string) *Bool[M] {
-	return NewBool(e.fn("crypto::argon2::compare", val))
+// Compare validates the given plaintext password against the stored hash
+// using the configured encryption algorithm. Returns a Bool filter.
+func (p *Password[M]) Compare(val string) *Bool[M] {
+	return NewBool(p.fn(p.algo.cryptoFunc(), val))
 }
 
-func (e *Email[M]) CompareBcrypt(val string) *Bool[M] {
-	return NewBool(e.fn("crypto::bcrypt::compare", val))
+// Verify validates the given plaintext password against the stored hash
+// using the configured encryption algorithm. Returns a Filter that matches
+// when the password comparison is true.
+func (p *Password[M]) Verify(val string) Filter[M] {
+	return p.Compare(val).True()
 }
 
-func (e *Email[M]) ComparePbkdf2(val string) *Bool[M] {
-	return NewBool(e.fn("crypto::pbkdf2::compare", val))
+type PasswordPtr[M any] struct {
+	*Password[M]
+	*Nillable[M]
 }
 
-func (e *Email[M]) CompareScrypt(val string) *Bool[M] {
-	return NewBool(e.fn("crypto::scrypt::compare", val))
+func NewPasswordPtr[M any](key Key[M], algo PasswordAlgorithm) *PasswordPtr[M] {
+	return &PasswordPtr[M]{
+		Password: NewPassword[M](key, algo),
+		Nillable: NewNillable[M](key),
+	}
 }

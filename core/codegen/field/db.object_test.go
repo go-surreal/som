@@ -1,8 +1,9 @@
 package field
 
 import (
-	"gotest.tools/v3/assert"
 	"testing"
+
+	"gotest.tools/v3/assert"
 )
 
 func TestDatabaseObject(t *testing.T) {
@@ -18,5 +19,4 @@ func TestDatabaseObject(t *testing.T) {
 	assert.Equal(t, "some_name_caps", dbObj.NameDatabase())
 	assert.Equal(t, "object.some_name_caps.go", dbObj.FileName())
 	assert.Check(t, dbObj.GetFields() == nil)
-	assert.Equal(t, false, dbObj.HasTimestamps())
 }

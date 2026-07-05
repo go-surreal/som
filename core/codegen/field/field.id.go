@@ -19,12 +19,13 @@ func (f *ID) typeGo() jen.Code {
 }
 
 func (f *ID) typeConv(ctx Context) jen.Code {
-	return jen.Op("*").Qual(ctx.TargetPkg, "ID") // f.typeGo()
+	return jen.Op("*").Qual(def.PkgModels, "RecordID")
 }
 
 func (f *ID) TypeDatabase() string {
-	// TODO: type "uuid" works, but there is no native type "ulid"
-	// see: https://github.com/surrealdb/surrealdb/issues/1722
+	if f.source.Type == parser.IDTypeUUID {
+		return "uuid"
+	}
 	return "string"
 }
 
@@ -48,8 +49,6 @@ func (f *ID) CodeGen() *CodeGen {
 		sortDefine: f.sortDefine,
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
-
-		fieldDef: f.fieldDef,
 	}
 }
 
@@ -69,9 +68,4 @@ func (f *ID) sortDefine(ctx Context) jen.Code {
 func (f *ID) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *ID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv(ctx)).
-		Tag(map[string]string{convTag: f.NameDatabase() + ",omitempty"})
 }
