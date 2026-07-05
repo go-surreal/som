@@ -66,6 +66,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		).Params(jen.Index().Qual(pkgLib, "SearchResult").Types(jen.Op("*").Add(modelType)), jen.Error()).Block(
 			jen.Return(jen.Id("unmarshalSearchAll").Call(jen.Id("data"), jen.Id("clauses"), convFn)),
 		),
+		jen.Id("Fields"): jen.Qual(pkgConv, node.NameGo()+"Fields"),
 	})
 
 	if node.HasComplexID() {

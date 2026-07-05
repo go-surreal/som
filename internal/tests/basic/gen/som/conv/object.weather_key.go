@@ -15,12 +15,16 @@ func (c *weatherKey) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *weatherKey) fields() map[string]any {
 	data := make(map[string]any, 2)
 
 	data["city"] = c.City
 	data["date"] = &types.DateTime{Time: c.Date}
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *weatherKey) UnmarshalCBOR(data []byte) error {

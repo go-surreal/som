@@ -4,27 +4,33 @@ package lib
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
+
+	"som.test/gen/som/internal/cbor"
 )
 
 // CursorData holds the data encoded within a pagination cursor.
+//
+// Values are stored as pre-encoded CBOR (the DB representation of the
+// corresponding fields). This lets them be re-injected as query variables
+// byte-identically to how the same fields are encoded for regular queries,
+// so comparisons against DB values are type-correct.
 type CursorData struct {
-	// SortValues holds the values of the sort fields at this cursor position.
-	// Keys are field names (e.g., "created_at", "name"), values are the actual values.
-	SortValues map[string]any `json:"s,omitempty"`
+	// SortValues holds the encoded values of the sort fields at this cursor
+	// position, keyed by DB field name (e.g. "created_at", "custom_name").
+	SortValues map[string]cbor.RawMessage `cbor:"s,omitempty"`
 
-	// ID is the record ID at this cursor position (used as tiebreaker).
-	ID string `json:"id"`
+	// ID is the encoded record ID at this cursor position (tiebreaker).
+	ID cbor.RawMessage `cbor:"id"`
 }
 
 // EncodeCursor encodes cursor data as an opaque base64url string.
 func EncodeCursor(data CursorData) (string, error) {
-	jsonData, err := json.Marshal(data)
+	raw, err := cbor.Marshal(data)
 	if err != nil {
 		return "", err
 	}
-	return base64.URLEncoding.EncodeToString(jsonData), nil
+	return base64.URLEncoding.EncodeToString(raw), nil
 }
 
 // DecodeCursor decodes a base64url cursor string back to CursorData.
@@ -33,17 +39,17 @@ func DecodeCursor(cursor string) (CursorData, error) {
 		return CursorData{}, errors.New("empty cursor")
 	}
 
-	jsonData, err := base64.URLEncoding.DecodeString(cursor)
+	raw, err := base64.URLEncoding.DecodeString(cursor)
 	if err != nil {
 		return CursorData{}, errors.New("invalid cursor encoding")
 	}
 
 	var data CursorData
-	if err := json.Unmarshal(jsonData, &data); err != nil {
+	if err := cbor.Unmarshal(raw, &data); err != nil {
 		return CursorData{}, errors.New("invalid cursor data")
 	}
 
-	if data.ID == "" {
+	if len(data.ID) == 0 {
 		return CursorData{}, errors.New("cursor missing record ID")
 	}
 

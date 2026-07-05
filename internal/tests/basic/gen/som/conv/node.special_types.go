@@ -18,6 +18,10 @@ func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *SpecialTypes) fields() map[string]any {
 	data := make(map[string]any, 4)
 
 	// Embedded som.Node/Edge ID field
@@ -31,7 +35,7 @@ func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 	data["name"] = c.Name
 	data["__som_lock_version"] = c.Version()
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
@@ -92,6 +96,11 @@ func ToSpecialTypesPtr(data *SpecialTypes) *model.SpecialTypes {
 	}
 	result := data.SpecialTypes
 	return &result
+}
+
+func SpecialTypesFields(m *model.SpecialTypes) map[string]any {
+	c := SpecialTypes{*m}
+	return c.fields()
 }
 
 type specialTypesLink struct {

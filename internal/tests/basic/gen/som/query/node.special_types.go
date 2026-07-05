@@ -11,6 +11,7 @@ import (
 
 // specialTypesModelInfo holds the model-specific unmarshal functions for SpecialTypes.
 var specialTypesModelInfo = modelInfo[model.SpecialTypes]{
+	Fields: conv.SpecialTypesFields,
 	UnmarshalAll: func(data []byte) ([]*model.SpecialTypes, error) {
 		return unmarshalAll(data, conv.ToSpecialTypesPtr)
 	},

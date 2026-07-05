@@ -10,6 +10,7 @@ import (
 
 // allTypesModelInfo holds the model-specific unmarshal functions for AllTypes.
 var allTypesModelInfo = modelInfo[model.AllTypes]{
+	Fields: conv.AllTypesFields,
 	UnmarshalAll: func(data []byte) ([]*model.AllTypes, error) {
 		return unmarshalAll(data, conv.ToAllTypesPtr)
 	},

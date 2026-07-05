@@ -14,12 +14,16 @@ func (c *personKey) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *personKey) fields() map[string]any {
 	data := make(map[string]any, 2)
 
 	data["name"] = c.Name
 	data["age"] = c.Age
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *personKey) UnmarshalCBOR(data []byte) error {

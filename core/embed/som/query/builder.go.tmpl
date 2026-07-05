@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
-	"reflect"
 	"strings"
 	"time"
 
@@ -31,6 +30,10 @@ type modelInfo[M any] struct {
 
 	// UnmarshalSearchAll unmarshals search query results into []SearchResult[*M]
 	UnmarshalSearchAll func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*M], error)
+
+	// Fields returns the DB-keyed value map for a model, using DB field names
+	// and DB-typed values. Used to derive pagination cursor values.
+	Fields func(*M) map[string]any
 }
 
 type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) string
@@ -518,7 +521,9 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 		if err != nil {
 			return nil, fmt.Errorf("invalid cursor: %w", err)
 		}
-		cursorFilter := lib.CursorFilter[M](cursorData, sorts, backward)
+		// Comparison direction is derived from the original sort order plus the
+		// backward flag; the reversed sorts are only used for ORDER BY + LIMIT.
+		cursorFilter := lib.CursorFilter[M](cursorData, originalSorts, backward)
 		b.query.Where = append(b.query.Where, cursorFilter)
 	}
 
@@ -547,7 +552,7 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 	// Build Entries with per-item cursors
 	entries := make([]lib.Entry[M], len(items))
 	for i, item := range items {
-		itemCursor, err := generateCursor(item, originalSorts)
+		itemCursor, err := b.generateCursor(item, originalSorts)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate cursor for item %d: %w", i, err)
 		}
@@ -611,9 +616,12 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 	// Get total count if requested
 	totalCount := -1
 	if cfg.IncludeTotalCount {
-		// Create a fresh query without cursor filter and pagination
+		// Create a fresh query without cursor filter, ordering or pagination.
+		// COUNT with GROUP ALL rejects an ORDER BY clause.
 		countBuilder := b
 		countBuilder.query.Where = b.query.Where[:originalWhereLen]
+		countBuilder.query.Sort = nil
+		countBuilder.query.SortRandom = false
 		countBuilder.query.Limit = 0
 		countBuilder.query.Start = 0
 		count, err := countBuilder.Count(ctx)
@@ -660,112 +668,53 @@ func reverseSlice[T any](s []T) {
 	}
 }
 
-// generateCursor creates a cursor string from an item and sort fields.
-func generateCursor[M any](item *M, sorts []*lib.SortBuilder) (string, error) {
+// generateCursor creates an opaque cursor from an item and its sort fields.
+// Values are sourced from the conversion layer (DB field names, DB-typed
+// values) and stored as pre-encoded CBOR so they re-inject as query variables
+// byte-identically to how the same fields are encoded for regular queries.
+func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, error) {
 	if item == nil {
 		return "", nil
 	}
 
-	sortValues := make(map[string]any)
-	var id string
+	dbFields := b.info.Fields(item)
 
-	val := reflect.ValueOf(item)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
+	sortValues := make(map[string]cbor.RawMessage, len(sorts))
+	var id cbor.RawMessage
 
 	for _, s := range sorts {
-		fieldVal, err := getFieldValue(val, s.Field)
+		val, ok := dbFields[s.Field]
+		if !ok {
+			continue // Skip fields not present in the DB representation
+		}
+
+		raw, err := cbor.Marshal(val)
 		if err != nil {
-			continue // Skip fields we can't access
+			return "", fmt.Errorf("could not encode cursor value for %q: %w", s.Field, err)
 		}
 
 		if s.Field == "id" {
-			if str, ok := fieldVal.(string); ok {
-				id = str
-			} else {
-				id = fmt.Sprintf("%v", fieldVal)
-			}
+			id = raw
 		} else {
-			sortValues[s.Field] = fieldVal
+			sortValues[s.Field] = raw
 		}
 	}
 
-	// If we didn't find id in sorts, try to get it from the struct
-	if id == "" {
-		if idVal, err := getFieldValue(val, "id"); err == nil {
-			if str, ok := idVal.(string); ok {
-				id = str
-			} else {
-				id = fmt.Sprintf("%v", idVal)
+	// Ensure the ID tiebreaker is always present, even if not part of the sort.
+	if id == nil {
+		if val, ok := dbFields["id"]; ok {
+			raw, err := cbor.Marshal(val)
+			if err != nil {
+				return "", fmt.Errorf("could not encode cursor id: %w", err)
 			}
+			id = raw
 		}
 	}
 
-	cursor := lib.CursorData{
+	return lib.EncodeCursor(lib.CursorData{
 		SortValues: sortValues,
 		ID:         id,
-	}
-
-	return lib.EncodeCursor(cursor)
-}
-
-// getFieldValue extracts a field value from a struct using reflection.
-// Supports nested fields using dot notation (e.g., "group.name").
-func getFieldValue(val reflect.Value, fieldPath string) (any, error) {
-	parts := strings.Split(fieldPath, ".")
-
-	for _, part := range parts {
-		if val.Kind() == reflect.Ptr {
-			if val.IsNil() {
-				return nil, errors.New("nil pointer")
-			}
-			val = val.Elem()
-		}
-
-		if val.Kind() != reflect.Struct {
-			return nil, errors.New("not a struct")
-		}
-
-		// Try to find field by name (case-insensitive for first char)
-		field := val.FieldByNameFunc(func(name string) bool {
-			return strings.EqualFold(name, part) ||
-				strings.EqualFold(name, strings.Title(part)) ||
-				strings.EqualFold(strings.ToLower(name), strings.ToLower(part))
-		})
-
-		if !field.IsValid() {
-			// Try json tag
-			typ := val.Type()
-			for i := 0; i < typ.NumField(); i++ {
-				f := typ.Field(i)
-				tag := f.Tag.Get("json")
-				if tag == "" {
-					continue
-				}
-				tagName := strings.Split(tag, ",")[0]
-				if tagName == part {
-					field = val.Field(i)
-					break
-				}
-			}
-		}
-
-		if !field.IsValid() {
-			return nil, fmt.Errorf("field %s not found", part)
-		}
-
-		val = field
-	}
-
-	if val.Kind() == reflect.Ptr {
-		if val.IsNil() {
-			return nil, nil
-		}
-		val = val.Elem()
-	}
-
-	return val.Interface(), nil
+	})
 }
 
 // Search adds full-text search conditions to the query.
@@ -936,6 +885,36 @@ func (b SearchBuilder[M]) Debug(prefix ...string) SearchBuilder[M] {
 // If multiple refs are provided, scores are summed.
 // Use with SearchBuilder.Order() to sort search results by relevance score.
 var Score = lib.Score
+
+// Pagination result types, re-exported so callers can name them without
+// depending on the internal lib package. Paginate returns *Page[M].
+type (
+	// Page is a paginated result set with cursor-based navigation metadata.
+	Page[M any] = lib.Page[M]
+
+	// Entry pairs a record with its opaque per-item cursor.
+	Entry[M any] = lib.Entry[M]
+
+	// PageInfo holds pagination navigation metadata (Relay-style).
+	PageInfo = lib.PageInfo
+
+	// PaginateOption configures a Paginate call.
+	PaginateOption = lib.PaginateOption
+)
+
+// Pagination option constructors, re-exported from the internal lib package.
+//
+// Use First/After for forward pagination and Last/Before for backward
+// pagination. WithTotalCount adds a COUNT query; WithAccuratePageInfo adds
+// extra queries for exact HasPreviousPage/HasNextPage on boundary pages.
+var (
+	First                = lib.First
+	After                = lib.After
+	Last                 = lib.Last
+	Before               = lib.Before
+	WithTotalCount       = lib.WithTotalCount
+	WithAccuratePageInfo = lib.WithAccuratePageInfo
+)
 
 func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
 	var rawNodes []internal.QueryResult[searchRawResult[*C]]

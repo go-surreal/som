@@ -17,13 +17,17 @@ func (c *Weather) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *Weather) fields() map[string]any {
 	data := make(map[string]any, 1)
 
 	// Embedded som.Node/Edge ID field
 
 	data["temperature"] = c.Temperature
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *Weather) UnmarshalCBOR(data []byte) error {
@@ -90,6 +94,11 @@ func ToWeatherPtr(data *Weather) *model.Weather {
 	}
 	result := data.Weather
 	return &result
+}
+
+func WeatherFields(m *model.Weather) map[string]any {
+	c := Weather{*m}
+	return c.fields()
 }
 
 type weatherLink struct {

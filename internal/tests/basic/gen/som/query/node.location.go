@@ -10,6 +10,7 @@ import (
 
 // locationModelInfo holds the model-specific unmarshal functions for Location.
 var locationModelInfo = modelInfo[model.Location]{
+	Fields: conv.LocationFields,
 	UnmarshalAll: func(data []byte) ([]*model.Location, error) {
 		return unmarshalAll(data, conv.ToLocationPtr)
 	},

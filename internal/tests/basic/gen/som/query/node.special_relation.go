@@ -11,6 +11,7 @@ import (
 
 // specialRelationModelInfo holds the model-specific unmarshal functions for SpecialRelation.
 var specialRelationModelInfo = modelInfo[model.SpecialRelation]{
+	Fields: conv.SpecialRelationFields,
 	UnmarshalAll: func(data []byte) ([]*model.SpecialRelation, error) {
 		return unmarshalAll(data, conv.ToSpecialRelationPtr)
 	},
