@@ -461,91 +461,10 @@ The instance is cached as a singleton on the client.
 			jen.Return(jen.Id("c").Dot(node.NameGoLower()+"Repo")),
 		)
 
-	hookEvents := []string{"Create", "Update", "Delete"}
-
 	f.Line()
-	f.Type().Id(node.NameGoLower()).StructFunc(func(g *jen.Group) {
-		g.Op("*").Id("repo").Types(b.input.SourceQual(node.NameGo()), keyType)
-		g.Id("mu").Qual("sync", "RWMutex")
-		for _, event := range hookEvents {
-			for _, timing := range []string{"before", "after"} {
-				g.Id(timing + event).Index().Id(node.NameGoLower() + "Hook")
-			}
-		}
-	})
-
-	f.Line()
-	f.Type().Id(node.NameGoLower() + "Hook").Struct(
-		jen.Id("id").Uint64(),
-		jen.Id("fn").Func().Params(
-			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).Error(),
+	f.Type().Id(node.NameGoLower()).Struct(
+		jen.Op("*").Id("repo").Types(b.input.SourceQual(node.NameGo()), keyType),
 	)
-
-	f.Line()
-	f.Var().Id(node.NameGoLower() + "HookCounter").Qual("sync/atomic", "Uint64")
-
-	for _, event := range hookEvents {
-		for _, timing := range []string{"Before", "After"} {
-			methodName := "On" + timing + event
-			fieldName := strings.ToLower(timing) + event
-
-			var hookComment string
-			switch timing {
-			case "Before":
-				hookComment = methodName + " registers a hook that runs before a record is " + strings.ToLower(event) + "d.\n" +
-					"If the hook returns an error, the " + strings.ToLower(event) + " operation is aborted.\n" +
-					"Returns a function that, when called, removes this hook.\n" +
-					"\n" +
-					"Note: Hooks are local to this application instance and are not\n" +
-					"distributed across multiple instances of the application."
-			case "After":
-				hookComment = methodName + " registers a hook that runs after a record has been " + strings.ToLower(event) + "d.\n" +
-					"If the hook returns an error, the error is returned to the caller.\n" +
-					"Returns a function that, when called, removes this hook.\n" +
-					"\n" +
-					"Note: Hooks are local to this application instance and are not\n" +
-					"distributed across multiple instances of the application."
-			}
-
-			f.Line().
-				Add(comment(hookComment)).
-				Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
-				Id(methodName).
-				Params(jen.Id("fn").Func().Params(
-					jen.Id("ctx").Qual("context", "Context"),
-					jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
-				).Error()).
-				Func().Params().
-				Block(
-					jen.Id("id").Op(":=").Id(node.NameGoLower()+"HookCounter").Dot("Add").Call(jen.Lit(1)),
-					jen.Id("r").Dot("mu").Dot("Lock").Call(),
-					jen.Id("r").Dot(fieldName).Op("=").Append(
-						jen.Id("r").Dot(fieldName),
-						jen.Id(node.NameGoLower()+"Hook").Values(jen.Dict{
-							jen.Id("id"): jen.Id("id"),
-							jen.Id("fn"): jen.Id("fn"),
-						}),
-					),
-					jen.Id("r").Dot("mu").Dot("Unlock").Call(),
-					jen.Return(jen.Func().Params().Block(
-						jen.Id("r").Dot("mu").Dot("Lock").Call(),
-						jen.Defer().Id("r").Dot("mu").Dot("Unlock").Call(),
-						jen.For(jen.Id("i").Op(",").Id("h").Op(":=").Range().Id("r").Dot(fieldName)).Block(
-							jen.If(jen.Id("h").Dot("id").Op("==").Id("id")).Block(
-								jen.Id("r").Dot(fieldName).Op("=").Qual("slices", "Delete").Call(
-									jen.Id("r").Dot(fieldName),
-									jen.Id("i"),
-									jen.Id("i").Op("+").Lit(1),
-								),
-								jen.Return(),
-							),
-						),
-					)),
-				)
-		}
-	}
 
 	// Query
 	f.Line().
@@ -672,8 +591,6 @@ Before- and after-create hooks are invoked.
 			).
 			Error().
 			BlockFunc(func(g *jen.Group) {
-				somPkg := b.relativePkgPath()
-
 				g.If(jen.Len(jen.Id("nodes")).Op("==").Lit(0)).
 					Block(jen.Return(jen.Nil()))
 
@@ -684,53 +601,17 @@ Before- and after-create hooks are invoked.
 						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node already has an id"))))
 				})
 
-				// Snapshot before-create hooks once
-				g.Id("r").Dot("mu").Dot("RLock").Call()
-				g.Id("beforeCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("beforeCreate")))
-				g.Copy(jen.Id("beforeCreateHooks"), jen.Id("r").Dot("beforeCreate"))
-				g.Id("r").Dot("mu").Dot("RUnlock").Call()
-
-				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
-					jen.If(
-						jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnBeforeCreateHook")),
-						jen.Id("ok"),
-					).Block(
-						jen.If(jen.Err().Op(":=").Id("h").Dot("OnBeforeCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-					),
-					jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("beforeCreateHooks")).Block(
-						jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-					),
-				)
+				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
+					b.addRunHooks(inner, jen.Id("n"), "beforeCreate")
+				})
 
 				g.If(jen.Err().Op(":=").Id("r").Dot("insert").Call(
 					jen.Id("ctx"), jen.Id("nodes"),
 				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
-				// Snapshot after-create hooks once
-				g.Id("r").Dot("mu").Dot("RLock").Call()
-				g.Id("afterCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("afterCreate")))
-				g.Copy(jen.Id("afterCreateHooks"), jen.Id("r").Dot("afterCreate"))
-				g.Id("r").Dot("mu").Dot("RUnlock").Call()
-
-				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
-					jen.If(
-						jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnAfterCreateHook")),
-						jen.Id("ok"),
-					).Block(
-						jen.If(jen.Err().Op(":=").Id("h").Dot("OnAfterCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-					),
-					jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("afterCreateHooks")).Block(
-						jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-					),
-				)
+				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
+					b.addRunHooks(inner, jen.Id("n"), "afterCreate")
+				})
 
 				g.Return(jen.Nil())
 			})
@@ -1160,53 +1041,19 @@ func (b *build) fieldValue(sf parser.ComplexIDField, keyVar string) jen.Code {
 //
 
 func (b *build) addBeforeHooks(g *jen.Group, node *field.NodeTable, event string) {
-	somPkg := b.relativePkgPath()
-	hookIface := "OnBefore" + event + "Hook"
-	fieldName := "before" + event
-
-	g.If(
-		jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id(node.NameGoLower())).Assert(jen.Qual(somPkg, hookIface)),
-		jen.Id("ok"),
-	).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("OnBefore"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Err()),
-		),
-	)
-
-	g.Id("r").Dot("mu").Dot("RLock").Call()
-	g.Id(fieldName+"Hooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot(fieldName)))
-	g.Copy(jen.Id(fieldName+"Hooks"), jen.Id("r").Dot(fieldName))
-	g.Id("r").Dot("mu").Dot("RUnlock").Call()
-	g.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id(fieldName + "Hooks")).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id(node.NameGoLower())), jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Err()),
-		),
-	)
+	b.addRunHooks(g, jen.Id(node.NameGoLower()), "before"+event)
 }
 
 func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string) {
-	somPkg := b.relativePkgPath()
-	hookIface := "OnAfter" + event + "Hook"
-	fieldName := "after" + event
+	b.addRunHooks(g, jen.Id(node.NameGoLower()), "after"+event)
+}
 
-	g.If(
-		jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id(node.NameGoLower())).Assert(jen.Qual(somPkg, hookIface)),
-		jen.Id("ok"),
-	).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("OnAfter"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Err()),
-		),
-	)
-
-	g.Id("r").Dot("mu").Dot("RLock").Call()
-	g.Id(fieldName+"Hooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot(fieldName)))
-	g.Copy(jen.Id(fieldName+"Hooks"), jen.Id("r").Dot(fieldName))
-	g.Id("r").Dot("mu").Dot("RUnlock").Call()
-	g.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id(fieldName + "Hooks")).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id(node.NameGoLower())), jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Err()),
-		),
-	)
+// addRunHooks emits a call to the generic repo.runHooks for the given hook kind
+// against the provided node expression, returning on error.
+func (b *build) addRunHooks(g *jen.Group, nodeExpr jen.Code, kind string) {
+	g.If(jen.Err().Op(":=").Id("r").Dot("runHooks").Call(
+		jen.Id("ctx"), jen.Id(kind), nodeExpr,
+	), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 }
 
 func (b *build) stringRecordIDFunc(node *field.NodeTable) jen.Code {

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
@@ -13,8 +12,6 @@ import (
 	types "som.test/gen/som/internal/types"
 	query "som.test/gen/som/query"
 	model "som.test/model"
-	"sync"
-	"sync/atomic"
 )
 
 type TeamMemberRepo interface {
@@ -172,176 +169,6 @@ func (c *ClientImpl) TeamMemberRepo() TeamMemberRepo {
 
 type teamMember struct {
 	*repo[model.TeamMember, model.TeamMemberKey]
-	mu           sync.RWMutex
-	beforeCreate []teamMemberHook
-	afterCreate  []teamMemberHook
-	beforeUpdate []teamMemberHook
-	afterUpdate  []teamMemberHook
-	beforeDelete []teamMemberHook
-	afterDelete  []teamMemberHook
-}
-
-type teamMemberHook struct {
-	id uint64
-	fn func(ctx context.Context, node *model.TeamMember) error
-}
-
-var teamMemberHookCounter atomic.Uint64
-
-// OnBeforeCreate registers a hook that runs before a record is created.
-// If the hook returns an error, the create operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *teamMember) OnBeforeCreate(fn func(ctx context.Context, node *model.TeamMember) error) func() {
-	id := teamMemberHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeCreate = append(r.beforeCreate, teamMemberHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeCreate {
-			if h.id == id {
-				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterCreate registers a hook that runs after a record has been created.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *teamMember) OnAfterCreate(fn func(ctx context.Context, node *model.TeamMember) error) func() {
-	id := teamMemberHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterCreate = append(r.afterCreate, teamMemberHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterCreate {
-			if h.id == id {
-				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeUpdate registers a hook that runs before a record is updated.
-// If the hook returns an error, the update operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *teamMember) OnBeforeUpdate(fn func(ctx context.Context, node *model.TeamMember) error) func() {
-	id := teamMemberHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeUpdate = append(r.beforeUpdate, teamMemberHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeUpdate {
-			if h.id == id {
-				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterUpdate registers a hook that runs after a record has been updated.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *teamMember) OnAfterUpdate(fn func(ctx context.Context, node *model.TeamMember) error) func() {
-	id := teamMemberHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterUpdate = append(r.afterUpdate, teamMemberHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterUpdate {
-			if h.id == id {
-				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeDelete registers a hook that runs before a record is deleted.
-// If the hook returns an error, the delete operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *teamMember) OnBeforeDelete(fn func(ctx context.Context, node *model.TeamMember) error) func() {
-	id := teamMemberHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeDelete = append(r.beforeDelete, teamMemberHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeDelete {
-			if h.id == id {
-				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterDelete registers a hook that runs after a record has been deleted.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *teamMember) OnAfterDelete(fn func(ctx context.Context, node *model.TeamMember) error) func() {
-	id := teamMemberHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterDelete = append(r.afterDelete, teamMemberHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterDelete {
-			if h.id == id {
-				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
-				return
-			}
-		}
-	}
 }
 
 // Query returns a new query builder for the TeamMember model.
@@ -363,36 +190,14 @@ func (r *teamMember) CreateWithID(ctx context.Context, teamMember *model.TeamMem
 	if teamMember.ID().Forecast.ID() == zeroForecastKey {
 		return errors.New("Forecast.ID must not be empty")
 	}
-	if h, ok := any(teamMember).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]teamMemberHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, teamMember); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, teamMember); err != nil {
+		return err
 	}
 	if err := r.createWithID(ctx, teamMember.ID(), teamMember); err != nil {
 		return err
 	}
-	if h, ok := any(teamMember).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]teamMemberHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, teamMember); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, teamMember); err != nil {
+		return err
 	}
 	return nil
 }
@@ -419,36 +224,14 @@ func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) e
 	if teamMember.ID().Forecast.ID() == zeroForecastKey {
 		return errors.New("Forecast.ID must not be empty")
 	}
-	if h, ok := any(teamMember).(som.OnBeforeUpdateHook); ok {
-		if err := h.OnBeforeUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeUpdateHooks := make([]teamMemberHook, len(r.beforeUpdate))
-	copy(beforeUpdateHooks, r.beforeUpdate)
-	r.mu.RUnlock()
-	for _, h := range beforeUpdateHooks {
-		if err := h.fn(ctx, teamMember); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeUpdate, teamMember); err != nil {
+		return err
 	}
 	if err := r.update(ctx, r.recordID(teamMember.ID()), teamMember); err != nil {
 		return err
 	}
-	if h, ok := any(teamMember).(som.OnAfterUpdateHook); ok {
-		if err := h.OnAfterUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterUpdateHooks := make([]teamMemberHook, len(r.afterUpdate))
-	copy(afterUpdateHooks, r.afterUpdate)
-	r.mu.RUnlock()
-	for _, h := range afterUpdateHooks {
-		if err := h.fn(ctx, teamMember); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterUpdate, teamMember); err != nil {
+		return err
 	}
 	return nil
 }
@@ -466,36 +249,14 @@ func (r *teamMember) Delete(ctx context.Context, teamMember *model.TeamMember) e
 	if teamMember.ID().Forecast.ID() == zeroForecastKey {
 		return errors.New("Forecast.ID must not be empty")
 	}
-	if h, ok := any(teamMember).(som.OnBeforeDeleteHook); ok {
-		if err := h.OnBeforeDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeDeleteHooks := make([]teamMemberHook, len(r.beforeDelete))
-	copy(beforeDeleteHooks, r.beforeDelete)
-	r.mu.RUnlock()
-	for _, h := range beforeDeleteHooks {
-		if err := h.fn(ctx, teamMember); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeDelete, teamMember); err != nil {
+		return err
 	}
 	if err := r.delete(ctx, r.recordID(teamMember.ID()), teamMember, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(teamMember).(som.OnAfterDeleteHook); ok {
-		if err := h.OnAfterDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterDeleteHooks := make([]teamMemberHook, len(r.afterDelete))
-	copy(afterDeleteHooks, r.afterDelete)
-	r.mu.RUnlock()
-	for _, h := range afterDeleteHooks {
-		if err := h.fn(ctx, teamMember); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterDelete, teamMember); err != nil {
+		return err
 	}
 	return nil
 }
