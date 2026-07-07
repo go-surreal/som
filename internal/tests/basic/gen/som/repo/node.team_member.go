@@ -89,8 +89,8 @@ type TeamMemberRepo interface {
 
 // teamMemberRepoInfo holds the model-specific conversion functions for TeamMember.
 var teamMemberRepoInfo = RepoInfo[model.TeamMember]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.TeamMember, error) {
-		raw, err := dbCreateNew[conv.TeamMember](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.TeamMember, error) {
+		raw, err := dbCreateNew[conv.TeamMember](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}

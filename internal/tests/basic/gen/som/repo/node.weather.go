@@ -89,8 +89,8 @@ type WeatherRepo interface {
 
 // weatherRepoInfo holds the model-specific conversion functions for Weather.
 var weatherRepoInfo = RepoInfo[model.Weather]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.Weather, error) {
-		raw, err := dbCreateNew[conv.Weather](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.Weather, error) {
+		raw, err := dbCreateNew[conv.Weather](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}
