@@ -379,10 +379,10 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
 			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
 		),
-		jen.Id("CreateNew"): jen.Func().Params(ctxParam, dbParam, jen.Id("idExpr").String(), jen.Id("data").Any()).Params(
+		jen.Id("CreateNew"): jen.Func().Params(ctxParam, dbParam, jen.Id("target").String(), jen.Id("data").Any()).Params(
 			jen.Op("*").Add(sourceType), jen.Error(),
 		).Block(
-			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbCreateNew").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("idExpr"), jen.Id("data")),
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbCreateNew").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("target"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
 			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
 		),
@@ -429,8 +429,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	)
 	if !node.HasComplexID() {
 		repoInitValues = append(repoInitValues,
-			jen.Add(jen.Line(), jen.Id("newID").Op(":").Id(idFuncName(node))),
-			jen.Add(jen.Line(), jen.Id("idFunc").Op(":").Lit(idSurrealFunc(node))),
+			jen.Add(jen.Line(), jen.Id("autoID").Op(":").Lit(true)),
 		)
 	}
 	repoInitValues = append(repoInitValues,
@@ -1068,28 +1067,6 @@ func (b *build) stringRecordIDFunc(node *field.NodeTable) jen.Code {
 		),
 		jen.Return(jen.Op("&").Id("rid")),
 	)
-}
-
-func idFuncName(node *field.NodeTable) string {
-	switch node.Source.IDType {
-	case parser.IDTypeUUID:
-		return "newUUID"
-	case parser.IDTypeRand:
-		return "newID"
-	default:
-		return "newULID" // ULID is the default ID type (used by the Node alias)
-	}
-}
-
-func idSurrealFunc(node *field.NodeTable) string {
-	switch node.Source.IDType {
-	case parser.IDTypeUUID:
-		return "rand::uuid()"
-	case parser.IDTypeRand:
-		return "rand::string(20)"
-	default:
-		return "rand::ulid()"
-	}
 }
 
 func comment(text string) jen.Code {

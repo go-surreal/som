@@ -4,32 +4,32 @@ DEFINE ANALYZER english TOKENIZERS blank, punct FILTERS lowercase, snowball(engl
 DEFINE ANALYZER autocomplete TOKENIZERS class FILTERS lowercase, edgengram(1, 10);
 
 DEFINE TABLE weather SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE weather TYPE array<any, 2>;
+DEFINE FIELD id ON TABLE weather TYPE [string, datetime];
 DEFINE FIELD temperature ON TABLE weather TYPE float ;
 
 DEFINE TABLE team_member SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE team_member TYPE object;
+DEFINE FIELD id ON TABLE team_member TYPE { member: record<all_types>, forecast: record<weather> };
 DEFINE FIELD role ON TABLE team_member TYPE string;
 
 DEFINE TABLE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE special_types TYPE uuid;
+DEFINE FIELD id ON TABLE special_types TYPE uuid DEFAULT rand::uuid();
 DEFINE FIELD deleted_at ON TABLE special_types TYPE option<datetime> DEFAULT NONE;
 DEFINE FIELD name ON TABLE special_types TYPE string;
 DEFINE FIELD __som_lock_version ON TABLE special_types TYPE int VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };
 
 DEFINE TABLE special_relation SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE special_relation TYPE string;
+DEFINE FIELD id ON TABLE special_relation TYPE string DEFAULT rand::string(20);
 DEFINE FIELD deleted_at ON TABLE special_relation TYPE option<datetime> DEFAULT NONE;
 DEFINE FIELD title ON TABLE special_relation TYPE string;
 DEFINE FIELD author ON TABLE special_relation TYPE option<record<special_types>>;
 DEFINE FIELD authors ON TABLE special_relation TYPE option<array<record<special_types> | null>>;
 
 DEFINE TABLE person_obj SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE person_obj TYPE object;
+DEFINE FIELD id ON TABLE person_obj TYPE { name: string, age: int };
 DEFINE FIELD email ON TABLE person_obj TYPE string;
 
 DEFINE TABLE location SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE location TYPE string;
+DEFINE FIELD id ON TABLE location TYPE string DEFAULT rand::ulid();
 DEFINE FIELD created_at ON TABLE location TYPE option<datetime> VALUE $before OR time::now() READONLY;
 DEFINE FIELD updated_at ON TABLE location TYPE option<datetime> VALUE time::now();
 DEFINE FIELD name ON TABLE location TYPE string;
@@ -66,7 +66,7 @@ DEFINE FIELD sf_multi_line_string ON TABLE location TYPE geometry<multiline>;
 DEFINE FIELD sf_multi_polygon ON TABLE location TYPE geometry<multipolygon>;
 
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE all_types TYPE string;
+DEFINE FIELD id ON TABLE all_types TYPE string DEFAULT rand::ulid();
 DEFINE FIELD created_at ON TABLE all_types TYPE option<datetime> VALUE $before OR time::now() READONLY;
 DEFINE FIELD updated_at ON TABLE all_types TYPE option<datetime> VALUE time::now();
 DEFINE FIELD field_string ON TABLE all_types TYPE string;
@@ -186,7 +186,7 @@ DEFINE FIELD field_hook_status ON TABLE all_types TYPE string;
 DEFINE FIELD field_hook_detail ON TABLE all_types TYPE string;
 
 DEFINE TABLE edge_relation SCHEMAFULL TYPE RELATION IN all_types OUT special_types ENFORCED PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE edge_relation TYPE string;
+DEFINE FIELD id ON TABLE edge_relation TYPE string DEFAULT rand::ulid();
 DEFINE FIELD created_at ON TABLE edge_relation TYPE option<datetime> VALUE $before OR time::now() READONLY;
 DEFINE FIELD updated_at ON TABLE edge_relation TYPE option<datetime> VALUE time::now();
 DEFINE FIELD meta ON TABLE edge_relation TYPE object;

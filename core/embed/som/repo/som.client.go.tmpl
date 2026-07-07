@@ -74,8 +74,8 @@ func dbCreate[T any](ctx context.Context, db *dbConn, id models.RecordID, data a
 	return surrealdb.Create[T](ctx, db.conn, id, data)
 }
 
-func dbCreateNew[T any](ctx context.Context, db *dbConn, idExpr string, data any) (*T, error) {
-	statement := fmt.Sprintf("CREATE %s CONTENT $data", idExpr)
+func dbCreateNew[T any](ctx context.Context, db *dbConn, target string, data any) (*T, error) {
+	statement := fmt.Sprintf("CREATE %s CONTENT $data", target)
 	vars := map[string]any{"data": data}
 	tx, err := db.ensureTx(ctx)
 	if err != nil {

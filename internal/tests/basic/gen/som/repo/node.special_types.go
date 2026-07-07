@@ -106,8 +106,8 @@ type SpecialTypesRepo interface {
 
 // specialTypesRepoInfo holds the model-specific conversion functions for SpecialTypes.
 var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.SpecialTypes, error) {
-		raw, err := dbCreateNew[conv.SpecialTypes](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.SpecialTypes, error) {
+		raw, err := dbCreateNew[conv.SpecialTypes](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}
@@ -173,8 +173,7 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 			db:     c.db,
 			name:   "special_types",
 			info:   specialTypesRepoInfo,
-			newID:  newUUID,
-			idFunc: "rand::uuid()",
+			autoID: true,
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_types", parseUUID(id))
 				return &rid

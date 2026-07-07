@@ -356,18 +356,20 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 	case *parser.FieldComplexID:
 		{
 			var fields []Field
+			var parts []idPart
 			for _, sf := range f.Fields {
-				if _, ok := sf.Field.(*parser.FieldNode); ok {
-					continue
-				}
 				fld, ok := Convert(source, conf, sf.Field)
 				if !ok {
+					continue
+				}
+				parts = append(parts, idPart{dbName: sf.DBName, dbType: idPartType(fld)})
+				if _, ok := sf.Field.(*parser.FieldNode); ok {
 					continue
 				}
 				fields = append(fields, fld)
 			}
 
-			cid := &ComplexID{baseField: base, source: f}
+			cid := &ComplexID{baseField: base, source: f, parts: parts}
 			if len(fields) > 0 {
 				cid.element = &NodeTable{Name: f.StructName, Fields: fields}
 			}
