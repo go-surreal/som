@@ -81,6 +81,12 @@ func (b *build) build() error {
 		}
 	}
 
+	for _, view := range b.input.views {
+		if err := b.buildViewRepoFile(view); err != nil {
+			return err
+		}
+	}
+
 	builders := []builder{
 		b.newQueryBuilder(),
 		b.newFilterBuilder(),
@@ -117,6 +123,10 @@ func (b *build) buildInterfaceFile() error {
 			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
 		}
 
+		for _, view := range b.input.views {
+			g.Id(view.NameGo() + "Repo").Call().Id(view.NameGo() + "Repo")
+		}
+
 		g.Id("Raw").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("query").String(),
@@ -136,6 +146,9 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("mu").Qual("sync", "Mutex")
 		for _, node := range b.input.nodes {
 			g.Id(node.NameGoLower() + "Repo").Op("*").Id(node.NameGoLower())
+		}
+		for _, view := range b.input.views {
+			g.Id(view.NameGoLower() + "Repo").Op("*").Id(view.NameGoLower())
 		}
 	})
 
@@ -958,6 +971,55 @@ Index returns a new index instance for the `+node.NameGo()+` model.
 	}
 
 	return nil
+}
+
+// buildViewRepoFile generates the read-only repository for a view. Views
+// expose only Query() — no create/update/delete/relate/index operations.
+func (b *build) buildViewRepoFile(view *field.ViewTable) error {
+	pkgQuery := b.relativePkgPath(def.PkgQuery)
+
+	f := jen.NewFile(def.PkgRepo)
+	f.PackageComment(string(embed.CodegenComment))
+
+	// <View>Repo interface { Query() ... }
+	f.Line().Type().Id(view.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
+		g.Add(comment("Query returns a new read-only query builder for the " + view.NameGo() + " view."))
+		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(view.NameGo()))
+	})
+
+	// func (c *ClientImpl) <View>Repo() <View>Repo { ... }
+	f.Line().
+		Add(comment(view.NameGo() + "Repo returns the repository instance for the " + view.NameGo() + " view.\nThe instance is cached as a singleton on the client.")).
+		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
+		Id(view.NameGo() + "Repo").Params().Id(view.NameGo() + "Repo").
+		Block(
+			jen.Id("c").Dot("mu").Dot("Lock").Call(),
+			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
+			jen.If(jen.Id("c").Dot(view.NameGoLower()+"Repo").Op("==").Nil()).Block(
+				jen.Id("c").Dot(view.NameGoLower()+"Repo").Op("=").
+					Op("&").Id(view.NameGoLower()).Values(jen.Dict{
+					jen.Id("db"): jen.Id("c").Dot("db"),
+				}),
+			),
+			jen.Return(jen.Id("c").Dot(view.NameGoLower()+"Repo")),
+		)
+
+	// type <viewLower> struct { db *dbConn }
+	f.Line().Type().Id(view.NameGoLower()).Struct(
+		jen.Id("db").Op("*").Id("dbConn"),
+	)
+
+	// func (r *<viewLower>) Query() query.Builder[model.View] { return query.New<View>(r.db) }
+	f.Line().
+		Add(comment("Query returns a new read-only query builder for the " + view.NameGo() + " view.")).
+		Func().Params(jen.Id("r").Op("*").Id(view.NameGoLower())).
+		Id("Query").Params().
+		Qual(pkgQuery, "Builder").Types(b.input.SourceQual(view.NameGo())).
+		Block(
+			jen.Return(jen.Qual(pkgQuery, "New"+view.NameGo()).Call(jen.Id("r").Dot("db"))),
+		)
+
+	return f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, view.FileName())))
 }
 
 func (b *build) newQueryBuilder() builder {

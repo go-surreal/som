@@ -15,6 +15,7 @@ type input struct {
 	sourcePkgPath string
 	nodes         []*field.NodeTable
 	edges         []*field.EdgeTable
+	views         []*field.ViewTable
 	objects       []*field.DatabaseObject
 	define        *parser.DefineOutput
 }
@@ -37,6 +38,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 
 	in.nodes = def.Nodes
 	in.edges = def.Edges
+	in.views = def.Views
 	in.objects = def.Objects
 	in.define = source.Define
 

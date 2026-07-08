@@ -20,7 +20,7 @@ func (c *SpecialRelation) MarshalCBOR() ([]byte, error) {
 	}
 	data := make(map[string]any, 5)
 
-	// Embedded som.Node/Edge ID field
+	// Embedded som.Node/Edge/View ID field
 	if c.ID() != "" {
 		data["id"] = models.NewRecordID("special_relation", c.ID())
 	}
@@ -51,7 +51,7 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	// Embedded som.Node/Edge ID field
+	// Embedded som.Node/Edge/View ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {

@@ -9,6 +9,7 @@ import (
 type Def struct {
 	Nodes   []*NodeTable
 	Edges   []*EdgeTable
+	Views   []*ViewTable
 	Objects []*DatabaseObject
 }
 
@@ -59,6 +60,22 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		}
 
 		def.Edges = append(def.Edges, dbEdge)
+	}
+
+	for _, view := range source.Views {
+		dbView := &ViewTable{
+			Name: view.Name,
+		}
+
+		for _, f := range view.Fields {
+			dbField, ok := Convert(source, buildConf, f)
+			if !ok {
+				return nil, fmt.Errorf("could not convert view field: %v", f)
+			}
+			dbView.Fields = append(dbView.Fields, dbField)
+		}
+
+		def.Views = append(def.Views, dbView)
 	}
 
 	for _, dbNode := range def.Nodes {

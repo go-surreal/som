@@ -239,6 +239,7 @@ type Output struct {
 	PkgPath    string
 	Nodes      []*Node
 	Edges      []*Edge
+	Views      []*View
 	Structs    []*Struct
 	Enums      []*Enum
 	EnumValues []*EnumValue

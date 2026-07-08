@@ -193,6 +193,8 @@ DEFINE FIELD meta ON TABLE edge_relation TYPE object;
 DEFINE FIELD meta.is_admin ON TABLE edge_relation TYPE bool;
 DEFINE FIELD meta.is_active ON TABLE edge_relation TYPE bool;
 
+DEFINE TABLE all_types_summary TYPE NORMAL AS SELECT field_string AS category, count(field_string) AS total, math::mean(field_float_64) AS avg_value FROM all_types GROUP BY field_string;
+
 DEFINE INDEX __som__weather_count ON weather COUNT;
 DEFINE INDEX __som__team_member_count ON team_member COUNT;
 DEFINE INDEX __som__special_types_count ON special_types COUNT;

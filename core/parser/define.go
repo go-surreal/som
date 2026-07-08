@@ -35,16 +35,40 @@ type SearchDef struct {
 	Concurrently bool
 }
 
+// ViewDef represents a read-only view definition (DEFINE TABLE ... AS SELECT).
+type ViewDef struct {
+	// View is the Go name of the view model the definition applies to.
+	View string
+	// Source is the Go name of the source model the view selects from.
+	Source string
+	// Projections are the rendered "<expr> AS <column>" select entries.
+	Projections []string
+	// Where is the rendered (literal) filter condition, if any.
+	Where string
+	// GroupBy holds the rendered group-by field expressions, if any.
+	GroupBy []string
+}
+
 // DefineOutput holds all parsed configuration from //go:build som files.
 type DefineOutput struct {
 	Analyzers []AnalyzerDef
 	Searches  []SearchDef
+	Views     []ViewDef
 }
 
 // defineOutputJSON matches the JSON structure from Definitions.ToJSON().
 type defineOutputJSON struct {
 	Analyzers []analyzerJSON `json:"analyzers"`
 	Searches  []searchJSON   `json:"searches"`
+	Views     []viewJSON     `json:"views"`
+}
+
+type viewJSON struct {
+	View        string   `json:"view"`
+	Source      string   `json:"source"`
+	Projections []string `json:"projections"`
+	Where       string   `json:"where,omitempty"`
+	GroupBy     []string `json:"group_by,omitempty"`
 }
 
 type analyzerJSON struct {
@@ -68,16 +92,31 @@ type searchJSON struct {
 	Concurrently bool    `json:"concurrently"`
 }
 
-// parseDefine parses all //go:build som files in the given directory
-// by compiling and running the user's Definitions() function.
+// parseDefine parses the //go:build som definition file(s) by compiling and
+// running the user's Definitions() function.
+//
+// Definitions live in the module-root package (next to go.mod), not in the
+// model package: a view definition references the generated filter refs,
+// which import the model package. Placing the definition in the model package
+// would create an import cycle (model -> filter -> model). The module root can
+// import both the model and the generated packages without a cycle.
 func parseDefine(dir string) (*DefineOutput, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("could not get absolute path: %w", err)
 	}
 
-	// Check if any file has //go:build som tag
-	hasDefine, err := hasDefineFiles(absDir)
+	// Get the module path; definitions are resolved against the module root.
+	mod, err := gomod.FindGoMod(absDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not find go.mod: %w", err)
+	}
+
+	rootDir := mod.Dir()
+	modelPkg := mod.Module()
+
+	// Check if the module root has any //go:build som file.
+	hasDefine, err := hasDefineFiles(rootDir)
 	if err != nil {
 		return nil, err
 	}
@@ -85,17 +124,8 @@ func parseDefine(dir string) (*DefineOutput, error) {
 		return &DefineOutput{}, nil
 	}
 
-	// Get the model package path
-	mod, err := gomod.FindGoMod(absDir)
-	if err != nil {
-		return nil, fmt.Errorf("could not find go.mod: %w", err)
-	}
-
-	diff := strings.TrimPrefix(absDir, mod.Dir())
-	modelPkg := filepath.ToSlash(filepath.Join(mod.Module(), diff))
-
 	// Create temp directory for main.go
-	tempDir, err := os.MkdirTemp(absDir, ".som_temp_")
+	tempDir, err := os.MkdirTemp(rootDir, ".som_temp_")
 	if err != nil {
 		return nil, fmt.Errorf("could not create temp directory: %w", err)
 	}
@@ -159,6 +189,16 @@ func main() {
 
 	for _, s := range jsonOutput.Searches {
 		result.Searches = append(result.Searches, SearchDef(s))
+	}
+
+	for _, v := range jsonOutput.Views {
+		result.Views = append(result.Views, ViewDef{
+			View:        v.View,
+			Source:      v.Source,
+			Projections: v.Projections,
+			Where:       v.Where,
+			GroupBy:     v.GroupBy,
+		})
 	}
 
 	return result, nil

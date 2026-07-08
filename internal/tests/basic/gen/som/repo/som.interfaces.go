@@ -15,6 +15,7 @@ type Client interface {
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
 	AllTypesRepo() AllTypesRepo
+	AllTypesSummaryRepo() AllTypesSummaryRepo
 	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
 	Close()
@@ -30,4 +31,5 @@ type ClientImpl struct {
 	personObjRepo       *personObj
 	locationRepo        *location
 	allTypesRepo        *allTypes
+	allTypesSummaryRepo *allTypesSummary
 }
