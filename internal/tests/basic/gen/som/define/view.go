@@ -38,8 +38,11 @@ type Projection[V any, T any] struct {
 
 // As projects a source expression (a filter field or an aggregate over one)
 // into a view column (a filter field of the view model). The view model V is
-// inferred from the column and the source model T from the expression.
-func As[V any, T any](column lib.KeyProvider[V], expr lib.KeyProvider[T]) Projection[V, T] {
+// inferred from the column, the source model T from the expression, and the
+// shared value type C ties the two together: the column and the expression
+// must have the same value type (e.g. an int column cannot be filled by a
+// float mean).
+func As[V any, T any, C any](column lib.TypedKey[V, C], expr lib.TypedKey[T, C]) Projection[V, T] {
 	return Projection[V, T]{render: lib.RenderProjection(expr) + " AS " + lib.RenderProjection(column)}
 }
 

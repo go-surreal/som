@@ -192,13 +192,7 @@ func main() {
 	}
 
 	for _, v := range jsonOutput.Views {
-		result.Views = append(result.Views, ViewDef{
-			View:        v.View,
-			Source:      v.Source,
-			Projections: v.Projections,
-			Where:       v.Where,
-			GroupBy:     v.GroupBy,
-		})
+		result.Views = append(result.Views, ViewDef(v))
 	}
 
 	return result, nil

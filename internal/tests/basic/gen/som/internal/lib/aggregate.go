@@ -15,6 +15,22 @@ type KeyProvider[M any] interface {
 	field[M]
 }
 
+// valueType witnesses a field's Go value type. It lets TypedKey carry the
+// value type C so a view projection can require the target column and the
+// source expression to share the same value type.
+func (b *Base[M, T, F, S]) valueType() T {
+	var zero T
+	return zero
+}
+
+// TypedKey is a KeyProvider that also exposes its value type C. It is used by
+// define.As to require a view column and its source expression to agree on
+// the value type (e.g. an int column cannot be filled by a float mean).
+type TypedKey[M any, C any] interface {
+	field[M]
+	valueType() C
+}
+
 // Count renders count(<field>): the number of non-null values in the group.
 func Count[M any](f KeyProvider[M]) *Int[M, int] {
 	return NewInt[M, int](Fn(f.key(), "count"))
