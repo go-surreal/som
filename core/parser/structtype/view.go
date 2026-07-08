@@ -75,10 +75,11 @@ func ParseView(v gotype.Type, outPkg string) (*parser.View, error) {
 
 		if f.IsAnonymous() {
 			if f.Elem().PkgPath() == outPkg && f.Name() == "View" {
-				// The view marker provides the read-only id column.
-				view.Fields = append(view.Fields,
-					parser.NewFieldID("ID", parser.IDTypeULID),
-				)
+				// The view marker (som.View) contributes no queryable column.
+				// The record id is read into som.View during conversion, but
+				// no id filter is generated: a view's id may be a composite
+				// (GROUP BY) array that the string-based id filter cannot
+				// express, so filtering a view by id is intentionally omitted.
 				continue
 			}
 

@@ -22,7 +22,7 @@ func TestBuildViewStatement(t *testing.T) {
 					Projections: []string{
 						"field_string AS category",
 						"count(field_string) AS total",
-						"math::mean(field_float64) AS avg_value",
+						"math::mean(field_float_64) AS avg_value",
 					},
 					Where:   "field_int > 0",
 					GroupBy: []string{"field_string"},
@@ -37,7 +37,7 @@ func TestBuildViewStatement(t *testing.T) {
 	}
 
 	want := "DEFINE TABLE all_types_summary TYPE NORMAL AS SELECT " +
-		"field_string AS category, count(field_string) AS total, math::mean(field_float64) AS avg_value " +
+		"field_string AS category, count(field_string) AS total, math::mean(field_float_64) AS avg_value " +
 		"FROM all_types WHERE field_int > 0 GROUP BY field_string;"
 
 	if got != want {

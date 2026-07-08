@@ -90,6 +90,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 				&fieldtype.URLHandler{},
 				&fieldtype.NodeRefHandler{},
 				&fieldtype.EdgeRefHandler{},
+				&fieldtype.ViewRefHandler{},
 				&fieldtype.UUIDHandler{},
 				&fieldtype.SliceHandler{},
 				&fieldtype.BoolHandler{},

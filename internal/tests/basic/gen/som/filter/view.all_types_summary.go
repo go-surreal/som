@@ -12,7 +12,6 @@ func newAllTypesSummary[M any](key lib.Key[M]) allTypesSummary[M] {
 	return allTypesSummary[M]{
 		AvgValue: lib.NewFloat[M, float64](lib.Field(key, "avg_value")),
 		Category: lib.NewString[M](lib.Field(key, "category")),
-		ID:       lib.NewID[M](lib.Field(key, "id"), "all_types_summary"),
 		Key:      key,
 		Total:    lib.NewInt[M, int](lib.Field(key, "total")),
 	}
@@ -20,7 +19,6 @@ func newAllTypesSummary[M any](key lib.Key[M]) allTypesSummary[M] {
 
 type allTypesSummary[M any] struct {
 	lib.Key[M]
-	ID       *lib.ID[M]
 	Category *lib.String[M]
 	Total    *lib.Int[M, int]
 	AvgValue *lib.Float[M, float64]
