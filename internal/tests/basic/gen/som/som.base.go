@@ -51,6 +51,40 @@ var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
 //	}
 type ServerError = connection.ServerError
 
+// ServerError kind constants, re-exported from the driver so callers can
+// compare against ServerError.Kind without importing the connection package.
+const (
+	KindValidation    = connection.KindValidation
+	KindConfiguration = connection.KindConfiguration
+	KindThrown        = connection.KindThrown
+	KindQuery         = connection.KindQuery
+	KindSerialization = connection.KindSerialization
+	KindNotAllowed    = connection.KindNotAllowed
+	KindNotFound      = connection.KindNotFound
+	KindAlreadyExists = connection.KindAlreadyExists
+	KindConnection    = connection.KindConnection
+	KindInternal      = connection.KindInternal
+)
+
+// ServerError classification helpers, re-exported from the driver. Each
+// unwraps err to a *ServerError and reports whether it matches the given
+// kind, so callers can branch on failure type without importing the
+// connection package or matching on message strings.
+var (
+	IsNotFound              = connection.IsNotFound
+	IsNotAllowed            = connection.IsNotAllowed
+	IsTransactionConflict   = connection.IsTransactionConflict
+	IsTimedOut              = connection.IsTimedOut
+	IsNotExecuted           = connection.IsNotExecuted
+	IsCancelled             = connection.IsCancelled
+	IsParseError            = connection.IsParseError
+	IsDeserialization       = connection.IsDeserialization
+	IsLiveQueryNotSupported = connection.IsLiveQueryNotSupported
+	IsScriptingBlocked      = connection.IsScriptingBlocked
+	IsTokenExpired          = connection.IsTokenExpired
+	IsInvalidAuth           = connection.IsInvalidAuth
+)
+
 // nodeID is a marker type for all ID types.
 type nodeID interface {
     isNodeID()
