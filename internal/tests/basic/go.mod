@@ -17,7 +17,7 @@ require (
 	github.com/peterstace/simplefeatures v0.59.0
 	github.com/testcontainers/testcontainers-go v0.43.0
 	github.com/twpayne/go-geom v1.6.1
-	golang.org/x/sync v0.21.0
+	golang.org/x/sync v0.22.0
 	gotest.tools/v3 v3.5.2
 )
 
@@ -26,14 +26,14 @@ require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/dave/jennifer v1.7.1 // indirect
-	github.com/go-surreal/som v0.18.0 // indirect
+	github.com/go-surreal/som v0.19.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/moby/moby/client v0.4.0 // indirect
-	github.com/urfave/cli/v3 v3.10.0 // indirect
+	github.com/urfave/cli/v3 v3.10.1 // indirect
 	github.com/wzshiming/gotype v0.8.0 // indirect
-	golang.org/x/exp v0.0.0-20260611194520-c48552f49976 // indirect
-	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/exp v0.0.0-20260709172345-9ea1abe57597 // indirect
+	golang.org/x/mod v0.38.0 // indirect
 )
 
 require (
