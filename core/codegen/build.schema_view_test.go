@@ -45,6 +45,31 @@ func TestBuildViewStatement(t *testing.T) {
 	}
 }
 
+func TestBuildViewStatement_EdgeSource(t *testing.T) {
+	edge := &field.EdgeTable{Name: "SomeEdge"}
+	view := &field.ViewTable{Name: "EdgeSummary"}
+
+	b := &build{input: &input{
+		edges: []*field.EdgeTable{edge},
+		views: []*field.ViewTable{view},
+		define: &parser.DefineOutput{Views: []parser.ViewDef{{
+			View:        "EdgeSummary",
+			Source:      "SomeEdge",
+			Projections: []string{"count(id) AS total"},
+		}}},
+	}}
+
+	got, err := b.buildViewStatement(view)
+	if err != nil {
+		t.Fatalf("edge-sourced view should resolve, got error: %v", err)
+	}
+
+	want := "DEFINE TABLE edge_summary TYPE NORMAL AS SELECT count(id) AS total FROM some_edge;"
+	if got != want {
+		t.Errorf("edge-sourced view DDL mismatch:\n got: %s\nwant: %s", got, want)
+	}
+}
+
 func TestBuildViewStatement_MissingDefinition(t *testing.T) {
 	view := &field.ViewTable{Name: "Orphan"}
 

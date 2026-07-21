@@ -127,8 +127,13 @@ func (b *build) buildViewStatement(view *field.ViewTable) (string, error) {
 		return "", fmt.Errorf("view %s: definition has no projections", view.NameGo())
 	}
 
-	source := b.input.findNodeByName(def.Source)
-	if source == nil {
+	// A view may select from a node or an edge (relation) table.
+	var sourceDB string
+	if node := b.input.findNodeByName(def.Source); node != nil {
+		sourceDB = node.NameDatabase()
+	} else if edge := b.input.findEdgeByName(def.Source); edge != nil {
+		sourceDB = edge.NameDatabase()
+	} else {
 		return "", fmt.Errorf("view %s: unknown source model %q", view.NameGo(), def.Source)
 	}
 
@@ -136,7 +141,7 @@ func (b *build) buildViewStatement(view *field.ViewTable) (string, error) {
 	fmt.Fprintf(&sb, "DEFINE TABLE %s TYPE NORMAL AS SELECT %s FROM %s",
 		view.NameDatabase(),
 		strings.Join(def.Projections, ", "),
-		source.NameDatabase(),
+		sourceDB,
 	)
 
 	if def.Where != "" {

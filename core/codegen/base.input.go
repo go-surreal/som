@@ -49,6 +49,15 @@ func (in *input) SourceQual(name string) jen.Code {
 	return jen.Qual(in.sourcePkgPath, name)
 }
 
+func (in *input) findEdgeByName(name string) *field.EdgeTable {
+	for _, edge := range in.edges {
+		if edge.NameGo() == name {
+			return edge
+		}
+	}
+	return nil
+}
+
 func (in *input) findNodeByName(name string) *field.NodeTable {
 	for _, node := range in.nodes {
 		if node.NameGo() == name {

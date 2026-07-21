@@ -4,6 +4,7 @@ package lib
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -49,13 +50,21 @@ func literalValue(val any) string {
 		return strconv.FormatFloat(float64(v), 'f', -1, 32)
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64)
-	case []any:
-		parts := make([]string, len(v))
-		for i, e := range v {
-			parts[i] = literalValue(e)
-		}
-		return "[" + strings.Join(parts, ", ") + "]"
 	default:
+		// Any slice/array (e.g. the typed []string / []int passed by IN /
+		// NotIn filters) renders as a SurrealQL array literal.
+		//
+		// TODO: this does not yet render converted values faithfully (e.g.
+		// internal/types.DateTime -> d"...", Duration, RecordID). Such values
+		// currently fall through to the %v fallback and produce invalid DDL;
+		// a proper literal renderer for view WHERE clauses is still needed.
+		if rv := reflect.ValueOf(val); rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
+			parts := make([]string, rv.Len())
+			for i := range parts {
+				parts[i] = literalValue(rv.Index(i).Interface())
+			}
+			return "[" + strings.Join(parts, ", ") + "]"
+		}
 		return fmt.Sprintf("%v", v)
 	}
 }
