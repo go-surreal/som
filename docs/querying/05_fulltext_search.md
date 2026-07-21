@@ -7,10 +7,10 @@ Full-text search enables BM25-based relevance searching on string fields with fu
 Use `.Matches()` on string fields to perform full-text search:
 
 ```go
-import "yourproject/gen/som/where"
+import "yourproject/gen/som/filter"
 
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang tutorial")).
+    Search(filter.Article.Content.Matches("golang tutorial")).
     AllMatches(ctx)
 ```
 
@@ -28,8 +28,8 @@ SOM provides two methods for combining multiple search conditions:
 // Returns articles containing "golang" OR "rust"
 results, err := client.ArticleRepo().Query().
     Search(
-        where.Article.Content.Matches("golang"),
-        where.Article.Content.Matches("rust"),
+        filter.Article.Content.Matches("golang"),
+        filter.Article.Content.Matches("rust"),
     ).
     AllMatches(ctx)
 ```
@@ -44,8 +44,8 @@ This is the default search engine behavior where broader results are preferred.
 // Returns only articles containing BOTH "golang" AND "tutorial"
 results, err := client.ArticleRepo().Query().
     SearchAll(
-        where.Article.Content.Matches("golang"),
-        where.Article.Content.Matches("tutorial"),
+        filter.Article.Content.Matches("golang"),
+        filter.Article.Content.Matches("tutorial"),
     ).
     AllMatches(ctx)
 ```
@@ -68,7 +68,7 @@ Returns all matching documents with search metadata (scores, highlights, offsets
 
 ```go
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang")).
+    Search(filter.Article.Content.Matches("golang")).
     AllMatches(ctx)
 
 for _, result := range results {
@@ -82,7 +82,7 @@ Returns the first matching document:
 
 ```go
 result, found, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang")).
+    Search(filter.Article.Content.Matches("golang")).
     FirstMatch(ctx)
 
 if found {
@@ -96,7 +96,7 @@ Returns plain models when you don't need search metadata:
 
 ```go
 articles, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang")).
+    Search(filter.Article.Content.Matches("golang")).
     All(ctx)
 ```
 
@@ -137,8 +137,8 @@ When searching multiple fields, use `.Ref()` to set explicit predicate reference
 ```go
 results, err := client.ArticleRepo().Query().
     Search(
-        where.Article.Title.Matches("golang").Ref(0),
-        where.Article.Content.Matches("golang").Ref(1),
+        filter.Article.Title.Matches("golang").Ref(0),
+        filter.Article.Content.Matches("golang").Ref(1),
     ).
     AllMatches(ctx)
 
@@ -155,7 +155,7 @@ Enable highlighted snippets with custom prefix/suffix tags:
 
 ```go
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang").WithHighlights("<mark>", "</mark>")).
+    Search(filter.Article.Content.Matches("golang").WithHighlights("<mark>", "</mark>")).
     AllMatches(ctx)
 
 // Get highlighted text
@@ -169,7 +169,7 @@ Enable offset tracking to get match positions:
 
 ```go
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang").WithOffsets()).
+    Search(filter.Article.Content.Matches("golang").WithOffsets()).
     AllMatches(ctx)
 
 // Get match positions
@@ -183,7 +183,7 @@ for _, offset := range results[0].Offset() {
 Options can be chained:
 
 ```go
-where.Article.Content.Matches("golang").
+filter.Article.Content.Matches("golang").
     Ref(0).
     WithHighlights("<b>", "</b>").
     WithOffsets()
@@ -197,7 +197,7 @@ Sort results by relevance score using the `query` package:
 import "yourproject/gen/som/query"
 
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang")).
+    Search(filter.Article.Content.Matches("golang")).
     Order(query.Score(0).Desc()).
     AllMatches(ctx)
 ```
@@ -219,8 +219,8 @@ When searching multiple fields, reference specific scores:
 ```go
 results, err := client.ArticleRepo().Query().
     Search(
-        where.Article.Title.Matches("golang").Ref(0),
-        where.Article.Content.Matches("golang").Ref(1),
+        filter.Article.Title.Matches("golang").Ref(0),
+        filter.Article.Content.Matches("golang").Ref(1),
     ).
     Order(query.Score(0).Desc()).  // Sort by title score
     AllMatches(ctx)
@@ -250,7 +250,7 @@ Combine score sorting with field sorting:
 
 ```go
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang")).
+    Search(filter.Article.Content.Matches("golang")).
     Order(
         query.Score(0).Desc(),           // Primary: relevance
         by.Article.CreatedAt.Desc(),     // Secondary: newest first
@@ -260,14 +260,14 @@ results, err := client.ArticleRepo().Query().
 
 ## Combining Search and Filters
 
-Search conditions can be combined with regular filters using `Filter()`:
+Search conditions can be combined with regular filters using `Where()`:
 
 ```go
 results, err := client.ArticleRepo().Query().
-    Search(where.Article.Content.Matches("golang")).
-    Filter(
-        where.Article.Published.IsTrue(),
-        where.Article.Category.Equal("tutorials"),
+    Search(filter.Article.Content.Matches("golang")).
+    Where(
+        filter.Article.Published.IsTrue(),
+        filter.Article.Category.Equal("tutorials"),
     ).
     AllMatches(ctx)
 ```
@@ -285,18 +285,18 @@ import (
 
     "yourproject/gen/som"
     "yourproject/gen/som/query"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func SearchArticles(ctx context.Context, client *som.Client, terms string) {
     // Multi-field search with relevance ranking
     results, err := client.ArticleRepo().Query().
         Search(
-            where.Article.Title.Matches(terms).Ref(0).WithHighlights("<b>", "</b>"),
-            where.Article.Content.Matches(terms).Ref(1).WithHighlights("<mark>", "</mark>"),
+            filter.Article.Title.Matches(terms).Ref(0).WithHighlights("<b>", "</b>"),
+            filter.Article.Content.Matches(terms).Ref(1).WithHighlights("<mark>", "</mark>"),
         ).
-        Filter(
-            where.Article.Published.IsTrue(),
+        Where(
+            filter.Article.Published.IsTrue(),
         ).
         Order(
             query.Score(0, 1).Weighted(2.0, 1.0).Desc(),  // Title matches weighted 2x
@@ -323,6 +323,6 @@ func SearchArticles(ctx context.Context, client *som.Client, terms string) {
 1. **Use appropriate semantics**: Use `Search()` for broad searches, `SearchAll()` for precise matches
 2. **Set explicit refs**: When searching multiple fields, use `.Ref()` for predictable score access
 3. **Weight important fields**: Use `.Weighted()` to boost matches in important fields (e.g., title)
-4. **Combine with filters**: Use `Filter()` for non-search criteria to narrow results efficiently
+4. **Combine with filters**: Use `Where()` for non-search criteria to narrow results efficiently
 5. **Consider highlights**: Enable highlighting for user-facing search results
 6. **Use `All()` when metadata isn't needed**: It's more efficient than `AllMatches()` if you don't need scores

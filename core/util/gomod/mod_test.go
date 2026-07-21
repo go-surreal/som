@@ -26,13 +26,6 @@ func TestGoModValid(t *testing.T) {
 
 	assert.Equal(t, "", msg)
 
-	msg, err = mod.CheckSOMVersion(false)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, "", msg)
-
 	msg, err = mod.CheckDriverVersion()
 	if err != nil {
 		t.Fatal(err)
@@ -58,80 +51,6 @@ func TestGoModUnsupportedGoVersion(t *testing.T) {
 
 	assert.ErrorContains(t, err, "go version 1.12 is not supported")
 	assert.Equal(t, "", msg)
-}
-
-func TestGoModMissingSOMPackage(t *testing.T) {
-	t.Parallel()
-
-	data, err := os.ReadFile("testdata/go.invalid.mod")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mod, err := NewGoMod("go.mod", data)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	msg, err := mod.CheckSOMVersion(false)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, "", msg)
-
-	exists := false
-
-	for _, req := range mod.file.Require {
-		if req.Mod.Path != pkgSOM {
-			continue
-		}
-
-		exists = true
-
-		if req.Mod.Version != requiredSOMVersion {
-			t.Fatal("som version not updated")
-		}
-	}
-
-	assert.Assert(t, exists)
-}
-
-func TestGoModWrongSOMVersion(t *testing.T) {
-	t.Parallel()
-
-	data, err := os.ReadFile("testdata/go.outdated.mod")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mod, err := NewGoMod("go.mod", data)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	msg, err := mod.CheckSOMVersion(false)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, "", msg)
-
-	exists := false
-
-	for _, req := range mod.file.Require {
-		if req.Mod.Path != pkgSOM {
-			continue
-		}
-
-		exists = true
-
-		if req.Mod.Version != requiredSOMVersion {
-			t.Fatal("som version not updated")
-		}
-	}
-
-	assert.Assert(t, exists)
 }
 
 func TestGoModMissingSurrealDBPackage(t *testing.T) {
@@ -169,6 +88,54 @@ func TestGoModMissingSurrealDBPackage(t *testing.T) {
 	}
 
 	assert.Assert(t, exists)
+}
+
+func TestWirePackageGoogle(t *testing.T) {
+	t.Parallel()
+
+	data, err := os.ReadFile("testdata/go.wire_google.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mod, err := NewGoMod("go.mod", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, pkgGoogleWire, mod.WirePackage())
+}
+
+func TestWirePackageGoforj(t *testing.T) {
+	t.Parallel()
+
+	data, err := os.ReadFile("testdata/go.wire_goforj.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mod, err := NewGoMod("go.mod", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, pkgGoforjWire, mod.WirePackage())
+}
+
+func TestWirePackageNone(t *testing.T) {
+	t.Parallel()
+
+	data, err := os.ReadFile("testdata/go.valid.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mod, err := NewGoMod("go.mod", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "", mod.WirePackage())
 }
 
 func TestGoModWrongSurrealDBVersion(t *testing.T) {

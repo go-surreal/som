@@ -2,17 +2,51 @@
 package query
 
 import (
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	model "som.test/model"
 )
 
-func NewChangefeedModel(db Database) Builder[model.ChangefeedModel, conv.ChangefeedModel] {
-	return Builder[model.ChangefeedModel, conv.ChangefeedModel]{builder[model.ChangefeedModel, conv.ChangefeedModel]{
-		convFrom: conv.FromChangefeedModelPtr,
-		convTo:   conv.ToChangefeedModelPtr,
-		db:       db,
-		query:    lib.NewQuery[model.ChangefeedModel]("changefeed_model"),
+// changefeedModelModelInfo holds the model-specific unmarshal functions for ChangefeedModel.
+var changefeedModelModelInfo = modelInfo[model.ChangefeedModel]{
+	UnmarshalAll: func(data []byte) ([]*model.ChangefeedModel, error) {
+		return unmarshalAll(data, conv.ToChangefeedModelPtr)
+	},
+	UnmarshalOne: func(data []byte) (*model.ChangefeedModel, error) {
+		return unmarshalOne(data, conv.ToChangefeedModelPtr)
+	},
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.ChangefeedModel], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToChangefeedModelPtr)
+	},
+}
+
+var changefeedModelRangeFn = rangeFn[model.ChangefeedModel](func(q *lib.Query[model.ChangefeedModel], from som.RangeFrom, to som.RangeTo) string {
+	expr := ":"
+	if !from.IsOpen() {
+		expr += q.AsVar(from.Value().(som.ULID))
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		expr += q.AsVar(to.Value().(som.ULID))
+	}
+	return expr
+})
+
+// NewChangefeedModel creates a new query builder for ChangefeedModel models.
+func NewChangefeedModel(db Database) Builder[model.ChangefeedModel] {
+	q := lib.NewQuery[model.ChangefeedModel]("changefeed_model")
+	return Builder[model.ChangefeedModel]{builder[model.ChangefeedModel]{
+		db:      db,
+		info:    changefeedModelModelInfo,
+		query:   q,
+		rangeFn: changefeedModelRangeFn,
 	}}
 }
 

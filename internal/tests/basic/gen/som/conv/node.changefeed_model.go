@@ -2,11 +2,12 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
+	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
+	cbor "som.test/gen/som/internal/cbor"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
 )
 
 type ChangefeedModel struct {
@@ -20,8 +21,8 @@ func (c *ChangefeedModel) MarshalCBOR() ([]byte, error) {
 	data := make(map[string]any, 4)
 
 	// Embedded som.Node/Edge ID field
-	if c.ID() != nil {
-		data["id"] = c.ID()
+	if c.ID() != "" {
+		data["id"] = models.NewRecordID("changefeed_model", c.ID())
 	}
 
 	if !c.CreatedAt().IsZero() {
@@ -36,25 +37,35 @@ func (c *ChangefeedModel) MarshalCBOR() ([]byte, error) {
 }
 
 func (c *ChangefeedModel) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
+	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
 	// Embedded som.Node/Edge ID field
 	if raw, ok := rawMap["id"]; ok {
-		var id *som.ID
-		cbor.Unmarshal(raw, &id)
-		c.Node = som.NewNode(id)
+		var recordID *models.RecordID
+		if err := cbor.Unmarshal(raw, &recordID); err != nil {
+			return err
+		}
+		var idStr string
+		if recordID != nil {
+			s, err := cbor.RecordIDToString(recordID.ID)
+			if err != nil {
+				return err
+			}
+			idStr = s
+		}
+		c.Node = som.NewNode[som.ULID](som.ULID(idStr))
 	}
 
 	if raw, ok := rawMap["created_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
-		c.Timestamps.SetCreatedAt(tm)
+		internal.SetCreatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["updated_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
-		c.Timestamps.SetUpdatedAt(tm)
+		internal.SetUpdatedAt(&c.Timestamps, tm)
 	}
 	if raw, ok := rawMap["name"]; ok {
 		cbor.Unmarshal(raw, &c.Name)
@@ -86,7 +97,7 @@ func ToChangefeedModelPtr(data *ChangefeedModel) *model.ChangefeedModel {
 
 type changefeedModelLink struct {
 	ChangefeedModel
-	ID *som.ID
+	ID *models.RecordID
 }
 
 func (f *changefeedModelLink) MarshalCBOR() ([]byte, error) {
@@ -127,17 +138,22 @@ func fromChangefeedModelLinkPtr(link *changefeedModelLink) *model.ChangefeedMode
 }
 
 func toChangefeedModelLink(node model.ChangefeedModel) *changefeedModelLink {
-	if node.ID() == nil {
+	if node.ID() == "" {
 		return nil
 	}
-	link := changefeedModelLink{ChangefeedModel: FromChangefeedModel(node), ID: node.ID()}
+	rid := models.NewRecordID("changefeed_model", node.ID())
+	link := changefeedModelLink{ChangefeedModel: FromChangefeedModel(node), ID: &rid}
 	return &link
 }
 
 func toChangefeedModelLinkPtr(node *model.ChangefeedModel) *changefeedModelLink {
-	if node == nil || node.ID() == nil {
+	if node == nil {
 		return nil
 	}
-	link := changefeedModelLink{ChangefeedModel: FromChangefeedModel(*node), ID: node.ID()}
+	if node.ID() == "" {
+		return nil
+	}
+	rid := models.NewRecordID("changefeed_model", node.ID())
+	link := changefeedModelLink{ChangefeedModel: FromChangefeedModel(*node), ID: &rid}
 	return &link
 }

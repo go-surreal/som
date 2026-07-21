@@ -67,6 +67,9 @@ func (f *UUID) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 	}
@@ -88,9 +91,7 @@ func (f *UUID) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(
-			jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
-		)
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *UUID) sortDefine(ctx Context) jen.Code {
@@ -99,7 +100,20 @@ func (f *UUID) sortDefine(ctx Context) jen.Code {
 
 func (f *UUID) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
+}
+
+func (f *UUID) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual(f.uuidPkg(), "UUID"))
+}
+
+func (f *UUID) fieldInit(ctx Context) jen.Code {
+	factory := "New" + f.uuidTypeName() + "Field"
+	if f.source.Pointer() {
+		factory = "New" + f.uuidTypeName() + "PtrField"
+	}
+	return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *UUID) cborMarshal(ctx Context) jen.Code {

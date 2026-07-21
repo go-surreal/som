@@ -1,6 +1,7 @@
 package field
 
 import (
+	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
 )
 
@@ -10,6 +11,7 @@ type EdgeTable struct {
 	Out        *Node
 	Fields     []Field
 	Changefeed string
+	Source     *parser.Edge
 }
 
 func (t *EdgeTable) NameGo() string {

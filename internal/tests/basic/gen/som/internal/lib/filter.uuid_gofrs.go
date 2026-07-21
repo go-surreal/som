@@ -5,7 +5,7 @@ package lib
 import (
 	"github.com/gofrs/uuid"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som/internal/types"
 )
 
 type UUIDGofrs[M any] struct {

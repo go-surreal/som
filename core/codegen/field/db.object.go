@@ -5,8 +5,9 @@ import (
 )
 
 type DatabaseObject struct {
-	Name   string
-	Fields []Field
+	Name           string
+	Fields         []Field
+	IsArrayIndexed bool
 }
 
 func (o *DatabaseObject) NameGo() string {

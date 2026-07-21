@@ -19,12 +19,13 @@ func (f *ID) typeGo() jen.Code {
 }
 
 func (f *ID) typeConv(ctx Context) jen.Code {
-	return jen.Op("*").Qual(ctx.TargetPkg, "ID") // f.typeGo()
+	return jen.Op("*").Qual(def.PkgModels, "RecordID")
 }
 
 func (f *ID) TypeDatabase() string {
-	// TODO: type "uuid" works, but there is no native type "ulid"
-	// see: https://github.com/surrealdb/surrealdb/issues/1722
+	if f.source.Type == parser.IDTypeUUID {
+		return "uuid"
+	}
 	return "string"
 }
 

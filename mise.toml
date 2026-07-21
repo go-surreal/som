@@ -1,4 +1,5 @@
 [tools]
-go = "1.24.10"
-golangci-lint = "2.6.2"
-task = "3.45.5"
+git-cliff = "2.13.1"
+go = "1.26.4"
+golangci-lint = "2.12.2"
+task = "3.52.0"

@@ -1,0 +1,33 @@
+//go:build embed
+
+package lib
+
+import "time"
+
+type Month[M any] struct {
+	*Base[M, time.Month, *Month[M], *Slice[M, time.Month, *Month[M]]]
+	*Comparable[M, time.Month, *Month[M]]
+}
+
+func NewMonth[M any](key Key[M]) *Month[M] {
+	return &Month[M]{
+		Base:       NewBase[M, time.Month, *Month[M], *Slice[M, time.Month, *Month[M]]](key),
+		Comparable: NewComparable[M, time.Month, *Month[M]](key),
+	}
+}
+
+type MonthPtr[M any] struct {
+	*Month[M]
+	*Nillable[M]
+}
+
+func (m *Month[M]) key() Key[M] {
+	return m.Base.key()
+}
+
+func NewMonthPtr[M any](key Key[M]) *MonthPtr[M] {
+	return &MonthPtr[M]{
+		Month:    NewMonth[M](key),
+		Nillable: NewNillable[M](key),
+	}
+}

@@ -19,6 +19,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		dbNode := &NodeTable{
 			Name:       node.Name,
 			Changefeed: node.Changefeed,
+			Source:     node,
 		}
 
 		for _, f := range node.Fields {
@@ -36,6 +37,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		dbEdge := &EdgeTable{
 			Name:       edge.Name,
 			Changefeed: edge.Changefeed,
+			Source:     edge,
 		}
 
 		inField, ok := Convert(source, buildConf, edge.In)
@@ -59,6 +61,18 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		}
 
 		def.Edges = append(def.Edges, dbEdge)
+	}
+
+	for _, dbNode := range def.Nodes {
+		for _, f := range dbNode.Fields {
+			if cid, ok := f.(*ComplexID); ok && cid.element != nil {
+				def.Objects = append(def.Objects, &DatabaseObject{
+					Name:           cid.element.NameGo(),
+					Fields:         cid.element.GetFields(),
+					IsArrayIndexed: cid.source.Kind == parser.IDTypeArray,
+				})
+			}
+		}
 	}
 
 	for _, str := range source.Structs {
@@ -141,9 +155,33 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldMonth:
+		{
+			return &Month{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldWeekday:
+		{
+			return &Weekday{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldUUID:
 		{
 			return &UUID{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldGeometry:
+		{
+			return &Geometry{
 				baseField: base,
 				source:    f,
 			}, true
@@ -168,6 +206,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 	case *parser.FieldEmail:
 		{
 			return &Email{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldSemVer:
+		{
+			return &SemVer{
 				baseField: base,
 				source:    f,
 			}, true
@@ -225,12 +271,22 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 
 	case *parser.FieldNode:
 		{
+			// Find the source node to get its properties (like SoftDelete)
+			var sourceNode *parser.Node
+			for _, node := range source.Nodes {
+				if node.Name == f.Node {
+					sourceNode = node
+					break
+				}
+			}
+
 			return &Node{
 				baseField: base,
 				source:    f,
 				table: &NodeTable{
 					Name:   f.Node,
 					Fields: nil, // TODO: needed? -> node.Fields
+					Source: sourceNode,
 				},
 			}, true
 		}
@@ -272,6 +328,7 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 					In:     in.(*Node),
 					Out:    out.(*Node),
 					Fields: fields,
+					Source: edge,
 				},
 			}, true
 		}
@@ -296,6 +353,27 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				baseField: base,
 				source:    f,
 			}, true
+		}
+
+	case *parser.FieldComplexID:
+		{
+			var fields []Field
+			for _, sf := range f.Fields {
+				if _, ok := sf.Field.(*parser.FieldNode); ok {
+					continue
+				}
+				fld, ok := Convert(source, conf, sf.Field)
+				if !ok {
+					continue
+				}
+				fields = append(fields, fld)
+			}
+
+			cid := &ComplexID{baseField: base, source: f}
+			if len(fields) > 0 {
+				cid.element = &NodeTable{Name: f.StructName, Fields: fields}
+			}
+			return cid, true
 		}
 	}
 

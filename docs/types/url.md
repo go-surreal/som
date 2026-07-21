@@ -61,28 +61,28 @@ bookmark.Favicon = faviconURL
 ```go
 // Exact match
 targetURL, _ := url.Parse("https://example.com")
-where.Bookmark.Link.Equal(*targetURL)
+filter.Bookmark.Link.Equal(*targetURL)
 
 // Not equal
-where.Bookmark.Link.NotEqual(*excludeURL)
+filter.Bookmark.Link.NotEqual(*excludeURL)
 ```
 
 ### Set Membership
 
 ```go
 // Value in set
-where.Bookmark.Link.In(url1, url2, url3)
+filter.Bookmark.Link.In(url1, url2, url3)
 
 // Value not in set
-where.Bookmark.Link.NotIn(blockedURLs...)
+filter.Bookmark.Link.NotIn(blockedURLs...)
 ```
 
 ### Comparison Operations
 
 ```go
 // Lexicographic comparison (as strings)
-where.Bookmark.Link.LessThan(referenceURL)
-where.Bookmark.Link.GreaterThan(referenceURL)
+filter.Bookmark.Link.LessThan(referenceURL)
+filter.Bookmark.Link.GreaterThan(referenceURL)
 ```
 
 ### Component Extraction
@@ -91,42 +91,42 @@ Extract URL components as string filters:
 
 ```go
 // Domain (without port)
-where.Bookmark.Link.Domain().Equal("example.com")
+filter.Bookmark.Link.Domain().Equal("example.com")
 
 // Host (with port if present)
-where.Bookmark.Link.Host().Equal("example.com:8080")
+filter.Bookmark.Link.Host().Equal("example.com:8080")
 
 // Port number
-where.Bookmark.Link.Port().Equal("443")
+filter.Bookmark.Link.Port().Equal("443")
 
 // Path
-where.Bookmark.Link.Path().StartsWith("/api/")
+filter.Bookmark.Link.Path().StartsWith("/api/")
 
 // Query string
-where.Bookmark.Link.Query().Contains("utm_source")
+filter.Bookmark.Link.Query().Contains("utm_source")
 
 // Fragment (after #)
-where.Bookmark.Link.Fragment().Equal("section1")
+filter.Bookmark.Link.Fragment().Equal("section1")
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.Bookmark.Favicon.IsNil()
+filter.Bookmark.Favicon.IsNil()
 
 // Check if not nil
-where.Bookmark.Favicon.IsNotNil()
+filter.Bookmark.Favicon.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Is empty URL
-where.Bookmark.Link.Zero(true)
+filter.Bookmark.Link.Zero(true)
 
 // Is not empty URL
-where.Bookmark.Link.Zero(false)
+filter.Bookmark.Link.Zero(false)
 ```
 
 ## Sorting
@@ -145,16 +145,16 @@ URL filters support component extraction and string operations:
 
 ```go
 // Find bookmarks on specific domain
-where.Bookmark.Link.Domain().Equal("github.com")
+filter.Bookmark.Link.Domain().Equal("github.com")
 
 // Find API endpoints
-where.Bookmark.Link.Path().StartsWith("/api/v2/")
+filter.Bookmark.Link.Path().StartsWith("/api/v2/")
 
 // Find URLs with specific query parameter
-where.Bookmark.Link.Query().Contains("page=")
+filter.Bookmark.Link.Query().Contains("page=")
 
 // Find HTTPS URLs (via string contains)
-where.Bookmark.Link.Host().StartsWith("https://")
+filter.Bookmark.Link.Host().StartsWith("https://")
 ```
 
 ## Common Patterns
@@ -164,7 +164,7 @@ where.Bookmark.Link.Host().StartsWith("https://")
 ```go
 // All GitHub bookmarks
 githubLinks, _ := client.BookmarkRepo().Query().
-    Filter(where.Bookmark.Link.Domain().Equal("github.com")).
+    Where(filter.Bookmark.Link.Domain().Equal("github.com")).
     All(ctx)
 ```
 
@@ -173,7 +173,7 @@ githubLinks, _ := client.BookmarkRepo().Query().
 ```go
 // All API endpoints
 apiEndpoints, _ := client.BookmarkRepo().Query().
-    Filter(where.Bookmark.Link.Path().StartsWith("/api/")).
+    Where(filter.Bookmark.Link.Path().StartsWith("/api/")).
     All(ctx)
 ```
 
@@ -182,7 +182,7 @@ apiEndpoints, _ := client.BookmarkRepo().Query().
 ```go
 // Development servers
 devServers, _ := client.BookmarkRepo().Query().
-    Filter(where.Bookmark.Link.Port().Equal("3000")).
+    Where(filter.Bookmark.Link.Port().Equal("3000")).
     All(ctx)
 ```
 
@@ -191,7 +191,7 @@ devServers, _ := client.BookmarkRepo().Query().
 ```go
 // Bookmarks with favicon configured
 withFavicon, _ := client.BookmarkRepo().Query().
-    Filter(where.Bookmark.Favicon.IsNotNil()).
+    Where(filter.Bookmark.Favicon.IsNotNil()).
     All(ctx)
 ```
 
@@ -205,7 +205,7 @@ import (
     "net/url"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -222,22 +222,22 @@ func main() {
 
     // Find GitHub links
     githubLinks, _ := client.BookmarkRepo().Query().
-        Filter(where.Bookmark.Link.Domain().Equal("github.com")).
+        Where(filter.Bookmark.Link.Domain().Equal("github.com")).
         All(ctx)
 
     // Find documentation pages
     docs, _ := client.BookmarkRepo().Query().
-        Filter(where.Bookmark.Link.Path().Contains("/docs/")).
+        Where(filter.Bookmark.Link.Path().Contains("/docs/")).
         All(ctx)
 
     // Find bookmarks with anchors
     withAnchors, _ := client.BookmarkRepo().Query().
-        Filter(where.Bookmark.Link.Fragment().Zero(false)).
+        Where(filter.Bookmark.Link.Fragment().Zero(false)).
         All(ctx)
 
     // Find bookmarks with query strings
     withQuery, _ := client.BookmarkRepo().Query().
-        Filter(where.Bookmark.Link.Query().Zero(false)).
+        Where(filter.Bookmark.Link.Query().Zero(false)).
         All(ctx)
 
     // Sort by domain
@@ -247,7 +247,7 @@ func main() {
 
     // Bookmarks without favicons
     noFavicon, _ := client.BookmarkRepo().Query().
-        Filter(where.Bookmark.Favicon.IsNil()).
+        Where(filter.Bookmark.Favicon.IsNil()).
         All(ctx)
 }
 ```

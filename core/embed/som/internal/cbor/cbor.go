@@ -46,3 +46,4 @@ func Unmarshal(data []byte, v any) error {
 // Re-export commonly used types for convenience
 type RawMessage = cbor.RawMessage
 type RawTag = cbor.RawTag
+type Tag = cbor.Tag

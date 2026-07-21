@@ -2,7 +2,7 @@
 
 This guide walks you through creating your first SOM-powered application.
 
-> **Note**: This package is currently tested against SurrealDB version [2.3.10](https://surrealdb.com/releases#v2-3-10).
+> **Note**: This package is currently tested against SurrealDB version [3.2.0](https://surrealdb.com/releases).
 
 ## Disclaimer
 
@@ -10,16 +10,22 @@ This library is currently considered **HIGHLY EXPERIMENTAL** and under heavy dev
 
 ## Step 1: Define Your Model
 
+First, generate the static base files so types like `som.Node` are available:
+
+```bash
+go run github.com/go-surreal/som@latest
+```
+
 Create `model/user.go`:
 
 ```go
 package model
 
-import "github.com/go-surreal/som"
+import "yourproject/gen/som"
 
 type User struct {
-    som.Node
-    som.Timestamps  // Adds CreatedAt, UpdatedAt
+    som.Node[som.ULID]
+    som.Timestamps
 
     Username string
     Email    string
@@ -29,19 +35,20 @@ type User struct {
 ```
 
 Key points:
-- `som.Node` makes this a database record (required)
+- `som.Node[som.ULID]` makes this a database record with ULID-based IDs (required)
 - `som.Timestamps` adds auto-managed timestamp fields (optional)
-- Field names become database field names (lowercase by default)
+- Field names become database field names (snake_case by default)
+- You can override field names with the `som:"custom_name"` tag
 
 ## Step 2: Generate Code
 
 ```bash
-go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+go run github.com/go-surreal/som@latest -i ./model
 ```
 
 This creates:
 - `gen/som/` - Client and repository code
-- `gen/som/where/` - Type-safe filters
+- `gen/som/filter/` - Type-safe filters
 - `gen/som/by/` - Sorting helpers
 
 ## Step 3: Connect and Use
@@ -55,7 +62,7 @@ import (
     "log"
 
     "yourproject/gen/som"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/gen/som/by"
     "yourproject/model"
 )
@@ -86,10 +93,10 @@ func main() {
     if err := client.UserRepo().Create(ctx, user); err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("Created user with ID: %s\n", user.ID)
+    fmt.Printf("Created user with ID: %s\n", user.ID())
 
     // READ by ID
-    found, exists, err := client.UserRepo().Read(ctx, user.ID)
+    found, exists, err := client.UserRepo().Read(ctx, string(user.ID()))
     if err != nil {
         log.Fatal(err)
     }
@@ -105,8 +112,8 @@ func main() {
 
     // QUERY with filters
     users, err := client.UserRepo().Query().
-        Filter(where.User.IsActive.IsTrue()).
-        Filter(where.User.Age.GreaterThan(18)).
+        Where(filter.User.IsActive.IsTrue()).
+        Where(filter.User.Age.GreaterThan(18)).
         Order(by.User.Username.Asc()).
         Limit(10).
         All(ctx)
@@ -127,11 +134,11 @@ func main() {
 ### Find First Match
 
 ```go
-user, exists, err := client.UserRepo().Query().
-    Filter(where.User.Email.Equal("john@example.com")).
+user, err := client.UserRepo().Query().
+    Where(filter.User.Email.Equal("john@example.com")).
     First(ctx)
 
-if exists {
+if err == nil {
     fmt.Println(user.Username)
 }
 ```
@@ -140,7 +147,7 @@ if exists {
 
 ```go
 exists, err := client.UserRepo().Query().
-    Filter(where.User.Email.Equal("john@example.com")).
+    Where(filter.User.Email.Equal("john@example.com")).
     Exists(ctx)
 ```
 
@@ -148,7 +155,7 @@ exists, err := client.UserRepo().Query().
 
 ```go
 count, err := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     Count(ctx)
 ```
 
@@ -157,7 +164,7 @@ count, err := client.UserRepo().Query().
 ```go
 // Start query in background
 result := client.UserRepo().Query().
-    Filter(where.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.IsTrue()).
     AllAsync(ctx)
 
 // Do other work...
@@ -165,61 +172,6 @@ result := client.UserRepo().Query().
 // Get results when ready
 users := <-result.Val()
 err := <-result.Err()
-```
-
-## Complete Example
-
-Here's a complete working example:
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "log"
-    "time"
-
-    "yourproject/gen/som"
-    "yourproject/gen/som/where"
-    "yourproject/model"
-)
-
-func main() {
-    ctx := context.Background()
-
-    client, _ := som.NewClient(ctx, som.Config{
-        Address:   "ws://localhost:8000",
-        Username:  "root",
-        Password:  "root",
-        Namespace: "demo",
-        Database:  "quickstart",
-    })
-    defer client.Close()
-
-    // Create some users
-    for i := 1; i <= 5; i++ {
-        user := &model.User{
-            Username: fmt.Sprintf("user%d", i),
-            Email:    fmt.Sprintf("user%d@example.com", i),
-            Age:      20 + i,
-            IsActive: i%2 == 0,
-        }
-        client.UserRepo().Create(ctx, user)
-    }
-
-    // Query active users over 21
-    users, _ := client.UserRepo().Query().
-        Filter(
-            where.User.IsActive.IsTrue(),
-            where.User.Age.GreaterThan(21),
-        ).
-        All(ctx)
-
-    for _, u := range users {
-        fmt.Printf("%s (age %d)\n", u.Username, u.Age)
-    }
-}
 ```
 
 ## Next Steps

@@ -74,20 +74,20 @@ doc.ParentID = nil  // Optional field
 ```go
 // Exact match
 targetID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
-where.Document.ExternalID.Equal(targetID)
+filter.Document.ExternalID.Equal(targetID)
 
 // Not equal
-where.Document.ExternalID.NotEqual(excludeID)
+filter.Document.ExternalID.NotEqual(excludeID)
 ```
 
 ### Set Membership
 
 ```go
 // Value in set
-where.Document.ExternalID.In(id1, id2, id3)
+filter.Document.ExternalID.In(id1, id2, id3)
 
 // Value not in set
-where.Document.TrackingID.NotIn(blacklistedIDs...)
+filter.Document.TrackingID.NotIn(blacklistedIDs...)
 ```
 
 ### Comparison Operations
@@ -96,36 +96,36 @@ UUIDs can be compared lexicographically:
 
 ```go
 // Less than
-where.Document.ExternalID.LessThan(referenceID)
+filter.Document.ExternalID.LessThan(referenceID)
 
 // Less than or equal
-where.Document.ExternalID.LessThanEqual(referenceID)
+filter.Document.ExternalID.LessThanEqual(referenceID)
 
 // Greater than
-where.Document.ExternalID.GreaterThan(referenceID)
+filter.Document.ExternalID.GreaterThan(referenceID)
 
 // Greater than or equal
-where.Document.ExternalID.GreaterThanEqual(referenceID)
+filter.Document.ExternalID.GreaterThanEqual(referenceID)
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.Document.ParentID.IsNil()
+filter.Document.ParentID.IsNil()
 
 // Check if not nil
-where.Document.ParentID.IsNotNil()
+filter.Document.ParentID.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Is nil UUID (00000000-0000-0000-0000-000000000000)
-where.Document.ExternalID.Zero(true)
+filter.Document.ExternalID.Zero(true)
 
 // Is not nil UUID
-where.Document.ExternalID.Zero(false)
+filter.Document.ExternalID.Zero(false)
 ```
 
 ## Sorting
@@ -146,7 +146,7 @@ query.Order(by.Document.ExternalID.Desc())
 externalID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
 
 doc, exists, _ := client.DocumentRepo().Query().
-    Filter(where.Document.ExternalID.Equal(externalID)).
+    Where(filter.Document.ExternalID.Equal(externalID)).
     First(ctx)
 ```
 
@@ -156,7 +156,7 @@ doc, exists, _ := client.DocumentRepo().Query().
 parentID := uuid.MustParse("...")
 
 children, _ := client.DocumentRepo().Query().
-    Filter(where.Document.ParentID.Equal(parentID)).
+    Where(filter.Document.ParentID.Equal(parentID)).
     All(ctx)
 ```
 
@@ -164,7 +164,7 @@ children, _ := client.DocumentRepo().Query().
 
 ```go
 roots, _ := client.DocumentRepo().Query().
-    Filter(where.Document.ParentID.IsNil()).
+    Where(filter.Document.ParentID.IsNil()).
     All(ctx)
 ```
 
@@ -174,7 +174,7 @@ roots, _ := client.DocumentRepo().Query().
 targetIDs := []uuid.UUID{id1, id2, id3}
 
 docs, _ := client.DocumentRepo().Query().
-    Filter(where.Document.ExternalID.In(targetIDs...)).
+    Where(filter.Document.ExternalID.In(targetIDs...)).
     All(ctx)
 ```
 
@@ -188,7 +188,7 @@ import (
     "github.com/google/uuid"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -205,29 +205,29 @@ func main() {
     // Find by external ID
     targetID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
     found, exists, _ := client.DocumentRepo().Query().
-        Filter(where.Document.ExternalID.Equal(targetID)).
+        Where(filter.Document.ExternalID.Equal(targetID)).
         First(ctx)
 
     // Find documents with parent
     withParent, _ := client.DocumentRepo().Query().
-        Filter(where.Document.ParentID.IsNotNil()).
+        Where(filter.Document.ParentID.IsNotNil()).
         All(ctx)
 
     // Find root documents
     roots, _ := client.DocumentRepo().Query().
-        Filter(where.Document.ParentID.IsNil()).
+        Where(filter.Document.ParentID.IsNil()).
         All(ctx)
 
     // Bulk lookup
     ids := []uuid.UUID{id1, id2, id3}
     batch, _ := client.DocumentRepo().Query().
-        Filter(where.Document.ExternalID.In(ids...)).
+        Where(filter.Document.ExternalID.In(ids...)).
         All(ctx)
 
     // Exclude specific documents
     excluded := []uuid.UUID{badID1, badID2}
     filtered, _ := client.DocumentRepo().Query().
-        Filter(where.Document.ExternalID.NotIn(excluded...)).
+        Where(filter.Document.ExternalID.NotIn(excluded...)).
         All(ctx)
 }
 ```

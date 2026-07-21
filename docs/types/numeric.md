@@ -86,36 +86,36 @@ DEFINE FIELD stock_level ON product TYPE int
 
 ```go
 // Exact match
-where.Product.Quantity.Equal(10)
+filter.Product.Quantity.Equal(10)
 
 // Not equal
-where.Product.Quantity.NotEqual(0)
+filter.Product.Quantity.NotEqual(0)
 ```
 
 ### Set Membership
 
 ```go
 // Value in set
-where.Product.Quantity.In(1, 5, 10, 25, 50)
+filter.Product.Quantity.In(1, 5, 10, 25, 50)
 
 // Value not in set
-where.Product.Quantity.NotIn(0, -1)
+filter.Product.Quantity.NotIn(0, -1)
 ```
 
 ### Comparison Operations
 
 ```go
 // Less than
-where.Product.Price.LessThan(100.0)
+filter.Product.Price.LessThan(100.0)
 
 // Less than or equal
-where.Product.Price.LessThanEqual(99.99)
+filter.Product.Price.LessThanEqual(99.99)
 
 // Greater than
-where.Product.Quantity.GreaterThan(0)
+filter.Product.Quantity.GreaterThan(0)
 
 // Greater than or equal
-where.Product.StockLevel.GreaterThanEqual(10)
+filter.Product.StockLevel.GreaterThanEqual(10)
 ```
 
 ### Arithmetic Operations
@@ -124,41 +124,41 @@ All arithmetic operations return a Float filter:
 
 ```go
 // Addition
-where.Product.Price.Add(10.0).LessThan(100.0)
+filter.Product.Price.Add(10.0).LessThan(100.0)
 
 // Subtraction
-where.Product.Price.Sub(5.0).GreaterThan(50.0)
+filter.Product.Price.Sub(5.0).GreaterThan(50.0)
 
 // Multiplication
-where.Product.Price.Mul(1.1).LessThan(110.0)  // 10% markup
+filter.Product.Price.Mul(1.1).LessThan(110.0)  // 10% markup
 
 // Division
-where.Product.Price.Div(2.0).LessThan(50.0)
+filter.Product.Price.Div(2.0).LessThan(50.0)
 
 // Exponentiation
-where.Metrics.Value.Raise(2).LessThan(100.0)  // Squared
+filter.Metrics.Value.Raise(2).LessThan(100.0)  // Squared
 ```
 
 ### Math Functions
 
 ```go
 // Absolute value
-where.Account.Balance.Abs().GreaterThan(100.0)
+filter.Account.Balance.Abs().GreaterThan(100.0)
 
 // Square root
-where.Metrics.Variance.Sqrt().LessThan(10.0)
+filter.Metrics.Variance.Sqrt().LessThan(10.0)
 
 // Ceiling (round up)
-where.Product.Price.Ceil().Equal(100.0)
+filter.Product.Price.Ceil().Equal(100.0)
 
 // Floor (round down)
-where.Product.Price.Floor().Equal(99.0)
+filter.Product.Price.Floor().Equal(99.0)
 
 // Round to nearest
-where.Product.Price.Round().Equal(100.0)
+filter.Product.Price.Round().Equal(100.0)
 
 // Fixed decimal places
-where.Product.Price.Fixed(2).Equal(99.99)
+filter.Product.Price.Fixed(2).Equal(99.99)
 ```
 
 ### Type Conversion
@@ -167,22 +167,22 @@ Convert between numeric types:
 
 ```go
 // To integer types
-where.Product.Price.Int().Equal(99)
-where.Product.Price.Int8().GreaterThan(50)
-where.Product.Price.Int16().LessThan(1000)
-where.Product.Price.Int32().Equal(99)
-where.Product.Price.Int64().GreaterThan(0)
+filter.Product.Price.Int().Equal(99)
+filter.Product.Price.Int8().GreaterThan(50)
+filter.Product.Price.Int16().LessThan(1000)
+filter.Product.Price.Int32().Equal(99)
+filter.Product.Price.Int64().GreaterThan(0)
 
 // To unsigned types
-where.Product.Quantity.Uint().GreaterThan(0)
-where.Product.Quantity.Uint8().LessThan(255)
-where.Product.Quantity.Uint16().GreaterThan(0)
-where.Product.Quantity.Uint32().LessThan(1000000)
-where.Product.Quantity.Uint64().GreaterThan(0)
+filter.Product.Quantity.Uint().GreaterThan(0)
+filter.Product.Quantity.Uint8().LessThan(255)
+filter.Product.Quantity.Uint16().GreaterThan(0)
+filter.Product.Quantity.Uint32().LessThan(1000000)
+filter.Product.Quantity.Uint64().GreaterThan(0)
 
 // To float types
-where.Product.Quantity.Float32().GreaterThan(0.0)
-where.Product.Quantity.Float64().LessThan(100.0)
+filter.Product.Quantity.Float32().GreaterThan(0.0)
+filter.Product.Quantity.Float64().LessThan(100.0)
 ```
 
 ### Duration Conversion
@@ -191,9 +191,9 @@ Convert numbers to duration filters:
 
 ```go
 // Interpret number as duration units
-where.Task.DelaySeconds.AsDurationSecs().LessThan(5 * time.Minute)
-where.Task.DelayMillis.AsDurationMillis().LessThan(time.Second)
-where.Config.TimeoutMins.AsDurationMins().GreaterThan(time.Hour)
+filter.Task.DelaySeconds.AsDurationSecs().LessThan(5 * time.Minute)
+filter.Task.DelayMillis.AsDurationMillis().LessThan(time.Second)
+filter.Config.TimeoutMins.AsDurationMins().GreaterThan(time.Hour)
 
 // All duration conversions:
 // AsDurationNanos() - nanoseconds
@@ -212,33 +212,33 @@ Convert numbers to time filters:
 
 ```go
 // Unix timestamp
-where.Event.Timestamp.AsTimeUnix().After(cutoffTime)
+filter.Event.Timestamp.AsTimeUnix().After(cutoffTime)
 
 // Time from various units
-where.Event.EpochSecs.AsTimeSecs().Before(deadline)
-where.Event.EpochMillis.AsTimeMillis().After(startTime)
-where.Event.EpochMicros.AsTimeMicros().Before(endTime)
-where.Event.EpochNanos.AsTimeNanos().After(reference)
+filter.Event.EpochSecs.AsTimeSecs().Before(deadline)
+filter.Event.EpochMillis.AsTimeMillis().After(startTime)
+filter.Event.EpochMicros.AsTimeMicros().Before(endTime)
+filter.Event.EpochNanos.AsTimeNanos().After(reference)
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.Product.Discount.IsNil()
+filter.Product.Discount.IsNil()
 
 // Check if not nil
-where.Product.Discount.IsNotNil()
+filter.Product.Discount.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Is zero
-where.Product.Quantity.Zero(true)
+filter.Product.Quantity.Zero(true)
 
 // Is not zero
-where.Product.Price.Zero(false)
+filter.Product.Price.Zero(false)
 ```
 
 ## Sorting
@@ -263,16 +263,16 @@ Numeric filters support powerful chaining:
 
 ```go
 // Calculate with tax and compare
-where.Product.Price.Mul(1.08).LessThan(100.0)
+filter.Product.Price.Mul(1.08).LessThan(100.0)
 
 // Absolute difference from target
-where.Product.Price.Sub(targetPrice).Abs().LessThan(10.0)
+filter.Product.Price.Sub(targetPrice).Abs().LessThan(10.0)
 
 // Round and compare
-where.Metrics.Average.Round().Equal(100)
+filter.Metrics.Average.Round().Equal(100)
 
 // Complex calculation
-where.Product.Price.Mul(quantity).Sub(discount).LessThan(budget)
+filter.Product.Price.Mul(quantity).Sub(discount).LessThan(budget)
 ```
 
 ## Complete Example
@@ -284,7 +284,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -293,38 +293,38 @@ func main() {
 
     // Find affordable products
     affordable, _ := client.ProductRepo().Query().
-        Filter(
-            where.Product.Price.LessThan(50.0),
-            where.Product.Quantity.GreaterThan(0),
+        Where(
+            filter.Product.Price.LessThan(50.0),
+            filter.Product.Quantity.GreaterThan(0),
         ).
         Order(by.Product.Price.Asc()).
         All(ctx)
 
     // Products with discount
     discounted, _ := client.ProductRepo().Query().
-        Filter(where.Product.Discount.IsNotNil()).
+        Where(filter.Product.Discount.IsNotNil()).
         All(ctx)
 
     // Calculate final price with 10% tax
     underBudget, _ := client.ProductRepo().Query().
-        Filter(
-            where.Product.Price.Mul(1.1).LessThanEqual(100.0),
+        Where(
+            filter.Product.Price.Mul(1.1).LessThanEqual(100.0),
         ).
         All(ctx)
 
     // Find products near target price (within $5)
     targetPrice := 49.99
     nearTarget, _ := client.ProductRepo().Query().
-        Filter(
-            where.Product.Price.Sub(targetPrice).Abs().LessThan(5.0),
+        Where(
+            filter.Product.Price.Sub(targetPrice).Abs().LessThan(5.0),
         ).
         All(ctx)
 
     // Low stock items
     lowStock, _ := client.ProductRepo().Query().
-        Filter(
-            where.Product.StockLevel.LessThan(10),
-            where.Product.StockLevel.GreaterThan(0),
+        Where(
+            filter.Product.StockLevel.LessThan(10),
+            filter.Product.StockLevel.GreaterThan(0),
         ).
         All(ctx)
 }

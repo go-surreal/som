@@ -9,12 +9,10 @@ Create `model/user.go`:
 ```go
 package model
 
-import (
-    "github.com/go-surreal/som"
-)
+import "yourproject/gen/som"
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps  // Adds CreatedAt and UpdatedAt
 
     Name     string
@@ -27,7 +25,7 @@ type User struct {
 ## Generate Code
 
 ```bash
-go run github.com/go-surreal/som/cmd/som@latest gen ./model ./gen/som
+go run github.com/go-surreal/som@latest -i ./model
 ```
 
 ## Application Code
@@ -44,7 +42,7 @@ import (
 
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
     "yourproject/model"
 )
 
@@ -79,7 +77,7 @@ func main() {
 
     // READ
     // Note: Read returns (record, exists, error)
-    retrieved, exists, err := client.UserRepo().Read(ctx, user.ID())
+    retrieved, exists, err := client.UserRepo().Read(ctx, string(user.ID()))
     if err != nil {
         log.Fatal(err)
     }
@@ -99,7 +97,7 @@ func main() {
 
     // QUERY
     activeUsers, err := client.UserRepo().Query().
-        Filter(where.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.IsTrue()).
         Order(by.User.Name.Asc()).
         All(ctx)
     if err != nil {
@@ -120,7 +118,8 @@ func main() {
 
 1. Start SurrealDB:
    ```bash
-   surreal start --user root --pass root memory
+   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.2.0 \
+       start --user root --pass root
    ```
 
 2. Run the application:
@@ -131,7 +130,7 @@ func main() {
 ## Expected Output
 
 ```
-Created user with ID: user:01HQ...
+Created user with ID: 01HQ...
 Retrieved user: Alice
 Updated user
 Found 1 active users
@@ -165,9 +164,9 @@ Deleted user
 ### Query
 
 - Use the fluent builder pattern
-- Filter with type-safe conditions from `where` package
+- Filter with type-safe conditions from `filter` package
 - Order with helpers from `by` package
-- Execute with `All()`, `First()`, `One()`, `Count()`, or `Exists()`
+- Execute with `All()`, `First()`, `Count()`, or `Exists()`
 
 ## Error Handling Pattern
 

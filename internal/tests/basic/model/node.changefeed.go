@@ -1,9 +1,9 @@
 package model
 
-import "github.com/go-surreal/som/tests/basic/gen/som"
+import "som.test/gen/som"
 
 type ChangefeedModel struct {
-	som.Node `som:"changefeed=1d"`
+	som.Node[som.ULID] `som:"changefeed=1d"`
 	som.Timestamps
 
 	Name string

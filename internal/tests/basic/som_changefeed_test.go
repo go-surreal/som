@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
@@ -24,7 +24,7 @@ func TestChangefeedBasic(t *testing.T) {
 
 	err := repo.Create(ctx, newModel)
 	assert.NilError(t, err)
-	assert.Check(t, newModel.ID() != nil)
+	assert.Check(t, newModel.ID() != "")
 
 	// Use versionstamp 0 to get all changes from the beginning
 	entries, err := repo.Changes().SinceVersionstamp(0).Show(ctx)
@@ -114,7 +114,7 @@ func TestChangefeedDelete(t *testing.T) {
 				foundCreate = true
 			}
 			// Deleted records might appear as updates with matching ID
-			if updated.ID() != nil && updated.ID().String() == recordID.String() {
+			if updated.ID() != "" && updated.ID() == recordID {
 				foundDelete = true
 			}
 		}

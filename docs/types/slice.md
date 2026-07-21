@@ -56,159 +56,159 @@ DEFINE FIELD data ON document TYPE option<bytes>;
 
 ```go
 // Check if empty
-where.Post.Tags.IsEmpty()
+filter.Post.Tags.IsEmpty()
 
 // Check if not empty
-where.Post.Tags.NotEmpty()
+filter.Post.Tags.NotEmpty()
 
 // Explicit empty check
-where.Post.Tags.Empty(true)   // Is empty
-where.Post.Tags.Empty(false)  // Not empty
+filter.Post.Tags.Empty(true)   // Is empty
+filter.Post.Tags.Empty(false)  // Not empty
 ```
 
 ### Single Element Membership
 
 ```go
 // Contains single element
-where.Post.Tags.Contains("golang")
+filter.Post.Tags.Contains("golang")
 
 // Does not contain element
-where.Post.Tags.ContainsNot("deprecated")
+filter.Post.Tags.ContainsNot("deprecated")
 ```
 
 ### Multiple Element Membership
 
 ```go
 // Contains ALL elements
-where.Post.Tags.ContainsAll("golang", "database", "orm")
+filter.Post.Tags.ContainsAll("golang", "database", "orm")
 
 // Contains ANY element
-where.Post.Tags.ContainsAny("golang", "rust", "python")
+filter.Post.Tags.ContainsAny("golang", "rust", "python")
 
 // Contains NONE of elements
-where.Post.Tags.ContainsNone("deprecated", "obsolete")
+filter.Post.Tags.ContainsNone("deprecated", "obsolete")
 ```
 
 ### Equality Checks
 
 ```go
 // Any element equals value
-where.Post.Scores.AnyEqual(100)
+filter.Post.Scores.AnyEqual(100)
 
 // All elements equal value
-where.Post.Scores.AllEqual(0)
+filter.Post.Scores.AllEqual(0)
 
 // Any element fuzzy matches (strings)
-where.Post.Tags.AnyFuzzyMatch("go*")
+filter.Post.Tags.AnyFuzzyMatch("go*")
 
 // All elements fuzzy match
-where.Post.Tags.AllFuzzyMatch("*lang")
+filter.Post.Tags.AllFuzzyMatch("*lang")
 ```
 
 ### Set Membership (Is-In)
 
 ```go
 // Any element is in set
-where.Post.Tags.AnyIn("golang", "rust", "python")
+filter.Post.Tags.AnyIn("golang", "rust", "python")
 
 // All elements are in set
-where.Post.Tags.AllIn("golang", "rust", "python")
+filter.Post.Tags.AllIn("golang", "rust", "python")
 
 // No elements are in set
-where.Post.Tags.NoneIn("deprecated", "obsolete")
+filter.Post.Tags.NoneIn("deprecated", "obsolete")
 ```
 
 ### Element Access
 
 ```go
 // First element
-where.Post.Tags.First().Equal("primary")
+filter.Post.Tags.First().Equal("primary")
 
 // Last element
-where.Post.Tags.Last().Equal("latest")
+filter.Post.Tags.Last().Equal("latest")
 
 // Element at index
-where.Post.Tags.At(2).Equal("third")
+filter.Post.Tags.At(2).Equal("third")
 ```
 
 ### Length Operations
 
 ```go
 // Get length
-where.Post.Tags.Len().GreaterThan(0)
+filter.Post.Tags.Len().GreaterThan(0)
 
 // Minimum length
-where.Post.Tags.Len().GreaterThanEqual(3)
+filter.Post.Tags.Len().GreaterThanEqual(3)
 
 // Maximum length
-where.Post.Tags.Len().LessThanEqual(10)
+filter.Post.Tags.Len().LessThanEqual(10)
 ```
 
 ### Array Transformations
 
 ```go
 // Distinct elements
-where.Post.Tags.Distinct().Len().Equal(5)
+filter.Post.Tags.Distinct().Len().Equal(5)
 
 // Reverse order
-where.Post.Tags.Reverse().First().Equal("last-tag")
+filter.Post.Tags.Reverse().First().Equal("last-tag")
 
 // Sort ascending
-where.Post.Scores.SortAsc().First().Equal(minScore)
+filter.Post.Scores.SortAsc().First().Equal(minScore)
 
 // Sort descending
-where.Post.Scores.SortDesc().First().Equal(maxScore)
+filter.Post.Scores.SortDesc().First().Equal(maxScore)
 
 // Slice (start, length)
-where.Post.Tags.Slice(0, 3).Contains("featured")
+filter.Post.Tags.Slice(0, 3).Contains("featured")
 ```
 
 ### Set Operations
 
 ```go
 // Concatenate arrays
-where.Post.Tags.Concat(otherTags).Len().GreaterThan(10)
+filter.Post.Tags.Concat(otherTags).Len().GreaterThan(10)
 
 // Intersection
-where.Post.Tags.Intersect(requiredTags).NotEmpty()
+filter.Post.Tags.Intersect(requiredTags).NotEmpty()
 
 // Union
-where.Post.Tags.Union(additionalTags).Contains("merged")
+filter.Post.Tags.Union(additionalTags).Contains("merged")
 
 // Complement (elements in first but not second)
-where.Post.Tags.Complement(excludeTags).NotEmpty()
+filter.Post.Tags.Complement(excludeTags).NotEmpty()
 
 // Difference (symmetric difference)
-where.Post.Tags.Diff(otherTags).IsEmpty()
+filter.Post.Tags.Diff(otherTags).IsEmpty()
 ```
 
 ### Search Operations
 
 ```go
 // Find index of element
-where.Post.Tags.FindIndex("featured").Equal(0)
+filter.Post.Tags.FindIndex("featured").Equal(0)
 
 // Filter to matching indices
-where.Post.Tags.FilterIndex("go*").NotEmpty()
+filter.Post.Tags.FilterIndex("go*").NotEmpty()
 ```
 
 ### Aggregation Operations
 
 ```go
 // Check if all elements are truthy
-where.Post.Tags.All().True()
+filter.Post.Tags.All().True()
 
 // Check if any element is truthy
-where.Post.Tags.Any().True()
+filter.Post.Tags.Any().True()
 
 // Get minimum value (numeric)
-where.Post.Scores.Min().GreaterThan(0)
+filter.Post.Scores.Min().GreaterThan(0)
 
 // Get maximum value (numeric)
-where.Post.Scores.Max().LessThan(100)
+filter.Post.Scores.Max().LessThan(100)
 
 // Join elements (strings)
-where.Post.Tags.Join(",").Contains("golang")
+filter.Post.Tags.Join(",").Contains("golang")
 ```
 
 ### Boolean Array Operations
@@ -217,36 +217,36 @@ For boolean arrays:
 
 ```go
 // Boolean AND of all elements
-where.Post.Flags.BooleanAnd().True()
+filter.Post.Flags.BooleanAnd().True()
 
 // Boolean OR of all elements
-where.Post.Flags.BooleanOr().True()
+filter.Post.Flags.BooleanOr().True()
 
 // Boolean XOR of all elements
-where.Post.Flags.BooleanXor().True()
+filter.Post.Flags.BooleanXor().True()
 
 // Boolean NOT of all elements
-where.Post.Flags.BooleanNot()
+filter.Post.Flags.BooleanNot()
 ```
 
 ### Logical Array Operations
 
 ```go
 // Logical AND
-where.Post.Values.LogicalAnd()
+filter.Post.Values.LogicalAnd()
 
 // Logical OR
-where.Post.Values.LogicalOr()
+filter.Post.Values.LogicalOr()
 
 // Logical XOR
-where.Post.Values.LogicalXor()
+filter.Post.Values.LogicalXor()
 ```
 
 ### Pattern Matching
 
 ```go
 // Elements matching pattern
-where.Post.Tags.Matches("go*").NotEmpty()
+filter.Post.Tags.Matches("go*").NotEmpty()
 ```
 
 ## Sorting
@@ -270,16 +270,16 @@ Slice filters support powerful chaining:
 
 ```go
 // Distinct tags, count > 3
-where.Post.Tags.Distinct().Len().GreaterThan(3)
+filter.Post.Tags.Distinct().Len().GreaterThan(3)
 
 // First tag starts with prefix
-where.Post.Tags.First().StartsWith("featured")
+filter.Post.Tags.First().StartsWith("featured")
 
 // Sorted scores, max value
-where.Post.Scores.SortDesc().First().GreaterThan(90)
+filter.Post.Scores.SortDesc().First().GreaterThan(90)
 
 // Top 3 tags contain value
-where.Post.Tags.Slice(0, 3).Contains("important")
+filter.Post.Tags.Slice(0, 3).Contains("important")
 ```
 
 ## Common Patterns
@@ -289,7 +289,7 @@ where.Post.Tags.Slice(0, 3).Contains("important")
 ```go
 // Posts with at least one tag
 tagged, _ := client.PostRepo().Query().
-    Filter(where.Post.Tags.NotEmpty()).
+    Where(filter.Post.Tags.NotEmpty()).
     All(ctx)
 ```
 
@@ -298,7 +298,7 @@ tagged, _ := client.PostRepo().Query().
 ```go
 // Posts with specific tag
 golangPosts, _ := client.PostRepo().Query().
-    Filter(where.Post.Tags.Contains("golang")).
+    Where(filter.Post.Tags.Contains("golang")).
     All(ctx)
 ```
 
@@ -307,8 +307,8 @@ golangPosts, _ := client.PostRepo().Query().
 ```go
 // Posts with all required tags
 tutorials, _ := client.PostRepo().Query().
-    Filter(
-        where.Post.Tags.ContainsAll("golang", "tutorial", "beginner"),
+    Where(
+        filter.Post.Tags.ContainsAll("golang", "tutorial", "beginner"),
     ).
     All(ctx)
 ```
@@ -318,7 +318,7 @@ tutorials, _ := client.PostRepo().Query().
 ```go
 // Posts with high scores
 highScoring, _ := client.PostRepo().Query().
-    Filter(where.Post.Scores.Max().GreaterThan(90)).
+    Where(filter.Post.Scores.Max().GreaterThan(90)).
     All(ctx)
 ```
 
@@ -327,8 +327,8 @@ highScoring, _ := client.PostRepo().Query().
 ```go
 // Posts where all tags are unique
 uniqueTags, _ := client.PostRepo().Query().
-    Filter(
-        where.Post.Tags.Len().Equal(where.Post.Tags.Distinct().Len()),
+    Where(
+        filter.Post.Tags.Len().Equal(filter.Post.Tags.Distinct().Len()),
     ).
     All(ctx)
 ```
@@ -342,7 +342,7 @@ import (
     "context"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -359,29 +359,29 @@ func main() {
 
     // Find posts with any tags
     tagged, _ := client.PostRepo().Query().
-        Filter(where.Post.Tags.NotEmpty()).
+        Where(filter.Post.Tags.NotEmpty()).
         All(ctx)
 
     // Find golang posts
     goPosts, _ := client.PostRepo().Query().
-        Filter(where.Post.Tags.Contains("golang")).
+        Where(filter.Post.Tags.Contains("golang")).
         All(ctx)
 
     // Find tutorials for beginners
     beginnerTutorials, _ := client.PostRepo().Query().
-        Filter(
-            where.Post.Tags.ContainsAll("tutorial", "beginner"),
+        Where(
+            filter.Post.Tags.ContainsAll("tutorial", "beginner"),
         ).
         All(ctx)
 
     // Find posts with good ratings
     goodPosts, _ := client.PostRepo().Query().
-        Filter(where.Post.Scores.Min().GreaterThanEqual(80)).
+        Where(filter.Post.Scores.Min().GreaterThanEqual(80)).
         All(ctx)
 
     // Find posts with many tags
     manyTags, _ := client.PostRepo().Query().
-        Filter(where.Post.Tags.Len().GreaterThan(5)).
+        Where(filter.Post.Tags.Len().GreaterThan(5)).
         All(ctx)
 
     // Sort by number of tags
@@ -391,8 +391,8 @@ func main() {
 
     // Posts without deprecated tags
     notDeprecated, _ := client.PostRepo().Query().
-        Filter(
-            where.Post.Tags.ContainsNone("deprecated", "obsolete"),
+        Where(
+            filter.Post.Tags.ContainsNone("deprecated", "obsolete"),
         ).
         All(ctx)
 }

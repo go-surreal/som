@@ -52,40 +52,40 @@ DEFINE FIELD grace_period ON task TYPE option<duration>;
 
 ```go
 // Exact match
-where.Task.Duration.Equal(30 * time.Minute)
+filter.Task.Duration.Equal(30 * time.Minute)
 
 // Not equal
-where.Task.Timeout.NotEqual(0)
+filter.Task.Timeout.NotEqual(0)
 ```
 
 ### Set Membership
 
 ```go
 // Value in set
-where.Task.Duration.In(
+filter.Task.Duration.In(
     15 * time.Minute,
     30 * time.Minute,
     1 * time.Hour,
 )
 
 // Value not in set
-where.Task.Duration.NotIn(0, -1)
+filter.Task.Duration.NotIn(0, -1)
 ```
 
 ### Comparison Operations
 
 ```go
 // Less than
-where.Task.Duration.LessThan(1 * time.Hour)
+filter.Task.Duration.LessThan(1 * time.Hour)
 
 // Less than or equal
-where.Task.Duration.LessThanEqual(30 * time.Minute)
+filter.Task.Duration.LessThanEqual(30 * time.Minute)
 
 // Greater than
-where.Task.Timeout.GreaterThan(5 * time.Second)
+filter.Task.Timeout.GreaterThan(5 * time.Second)
 
 // Greater than or equal
-where.Task.Timeout.GreaterThanEqual(1 * time.Minute)
+filter.Task.Timeout.GreaterThanEqual(1 * time.Minute)
 ```
 
 ### Component Extraction
@@ -94,51 +94,51 @@ Extract duration components as numeric filters:
 
 ```go
 // Days
-where.Task.Duration.Days().GreaterThan(0)
+filter.Task.Duration.Days().GreaterThan(0)
 
 // Hours
-where.Task.Duration.Hours().LessThan(24)
+filter.Task.Duration.Hours().LessThan(24)
 
 // Minutes
-where.Task.Duration.Mins().Equal(30)
+filter.Task.Duration.Mins().Equal(30)
 
 // Seconds
-where.Task.Duration.Secs().GreaterThan(0)
+filter.Task.Duration.Secs().GreaterThan(0)
 
 // Milliseconds
-where.Task.Duration.Millis().LessThan(1000)
+filter.Task.Duration.Millis().LessThan(1000)
 
 // Microseconds
-where.Task.Duration.Micros().GreaterThan(0)
+filter.Task.Duration.Micros().GreaterThan(0)
 
 // Nanoseconds
-where.Task.Duration.Nanos().Equal(0)
+filter.Task.Duration.Nanos().Equal(0)
 
 // Weeks
-where.Task.Duration.Weeks().Equal(1)
+filter.Task.Duration.Weeks().Equal(1)
 
 // Years (approximate, 365 days)
-where.Task.Duration.Years().LessThan(1)
+filter.Task.Duration.Years().LessThan(1)
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-where.Task.GracePeriod.IsNil()
+filter.Task.GracePeriod.IsNil()
 
 // Check if not nil
-where.Task.GracePeriod.IsNotNil()
+filter.Task.GracePeriod.IsNotNil()
 ```
 
 ### Zero Value Check
 
 ```go
 // Is zero duration
-where.Task.Duration.Zero(true)
+filter.Task.Duration.Zero(true)
 
 // Is not zero duration
-where.Task.Duration.Zero(false)
+filter.Task.Duration.Zero(false)
 ```
 
 ## Sorting
@@ -163,13 +163,13 @@ Duration filters support component extraction:
 
 ```go
 // Tasks taking more than 2 hours
-where.Task.Duration.Hours().GreaterThan(2)
+filter.Task.Duration.Hours().GreaterThan(2)
 
 // Timeouts under 100ms
-where.Task.Timeout.Millis().LessThan(100)
+filter.Task.Timeout.Millis().LessThan(100)
 
 // Tasks lasting multiple days
-where.Task.Duration.Days().GreaterThanEqual(1)
+filter.Task.Duration.Days().GreaterThanEqual(1)
 ```
 
 ## Common Patterns
@@ -179,9 +179,9 @@ where.Task.Duration.Days().GreaterThanEqual(1)
 ```go
 // Tasks between 30 minutes and 2 hours
 tasks, _ := client.TaskRepo().Query().
-    Filter(
-        where.Task.Duration.GreaterThanEqual(30 * time.Minute),
-        where.Task.Duration.LessThan(2 * time.Hour),
+    Where(
+        filter.Task.Duration.GreaterThanEqual(30 * time.Minute),
+        filter.Task.Duration.LessThan(2 * time.Hour),
     ).
     All(ctx)
 ```
@@ -191,12 +191,12 @@ tasks, _ := client.TaskRepo().Query().
 ```go
 // Quick tasks (under 5 minutes)
 quickTasks, _ := client.TaskRepo().Query().
-    Filter(where.Task.Duration.LessThan(5 * time.Minute)).
+    Where(filter.Task.Duration.LessThan(5 * time.Minute)).
     All(ctx)
 
 // Long-running tasks (over 1 hour)
 longTasks, _ := client.TaskRepo().Query().
-    Filter(where.Task.Duration.GreaterThan(1 * time.Hour)).
+    Where(filter.Task.Duration.GreaterThan(1 * time.Hour)).
     All(ctx)
 ```
 
@@ -205,9 +205,9 @@ longTasks, _ := client.TaskRepo().Query().
 ```go
 // Tasks with reasonable timeouts
 validTimeouts, _ := client.TaskRepo().Query().
-    Filter(
-        where.Task.Timeout.GreaterThan(0),
-        where.Task.Timeout.LessThanEqual(30 * time.Minute),
+    Where(
+        filter.Task.Timeout.GreaterThan(0),
+        filter.Task.Timeout.LessThanEqual(30 * time.Minute),
     ).
     All(ctx)
 ```
@@ -222,7 +222,7 @@ import (
     "time"
     "yourproject/gen/som"
     "yourproject/gen/som/by"
-    "yourproject/gen/som/where"
+    "yourproject/gen/som/filter"
 )
 
 func main() {
@@ -231,23 +231,23 @@ func main() {
 
     // Find quick tasks (under 5 minutes)
     quickTasks, _ := client.TaskRepo().Query().
-        Filter(where.Task.Duration.LessThan(5 * time.Minute)).
+        Where(filter.Task.Duration.LessThan(5 * time.Minute)).
         Order(by.Task.Duration.Asc()).
         All(ctx)
 
     // Find tasks with hour-long durations
     hourlyTasks, _ := client.TaskRepo().Query().
-        Filter(where.Task.Duration.Hours().Equal(1)).
+        Where(filter.Task.Duration.Hours().Equal(1)).
         All(ctx)
 
     // Tasks with grace period configured
     withGrace, _ := client.TaskRepo().Query().
-        Filter(where.Task.GracePeriod.IsNotNil()).
+        Where(filter.Task.GracePeriod.IsNotNil()).
         All(ctx)
 
     // Tasks with multi-day durations
     multiDay, _ := client.TaskRepo().Query().
-        Filter(where.Task.Duration.Days().GreaterThanEqual(1)).
+        Where(filter.Task.Duration.Days().GreaterThanEqual(1)).
         All(ctx)
 
     // Tasks sorted by duration
@@ -258,7 +258,7 @@ func main() {
 
     // Tasks with sub-second timeout
     fastTimeout, _ := client.TaskRepo().Query().
-        Filter(where.Task.Timeout.Millis().LessThan(1000)).
+        Where(filter.Task.Timeout.Millis().LessThan(1000)).
         All(ctx)
 }
 ```

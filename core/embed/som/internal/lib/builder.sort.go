@@ -37,11 +37,7 @@ func (b *SortBuilder) render() string {
 		return searchScorePrefix + strings.Join(refStrs, "_") + " " + string(b.Order)
 	}
 
-	// Due to a bug in SurrealDB when using ORDER BY with indexed fields,
-	// we need to specifically SELECT all fields used for sorting with a
-	// special alias to avoid issues for now.
-	// see: https://github.com/surrealdb/surrealdb/issues/5588
-	out := sortFieldPrefix + b.Field + " "
+	out := b.Field + " "
 
 	if b.IsCollate {
 		out += "COLLATE "

@@ -36,6 +36,6 @@ func (b *baseBuilder) path() string {
 	return b.pkgName
 }
 
-func (b *baseBuilder) subPkg(pkg string) string {
-	return path.Join(b.basePkg, pkg)
+func (b *baseBuilder) relativePkgPath(pkg ...string) string {
+	return path.Join(append([]string{b.basePkg}, pkg...)...)
 }

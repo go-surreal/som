@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
+	"som.test/gen/som/internal/lib"
 )
 
 // ChangesBuilder builds a SHOW CHANGES query for tables with changefeed enabled.
@@ -60,8 +62,8 @@ func (b ChangesBuilder[M, C]) Show(ctx context.Context) ([]ChangeEntry[*M], erro
 		return nil, fmt.Errorf("failed to query changes: %w", err)
 	}
 
-	var rawResults []queryResult[rawChangeEntry]
-	if err := b.db.Unmarshal(res, &rawResults); err != nil {
+	var rawResults []internal.QueryResult[rawChangeEntry]
+	if err := cbor.Unmarshal(res, &rawResults); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal changes: %w", err)
 	}
 
@@ -82,19 +84,19 @@ func (b ChangesBuilder[M, C]) Show(ctx context.Context) ([]ChangeEntry[*M], erro
 				continue
 			case change.Update != nil:
 				var conv *C
-				if err := b.db.Unmarshal(change.Update, &conv); err != nil {
+				if err := cbor.Unmarshal(change.Update, &conv); err != nil {
 					return nil, fmt.Errorf("failed to unmarshal update change: %w", err)
 				}
 				entry.Updates = append(entry.Updates, b.convTo(conv))
 			case change.Create != nil:
 				var conv *C
-				if err := b.db.Unmarshal(change.Create, &conv); err != nil {
+				if err := cbor.Unmarshal(change.Create, &conv); err != nil {
 					return nil, fmt.Errorf("failed to unmarshal create change: %w", err)
 				}
 				entry.Creates = append(entry.Creates, b.convTo(conv))
 			case change.Delete != nil:
 				var conv *C
-				if err := b.db.Unmarshal(change.Delete, &conv); err != nil {
+				if err := cbor.Unmarshal(change.Delete, &conv); err != nil {
 					return nil, fmt.Errorf("failed to unmarshal delete change: %w", err)
 				}
 				entry.Deletes = append(entry.Deletes, b.convTo(conv))

@@ -46,6 +46,9 @@ func (f *String) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
 	}
@@ -77,7 +80,7 @@ func (f *String) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 		return jen.Id(wrapperName).Types(def.TypeModel).Values(
 			jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel).
-				Call(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase()))),
+				Call(ctx.filterKeyCode(f.NameDatabase())),
 		), jen.Empty()
 	}
 
@@ -87,7 +90,7 @@ func (f *String) filterInit(ctx Context) (jen.Code, jen.Code) {
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
-		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 // filterExtra generates the wrapper type and Matches() method for search-indexed strings.
@@ -123,6 +126,20 @@ func (f *String) filterExtra(ctx Context) jen.Code {
 		jen.Line(),
 		jen.Func().
 			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("MatchesAny").
+			Params(jen.Id("terms").String()).
+			Qual(ctx.pkgLib(), "Search").Types(def.TypeModel).
+			Block(
+				jen.Return(
+					jen.Qual(ctx.pkgLib(), "NewSearchOr").Types(def.TypeModel).Call(
+						jen.Id("f").Dot(embeddedType).Dot("Base").Dot("Key"),
+						jen.Id("terms"),
+					),
+				),
+			),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
 			Id("key").
 			Params().
 			Qual(ctx.pkgLib(), "Key").Types(def.TypeModel).
@@ -138,7 +155,16 @@ func (f *String) sortDefine(ctx Context) jen.Code {
 
 func (f *String) sortInit(ctx Context) jen.Code {
 	return jen.Qual(ctx.pkgLib(), "NewStringSort").Types(def.TypeModel).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+		Params(ctx.sortKeyCode(f.NameDatabase()))
+}
+
+func (f *String) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.String())
+}
+
+func (f *String) fieldInit(ctx Context) jen.Code {
+	return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.String()).
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
 func (f *String) cborMarshal(_ Context) jen.Code {

@@ -5,7 +5,7 @@ package lib
 import (
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som/internal/types"
 )
 
 type Time[M any] struct {
@@ -38,6 +38,10 @@ func (t *Time[M]) After(val time.Time) Filter[M] {
 
 func (t *Time[M]) AfterOrEqual(val time.Time) Filter[M] {
 	return t.comp.GreaterThanEqual(val)
+}
+
+func (t *Time[M]) Between(from, to time.Time) *BetweenFilter[M, time.Time] {
+	return t.comp.Between(from, to)
 }
 
 func (t *Time[M]) Add(dur time.Duration) *Time[M] {
@@ -159,7 +163,7 @@ func (t *Time[M]) Year() *Numeric[M, int] {
 }
 
 func (t *Time[M]) IsLeapYear() *Bool[M] {
-	return NewBool[M](t.fn("time::is::leap_year"))
+	return NewBool[M](t.fn("time::is_leap_year"))
 }
 
 type TimePtr[R any] struct {

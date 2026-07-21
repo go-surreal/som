@@ -2,7 +2,7 @@
 
 package query
 
-import "github.com/fxamacker/cbor/v2"
+import "som.test/gen/som/internal/cbor"
 
 // ChangeEntry represents a batch of changes at a specific versionstamp.
 type ChangeEntry[M any] struct {

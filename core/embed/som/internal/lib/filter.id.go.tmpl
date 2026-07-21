@@ -1,0 +1,41 @@
+{{- /* gotype: github.com/go-surreal/som/core/embed.Template */ -}}
+//go:build embed
+
+package lib
+
+import (
+	"github.com/surrealdb/surrealdb.go/pkg/models"
+)
+
+type ID[M any] struct {
+	key  Key[M]
+	node string
+}
+
+func NewID[M any](key Key[M], node string) *ID[M] {
+	return &ID[M]{key: key, node: node}
+}
+
+func (b *ID[M]) Equal(val string) Filter[M] {
+	return b.key.op(OpEqual, models.NewRecordID(b.node, val))
+}
+
+func (b *ID[M]) NotEqual(val string) Filter[M] {
+	return b.key.op(OpNotEqual, models.NewRecordID(b.node, val))
+}
+
+func (b *ID[M]) In(vals []string) Filter[M] {
+	ids := make([]models.RecordID, len(vals))
+	for i, v := range vals {
+		ids[i] = models.NewRecordID(b.node, v)
+	}
+	return b.key.op(OpIn, ids)
+}
+
+func (b *ID[M]) NotIn(vals []string) Filter[M] {
+	ids := make([]models.RecordID, len(vals))
+	for i, v := range vals {
+		ids[i] = models.NewRecordID(b.node, v)
+	}
+	return b.key.op(OpNotIn, ids)
+}

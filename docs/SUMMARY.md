@@ -24,6 +24,7 @@
   * [Structs](models/03_structs.md)
   * [Enums](models/04_enums.md)
   * [Optimistic Locking](models/05_optimistic_locking.md)
+  * [Soft Delete](models/06_soft_delete.md)
 
 ## Data Types
 
@@ -47,6 +48,8 @@
   * [Ordering & Pagination](querying/03_ordering_pagination.md)
   * [Live Queries](querying/04_live_queries.md)
   * [Full-Text Search](querying/05_fulltext_search.md)
+  * [Raw Queries](querying/06_raw_queries.md)
+  * [Transactions](querying/07_transactions.md)
 
 ## Relationships
 
@@ -60,6 +63,7 @@
   * [Client](api_reference/01_client.md)
   * [Repository](api_reference/02_repository.md)
   * [Query Builder](api_reference/03_query_builder.md)
+  * [Caching](api_reference/04_caching.md)
 
 ## Examples
 
