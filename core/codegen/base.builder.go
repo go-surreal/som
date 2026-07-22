@@ -139,6 +139,17 @@ func (b *build) buildInterfaceFile() error {
 		}
 	})
 
+	// ttlTables lists the database tables that have a TTL configured. The client
+	// runs a background purge over these tables (see runTTLPurge).
+	f.Line().Comment("ttlTables lists tables with a configured TTL, purged in the background.")
+	f.Var().Id("ttlTables").Op("=").Index().String().ValuesFunc(func(g *jen.Group) {
+		for _, node := range b.input.nodes {
+			if node.Source.TTL {
+				g.Lit(node.NameDatabase())
+			}
+		}
+	})
+
 	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, filenameInterfaces))); err != nil {
 		return err
 	}

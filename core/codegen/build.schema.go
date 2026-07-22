@@ -40,6 +40,13 @@ func (b *build) buildSchemaFile() error {
 		// Build indexes for this table (handles both simple and composite)
 		indexStatements = append(indexStatements, b.buildTableIndexStatements(node.NameDatabase(), node.GetFields(), node.Source.SoftDelete)...)
 
+		// Index expires_at to keep TTL purge deletes efficient.
+		if node.Source.TTL {
+			indexName := fmt.Sprintf(def.IndexPrefix+"%s_expires_at", node.NameDatabase())
+			indexStatements = append(indexStatements,
+				fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS expires_at CONCURRENTLY;", indexName, node.NameDatabase()))
+		}
+
 		statements = append(statements, "")
 	}
 

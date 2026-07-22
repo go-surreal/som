@@ -91,6 +91,11 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 					Qual(pkgFilter, node.Name).Dot("DeletedAt").Dot("Nil").Call(jen.Lit(true))
 			}
 
+			if node.Source.TTL {
+				g.Comment("Automatically exclude expired records (TTL)")
+				g.Id("q").Dot("ExpiryField").Op("=").Lit("expires_at")
+			}
+
 			builderDict := jen.Dict{
 				jen.Id("db"):    jen.Id("db"),
 				jen.Id("query"): jen.Id("q"),

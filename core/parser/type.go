@@ -9,6 +9,8 @@ type Node struct {
 	Timestamps     bool
 	OptimisticLock bool
 	SoftDelete     bool
+	TTL            bool
+	TTLExpiry      string
 }
 
 type Edge struct {

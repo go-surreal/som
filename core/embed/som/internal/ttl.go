@@ -1,0 +1,21 @@
+//go:build embed
+
+package internal
+
+import "time"
+
+// TTL provides time-to-live functionality when embedded in a model.
+// The duration is configured via the `som:"ttl=<duration>"` struct tag on the
+// embed. The ExpiresAt field is set automatically by the database on creation.
+type TTL struct {
+	expiresAt time.Time
+}
+
+// ExpiresAt returns the time at which this record expires.
+func (t TTL) ExpiresAt() time.Time {
+	return t.expiresAt
+}
+
+func SetExpiresAt(t *TTL, at time.Time) {
+	t.expiresAt = at
+}

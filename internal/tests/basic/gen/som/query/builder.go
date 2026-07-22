@@ -68,6 +68,14 @@ func (b builder[M]) WithDeleted() Builder[M] {
 	return Builder[M]{b}
 }
 
+// WithExpired allows querying records that have passed their TTL expiry.
+// By default, expired records are automatically filtered out.
+// This method only has an effect on models with a TTL enabled.
+func (b builder[M]) WithExpired() Builder[M] {
+	b.query.IncludeExpired = true
+	return Builder[M]{b}
+}
+
 // Range restricts the query to a range of record IDs.
 // This uses SurrealDB's native range syntax (e.g. table:start..end)
 // which avoids table scans and is much more performant than WHERE filters.

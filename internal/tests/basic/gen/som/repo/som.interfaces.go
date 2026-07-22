@@ -12,8 +12,10 @@ type Client interface {
 	TeamMemberRepo() TeamMemberRepo
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
+	SessionRepo() SessionRepo
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
+	EphemeralRepo() EphemeralRepo
 	AllTypesRepo() AllTypesRepo
 	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
@@ -27,7 +29,12 @@ type ClientImpl struct {
 	teamMemberRepo      *teamMember
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
+	sessionRepo         *session
 	personObjRepo       *personObj
 	locationRepo        *location
+	ephemeralRepo       *ephemeral
 	allTypesRepo        *allTypes
 }
+
+// ttlTables lists tables with a configured TTL, purged in the background.
+var ttlTables = []string{"session", "ephemeral"}

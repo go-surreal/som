@@ -232,6 +232,8 @@ type OptimisticLock = internal.OptimisticLock
 
 type SoftDelete = internal.SoftDelete
 
+type TTL = internal.TTL
+
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
 
