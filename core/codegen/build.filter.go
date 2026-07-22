@@ -32,6 +32,12 @@ func (b *filterBuilder) build() error {
 		}
 	}
 
+	for _, view := range b.views {
+		if err := b.buildFile(view); err != nil {
+			return err
+		}
+	}
+
 	for _, object := range b.objects {
 		if err := b.buildFile(object); err != nil {
 			return err
@@ -69,6 +75,13 @@ func (b *filterBuilder) buildOther(file *jen.File, elem field.Element) {
 	}
 
 	if _, ok := elem.(*field.NodeTable); ok {
+		file.Line()
+		file.Var().Id(elem.NameGo()).Op("=").
+			Id("new" + elem.NameGo()).Types(b.SourceQual(elem.NameGo())).
+			Call(jen.Qual(pkgLib, "NewKey").Types(b.SourceQual(elem.NameGo())).Call())
+	}
+
+	if _, ok := elem.(*field.ViewTable); ok {
 		file.Line()
 		file.Var().Id(elem.NameGo()).Op("=").
 			Id("new" + elem.NameGo()).Types(b.SourceQual(elem.NameGo())).

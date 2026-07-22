@@ -205,6 +205,29 @@ func (e Edge) ID() string {
 	return e.id
 }
 
+// View describes a read-only, pre-computed table view backed by a
+// SurrealDB DEFINE TABLE ... AS SELECT statement. View rows are computed
+// from a source table and cannot be created, updated or deleted through
+// the generated repository.
+//
+// Caution: values projected from linked tables (via record links or graph
+// traversal, e.g. ->product.name) are frozen at the time the source row is
+// written. They do NOT refresh when the linked record itself changes, so a
+// view may hold stale linked data.
+type View struct {
+	id string
+}
+
+func NewView(id string) View {
+	return View{id: id}
+}
+
+func (v View) ID() string {
+	return v.id
+}
+
+func (View) isView() {}
+
 type node interface {
 	isNode()
 }

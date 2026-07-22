@@ -26,6 +26,15 @@ type Struct struct {
 	Fields []Field
 }
 
+// View is a read-only, pre-computed table view. It has a struct shape
+// (its projected columns) like a Node, but no ID type, features or
+// write operations. The SELECT that populates it is supplied separately
+// via a //go:build som definition and linked back by database name.
+type View struct {
+	Name   string
+	Fields []Field
+}
+
 type Enum struct {
 	Name string
 }

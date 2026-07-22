@@ -15,6 +15,7 @@ type input struct {
 	sourcePkgPath string
 	nodes         []*field.NodeTable
 	edges         []*field.EdgeTable
+	views         []*field.ViewTable
 	objects       []*field.DatabaseObject
 	define        *parser.DefineOutput
 }
@@ -37,6 +38,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 
 	in.nodes = def.Nodes
 	in.edges = def.Edges
+	in.views = def.Views
 	in.objects = def.Objects
 	in.define = source.Define
 
@@ -45,6 +47,15 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 
 func (in *input) SourceQual(name string) jen.Code {
 	return jen.Qual(in.sourcePkgPath, name)
+}
+
+func (in *input) findEdgeByName(name string) *field.EdgeTable {
+	for _, edge := range in.edges {
+		if edge.NameGo() == name {
+			return edge
+		}
+	}
+	return nil
 }
 
 func (in *input) findNodeByName(name string) *field.NodeTable {
