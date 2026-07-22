@@ -18,7 +18,7 @@ func (c *PersonObj) MarshalCBOR() ([]byte, error) {
 	}
 	data := make(map[string]any, 1)
 
-	// Embedded som.Node/Edge/View ID field
+	// Embedded som.Node/Edge ID field
 
 	data["email"] = c.Email
 

@@ -16,12 +16,7 @@ func (c *AllTypesSummary) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 4)
-
-	// Embedded som.Node/Edge/View ID field
-	if c.ID() != "" {
-		data["id"] = models.NewRecordID("all_types_summary", c.ID())
-	}
+	data := make(map[string]any, 3)
 
 	data["category"] = c.Category
 	data["total"] = c.Total

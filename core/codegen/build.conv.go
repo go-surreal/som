@@ -419,9 +419,11 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Nil())),
 			)
 
-			// Count fields for pre-sized map allocation
+			// Count fields for pre-sized map allocation.
+			// Views are read-only and never marshal an id (their id may be a
+			// composite that cannot be re-wrapped), so only nodes/edges count it.
 			fieldCount := 0
-			if isNode || isEdge || isView {
+			if isNode || isEdge {
 				if node, ok := elem.(*field.NodeTable); !ok || !node.HasComplexID() {
 					fieldCount++
 				}
@@ -434,11 +436,12 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 
 			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Any(), jen.Lit(fieldCount))
 
-			// Marshal ID field for nodes, edges and views
-			if isNode || isEdge || isView {
+			// Marshal ID field for nodes and edges. Views are read-only and
+			// their id (possibly a composite GROUP BY key) is not marshaled.
+			if isNode || isEdge {
 				tableName := elem.NameDatabase()
 				g.Line()
-				g.Comment("Embedded som.Node/Edge/View ID field")
+				g.Comment("Embedded som.Node/Edge ID field")
 
 				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
 					// Complex IDs: no ID marshaling needed, sub-fields are populated from the record ID.

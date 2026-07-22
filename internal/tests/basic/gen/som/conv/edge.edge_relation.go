@@ -20,7 +20,7 @@ func (c *EdgeRelation) MarshalCBOR() ([]byte, error) {
 	}
 	data := make(map[string]any, 4)
 
-	// Embedded som.Node/Edge/View ID field
+	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
 		data["id"] = models.NewRecordID("edge_relation", c.ID())
 	}

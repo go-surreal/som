@@ -20,7 +20,7 @@ func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 	}
 	data := make(map[string]any, 4)
 
-	// Embedded som.Node/Edge/View ID field
+	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
 		data["id"] = models.NewRecordID("special_types", som.UUID(c.ID()))
 	}

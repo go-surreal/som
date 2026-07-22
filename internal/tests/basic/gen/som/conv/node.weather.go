@@ -19,7 +19,7 @@ func (c *Weather) MarshalCBOR() ([]byte, error) {
 	}
 	data := make(map[string]any, 1)
 
-	// Embedded som.Node/Edge/View ID field
+	// Embedded som.Node/Edge ID field
 
 	data["temperature"] = c.Temperature
 
