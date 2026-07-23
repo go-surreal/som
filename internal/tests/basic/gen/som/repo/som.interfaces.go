@@ -42,5 +42,5 @@ type ClientImpl struct {
 	eventLogRepo        *eventLog
 }
 
-// ttlTables lists tables with a configured TTL, purged in the background.
-var ttlTables = []string{"session", "ephemeral"}
+// expiryTables lists tables with a configured expiry, purged in the background.
+var expiryTables = []string{"session", "ephemeral"}

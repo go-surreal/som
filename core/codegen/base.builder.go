@@ -165,12 +165,12 @@ func (b *build) buildInterfaceFile() error {
 		}
 	})
 
-	// ttlTables lists the database tables that have a TTL configured. The client
-	// runs a background purge over these tables (see runTTLPurge).
-	f.Line().Comment("ttlTables lists tables with a configured TTL, purged in the background.")
-	f.Var().Id("ttlTables").Op("=").Index().String().ValuesFunc(func(g *jen.Group) {
+	// expiryTables lists the database tables that have an expiry (TTL) configured.
+	// The client runs a background purge over these tables (see runExpiryPurge).
+	f.Line().Comment("expiryTables lists tables with a configured expiry, purged in the background.")
+	f.Var().Id("expiryTables").Op("=").Index().String().ValuesFunc(func(g *jen.Group) {
 		for _, node := range b.input.nodes {
-			if node.Source.TTL {
+			if node.Source.Expiry {
 				g.Lit(node.NameDatabase())
 			}
 		}
@@ -255,7 +255,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	//
 	// type {NodeName}Repo interface {...}
 	//
-	f.Line().Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
+	f.Line().Type().Id(node.NameGo() + "Repo").InterfaceFunc(func(g *jen.Group) {
 		g.Add(comment("Query returns a new query builder for the " + node.NameGo() + " model."))
 		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
 
@@ -475,11 +475,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 	f.Line().
 		Add(comment(`
-` + node.NameGo() + `Repo returns the repository instance for the ` + node.NameGo() + ` model.
+`+node.NameGo()+`Repo returns the repository instance for the `+node.NameGo()+` model.
 The instance is cached as a singleton on the client.
 		`)).
 		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
-		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
+		Id(node.NameGo()+"Repo").Params().Id(node.NameGo()+"Repo").
 		Block(
 			jen.Id("c").Dot("mu").Dot("Lock").Call(),
 			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
@@ -1005,16 +1005,16 @@ func (b *build) buildViewRepoFile(view *field.ViewTable) error {
 	f.PackageComment(string(embed.CodegenComment))
 
 	// <View>Repo interface { Query() ... }
-	f.Line().Type().Id(view.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
+	f.Line().Type().Id(view.NameGo() + "Repo").InterfaceFunc(func(g *jen.Group) {
 		g.Add(comment("Query returns a new read-only query builder for the " + view.NameGo() + " view."))
 		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(view.NameGo()))
 	})
 
 	// func (c *ClientImpl) <View>Repo() <View>Repo { ... }
 	f.Line().
-		Add(comment(view.NameGo() + "Repo returns the repository instance for the " + view.NameGo() + " view.\nThe instance is cached as a singleton on the client.")).
+		Add(comment(view.NameGo()+"Repo returns the repository instance for the "+view.NameGo()+" view.\nThe instance is cached as a singleton on the client.")).
 		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
-		Id(view.NameGo() + "Repo").Params().Id(view.NameGo() + "Repo").
+		Id(view.NameGo()+"Repo").Params().Id(view.NameGo()+"Repo").
 		Block(
 			jen.Id("c").Dot("mu").Dot("Lock").Call(),
 			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
@@ -1034,7 +1034,7 @@ func (b *build) buildViewRepoFile(view *field.ViewTable) error {
 
 	// func (r *<viewLower>) Query() query.Builder[model.View] { return query.New<View>(r.db) }
 	f.Line().
-		Add(comment("Query returns a new read-only query builder for the " + view.NameGo() + " view.")).
+		Add(comment("Query returns a new read-only query builder for the "+view.NameGo()+" view.")).
 		Func().Params(jen.Id("r").Op("*").Id(view.NameGoLower())).
 		Id("Query").Params().
 		Qual(pkgQuery, "Builder").Types(b.input.SourceQual(view.NameGo())).
@@ -1061,7 +1061,7 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 	f.PackageComment(string(embed.CodegenComment))
 
 	// <Sink>Repo interface { Create(...) error; Insert(...) error }
-	f.Line().Type().Id(name+"Repo").InterfaceFunc(func(g *jen.Group) {
+	f.Line().Type().Id(name + "Repo").InterfaceFunc(func(g *jen.Group) {
 		g.Add(comment("Create writes a new " + name + " record. The record is discarded\nimmediately after write (DROP table); nothing is returned."))
 		g.Id("Create").Call(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -1076,9 +1076,9 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 
 	// func (c *ClientImpl) <Sink>Repo() <Sink>Repo { ... }
 	f.Line().
-		Add(comment(name + "Repo returns the repository instance for the " + name + " sink.\nThe instance is cached as a singleton on the client.")).
+		Add(comment(name+"Repo returns the repository instance for the "+name+" sink.\nThe instance is cached as a singleton on the client.")).
 		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
-		Id(name + "Repo").Params().Id(name + "Repo").
+		Id(name+"Repo").Params().Id(name+"Repo").
 		Block(
 			jen.Id("c").Dot("mu").Dot("Lock").Call(),
 			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
@@ -1098,7 +1098,7 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 
 	// func (r *<sinkLower>) Create(ctx, m *model.Sink) error { ... }
 	f.Line().
-		Add(comment("Create writes a new " + name + " record; the row is discarded after write.")).
+		Add(comment("Create writes a new "+name+" record; the row is discarded after write.")).
 		Func().Params(jen.Id("r").Op("*").Id(lower)).
 		Id("Create").Params(
 		jen.Id("ctx").Qual("context", "Context"),
@@ -1116,7 +1116,7 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 
 	// func (r *<sinkLower>) Insert(ctx, ms []*model.Sink) error { ... }
 	f.Line().
-		Add(comment("Insert writes multiple " + name + " records; the rows are discarded after write.")).
+		Add(comment("Insert writes multiple "+name+" records; the rows are discarded after write.")).
 		Func().Params(jen.Id("r").Op("*").Id(lower)).
 		Id("Insert").Params(
 		jen.Id("ctx").Qual("context", "Context"),

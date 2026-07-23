@@ -42,7 +42,7 @@ var ephemeralRangeFn = rangeFn[model.Ephemeral](func(q *lib.Query[model.Ephemera
 // NewEphemeral creates a new query builder for Ephemeral models.
 func NewEphemeral(db Database) Builder[model.Ephemeral] {
 	q := lib.NewQuery[model.Ephemeral]("ephemeral")
-	// Automatically exclude expired records (TTL)
+	// Automatically exclude expired records
 	q.ExpiryField = "expires_at"
 	return Builder[model.Ephemeral]{builder[model.Ephemeral]{
 		db:      db,

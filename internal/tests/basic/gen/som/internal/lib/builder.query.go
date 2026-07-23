@@ -67,9 +67,9 @@ type Query[T any] struct {
 	SoftDeleteFilter Filter[T] // Injected at initialization
 	IncludeDeleted   bool      // Flag to skip soft delete filter
 
-	// TTL support: when set, expired records are excluded from main queries.
+	// Expiry (TTL) support: when set, expired records are excluded from main queries.
 	ExpiryField    string // Database field name holding the expiry timestamp
-	IncludeExpired bool   // Flag to skip the TTL filter
+	IncludeExpired bool   // Flag to skip the expiry filter
 }
 
 func (q *Query[T]) AsVar(val any) string {
@@ -210,7 +210,7 @@ func (q Query[T]) render() string {
 		}
 	}
 
-	// 1b. Inject TTL filter to exclude expired records (if enabled and not disabled)
+	// 1b. Inject expiry filter to exclude expired records (if enabled and not disabled)
 	if !q.IncludeExpired && q.ExpiryField != "" {
 		whereParts = append(whereParts, "("+q.ExpiryField+" IS NONE OR "+q.ExpiryField+" > time::now())")
 	}

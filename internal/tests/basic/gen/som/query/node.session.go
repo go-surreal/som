@@ -42,7 +42,7 @@ var sessionRangeFn = rangeFn[model.Session](func(q *lib.Query[model.Session], fr
 // NewSession creates a new query builder for Session models.
 func NewSession(db Database) Builder[model.Session] {
 	q := lib.NewQuery[model.Session]("session")
-	// Automatically exclude expired records (TTL)
+	// Automatically exclude expired records
 	q.ExpiryField = "expires_at"
 	return Builder[model.Session]{builder[model.Session]{
 		db:      db,

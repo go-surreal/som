@@ -6,8 +6,8 @@ type FeatureSet struct {
 	Timestamps     bool
 	OptimisticLock bool
 	SoftDelete     bool
-	TTL            bool
-	TTLExpiry      string
+	Expiry         bool
+	ExpiryDuration string
 }
 
 // ParseFeature checks if an anonymous field is a known feature embed.
@@ -49,12 +49,12 @@ func ParseFeature(f gotype.Type, internalPkg string, features *FeatureSet, field
 		return true, nil
 
 	case "Expiry":
-		expiry, err := parseTTLTag(f.Tag().Get("som"))
+		expiry, err := parseExpiryTag(f.Tag().Get("som"))
 		if err != nil {
 			return true, err
 		}
-		features.TTL = true
-		features.TTLExpiry = expiry
+		features.Expiry = true
+		features.ExpiryDuration = expiry
 		*fields = append(*fields,
 			&FieldTime{
 				fieldAtomic: &fieldAtomic{name: "ExpiresAt"},

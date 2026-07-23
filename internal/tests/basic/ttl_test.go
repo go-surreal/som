@@ -69,7 +69,7 @@ func TestTTLPurge(t *testing.T) {
 		Password:         sharedPassword,
 		Namespace:        namespace,
 		Database:         database,
-		TTLPurgeInterval: 250 * time.Millisecond,
+		ExpiryPurgeInterval: 250 * time.Millisecond,
 	})
 	assert.NilError(t, err)
 	defer func() {

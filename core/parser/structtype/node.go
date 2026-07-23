@@ -280,8 +280,8 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 
 	parser.ApplyFeatures(features, &node.Timestamps, &node.OptimisticLock, &node.SoftDelete, &node.Fields)
 
-	node.TTL = features.TTL
-	node.TTLExpiry = features.TTLExpiry
+	node.Expiry = features.Expiry
+	node.ExpiryDuration = features.ExpiryDuration
 
 	return node, nil
 }

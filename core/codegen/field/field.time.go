@@ -130,7 +130,7 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 		)
 	}
 
-	// TTL field: expires_at is managed by the database (VALUE clause). Only send
+	// Expiry field: expires_at is managed by the database (VALUE clause). Only send
 	// it back when already set, mirroring created_at behaviour.
 	if f.source.IsExpiresAt {
 		return jen.If(jen.Op("!").Id("c").Dot("Expiry").Dot("ExpiresAt").Call().Dot("IsZero").Call()).Block(
@@ -181,7 +181,7 @@ func (f *Time) cborUnmarshal(ctx Context) jen.Code {
 		)
 	}
 
-	// TTL field: populate expires_at via package-level setter.
+	// Expiry field: populate expires_at via package-level setter.
 	if f.source.IsExpiresAt {
 		return jen.If(
 			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),

@@ -26,21 +26,21 @@ var ReservedDBNames = map[string]bool{
 	"expires_at": true,
 }
 
-// validTTL matches SurrealDB duration literals as used in the ttl struct tag,
+// validExpiryDuration matches SurrealDB duration literals as used in the som.Expiry struct tag,
 // e.g. "24h", "7d", "1w", "500ms". Units follow SurrealDB semantics, which are
 // broader than Go's time.ParseDuration (it additionally supports d, w and y).
-var validTTL = regexp.MustCompile(`^([0-9]+(ns|us|µs|ms|s|m|h|d|w|y))+$`)
+var validExpiryDuration = regexp.MustCompile(`^([0-9]+(ns|us|µs|ms|s|m|h|d|w|y))+$`)
 
-// parseTTLTag validates the duration declared on a som.Expiry embed. The whole
+// parseExpiryTag validates the duration declared on a som.Expiry embed. The whole
 // som tag value is the duration (e.g. `som:"24h"`), since the embed already
 // conveys the expiry intent. It returns the raw duration string (embedded
 // verbatim into the generated schema) or an error.
-func parseTTLTag(tag string) (string, error) {
+func parseExpiryTag(tag string) (string, error) {
 	tag = strings.TrimSpace(tag)
 	if tag == "" {
 		return "", fmt.Errorf("som.Expiry embed requires a duration via `som:\"<duration>\"` (e.g. som:\"24h\")")
 	}
-	if !validTTL.MatchString(tag) {
+	if !validExpiryDuration.MatchString(tag) {
 		return "", fmt.Errorf("som.Expiry embed: %q is not a valid duration", tag)
 	}
 	return tag, nil
@@ -272,11 +272,11 @@ type Output struct {
 }
 
 type UsedFeatures struct {
-	UsesGoogleUUID       bool
-	UsesGofrsUUID        bool
-	UsesOrbGeo           bool
+	UsesGoogleUUID        bool
+	UsesGofrsUUID         bool
+	UsesOrbGeo            bool
 	UsesSimplefeaturesGeo bool
-	UsesGoGeomGeo        bool
+	UsesGoGeomGeo         bool
 }
 
 func collectUsedFeatures(output *Output) *UsedFeatures {

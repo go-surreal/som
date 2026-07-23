@@ -103,7 +103,7 @@ func ParseEdge(v gotype.Type, outPkg string) (*parser.Edge, error) {
 				return nil, fmt.Errorf("model %s: %w", v.Name(), err)
 			}
 			if matched {
-				if features.TTL {
+				if features.Expiry {
 					return nil, fmt.Errorf("model %s: som.Expiry is not supported on edges", v.Name())
 				}
 				continue

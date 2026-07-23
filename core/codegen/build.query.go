@@ -73,7 +73,7 @@ func (b *queryBuilder) buildViewFile(view *field.ViewTable) error {
 
 	f.Line()
 	f.Commentf("New%s creates a new query builder for %s views.", view.NameGo(), view.NameGo())
-	f.Func().Id("New"+view.NameGo()).
+	f.Func().Id("New" + view.NameGo()).
 		Params(
 			jen.Id("db").Id("Database"),
 		).
@@ -146,7 +146,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.Line()
 	f.Commentf("New%s creates a new query builder for %s models.", node.NameGo(), node.NameGo())
-	f.Func().Id("New"+node.Name).
+	f.Func().Id("New" + node.Name).
 		Params(
 			jen.Id("db").Id("Database"),
 		).
@@ -161,8 +161,8 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 					Qual(pkgFilter, node.Name).Dot("DeletedAt").Dot("Nil").Call(jen.Lit(true))
 			}
 
-			if node.Source.TTL {
-				g.Comment("Automatically exclude expired records (TTL)")
+			if node.Source.Expiry {
+				g.Comment("Automatically exclude expired records")
 				g.Id("q").Dot("ExpiryField").Op("=").Lit("expires_at")
 			}
 

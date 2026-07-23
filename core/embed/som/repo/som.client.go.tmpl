@@ -26,10 +26,10 @@ type Config struct {
 	Username  string
 	Password  string
 
-	// TTLPurgeInterval controls how often expired records are purged from
-	// tables with a configured TTL. Defaults to one minute when unset.
-	// It has no effect if no model declares a TTL.
-	TTLPurgeInterval time.Duration
+	// ExpiryPurgeInterval controls how often expired records are purged from
+	// tables with an expiry (TTL) configured. Defaults to one minute when unset.
+	// It has no effect if no model embeds som.Expiry.
+	ExpiryPurgeInterval time.Duration
 }
 
 type dbConn struct {
@@ -419,14 +419,14 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 
 	conn := &dbConn{conn: db}
 
-	if len(ttlTables) > 0 {
-		interval := conf.TTLPurgeInterval
+	if len(expiryTables) > 0 {
+		interval := conf.ExpiryPurgeInterval
 		if interval <= 0 {
 			interval = time.Minute
 		}
 		purgeCtx, cancel := context.WithCancel(context.Background())
 		conn.purgeCancel = cancel
-		go runTTLPurge(purgeCtx, conn, interval)
+		go runExpiryPurge(purgeCtx, conn, interval)
 	}
 
 	return &ClientImpl{
@@ -434,9 +434,9 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	}, nil
 }
 
-// runTTLPurge periodically deletes expired records from all TTL-enabled tables.
+// runExpiryPurge periodically deletes expired records from all expiry-enabled tables.
 // It runs until the provided context is cancelled (on client Close).
-func runTTLPurge(ctx context.Context, db *dbConn, interval time.Duration) {
+func runExpiryPurge(ctx context.Context, db *dbConn, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -445,7 +445,7 @@ func runTTLPurge(ctx context.Context, db *dbConn, interval time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			for _, table := range ttlTables {
+			for _, table := range expiryTables {
 				stmt := fmt.Sprintf("DELETE %s WHERE expires_at < time::now()", table)
 				if _, err := surrealdb.Query[any](ctx, db.conn, stmt, nil); err != nil {
 					slog.ErrorContext(ctx, "failed to purge expired records", "table", table, "error", err)
