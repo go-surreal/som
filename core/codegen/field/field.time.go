@@ -133,9 +133,9 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 	// TTL field: expires_at is managed by the database (VALUE clause). Only send
 	// it back when already set, mirroring created_at behaviour.
 	if f.source.IsExpiresAt {
-		return jen.If(jen.Op("!").Id("c").Dot("TTL").Dot("ExpiresAt").Call().Dot("IsZero").Call()).Block(
+		return jen.If(jen.Op("!").Id("c").Dot("Expiry").Dot("ExpiresAt").Call().Dot("IsZero").Call()).Block(
 			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
-				jen.Id("Time").Op(":").Id("c").Dot("TTL").Dot("ExpiresAt").Call(),
+				jen.Id("Time").Op(":").Id("c").Dot("Expiry").Dot("ExpiresAt").Call(),
 			),
 		)
 	}
@@ -188,7 +188,7 @@ func (f *Time) cborUnmarshal(ctx Context) jen.Code {
 			jen.Id("ok"),
 		).Block(
 			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
-			jen.Qual(ctx.pkgInternal(), "SetExpiresAt").Call(jen.Op("&").Id("c").Dot("TTL"), jen.Id("tm")),
+			jen.Qual(ctx.pkgInternal(), "SetExpiresAt").Call(jen.Op("&").Id("c").Dot("Expiry"), jen.Id("tm")),
 		)
 	}
 

@@ -31,8 +31,8 @@ func (c *Session) MarshalCBOR() ([]byte, error) {
 	if !c.UpdatedAt().IsZero() {
 		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
 	}
-	if !c.TTL.ExpiresAt().IsZero() {
-		data["expires_at"] = &types.DateTime{Time: c.TTL.ExpiresAt()}
+	if !c.Expiry.ExpiresAt().IsZero() {
+		data["expires_at"] = &types.DateTime{Time: c.Expiry.ExpiresAt()}
 	}
 	data["token"] = c.Token
 	data["user_id"] = c.UserID
@@ -73,7 +73,7 @@ func (c *Session) UnmarshalCBOR(data []byte) error {
 	}
 	if raw, ok := rawMap["expires_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
-		internal.SetExpiresAt(&c.TTL, tm)
+		internal.SetExpiresAt(&c.Expiry, tm)
 	}
 	if raw, ok := rawMap["token"]; ok {
 		cbor.Unmarshal(raw, &c.Token)

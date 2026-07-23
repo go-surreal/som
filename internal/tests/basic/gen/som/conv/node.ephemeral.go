@@ -25,8 +25,8 @@ func (c *Ephemeral) MarshalCBOR() ([]byte, error) {
 		data["id"] = models.NewRecordID("ephemeral", som.UUID(c.ID()))
 	}
 
-	if !c.TTL.ExpiresAt().IsZero() {
-		data["expires_at"] = &types.DateTime{Time: c.TTL.ExpiresAt()}
+	if !c.Expiry.ExpiresAt().IsZero() {
+		data["expires_at"] = &types.DateTime{Time: c.Expiry.ExpiresAt()}
 	}
 	data["label"] = c.Label
 
@@ -58,7 +58,7 @@ func (c *Ephemeral) UnmarshalCBOR(data []byte) error {
 
 	if raw, ok := rawMap["expires_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
-		internal.SetExpiresAt(&c.TTL, tm)
+		internal.SetExpiresAt(&c.Expiry, tm)
 	}
 	if raw, ok := rawMap["label"]; ok {
 		cbor.Unmarshal(raw, &c.Label)

@@ -48,7 +48,7 @@ func ParseFeature(f gotype.Type, internalPkg string, features *FeatureSet, field
 		)
 		return true, nil
 
-	case "TTL":
+	case "Expiry":
 		expiry, err := parseTTLTag(f.Tag().Get("som"))
 		if err != nil {
 			return true, err

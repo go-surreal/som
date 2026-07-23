@@ -31,18 +31,19 @@ var ReservedDBNames = map[string]bool{
 // broader than Go's time.ParseDuration (it additionally supports d, w and y).
 var validTTL = regexp.MustCompile(`^([0-9]+(ns|us|µs|ms|s|m|h|d|w|y))+$`)
 
-// parseTTLTag extracts and validates the "ttl=<duration>" value from a som
-// struct tag placed on the som.TTL embed. It returns the raw duration string
-// (embedded verbatim into the generated schema) or an error.
+// parseTTLTag validates the duration declared on a som.Expiry embed. The whole
+// som tag value is the duration (e.g. `som:"24h"`), since the embed already
+// conveys the expiry intent. It returns the raw duration string (embedded
+// verbatim into the generated schema) or an error.
 func parseTTLTag(tag string) (string, error) {
-	info, err := parseSomTag(tag)
-	if err != nil {
-		return "", err
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return "", fmt.Errorf("som.Expiry embed requires a duration via `som:\"<duration>\"` (e.g. som:\"24h\")")
 	}
-	if info == nil || info.TTL == "" {
-		return "", fmt.Errorf("som.TTL embed requires a duration via `som:\"ttl=<duration>\"` (e.g. ttl=24h)")
+	if !validTTL.MatchString(tag) {
+		return "", fmt.Errorf("som.Expiry embed: %q is not a valid duration", tag)
 	}
-	return info.TTL, nil
+	return tag, nil
 }
 
 // activeFieldRegistry is set at the start of Parse() so that
@@ -176,7 +177,6 @@ type TagInfo struct {
 	DBName  string
 	Indexes []IndexInfo
 	Search  *SearchInfo
-	TTL     string
 }
 
 // parseSomTag parses the "som" struct tag and extracts field metadata.
@@ -247,15 +247,6 @@ func parseSomTag(tag string) (*TagInfo, error) {
 				return nil, fmt.Errorf("invalid tag %q: fulltext requires a config name (fulltext=english_search)", part)
 			}
 			info.Search = &SearchInfo{ConfigName: value}
-
-		case "ttl":
-			if !hasValue || value == "" {
-				return nil, fmt.Errorf("invalid tag %q: ttl requires a duration (ttl=24h)", part)
-			}
-			if !validTTL.MatchString(value) {
-				return nil, fmt.Errorf("invalid tag %q: %q is not a valid duration", part, value)
-			}
-			info.TTL = value
 
 		default:
 			return nil, fmt.Errorf("unknown som tag %q", part)

@@ -24,8 +24,8 @@ func TestTTL(t *testing.T) {
 	err := client.SessionRepo().Create(ctx, &session)
 	assert.NilError(t, err)
 	assert.Assert(t, session.ID() != "")
-	assert.Assert(t, !session.TTL.ExpiresAt().IsZero(), "expires_at should be populated on create")
-	assert.Assert(t, session.TTL.ExpiresAt().After(time.Now()), "expires_at should be in the future")
+	assert.Assert(t, !session.Expiry.ExpiresAt().IsZero(), "expires_at should be populated on create")
+	assert.Assert(t, session.Expiry.ExpiresAt().After(time.Now()), "expires_at should be in the future")
 
 	sessions, err := client.SessionRepo().Query().All(ctx)
 	assert.NilError(t, err)
