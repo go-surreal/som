@@ -470,17 +470,105 @@ func (b builder[M]) Debug(prefix ...string) Builder[M] {
 	return Builder[M]{b}
 }
 
-// Paginate returns a page of results using cursor-based (keyset) navigation.
-// Use First/After for forward paging and Last/Before for backward paging.
-// WithTotalCount and WithAccuratePageInfo enable optional extra queries.
-func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*lib.Page[M], error) {
-	cfg := &lib.PaginateConfig{}
-	for _, opt := range opts {
-		opt(cfg)
+// Paginate starts a cursor-based (keyset) pagination request. Chain First or
+// Last with an optional After/Before cursor and the With* options, then call
+// Get. For example:
+//
+//	page, err := query.Order(by.User.CreatedAt.Desc()).
+//		Paginate().First(20).After(cursor).Get(ctx)
+func (b builder[M]) Paginate() PageBuilder[M] {
+	return PageBuilder[M]{builder: b}
+}
+
+// PageBuilder configures and executes a cursor-based pagination query.
+type PageBuilder[M any] struct {
+	builder builder[M]
+
+	first, last      int
+	after, before    string
+	totalCount       bool
+	accuratePageInfo bool
+}
+
+// First requests the first n items (forward pagination).
+func (p PageBuilder[M]) First(n int) PageBuilder[M] {
+	p.first = n
+	return p
+}
+
+// Last requests the last n items (backward pagination).
+func (p PageBuilder[M]) Last(n int) PageBuilder[M] {
+	p.last = n
+	return p
+}
+
+// After continues forward pagination after the given cursor.
+func (p PageBuilder[M]) After(cursor string) PageBuilder[M] {
+	p.after = cursor
+	return p
+}
+
+// Before continues backward pagination before the given cursor.
+func (p PageBuilder[M]) Before(cursor string) PageBuilder[M] {
+	p.before = cursor
+	return p
+}
+
+// WithTotalCount also fetches the total number of matching records, exposed as
+// Page.TotalCount. This runs an additional COUNT query.
+func (p PageBuilder[M]) WithTotalCount() PageBuilder[M] {
+	p.totalCount = true
+	return p
+}
+
+// WithAccuratePageInfo enables an extra query for exact HasPreviousPage/
+// HasNextPage on the first and last page.
+func (p PageBuilder[M]) WithAccuratePageInfo() PageBuilder[M] {
+	p.accuratePageInfo = true
+	return p
+}
+
+func (p PageBuilder[M]) backward() bool { return p.last > 0 || p.before != "" }
+
+func (p PageBuilder[M]) pageSize() int {
+	if p.first > 0 {
+		return p.first
 	}
-	if err := cfg.Validate(); err != nil {
+	return p.last
+}
+
+func (p PageBuilder[M]) cursor() string {
+	if p.after != "" {
+		return p.after
+	}
+	return p.before
+}
+
+func (p PageBuilder[M]) validate() error {
+	switch {
+	case p.first > 0 && p.last > 0:
+		return errors.New("cannot use both First and Last")
+	case p.after != "" && p.before != "":
+		return errors.New("cannot use both After and Before")
+	case p.first == 0 && p.last == 0:
+		return errors.New("must specify First or Last")
+	case p.first < 0 || p.last < 0:
+		return errors.New("page size must be positive")
+	case p.first > 0 && p.before != "":
+		return errors.New("cannot use Before with First (use After for forward pagination)")
+	case p.last > 0 && p.after != "":
+		return errors.New("cannot use After with Last (use Before for backward pagination)")
+	}
+	return nil
+}
+
+// Get executes the pagination query and returns the page.
+func (p PageBuilder[M]) Get(ctx context.Context) (*Page[M], error) {
+	if err := p.validate(); err != nil {
 		return nil, fmt.Errorf("invalid pagination options: %w", err)
 	}
+
+	b := p.builder
 	if b.query.SortRandom {
 		return nil, errors.New("cursor pagination is not compatible with random ordering")
 	}
@@ -496,13 +584,13 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 	// flipped back below. originalSorts drives cursor generation and, together
 	// with the backward flag, the keyset comparison direction.
 	originalSorts := sorts
-	backward := cfg.IsBackward()
+	backward := p.backward()
 	if backward {
 		sorts = reverseSorts(sorts)
 	}
 
 	whereLen := len(b.query.Where)
-	cursor := cfg.Cursor()
+	cursor := p.cursor()
 	if cursor != "" {
 		cursorData, err := lib.DecodeCursor(cursor)
 		if err != nil {
@@ -513,7 +601,7 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 
 	// Fetch one extra row to detect whether a further page exists.
 	b.query.Sort = sorts
-	pageSize := cfg.Limit()
+	pageSize := p.pageSize()
 	b.query.Limit = pageSize + 1
 
 	items, err := b.All(ctx)
@@ -529,16 +617,16 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 		slices.Reverse(items)
 	}
 
-	entries := make([]lib.Entry[M], len(items))
+	entries := make([]Entry[M], len(items))
 	for i, item := range items {
 		itemCursor, err := b.generateCursor(item, originalSorts)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate cursor for item %d: %w", i, err)
 		}
-		entries[i] = lib.Entry[M]{Node: item, Cursor: itemCursor}
+		entries[i] = Entry[M]{Node: item, Cursor: itemCursor}
 	}
 
-	pageInfo := lib.PageInfo{}
+	pageInfo := PageInfo{}
 	if backward {
 		pageInfo.HasPreviousPage = hasMore
 		pageInfo.HasNextPage = cursor != ""
@@ -552,7 +640,7 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 	}
 
 	// Without a cursor the far side is assumed empty; opt in to probe it.
-	if cfg.AccuratePageInfo && len(entries) > 0 && cursor == "" {
+	if p.accuratePageInfo && len(entries) > 0 && cursor == "" {
 		if backward {
 			pageInfo.HasNextPage = b.probeBeyond(ctx, entries[len(entries)-1].Cursor, originalSorts, whereLen, false)
 		} else {
@@ -561,7 +649,7 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 	}
 
 	totalCount := -1
-	if cfg.IncludeTotalCount {
+	if p.totalCount {
 		count, err := b.countMatching(ctx, whereLen)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get total count: %w", err)
@@ -569,19 +657,19 @@ func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*
 		totalCount = count
 	}
 
-	return &lib.Page[M]{
+	return &Page[M]{
 		Items:      items,
 		Entries:    entries,
 		PageInfo:   pageInfo,
 		TotalCount: totalCount,
+		source:     p,
+		size:       pageSize,
 	}, nil
 }
 
-// PaginateAsync is the asynchronous version of Paginate.
-func (b builder[M]) PaginateAsync(ctx context.Context, opts ...lib.PaginateOption) *asyncResult[*lib.Page[M]] {
-	return async(ctx, func(ctx context.Context) (*lib.Page[M], error) {
-		return b.Paginate(ctx, opts...)
-	})
+// GetAsync is the asynchronous version of Get.
+func (p PageBuilder[M]) GetAsync(ctx context.Context) *asyncResult[*Page[M]] {
+	return async(ctx, p.Get)
 }
 
 // probeBeyond reports whether any record exists on the far side of cursor,
@@ -859,35 +947,63 @@ func (b SearchBuilder[M]) Debug(prefix ...string) SearchBuilder[M] {
 // Use with SearchBuilder.Order() to sort search results by relevance score.
 var Score = lib.Score
 
-// Pagination result types, re-exported so callers can name them without
-// depending on the internal lib package. Paginate returns *Page[M].
-type (
-	// Page is a paginated result set with cursor-based navigation metadata.
-	Page[M any] = lib.Page[M]
+// PageInfo holds cursor-pagination navigation metadata (Relay-style).
+type PageInfo struct {
+	// HasNextPage indicates whether more items exist after this page.
+	HasNextPage bool
 
-	// Entry pairs a record with its opaque per-item cursor.
-	Entry[M any] = lib.Entry[M]
+	// HasPreviousPage indicates whether more items exist before this page.
+	HasPreviousPage bool
 
-	// PageInfo holds pagination navigation metadata (Relay-style).
-	PageInfo = lib.PageInfo
+	// StartCursor is the cursor of the first item, empty if the page is empty.
+	StartCursor string
 
-	// PaginateOption configures a Paginate call.
-	PaginateOption = lib.PaginateOption
-)
+	// EndCursor is the cursor of the last item, empty if the page is empty.
+	EndCursor string
+}
 
-// Pagination option constructors, re-exported from the internal lib package.
-//
-// Use First/After for forward pagination and Last/Before for backward
-// pagination. WithTotalCount adds a COUNT query; WithAccuratePageInfo adds
-// extra queries for exact HasPreviousPage/HasNextPage on boundary pages.
-var (
-	First                = lib.First
-	After                = lib.After
-	Last                 = lib.Last
-	Before               = lib.Before
-	WithTotalCount       = lib.WithTotalCount
-	WithAccuratePageInfo = lib.WithAccuratePageInfo
-)
+// Entry pairs a record with its opaque per-item cursor (Relay edge).
+type Entry[M any] struct {
+	Node   *M
+	Cursor string
+}
+
+// Page is a cursor-paginated result set.
+type Page[M any] struct {
+	// Items holds the records for this page.
+	Items []*M
+
+	// Entries holds the records with their individual cursors (Relay-style).
+	Entries []Entry[M]
+
+	// PageInfo holds navigation metadata.
+	PageInfo PageInfo
+
+	// TotalCount is the total number of matching records, or -1 if it was not
+	// requested via WithTotalCount.
+	TotalCount int
+
+	source PageBuilder[M]
+	size   int
+}
+
+// Next returns a request for the page after this one, preserving the original
+// query and options. Call Get on it to execute.
+func (p *Page[M]) Next() PageBuilder[M] {
+	next := p.source
+	next.first, next.after = p.size, p.PageInfo.EndCursor
+	next.last, next.before = 0, ""
+	return next
+}
+
+// Prev returns a request for the page before this one, preserving the original
+// query and options. Call Get on it to execute.
+func (p *Page[M]) Prev() PageBuilder[M] {
+	prev := p.source
+	prev.last, prev.before = p.size, p.PageInfo.StartCursor
+	prev.first, prev.after = 0, ""
+	return prev
+}
 
 func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
 	var rawNodes []internal.QueryResult[searchRawResult[*C]]

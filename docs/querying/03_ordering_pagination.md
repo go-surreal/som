@@ -93,12 +93,13 @@ A cursor is an opaque string that encodes a position in the result set. You neve
 build one by hand — read it from the returned page and pass it back to fetch the
 next or previous page.
 
-```go
-import "yourproject/gen/som/query"
+`Paginate()` opens a small builder: chain `First`/`Last`, an optional
+`After`/`Before` cursor and any `With*` options, then call `Get`.
 
+```go
 page, err := client.UserRepo().Query().
     Order(by.User.CreatedAt.Desc()).
-    Paginate(ctx, query.First(20))
+    Paginate().First(20).Get(ctx)
 if err != nil {
     return err
 }
@@ -114,7 +115,7 @@ The returned `*query.Page[User]` holds:
 page.Items       // []*User — the records for this page
 page.Entries     // []query.Entry[User] — {Node *User, Cursor string} per item
 page.PageInfo    // navigation metadata (see below)
-page.TotalCount  // int; -1 unless WithTotalCount() was passed
+page.TotalCount  // int; -1 unless WithTotalCount() was set
 ```
 
 `PageInfo` follows the GraphQL Relay convention:
@@ -126,16 +127,17 @@ page.PageInfo.StartCursor      // cursor of the first item
 page.PageInfo.EndCursor        // cursor of the last item
 ```
 
-#### Options
+#### Builder methods
 
-| Option | Meaning |
+| Method | Meaning |
 |--------|---------|
-| `query.First(n)` | Forward pagination, first `n` items |
-| `query.After(cursor)` | Continue forward, after the given cursor |
-| `query.Last(n)` | Backward pagination, last `n` items |
-| `query.Before(cursor)` | Continue backward, before the given cursor |
-| `query.WithTotalCount()` | Also run a COUNT query, exposed as `page.TotalCount` |
-| `query.WithAccuratePageInfo()` | Extra query for exact `HasPreviousPage`/`HasNextPage` on boundary pages |
+| `First(n)` | Forward pagination, first `n` items |
+| `After(cursor)` | Continue forward, after the given cursor |
+| `Last(n)` | Backward pagination, last `n` items |
+| `Before(cursor)` | Continue backward, before the given cursor |
+| `WithTotalCount()` | Also run a COUNT query, exposed as `page.TotalCount` |
+| `WithAccuratePageInfo()` | Extra query for exact `HasPreviousPage`/`HasNextPage` on boundary pages |
+| `Get(ctx)` | Execute and return the page |
 
 Use `First` with optional `After` for forward paging, or `Last` with optional
 `Before` for backward paging. `First`+`Last` (or `After`+`Before`) together is an
@@ -144,15 +146,15 @@ error, as is omitting both `First` and `Last`.
 #### Forward and backward
 
 ```go
-// Next page: pass the previous page's end cursor.
+// Next page: continue after the previous page's end cursor.
 next, err := client.UserRepo().Query().
     Order(by.User.CreatedAt.Desc()).
-    Paginate(ctx, query.First(20), query.After(page.PageInfo.EndCursor))
+    Paginate().First(20).After(page.PageInfo.EndCursor).Get(ctx)
 
-// Previous page: pass the current page's start cursor.
+// Previous page: continue before the current page's start cursor.
 prev, err := client.UserRepo().Query().
     Order(by.User.CreatedAt.Desc()).
-    Paginate(ctx, query.Last(20), query.Before(page.PageInfo.StartCursor))
+    Paginate().Last(20).Before(page.PageInfo.StartCursor).Get(ctx)
 ```
 
 > The same `Order(...)` and `Where(...)` must be repeated on every page call.
@@ -166,42 +168,38 @@ HTTP request is independent — no server-side state:
 
 ```go
 func handleUsers(w http.ResponseWriter, r *http.Request) {
-    opts := []query.PaginateOption{query.First(20)}
+    page := client.UserRepo().Query().
+        Order(by.User.CreatedAt.Desc()).
+        Paginate().First(20)
     if after := r.URL.Query().Get("after"); after != "" {
-        opts = append(opts, query.After(after))
+        page = page.After(after)
     }
 
-    page, err := client.UserRepo().Query().
-        Order(by.User.CreatedAt.Desc()).
-        Paginate(r.Context(), opts...)
+    result, err := page.Get(r.Context())
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
 
     json.NewEncoder(w).Encode(map[string]any{
-        "items":     page.Items,
-        "endCursor": page.PageInfo.EndCursor, // client echoes this back as ?after=
-        "hasNext":   page.PageInfo.HasNextPage,
+        "items":     result.Items,
+        "endCursor": result.PageInfo.EndCursor, // client echoes this back as ?after=
+        "hasNext":   result.PageInfo.HasNextPage,
     })
 }
 ```
 
 #### In-process loop
 
-For batch jobs that walk the whole set in one call, hold the query in a variable
-and thread the cursor:
+For batch jobs that walk the whole set, `Page.Next()` carries the query, page
+size and options forward, so there's no cursor to thread by hand:
 
 ```go
-q := client.UserRepo().Query().Order(by.User.CreatedAt.Desc())
+page, err := client.UserRepo().Query().
+    Order(by.User.CreatedAt.Desc()).
+    Paginate().First(500).Get(ctx)
 
-var after string
 for {
-    opts := []query.PaginateOption{query.First(500)}
-    if after != "" {
-        opts = append(opts, query.After(after))
-    }
-    page, err := q.Paginate(ctx, opts...)
     if err != nil {
         return err
     }
@@ -209,9 +207,11 @@ for {
     if !page.PageInfo.HasNextPage {
         break
     }
-    after = page.PageInfo.EndCursor
+    page, err = page.Next().Get(ctx)
 }
 ```
+
+`Page.Prev()` is the backward equivalent.
 
 > For pure "process everything" jobs, `Iterate()` (below) is simpler — reach for
 > cursor pagination when you also need the cursors, `PageInfo`, or stable paging
@@ -226,7 +226,7 @@ always appended so the order is stable even when sort values tie:
 page, err := client.UserRepo().Query().
     Where(filter.User.Age.GreaterThan(18)).
     Order(by.User.LastName.Asc(), by.User.Age.Desc()).
-    Paginate(ctx, query.First(10))
+    Paginate().First(10).Get(ctx)
 ```
 
 #### Limitations
