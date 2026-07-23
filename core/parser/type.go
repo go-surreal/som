@@ -9,6 +9,8 @@ type Node struct {
 	Timestamps     bool
 	OptimisticLock bool
 	SoftDelete     bool
+	Expiry         bool
+	ExpiryDuration string
 }
 
 type Edge struct {

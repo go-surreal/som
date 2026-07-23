@@ -24,10 +24,16 @@ type Config struct {
 	Database  string
 	Username  string
 	Password  string
+
+	// ExpiryPurgeInterval controls how often expired records are purged from
+	// tables with an expiry (TTL) configured. Defaults to one minute when unset.
+	// It has no effect if no model embeds som.Expiry.
+	ExpiryPurgeInterval time.Duration
 }
 
 type dbConn struct {
-	conn *surrealdb.DB
+	conn        *surrealdb.DB
+	purgeCancel context.CancelFunc
 }
 
 func (c *dbConn) ensureTx(ctx context.Context) (*surrealdb.Transaction, error) {
@@ -410,9 +416,45 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		}
 	}
 
+	conn := &dbConn{conn: db}
+
+	if len(expiryTables) > 0 {
+		interval := conf.ExpiryPurgeInterval
+		if interval <= 0 {
+			interval = time.Minute
+		}
+		// Purge lives for the client's lifetime (until Close), not the caller's
+		// setup context. WithoutCancel keeps ctx values (trace/log metadata) while
+		// dropping its cancellation, so the goroutine isn't killed prematurely.
+		purgeCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+		conn.purgeCancel = cancel
+		go runExpiryPurge(purgeCtx, conn, interval)
+	}
+
 	return &ClientImpl{
-		db: &dbConn{conn: db},
+		db: conn,
 	}, nil
+}
+
+// runExpiryPurge periodically deletes expired records from all expiry-enabled tables.
+// It runs until the provided context is cancelled (on client Close).
+func runExpiryPurge(ctx context.Context, db *dbConn, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			for _, table := range expiryTables {
+				stmt := fmt.Sprintf("DELETE %s WHERE expires_at < time::now()", table)
+				if _, err := surrealdb.Query[any](ctx, db.conn, stmt, nil); err != nil {
+					slog.ErrorContext(ctx, "failed to purge expired records", "table", table, "error", err)
+				}
+			}
+		}
+	}
 }
 
 func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error) {
@@ -424,5 +466,8 @@ func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (
 }
 
 func (c *ClientImpl) Close() {
+	if c.db.purgeCancel != nil {
+		c.db.purgeCancel()
+	}
 	_ = c.db.conn.Close(context.Background())
 }

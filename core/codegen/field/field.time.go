@@ -24,7 +24,7 @@ func (f *Time) typeConv(ctx Context) jen.Code {
 }
 
 func (f *Time) TypeDatabase() string {
-	if f.source.IsCreatedAt || f.source.IsUpdatedAt || f.source.IsDeletedAt {
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt || f.source.IsDeletedAt || f.source.IsExpiresAt {
 		return "option<datetime>"
 	}
 
@@ -40,6 +40,8 @@ func (f *Time) SchemaStatements(table, prefix string) []string {
 		extend = "VALUE time::now()"
 	} else if f.source.IsDeletedAt {
 		extend = "DEFAULT NONE"
+	} else if f.source.IsExpiresAt {
+		extend = fmt.Sprintf("VALUE $before OR (time::now() + %s) READONLY", f.source.ExpiresIn)
 	}
 
 	return []string{
@@ -128,6 +130,16 @@ func (f *Time) cborMarshal(ctx Context) jen.Code {
 		)
 	}
 
+	// Expiry field: expires_at is managed by the database (VALUE clause). Only send
+	// it back when already set, mirroring created_at behaviour.
+	if f.source.IsExpiresAt {
+		return jen.If(jen.Op("!").Id("c").Dot("Expiry").Dot("ExpiresAt").Call().Dot("IsZero").Call()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Id("c").Dot("Expiry").Dot("ExpiresAt").Call(),
+			),
+		)
+	}
+
 	// Using custom types.DateTime with MarshalCBOR method.
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
@@ -166,6 +178,17 @@ func (f *Time) cborUnmarshal(ctx Context) jen.Code {
 		).Block(
 			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
 			jen.Qual(ctx.pkgInternal(), "SetDeletedAt").Call(jen.Op("&").Id("c").Dot("SoftDelete"), jen.Id("tm")),
+		)
+	}
+
+	// Expiry field: populate expires_at via package-level setter.
+	if f.source.IsExpiresAt {
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Qual(ctx.pkgInternal(), "SetExpiresAt").Call(jen.Op("&").Id("c").Dot("Expiry"), jen.Id("tm")),
 		)
 	}
 

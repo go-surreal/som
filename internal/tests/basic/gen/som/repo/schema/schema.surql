@@ -65,6 +65,13 @@ DEFINE FIELD sf_multi_point_ptr ON TABLE location TYPE option<geometry<multipoin
 DEFINE FIELD sf_multi_line_string ON TABLE location TYPE geometry<multiline>;
 DEFINE FIELD sf_multi_polygon ON TABLE location TYPE geometry<multipolygon>;
 
+DEFINE TABLE ephemeral SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE ephemeral TYPE uuid DEFAULT rand::uuid();
+DEFINE FIELD created_at ON TABLE ephemeral TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE ephemeral TYPE option<datetime> VALUE time::now();
+DEFINE FIELD expires_at ON TABLE ephemeral TYPE option<datetime> VALUE $before OR (time::now() + 1s) READONLY;
+DEFINE FIELD label ON TABLE ephemeral TYPE string;
+
 DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_types TYPE string DEFAULT rand::ulid();
 DEFINE FIELD created_at ON TABLE all_types TYPE option<datetime> VALUE $before OR time::now() READONLY;
@@ -209,6 +216,8 @@ DEFINE INDEX __som__special_relation_count ON special_relation COUNT;
 DEFINE INDEX __som__special_relation_deleted_at ON special_relation FIELDS deleted_at CONCURRENTLY;
 DEFINE INDEX __som__person_obj_count ON person_obj COUNT;
 DEFINE INDEX __som__location_count ON location COUNT;
+DEFINE INDEX __som__ephemeral_count ON ephemeral COUNT;
+DEFINE INDEX __som__ephemeral_expires_at ON ephemeral FIELDS expires_at CONCURRENTLY;
 DEFINE INDEX __som__all_types_count ON all_types COUNT;
 DEFINE INDEX __som__all_types_search_field_string ON all_types FIELDS field_string FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_string_ptr ON all_types FIELDS field_string_ptr FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
