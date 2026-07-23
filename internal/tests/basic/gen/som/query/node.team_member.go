@@ -12,6 +12,7 @@ import (
 
 // teamMemberModelInfo holds the model-specific unmarshal functions for TeamMember.
 var teamMemberModelInfo = modelInfo[model.TeamMember]{
+	Fields: conv.TeamMemberFields,
 	UnmarshalAll: func(data []byte) ([]*model.TeamMember, error) {
 		return unmarshalAll(data, conv.ToTeamMemberPtr)
 	},

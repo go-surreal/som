@@ -18,6 +18,10 @@ func (c *Ephemeral) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *Ephemeral) fields() map[string]any {
 	data := make(map[string]any, 5)
 
 	// Embedded som.Node/Edge ID field
@@ -36,7 +40,7 @@ func (c *Ephemeral) MarshalCBOR() ([]byte, error) {
 	}
 	data["label"] = c.Label
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *Ephemeral) UnmarshalCBOR(data []byte) error {
@@ -100,6 +104,11 @@ func ToEphemeralPtr(data *Ephemeral) *model.Ephemeral {
 	}
 	result := data.Ephemeral
 	return &result
+}
+
+func EphemeralFields(m *model.Ephemeral) map[string]any {
+	c := Ephemeral{*m}
+	return c.fields()
 }
 
 type ephemeralLink struct {

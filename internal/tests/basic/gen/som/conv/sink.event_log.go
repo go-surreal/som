@@ -14,12 +14,16 @@ func (c *EventLog) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *EventLog) fields() map[string]any {
 	data := make(map[string]any, 2)
 
 	data["category"] = c.Category
 	data["value"] = c.Value
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *EventLog) UnmarshalCBOR(data []byte) error {

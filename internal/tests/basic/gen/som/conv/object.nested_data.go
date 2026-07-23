@@ -15,6 +15,10 @@ func (c *nestedData) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *nestedData) fields() map[string]any {
 	data := make(map[string]any, 4)
 
 	if c.StringPtr != nil {
@@ -31,7 +35,7 @@ func (c *nestedData) MarshalCBOR() ([]byte, error) {
 		data["uuid_ptr"] = &uuidVal
 	}
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *nestedData) UnmarshalCBOR(data []byte) error {

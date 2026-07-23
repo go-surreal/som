@@ -10,6 +10,7 @@ import (
 
 // ephemeralModelInfo holds the model-specific unmarshal functions for Ephemeral.
 var ephemeralModelInfo = modelInfo[model.Ephemeral]{
+	Fields: conv.EphemeralFields,
 	UnmarshalAll: func(data []byte) ([]*model.Ephemeral, error) {
 		return unmarshalAll(data, conv.ToEphemeralPtr)
 	},
