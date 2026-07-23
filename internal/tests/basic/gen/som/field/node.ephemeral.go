@@ -11,14 +11,18 @@ var Ephemeral = newEphemeral[model.Ephemeral]("")
 
 func newEphemeral[M any](key string) ephemeral[M] {
 	return ephemeral[M]{
+		CreatedAt: distinct.NewTimeField[M](keyed(key, "created_at")),
 		ExpiresAt: distinct.NewTimeField[M](keyed(key, "expires_at")),
 		Label:     distinct.NewField[M, string](keyed(key, "label")),
+		UpdatedAt: distinct.NewTimeField[M](keyed(key, "updated_at")),
 		key:       key,
 	}
 }
 
 type ephemeral[M any] struct {
 	key       string
+	CreatedAt distinct.Field[M, time.Time]
+	UpdatedAt distinct.Field[M, time.Time]
 	ExpiresAt distinct.Field[M, time.Time]
 	Label     distinct.Field[M, string]
 }

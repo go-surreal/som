@@ -12,7 +12,6 @@ type Client interface {
 	TeamMemberRepo() TeamMemberRepo
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
-	SessionRepo() SessionRepo
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
 	EphemeralRepo() EphemeralRepo
@@ -32,7 +31,6 @@ type ClientImpl struct {
 	teamMemberRepo      *teamMember
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
-	sessionRepo         *session
 	personObjRepo       *personObj
 	locationRepo        *location
 	ephemeralRepo       *ephemeral
@@ -43,4 +41,4 @@ type ClientImpl struct {
 }
 
 // expiryTables lists tables with a configured expiry, purged in the background.
-var expiryTables = []string{"session", "ephemeral"}
+var expiryTables = []string{"ephemeral"}

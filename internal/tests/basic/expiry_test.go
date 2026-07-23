@@ -11,7 +11,7 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestTTL(t *testing.T) {
+func TestExpiry(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -19,22 +19,13 @@ func TestTTL(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	// A long-lived record: expires_at is set on creation and lies in the future.
-	session := model.Session{Token: "abc", UserID: "user-1"}
-	err := client.SessionRepo().Create(ctx, &session)
-	assert.NilError(t, err)
-	assert.Assert(t, session.ID() != "")
-	assert.Assert(t, !session.Expiry.ExpiresAt().IsZero(), "expires_at should be populated on create")
-	assert.Assert(t, session.Expiry.ExpiresAt().After(time.Now()), "expires_at should be in the future")
-
-	sessions, err := client.SessionRepo().Query().All(ctx)
-	assert.NilError(t, err)
-	assert.Equal(t, 1, len(sessions), "unexpired record should be returned")
-
-	// A short-lived record that expires within the test.
+	// expires_at is set by the database on creation and lies in the future.
 	eph := model.Ephemeral{Label: "temp"}
-	err = client.EphemeralRepo().Create(ctx, &eph)
+	err := client.EphemeralRepo().Create(ctx, &eph)
 	assert.NilError(t, err)
+	assert.Assert(t, eph.ID() != "")
+	assert.Assert(t, !eph.Expiry.ExpiresAt().IsZero(), "expires_at should be populated on create")
+	assert.Assert(t, eph.Expiry.ExpiresAt().After(time.Now()), "expires_at should be in the future")
 
 	all, err := client.EphemeralRepo().Query().All(ctx)
 	assert.NilError(t, err)
@@ -53,22 +44,22 @@ func TestTTL(t *testing.T) {
 	assert.Equal(t, 1, len(withExpired), "expired record should still exist until purged")
 }
 
-// TestTTLPurge verifies the background purge goroutine deletes expired records.
-func TestTTLPurge(t *testing.T) {
+// TestExpiryPurge verifies the background purge goroutine deletes expired records.
+func TestExpiryPurge(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
 	id := dbCounter.Add(1)
-	namespace := fmt.Sprintf("ns_ttl_%d", id)
-	database := fmt.Sprintf("db_ttl_%d", id)
+	namespace := fmt.Sprintf("ns_expiry_%d", id)
+	database := fmt.Sprintf("db_expiry_%d", id)
 
 	client, err := repo.NewClient(ctx, repo.Config{
-		Address:          "ws://" + sharedEndpoint,
-		Username:         sharedUsername,
-		Password:         sharedPassword,
-		Namespace:        namespace,
-		Database:         database,
+		Address:             "ws://" + sharedEndpoint,
+		Username:            sharedUsername,
+		Password:            sharedPassword,
+		Namespace:           namespace,
+		Database:            database,
 		ExpiryPurgeInterval: 250 * time.Millisecond,
 	})
 	assert.NilError(t, err)
@@ -85,7 +76,7 @@ func TestTTLPurge(t *testing.T) {
 	err = client.EphemeralRepo().Create(ctx, &eph)
 	assert.NilError(t, err)
 
-	// Wait for expiry (1s TTL) plus at least one purge tick (250ms).
+	// Wait for expiry (1s) plus at least one purge tick (250ms).
 	time.Sleep(2 * time.Second)
 
 	// Even including expired records, the purge goroutine should have removed it.

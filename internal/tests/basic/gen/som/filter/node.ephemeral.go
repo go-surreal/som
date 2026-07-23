@@ -10,16 +10,20 @@ var Ephemeral = newEphemeral[model.Ephemeral](lib.NewKey[model.Ephemeral]())
 
 func newEphemeral[M any](key lib.Key[M]) ephemeral[M] {
 	return ephemeral[M]{
+		CreatedAt: lib.NewTime[M](lib.Field(key, "created_at")),
 		ExpiresAt: lib.NewTime[M](lib.Field(key, "expires_at")),
 		ID:        lib.NewID[M](lib.Field(key, "id"), "ephemeral"),
 		Key:       key,
 		Label:     lib.NewString[M](lib.Field(key, "label")),
+		UpdatedAt: lib.NewTime[M](lib.Field(key, "updated_at")),
 	}
 }
 
 type ephemeral[M any] struct {
 	lib.Key[M]
 	ID        *lib.ID[M]
+	CreatedAt *lib.Time[M]
+	UpdatedAt *lib.Time[M]
 	ExpiresAt *lib.Time[M]
 	Label     *lib.String[M]
 }

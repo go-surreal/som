@@ -423,7 +423,10 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		if interval <= 0 {
 			interval = time.Minute
 		}
-		purgeCtx, cancel := context.WithCancel(context.Background())
+		// Purge lives for the client's lifetime (until Close), not the caller's
+		// setup context. WithoutCancel keeps ctx values (trace/log metadata) while
+		// dropping its cancellation, so the goroutine isn't killed prematurely.
+		purgeCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 		conn.purgeCancel = cancel
 		go runExpiryPurge(purgeCtx, conn, interval)
 	}

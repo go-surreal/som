@@ -10,9 +10,11 @@ var Ephemeral = newEphemeral[model.Ephemeral]("")
 
 func newEphemeral[M any](key string) ephemeral[M] {
 	return ephemeral[M]{
+		CreatedAt: lib.NewBaseSort[M](keyed(key, "created_at")),
 		ExpiresAt: lib.NewBaseSort[M](keyed(key, "expires_at")),
 		ID:        lib.NewBaseSort[M](keyed(key, "id")),
 		Label:     lib.NewStringSort[M](keyed(key, "label")),
+		UpdatedAt: lib.NewBaseSort[M](keyed(key, "updated_at")),
 		key:       key,
 	}
 }
@@ -20,6 +22,8 @@ func newEphemeral[M any](key string) ephemeral[M] {
 type ephemeral[M any] struct {
 	key       string
 	ID        *lib.BaseSort[M]
+	CreatedAt *lib.BaseSort[M]
+	UpdatedAt *lib.BaseSort[M]
 	ExpiresAt *lib.BaseSort[M]
 	Label     *lib.StringSort[M]
 }

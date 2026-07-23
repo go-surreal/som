@@ -18,13 +18,19 @@ func (c *Ephemeral) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 3)
+	data := make(map[string]any, 5)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
 		data["id"] = models.NewRecordID("ephemeral", som.UUID(c.ID()))
 	}
 
+	if !c.CreatedAt().IsZero() {
+		data["created_at"] = &types.DateTime{Time: c.CreatedAt()}
+	}
+	if !c.UpdatedAt().IsZero() {
+		data["updated_at"] = &types.DateTime{Time: c.UpdatedAt()}
+	}
 	if !c.Expiry.ExpiresAt().IsZero() {
 		data["expires_at"] = &types.DateTime{Time: c.Expiry.ExpiresAt()}
 	}
@@ -56,6 +62,14 @@ func (c *Ephemeral) UnmarshalCBOR(data []byte) error {
 		c.Node = som.NewNode[som.UUID](som.UUID(idStr))
 	}
 
+	if raw, ok := rawMap["created_at"]; ok {
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		internal.SetCreatedAt(&c.Timestamps, tm)
+	}
+	if raw, ok := rawMap["updated_at"]; ok {
+		tm, _ := cbor.UnmarshalDateTime(raw)
+		internal.SetUpdatedAt(&c.Timestamps, tm)
+	}
 	if raw, ok := rawMap["expires_at"]; ok {
 		tm, _ := cbor.UnmarshalDateTime(raw)
 		internal.SetExpiresAt(&c.Expiry, tm)

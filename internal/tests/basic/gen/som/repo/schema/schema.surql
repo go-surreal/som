@@ -24,14 +24,6 @@ DEFINE FIELD title ON TABLE special_relation TYPE string;
 DEFINE FIELD author ON TABLE special_relation TYPE option<record<special_types>>;
 DEFINE FIELD authors ON TABLE special_relation TYPE option<array<record<special_types> | null>>;
 
-DEFINE TABLE session SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE session TYPE uuid DEFAULT rand::uuid();
-DEFINE FIELD created_at ON TABLE session TYPE option<datetime> VALUE $before OR time::now() READONLY;
-DEFINE FIELD updated_at ON TABLE session TYPE option<datetime> VALUE time::now();
-DEFINE FIELD expires_at ON TABLE session TYPE option<datetime> VALUE $before OR (time::now() + 24h) READONLY;
-DEFINE FIELD token ON TABLE session TYPE string;
-DEFINE FIELD user_id ON TABLE session TYPE string;
-
 DEFINE TABLE person_obj SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE person_obj TYPE { name: string, age: int };
 DEFINE FIELD email ON TABLE person_obj TYPE string;
@@ -75,6 +67,8 @@ DEFINE FIELD sf_multi_polygon ON TABLE location TYPE geometry<multipolygon>;
 
 DEFINE TABLE ephemeral SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE ephemeral TYPE uuid DEFAULT rand::uuid();
+DEFINE FIELD created_at ON TABLE ephemeral TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE ephemeral TYPE option<datetime> VALUE time::now();
 DEFINE FIELD expires_at ON TABLE ephemeral TYPE option<datetime> VALUE $before OR (time::now() + 1s) READONLY;
 DEFINE FIELD label ON TABLE ephemeral TYPE string;
 
@@ -220,8 +214,6 @@ DEFINE INDEX __som__special_types_count ON special_types COUNT;
 DEFINE INDEX __som__special_types_deleted_at ON special_types FIELDS deleted_at CONCURRENTLY;
 DEFINE INDEX __som__special_relation_count ON special_relation COUNT;
 DEFINE INDEX __som__special_relation_deleted_at ON special_relation FIELDS deleted_at CONCURRENTLY;
-DEFINE INDEX __som__session_count ON session COUNT;
-DEFINE INDEX __som__session_expires_at ON session FIELDS expires_at CONCURRENTLY;
 DEFINE INDEX __som__person_obj_count ON person_obj COUNT;
 DEFINE INDEX __som__location_count ON location COUNT;
 DEFINE INDEX __som__ephemeral_count ON ephemeral COUNT;
