@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"iter"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -469,169 +470,99 @@ func (b builder[M]) Debug(prefix ...string) Builder[M] {
 	return Builder[M]{b}
 }
 
-// Paginate returns a paginated result set with cursor-based navigation.
-// Use lib.First(n) for forward pagination and lib.Last(n) for backward pagination.
-// Use lib.After(cursor) and lib.Before(cursor) to navigate between pages.
-// Use lib.WithTotalCount() to include the total count (requires additional query).
-// Use lib.WithAccuratePageInfo() to enable accurate HasPreviousPage/HasNextPage detection.
+// Paginate returns a page of results using cursor-based (keyset) navigation.
+// Use First/After for forward paging and Last/Before for backward paging.
+// WithTotalCount and WithAccuratePageInfo enable optional extra queries.
 func (b builder[M]) Paginate(ctx context.Context, opts ...lib.PaginateOption) (*lib.Page[M], error) {
-	// Parse options
 	cfg := &lib.PaginateConfig{}
 	for _, opt := range opts {
 		opt(cfg)
 	}
-
-	// Validate configuration
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid pagination options: %w", err)
 	}
-
-	// Check for incompatible random sort
 	if b.query.SortRandom {
 		return nil, errors.New("cursor pagination is not compatible with random ordering")
 	}
 
-	// Ensure we have sort criteria (default to id ASC)
-	sorts := b.query.Sort
-	if len(sorts) == 0 {
-		sorts = []*lib.SortBuilder{lib.NewSortBuilder("id", lib.SortAsc)}
-	}
-
-	// Ensure id is included as tiebreaker
-	hasID := false
-	for _, s := range sorts {
-		if s.Field == "id" {
-			hasID = true
-			break
-		}
-	}
-	if !hasID {
+	// Sort keys default to id, and an id tiebreaker is always appended so the
+	// order is total and cursors are stable.
+	sorts := slices.Clone(b.query.Sort)
+	if len(sorts) == 0 || !slices.ContainsFunc(sorts, func(s *lib.SortBuilder) bool { return s.Field == "id" }) {
 		sorts = append(sorts, lib.NewSortBuilder("id", lib.SortAsc))
 	}
 
-	// Store original sorts for cursor generation (before potential reversal)
+	// Backward paging reverses the sort so LIMIT yields the last N; results are
+	// flipped back below. originalSorts drives cursor generation and, together
+	// with the backward flag, the keyset comparison direction.
 	originalSorts := sorts
-
-	// For backward pagination, reverse sort directions
 	backward := cfg.IsBackward()
 	if backward {
 		sorts = reverseSorts(sorts)
 	}
 
-	// Store original filters before adding cursor filter
-	originalWhereLen := len(b.query.Where)
-
-	// Build cursor filter if cursor provided
+	whereLen := len(b.query.Where)
 	cursor := cfg.Cursor()
 	if cursor != "" {
 		cursorData, err := lib.DecodeCursor(cursor)
 		if err != nil {
 			return nil, fmt.Errorf("invalid cursor: %w", err)
 		}
-		// Comparison direction is derived from the original sort order plus the
-		// backward flag; the reversed sorts are only used for ORDER BY + LIMIT.
-		cursorFilter := lib.CursorFilter[M](cursorData, originalSorts, backward)
-		b.query.Where = append(b.query.Where, cursorFilter)
+		b.query.Where = append(b.query.Where, lib.CursorFilter[M](cursorData, originalSorts, backward))
 	}
 
-	// Set sort and limit (fetch one extra to detect hasMore)
+	// Fetch one extra row to detect whether a further page exists.
 	b.query.Sort = sorts
 	pageSize := cfg.Limit()
 	b.query.Limit = pageSize + 1
 
-	// Execute query
 	items, err := b.All(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if there are more items
 	hasMore := len(items) > pageSize
 	if hasMore {
 		items = items[:pageSize]
 	}
-
-	// For backward pagination, reverse results to correct order
 	if backward {
-		reverseSlice(items)
+		slices.Reverse(items)
 	}
 
-	// Build Entries with per-item cursors
 	entries := make([]lib.Entry[M], len(items))
 	for i, item := range items {
 		itemCursor, err := b.generateCursor(item, originalSorts)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate cursor for item %d: %w", i, err)
 		}
-		entries[i] = lib.Entry[M]{
-			Node:   item,
-			Cursor: itemCursor,
-		}
+		entries[i] = lib.Entry[M]{Node: item, Cursor: itemCursor}
 	}
 
-	// Build PageInfo
 	pageInfo := lib.PageInfo{}
 	if backward {
 		pageInfo.HasPreviousPage = hasMore
-		pageInfo.HasNextPage = cursor != "" // If we have a before cursor, there's a next page
+		pageInfo.HasNextPage = cursor != ""
 	} else {
 		pageInfo.HasNextPage = hasMore
-		pageInfo.HasPreviousPage = cursor != "" // If we have an after cursor, there's a previous page
+		pageInfo.HasPreviousPage = cursor != ""
 	}
-
-	// Set start/end cursors from entries
 	if len(entries) > 0 {
 		pageInfo.StartCursor = entries[0].Cursor
 		pageInfo.EndCursor = entries[len(entries)-1].Cursor
 	}
 
-	// Accurate page detection (opt-in)
-	if cfg.AccuratePageInfo && len(items) > 0 {
-		// For forward pagination without cursor, check if there are items before
-		// For backward pagination without cursor, check if there are items after
-		if !backward && cursor == "" {
-			// Check HasPreviousPage: are there items before the first item?
-			firstCursorData, err := lib.DecodeCursor(entries[0].Cursor)
-			if err == nil {
-				prevFilter := lib.CursorFilter[M](firstCursorData, originalSorts, true) // true = backward check
-				checkBuilder := b
-				checkBuilder.query.Where = append(b.query.Where[:originalWhereLen:originalWhereLen], prevFilter)
-				checkBuilder.query.Sort = reverseSorts(originalSorts)
-				checkBuilder.query.Limit = 1
-				prevItems, err := checkBuilder.All(ctx)
-				if err == nil && len(prevItems) > 0 {
-					pageInfo.HasPreviousPage = true
-				}
-			}
-		} else if backward && cursor == "" {
-			// Check HasNextPage: are there items after the last item?
-			lastCursorData, err := lib.DecodeCursor(entries[len(entries)-1].Cursor)
-			if err == nil {
-				nextFilter := lib.CursorFilter[M](lastCursorData, originalSorts, false) // false = forward check
-				checkBuilder := b
-				checkBuilder.query.Where = append(b.query.Where[:originalWhereLen:originalWhereLen], nextFilter)
-				checkBuilder.query.Sort = originalSorts
-				checkBuilder.query.Limit = 1
-				nextItems, err := checkBuilder.All(ctx)
-				if err == nil && len(nextItems) > 0 {
-					pageInfo.HasNextPage = true
-				}
-			}
+	// Without a cursor the far side is assumed empty; opt in to probe it.
+	if cfg.AccuratePageInfo && len(entries) > 0 && cursor == "" {
+		if backward {
+			pageInfo.HasNextPage = b.probeBeyond(ctx, entries[len(entries)-1].Cursor, originalSorts, whereLen, false)
+		} else {
+			pageInfo.HasPreviousPage = b.probeBeyond(ctx, entries[0].Cursor, originalSorts, whereLen, true)
 		}
 	}
 
-	// Get total count if requested
 	totalCount := -1
 	if cfg.IncludeTotalCount {
-		// Create a fresh query without cursor filter, ordering or pagination.
-		// COUNT with GROUP ALL rejects an ORDER BY clause.
-		countBuilder := b
-		countBuilder.query.Where = b.query.Where[:originalWhereLen]
-		countBuilder.query.Sort = nil
-		countBuilder.query.SortRandom = false
-		countBuilder.query.Limit = 0
-		countBuilder.query.Start = 0
-		count, err := countBuilder.Count(ctx)
+		count, err := b.countMatching(ctx, whereLen)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get total count: %w", err)
 		}
@@ -653,6 +584,36 @@ func (b builder[M]) PaginateAsync(ctx context.Context, opts ...lib.PaginateOptio
 	})
 }
 
+// probeBeyond reports whether any record exists on the far side of cursor,
+// used to compute accurate boundary page info. The backward flag selects the
+// probe direction; whereLen strips any previously appended cursor filter.
+func (b builder[M]) probeBeyond(ctx context.Context, cursor string, sorts []*lib.SortBuilder, whereLen int, backward bool) bool {
+	data, err := lib.DecodeCursor(cursor)
+	if err != nil {
+		return false
+	}
+	b.query.Where = append(b.query.Where[:whereLen:whereLen], lib.CursorFilter[M](data, sorts, backward))
+	if backward {
+		b.query.Sort = reverseSorts(sorts)
+	} else {
+		b.query.Sort = sorts
+	}
+	b.query.Limit = 1
+	items, err := b.All(ctx)
+	return err == nil && len(items) > 0
+}
+
+// countMatching returns the total number of matching records, ignoring the
+// cursor filter, ordering and pagination (COUNT with GROUP ALL rejects ORDER BY).
+func (b builder[M]) countMatching(ctx context.Context, whereLen int) (int, error) {
+	b.query.Where = b.query.Where[:whereLen]
+	b.query.Sort = nil
+	b.query.SortRandom = false
+	b.query.Limit = 0
+	b.query.Start = 0
+	return b.Count(ctx)
+}
+
 // reverseSorts creates a copy of sorts with reversed directions.
 func reverseSorts(sorts []*lib.SortBuilder) []*lib.SortBuilder {
 	reversed := make([]*lib.SortBuilder, len(sorts))
@@ -666,13 +627,6 @@ func reverseSorts(sorts []*lib.SortBuilder) []*lib.SortBuilder {
 		reversed[i].IsNumeric = s.IsNumeric
 	}
 	return reversed
-}
-
-// reverseSlice reverses a slice in place.
-func reverseSlice[T any](s []T) {
-	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = s[j], s[i]
-	}
 }
 
 // generateCursor creates an opaque cursor from an item and its sort fields.
@@ -692,7 +646,13 @@ func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, e
 	for _, s := range sorts {
 		val, ok := dbFields[s.Field]
 		if !ok {
-			continue // Skip fields not present in the DB representation
+			if s.Field == "id" {
+				continue // handled by the tiebreaker/complex-ID checks below
+			}
+			// A missing sort value would drop a keyset term and silently
+			// corrupt paging, so reject it. Nested/computed sort fields are
+			// not part of the flat DB representation.
+			return "", fmt.Errorf("cannot paginate on sort field %q: only top-level stored fields are supported", s.Field)
 		}
 
 		raw, err := cbor.Marshal(val)

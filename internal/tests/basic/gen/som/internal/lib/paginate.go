@@ -77,11 +77,6 @@ func WithAccuratePageInfo() PaginateOption {
 	}
 }
 
-// IsForward returns true if this is forward pagination.
-func (c *PaginateConfig) IsForward() bool {
-	return c.First > 0 || c.After != ""
-}
-
 // IsBackward returns true if this is backward pagination.
 func (c *PaginateConfig) IsBackward() bool {
 	return c.Last > 0 || c.Before != ""
