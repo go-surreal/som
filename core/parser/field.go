@@ -185,6 +185,9 @@ type FieldTime struct {
 	IsCreatedAt bool
 	IsUpdatedAt bool
 	IsDeletedAt bool
+	IsExpiresAt bool
+	// ExpiresIn holds the TTL duration (SurrealDB literal) for IsExpiresAt fields.
+	ExpiresIn string
 }
 
 func NewFieldTime(name string) *FieldTime {

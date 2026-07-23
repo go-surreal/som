@@ -9,6 +9,8 @@ type Node struct {
 	Timestamps     bool
 	OptimisticLock bool
 	SoftDelete     bool
+	Expiry         bool
+	ExpiryDuration string
 }
 
 type Edge struct {
@@ -22,6 +24,24 @@ type Edge struct {
 }
 
 type Struct struct {
+	Name   string
+	Fields []Field
+}
+
+// View is a read-only, pre-computed table view. It has a struct shape
+// (its projected columns) like a Node, but no ID type, features or
+// write operations. The SELECT that populates it is supplied separately
+// via a //go:build som definition and linked back by database name.
+type View struct {
+	Name   string
+	Fields []Field
+}
+
+// Sink is a write-only ingestion table backed by a DEFINE TABLE ... DROP
+// statement. It has a struct shape (its columns) like a Node but no ID,
+// no features and only create operations; rows are discarded immediately
+// after write, so they cannot be read back or linked to.
+type Sink struct {
 	Name   string
 	Fields []Field
 }

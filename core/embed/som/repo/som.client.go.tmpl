@@ -25,10 +25,16 @@ type Config struct {
 	Database  string
 	Username  string
 	Password  string
+
+	// ExpiryPurgeInterval controls how often expired records are purged from
+	// tables with an expiry (TTL) configured. Defaults to one minute when unset.
+	// It has no effect if no model embeds som.Expiry.
+	ExpiryPurgeInterval time.Duration
 }
 
 type dbConn struct {
-	conn *surrealdb.DB
+	conn        *surrealdb.DB
+	purgeCancel context.CancelFunc
 }
 
 func (c *dbConn) ensureTx(ctx context.Context) (*surrealdb.Transaction, error) {
@@ -74,8 +80,8 @@ func dbCreate[T any](ctx context.Context, db *dbConn, id models.RecordID, data a
 	return surrealdb.Create[T](ctx, db.conn, id, data)
 }
 
-func dbCreateNew[T any](ctx context.Context, db *dbConn, idExpr string, data any) (*T, error) {
-	statement := fmt.Sprintf("CREATE %s CONTENT $data", idExpr)
+func dbCreateNew[T any](ctx context.Context, db *dbConn, target string, data any) (*T, error) {
+	statement := fmt.Sprintf("CREATE %s CONTENT $data", target)
 	vars := map[string]any{"data": data}
 	tx, err := db.ensureTx(ctx)
 	if err != nil {
@@ -184,6 +190,33 @@ func dbInsert[T any](ctx context.Context, db *dbConn, statement string, vars map
 	return qr.Result, nil
 }
 
+// dbInsertVoid inserts one or more records into a write-only (DROP) table.
+// Such tables discard rows after write, so — unlike dbInsert — no results
+// are read back and an empty response is the success case, not an error.
+func dbInsertVoid(ctx context.Context, db *dbConn, table string, data []any) error {
+	statement := "INSERT INTO " + table + " $data"
+	vars := map[string]any{"data": data}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return err
+	}
+	var result *[]surrealdb.QueryResult[[]any]
+	if tx != nil {
+		result, err = surrealdb.Query[[]any](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]any](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return err
+	}
+	if result != nil && len(*result) > 0 {
+		if qr := (*result)[0]; qr.Error != nil {
+			return fmt.Errorf("insert failed: %w", qr.Error)
+		}
+	}
+	return nil
+}
+
 func (c *dbConn) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
 	tx, err := c.ensureTx(ctx)
 	if err != nil {
@@ -284,7 +317,7 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	return out, nil
 }
 
-var minVersion = [3]int{3, 1, 5}
+var minVersion = [3]int{3, 2, 0}
 
 func parseVersion(raw string) ([3]int, error) {
 	s := strings.TrimPrefix(raw, "v")
@@ -384,9 +417,45 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		}
 	}
 
+	conn := &dbConn{conn: db}
+
+	if len(expiryTables) > 0 {
+		interval := conf.ExpiryPurgeInterval
+		if interval <= 0 {
+			interval = time.Minute
+		}
+		// Purge lives for the client's lifetime (until Close), not the caller's
+		// setup context. WithoutCancel keeps ctx values (trace/log metadata) while
+		// dropping its cancellation, so the goroutine isn't killed prematurely.
+		purgeCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+		conn.purgeCancel = cancel
+		go runExpiryPurge(purgeCtx, conn, interval)
+	}
+
 	return &ClientImpl{
-		db: &dbConn{conn: db},
+		db: conn,
 	}, nil
+}
+
+// runExpiryPurge periodically deletes expired records from all expiry-enabled tables.
+// It runs until the provided context is cancelled (on client Close).
+func runExpiryPurge(ctx context.Context, db *dbConn, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			for _, table := range expiryTables {
+				stmt := fmt.Sprintf("DELETE %s WHERE expires_at < time::now()", table)
+				if _, err := surrealdb.Query[any](ctx, db.conn, stmt, nil); err != nil {
+					slog.ErrorContext(ctx, "failed to purge expired records", "table", table, "error", err)
+				}
+			}
+		}
+	}
 }
 
 func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error) {
@@ -398,5 +467,8 @@ func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (
 }
 
 func (c *ClientImpl) Close() {
+	if c.db.purgeCancel != nil {
+		c.db.purgeCancel()
+	}
 	_ = c.db.conn.Close(context.Background())
 }

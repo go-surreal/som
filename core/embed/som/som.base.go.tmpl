@@ -39,7 +39,7 @@ var ErrEmptyResponse = errors.New("empty response")
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
 // ErrUnsupportedVersion is returned when the connected SurrealDB instance
-// is running a version older than the minimum required (3.1.5), or when
+// is running a version older than the minimum required (3.2.0), or when
 // the version string returned by the server cannot be parsed.
 var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
 
@@ -51,6 +51,40 @@ var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
 //	    fmt.Println(se.Kind, se.Message, se.Details)
 //	}
 type ServerError = connection.ServerError
+
+// ServerError kind constants, re-exported from the driver so callers can
+// compare against ServerError.Kind without importing the connection package.
+const (
+	KindValidation    = connection.KindValidation
+	KindConfiguration = connection.KindConfiguration
+	KindThrown        = connection.KindThrown
+	KindQuery         = connection.KindQuery
+	KindSerialization = connection.KindSerialization
+	KindNotAllowed    = connection.KindNotAllowed
+	KindNotFound      = connection.KindNotFound
+	KindAlreadyExists = connection.KindAlreadyExists
+	KindConnection    = connection.KindConnection
+	KindInternal      = connection.KindInternal
+)
+
+// ServerError classification helpers, re-exported from the driver. Each
+// unwraps err to a *ServerError and reports whether it matches the given
+// kind, so callers can branch on failure type without importing the
+// connection package or matching on message strings.
+var (
+	IsNotFound              = connection.IsNotFound
+	IsNotAllowed            = connection.IsNotAllowed
+	IsTransactionConflict   = connection.IsTransactionConflict
+	IsTimedOut              = connection.IsTimedOut
+	IsNotExecuted           = connection.IsNotExecuted
+	IsCancelled             = connection.IsCancelled
+	IsParseError            = connection.IsParseError
+	IsDeserialization       = connection.IsDeserialization
+	IsLiveQueryNotSupported = connection.IsLiveQueryNotSupported
+	IsScriptingBlocked      = connection.IsScriptingBlocked
+	IsTokenExpired          = connection.IsTokenExpired
+	IsInvalidAuth           = connection.IsInvalidAuth
+)
 
 // nodeID is a marker type for all ID types.
 type nodeID interface {
@@ -172,6 +206,42 @@ func (e Edge) ID() string {
 	return e.id
 }
 
+// View describes a read-only, pre-computed table view backed by a
+// SurrealDB DEFINE TABLE ... AS SELECT statement. View rows are computed
+// from a source table and cannot be created, updated or deleted through
+// the generated repository.
+//
+// Caution: values projected from linked tables (via record links or graph
+// traversal, e.g. ->product.name) are frozen at the time the source row is
+// written. They do NOT refresh when the linked record itself changes, so a
+// view may hold stale linked data.
+type View struct {
+	id string
+}
+
+func NewView(id string) View {
+	return View{id: id}
+}
+
+func (v View) ID() string {
+	return v.id
+}
+
+func (View) isView() {}
+
+// Sink describes a write-only ingestion table backed by a SurrealDB
+// DEFINE TABLE ... DROP statement. Records created through a Sink are
+// accepted — firing any pre-computed table views (som.View) and events
+// that select from it — but are NOT persisted: the row is discarded
+// immediately after write. A Sink therefore exposes only Create and
+// Insert; it has no id and cannot be read, queried, updated or deleted.
+//
+// Typical use: feeding an aggregating view from a high-volume event or
+// log stream where only the aggregate is kept, not the raw records.
+type Sink struct{}
+
+func (Sink) isSink() {}
+
 type node interface {
 	isNode()
 }
@@ -198,6 +268,8 @@ type Timestamps = internal.Timestamps
 type OptimisticLock = internal.OptimisticLock
 
 type SoftDelete = internal.SoftDelete
+
+type Expiry = internal.Expiry
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string

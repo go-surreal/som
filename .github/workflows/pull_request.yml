@@ -43,7 +43,7 @@ jobs:
           cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
           key: go-modules-v1
@@ -81,7 +81,7 @@ jobs:
           cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
           key: go-modules-v1
@@ -118,13 +118,13 @@ jobs:
           cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
           key: go-modules-v1
 
       - name: Cache Go Build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/go-build
           key: go-build-v1
@@ -150,13 +150,13 @@ jobs:
           cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
           key: go-modules-v1
 
       - name: Cache Go Build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/go-build
           key: go-build-v1
@@ -187,13 +187,13 @@ jobs:
           cache: true
 
       - name: Cache Go Modules
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
           key: go-modules-tests-v1
 
       - name: Cache Go Build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/go-build
           key: go-build-tests-v1

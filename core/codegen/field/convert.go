@@ -9,6 +9,8 @@ import (
 type Def struct {
 	Nodes   []*NodeTable
 	Edges   []*EdgeTable
+	Views   []*ViewTable
+	Sinks   []*SinkTable
 	Objects []*DatabaseObject
 }
 
@@ -59,6 +61,38 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		}
 
 		def.Edges = append(def.Edges, dbEdge)
+	}
+
+	for _, view := range source.Views {
+		dbView := &ViewTable{
+			Name: view.Name,
+		}
+
+		for _, f := range view.Fields {
+			dbField, ok := Convert(source, buildConf, f)
+			if !ok {
+				return nil, fmt.Errorf("could not convert view field: %v", f)
+			}
+			dbView.Fields = append(dbView.Fields, dbField)
+		}
+
+		def.Views = append(def.Views, dbView)
+	}
+
+	for _, sink := range source.Sinks {
+		dbSink := &SinkTable{
+			Name: sink.Name,
+		}
+
+		for _, f := range sink.Fields {
+			dbField, ok := Convert(source, buildConf, f)
+			if !ok {
+				return nil, fmt.Errorf("could not convert sink field: %v", f)
+			}
+			dbSink.Fields = append(dbSink.Fields, dbField)
+		}
+
+		def.Sinks = append(def.Sinks, dbSink)
 	}
 
 	for _, dbNode := range def.Nodes {
@@ -356,18 +390,20 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 	case *parser.FieldComplexID:
 		{
 			var fields []Field
+			var parts []idPart
 			for _, sf := range f.Fields {
-				if _, ok := sf.Field.(*parser.FieldNode); ok {
-					continue
-				}
 				fld, ok := Convert(source, conf, sf.Field)
 				if !ok {
+					continue
+				}
+				parts = append(parts, idPart{dbName: sf.DBName, dbType: idPartType(fld)})
+				if _, ok := sf.Field.(*parser.FieldNode); ok {
 					continue
 				}
 				fields = append(fields, fld)
 			}
 
-			cid := &ComplexID{baseField: base, source: f}
+			cid := &ComplexID{baseField: base, source: f, parts: parts}
 			if len(fields) > 0 {
 				cid.element = &NodeTable{Name: f.StructName, Fields: fields}
 			}

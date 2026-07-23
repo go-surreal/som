@@ -6,13 +6,15 @@ type FeatureSet struct {
 	Timestamps     bool
 	OptimisticLock bool
 	SoftDelete     bool
+	Expiry         bool
+	ExpiryDuration string
 }
 
 // ParseFeature checks if an anonymous field is a known feature embed.
 // Returns true if the field was matched as a feature (caller should continue to next field).
-func ParseFeature(f gotype.Type, internalPkg string, features *FeatureSet, fields *[]Field) bool {
+func ParseFeature(f gotype.Type, internalPkg string, features *FeatureSet, fields *[]Field) (bool, error) {
 	if f.Elem().PkgPath() != internalPkg {
-		return false
+		return false, nil
 	}
 
 	switch f.Name() {
@@ -30,11 +32,11 @@ func ParseFeature(f gotype.Type, internalPkg string, features *FeatureSet, field
 				IsUpdatedAt: true,
 			},
 		)
-		return true
+		return true, nil
 
 	case "OptimisticLock":
 		features.OptimisticLock = true
-		return true
+		return true, nil
 
 	case "SoftDelete":
 		features.SoftDelete = true
@@ -44,10 +46,26 @@ func ParseFeature(f gotype.Type, internalPkg string, features *FeatureSet, field
 				IsDeletedAt: true,
 			},
 		)
-		return true
+		return true, nil
+
+	case "Expiry":
+		expiry, err := parseExpiryTag(f.Tag().Get("som"))
+		if err != nil {
+			return true, err
+		}
+		features.Expiry = true
+		features.ExpiryDuration = expiry
+		*fields = append(*fields,
+			&FieldTime{
+				fieldAtomic: &fieldAtomic{name: "ExpiresAt"},
+				IsExpiresAt: true,
+				ExpiresIn:   expiry,
+			},
+		)
+		return true, nil
 	}
 
-	return false
+	return false, nil
 }
 
 // ApplyFeatures copies feature flags to the target booleans and appends

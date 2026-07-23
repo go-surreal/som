@@ -55,7 +55,7 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	// Embedded som.Node/Edge ID field
+	// Embedded som.Node/Edge/View ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {

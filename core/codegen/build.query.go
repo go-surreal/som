@@ -28,6 +28,76 @@ func (b *queryBuilder) build() error {
 		}
 	}
 
+	for _, view := range b.views {
+		if err := b.buildViewFile(view); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// buildViewFile generates the query builder constructor for a read-only view.
+// Views have no soft-delete filter and no ID range function.
+func (b *queryBuilder) buildViewFile(view *field.ViewTable) error {
+	pkgLib := b.relativePkgPath(def.PkgLib)
+	pkgConv := b.relativePkgPath(def.PkgConv)
+
+	f := jen.NewFile(b.pkgName)
+	f.PackageComment(string(embed.CodegenComment))
+
+	modelType := b.SourceQual(view.NameGo())
+	modelInfoVarName := view.NameGoLower() + "ModelInfo"
+	convFn := jen.Qual(pkgConv, "To"+view.NameGo()+"Ptr")
+
+	f.Line()
+	f.Commentf("%s holds the model-specific unmarshal functions for %s.", modelInfoVarName, view.NameGo())
+	f.Var().Id(modelInfoVarName).Op("=").Id("modelInfo").Types(modelType).Values(jen.Dict{
+		jen.Id("UnmarshalAll"): jen.Func().Params(
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Index().Op("*").Add(modelType), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalAll").Call(jen.Id("data"), convFn)),
+		),
+		jen.Id("UnmarshalOne"): jen.Func().Params(
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Op("*").Add(modelType), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalOne").Call(jen.Id("data"), convFn)),
+		),
+		jen.Id("UnmarshalSearchAll"): jen.Func().Params(
+			jen.Id("data").Index().Byte(),
+			jen.Id("clauses").Index().Qual(pkgLib, "SearchClause"),
+		).Params(jen.Index().Qual(pkgLib, "SearchResult").Types(jen.Op("*").Add(modelType)), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalSearchAll").Call(jen.Id("data"), jen.Id("clauses"), convFn)),
+		),
+	})
+
+	f.Line()
+	f.Commentf("New%s creates a new query builder for %s views.", view.NameGo(), view.NameGo())
+	f.Func().Id("New" + view.NameGo()).
+		Params(
+			jen.Id("db").Id("Database"),
+		).
+		Id("Builder").Types(modelType).
+		BlockFunc(func(g *jen.Group) {
+			g.Id("q").Op(":=").Qual(pkgLib, "NewQuery").Types(modelType).Call(jen.Lit(view.NameDatabase()))
+
+			g.Return(
+				jen.Id("Builder").Types(modelType).
+					Values(
+						jen.Id("builder").Types(modelType).
+							Values(jen.Dict{
+								jen.Id("db"):    jen.Id("db"),
+								jen.Id("query"): jen.Id("q"),
+								jen.Id("info"):  jen.Id(modelInfoVarName),
+							}),
+					),
+			)
+		})
+
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), view.FileName()))); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -77,7 +147,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.Line()
 	f.Commentf("New%s creates a new query builder for %s models.", node.NameGo(), node.NameGo())
-	f.Func().Id("New"+node.Name).
+	f.Func().Id("New" + node.Name).
 		Params(
 			jen.Id("db").Id("Database"),
 		).
@@ -90,6 +160,11 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 				pkgFilter := path.Join(b.basePkg, def.PkgFilter)
 				g.Id("q").Dot("SoftDeleteFilter").Op("=").
 					Qual(pkgFilter, node.Name).Dot("DeletedAt").Dot("Nil").Call(jen.Lit(true))
+			}
+
+			if node.Source.Expiry {
+				g.Comment("Automatically exclude expired records")
+				g.Id("q").Dot("ExpiryField").Op("=").Lit("expires_at")
 			}
 
 			builderDict := jen.Dict{
