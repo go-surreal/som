@@ -63,6 +63,21 @@ func (b *build) buildSchemaFile() error {
 		statements = append(statements, "")
 	}
 
+	// Sinks are write-only ingestion tables: records are accepted (firing
+	// any dependent views/events) but discarded via DROP. Fields are still
+	// defined so writes are validated and dependent view SELECTs typecheck.
+	// No indexes are emitted — there are no rows to index.
+	for _, sink := range b.input.sinks {
+		statement := fmt.Sprintf("DEFINE TABLE %s DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", sink.NameDatabase())
+		statements = append(statements, statement)
+
+		for _, f := range sink.GetFields() {
+			statements = append(statements, f.SchemaStatements(sink.NameDatabase(), "")...)
+		}
+
+		statements = append(statements, "")
+	}
+
 	// Views are read-only, pre-computed tables defined via AS SELECT.
 	// They are emitted after the source tables they depend on.
 	for _, view := range b.input.views {
@@ -127,12 +142,15 @@ func (b *build) buildViewStatement(view *field.ViewTable) (string, error) {
 		return "", fmt.Errorf("view %s: definition has no projections", view.NameGo())
 	}
 
-	// A view may select from a node or an edge (relation) table.
+	// A view may select from a node, an edge (relation) or a write-only
+	// sink table (the sink→view ingestion pattern).
 	var sourceDB string
 	if node := b.input.findNodeByName(def.Source); node != nil {
 		sourceDB = node.NameDatabase()
 	} else if edge := b.input.findEdgeByName(def.Source); edge != nil {
 		sourceDB = edge.NameDatabase()
+	} else if sink := b.input.findSinkByName(def.Source); sink != nil {
+		sourceDB = sink.NameDatabase()
 	} else {
 		return "", fmt.Errorf("view %s: unknown source model %q", view.NameGo(), def.Source)
 	}

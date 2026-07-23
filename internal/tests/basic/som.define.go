@@ -17,6 +17,7 @@ func Definitions() define.Definitions {
 		},
 		Views: []define.ViewDefinition{
 			allTypesSummary,
+			eventSummary,
 		},
 	}
 }
@@ -60,3 +61,14 @@ var allTypesSummary = define.View[model.AllTypesSummary, model.AllTypes]().
 		define.As(filter.AllTypesSummary.AvgValue, aggregate.Mean(filter.AllTypes.FieldFloat64)),
 	).
 	GroupBy(filter.AllTypes.FieldString)
+
+// eventSummary aggregates the write-only EventLog sink into a view,
+// exercising the sink→view ingestion pattern.
+//
+var eventSummary = define.View[model.EventSummary, model.EventLog]().
+	Project(
+		define.As(filter.EventSummary.Category, filter.EventLog.Category),
+		define.As(filter.EventSummary.Total, aggregate.Count(filter.EventLog.Category)),
+		define.As(filter.EventSummary.AvgValue, aggregate.Mean(filter.EventLog.Value)),
+	).
+	GroupBy(filter.EventLog.Category)

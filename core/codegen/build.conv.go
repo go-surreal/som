@@ -40,6 +40,12 @@ func (b *convBuilder) build() error {
 		}
 	}
 
+	for _, sink := range b.sinks {
+		if err := b.buildFile(sink); err != nil {
+			return err
+		}
+	}
+
 	for _, object := range b.objects {
 		if err := b.buildFile(object); err != nil {
 			return err
@@ -63,9 +69,10 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
 	_, isView := elem.(*field.ViewTable)
+	_, isSink := elem.(*field.SinkTable)
 
 	typeName := elem.NameGoLower()
-	if isNode || isEdge || isView {
+	if isNode || isEdge || isView || isSink {
 		typeName = elem.NameGo()
 	}
 
@@ -372,8 +379,9 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
 	_, isView := elem.(*field.ViewTable)
+	_, isSink := elem.(*field.SinkTable)
 
-	if isNode || isEdge || isView {
+	if isNode || isEdge || isView || isSink {
 		localName = elem.NameGo()
 		methodPrefix = "From"
 	}
@@ -571,8 +579,9 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
 	_, isView := elem.(*field.ViewTable)
+	_, isSink := elem.(*field.SinkTable)
 
-	if isNode || isEdge || isView {
+	if isNode || isEdge || isView || isSink {
 		localName = elem.NameGo()
 		methodPrefix = "To"
 	}

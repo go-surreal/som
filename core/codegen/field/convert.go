@@ -10,6 +10,7 @@ type Def struct {
 	Nodes   []*NodeTable
 	Edges   []*EdgeTable
 	Views   []*ViewTable
+	Sinks   []*SinkTable
 	Objects []*DatabaseObject
 }
 
@@ -76,6 +77,22 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		}
 
 		def.Views = append(def.Views, dbView)
+	}
+
+	for _, sink := range source.Sinks {
+		dbSink := &SinkTable{
+			Name: sink.Name,
+		}
+
+		for _, f := range sink.Fields {
+			dbField, ok := Convert(source, buildConf, f)
+			if !ok {
+				return nil, fmt.Errorf("could not convert sink field: %v", f)
+			}
+			dbSink.Fields = append(dbSink.Fields, dbField)
+		}
+
+		def.Sinks = append(def.Sinks, dbSink)
 	}
 
 	for _, dbNode := range def.Nodes {
