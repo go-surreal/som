@@ -2,9 +2,11 @@ package basic
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
+	"som.test/gen/som"
 	"som.test/gen/som/by"
 	"som.test/gen/som/query"
 	"som.test/model"
@@ -150,4 +152,74 @@ func TestPaginateTypedCursor(t *testing.T) {
 	assert.Equal(t, 2, len(page2.Items))
 	assert.Equal(t, 2, page2.Items[0].FieldInt)
 	assert.Equal(t, 1, page2.Items[1].FieldInt)
+}
+
+// TestPaginateAccuratePageInfo exercises the WithAccuratePageInfo path, which
+// runs an extra boundary query. It verifies the flags stay correct and, just
+// as importantly, that the extra query is well-formed (does not error).
+func TestPaginateAccuratePageInfo(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	for _, n := range []string{"a", "b", "c", "d", "e"} {
+		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
+			FieldString: n,
+			FieldMonth:  time.January,
+		})
+		assert.NilError(t, err)
+	}
+
+	// First page, no cursor: there genuinely is no previous page.
+	first, err := client.AllTypesRepo().Query().
+		Order(by.AllTypes.FieldString.Asc()).
+		Paginate(ctx, query.First(2), query.WithAccuratePageInfo())
+	assert.NilError(t, err)
+	assert.Equal(t, "a", first.Items[0].FieldString)
+	assert.Equal(t, false, first.PageInfo.HasPreviousPage)
+	assert.Equal(t, true, first.PageInfo.HasNextPage)
+
+	// Middle page via cursor still reports a previous page.
+	mid, err := client.AllTypesRepo().Query().
+		Order(by.AllTypes.FieldString.Asc()).
+		Paginate(ctx, query.First(2), query.After(first.PageInfo.EndCursor), query.WithAccuratePageInfo())
+	assert.NilError(t, err)
+	assert.Equal(t, "c", mid.Items[0].FieldString)
+	assert.Equal(t, true, mid.PageInfo.HasPreviousPage)
+	assert.Equal(t, true, mid.PageInfo.HasNextPage)
+
+	// Last page (backward, no cursor): there genuinely is no next page.
+	last, err := client.AllTypesRepo().Query().
+		Order(by.AllTypes.FieldString.Asc()).
+		Paginate(ctx, query.Last(2), query.WithAccuratePageInfo())
+	assert.NilError(t, err)
+	assert.Equal(t, "e", last.Items[1].FieldString)
+	assert.Equal(t, false, last.PageInfo.HasNextPage)
+	assert.Equal(t, true, last.PageInfo.HasPreviousPage)
+}
+
+// TestPaginateComplexIDGuard verifies that Paginate fails with a clear error
+// for models with a complex ID, which have no single "id" tiebreaker and
+// should use Range() instead.
+func TestPaginateComplexIDGuard(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	person := &model.PersonObj{
+		Node:  som.NewNode[model.PersonKey](model.PersonKey{Name: "Alice", Age: 30}),
+		Email: "alice@example.com",
+	}
+	assert.NilError(t, client.PersonObjRepo().CreateWithID(ctx, person))
+
+	_, err := client.PersonObjRepo().Query().Paginate(ctx, query.First(10))
+	assert.Assert(t, err != nil, "expected an error for complex-ID pagination")
+	assert.Assert(t, strings.Contains(err.Error(), "Range()"),
+		"error should point to Range(), got: %v", err)
 }

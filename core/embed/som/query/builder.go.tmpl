@@ -719,6 +719,12 @@ func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, e
 		}
 	}
 
+	// Complex-ID models expose no single "id" field, so cursor pagination
+	// cannot form a stable tiebreaker. These models should use Range() instead.
+	if id == nil {
+		return "", errors.New("cursor pagination requires a string ID; use Range() for models with a complex ID")
+	}
+
 	return lib.EncodeCursor(lib.CursorData{
 		SortValues: sortValues,
 		ID:         id,
