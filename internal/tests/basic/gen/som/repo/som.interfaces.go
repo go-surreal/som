@@ -17,6 +17,9 @@ type Client interface {
 	LocationRepo() LocationRepo
 	EphemeralRepo() EphemeralRepo
 	AllTypesRepo() AllTypesRepo
+	EventSummaryRepo() EventSummaryRepo
+	AllTypesSummaryRepo() AllTypesSummaryRepo
+	EventLogRepo() EventLogRepo
 	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
 	Close()
@@ -34,6 +37,9 @@ type ClientImpl struct {
 	locationRepo        *location
 	ephemeralRepo       *ephemeral
 	allTypesRepo        *allTypes
+	eventSummaryRepo    *eventSummary
+	allTypesSummaryRepo *allTypesSummary
+	eventLogRepo        *eventLog
 }
 
 // ttlTables lists tables with a configured TTL, purged in the background.

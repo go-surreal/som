@@ -260,6 +260,8 @@ type Output struct {
 	PkgPath    string
 	Nodes      []*Node
 	Edges      []*Edge
+	Views      []*View
+	Sinks      []*Sink
 	Structs    []*Struct
 	Enums      []*Enum
 	EnumValues []*EnumValue

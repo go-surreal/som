@@ -18,6 +18,12 @@ const (
 type context struct {
 	varIndex int32
 	vars     map[string]any
+
+	// literal makes asVar inline values as SurrealQL literals instead of
+	// binding them as $-parameters. This is required when rendering static
+	// DDL such as a DEFINE TABLE ... AS SELECT view definition, which cannot
+	// carry query parameters.
+	literal bool
 }
 
 func (c *context) Vars() map[string]any {
@@ -26,6 +32,10 @@ func (c *context) Vars() map[string]any {
 
 // TODO: deduplicate same values in the same query
 func (c *context) asVar(val any) string {
+	if c.literal {
+		return literalValue(val)
+	}
+
 	index := intToLetters(c.varIndex)
 	c.varIndex++
 	c.vars[index] = val

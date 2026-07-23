@@ -189,6 +189,33 @@ func dbInsert[T any](ctx context.Context, db *dbConn, statement string, vars map
 	return qr.Result, nil
 }
 
+// dbInsertVoid inserts one or more records into a write-only (DROP) table.
+// Such tables discard rows after write, so — unlike dbInsert — no results
+// are read back and an empty response is the success case, not an error.
+func dbInsertVoid(ctx context.Context, db *dbConn, table string, data []any) error {
+	statement := "INSERT INTO " + table + " $data"
+	vars := map[string]any{"data": data}
+	tx, err := db.ensureTx(ctx)
+	if err != nil {
+		return err
+	}
+	var result *[]surrealdb.QueryResult[[]any]
+	if tx != nil {
+		result, err = surrealdb.Query[[]any](ctx, tx, statement, vars)
+	} else {
+		result, err = surrealdb.Query[[]any](ctx, db.conn, statement, vars)
+	}
+	if err != nil {
+		return err
+	}
+	if result != nil && len(*result) > 0 {
+		if qr := (*result)[0]; qr.Error != nil {
+			return fmt.Errorf("insert failed: %w", qr.Error)
+		}
+	}
+	return nil
+}
+
 func (c *dbConn) Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error) {
 	tx, err := c.ensureTx(ctx)
 	if err != nil {

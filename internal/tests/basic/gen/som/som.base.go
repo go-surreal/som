@@ -205,6 +205,42 @@ func (e Edge) ID() string {
 	return e.id
 }
 
+// View describes a read-only, pre-computed table view backed by a
+// SurrealDB DEFINE TABLE ... AS SELECT statement. View rows are computed
+// from a source table and cannot be created, updated or deleted through
+// the generated repository.
+//
+// Caution: values projected from linked tables (via record links or graph
+// traversal, e.g. ->product.name) are frozen at the time the source row is
+// written. They do NOT refresh when the linked record itself changes, so a
+// view may hold stale linked data.
+type View struct {
+	id string
+}
+
+func NewView(id string) View {
+	return View{id: id}
+}
+
+func (v View) ID() string {
+	return v.id
+}
+
+func (View) isView() {}
+
+// Sink describes a write-only ingestion table backed by a SurrealDB
+// DEFINE TABLE ... DROP statement. Records created through a Sink are
+// accepted — firing any pre-computed table views (som.View) and events
+// that select from it — but are NOT persisted: the row is discarded
+// immediately after write. A Sink therefore exposes only Create and
+// Insert; it has no id and cannot be read, queried, updated or deleted.
+//
+// Typical use: feeding an aggregating view from a high-volume event or
+// log stream where only the aggregate is kept, not the raw records.
+type Sink struct{}
+
+func (Sink) isSink() {}
+
 type node interface {
 	isNode()
 }

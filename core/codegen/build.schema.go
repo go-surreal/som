@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"strings"
 
@@ -69,6 +70,34 @@ func (b *build) buildSchemaFile() error {
 		statements = append(statements, "")
 	}
 
+	// Sinks are write-only ingestion tables: records are accepted (firing
+	// any dependent views/events) but discarded via DROP. Fields are still
+	// defined so writes are validated and dependent view SELECTs typecheck.
+	// No indexes are emitted — there are no rows to index.
+	for _, sink := range b.input.sinks {
+		statement := fmt.Sprintf("DEFINE TABLE %s DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", sink.NameDatabase())
+		statements = append(statements, statement)
+
+		for _, f := range sink.GetFields() {
+			statements = append(statements, f.SchemaStatements(sink.NameDatabase(), "")...)
+		}
+
+		statements = append(statements, "")
+	}
+
+	// Views are read-only, pre-computed tables defined via AS SELECT.
+	// They are emitted after the source tables they depend on.
+	for _, view := range b.input.views {
+		statement, err := b.buildViewStatement(view)
+		if err != nil {
+			return err
+		}
+		if statement == "" {
+			continue // view without a definition (see buildViewStatement)
+		}
+		statements = append(statements, statement, "")
+	}
+
 	// Append index statements at the end
 	if len(indexStatements) > 0 {
 		statements = append(statements, indexStatements...)
@@ -80,6 +109,77 @@ func (b *build) buildSchemaFile() error {
 	b.fs.Write(path.Join(def.PkgRepo, "schema", filenameSchema), []byte(content))
 
 	return nil
+}
+
+// buildViewStatement builds the DEFINE TABLE ... AS SELECT statement for a
+// read-only view, joining the view model (its projected columns) with the
+// SELECT definition supplied via a //go:build som definition file.
+func (b *build) buildViewStatement(view *field.ViewTable) (string, error) {
+	var def *parser.ViewDef
+	if b.input.define != nil {
+		for i := range b.input.define.Views {
+			v := &b.input.define.Views[i]
+			if v.View != view.NameGo() {
+				continue
+			}
+			if def != nil {
+				return "", fmt.Errorf(
+					"view %s: multiple definitions found; multi-source views are not yet supported (SurrealDB #5593)",
+					view.NameGo(),
+				)
+			}
+			def = v
+		}
+	}
+
+	if def == nil {
+		// A view struct with no definition yet is not fatal: it lets the
+		// read stack be generated first, so define.View can reference the
+		// view's own filter refs, then a second gen emits the DDL. Warn and
+		// skip emitting a statement for this view.
+		fmt.Fprintf(os.Stderr,
+			"warning: view %s has no definition; skipping its schema statement. "+
+				"Declare it via define.View in a //go:build som file, then regenerate.\n",
+			view.NameGo(),
+		)
+		return "", nil
+	}
+
+	if len(def.Projections) == 0 {
+		return "", fmt.Errorf("view %s: definition has no projections", view.NameGo())
+	}
+
+	// A view may select from a node, an edge (relation) or a write-only
+	// sink table (the sink→view ingestion pattern).
+	var sourceDB string
+	if node := b.input.findNodeByName(def.Source); node != nil {
+		sourceDB = node.NameDatabase()
+	} else if edge := b.input.findEdgeByName(def.Source); edge != nil {
+		sourceDB = edge.NameDatabase()
+	} else if sink := b.input.findSinkByName(def.Source); sink != nil {
+		sourceDB = sink.NameDatabase()
+	} else {
+		return "", fmt.Errorf("view %s: unknown source model %q", view.NameGo(), def.Source)
+	}
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "DEFINE TABLE %s TYPE NORMAL AS SELECT %s FROM %s",
+		view.NameDatabase(),
+		strings.Join(def.Projections, ", "),
+		sourceDB,
+	)
+
+	if def.Where != "" {
+		fmt.Fprintf(&sb, " WHERE %s", def.Where)
+	}
+
+	if len(def.GroupBy) > 0 {
+		fmt.Fprintf(&sb, " GROUP BY %s", strings.Join(def.GroupBy, ", "))
+	}
+
+	sb.WriteString(";")
+
+	return sb.String(), nil
 }
 
 func buildAnalyzerStatement(analyzer parser.AnalyzerDef) string {
