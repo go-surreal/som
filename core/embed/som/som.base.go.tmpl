@@ -229,6 +229,19 @@ func (v View) ID() string {
 
 func (View) isView() {}
 
+// Sink describes a write-only ingestion table backed by a SurrealDB
+// DEFINE TABLE ... DROP statement. Records created through a Sink are
+// accepted — firing any pre-computed table views (som.View) and events
+// that select from it — but are NOT persisted: the row is discarded
+// immediately after write. A Sink therefore exposes only Create and
+// Insert; it has no id and cannot be read, queried, updated or deleted.
+//
+// Typical use: feeding an aggregating view from a high-volume event or
+// log stream where only the aggregate is kept, not the raw records.
+type Sink struct{}
+
+func (Sink) isSink() {}
+
 type node interface {
 	isNode()
 }

@@ -87,6 +87,12 @@ func (b *build) build() error {
 		}
 	}
 
+	for _, sink := range b.input.sinks {
+		if err := b.buildSinkRepoFile(sink); err != nil {
+			return err
+		}
+	}
+
 	builders := []builder{
 		b.newQueryBuilder(),
 		b.newFilterBuilder(),
@@ -127,6 +133,10 @@ func (b *build) buildInterfaceFile() error {
 			g.Id(view.NameGo() + "Repo").Call().Id(view.NameGo() + "Repo")
 		}
 
+		for _, sink := range b.input.sinks {
+			g.Id(sink.NameGo() + "Repo").Call().Id(sink.NameGo() + "Repo")
+		}
+
 		g.Id("Raw").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("query").String(),
@@ -149,6 +159,9 @@ func (b *build) buildInterfaceFile() error {
 		}
 		for _, view := range b.input.views {
 			g.Id(view.NameGoLower() + "Repo").Op("*").Id(view.NameGoLower())
+		}
+		for _, sink := range b.input.sinks {
+			g.Id(sink.NameGoLower() + "Repo").Op("*").Id(sink.NameGoLower())
 		}
 	})
 
@@ -1019,6 +1032,102 @@ func (b *build) buildViewRepoFile(view *field.ViewTable) error {
 		)
 
 	return f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, view.FileName())))
+}
+
+// buildSinkRepoFile generates the write-only repository for a sink. Sinks
+// expose only Create and Insert — the written rows are discarded by the
+// DROP table, so nothing is read back, queried, updated or deleted.
+func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
+	pkgConv := b.relativePkgPath(def.PkgConv)
+
+	name := sink.NameGo()
+	lower := sink.NameGoLower()
+	table := sink.NameDatabase()
+	modelType := b.input.SourceQual(name)
+	fromPtr := jen.Qual(pkgConv, "From"+name+"Ptr")
+
+	f := jen.NewFile(def.PkgRepo)
+	f.PackageComment(string(embed.CodegenComment))
+
+	// <Sink>Repo interface { Create(...) error; Insert(...) error }
+	f.Line().Type().Id(name+"Repo").InterfaceFunc(func(g *jen.Group) {
+		g.Add(comment("Create writes a new " + name + " record. The record is discarded\nimmediately after write (DROP table); nothing is returned."))
+		g.Id("Create").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id(lower).Op("*").Add(modelType),
+		).Error()
+		g.Add(comment("Insert writes multiple " + name + " records in a single operation.\nThe records are discarded immediately after write (DROP table)."))
+		g.Id("Insert").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id(lower+"s").Index().Op("*").Add(modelType),
+		).Error()
+	})
+
+	// func (c *ClientImpl) <Sink>Repo() <Sink>Repo { ... }
+	f.Line().
+		Add(comment(name + "Repo returns the repository instance for the " + name + " sink.\nThe instance is cached as a singleton on the client.")).
+		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
+		Id(name + "Repo").Params().Id(name + "Repo").
+		Block(
+			jen.Id("c").Dot("mu").Dot("Lock").Call(),
+			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
+			jen.If(jen.Id("c").Dot(lower+"Repo").Op("==").Nil()).Block(
+				jen.Id("c").Dot(lower+"Repo").Op("=").
+					Op("&").Id(lower).Values(jen.Dict{
+					jen.Id("db"): jen.Id("c").Dot("db"),
+				}),
+			),
+			jen.Return(jen.Id("c").Dot(lower+"Repo")),
+		)
+
+	// type <sinkLower> struct { db *dbConn }
+	f.Line().Type().Id(lower).Struct(
+		jen.Id("db").Op("*").Id("dbConn"),
+	)
+
+	// func (r *<sinkLower>) Create(ctx, m *model.Sink) error { ... }
+	f.Line().
+		Add(comment("Create writes a new " + name + " record; the row is discarded after write.")).
+		Func().Params(jen.Id("r").Op("*").Id(lower)).
+		Id("Create").Params(
+		jen.Id("ctx").Qual("context", "Context"),
+		jen.Id(lower).Op("*").Add(modelType),
+	).Error().
+		Block(
+			jen.If(jen.Id(lower).Op("==").Nil()).Block(
+				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed record must not be nil"))),
+			),
+			jen.Return(jen.Id("dbInsertVoid").Call(
+				jen.Id("ctx"), jen.Id("r").Dot("db"), jen.Lit(table),
+				jen.Index().Any().Values(fromPtr.Clone().Call(jen.Id(lower))),
+			)),
+		)
+
+	// func (r *<sinkLower>) Insert(ctx, ms []*model.Sink) error { ... }
+	f.Line().
+		Add(comment("Insert writes multiple " + name + " records; the rows are discarded after write.")).
+		Func().Params(jen.Id("r").Op("*").Id(lower)).
+		Id("Insert").Params(
+		jen.Id("ctx").Qual("context", "Context"),
+		jen.Id(lower+"s").Index().Op("*").Add(modelType),
+	).Error().
+		Block(
+			jen.If(jen.Len(jen.Id(lower+"s")).Op("==").Lit(0)).Block(
+				jen.Return(jen.Nil()),
+			),
+			jen.Id("data").Op(":=").Make(jen.Index().Any(), jen.Len(jen.Id(lower+"s"))),
+			jen.For(jen.List(jen.Id("i"), jen.Id("s")).Op(":=").Range().Id(lower+"s")).Block(
+				jen.If(jen.Id("s").Op("==").Nil()).Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("slice contains nil record"))),
+				),
+				jen.Id("data").Index(jen.Id("i")).Op("=").Add(fromPtr.Clone().Call(jen.Id("s"))),
+			),
+			jen.Return(jen.Id("dbInsertVoid").Call(
+				jen.Id("ctx"), jen.Id("r").Dot("db"), jen.Lit(table), jen.Id("data"),
+			)),
+		)
+
+	return f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, sink.FileName())))
 }
 
 func (b *build) newQueryBuilder() builder {

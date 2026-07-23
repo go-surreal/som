@@ -35,6 +35,15 @@ type View struct {
 	Fields []Field
 }
 
+// Sink is a write-only ingestion table backed by a DEFINE TABLE ... DROP
+// statement. It has a struct shape (its columns) like a Node but no ID,
+// no features and only create operations; rows are discarded immediately
+// after write, so they cannot be read back or linked to.
+type Sink struct {
+	Name   string
+	Fields []Field
+}
+
 type Enum struct {
 	Name string
 }

@@ -16,6 +16,7 @@ type input struct {
 	nodes         []*field.NodeTable
 	edges         []*field.EdgeTable
 	views         []*field.ViewTable
+	sinks         []*field.SinkTable
 	objects       []*field.DatabaseObject
 	define        *parser.DefineOutput
 }
@@ -39,6 +40,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 	in.nodes = def.Nodes
 	in.edges = def.Edges
 	in.views = def.Views
+	in.sinks = def.Sinks
 	in.objects = def.Objects
 	in.define = source.Define
 
@@ -62,6 +64,15 @@ func (in *input) findNodeByName(name string) *field.NodeTable {
 	for _, node := range in.nodes {
 		if node.NameGo() == name {
 			return node
+		}
+	}
+	return nil
+}
+
+func (in *input) findSinkByName(name string) *field.SinkTable {
+	for _, sink := range in.sinks {
+		if sink.NameGo() == name {
+			return sink
 		}
 	}
 	return nil

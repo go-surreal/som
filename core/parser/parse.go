@@ -240,6 +240,7 @@ type Output struct {
 	Nodes      []*Node
 	Edges      []*Edge
 	Views      []*View
+	Sinks      []*Sink
 	Structs    []*Struct
 	Enums      []*Enum
 	EnumValues []*EnumValue
