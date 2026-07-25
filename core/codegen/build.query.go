@@ -186,6 +186,13 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			)
 		})
 
+	// Deferred: SurrealDB's INCLUDE ORIGINAL (change-feed pre-image) is intentionally
+	// not implemented. It is a table-level clause (DEFINE TABLE ... CHANGEFEED ...
+	// INCLUDE ORIGINAL), not a SHOW CHANGES option, and enabling it changes the wire
+	// format: an update arrives as {current, update: [reverse json-patch incl. text
+	// diff]} instead of a full record. Proper support needs a tag opt-in, schema
+	// emission, and a diff-aware decoder that reverse-applies the patch to rebuild the
+	// original. Tracked separately; see the changefeed feature notes.
 	if node.HasChangefeed() {
 		f.Line()
 		f.Func().Id("New"+node.Name+"Changes").
