@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.20.0] - 2026-07-25
+
+
+### Added
+
+- Require surrealdb.go client v1.5.0 ([#509](https://github.com/go-surreal/som/pull/509))
+- Require surrealdb.go client v1.5.1 ([#512](https://github.com/go-surreal/som/pull/512))
+- Require surrealdb v3.2.0 ([#513](https://github.com/go-surreal/som/pull/513))
+- Server-side ID generation and typed complex IDs ([#516](https://github.com/go-surreal/som/pull/516))
+- Require surrealdb.go client v1.6.0 ([#520](https://github.com/go-surreal/som/pull/520))
+- Re-export ServerError kind constants and Is* helpers ([#521](https://github.com/go-surreal/som/pull/521))
+- Support read-only views ([#517](https://github.com/go-surreal/som/pull/517))
+- Support write-only sink models ([#524](https://github.com/go-surreal/som/pull/524))
+- Add expiry (TTL) support for nodes ([#523](https://github.com/go-surreal/som/pull/523))
+- Implement cursor-based pagination ([#205](https://github.com/go-surreal/som/pull/205))
+- Add changefeed support for models ([#408](https://github.com/go-surreal/som/pull/408))
+
+### Changed
+
+- Generic hook base ([#511](https://github.com/go-surreal/som/pull/511))
+
+### Fixed
+
+- Exclude unset (NONE) fields from NotEqual/NotIn filters ([#525](https://github.com/go-surreal/som/pull/525))
+
 ## [v0.19.0] - 2026-06-21
 
 
@@ -520,6 +545,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.0.1] - 2022-12-03
 
+[v0.20.0]: https://github.com/go-surreal/som/compare/v0.19.0...v0.20.0
 [v0.19.0]: https://github.com/go-surreal/som/compare/v0.18.0...v0.19.0
 [v0.18.0]: https://github.com/go-surreal/som/compare/v0.17.0...v0.18.0
 [v0.17.0]: https://github.com/go-surreal/som/compare/v0.16.0...v0.17.0
