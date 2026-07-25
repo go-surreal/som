@@ -18,6 +18,10 @@ func (c *SpecialRelation) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *SpecialRelation) fields() map[string]any {
 	data := make(map[string]any, 5)
 
 	// Embedded som.Node/Edge ID field
@@ -42,7 +46,7 @@ func (c *SpecialRelation) MarshalCBOR() ([]byte, error) {
 		data["authors"] = convSlice
 	}
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
@@ -113,6 +117,11 @@ func ToSpecialRelationPtr(data *SpecialRelation) *model.SpecialRelation {
 	}
 	result := data.SpecialRelation
 	return &result
+}
+
+func SpecialRelationFields(m *model.SpecialRelation) map[string]any {
+	c := SpecialRelation{*m}
+	return c.fields()
 }
 
 type specialRelationLink struct {

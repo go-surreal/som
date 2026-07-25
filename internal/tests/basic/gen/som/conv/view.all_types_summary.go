@@ -16,13 +16,17 @@ func (c *AllTypesSummary) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *AllTypesSummary) fields() map[string]any {
 	data := make(map[string]any, 3)
 
 	data["category"] = c.Category
 	data["total"] = c.Total
 	data["avg_value"] = c.AvgValue
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *AllTypesSummary) UnmarshalCBOR(data []byte) error {

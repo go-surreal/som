@@ -19,6 +19,10 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *AllTypes) fields() map[string]any {
 	data := make(map[string]any, 100)
 
 	// Embedded som.Node/Edge ID field
@@ -318,7 +322,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	data["field_hook_status"] = c.FieldHookStatus
 	data["field_hook_detail"] = c.FieldHookDetail
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *AllTypes) UnmarshalCBOR(data []byte) error {
@@ -768,6 +772,11 @@ func ToAllTypesPtr(data *AllTypes) *model.AllTypes {
 	}
 	result := data.AllTypes
 	return &result
+}
+
+func AllTypesFields(m *model.AllTypes) map[string]any {
+	c := AllTypes{*m}
+	return c.fields()
 }
 
 type allTypesLink struct {

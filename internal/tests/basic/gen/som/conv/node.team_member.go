@@ -17,13 +17,17 @@ func (c *TeamMember) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *TeamMember) fields() map[string]any {
 	data := make(map[string]any, 1)
 
 	// Embedded som.Node/Edge ID field
 
 	data["role"] = c.Role
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *TeamMember) UnmarshalCBOR(data []byte) error {
@@ -125,6 +129,11 @@ func ToTeamMemberPtr(data *TeamMember) *model.TeamMember {
 	}
 	result := data.TeamMember
 	return &result
+}
+
+func TeamMemberFields(m *model.TeamMember) map[string]any {
+	c := TeamMember{*m}
+	return c.fields()
 }
 
 type teamMemberLink struct {
