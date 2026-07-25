@@ -18,6 +18,10 @@ func (c *EdgeRelation) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *EdgeRelation) fields() map[string]any {
 	data := make(map[string]any, 4)
 
 	// Embedded som.Node/Edge ID field
@@ -33,7 +37,7 @@ func (c *EdgeRelation) MarshalCBOR() ([]byte, error) {
 	}
 	data["meta"] = fromEdgeMeta(c.Meta)
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *EdgeRelation) UnmarshalCBOR(data []byte) error {

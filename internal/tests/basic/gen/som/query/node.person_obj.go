@@ -10,6 +10,7 @@ import (
 
 // personObjModelInfo holds the model-specific unmarshal functions for PersonObj.
 var personObjModelInfo = modelInfo[model.PersonObj]{
+	Fields: conv.PersonObjFields,
 	UnmarshalAll: func(data []byte) ([]*model.PersonObj, error) {
 		return unmarshalAll(data, conv.ToPersonObjPtr)
 	},

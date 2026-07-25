@@ -11,6 +11,7 @@ import (
 
 // weatherModelInfo holds the model-specific unmarshal functions for Weather.
 var weatherModelInfo = modelInfo[model.Weather]{
+	Fields: conv.WeatherFields,
 	UnmarshalAll: func(data []byte) ([]*model.Weather, error) {
 		return unmarshalAll(data, conv.ToWeatherPtr)
 	},

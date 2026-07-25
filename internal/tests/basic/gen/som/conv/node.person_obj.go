@@ -16,13 +16,17 @@ func (c *PersonObj) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *PersonObj) fields() map[string]any {
 	data := make(map[string]any, 1)
 
 	// Embedded som.Node/Edge ID field
 
 	data["email"] = c.Email
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *PersonObj) UnmarshalCBOR(data []byte) error {
@@ -83,6 +87,11 @@ func ToPersonObjPtr(data *PersonObj) *model.PersonObj {
 	}
 	result := data.PersonObj
 	return &result
+}
+
+func PersonObjFields(m *model.PersonObj) map[string]any {
+	c := PersonObj{*m}
+	return c.fields()
 }
 
 type personObjLink struct {

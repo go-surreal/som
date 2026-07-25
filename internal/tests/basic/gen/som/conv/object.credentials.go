@@ -14,6 +14,10 @@ func (c *credentials) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *credentials) fields() map[string]any {
 	data := make(map[string]any, 3)
 
 	data["username"] = c.Username
@@ -22,7 +26,7 @@ func (c *credentials) MarshalCBOR() ([]byte, error) {
 		data["password_ptr"] = c.PasswordPtr
 	}
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *credentials) UnmarshalCBOR(data []byte) error {

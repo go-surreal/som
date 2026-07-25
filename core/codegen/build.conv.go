@@ -85,6 +85,9 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	f.Add(b.buildMarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge, isView))
 
 	f.Line()
+	f.Add(b.buildFields(elem, typeName, fieldCtx, isNode, isEdge))
+
+	f.Line()
 	f.Add(b.buildUnmarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge, isView))
 
 	f.Line()
@@ -94,6 +97,9 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	f.Add(b.buildTo(elem))
 
 	if node, ok := elem.(*field.NodeTable); ok {
+		f.Line()
+		f.Add(b.buildNodeFields(node, typeName))
+
 		f.Line()
 		f.Type().Id(node.NameGoLower()+"Link").Struct(
 			jen.Id(node.NameGo()),
@@ -422,11 +428,23 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 		Params(jen.Id("c").Op("*").Id(typeName)).
 		Id("MarshalCBOR").Params().
 		Params(jen.Index().Byte(), jen.Error()).
-		BlockFunc(func(g *jen.Group) {
-			g.If(jen.Id("c").Op("==").Nil()).Block(
+		Block(
+			jen.If(jen.Id("c").Op("==").Nil()).Block(
 				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Nil())),
-			)
+			),
+			jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("c").Dot("fields").Call())),
+		)
+}
 
+// buildFields generates a fields() method that builds the DB-keyed value map.
+// It is used by MarshalCBOR and, for nodes, exposed via <Type>Fields for
+// cursor-based pagination which needs DB field names and DB-typed values.
+func (b *convBuilder) buildFields(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
+	return jen.Func().
+		Params(jen.Id("c").Op("*").Id(typeName)).
+		Id("fields").Params().
+		Map(jen.String()).Any().
+		BlockFunc(func(g *jen.Group) {
 			// Count fields for pre-sized map allocation.
 			// Views are read-only and never marshal an id (their id may be a
 			// composite that cannot be re-wrapped), so only nodes/edges count it.
@@ -484,8 +502,22 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 			}
 
 			g.Line()
-			g.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("data")))
+			g.Return(jen.Id("data"))
 		})
+}
+
+// buildNodeFields generates an exported <Type>Fields package function that
+// returns the DB-keyed value map for a model. Used by the query builder to
+// derive pagination cursor values with correct DB field names and types.
+func (b *convBuilder) buildNodeFields(node *field.NodeTable, typeName string) jen.Code {
+	return jen.Func().
+		Id(node.NameGo() + "Fields").
+		Params(jen.Id("m").Op("*").Add(b.SourceQual(node.NameGo()))).
+		Map(jen.String()).Any().
+		Block(
+			jen.Id("c").Op(":=").Id(typeName).Values(jen.Op("*").Id("m")),
+			jen.Return(jen.Id("c").Dot("fields").Call()),
+		)
 }
 
 func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge, isView bool) jen.Code {
