@@ -33,7 +33,7 @@ type Dimensions struct {
 }
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name    string
     Address Address    // Required embedded struct
@@ -41,7 +41,7 @@ type User struct {
 }
 
 type Product struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name       string
     Dimensions Dimensions
@@ -99,11 +99,11 @@ Access nested fields using dot notation in the where clause:
 
 ```go
 // Filter by nested field
-filter.User.Address.City.Equal("New York")
+filter.User.Address().City.Equal("New York")
 
 // String operations on nested fields
-filter.User.Address.Country.Equal("USA")
-filter.User.Address.ZipCode.StartsWith("100")
+filter.User.Address().Country.Equal("USA")
+filter.User.Address().ZipCode.StartsWith("100").True()
 
 // Numeric nested fields
 filter.Product.Dimensions.Width.GreaterThan(10.0)
@@ -115,8 +115,8 @@ filter.Product.Dimensions.Height.LessThan(50.0)
 ```go
 // Multiple conditions on nested struct
 query.Where(
-    filter.User.Address.City.Equal("New York"),
-    filter.User.Address.Country.Equal("USA"),
+    filter.User.Address().City.Equal("New York"),
+    filter.User.Address().Country.Equal("USA"),
 )
 ```
 
@@ -124,17 +124,17 @@ query.Where(
 
 ```go
 // Has billing address
-filter.User.Billing.IsNotNil()
+filter.User.Billing().Nil(false)
 
 // No billing address
-filter.User.Billing.IsNil()
+filter.User.Billing().Nil(true)
 ```
 
 ### Optional Struct Field Access
 
 ```go
 // Filter by optional struct's field (if struct is not nil)
-filter.User.Billing.City.Equal("Chicago")
+filter.User.Billing().City.Equal("Chicago")
 ```
 
 ## Sorting
@@ -166,7 +166,7 @@ type BaseInfo struct {
 }
 
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
 
     Title    string
     BaseInfo // Anonymous embedding
@@ -188,15 +188,15 @@ type ContactInfo struct {
 }
 
 type Company struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name    string
     Contact ContactInfo
 }
 
 // Access deeply nested fields
-filter.Company.Contact.Address.City.Equal("San Francisco")
-filter.Company.Contact.Email.EndsWith("@company.com")
+filter.Company.Contact().Address.City.Equal("San Francisco")
+filter.Company.Contact().Email.EndsWith("@company.com").True()
 ```
 
 ## Common Patterns
@@ -206,7 +206,7 @@ filter.Company.Contact.Email.EndsWith("@company.com")
 ```go
 // Users in New York
 nyUsers, _ := client.UserRepo().Query().
-    Where(filter.User.Address.City.Equal("New York")).
+    Where(filter.User.Address().City.Equal("New York")).
     All(ctx)
 ```
 
@@ -215,7 +215,7 @@ nyUsers, _ := client.UserRepo().Query().
 ```go
 // Users in USA
 usUsers, _ := client.UserRepo().Query().
-    Where(filter.User.Address.Country.Equal("USA")).
+    Where(filter.User.Address().Country.Equal("USA")).
     All(ctx)
 ```
 
@@ -224,7 +224,7 @@ usUsers, _ := client.UserRepo().Query().
 ```go
 // Users with separate billing
 withBilling, _ := client.UserRepo().Query().
-    Where(filter.User.Billing.IsNotNil()).
+    Where(filter.User.Billing().Nil(false)).
     All(ctx)
 ```
 
@@ -260,7 +260,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create user with address
     user := &model.User{
@@ -276,29 +276,29 @@ func main() {
 
     // Find by city
     nyUsers, _ := client.UserRepo().Query().
-        Where(filter.User.Address.City.Equal("New York")).
+        Where(filter.User.Address().City.Equal("New York")).
         All(ctx)
 
     // Find by country
     usUsers, _ := client.UserRepo().Query().
-        Where(filter.User.Address.Country.Equal("USA")).
+        Where(filter.User.Address().Country.Equal("USA")).
         All(ctx)
 
     // Find by zip code prefix
     manhattan, _ := client.UserRepo().Query().
-        Where(filter.User.Address.ZipCode.StartsWith("100")).
+        Where(filter.User.Address().ZipCode.StartsWith("100").True()).
         All(ctx)
 
     // Users with billing address
     withBilling, _ := client.UserRepo().Query().
-        Where(filter.User.Billing.IsNotNil()).
+        Where(filter.User.Billing().Nil(false)).
         All(ctx)
 
     // Users with billing in different city
     differentBilling, _ := client.UserRepo().Query().
         Where(
-            filter.User.Billing.IsNotNil(),
-            filter.User.Billing.City.NotEqual(filter.User.Address.City),
+            filter.User.Billing().Nil(false),
+            filter.User.Billing().City.NotEqual(filter.User.Address().City),
         ).
         All(ctx)
 
@@ -325,8 +325,8 @@ func main() {
 | Operation | Description | Returns |
 |-----------|-------------|---------|
 | `<FieldName>` | Access nested field | Field's filter type |
-| `IsNil()` | Struct is null (ptr) | Bool filter |
-| `IsNotNil()` | Struct is not null (ptr) | Bool filter |
+| `Nil(true)` | Struct is null (ptr) | Bool filter |
+| `Nil(false)` | Struct is not null (ptr) | Bool filter |
 
 ### Nested Field Operations
 
@@ -334,16 +334,16 @@ All filter operations available for the nested field's type:
 
 ```go
 // String fields in struct
-filter.User.Address.City.Equal("NYC")
-filter.User.Address.City.Contains("York")
-filter.User.Address.City.Lowercase().StartsWith("new")
+filter.User.Address().City.Equal("NYC")
+filter.User.Address().City.Contains("York").True()
+filter.User.Address().City.Lowercase().StartsWith("new").True()
 
 // Numeric fields in struct
 filter.Product.Dimensions.Width.GreaterThan(10)
 filter.Product.Dimensions.Width.Mul(2).LessThan(100)
 
 // Bool fields in struct
-filter.Config.Settings.IsEnabled.True()
+filter.Config.Settings().IsEnabled.True()
 ```
 
 ## Best Practices
@@ -362,7 +362,7 @@ type Address struct {
 
 // Consider Node instead for entities with identity
 type Location struct {
-    som.Node  // Has its own ID, can be referenced
+    som.Node[som.ULID]  // Has its own ID, can be referenced
     Name      string
     Latitude  float64
     Longitude float64
@@ -387,7 +387,7 @@ Optional embedded structs should be pointers:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Address  Address   // Always required
     Billing  *Address  // Optional

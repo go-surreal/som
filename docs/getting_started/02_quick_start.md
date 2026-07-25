@@ -38,7 +38,7 @@ Key points:
 - `som.Node[som.ULID]` makes this a database record with ULID-based IDs (required)
 - `som.Timestamps` adds auto-managed timestamp fields (optional)
 - Field names become database field names (snake_case by default)
-- You can override field names with the `som:"custom_name"` tag
+- You can override field names with the `som:"name=custom_name"` tag
 
 ## Step 2: Generate Code
 
@@ -47,9 +47,13 @@ go run github.com/go-surreal/som@latest -i ./model
 ```
 
 This creates:
-- `gen/som/` - Client and repository code
+- `gen/som/` - Base types (`som.Node`, errors, transactions, cache)
+- `gen/som/repo/` - Client and repositories (`repo.NewClient`, `client.UserRepo()`)
+- `gen/som/query/` - Query builders
 - `gen/som/filter/` - Type-safe filters
 - `gen/som/by/` - Sorting helpers
+- `gen/som/with/`, `gen/som/field/`, `gen/som/index/`, `gen/som/relate/` - fetch paths,
+  distinct fields, index access and edge creation
 
 ## Step 3: Connect and Use
 
@@ -61,9 +65,9 @@ import (
     "fmt"
     "log"
 
-    "yourproject/gen/som"
-    "yourproject/gen/som/filter"
     "yourproject/gen/som/by"
+    "yourproject/gen/som/filter"
+    "yourproject/gen/som/repo"
     "yourproject/model"
 )
 
@@ -71,7 +75,7 @@ func main() {
     ctx := context.Background()
 
     // Connect to SurrealDB
-    client, err := som.NewClient(ctx, som.Config{
+    client, err := repo.NewClient(ctx, repo.Config{
         Address:   "ws://localhost:8000",
         Username:  "root",
         Password:  "root",
@@ -82,6 +86,11 @@ func main() {
         log.Fatal(err)
     }
     defer client.Close()
+
+    // Apply the generated schema (tables, fields, indexes)
+    if err := client.ApplySchema(ctx); err != nil {
+        log.Fatal(err)
+    }
 
     // CREATE
     user := &model.User{
@@ -112,7 +121,7 @@ func main() {
 
     // QUERY with filters
     users, err := client.UserRepo().Query().
-        Where(filter.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.True()).
         Where(filter.User.Age.GreaterThan(18)).
         Order(by.User.Username.Asc()).
         Limit(10).
@@ -155,7 +164,7 @@ exists, err := client.UserRepo().Query().
 
 ```go
 count, err := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Count(ctx)
 ```
 
@@ -164,7 +173,7 @@ count, err := client.UserRepo().Query().
 ```go
 // Start query in background
 result := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     AllAsync(ctx)
 
 // Do other work...

@@ -35,7 +35,10 @@ The parser analyzes your Go source files to identify:
 - **Nodes**: Structs embedding `som.Node[T]` (where T is an ID type)
 - **Edges**: Structs embedding `som.Edge`
 - **Structs**: Regular structs used as fields (for nested types)
-- **Enums**: Types implementing `som.Enum` interface
+- **Enums**: Types declared as `som.Enum` (e.g. `type Role som.Enum`)
+- **Views / Sinks**: Structs embedding `som.View` or `som.Sink`
+- **Definitions**: A `//go:build som` file in the module root providing analyzers, search
+  configurations and view projections
 - **Fields**: All fields with their types, tags, and constraints
 
 ### 2. Code Generation Phase
@@ -55,14 +58,18 @@ Generated files are written to the output directory with their own `go.mod`, cre
 
 ```
 gen/som/
-├── som.base.go           # ID types, Node[T], Edge, Timestamps
-├── som.client.go         # Client implementation
-├── som.interfaces.go     # Repository interfaces
-├── som.node.go           # Base repository pattern
-├── som.schema.go         # Schema utilities
+├── som.base.go           # ID types, Node[T], Edge, View, Sink, Timestamps, errors
+├── cache.go              # Context cache options
+├── transaction.go        # Transaction helpers
 │
-├── repo/                 # Repository implementations
-│   └── node.{model}.go   # Per-model: Create, Read, Update, Delete, Insert, Query
+├── repo/                 # Client and repository implementations
+│   ├── som.client.go     # NewClient, Config, connection handling
+│   ├── som.interfaces.go # Client and repository interfaces
+│   ├── som.schema.go     # ApplySchema
+│   ├── schema/           # Generated schema.surql
+│   ├── node.{model}.go   # Per-model: Create, Read, Update, Delete, Insert, Query
+│   ├── view.{model}.go   # Read-only view repositories
+│   └── sink.{model}.go   # Write-only sink repositories
 │
 ├── query/                # Query builders
 │   ├── builder.go        # Generic builder with all methods
@@ -79,6 +86,15 @@ gen/som/
 │
 ├── with/                 # Fetch/eager loading
 │   └── node.{model}.go   # Per-model fetchable relations
+│
+├── field/                # Field references for query.Distinct
+│   └── node.{model}.go   # Per-model distinct-capable fields
+│
+├── index/                # Index handles (Rebuild)
+│   └── node.{model}.go   # Per-model indexes
+│
+├── define/               # Analyzer, search and view definition builders
+│   └── aggregate/        # Aggregate functions for view projections
 │
 ├── conv/                 # Type converters
 │   ├── node.{model}.go   # Model to/from database format
@@ -118,8 +134,12 @@ Edges represent graph relationships between nodes:
 
 ```go
 type Follows struct {
-    som.Edge        // Provides ID, In, Out
-    Since time.Time // Edge metadata
+    som.Edge                 // Provides the edge ID
+
+    From  User `som:"in"`    // Source node
+    To    User `som:"out"`   // Target node
+
+    Since time.Time          // Edge metadata
 }
 // Creates edge table: follows
 // RELATE user:a->follows->user:b
@@ -138,6 +158,7 @@ type UserRepo interface {
     Update(ctx, *User) error
     Delete(ctx, *User) error
     Refresh(ctx, *User) error
+    Relate() *relate.User
     Index() *index.User
     Query() Builder[User]
 }
@@ -153,6 +174,8 @@ Builder[M]
 ├── Fetch(relations...)   // FETCH (keeps Live available)
 ├── WithDeleted()         // Include soft-deleted (keeps Live available)
 │
+├── WithExpired()         // Include expired records (keeps Live available)
+│
 ├── Order(sorts...)       // ORDER BY (returns BuilderNoLive)
 ├── OrderRandom()         // ORDER RAND() (returns BuilderNoLive)
 ├── Start(n)              // START (returns BuilderNoLive)
@@ -167,6 +190,8 @@ Builder[M]
 ├── Count(ctx)            // Count results
 ├── Exists(ctx)           // Check existence
 ├── Live(ctx)             // Stream changes (only on Builder, not BuilderNoLive)
+├── LiveCount(ctx)        // Live count of matches
+├── Paginate()            // Cursor pagination builder
 │
 ├── Iterate(ctx, batch)   // Stream records in batches
 ├── IterateID(ctx, batch) // Stream record IDs

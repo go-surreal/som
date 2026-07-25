@@ -266,7 +266,7 @@ Search conditions can be combined with regular filters using `Where()`:
 results, err := client.ArticleRepo().Query().
     Search(filter.Article.Content.Matches("golang")).
     Where(
-        filter.Article.Published.IsTrue(),
+        filter.Article.Published.True(),
         filter.Article.Category.Equal("tutorials"),
     ).
     AllMatches(ctx)
@@ -288,7 +288,7 @@ import (
     "yourproject/gen/som/filter"
 )
 
-func SearchArticles(ctx context.Context, client *som.Client, terms string) {
+func SearchArticles(ctx context.Context, client repo.Client, terms string) {
     // Multi-field search with relevance ranking
     results, err := client.ArticleRepo().Query().
         Search(
@@ -296,7 +296,7 @@ func SearchArticles(ctx context.Context, client *som.Client, terms string) {
             filter.Article.Content.Matches(terms).Ref(1).WithHighlights("<mark>", "</mark>"),
         ).
         Where(
-            filter.Article.Published.IsTrue(),
+            filter.Article.Published.True(),
         ).
         Order(
             query.Score(0, 1).Weighted(2.0, 1.0).Desc(),  // Title matches weighted 2x

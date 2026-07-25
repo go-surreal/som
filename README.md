@@ -105,32 +105,33 @@ type User struct {
 }
 ```
 
-In order for it to be considered by the generator, it must embed `som.Node`:
+In order for it to be considered by the generator, it must embed `som.Node[T]`, where `T` is the
+ID type (`som.ULID`, `som.UUID`, `som.Rand` or a custom key struct):
 
 ```go
 package model
 
-import "github.com/go-surreal/som"
+import "<root>/gen/som"
 
 type User struct {
-    som.Node
-    
-    // ID string `som:"id"` --> provided by som!
-    
-    Username string `som:"username"`
-    Password string `som:"password"`
-    Email    string `som:"email"`
+    som.Node[som.ULID]
+
+    // ID string --> provided by som!
+
+    Username string
+    Password string
+    Email    string
 }
 ```
 
 Now, we can generate the client code:
 
 ```
-go run github.com/go-surreal/som/cmd/som@latest gen <in_model_path> <out_gen_path>
+go run github.com/go-surreal/som@latest -i <in_model_path> -o <out_gen_path>
 
 // e.g.
 
-go run github.com/go-surreal/som/cmd/som@latest gen <root>/model <root>/gen/som
+go run github.com/go-surreal/som@latest -i ./model
 ```
 
 With the generated client, we can now perform operations on the database:
@@ -142,8 +143,8 @@ import (
     "context"
     "log"
     
-    "<root>/gen/som"
     "<root>/gen/som/filter"
+    "<root>/gen/som/repo"
     "<root>/model"
 )
 
@@ -151,7 +152,7 @@ func main() {
     ctx := context.Background()
 
     // create a new client
-    client, err := som.NewClient(ctx, som.Config{
+    client, err := repo.NewClient(ctx, repo.Config{
         Address:   "ws://localhost:8000",
         Username:  "root",
         Password:  "root",
@@ -160,6 +161,12 @@ func main() {
     })
     
     if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    // apply the generated schema
+    if err := client.ApplySchema(ctx); err != nil {
         log.Fatal(err)
     }
     

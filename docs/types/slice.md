@@ -15,7 +15,7 @@ The slice type handles arrays of any other type with extensive membership, set, 
 
 ```go
 type Post struct {
-    som.Node
+    som.Node[som.ULID]
 
     Title    string
     Tags     []string        // String slice
@@ -32,7 +32,7 @@ Byte slices have special handling:
 
 ```go
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
 
     Data []byte  // Stored as bytes type
 }
@@ -70,23 +70,23 @@ filter.Post.Tags.Empty(false)  // Not empty
 
 ```go
 // Contains single element
-filter.Post.Tags.Contains("golang")
+filter.Post.Tags.Contains("golang").True()
 
 // Does not contain element
-filter.Post.Tags.ContainsNot("deprecated")
+filter.Post.Tags.ContainsNot("deprecated").True()
 ```
 
 ### Multiple Element Membership
 
 ```go
 // Contains ALL elements
-filter.Post.Tags.ContainsAll("golang", "database", "orm")
+filter.Post.Tags.ContainsAll([]string{"golang", "database", "orm"})
 
 // Contains ANY element
-filter.Post.Tags.ContainsAny("golang", "rust", "python")
+filter.Post.Tags.ContainsAny([]string{"golang", "rust", "python"})
 
 // Contains NONE of elements
-filter.Post.Tags.ContainsNone("deprecated", "obsolete")
+filter.Post.Tags.ContainsNone([]string{"deprecated", "obsolete"})
 ```
 
 ### Equality Checks
@@ -160,7 +160,7 @@ filter.Post.Scores.SortAsc().First().Equal(minScore)
 filter.Post.Scores.SortDesc().First().Equal(maxScore)
 
 // Slice (start, length)
-filter.Post.Tags.Slice(0, 3).Contains("featured")
+filter.Post.Tags.Slice(0, 3).Contains("featured").True()
 ```
 
 ### Set Operations
@@ -173,7 +173,7 @@ filter.Post.Tags.Concat(otherTags).Len().GreaterThan(10)
 filter.Post.Tags.Intersect(requiredTags).NotEmpty()
 
 // Union
-filter.Post.Tags.Union(additionalTags).Contains("merged")
+filter.Post.Tags.Union(additionalTags).Contains("merged").True()
 
 // Complement (elements in first but not second)
 filter.Post.Tags.Complement(excludeTags).NotEmpty()
@@ -208,7 +208,7 @@ filter.Post.Scores.Min().GreaterThan(0)
 filter.Post.Scores.Max().LessThan(100)
 
 // Join elements (strings)
-filter.Post.Tags.Join(",").Contains("golang")
+filter.Post.Tags.Join(",").Contains("golang").True()
 ```
 
 ### Boolean Array Operations
@@ -273,13 +273,13 @@ Slice filters support powerful chaining:
 filter.Post.Tags.Distinct().Len().GreaterThan(3)
 
 // First tag starts with prefix
-filter.Post.Tags.First().StartsWith("featured")
+filter.Post.Tags.First().StartsWith("featured").True()
 
 // Sorted scores, max value
 filter.Post.Scores.SortDesc().First().GreaterThan(90)
 
 // Top 3 tags contain value
-filter.Post.Tags.Slice(0, 3).Contains("important")
+filter.Post.Tags.Slice(0, 3).Contains("important").True()
 ```
 
 ## Common Patterns
@@ -308,7 +308,7 @@ golangPosts, _ := client.PostRepo().Query().
 // Posts with all required tags
 tutorials, _ := client.PostRepo().Query().
     Where(
-        filter.Post.Tags.ContainsAll("golang", "tutorial", "beginner"),
+        filter.Post.Tags.ContainsAll([]string{"golang", "tutorial", "beginner"}),
     ).
     All(ctx)
 ```
@@ -347,7 +347,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create post with tags
     post := &model.Post{
@@ -370,7 +370,7 @@ func main() {
     // Find tutorials for beginners
     beginnerTutorials, _ := client.PostRepo().Query().
         Where(
-            filter.Post.Tags.ContainsAll("tutorial", "beginner"),
+            filter.Post.Tags.ContainsAll([]string{"tutorial", "beginner"}),
         ).
         All(ctx)
 
@@ -392,7 +392,7 @@ func main() {
     // Posts without deprecated tags
     notDeprecated, _ := client.PostRepo().Query().
         Where(
-            filter.Post.Tags.ContainsNone("deprecated", "obsolete"),
+            filter.Post.Tags.ContainsNone([]string{"deprecated", "obsolete"}),
         ).
         All(ctx)
 }
@@ -407,16 +407,16 @@ func main() {
 | `Empty(bool)` | Explicit empty check | Bool filter |
 | `Contains(val)` | Contains element | Bool filter |
 | `ContainsNot(val)` | Doesn't contain | Bool filter |
-| `ContainsAll(vals...)` | Contains all | Bool filter |
-| `ContainsAny(vals...)` | Contains any | Bool filter |
-| `ContainsNone(vals...)` | Contains none | Bool filter |
+| `ContainsAll(vals []E)` | Contains all | Bool filter |
+| `ContainsAny(vals []E)` | Contains any | Bool filter |
+| `ContainsNone(vals []E)` | Contains none | Bool filter |
 | `AnyEqual(val)` | Any equals | Bool filter |
 | `AllEqual(val)` | All equal | Bool filter |
 | `AnyFuzzyMatch(pattern)` | Any matches pattern | Bool filter |
 | `AllFuzzyMatch(pattern)` | All match pattern | Bool filter |
-| `AnyIn(vals...)` | Any in set | Bool filter |
-| `AllIn(vals...)` | All in set | Bool filter |
-| `NoneIn(vals...)` | None in set | Bool filter |
+| `AnyIn(vals []E)` | Any in set | Bool filter |
+| `AllIn(vals []E)` | All in set | Bool filter |
+| `NoneIn(vals []E)` | None in set | Bool filter |
 | `First()` | First element | Element filter |
 | `Last()` | Last element | Element filter |
 | `At(index)` | Element at index | Element filter |

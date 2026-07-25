@@ -11,7 +11,7 @@ ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
 liveChan, err := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Live(ctx)
 if err != nil {
     return err
@@ -72,7 +72,7 @@ Track the number of matching records in real time:
 
 ```go
 liveCount, err := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     LiveCount(ctx)
 if err != nil {
     return err
@@ -92,8 +92,8 @@ Live queries respect filters — you only receive updates for records that match
 ```go
 liveChan, err := client.UserRepo().Query().
     Where(
-        filter.User.IsPremium.IsTrue(),
-        filter.User.IsActive.IsTrue(),
+        filter.User.IsPremium.True(),
+        filter.User.IsActive.True(),
     ).
     Live(ctx)
 ```
@@ -104,7 +104,7 @@ Live queries support the `Fetch()` clause to include related records:
 
 ```go
 liveChan, err := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Fetch(with.User.Organization()).
     Live(ctx)
 if err != nil {

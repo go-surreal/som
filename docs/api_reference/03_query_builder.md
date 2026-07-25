@@ -24,7 +24,7 @@ Query().Where(conditions...)
 
 ```go
 query.Where(
-    filter.User.IsActive.IsTrue(),
+    filter.User.IsActive.True(),
     filter.User.Age.GreaterThan(18),
 )
 ```
@@ -102,7 +102,10 @@ Query().Fetch(relations...)
 ```
 
 ```go
-query.Fetch(with.User.Groups...)
+query.Fetch(with.User.Groups())
+
+// Nested relations chain
+query.Fetch(with.User.Organization().Owner())
 ```
 
 ### Timeout
@@ -132,7 +135,7 @@ Query().TempFiles(enabled bool)
 ```go
 // Process large result sets using temporary files instead of memory
 users, err := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Limit(100000).
     TempFiles(true).
     All(ctx)
@@ -148,9 +151,19 @@ Include soft-deleted records in results (only for models with `som.SoftDelete`):
 Query().WithDeleted()
 ```
 
+### WithExpired
+
+Include records past their `expires_at` that have not been purged yet (only for models with
+`som.Expiry`):
+
+```go
+Query().WithExpired()
+```
+
 ### Range
 
-Range query for models with string IDs (ULID, UUID, Rand) or complex IDs (ArrayID, ObjectID):
+Range query over record IDs, for models with string IDs (ULID, UUID, Rand) or complex IDs
+(ArrayID, ObjectID). It uses SurrealDB's native range syntax and avoids a table scan:
 
 ```go
 Query().Range(from som.RangeFrom, to som.RangeTo)
@@ -210,7 +223,7 @@ func (b Builder) All(ctx context.Context) ([]*Model, error)
 
 ```go
 users, err := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     All(ctx)
 ```
 
@@ -246,7 +259,7 @@ func (b Builder) Count(ctx context.Context) (int, error)
 
 ```go
 count, err := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Count(ctx)
 ```
 
@@ -269,21 +282,89 @@ exists, err := client.UserRepo().Query().
 Subscribe to real-time updates:
 
 ```go
-func (b Builder) Live(ctx context.Context) (<-chan LiveResult[Model], error)
+func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error)
 ```
+
+`LiveResult` is an interface; each event is one of `LiveCreate`, `LiveUpdate`, `LiveDelete` or
+`LiveKilled`:
 
 ```go
 updates, err := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Live(ctx)
 
 for update := range updates {
-    if update.Error != nil {
-        log.Println("Error:", update.Error)
-        continue
+    switch res := update.(type) {
+    case query.LiveCreate[*model.User]:
+        user, err := res.Get()
+        ...
+    case query.LiveKilled[*model.User]:
+        return
     }
-    fmt.Printf("Action: %s, Data: %+v\n", update.Action, update.Data)
 }
+```
+
+See [Live Queries](../querying/04_live_queries.md).
+
+### LiveCount
+
+Track the number of matching records in real time:
+
+```go
+func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error)
+```
+
+### AllIDs / FirstID
+
+Fetch only record IDs:
+
+```go
+ids, err := client.UserRepo().Query().AllIDs(ctx)
+id, err := client.UserRepo().Query().FirstID(ctx)
+```
+
+### Paginate
+
+Cursor-based (keyset) pagination:
+
+```go
+page, err := client.UserRepo().Query().
+    Order(by.User.CreatedAt.Desc()).
+    Paginate().First(20).Get(ctx)
+```
+
+See [Ordering & Pagination](../querying/03_ordering_pagination.md).
+
+### Distinct
+
+Distinct values of a single field (package-level function):
+
+```go
+values, err := query.Distinct(ctx, client.UserRepo().Query(), field.User.Country)
+```
+
+See [Distinct Values](../querying/09_distinct.md).
+
+### Changes
+
+For models with a changefeed, the repository exposes a change query builder:
+
+```go
+entries, err := client.UserRepo().Changes().SinceVersionstamp(0).Show(ctx)
+```
+
+See [Changefeed](../querying/08_changefeed.md).
+
+### Describe / Debug
+
+Inspect the generated statement:
+
+```go
+stmt := client.UserRepo().Query().Where(...).Describe()
+stmt = client.UserRepo().Query().Where(...).DescribeWithVars()
+
+// Debug prints the statement and keeps the builder chainable
+users, err := client.UserRepo().Query().Debug("users").All(ctx)
 ```
 
 ### AllMatches
@@ -337,7 +418,7 @@ func (b Builder) Iterate(ctx context.Context, batchSize int) iter.Seq2[*Model, e
 ```go
 // Process all active users in batches of 100
 for user, err := range client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Iterate(ctx, 100) {
 
     if err != nil {
@@ -402,17 +483,21 @@ Every execution method has an async variant that returns immediately:
 | Sync | Async |
 |------|-------|
 | `All(ctx)` | `AllAsync(ctx)` |
+| `AllIDs(ctx)` | `AllIDsAsync(ctx)` |
 | `First(ctx)` | `FirstAsync(ctx)` |
+| `FirstID(ctx)` | `FirstIDAsync(ctx)` |
 | `Count(ctx)` | `CountAsync(ctx)` |
 | `Exists(ctx)` | `ExistsAsync(ctx)` |
-| `Live(ctx)` | `LiveAsync(ctx)` |
+| `Paginate().Get(ctx)` | `Paginate().GetAsync(ctx)` |
+
+Live queries have no async variant — they already return a channel.
 
 ### Using Async Methods
 
 ```go
 // Start query in background
 result := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     AllAsync(ctx)
 
 // Do other work...
@@ -435,14 +520,15 @@ func (r *asyncResult[T]) Val() <-chan T
 func (r *asyncResult[T]) Err() <-chan error
 ```
 
-## LiveResult Type
+## LiveResult Types
 
 ```go
-type LiveResult[M any] struct {
-    Action string  // "CREATE", "UPDATE", or "DELETE"
-    Data   *M      // The affected record
-    Error  error   // Any error
-}
+type LiveResult[M any] interface{ ... }
+
+type LiveCreate[M any] interface{ Get() (M, error) }
+type LiveUpdate[M any] interface{ Get() (M, error) }
+type LiveDelete[M any] interface{ Get() (M, error) }
+type LiveKilled[M any] interface{ ... }  // server terminated the subscription
 ```
 
 ## SearchResult Type
@@ -520,8 +606,8 @@ results, err := client.ArticleRepo().Query().
 users, err := client.UserRepo().Query().
     // Filter conditions
     Where(
-        filter.User.IsActive.IsTrue(),
-        filter.User.Age.GreaterThanOrEqual(18),
+        filter.User.IsActive.True(),
+        filter.User.Age.GreaterThanEqual(18),
         filter.Any(
             filter.User.Role.Equal("admin"),
             filter.User.Role.Equal("moderator"),
@@ -536,7 +622,7 @@ users, err := client.UserRepo().Query().
     Limit(20).
     Start(0).
     // Eager loading
-    Fetch(with.User.Posts...).
+    Fetch(with.User.Posts()).
     // Execution options
     Timeout(5 * time.Second).
     Parallel(true).
@@ -549,7 +635,7 @@ users, err := client.UserRepo().Query().
 ```go
 func GetPage(ctx context.Context, page, pageSize int) ([]*model.User, error) {
     return client.UserRepo().Query().
-        Where(filter.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.True()).
         Order(by.User.CreatedAt.Desc()).
         Limit(pageSize).
         Start((page - 1) * pageSize).
@@ -559,7 +645,7 @@ func GetPage(ctx context.Context, page, pageSize int) ([]*model.User, error) {
 // Get total for pagination UI
 func GetTotal(ctx context.Context) (int, error) {
     return client.UserRepo().Query().
-        Where(filter.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.True()).
         Count(ctx)
 }
 ```
@@ -571,7 +657,7 @@ Queries can be built incrementally:
 ```go
 // Base query
 baseQuery := client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue())
+    Where(filter.User.IsActive.True())
 
 // Different executions
 count, _ := baseQuery.Count(ctx)

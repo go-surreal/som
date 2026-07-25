@@ -28,7 +28,7 @@ This provides:
 
 ```go
 type Event struct {
-    som.Node
+    som.Node[som.ULID]
 
     StartTime   time.Time   // Required
     EndTime     time.Time   // Required
@@ -42,7 +42,7 @@ Use `som.Timestamps` for automatic tracking:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps  // Adds CreatedAt and UpdatedAt
 
     Name string
@@ -84,10 +84,10 @@ filter.Event.StartTime.NotEqual(excludeTime)
 
 ```go
 // Value in set
-filter.Event.StartTime.In(time1, time2, time3)
+filter.Event.StartTime.In([]time.Time{time1, time2, time3})
 
 // Value not in set
-filter.Event.StartTime.NotIn(excludedTimes...)
+filter.Event.StartTime.NotIn(excludedTimes)
 ```
 
 ### Comparison Operations
@@ -232,10 +232,10 @@ filter.Event.StartTime.IsLeapYear().True()
 
 ```go
 // Check if nil
-filter.Event.CancelledAt.IsNil()
+filter.Event.CancelledAt.Nil(true)
 
 // Check if not nil
-filter.Event.CancelledAt.IsNotNil()
+filter.Event.CancelledAt.Nil(false)
 ```
 
 ### Zero Value Check
@@ -338,7 +338,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
     now := time.Now()
 
     // Events starting today
@@ -353,7 +353,7 @@ func main() {
 
     // Cancelled events
     cancelled, _ := client.EventRepo().Query().
-        Where(filter.Event.CancelledAt.IsNotNil()).
+        Where(filter.Event.CancelledAt.Nil(false)).
         All(ctx)
 
     // Morning events (9 AM - 12 PM)
@@ -388,8 +388,8 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `Before(val)` | Before time | Bool filter |
 | `BeforeOrEqual(val)` | Before or equal | Bool filter |
 | `After(val)` | After time | Bool filter |
@@ -420,5 +420,5 @@ func main() {
 | `IsLeapYear()` | Check leap year | Bool filter |
 | `Zero(bool)` | Check zero time | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr) | Bool filter |
-| `IsNotNil()` | Not null (ptr) | Bool filter |
+| `Nil(true)` | Is null (ptr) | Bool filter |
+| `Nil(false)` | Not null (ptr) | Bool filter |

@@ -1,6 +1,7 @@
 # Social Network Example
 
-This example demonstrates modeling a social network with users, posts, and relationships using SOM's graph capabilities.
+This example models a social network with users, posts and relationships using SOM's graph
+capabilities.
 
 ## Models
 
@@ -24,6 +25,10 @@ type User struct {
     Email    string
     Bio      string
     IsActive bool
+
+    // Edges starting at this user
+    Follows []Follows
+    Likes   []Likes
 }
 
 type Post struct {
@@ -31,7 +36,7 @@ type Post struct {
     som.Timestamps
 
     Content string
-    Author  *User
+    Author  *User  // record link
 }
 
 // Edges
@@ -39,8 +44,8 @@ type Post struct {
 type Follows struct {
     som.Edge
 
-    In  *User `som:"in"`   // Follower
-    Out *User `som:"out"`  // Followed
+    Follower User `som:"in"`
+    Followed User `som:"out"`
 
     FollowedAt time.Time
 }
@@ -48,12 +53,15 @@ type Follows struct {
 type Likes struct {
     som.Edge
 
-    In  *User `som:"in"`   // Who liked
-    Out *Post `som:"out"`  // What was liked
+    User User `som:"in"`
+    Post Post `som:"out"`
 
     LikedAt time.Time
 }
 ```
+
+Both edges are declared as fields on `User`, which is what generates the `Relate()` accessors and
+the traversal filters.
 
 ## Application Code
 
@@ -66,16 +74,17 @@ import (
     "log"
     "time"
 
-    "yourproject/gen/som"
     "yourproject/gen/som/by"
     "yourproject/gen/som/filter"
+    "yourproject/gen/som/repo"
+    "yourproject/gen/som/with"
     "yourproject/model"
 )
 
 func main() {
     ctx := context.Background()
 
-    client, err := som.NewClient(ctx, som.Config{
+    client, err := repo.NewClient(ctx, repo.Config{
         Address:   "ws://localhost:8000",
         Username:  "root",
         Password:  "root",
@@ -85,26 +94,16 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
+    defer client.Close()
+
+    if err := client.ApplySchema(ctx); err != nil {
+        log.Fatal(err)
+    }
 
     // Create users
-    alice := &model.User{
-        Username: "alice",
-        Email:    "alice@example.com",
-        Bio:      "Software developer",
-        IsActive: true,
-    }
-    bob := &model.User{
-        Username: "bob",
-        Email:    "bob@example.com",
-        Bio:      "Designer",
-        IsActive: true,
-    }
-    charlie := &model.User{
-        Username: "charlie",
-        Email:    "charlie@example.com",
-        Bio:      "Product manager",
-        IsActive: true,
-    }
+    alice := &model.User{Username: "alice", Email: "alice@example.com", IsActive: true}
+    bob := &model.User{Username: "bob", Email: "bob@example.com", IsActive: true}
+    charlie := &model.User{Username: "charlie", Email: "charlie@example.com", IsActive: true}
 
     for _, user := range []*model.User{alice, bob, charlie} {
         if err := client.UserRepo().Create(ctx, user); err != nil {
@@ -115,33 +114,29 @@ func main() {
 
     // Alice follows Bob and Charlie
     for _, target := range []*model.User{bob, charlie} {
-        follows := &model.Follows{FollowedAt: time.Now()}
-        err := client.FollowsRepo().Relate().
-            From(alice).
-            To(target).
-            Create(ctx, follows)
-        if err != nil {
+        follows := &model.Follows{
+            Follower:   *alice,
+            Followed:   *target,
+            FollowedAt: time.Now(),
+        }
+        if err := client.UserRepo().Relate().Follows().Create(ctx, follows); err != nil {
             log.Fatal(err)
         }
     }
     fmt.Println("Alice follows Bob and Charlie")
 
     // Bob follows Alice (mutual)
-    follows := &model.Follows{FollowedAt: time.Now()}
-    err = client.FollowsRepo().Relate().
-        From(bob).
-        To(alice).
-        Create(ctx, follows)
-    if err != nil {
+    if err := client.UserRepo().Relate().Follows().Create(ctx, &model.Follows{
+        Follower:   *bob,
+        Followed:   *alice,
+        FollowedAt: time.Now(),
+    }); err != nil {
         log.Fatal(err)
     }
     fmt.Println("Bob follows Alice")
 
     // Alice creates a post
-    post := &model.Post{
-        Content: "Hello, world!",
-        Author:  alice,
-    }
+    post := &model.Post{Content: "Hello, world!", Author: alice}
     if err := client.PostRepo().Create(ctx, post); err != nil {
         log.Fatal(err)
     }
@@ -149,86 +144,98 @@ func main() {
 
     // Bob and Charlie like the post
     for _, user := range []*model.User{bob, charlie} {
-        like := &model.Likes{LikedAt: time.Now()}
-        err := client.LikesRepo().Relate().
-            From(user).
-            To(post).
-            Create(ctx, like)
-        if err != nil {
+        like := &model.Likes{User: *user, Post: *post, LikedAt: time.Now()}
+        if err := client.UserRepo().Relate().Likes().Create(ctx, like); err != nil {
             log.Fatal(err)
         }
     }
     fmt.Println("Bob and Charlie liked Alice's post")
 
-    // Query: Who does Alice follow?
-    following, err := client.FollowsRepo().Query().
-        Where(filter.Follows.In.Equal(alice.ID())).
+    // Query: who does Alice follow?
+    following, err := client.UserRepo().Query().
+        Where(
+            filter.User.Follows().Followed(
+                filter.User.Username.Equal(alice.Username),
+            ),
+        ).
         All(ctx)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("\nAlice follows %d people:\n", len(following))
-    for _, f := range following {
-        fmt.Printf("  - %s\n", f.Out.Username)
-    }
+    fmt.Printf("\nUsers followed by someone: %d\n", len(following))
 
-    // Query: Who follows Alice?
-    followers, err := client.FollowsRepo().Query().
-        Where(filter.Follows.Out.Equal(alice.ID())).
+    // Query: who follows Alice? (users that have a follows edge to alice)
+    followers, err := client.UserRepo().Query().
+        Where(
+            filter.User.Follows().Followed(
+                filter.User.ID.Equal(string(alice.ID())),
+            ),
+        ).
         All(ctx)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("\nAlice has %d followers:\n", len(followers))
-    for _, f := range followers {
-        fmt.Printf("  - %s\n", f.In.Username)
-    }
+    fmt.Printf("Alice has %d followers\n", len(followers))
 
-    // Query: How many likes does the post have?
-    likeCount, err := client.LikesRepo().Query().
-        Where(filter.Likes.Out.Equal(post.ID())).
+    // Query: how many users liked the post?
+    likeCount, err := client.UserRepo().Query().
+        Where(
+            filter.User.Likes().Post(
+                filter.Post.ID.Equal(string(post.ID())),
+            ),
+        ).
         Count(ctx)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("\nPost has %d likes\n", likeCount)
+    fmt.Printf("Post has %d likes\n", likeCount)
 
-    // Query: Recent posts
+    // Query: recent posts with their authors
     recentPosts, err := client.PostRepo().Query().
+        Fetch(with.Post.Author()).
         Order(by.Post.CreatedAt.Desc()).
         Limit(10).
         All(ctx)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("\nRecent posts: %d\n", len(recentPosts))
+    fmt.Printf("Recent posts: %d\n", len(recentPosts))
 }
 ```
 
 ## Live Notifications
 
-Subscribe to new followers:
+Watch for users gaining followers in real time:
 
 ```go
-func WatchFollowers(ctx context.Context, client *som.Client, user *model.User) {
-    updates, err := client.FollowsRepo().Query().
-        Where(filter.Follows.Out.Equal(user.ID())).
+func WatchFollowers(ctx context.Context, client repo.Client, user *model.User) {
+    updates, err := client.UserRepo().Query().
+        Where(
+            filter.User.Follows().Followed(
+                filter.User.ID.Equal(string(user.ID())),
+            ),
+        ).
         Live(ctx)
     if err != nil {
         log.Fatal(err)
     }
 
     for update := range updates {
-        if update.Error != nil {
-            log.Printf("Error: %v", update.Error)
-            continue
-        }
+        switch res := update.(type) {
+        case query.LiveCreate[*model.User]:
+            follower, err := res.Get()
+            if err != nil {
+                log.Printf("error: %v", err)
+                continue
+            }
+            fmt.Printf("New follower: %s\n", follower.Username)
 
-        switch update.Action {
-        case "CREATE":
-            fmt.Printf("New follower: %s\n", update.Data.In.Username)
-        case "DELETE":
-            fmt.Printf("Lost follower: %s\n", update.Data.In.Username)
+        case query.LiveDelete[*model.User]:
+            follower, _ := res.Get()
+            fmt.Printf("Lost follower: %s\n", follower.Username)
+
+        case query.LiveKilled[*model.User]:
+            return
         }
     }
 }
@@ -251,14 +258,8 @@ Bob follows Alice
 Alice posted: Hello, world!
 Bob and Charlie liked Alice's post
 
-Alice follows 2 people:
-  - bob
-  - charlie
-
-Alice has 1 followers:
-  - bob
-
+Users followed by someone: 2
+Alice has 1 followers
 Post has 2 likes
-
 Recent posts: 1
 ```

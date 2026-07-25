@@ -28,7 +28,7 @@ This provides:
 
 ```go
 type Task struct {
-    som.Node
+    som.Node[som.ULID]
 
     Duration    time.Duration   // Required
     Timeout     time.Duration   // Required
@@ -62,14 +62,14 @@ filter.Task.Timeout.NotEqual(0)
 
 ```go
 // Value in set
-filter.Task.Duration.In(
+filter.Task.Duration.In([]time.Duration{
     15 * time.Minute,
     30 * time.Minute,
     1 * time.Hour,
-)
+})
 
 // Value not in set
-filter.Task.Duration.NotIn(0, -1)
+filter.Task.Duration.NotIn([]time.Duration{0, -1})
 ```
 
 ### Comparison Operations
@@ -125,10 +125,10 @@ filter.Task.Duration.Years().LessThan(1)
 
 ```go
 // Check if nil
-filter.Task.GracePeriod.IsNil()
+filter.Task.GracePeriod.Nil(true)
 
 // Check if not nil
-filter.Task.GracePeriod.IsNotNil()
+filter.Task.GracePeriod.Nil(false)
 ```
 
 ### Zero Value Check
@@ -227,7 +227,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Find quick tasks (under 5 minutes)
     quickTasks, _ := client.TaskRepo().Query().
@@ -242,7 +242,7 @@ func main() {
 
     // Tasks with grace period configured
     withGrace, _ := client.TaskRepo().Query().
-        Where(filter.Task.GracePeriod.IsNotNil()).
+        Where(filter.Task.GracePeriod.Nil(false)).
         All(ctx)
 
     // Tasks with multi-day durations
@@ -269,8 +269,8 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `LessThan(val)` | Strictly less | Bool filter |
 | `LessThanEqual(val)` | Less or equal | Bool filter |
 | `GreaterThan(val)` | Strictly greater | Bool filter |
@@ -286,5 +286,5 @@ func main() {
 | `Years()` | Extract years | Numeric filter |
 | `Zero(bool)` | Check zero | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr) | Bool filter |
-| `IsNotNil()` | Not null (ptr) | Bool filter |
+| `Nil(true)` | Is null (ptr) | Bool filter |
+| `Nil(false)` | Not null (ptr) | Bool filter |

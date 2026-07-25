@@ -65,8 +65,8 @@ filter.User.Name.Equal("Alice")
 filter.User.Name.NotEqual("Bob")
 
 // Set membership
-filter.User.Role.In("admin", "moderator")
-filter.User.Status.NotIn("banned", "suspended")
+filter.User.Role.In([]string{"admin", "moderator"})
+filter.User.Status.NotIn([]string{"banned", "suspended"})
 
 // Zero value check
 filter.User.Name.Zero(true)   // Is empty string
@@ -82,7 +82,7 @@ All types support pointer variants for optional fields:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name     string   // Required
     Nickname *string  // Optional
@@ -92,8 +92,8 @@ type User struct {
 Pointer types add nil-checking operations:
 
 ```go
-filter.User.Nickname.IsNil()     // Field is NULL/NONE
-filter.User.Nickname.IsNotNil()  // Field has a value
+filter.User.Nickname.Nil(true)     // Field is NULL/NONE
+filter.User.Nickname.Nil(false)  // Field has a value
 ```
 
 ## CBOR Encoding
@@ -132,7 +132,7 @@ Many filter operations return new filters, enabling powerful chains:
 
 ```go
 // String transformations
-filter.User.Email.Lowercase().Contains("@gmail")
+filter.User.Email.Lowercase().Contains("@gmail").True()
 
 // Numeric math
 filter.Product.Price.Mul(1.1).LessThan(100)

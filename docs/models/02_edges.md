@@ -1,10 +1,12 @@
 # Edges
 
-Edges represent relationships between nodes in SurrealDB's graph model. They allow you to connect records with typed, directional relationships that can carry their own properties.
+Edges represent relationships between nodes in SurrealDB's graph model. They connect two records
+with a typed, directional relationship that can carry its own properties.
 
 ## Defining an Edge
 
-Embed `som.Edge` to create a relationship type:
+An edge is a struct embedding `som.Edge` with exactly one field tagged `som:"in"` and one tagged
+`som:"out"`:
 
 ```go
 package model
@@ -14,53 +16,59 @@ import (
     "yourproject/gen/som"
 )
 
-type Follows struct {
+type MemberOf struct {
     som.Edge
 
-    Since time.Time
-}
-```
+    User  User  `som:"in"`   // source node
+    Group Group `som:"out"`  // target node
 
-## Edge Structure
-
-The `som.Edge` embedding provides an `ID()` method returning the edge's unique identifier. You define the connected nodes by declaring fields with `som:"in"` and `som:"out"` tags.
-
-## Specifying Connected Nodes
-
-Use the `som:"in"` and `som:"out"` tags to specify the node types:
-
-```go
-type GroupMember struct {
-    som.Edge
-    som.Timestamps
-
-    // Specify the connected node types
-    In  User  `som:"in"`   // The user
-    Out Group `som:"out"`  // The group they belong to
-
-    // Edge properties
     Role     string
     JoinedAt time.Time
 }
 ```
 
-This creates relationships like:
-```surql
-RELATE user:alice->group_member->group:developers
+Rules enforced by the generator:
+
+- The struct must embed `som.Edge` (provides `ID() string`).
+- Exactly one field must be tagged `som:"in"`, one `som:"out"`.
+- Both must be node types, used as values (`User`, not `*User`).
+- A field named `ID` is not allowed — it is provided by `som.Edge`.
+- `som.Timestamps`, `som.OptimisticLock` and `som.SoftDelete` may be embedded.
+  `som.Expiry` is **not** supported on edges.
+
+The names of the `in`/`out` fields are up to you — only the tags matter. Those names become the
+accessors used when filtering across the edge.
+
+## Registering the Edge on a Node
+
+To create or traverse an edge, the node it starts from must declare it as a field:
+
+```go
+type User struct {
+    som.Node[som.ULID]
+
+    Name        string
+    Memberships []MemberOf  // edge field: generates relate/filter accessors
+}
 ```
+
+The field name (`Memberships`) becomes the accessor name in the generated `relate` and `filter`
+packages.
 
 ## Edge Properties
 
-Edges can have their own fields, just like nodes:
+Edges can have their own fields, just like nodes, including nested structs:
 
 ```go
 type MemberOf struct {
     som.Edge
+    som.Timestamps
 
-    Role      string        // "admin", "member", "viewer"
-    JoinedAt  time.Time
-    IsAdmin   bool
-    Metadata  *EdgeMetadata // Optional nested data
+    User  User  `som:"in"`
+    Group Group `som:"out"`
+
+    Role string
+    Meta EdgeMetadata
 }
 
 type EdgeMetadata struct {
@@ -71,190 +79,91 @@ type EdgeMetadata struct {
 
 ## Creating Edges
 
-Use the generated `Relate()` method:
+Edges have no repository of their own. They are created through the `Relate()` builder of the
+node the edge starts from:
 
 ```go
-// Create an edge connecting two nodes
-membership := &model.GroupMember{
+// Both nodes must exist already
+membership := &model.MemberOf{
+    User:     *user,
+    Group:    *group,
     Role:     "admin",
     JoinedAt: time.Now(),
 }
 
-// The Relate() method handles the RELATE statement
-err := client.GroupMemberRepo().Relate().
-    From(user).   // In node
-    To(group).    // Out node
-    Create(ctx, membership)
+err := client.UserRepo().Relate().Memberships().Create(ctx, membership)
 ```
 
-Or create directly with populated In/Out:
+This executes a `RELATE user:...->member_of->group:...` statement. After a successful call, the
+edge carries its generated ID and any database defaults (for example timestamps).
+
+Errors are returned when:
+
+- the edge is `nil`,
+- the edge already has an ID set,
+- the `in` or `out` node has an empty ID.
+
+> `Update` and `Delete` on edges are not implemented yet and return an error.
+
+## Querying Across Edges
+
+Edges are traversed from a node query using the generated edge accessor on the node's filter.
+The accessor takes filters on the edge itself and then exposes the connected node for further
+filtering:
 
 ```go
-membership := &model.GroupMember{
-    In:       *user,    // The user
-    Out:      *group,   // The group
-    Role:     "member",
-    JoinedAt: time.Now(),
-}
-
-err := client.GroupMemberRepo().Create(ctx, membership)
-```
-
-## Querying Edges
-
-### Find by Source Node
-
-```go
-// Find all groups a user belongs to
-memberships, err := client.GroupMemberRepo().Query().
-    Where(filter.GroupMember.In.Equal(user.ID)).
-    All(ctx)
-```
-
-### Find by Target Node
-
-```go
-// Find all members of a group
-memberships, err := client.GroupMemberRepo().Query().
-    Where(filter.GroupMember.Out.Equal(group.ID)).
-    All(ctx)
-```
-
-### Filter by Edge Properties
-
-```go
-// Find admin memberships
-admins, err := client.GroupMemberRepo().Query().
+users, err := client.UserRepo().Query().
     Where(
-        filter.GroupMember.Out.Equal(group.ID),
-        filter.GroupMember.Role.Equal("admin"),
+        filter.User.
+            Memberships(
+                filter.MemberOf.Role.Equal("admin"),
+            ).
+            Group(
+                filter.Group.Name.Equal("developers"),
+            ),
     ).
     All(ctx)
 ```
 
+`Memberships(...)` is the node's edge field, `Group(...)` the edge's `out` field. Selecting edge
+records directly (as you would with a repository) is not supported — model the traversal from one
+of the connected nodes instead.
+
 ## Edge Direction
 
-Edges are **directional**. The `In` → `Out` direction matters:
+Edges are **directional**. The `in` → `out` direction matters:
 
 ```
-User:alice ──[Follows]──> User:bob
-   (In)                    (Out)
+user:alice ──[member_of]──> group:developers
+    (in)                          (out)
 ```
 
-- `In` is where the relationship **starts**
-- `Out` is where the relationship **points to**
+For bidirectional relationships, create two edges — one per direction.
 
-For bidirectional relationships, create edges in both directions:
+## Table Naming
+
+The edge table name is the snake_case form of the struct name:
+
+| Struct | Table |
+|--------|-------|
+| `Follows` | `follows` |
+| `MemberOf` | `member_of` |
+| `GroupMember` | `group_member` |
+
+## Changefeed on Edges
+
+Like nodes, edges support a changefeed via a tag on the embedded `som.Edge`:
 
 ```go
-// Alice follows Bob
-client.FollowsRepo().Create(ctx, &model.Follows{
-    In:    alice,
-    Out:   bob,
-    Since: time.Now(),
-})
+type MemberOf struct {
+    som.Edge `som:"changefeed=1d"`
 
-// Bob follows Alice (separate edge)
-client.FollowsRepo().Create(ctx, &model.Follows{
-    In:    bob,
-    Out:   alice,
-    Since: time.Now(),
-})
-```
-
-## Edge Timestamps
-
-Like nodes, edges support automatic timestamps:
-
-```go
-type Follows struct {
-    som.Edge
-    som.Timestamps  // CreatedAt, UpdatedAt
-
-    Since time.Time
+    User  User  `som:"in"`
+    Group Group `som:"out"`
 }
 ```
 
-## Common Patterns
+See [Changefeed](../querying/08_changefeed.md).
 
-### Self-Referencing (Same Node Type)
-
-```go
-// User follows User
-type Follows struct {
-    som.Edge
-
-    In  User `som:"in"`
-    Out User `som:"out"`
-
-    Since    time.Time
-    IsMutual bool
-}
-```
-
-### Different Node Types
-
-```go
-// User owns Document
-type Owns struct {
-    som.Edge
-
-    In  User     `som:"in"`
-    Out Document `som:"out"`
-
-    AcquiredAt time.Time
-    Permission string
-}
-```
-
-### Many-to-Many with Metadata
-
-```go
-// Student enrolled in Course
-type Enrollment struct {
-    som.Edge
-    som.Timestamps
-
-    In  Student `som:"in"`
-    Out Course  `som:"out"`
-
-    Semester    string
-    Grade       *float64
-    Status      EnrollmentStatus
-    CompletedAt *time.Time
-}
-```
-
-## Example: Social Network
-
-```go
-// Nodes
-type User struct {
-    som.Node[som.ULID]
-    Username string
-    Email    string
-}
-
-type Post struct {
-    som.Node[som.ULID]
-    som.Timestamps
-    Content string
-    Author  *User  // Direct link (not an edge)
-}
-
-// Edges
-type Follows struct {
-    som.Edge
-    In    User `som:"in"`
-    Out   User `som:"out"`
-    Since time.Time
-}
-
-type Likes struct {
-    som.Edge
-    In  User `som:"in"`
-    Out Post `som:"out"`
-}
-```
-
-See [Relationships](../relationships/README.md) for more advanced graph queries and traversal patterns.
+See [Relationships](../relationships/README.md) for record links, traversal patterns and eager
+loading.

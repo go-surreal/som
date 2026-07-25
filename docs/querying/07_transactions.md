@@ -60,7 +60,7 @@ defer cancel()
 
 err := client.UserRepo().Create(txCtx, user)
 err = client.PostRepo().Create(txCtx, post)
-err = client.FollowsRepo().Relate().From(user1).To(user2).Create(txCtx, follows)
+err = client.UserRepo().Relate().Follows().Create(txCtx, follows)
 
 return som.TxCommit(txCtx)
 ```

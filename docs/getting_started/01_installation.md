@@ -99,9 +99,10 @@ The generated code is a self-contained Go module. Import it in your application:
 
 ```go
 import (
-    "yourproject/gen/som"
-    "yourproject/gen/som/filter"
-    "yourproject/gen/som/by"
+    "yourproject/gen/som"        // base types, errors, transactions
+    "yourproject/gen/som/repo"   // client and repositories
+    "yourproject/gen/som/filter" // filters
+    "yourproject/gen/som/by"     // sorting
 )
 ```
 
@@ -145,13 +146,13 @@ import (
     "context"
     "log"
 
-    "yourproject/gen/som"
+    "yourproject/gen/som/repo"
 )
 
 func main() {
     ctx := context.Background()
 
-    client, err := som.NewClient(ctx, som.Config{
+    client, err := repo.NewClient(ctx, repo.Config{
         Address:   "ws://localhost:8000",
         Username:  "root",
         Password:  "root",

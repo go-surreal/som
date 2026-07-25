@@ -77,6 +77,14 @@ type PersonObj struct {
 }
 ```
 
+With a complex ID the key is part of the record, so the repository differs:
+
+- no `Create` / `Insert` — use `CreateWithID(ctx, record)`, which reads the embedded key
+- `Read(ctx, key)` takes the typed key struct instead of a string
+- `ID()` returns the key struct
+- the [context cache](../api_reference/04_caching.md) is not supported
+  (`som.ErrCacheNotSupported`), and `Paginate()` is unavailable — use `Range()`
+
 Complex IDs enable efficient range queries:
 
 ```go
@@ -102,12 +110,12 @@ type User struct {
 }
 ```
 
-This adds two fields:
+This adds two database fields, exposed on the model as accessor methods:
 
-| Field | Type | Behavior |
-|-------|------|----------|
-| `CreatedAt` | `time.Time` | Set on creation, **readonly** |
-| `UpdatedAt` | `time.Time` | Updated on every modification |
+| Accessor | Type | Behavior |
+|----------|------|----------|
+| `CreatedAt()` | `time.Time` | Set on creation, **readonly** |
+| `UpdatedAt()` | `time.Time` | Updated on every modification |
 
 These fields are managed by SurrealDB:
 
@@ -198,14 +206,40 @@ By default, Go field names are converted to snake_case for the database. Use the
 type User struct {
     som.Node[som.ULID]
 
-    FullName string `som:"name"`           // Stored as "name" in DB
-    EMail    string `som:"email_address"`  // Stored as "email_address"
+    FullName string `som:"name=full_name"`      // Stored as "full_name" in DB
+    EMail    string `som:"name=email_address"`  // Stored as "email_address"
 }
+```
+
+## Indexes
+
+Mark fields as indexed or unique with the `som` tag:
+
+```go
+type User struct {
+    som.Node[som.ULID]
+
+    Username string `som:"index"`               // plain index
+    Email    string `som:"unique"`              // unique index
+    TenantID string `som:"index=tenant_lookup"` // named index
+    Login    string `som:"unique=login"`        // named composite: same name = one index
+}
+```
+
+Multiple options are comma-separated (`som:"index,unique=login"`). Named indexes that share a
+name across fields form a composite index. Every table also gets a COUNT index unless the
+generator is run with `--no-count-index`.
+
+Indexes can be rebuilt at runtime:
+
+```go
+err := client.UserRepo().Index().Count().Rebuild(ctx)
 ```
 
 ## Full-Text Search Index
 
-Mark string fields for full-text search indexing:
+Mark string fields for full-text search indexing. The value references a search configuration
+declared in `som.define.go` (see [Schema Definitions](../code_generation/03_definitions.md)):
 
 ```go
 type Article struct {
@@ -216,15 +250,45 @@ type Article struct {
 }
 ```
 
+## Changefeed
+
+Attach a changefeed to a table by tagging the embedded `som.Node`:
+
+```go
+type User struct {
+    som.Node[som.ULID] `som:"changefeed=1d"`
+
+    Name string
+}
+```
+
+This adds `CHANGEFEED 1d` to the table definition and generates a `Changes()` method on the
+repository. See [Changefeed](../querying/08_changefeed.md).
+
+## Expiry (TTL)
+
+Embed `som.Expiry` with a duration to make records expire:
+
+```go
+type Session struct {
+    som.Node[som.ULID]
+    som.Expiry `som:"24h"`
+
+    Token string
+}
+```
+
+See [Expiry (TTL)](09_expiry.md).
+
 ## Table Naming
 
-By default, the table name is the lowercase struct name:
+By default, the table name is the snake_case form of the struct name:
 
 | Struct | Table |
 |--------|-------|
 | `User` | `user` |
-| `BlogPost` | `blogpost` |
-| `UserProfile` | `userprofile` |
+| `BlogPost` | `blog_post` |
+| `UserProfile` | `user_profile` |
 
 ## Repository Methods
 
@@ -253,7 +317,9 @@ type UserRepo interface {
     // Refresh from database
     Refresh(ctx context.Context, user *model.User) error
 
-    // Rebuild all indexes
+    // Edge creation for edges declared on this node
+    Relate() *relate.User
+
     // Index access (e.g. per-index Rebuild)
     Index() *index.User
 
@@ -270,6 +336,9 @@ type UserRepo interface {
 }
 ```
 
+Feature-dependent additions: `Erase`/`Restore` for `som.SoftDelete`, `Changes()` for models with
+a changefeed.
+
 ## Generated Filters
 
 Each field generates type-safe filters in the `filter` package:
@@ -277,20 +346,20 @@ Each field generates type-safe filters in the `filter` package:
 ```go
 // String fields
 filter.User.Username.Equal("john")
-filter.User.Username.Contains("oh")
-filter.User.Email.EndsWith("@gmail.com")
+filter.User.Username.Contains("oh").True()      // Contains returns a bool expression
+filter.User.Email.EndsWith("@gmail.com").True()
 
 // Numeric fields
 filter.User.Age.GreaterThan(18)
-filter.User.Age.LessThanOrEqual(65)
+filter.User.Age.LessThanEqual(65)
 
 // Boolean fields
-filter.User.Active.IsTrue()
-filter.User.Active.IsFalse()
+filter.User.Active.True()
+filter.User.Active.False()
 
 // Optional fields
-filter.User.DeletedAt.IsNil()
-filter.User.DeletedAt.IsNotNil()
+filter.User.DeletedAt.Nil(true)
+filter.User.DeletedAt.Nil(false)
 ```
 
 ## Generated Sorts
