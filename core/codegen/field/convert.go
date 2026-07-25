@@ -19,8 +19,9 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, node := range source.Nodes {
 		dbNode := &NodeTable{
-			Name:   node.Name,
-			Source: node,
+			Name:       node.Name,
+			Changefeed: node.Changefeed,
+			Source:     node,
 		}
 
 		for _, f := range node.Fields {
@@ -36,8 +37,9 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, edge := range source.Edges {
 		dbEdge := &EdgeTable{
-			Name:   edge.Name,
-			Source: edge,
+			Name:       edge.Name,
+			Changefeed: edge.Changefeed,
+			Source:     edge,
 		}
 
 		inField, ok := Convert(source, buildConf, edge.In)

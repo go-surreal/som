@@ -6,9 +6,10 @@ import (
 )
 
 type NodeTable struct {
-	Name   string
-	Fields []Field
-	Source *parser.Node // Reference to source parser.Node
+	Name       string
+	Fields     []Field
+	Changefeed string
+	Source     *parser.Node // Reference to source parser.Node
 
 	// TODO: include source package path + method(s)
 }
@@ -31,6 +32,10 @@ func (t *NodeTable) NameGoLower() string {
 
 func (t *NodeTable) NameDatabase() string {
 	return strcase.ToSnake(t.Name) // TODO
+}
+
+func (t *NodeTable) HasChangefeed() bool {
+	return t.Changefeed != ""
 }
 
 func (t *NodeTable) HasComplexID() bool {

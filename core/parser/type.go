@@ -8,6 +8,7 @@ type Node struct {
 	ComplexID      *FieldComplexID
 	Timestamps     bool
 	OptimisticLock bool
+	Changefeed     string
 	SoftDelete     bool
 	Expiry         bool
 	ExpiryDuration string
@@ -20,6 +21,7 @@ type Edge struct {
 	Fields         []Field
 	Timestamps     bool
 	OptimisticLock bool
+	Changefeed     string
 	SoftDelete     bool
 }
 

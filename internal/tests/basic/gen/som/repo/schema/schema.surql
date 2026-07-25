@@ -72,7 +72,7 @@ DEFINE FIELD updated_at ON TABLE ephemeral TYPE option<datetime> VALUE time::now
 DEFINE FIELD expires_at ON TABLE ephemeral TYPE option<datetime> VALUE $before OR (time::now() + 1s) READONLY;
 DEFINE FIELD label ON TABLE ephemeral TYPE string;
 
-DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL CHANGEFEED 1d PERMISSIONS FULL;
 DEFINE FIELD id ON TABLE all_types TYPE string DEFAULT rand::ulid();
 DEFINE FIELD created_at ON TABLE all_types TYPE option<datetime> VALUE $before OR time::now() READONLY;
 DEFINE FIELD updated_at ON TABLE all_types TYPE option<datetime> VALUE time::now();

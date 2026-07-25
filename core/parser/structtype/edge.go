@@ -92,6 +92,7 @@ func ParseEdge(v gotype.Type, outPkg string) (*parser.Edge, error) {
 
 		if f.IsAnonymous() {
 			if f.Elem().PkgPath() == outPkg && f.Name() == "Edge" {
+				edge.Changefeed = parser.ParseChangefeedTag(f.Tag().Get("som"))
 				edge.Fields = append(edge.Fields,
 					parser.NewFieldID("ID", parser.IDTypeULID),
 				)

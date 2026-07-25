@@ -234,6 +234,8 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 
 		if f.IsAnonymous() {
 			if f.Name() == "Node" && IsGenericNodeFromSom(f.Elem(), outPkg, "Node") {
+				node.Changefeed = parser.ParseChangefeedTag(f.Tag().Get("som"))
+
 				if IsKnownStringIDType(f.Elem()) {
 					gen := ParseIDType(f.Elem())
 					node.IDType = gen

@@ -179,6 +179,23 @@ type TagInfo struct {
 	Search  *SearchInfo
 }
 
+// ParseChangefeedTag extracts the changefeed duration from a som tag.
+// Tag format: som:"changefeed=2d" returns "2d"
+func ParseChangefeedTag(tag string) string {
+	if tag == "" {
+		return ""
+	}
+
+	parts := strings.Split(tag, ",")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if strings.HasPrefix(part, "changefeed=") {
+			return strings.TrimPrefix(part, "changefeed=")
+		}
+	}
+	return ""
+}
+
 // parseSomTag parses the "som" struct tag and extracts field metadata.
 // All parameterized options use key=value syntax:
 //
@@ -247,6 +264,9 @@ func parseSomTag(tag string) (*TagInfo, error) {
 				return nil, fmt.Errorf("invalid tag %q: fulltext requires a config name (fulltext=english_search)", part)
 			}
 			info.Search = &SearchInfo{ConfigName: value}
+
+		case "changefeed":
+			// Handled separately at the node/edge level via ParseChangefeedTag.
 
 		default:
 			return nil, fmt.Errorf("unknown som tag %q", part)

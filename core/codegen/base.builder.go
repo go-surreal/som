@@ -352,6 +352,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		g.Add(comment("Index returns a new index instance for the " + node.NameGo() + " model."))
 		g.Id("Index").Call().Op("*").Qual(b.relativePkgPath(def.PkgIndex), node.NameGo())
 
+		if node.HasChangefeed() {
+			g.Add(comment("Changes returns a new changes query builder for the " + node.NameGo() + " model.\nThis is only available for models with changefeed enabled."))
+			g.Id("Changes").Call().Qual(pkgQuery, "ChangesBuilder").
+				Types(b.input.SourceQual(node.NameGo()), jen.Qual(pkgConv, node.NameGo()))
+		}
+
 		g.Line()
 
 		for _, event := range []string{"Create", "Update", "Delete"} {
@@ -988,6 +994,27 @@ Index returns a new index instance for the `+node.NameGo()+` model.
 				),
 			),
 		)
+
+	// Changes (changefeed only)
+	if node.HasChangefeed() {
+		f.Line().
+			Add(comment(`
+Changes returns a new changes query builder for the `+node.NameGo()+` model.
+This is only available for models with changefeed enabled.
+		`)).
+			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+			Id("Changes").Params().
+			Qual(pkgQuery, "ChangesBuilder").
+			Types(
+				b.input.SourceQual(node.NameGo()),
+				jen.Qual(pkgConv, node.NameGo()),
+			).
+			Block(
+				jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()+"Changes").Call(
+					jen.Id("r").Dot("db"),
+				)),
+			)
+	}
 
 	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName()))); err != nil {
 		return err
