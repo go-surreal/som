@@ -16,7 +16,7 @@ Embed `som.SoftDelete` in your model:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.SoftDelete  // Adds soft delete functionality
 
     Name  string
@@ -190,7 +190,7 @@ Soft-delete filtering does **NOT** apply to fetched relations. When you use `Fet
 
 ```go
 type Post struct {
-    som.Node
+    som.Node[som.ULID]
     som.SoftDelete
     Title  string
     Author *User  // User also has SoftDelete
@@ -231,7 +231,7 @@ For slice relations:
 
 ```go
 type BlogPost struct {
-    som.Node
+    som.Node[som.ULID]
     som.SoftDelete
     Title   string
     Authors []*User
@@ -259,7 +259,7 @@ Soft delete works seamlessly with Timestamps and OptimisticLock:
 
 ```go
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps      // CreatedAt, UpdatedAt
     som.OptimisticLock  // Version tracking
     som.SoftDelete      // Soft delete

@@ -4,16 +4,14 @@ package repo
 import (
 	"context"
 	"errors"
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
-	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
-	"sync"
-	"sync/atomic"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	index "som.test/gen/som/index"
+	internal "som.test/gen/som/internal"
+	types "som.test/gen/som/internal/types"
+	query "som.test/gen/som/query"
+	model "som.test/model"
 )
 
 type WeatherRepo interface {
@@ -35,6 +33,9 @@ type WeatherRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, weather *model.Weather) error
+	// Index returns a new index instance for the Weather model.
+
+	Index() *index.Weather
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -88,12 +89,57 @@ type WeatherRepo interface {
 
 // weatherRepoInfo holds the model-specific conversion functions for Weather.
 var weatherRepoInfo = RepoInfo[model.Weather]{
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.Weather, error) {
+		raw, err := dbCreateNew[conv.Weather](ctx, db, target, data)
+		if err != nil {
+			return nil, err
+		}
+		return conv.ToWeatherPtr(raw), nil
+	},
+	CreateOne: func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*model.Weather, error) {
+		raw, err := dbCreate[conv.Weather](ctx, db, id, data)
+		if err != nil {
+			return nil, err
+		}
+		return conv.ToWeatherPtr(raw), nil
+	},
+	InsertAll: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*model.Weather, error) {
+		raw, err := dbInsert[conv.Weather](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		results := make([]*model.Weather, len(raw))
+		for i, r := range raw {
+			results[i] = conv.ToWeatherPtr(r)
+		}
+		return results, nil
+	},
 	MarshalOne: func(node *model.Weather) any {
 		return conv.FromWeatherPtr(node)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Weather, error) {
-		var raw *conv.Weather
-		if err := unmarshal(data, &raw); err != nil {
+	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.Weather, error) {
+		raw, err := dbQueryOne[conv.Weather](ctx, db, stmt, vars)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToWeatherPtr(raw), nil
+	},
+	ReadOne: func(ctx context.Context, db *dbConn, id *models.RecordID) (*model.Weather, error) {
+		raw, err := dbSelect[conv.Weather](ctx, db, id)
+		if err != nil {
+			return nil, err
+		}
+		if raw == nil {
+			return nil, nil
+		}
+		return conv.ToWeatherPtr(raw), nil
+	},
+	UpdateOne: func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*model.Weather, error) {
+		raw, err := dbUpdate[conv.Weather](ctx, db, id, data)
+		if err != nil {
 			return nil, err
 		}
 		return conv.ToWeatherPtr(raw), nil
@@ -120,176 +166,6 @@ func (c *ClientImpl) WeatherRepo() WeatherRepo {
 
 type weather struct {
 	*repo[model.Weather, model.WeatherKey]
-	mu           sync.RWMutex
-	beforeCreate []weatherHook
-	afterCreate  []weatherHook
-	beforeUpdate []weatherHook
-	afterUpdate  []weatherHook
-	beforeDelete []weatherHook
-	afterDelete  []weatherHook
-}
-
-type weatherHook struct {
-	id uint64
-	fn func(ctx context.Context, node *model.Weather) error
-}
-
-var weatherHookCounter atomic.Uint64
-
-// OnBeforeCreate registers a hook that runs before a record is created.
-// If the hook returns an error, the create operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *weather) OnBeforeCreate(fn func(ctx context.Context, node *model.Weather) error) func() {
-	id := weatherHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeCreate = append(r.beforeCreate, weatherHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeCreate {
-			if h.id == id {
-				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterCreate registers a hook that runs after a record has been created.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *weather) OnAfterCreate(fn func(ctx context.Context, node *model.Weather) error) func() {
-	id := weatherHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterCreate = append(r.afterCreate, weatherHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterCreate {
-			if h.id == id {
-				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeUpdate registers a hook that runs before a record is updated.
-// If the hook returns an error, the update operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *weather) OnBeforeUpdate(fn func(ctx context.Context, node *model.Weather) error) func() {
-	id := weatherHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeUpdate = append(r.beforeUpdate, weatherHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeUpdate {
-			if h.id == id {
-				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterUpdate registers a hook that runs after a record has been updated.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *weather) OnAfterUpdate(fn func(ctx context.Context, node *model.Weather) error) func() {
-	id := weatherHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterUpdate = append(r.afterUpdate, weatherHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterUpdate {
-			if h.id == id {
-				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeDelete registers a hook that runs before a record is deleted.
-// If the hook returns an error, the delete operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *weather) OnBeforeDelete(fn func(ctx context.Context, node *model.Weather) error) func() {
-	id := weatherHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeDelete = append(r.beforeDelete, weatherHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeDelete {
-			if h.id == id {
-				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterDelete registers a hook that runs after a record has been deleted.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *weather) OnAfterDelete(fn func(ctx context.Context, node *model.Weather) error) func() {
-	id := weatherHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterDelete = append(r.afterDelete, weatherHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterDelete {
-			if h.id == id {
-				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
-				return
-			}
-		}
-	}
 }
 
 // Query returns a new query builder for the Weather model.
@@ -299,6 +175,7 @@ func (r *weather) Query() query.Builder[model.Weather] {
 
 // CreateWithID creates a new record for the Weather model using its embedded key.
 // The node must have a non-zero ID set.
+// Before- and after-create hooks are invoked.
 func (r *weather) CreateWithID(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
@@ -307,36 +184,14 @@ func (r *weather) CreateWithID(ctx context.Context, weather *model.Weather) erro
 	if weather.ID() == zeroKey {
 		return errors.New("node must have a non-zero ID")
 	}
-	if h, ok := any(weather).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]weatherHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, weather); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, weather); err != nil {
+		return err
 	}
 	if err := r.createWithID(ctx, weather.ID(), weather); err != nil {
 		return err
 	}
-	if h, ok := any(weather).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]weatherHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, weather); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, weather); err != nil {
+		return err
 	}
 	return nil
 }
@@ -351,6 +206,7 @@ func (r *weather) Read(ctx context.Context, key model.WeatherKey) (*model.Weathe
 }
 
 // Update updates the record for the given model.
+// Before- and after-update hooks are invoked.
 func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
@@ -359,41 +215,20 @@ func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 	if weather.ID() == zeroKey {
 		return errors.New("cannot update Weather without existing record ID")
 	}
-	if h, ok := any(weather).(som.OnBeforeUpdateHook); ok {
-		if err := h.OnBeforeUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeUpdateHooks := make([]weatherHook, len(r.beforeUpdate))
-	copy(beforeUpdateHooks, r.beforeUpdate)
-	r.mu.RUnlock()
-	for _, h := range beforeUpdateHooks {
-		if err := h.fn(ctx, weather); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeUpdate, weather); err != nil {
+		return err
 	}
 	if err := r.update(ctx, r.recordID(weather.ID()), weather); err != nil {
 		return err
 	}
-	if h, ok := any(weather).(som.OnAfterUpdateHook); ok {
-		if err := h.OnAfterUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterUpdateHooks := make([]weatherHook, len(r.afterUpdate))
-	copy(afterUpdateHooks, r.afterUpdate)
-	r.mu.RUnlock()
-	for _, h := range afterUpdateHooks {
-		if err := h.fn(ctx, weather); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterUpdate, weather); err != nil {
+		return err
 	}
 	return nil
 }
 
 // Delete deletes the record for the given model.
+// Before- and after-delete hooks are invoked.
 func (r *weather) Delete(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
@@ -402,36 +237,14 @@ func (r *weather) Delete(ctx context.Context, weather *model.Weather) error {
 	if weather.ID() == zeroKey {
 		return errors.New("cannot delete Weather without existing record ID")
 	}
-	if h, ok := any(weather).(som.OnBeforeDeleteHook); ok {
-		if err := h.OnBeforeDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeDeleteHooks := make([]weatherHook, len(r.beforeDelete))
-	copy(beforeDeleteHooks, r.beforeDelete)
-	r.mu.RUnlock()
-	for _, h := range beforeDeleteHooks {
-		if err := h.fn(ctx, weather); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeDelete, weather); err != nil {
+		return err
 	}
 	if err := r.delete(ctx, r.recordID(weather.ID()), weather, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(weather).(som.OnAfterDeleteHook); ok {
-		if err := h.OnAfterDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterDeleteHooks := make([]weatherHook, len(r.afterDelete))
-	copy(afterDeleteHooks, r.afterDelete)
-	r.mu.RUnlock()
-	for _, h := range afterDeleteHooks {
-		if err := h.fn(ctx, weather); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterDelete, weather); err != nil {
+		return err
 	}
 	return nil
 }
@@ -446,4 +259,9 @@ func (r *weather) Refresh(ctx context.Context, weather *model.Weather) error {
 		return errors.New("cannot refresh Weather without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(weather.ID()), weather)
+}
+
+// Index returns a new index instance for the Weather model.
+func (r *weather) Index() *index.Weather {
+	return index.NewWeather(r.db)
 }

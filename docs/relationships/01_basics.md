@@ -10,7 +10,7 @@ Direct references from one node to another:
 
 ```go
 type Post struct {
-    som.Node
+    som.Node[som.ULID]
 
     Title  string
     Author *User  // Link to User record
@@ -39,7 +39,7 @@ Link to another node using a pointer:
 
 ```go
 type Comment struct {
-    som.Node
+    som.Node[som.ULID]
 
     Content string
     Author  *User  // Single link
@@ -165,7 +165,7 @@ Best for:
 
 ```go
 type Post struct {
-    som.Node
+    som.Node[som.ULID]
     Author   *User     // Required author
     Category *Category // Optional category
 }
@@ -196,7 +196,7 @@ type Friendship struct {
 ```go
 // Nodes
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps
 
     Name  string
@@ -204,7 +204,7 @@ type User struct {
 }
 
 type Group struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name        string
     Description string
@@ -212,7 +212,7 @@ type Group struct {
 }
 
 type Post struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps
 
     Content string

@@ -35,6 +35,18 @@ func (b *convBuilder) build() error {
 		}
 	}
 
+	for _, view := range b.views {
+		if err := b.buildFile(view); err != nil {
+			return err
+		}
+	}
+
+	for _, sink := range b.sinks {
+		if err := b.buildFile(sink); err != nil {
+			return err
+		}
+	}
+
 	for _, object := range b.objects {
 		if err := b.buildFile(object); err != nil {
 			return err
@@ -57,9 +69,11 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 
 	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
+	_, isView := elem.(*field.ViewTable)
+	_, isSink := elem.(*field.SinkTable)
 
 	typeName := elem.NameGoLower()
-	if isNode || isEdge {
+	if isNode || isEdge || isView || isSink {
 		typeName = elem.NameGo()
 	}
 
@@ -69,10 +83,13 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	)
 
 	f.Line()
-	f.Add(b.buildMarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge))
+	f.Add(b.buildMarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge, isView))
 
 	f.Line()
-	f.Add(b.buildUnmarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge))
+	f.Add(b.buildFields(elem, typeName, fieldCtx, isNode, isEdge))
+
+	f.Line()
+	f.Add(b.buildUnmarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge, isView))
 
 	f.Line()
 	f.Add(b.buildFrom(elem))
@@ -81,6 +98,9 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	f.Add(b.buildTo(elem))
 
 	if node, ok := elem.(*field.NodeTable); ok {
+		f.Line()
+		f.Add(b.buildNodeFields(node, typeName))
+
 		f.Line()
 		f.Type().Id(node.NameGoLower()+"Link").Struct(
 			jen.Id(node.NameGo()),
@@ -189,7 +209,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 			inner.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("recordID").Dot("ID"))
 			inner.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 			if cid.Kind == parser.IDTypeArray {
-				inner.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
+				inner.Var().Id("rawArr").Index().Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 				inner.If(
 					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
 					jen.Err().Op("!=").Nil(),
@@ -207,7 +227,7 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 					).Call(jen.Id("key"))
 				})
 			} else {
-				inner.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+				inner.Var().Id("rawObj").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 				inner.If(
 					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
 					jen.Err().Op("!=").Nil(),
@@ -320,7 +340,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 	g.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 	if cid.Kind == parser.IDTypeArray {
-		g.Var().Id("rawArr").Index().Qual(def.PkgCBOR, "RawMessage")
+		g.Var().Id("rawArr").Index().Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 		g.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
 			jen.Err().Op("!=").Nil(),
@@ -337,7 +357,7 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 			})
 		})
 	} else {
-		g.Var().Id("rawObj").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+		g.Var().Id("rawObj").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 		g.If(
 			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
 			jen.Err().Op("!=").Nil(),
@@ -365,8 +385,10 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 
 	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
+	_, isView := elem.(*field.ViewTable)
+	_, isSink := elem.(*field.SinkTable)
 
-	if isNode || isEdge {
+	if isNode || isEdge || isView || isSink {
 		localName = elem.NameGo()
 		methodPrefix = "From"
 	}
@@ -402,17 +424,31 @@ func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
 	)
 }
 
-func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
+func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge, isView bool) jen.Code {
 	return jen.Func().
 		Params(jen.Id("c").Op("*").Id(typeName)).
 		Id("MarshalCBOR").Params().
 		Params(jen.Index().Byte(), jen.Error()).
-		BlockFunc(func(g *jen.Group) {
-			g.If(jen.Id("c").Op("==").Nil()).Block(
+		Block(
+			jen.If(jen.Id("c").Op("==").Nil()).Block(
 				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Nil())),
-			)
+			),
+			jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("c").Dot("fields").Call())),
+		)
+}
 
-			// Count fields for pre-sized map allocation
+// buildFields generates a fields() method that builds the DB-keyed value map.
+// It is used by MarshalCBOR and, for nodes, exposed via <Type>Fields for
+// cursor-based pagination which needs DB field names and DB-typed values.
+func (b *convBuilder) buildFields(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
+	return jen.Func().
+		Params(jen.Id("c").Op("*").Id(typeName)).
+		Id("fields").Params().
+		Map(jen.String()).Any().
+		BlockFunc(func(g *jen.Group) {
+			// Count fields for pre-sized map allocation.
+			// Views are read-only and never marshal an id (their id may be a
+			// composite that cannot be re-wrapped), so only nodes/edges count it.
 			fieldCount := 0
 			if isNode || isEdge {
 				if node, ok := elem.(*field.NodeTable); !ok || !node.HasComplexID() {
@@ -427,7 +463,8 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 
 			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Any(), jen.Lit(fieldCount))
 
-			// Marshal ID field for nodes and edges
+			// Marshal ID field for nodes and edges. Views are read-only and
+			// their id (possibly a composite GROUP BY key) is not marshaled.
 			if isNode || isEdge {
 				tableName := elem.NameDatabase()
 				g.Line()
@@ -466,17 +503,31 @@ func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx 
 			}
 
 			g.Line()
-			g.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("data")))
+			g.Return(jen.Id("data"))
 		})
 }
 
-func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
+// buildNodeFields generates an exported <Type>Fields package function that
+// returns the DB-keyed value map for a model. Used by the query builder to
+// derive pagination cursor values with correct DB field names and types.
+func (b *convBuilder) buildNodeFields(node *field.NodeTable, typeName string) jen.Code {
+	return jen.Func().
+		Id(node.NameGo() + "Fields").
+		Params(jen.Id("m").Op("*").Add(b.SourceQual(node.NameGo()))).
+		Map(jen.String()).Any().
+		Block(
+			jen.Id("c").Op(":=").Id(typeName).Values(jen.Op("*").Id("m")),
+			jen.Return(jen.Id("c").Dot("fields").Call()),
+		)
+}
+
+func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge, isView bool) jen.Code {
 	return jen.Func().
 		Params(jen.Id("c").Op("*").Id(typeName)).
 		Id("UnmarshalCBOR").Params(jen.Id("data").Index().Byte()).
 		Error().
 		BlockFunc(func(g *jen.Group) {
-			g.Var().Id("rawMap").Map(jen.String()).Qual(def.PkgCBOR, "RawMessage")
+			g.Var().Id("rawMap").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
 			g.If(
 				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(
 					jen.Id("data"),
@@ -487,10 +538,10 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 				jen.Return(jen.Err()),
 			)
 
-			// Unmarshal ID field for nodes and edges
-			if isNode || isEdge {
+			// Unmarshal ID field for nodes, edges and views
+			if isNode || isEdge || isView {
 				g.Line()
-				g.Comment("Embedded som.Node/Edge ID field")
+				g.Comment("Embedded som.Node/Edge/View ID field")
 				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
 					b.unmarshalComplexID(g, node)
 				} else {
@@ -504,19 +555,30 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 							jen.Err().Op("!=").Nil(),
 						).Block(jen.Return(jen.Err()))
 						bg.Var().Id("idStr").String()
-						bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
-							jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
-							jen.If(jen.Err().Op("!=").Nil()).Block(
-								jen.Return(jen.Err()),
-							),
-							jen.Id("idStr").Op("=").Id("s"),
-						)
+						if isView {
+							// A view's record id may be an array/object (e.g. a
+							// GROUP BY composite key), so it is stored as the full
+							// record-id string representation.
+							bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
+								jen.Id("idStr").Op("=").Id("recordID").Dot("String").Call(),
+							)
+						} else {
+							bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
+								jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
+								jen.If(jen.Err().Op("!=").Nil()).Block(
+									jen.Return(jen.Err()),
+								),
+								jen.Id("idStr").Op("=").Id("s"),
+							)
+						}
 
 						if isNode {
 							node := elem.(*field.NodeTable)
 							bg.Id("c").Dot("Node").Op("=").Qual(b.relativePkgPath(), "NewNode").Types(
 								jen.Qual(b.relativePkgPath(), string(node.Source.IDType)),
 							).Call(jen.Qual(b.relativePkgPath(), string(node.Source.IDType)).Call(jen.Id("idStr")))
+						} else if isView {
+							bg.Id("c").Dot("View").Op("=").Qual(b.relativePkgPath(), "NewView").Call(jen.Id("idStr"))
 						} else {
 							bg.Id("c").Dot("Edge").Op("=").Qual(b.relativePkgPath(), "NewEdge").Call(jen.Id("idStr"))
 						}
@@ -549,8 +611,10 @@ func (b *convBuilder) buildTo(elem field.Element) jen.Code {
 
 	_, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
+	_, isView := elem.(*field.ViewTable)
+	_, isSink := elem.(*field.SinkTable)
 
-	if isNode || isEdge {
+	if isNode || isEdge || isView || isSink {
 		localName = elem.NameGo()
 		methodPrefix = "To"
 	}

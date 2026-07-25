@@ -2,24 +2,25 @@
 package query
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
 )
 
 // teamMemberModelInfo holds the model-specific unmarshal functions for TeamMember.
 var teamMemberModelInfo = modelInfo[model.TeamMember]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.TeamMember, error) {
-		return unmarshalAll(unmarshal, data, conv.ToTeamMemberPtr)
+	Fields: conv.TeamMemberFields,
+	UnmarshalAll: func(data []byte) ([]*model.TeamMember, error) {
+		return unmarshalAll(data, conv.ToTeamMemberPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.TeamMember, error) {
-		return unmarshalOne(unmarshal, data, conv.ToTeamMemberPtr)
+	UnmarshalOne: func(data []byte) (*model.TeamMember, error) {
+		return unmarshalOne(data, conv.ToTeamMemberPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.TeamMember], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToTeamMemberPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.TeamMember], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToTeamMemberPtr)
 	},
 }
 

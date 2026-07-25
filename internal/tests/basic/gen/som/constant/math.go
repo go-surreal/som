@@ -2,7 +2,7 @@
 
 package constant
 
-import "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+import "som.test/gen/som/internal/lib"
 
 func E[M any]() *lib.Float[M, float64] {
 	return lib.NewFloat[M, float64](lib.NewFixedKey[M]("MATH::E"))

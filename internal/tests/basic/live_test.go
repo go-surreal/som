@@ -6,15 +6,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/query"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/gen/som/with"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som/filter"
+	"som.test/gen/som/query"
+	"som.test/gen/som/with"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
 )
 
 func TestCreateWithAllTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -22,6 +24,7 @@ func TestCreateWithAllTypes(t *testing.T) {
 
 	newModel := &model.AllTypes{
 		FieldHookStatus: "some value",
+		FieldMonth:      time.January,
 	}
 
 	err := client.AllTypesRepo().Create(ctx, newModel)
@@ -53,6 +56,8 @@ func TestCreateWithAllTypes(t *testing.T) {
 }
 
 func TestLiveQueries(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -63,6 +68,7 @@ func TestLiveQueries(t *testing.T) {
 
 	newModel := &model.AllTypes{
 		FieldHookStatus: "some value",
+		FieldMonth:      time.January,
 	}
 
 	liveChan, err := client.AllTypesRepo().Query().Live(ctx)
@@ -175,6 +181,8 @@ func TestLiveQueries(t *testing.T) {
 }
 
 func TestLiveQueriesFilter(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -191,6 +199,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	newModel1 := &model.AllTypes{
 		FieldHookStatus: "some value",
+		FieldMonth:      time.January,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel1)
@@ -200,6 +209,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	newModel2 := &model.AllTypes{
 		FieldHookStatus: "some unsupported value",
+		FieldMonth:      time.January,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel2)
@@ -209,6 +219,7 @@ func TestLiveQueriesFilter(t *testing.T) {
 
 	newModel3 := &model.AllTypes{
 		FieldHookStatus: "some other value",
+		FieldMonth:      time.January,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel3)
@@ -251,6 +262,8 @@ func TestLiveQueriesFilter(t *testing.T) {
 }
 
 func TestLiveQueryCount(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -272,6 +285,7 @@ func TestLiveQueryCount(t *testing.T) {
 		newModel := &model.AllTypes{
 			FieldTime:     time.Now(),
 			FieldDuration: time.Second,
+			FieldMonth:    time.January,
 		}
 
 		if err := client.AllTypesRepo().Create(ctx, newModel); err != nil {
@@ -319,7 +333,52 @@ func TestLiveQueryCount(t *testing.T) {
 	}
 }
 
+func TestLiveQueryKilled(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	liveChan, err := client.LocationRepo().Query().Live(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Remove the table to trigger a server-side kill of the live query.
+	// Location is used (not AllTypes) because a view is defined on AllTypes,
+	// and SurrealDB forbids REMOVE TABLE on a table a view depends on.
+	_, err = client.Raw(ctx, "REMOVE TABLE location", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+
+	case res, more := <-liveChan:
+		if !more {
+			// Channel closed without a killed event is also acceptable,
+			// since the server may close the connection instead.
+			return
+		}
+
+		_, ok := res.(query.LiveKilled[*model.Location])
+		if !ok {
+			t.Fatalf("expected LiveKilled event, got %T", res)
+		}
+
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for killed event after REMOVE TABLE")
+	}
+}
+
 func TestLiveQueryWithFetch(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -347,9 +406,10 @@ func TestLiveQueryWithFetch(t *testing.T) {
 
 	// Create a record with MainGroup set
 	newModel := &model.AllTypes{
-		FieldTime:      time.Now(),
-		FieldDuration:  time.Second,
-		FieldNode: *group,
+		FieldTime:     time.Now(),
+		FieldDuration: time.Second,
+		FieldMonth:    time.January,
+		FieldNode:     *group,
 	}
 
 	err = client.AllTypesRepo().Create(ctx, newModel)

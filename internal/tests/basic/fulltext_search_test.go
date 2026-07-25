@@ -4,16 +4,19 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/by"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/gen/som/query"
-	"github.com/go-surreal/som/tests/basic/gen/som/repo"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som/by"
+	"som.test/gen/som/filter"
+	"som.test/gen/som/query"
+	"som.test/gen/som/repo"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
 func TestFullTextSearchBasic(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -21,6 +24,7 @@ func TestFullTextSearchBasic(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "the quick brown fox jumps over the lazy dog",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -39,6 +43,8 @@ func TestFullTextSearchBasic(t *testing.T) {
 }
 
 func TestFullTextSearchNoMatch(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -46,6 +52,7 @@ func TestFullTextSearchNoMatch(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "hello world",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -63,6 +70,8 @@ func TestFullTextSearchNoMatch(t *testing.T) {
 }
 
 func TestFullTextSearchMultipleResults(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -77,6 +86,7 @@ func TestFullTextSearchMultipleResults(t *testing.T) {
 	for _, s := range testData {
 		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 			FieldString: s,
+			FieldMonth:  time.January,
 		})
 		if err != nil {
 			t.Fatalf("failed to create test data: %v", err)
@@ -95,6 +105,8 @@ func TestFullTextSearchMultipleResults(t *testing.T) {
 }
 
 func TestFullTextSearchWithFilter(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -103,6 +115,7 @@ func TestFullTextSearchWithFilter(t *testing.T) {
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "searchable content here",
 		FieldInt:    42,
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -111,6 +124,7 @@ func TestFullTextSearchWithFilter(t *testing.T) {
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "searchable content there",
 		FieldInt:    100,
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -130,6 +144,8 @@ func TestFullTextSearchWithFilter(t *testing.T) {
 }
 
 func TestFullTextSearchQueryDescribe(t *testing.T) {
+	t.Parallel()
+
 	client, cleanup := prepareDatabase(t.Context(), t)
 	defer cleanup()
 
@@ -143,6 +159,8 @@ func TestFullTextSearchQueryDescribe(t *testing.T) {
 }
 
 func TestFullTextSearchWithRef(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -150,6 +168,7 @@ func TestFullTextSearchWithRef(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "testing explicit ref",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -167,6 +186,8 @@ func TestFullTextSearchWithRef(t *testing.T) {
 }
 
 func TestFullTextSearchWithHighlights(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -174,6 +195,7 @@ func TestFullTextSearchWithHighlights(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "highlight this word please",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -193,6 +215,8 @@ func TestFullTextSearchWithHighlights(t *testing.T) {
 // TestFullTextSearchOrDefault tests that Search() combines conditions with OR by default.
 // This is the standard search engine behavior where any matching term is sufficient.
 func TestFullTextSearchOrDefault(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -200,6 +224,7 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "apple pie is delicious",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -207,6 +232,7 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "orange juice is refreshing",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -214,6 +240,7 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "banana bread is tasty",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -237,6 +264,8 @@ func TestFullTextSearchOrDefault(t *testing.T) {
 // TestFullTextSearchAndExplicit tests that SearchAll() combines conditions with AND.
 // Use this when documents must match ALL search terms.
 func TestFullTextSearchAndExplicit(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -244,6 +273,7 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "apple pie is delicious and sweet",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -251,6 +281,7 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "apple juice is refreshing",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -258,6 +289,7 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "orange juice is also refreshing",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -281,6 +313,8 @@ func TestFullTextSearchAndExplicit(t *testing.T) {
 }
 
 func TestFullTextSearchFirstMatch(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -288,6 +322,7 @@ func TestFullTextSearchFirstMatch(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "first result here",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -295,6 +330,7 @@ func TestFullTextSearchFirstMatch(t *testing.T) {
 
 	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "second result here",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -313,6 +349,8 @@ func TestFullTextSearchFirstMatch(t *testing.T) {
 }
 
 func TestFullTextSearchFirstMatchNoResult(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -330,6 +368,8 @@ func TestFullTextSearchFirstMatchNoResult(t *testing.T) {
 }
 
 func TestFullTextSearchAll(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -337,6 +377,7 @@ func TestFullTextSearchAll(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "get all without metadata",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -355,6 +396,8 @@ func TestFullTextSearchAll(t *testing.T) {
 }
 
 func TestFullTextSearchScore(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -362,6 +405,7 @@ func TestFullTextSearchScore(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "test test test repeated words",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -383,6 +427,8 @@ func TestFullTextSearchScore(t *testing.T) {
 }
 
 func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -392,6 +438,7 @@ func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString:    strVal,
 		FieldStringPtr: &strVal,
+		FieldMonth:     time.January,
 	})
 	if err != nil {
 		t.Fatalf("failed to create test data: %v", err)
@@ -422,6 +469,8 @@ func TestFullTextSearchMultipleScoreSorts(t *testing.T) {
 }
 
 func TestFulltextSearchOrder(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	// Test 1: Score sort first, then field sort
@@ -442,6 +491,8 @@ func TestFulltextSearchOrder(t *testing.T) {
 }
 
 func TestFulltextSearchScoreCombination(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	// Test Sum (default)
@@ -481,6 +532,8 @@ func TestFulltextSearchScoreCombination(t *testing.T) {
 }
 
 func TestSearchWithOffsets(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	q := client.AllTypesRepo().Query().
@@ -491,6 +544,8 @@ func TestSearchWithOffsets(t *testing.T) {
 }
 
 func TestSearchWithHighlightsAndOffsets(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	q := client.AllTypesRepo().Query().
@@ -504,6 +559,8 @@ func TestSearchWithHighlightsAndOffsets(t *testing.T) {
 }
 
 func TestFulltextSearchValidTypes(t *testing.T) {
+	t.Parallel()
+
 	client := &repo.ClientImpl{}
 
 	// Test string
@@ -535,4 +592,89 @@ func TestFulltextSearchValidTypes(t *testing.T) {
 	q6 := client.AllTypesRepo().Query().
 		Search(filter.AllTypes.FieldStringPtrSlicePtr.Matches("test"))
 	assert.Assert(t, strings.Contains(q6.Describe(), "field_string_ptr_slice_ptr @0@"))
+}
+
+func TestFulltextSearchMatchesAnySQL(t *testing.T) {
+	t.Parallel()
+
+	client := &repo.ClientImpl{}
+
+	// Test MatchesAny generates @ref,OR@ syntax for all field types
+	q1 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldString.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q1.Describe(), "field_string @0,OR@"))
+
+	q2 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldStringPtr.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q2.Describe(), "field_string_ptr @0,OR@"))
+
+	q3 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldOther.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q3.Describe(), "field_other @0,OR@"))
+
+	q4 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldStringPtrSlice.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q4.Describe(), "field_string_ptr_slice @0,OR@"))
+
+	q5 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldStringSlicePtr.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q5.Describe(), "field_string_slice_ptr @0,OR@"))
+
+	q6 := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldStringPtrSlicePtr.MatchesAny("hello world"))
+	assert.Assert(t, strings.Contains(q6.Describe(), "field_string_ptr_slice_ptr @0,OR@"))
+}
+
+func TestFulltextSearchMatchesAnyWithRef(t *testing.T) {
+	t.Parallel()
+
+	client := &repo.ClientImpl{}
+
+	q := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldString.MatchesAny("hello world").Ref(3))
+	assert.Assert(t, strings.Contains(q.Describe(), "field_string @3,OR@"))
+}
+
+func TestFullTextSearchMatchesAnyIntegration(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
+		FieldString: "the quick brown fox",
+		FieldMonth:  time.January,
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
+		FieldString: "the lazy dog",
+		FieldMonth:  time.January,
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{
+		FieldString: "some other content",
+		FieldMonth:  time.January,
+	})
+	if err != nil {
+		t.Fatalf("failed to create test data: %v", err)
+	}
+
+	// MatchesAny with "fox dog" should match documents containing "fox" OR "dog"
+	results, err := client.AllTypesRepo().Query().
+		Search(filter.AllTypes.FieldString.MatchesAny("fox dog")).
+		AllMatches(ctx)
+
+	if err != nil {
+		t.Fatalf("failed to execute search: %v", err)
+	}
+
+	assert.Equal(t, 2, len(results))
 }

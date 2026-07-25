@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/by"
-	"github.com/go-surreal/som/tests/basic/gen/som/repo"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/gen/som/with"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som/by"
+	"som.test/gen/som/repo"
+	"som.test/gen/som/filter"
+	"som.test/gen/som/with"
+	"som.test/model"
 )
 
 type AllTypesRepo interface {
@@ -110,7 +110,7 @@ func (r *allTypesRepo) List(ctx context.Context) ([]*model.AllTypes, error) {
 		// FetchEdgesWithDepth3().
 		// FetchDepth(2).
 		// OrderRandom().
-		// Offset(10).
+		// Start(10).
 		// Limit(10).
 		Timeout(10 * time.Second).
 		Parallel(true).

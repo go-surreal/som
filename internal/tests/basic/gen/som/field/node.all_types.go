@@ -2,12 +2,12 @@
 package field
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
-	model "github.com/go-surreal/som/tests/basic/model"
 	uuid1 "github.com/gofrs/uuid"
 	uuid "github.com/google/uuid"
 	"net/url"
+	som "som.test/gen/som"
+	distinct "som.test/gen/som/internal/distinct"
+	model "som.test/model"
 	"time"
 )
 
@@ -56,9 +56,16 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldIntPtrSlicePtr:     distinct.NewField[M, int](keyed(key, "field_int_ptr_slice_ptr")),
 		FieldIntSlice:           distinct.NewField[M, int](keyed(key, "field_int_slice")),
 		FieldIntSlicePtr:        distinct.NewField[M, int](keyed(key, "field_int_slice_ptr")),
+		FieldMonth:              distinct.NewField[M, time.Month](keyed(key, "field_month")),
+		FieldMonthPtr:           distinct.NewField[M, time.Month](keyed(key, "field_month_ptr")),
 		FieldOther:              distinct.NewField[M, string](keyed(key, "field_other")),
+		FieldRenamed:            distinct.NewField[M, string](keyed(key, "custom_name")),
 		FieldRune:               distinct.NewField[M, rune](keyed(key, "field_rune")),
 		FieldRuneSlice:          distinct.NewField[M, rune](keyed(key, "field_rune_slice")),
+		FieldSemVer:             distinct.NewField[M, som.SemVer](keyed(key, "field_sem_ver")),
+		FieldSemVerNil:          distinct.NewField[M, som.SemVer](keyed(key, "field_sem_ver_nil")),
+		FieldSemVerPtr:          distinct.NewField[M, som.SemVer](keyed(key, "field_sem_ver_ptr")),
+		FieldSemVerSlice:        distinct.NewField[M, som.SemVer](keyed(key, "field_sem_ver_slice")),
 		FieldString:             distinct.NewField[M, string](keyed(key, "field_string")),
 		FieldStringPtr:          distinct.NewField[M, string](keyed(key, "field_string_ptr")),
 		FieldStringPtrSlice:     distinct.NewField[M, string](keyed(key, "field_string_ptr_slice")),
@@ -86,6 +93,8 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldUint32Ptr:          distinct.NewField[M, uint32](keyed(key, "field_uint_32_ptr")),
 		FieldUint8:              distinct.NewField[M, uint8](keyed(key, "field_uint_8")),
 		FieldUint8Ptr:           distinct.NewField[M, uint8](keyed(key, "field_uint_8_ptr")),
+		FieldWeekday:            distinct.NewField[M, time.Weekday](keyed(key, "field_weekday")),
+		FieldWeekdayPtr:         distinct.NewField[M, time.Weekday](keyed(key, "field_weekday_ptr")),
 		UpdatedAt:               distinct.NewTimeField[M](keyed(key, "updated_at")),
 		key:                     key,
 	}
@@ -140,6 +149,10 @@ type allTypes[M any] struct {
 	FieldDurationPtr        distinct.Field[M, time.Duration]
 	FieldDurationNil        distinct.Field[M, time.Duration]
 	FieldDurationSlice      distinct.Field[M, time.Duration]
+	FieldMonth              distinct.Field[M, time.Month]
+	FieldMonthPtr           distinct.Field[M, time.Month]
+	FieldWeekday            distinct.Field[M, time.Weekday]
+	FieldWeekdayPtr         distinct.Field[M, time.Weekday]
 	FieldUUID               distinct.Field[M, uuid.UUID]
 	FieldUUIDPtr            distinct.Field[M, uuid.UUID]
 	FieldUUIDNil            distinct.Field[M, uuid.UUID]
@@ -156,6 +169,10 @@ type allTypes[M any] struct {
 	FieldEmailPtr           distinct.Field[M, som.Email]
 	FieldEmailNil           distinct.Field[M, som.Email]
 	FieldEmailSlice         distinct.Field[M, som.Email]
+	FieldSemVer             distinct.Field[M, som.SemVer]
+	FieldSemVerPtr          distinct.Field[M, som.SemVer]
+	FieldSemVerNil          distinct.Field[M, som.SemVer]
+	FieldSemVerSlice        distinct.Field[M, som.SemVer]
 	FieldEnum               distinct.Field[M, model.Role]
 	FieldEnumPtr            distinct.Field[M, model.Role]
 	FieldEnumSlice          distinct.Field[M, model.Role]
@@ -163,6 +180,7 @@ type allTypes[M any] struct {
 	FieldEnumPtrSlicePtr    distinct.Field[M, model.Role]
 	FieldByte               distinct.Field[M, byte]
 	FieldBytePtr            distinct.Field[M, byte]
+	FieldRenamed            distinct.Field[M, string]
 	FieldHookStatus         distinct.Field[M, string]
 	FieldHookDetail         distinct.Field[M, string]
 }

@@ -2,22 +2,23 @@
 package query
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	model "som.test/model"
 )
 
 // personObjModelInfo holds the model-specific unmarshal functions for PersonObj.
 var personObjModelInfo = modelInfo[model.PersonObj]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.PersonObj, error) {
-		return unmarshalAll(unmarshal, data, conv.ToPersonObjPtr)
+	Fields: conv.PersonObjFields,
+	UnmarshalAll: func(data []byte) ([]*model.PersonObj, error) {
+		return unmarshalAll(data, conv.ToPersonObjPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.PersonObj, error) {
-		return unmarshalOne(unmarshal, data, conv.ToPersonObjPtr)
+	UnmarshalOne: func(data []byte) (*model.PersonObj, error) {
+		return unmarshalOne(data, conv.ToPersonObjPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.PersonObj], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToPersonObjPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.PersonObj], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToPersonObjPtr)
 	},
 }
 

@@ -4,8 +4,9 @@ import (
 	"context"
 	"regexp"
 	"testing"
+	"time"
 
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
@@ -15,6 +16,8 @@ var (
 )
 
 func TestCustomID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -35,7 +38,7 @@ func TestCustomID(t *testing.T) {
 	})
 
 	t.Run("ulid", func(t *testing.T) {
-		rec := model.AllTypes{FieldString: "ulid-test"}
+		rec := model.AllTypes{FieldString: "ulid-test", FieldMonth: time.January}
 		err := client.AllTypesRepo().Create(ctx, &rec)
 		assert.NilError(t, err)
 		assert.Assert(t, ulidRegex.MatchString(string(rec.ID())), "expected ULID format, got %q", rec.ID())
@@ -57,7 +60,7 @@ func TestCustomID(t *testing.T) {
 
 	t.Run("create_with_id_ulid", func(t *testing.T) {
 		knownID := "my-custom-id"
-		rec := model.AllTypes{FieldString: "ulid-with-id"}
+		rec := model.AllTypes{FieldString: "ulid-with-id", FieldMonth: time.January}
 		err := client.AllTypesRepo().CreateWithID(ctx, knownID, &rec)
 		assert.NilError(t, err)
 		assert.Equal(t, string(rec.ID()), knownID)

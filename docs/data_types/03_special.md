@@ -10,7 +10,7 @@ Use `github.com/google/uuid.UUID` for unique identifiers:
 import "github.com/google/uuid"
 
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
 
     ExternalID uuid.UUID
     TrackingID uuid.UUID
@@ -68,7 +68,7 @@ Use `net/url.URL` for web addresses:
 import "net/url"
 
 type Bookmark struct {
-    som.Node
+    som.Node[som.ULID]
 
     Title string
     Link  url.URL
@@ -103,7 +103,7 @@ Use pointers for optional values:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     ProfileID *uuid.UUID  // Optional UUID
     Website   *url.URL    // Optional URL
@@ -120,47 +120,23 @@ filter.User.ProfileID.IsNotNil()
 filter.User.Website.IsNil()
 ```
 
-## Record IDs
+## UUID (gofrs)
 
-SOM uses SurrealDB's native Record ID format:
-
-```go
-type ID = models.RecordID
-```
-
-Record IDs are automatically managed:
+SOM also supports `github.com/gofrs/uuid.UUID` as an alternative UUID implementation:
 
 ```go
-user := &model.User{Name: "Alice"}
-err := client.UserRepo().Create(ctx, user)
-// user.ID() returns *som.ID like "user:01HQ..."
+import "github.com/gofrs/uuid"
+
+type Resource struct {
+    som.Node[som.ULID]
+
+    ExternalID uuid.UUID
+}
 ```
 
-### Creating Custom IDs
-
-Use `CreateWithID` for specific IDs:
-
-```go
-err := client.UserRepo().CreateWithID(ctx, "alice", user)
-// Creates user:alice
-```
-
-### ID Utilities
-
-```go
-// Create a new RecordID
-id := som.NewRecordID("user", "alice")
-
-// Create a pointer to RecordID
-idPtr := som.MakeID("user", "alice")
-
-// Reference a table (for server-generated IDs)
-table := som.Table("user")
-```
+Both `google/uuid` and `gofrs/uuid` are encoded identically using CBOR Tag 37.
 
 ## Built-in Special Types
-
-SOM provides marker types for special handling:
 
 ### som.Email
 
@@ -168,10 +144,12 @@ Type-safe email addresses:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     Email som.Email
 }
 ```
+
+Filter operations include `Equal`, `In`, `User()` (extract user part), and `Host()` (extract host part).
 
 ### som.Password
 
@@ -179,12 +157,12 @@ Secure password handling with automatic hashing. Supports multiple algorithms:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     Password som.Password[som.Bcrypt]   // Bcrypt algorithm
 }
 
 type Admin struct {
-    som.Node
+    som.Node[som.ULID]
     Password som.Password[som.Argon2]   // Argon2 (most secure)
 }
 ```
@@ -200,14 +178,16 @@ See [Password Type Reference](../types/password.md) for complete documentation.
 
 ### som.SemVer
 
-Semantic version strings:
+Semantic version strings with comparison and component extraction:
 
 ```go
 type Release struct {
-    som.Node
+    som.Node[som.ULID]
     Version som.SemVer
 }
 ```
+
+Filter operations include `Equal`, `Compare`, `Major()`, `Minor()`, and `Patch()`.
 
 ## Type Reference
 
@@ -215,8 +195,11 @@ type Release struct {
 |------|---------|----------|-------------|
 | `time.Time` | `time` | 12 | Datetime with nanosecond precision |
 | `time.Duration` | `time` | 14 | Duration with nanosecond precision |
+| `time.Month` | `time` | - | Month of the year |
+| `time.Weekday` | `time` | - | Day of the week |
 | `uuid.UUID` | `github.com/google/uuid` | 37 | Universally unique identifier |
+| `uuid.UUID` | `github.com/gofrs/uuid` | 37 | Universally unique identifier |
 | `url.URL` | `net/url` | - | Web address |
 | `som.Email` | generated | - | Email address string |
-| `som.Password` | generated | - | Password string |
+| `som.Password[A]` | generated | - | Auto-hashed password |
 | `som.SemVer` | generated | - | Semantic version string |

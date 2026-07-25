@@ -4,32 +4,76 @@ DEFINE ANALYZER english TOKENIZERS blank, punct FILTERS lowercase, snowball(engl
 DEFINE ANALYZER autocomplete TOKENIZERS class FILTERS lowercase, edgengram(1, 10);
 
 DEFINE TABLE weather SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE weather TYPE array<any, 2>;
+DEFINE FIELD id ON TABLE weather TYPE [string, datetime];
 DEFINE FIELD temperature ON TABLE weather TYPE float ;
 
 DEFINE TABLE team_member SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE team_member TYPE object FLEXIBLE;
+DEFINE FIELD id ON TABLE team_member TYPE { member: record<all_types>, forecast: record<weather> };
 DEFINE FIELD role ON TABLE team_member TYPE string;
 
 DEFINE TABLE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE special_types TYPE uuid;
+DEFINE FIELD id ON TABLE special_types TYPE uuid DEFAULT rand::uuid();
 DEFINE FIELD deleted_at ON TABLE special_types TYPE option<datetime> DEFAULT NONE;
 DEFINE FIELD name ON TABLE special_types TYPE string;
 DEFINE FIELD __som_lock_version ON TABLE special_types TYPE int VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };
 
 DEFINE TABLE special_relation SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE special_relation TYPE string;
+DEFINE FIELD id ON TABLE special_relation TYPE string DEFAULT rand::string(20);
 DEFINE FIELD deleted_at ON TABLE special_relation TYPE option<datetime> DEFAULT NONE;
 DEFINE FIELD title ON TABLE special_relation TYPE string;
 DEFINE FIELD author ON TABLE special_relation TYPE option<record<special_types>>;
 DEFINE FIELD authors ON TABLE special_relation TYPE option<array<record<special_types> | null>>;
 
 DEFINE TABLE person_obj SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE person_obj TYPE object FLEXIBLE;
+DEFINE FIELD id ON TABLE person_obj TYPE { name: string, age: int };
 DEFINE FIELD email ON TABLE person_obj TYPE string;
 
-DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE all_types TYPE string;
+DEFINE TABLE location SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE location TYPE string DEFAULT rand::ulid();
+DEFINE FIELD created_at ON TABLE location TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE location TYPE option<datetime> VALUE time::now();
+DEFINE FIELD name ON TABLE location TYPE string;
+DEFINE FIELD point ON TABLE location TYPE geometry<point>;
+DEFINE FIELD point_ptr ON TABLE location TYPE option<geometry<point>>;
+DEFINE FIELD line_string ON TABLE location TYPE geometry<line>;
+DEFINE FIELD line_string_ptr ON TABLE location TYPE option<geometry<line>>;
+DEFINE FIELD polygon ON TABLE location TYPE geometry<polygon>;
+DEFINE FIELD polygon_ptr ON TABLE location TYPE option<geometry<polygon>>;
+DEFINE FIELD multi_point ON TABLE location TYPE geometry<multipoint>;
+DEFINE FIELD multi_point_ptr ON TABLE location TYPE option<geometry<multipoint>>;
+DEFINE FIELD multi_line_string ON TABLE location TYPE geometry<multiline>;
+DEFINE FIELD multi_polygon ON TABLE location TYPE geometry<multipolygon>;
+DEFINE FIELD collection ON TABLE location TYPE geometry<collection>;
+DEFINE FIELD gg_point ON TABLE location TYPE geometry<point>;
+DEFINE FIELD gg_point_ptr ON TABLE location TYPE option<geometry<point>>;
+DEFINE FIELD gg_line_string ON TABLE location TYPE geometry<line>;
+DEFINE FIELD gg_line_string_ptr ON TABLE location TYPE option<geometry<line>>;
+DEFINE FIELD gg_polygon ON TABLE location TYPE geometry<polygon>;
+DEFINE FIELD gg_polygon_ptr ON TABLE location TYPE option<geometry<polygon>>;
+DEFINE FIELD gg_multi_point ON TABLE location TYPE geometry<multipoint>;
+DEFINE FIELD gg_multi_point_ptr ON TABLE location TYPE option<geometry<multipoint>>;
+DEFINE FIELD gg_multi_line_string ON TABLE location TYPE geometry<multiline>;
+DEFINE FIELD gg_multi_polygon ON TABLE location TYPE geometry<multipolygon>;
+DEFINE FIELD sf_point ON TABLE location TYPE geometry<point>;
+DEFINE FIELD sf_point_ptr ON TABLE location TYPE option<geometry<point>>;
+DEFINE FIELD sf_line_string ON TABLE location TYPE geometry<line>;
+DEFINE FIELD sf_line_string_ptr ON TABLE location TYPE option<geometry<line>>;
+DEFINE FIELD sf_polygon ON TABLE location TYPE geometry<polygon>;
+DEFINE FIELD sf_polygon_ptr ON TABLE location TYPE option<geometry<polygon>>;
+DEFINE FIELD sf_multi_point ON TABLE location TYPE geometry<multipoint>;
+DEFINE FIELD sf_multi_point_ptr ON TABLE location TYPE option<geometry<multipoint>>;
+DEFINE FIELD sf_multi_line_string ON TABLE location TYPE geometry<multiline>;
+DEFINE FIELD sf_multi_polygon ON TABLE location TYPE geometry<multipolygon>;
+
+DEFINE TABLE ephemeral SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE ephemeral TYPE uuid DEFAULT rand::uuid();
+DEFINE FIELD created_at ON TABLE ephemeral TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD updated_at ON TABLE ephemeral TYPE option<datetime> VALUE time::now();
+DEFINE FIELD expires_at ON TABLE ephemeral TYPE option<datetime> VALUE $before OR (time::now() + 1s) READONLY;
+DEFINE FIELD label ON TABLE ephemeral TYPE string;
+
+DEFINE TABLE all_types SCHEMAFULL TYPE NORMAL CHANGEFEED 1d PERMISSIONS FULL;
+DEFINE FIELD id ON TABLE all_types TYPE string DEFAULT rand::ulid();
 DEFINE FIELD created_at ON TABLE all_types TYPE option<datetime> VALUE $before OR time::now() READONLY;
 DEFINE FIELD updated_at ON TABLE all_types TYPE option<datetime> VALUE time::now();
 DEFINE FIELD field_string ON TABLE all_types TYPE string;
@@ -78,6 +122,10 @@ DEFINE FIELD field_duration ON TABLE all_types TYPE duration;
 DEFINE FIELD field_duration_ptr ON TABLE all_types TYPE option<duration>;
 DEFINE FIELD field_duration_nil ON TABLE all_types TYPE option<duration>;
 DEFINE FIELD field_duration_slice ON TABLE all_types TYPE option<array<duration>>;
+DEFINE FIELD field_month ON TABLE all_types TYPE int ASSERT $value >= 1 AND $value <= 12;
+DEFINE FIELD field_month_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 1 AND $value <= 12;
+DEFINE FIELD field_weekday ON TABLE all_types TYPE int ASSERT $value >= 0 AND $value <= 6;
+DEFINE FIELD field_weekday_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 6;
 DEFINE FIELD field_uuid ON TABLE all_types TYPE uuid;
 DEFINE FIELD field_uuid_ptr ON TABLE all_types TYPE option<uuid>;
 DEFINE FIELD field_uuid_nil ON TABLE all_types TYPE option<uuid>;
@@ -94,6 +142,10 @@ DEFINE FIELD field_email ON TABLE all_types TYPE string ASSERT $value == "" OR s
 DEFINE FIELD field_email_ptr ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_email($value);
 DEFINE FIELD field_email_nil ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_email($value);
 DEFINE FIELD field_email_slice ON TABLE all_types TYPE option<array<string>>;
+DEFINE FIELD field_sem_ver ON TABLE all_types TYPE string ASSERT $value == "" OR string::is_semver($value);
+DEFINE FIELD field_sem_ver_ptr ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_semver($value);
+DEFINE FIELD field_sem_ver_nil ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_semver($value);
+DEFINE FIELD field_sem_ver_slice ON TABLE all_types TYPE option<array<string>>;
 DEFINE FIELD field_enum ON TABLE all_types TYPE "" | "admin" | "user";
 DEFINE FIELD field_enum_ptr ON TABLE all_types TYPE option<"" | "admin" | "user">;
 DEFINE FIELD field_enum_slice ON TABLE all_types TYPE option<array<"" | "admin" | "user">>;
@@ -136,19 +188,37 @@ DEFINE FIELD field_byte ON TABLE all_types TYPE int ASSERT $value >= 0 AND $valu
 DEFINE FIELD field_byte_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 255;
 DEFINE FIELD field_byte_slice ON TABLE all_types TYPE option<bytes>;
 DEFINE FIELD field_byte_slice_ptr ON TABLE all_types TYPE option<bytes>;
+DEFINE FIELD custom_name ON TABLE all_types TYPE string;
 DEFINE FIELD field_hook_status ON TABLE all_types TYPE string;
 DEFINE FIELD field_hook_detail ON TABLE all_types TYPE string;
 
 DEFINE TABLE edge_relation SCHEMAFULL TYPE RELATION IN all_types OUT special_types ENFORCED PERMISSIONS FULL;
-DEFINE FIELD id ON TABLE edge_relation TYPE string;
+DEFINE FIELD id ON TABLE edge_relation TYPE string DEFAULT rand::ulid();
 DEFINE FIELD created_at ON TABLE edge_relation TYPE option<datetime> VALUE $before OR time::now() READONLY;
 DEFINE FIELD updated_at ON TABLE edge_relation TYPE option<datetime> VALUE time::now();
 DEFINE FIELD meta ON TABLE edge_relation TYPE object;
 DEFINE FIELD meta.is_admin ON TABLE edge_relation TYPE bool;
 DEFINE FIELD meta.is_active ON TABLE edge_relation TYPE bool;
 
-DEFINE INDEX __som__special_types_index_deleted_at ON special_types FIELDS deleted_at CONCURRENTLY;
-DEFINE INDEX __som__special_relation_index_deleted_at ON special_relation FIELDS deleted_at CONCURRENTLY;
+DEFINE TABLE event_log DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD category ON TABLE event_log TYPE string;
+DEFINE FIELD value ON TABLE event_log TYPE float ;
+
+DEFINE TABLE event_summary TYPE NORMAL AS SELECT category AS category, count(category) AS total, math::mean(value) AS avg_value FROM event_log GROUP BY category;
+
+DEFINE TABLE all_types_summary TYPE NORMAL AS SELECT field_string AS category, count(field_string) AS total, math::mean(field_float_64) AS avg_value FROM all_types GROUP BY field_string;
+
+DEFINE INDEX __som__weather_count ON weather COUNT;
+DEFINE INDEX __som__team_member_count ON team_member COUNT;
+DEFINE INDEX __som__special_types_count ON special_types COUNT;
+DEFINE INDEX __som__special_types_deleted_at ON special_types FIELDS deleted_at CONCURRENTLY;
+DEFINE INDEX __som__special_relation_count ON special_relation COUNT;
+DEFINE INDEX __som__special_relation_deleted_at ON special_relation FIELDS deleted_at CONCURRENTLY;
+DEFINE INDEX __som__person_obj_count ON person_obj COUNT;
+DEFINE INDEX __som__location_count ON location COUNT;
+DEFINE INDEX __som__ephemeral_count ON ephemeral COUNT;
+DEFINE INDEX __som__ephemeral_expires_at ON ephemeral FIELDS expires_at CONCURRENTLY;
+DEFINE INDEX __som__all_types_count ON all_types COUNT;
 DEFINE INDEX __som__all_types_search_field_string ON all_types FIELDS field_string FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_string_ptr ON all_types FIELDS field_string_ptr FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_other ON all_types FIELDS field_other FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
@@ -156,3 +226,4 @@ DEFINE INDEX __som__all_types_search_field_string_ptr_slice ON all_types FIELDS 
 DEFINE INDEX __som__all_types_search_field_string_slice_ptr ON all_types FIELDS field_string_slice_ptr FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_search_field_string_ptr_slice_ptr ON all_types FIELDS field_string_ptr_slice_ptr FULLTEXT ANALYZER english BM25(1.2, 0.75) HIGHLIGHTS;
 DEFINE INDEX __som__all_types_index_field_credentials_username ON all_types FIELDS field_credentials.username CONCURRENTLY;
+DEFINE INDEX __som__edge_relation_count ON edge_relation COUNT;

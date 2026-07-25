@@ -7,15 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/field"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/gen/som/query"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som/field"
+	"som.test/gen/som/filter"
+	"som.test/gen/som/query"
+	"som.test/model"
 	"github.com/google/uuid"
 	"gotest.tools/v3/assert"
 )
 
 func TestDistinct(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -54,6 +56,7 @@ func TestDistinct(t *testing.T) {
 		FieldURL:         *url1,
 		FieldEnum:        model.RoleAdmin,
 		FieldCredentials: model.Credentials{Username: "alice", Password: "pass1"},
+		FieldMonth:       time.January,
 	}
 
 	record2 := &model.AllTypes{
@@ -66,6 +69,7 @@ func TestDistinct(t *testing.T) {
 		FieldURL:         *url2,
 		FieldEnum:        model.RoleUser,
 		FieldCredentials: model.Credentials{Username: "bob", Password: "pass2"},
+		FieldMonth:       time.January,
 	}
 
 	record3 := &model.AllTypes{
@@ -78,6 +82,7 @@ func TestDistinct(t *testing.T) {
 		FieldURL:         *url3,
 		FieldEnum:        model.RoleUser,
 		FieldCredentials: model.Credentials{Username: "charlie", Password: "pass3"},
+		FieldMonth:       time.January,
 	}
 
 	for _, r := range []*model.AllTypes{record1, record2, record3} {
@@ -160,8 +165,8 @@ func TestDistinct(t *testing.T) {
 	})
 
 	t.Run("StringWithDuplicates", func(t *testing.T) {
-		dup1 := &model.AllTypes{FieldString: "alpha", FieldCredentials: model.Credentials{Username: "dup1", Password: "pass"}}
-		dup2 := &model.AllTypes{FieldString: "alpha", FieldCredentials: model.Credentials{Username: "dup2", Password: "pass"}}
+		dup1 := &model.AllTypes{FieldString: "alpha", FieldCredentials: model.Credentials{Username: "dup1", Password: "pass"}, FieldMonth: time.January}
+		dup2 := &model.AllTypes{FieldString: "alpha", FieldCredentials: model.Credentials{Username: "dup2", Password: "pass"}, FieldMonth: time.January}
 		for _, r := range []*model.AllTypes{dup1, dup2} {
 			if err := client.AllTypesRepo().Create(ctx, r); err != nil {
 				t.Fatal(err)

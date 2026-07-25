@@ -75,11 +75,40 @@ Available on all comparable field types:
 | `LessThanOrEqual(val)` | Less than or equal |
 | `GreaterThan(val)` | Greater than |
 | `GreaterThanOrEqual(val)` | Greater than or equal |
+| `Between(from, to)` | Value within range (inclusive by default) |
 
 ```go
 filter.User.Age.GreaterThan(18)
 filter.User.Age.LessThanOrEqual(65)
 filter.User.CreatedAt.GreaterThan(lastWeek)
+```
+
+### Between Filter
+
+The `Between` filter checks whether a field value falls within a range. By default, both bounds are inclusive:
+
+```go
+// Age between 18 and 65 (inclusive)
+filter.User.Age.Between(18, 65)
+```
+
+Control bound inclusivity with chainable methods:
+
+```go
+// Exclusive lower bound: 18 < age <= 65
+filter.User.Age.Between(18, 65).FromExclusive()
+
+// Exclusive upper bound: 18 <= age < 65
+filter.User.Age.Between(18, 65).ToExclusive()
+
+// Both exclusive: 18 < age < 65
+filter.User.Age.Between(18, 65).BothExclusive()
+```
+
+Works with any comparable type including time:
+
+```go
+filter.User.CreatedAt.Between(startDate, endDate)
 ```
 
 ## String Operations
@@ -313,8 +342,7 @@ users, err := client.UserRepo().Query().
         ),
 
         // Age between 18 and 65
-        filter.User.Age.GreaterThanOrEqual(18),
-        filter.User.Age.LessThanOrEqual(65),
+        filter.User.Age.Between(18, 65),
 
         // Has at least one role
         filter.User.Roles.NotEmpty(),

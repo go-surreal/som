@@ -2,8 +2,8 @@
 package by
 
 import (
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	lib "som.test/gen/som/internal/lib"
+	model "som.test/model"
 )
 
 var AllTypes = newAllTypes[model.AllTypes]("")
@@ -37,7 +37,13 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldInt8:         lib.NewBaseSort[M](keyed(key, "field_int_8")),
 		FieldInt8Ptr:      lib.NewBaseSort[M](keyed(key, "field_int_8_ptr")),
 		FieldIntPtr:       lib.NewBaseSort[M](keyed(key, "field_int_ptr")),
+		FieldMonth:        lib.NewBaseSort[M](keyed(key, "field_month")),
+		FieldMonthPtr:     lib.NewBaseSort[M](keyed(key, "field_month_ptr")),
+		FieldRenamed:      lib.NewStringSort[M](keyed(key, "custom_name")),
 		FieldRune:         lib.NewBaseSort[M](keyed(key, "field_rune")),
+		FieldSemVer:       lib.NewBaseSort[M](keyed(key, "field_sem_ver")),
+		FieldSemVerNil:    lib.NewBaseSort[M](keyed(key, "field_sem_ver_nil")),
+		FieldSemVerPtr:    lib.NewBaseSort[M](keyed(key, "field_sem_ver_ptr")),
 		FieldString:       lib.NewStringSort[M](keyed(key, "field_string")),
 		FieldStringPtr:    lib.NewStringSort[M](keyed(key, "field_string_ptr")),
 		FieldTime:         lib.NewBaseSort[M](keyed(key, "field_time")),
@@ -58,6 +64,8 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldUint32Ptr:    lib.NewBaseSort[M](keyed(key, "field_uint_32_ptr")),
 		FieldUint8:        lib.NewBaseSort[M](keyed(key, "field_uint_8")),
 		FieldUint8Ptr:     lib.NewBaseSort[M](keyed(key, "field_uint_8_ptr")),
+		FieldWeekday:      lib.NewBaseSort[M](keyed(key, "field_weekday")),
+		FieldWeekdayPtr:   lib.NewBaseSort[M](keyed(key, "field_weekday_ptr")),
 		ID:                lib.NewBaseSort[M](keyed(key, "id")),
 		UpdatedAt:         lib.NewBaseSort[M](keyed(key, "updated_at")),
 		key:               key,
@@ -98,6 +106,10 @@ type allTypes[M any] struct {
 	FieldDuration     *lib.BaseSort[M]
 	FieldDurationPtr  *lib.BaseSort[M]
 	FieldDurationNil  *lib.BaseSort[M]
+	FieldMonth        *lib.BaseSort[M]
+	FieldMonthPtr     *lib.BaseSort[M]
+	FieldWeekday      *lib.BaseSort[M]
+	FieldWeekdayPtr   *lib.BaseSort[M]
 	FieldUUID         *lib.BaseSort[M]
 	FieldUUIDPtr      *lib.BaseSort[M]
 	FieldUUIDNil      *lib.BaseSort[M]
@@ -110,10 +122,14 @@ type allTypes[M any] struct {
 	FieldEmail        *lib.BaseSort[M]
 	FieldEmailPtr     *lib.BaseSort[M]
 	FieldEmailNil     *lib.BaseSort[M]
+	FieldSemVer       *lib.BaseSort[M]
+	FieldSemVerPtr    *lib.BaseSort[M]
+	FieldSemVerNil    *lib.BaseSort[M]
 	FieldEnum         *lib.BaseSort[M]
 	FieldEnumPtr      *lib.BaseSort[M]
 	FieldByte         *lib.BaseSort[M]
 	FieldBytePtr      *lib.BaseSort[M]
+	FieldRenamed      *lib.StringSort[M]
 	FieldHookStatus   *lib.StringSort[M]
 	FieldHookDetail   *lib.StringSort[M]
 }

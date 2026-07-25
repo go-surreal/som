@@ -6,11 +6,45 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/go-surreal/som/core/util/gomod"
 	"github.com/wzshiming/gotype"
 )
+
+var validDBName = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+
+// ReservedDBNames contains field names managed by SOM or SurrealDB internals.
+var ReservedDBNames = map[string]bool{
+	"id":         true,
+	"in":         true,
+	"out":        true,
+	"created_at": true,
+	"updated_at": true,
+	"deleted_at": true,
+	"expires_at": true,
+}
+
+// validExpiryDuration matches SurrealDB duration literals as used in the som.Expiry struct tag,
+// e.g. "24h", "7d", "1w", "500ms". Units follow SurrealDB semantics, which are
+// broader than Go's time.ParseDuration (it additionally supports d, w and y).
+var validExpiryDuration = regexp.MustCompile(`^([0-9]+(ns|us|µs|ms|s|m|h|d|w|y))+$`)
+
+// parseExpiryTag validates the duration declared on a som.Expiry embed. The whole
+// som tag value is the duration (e.g. `som:"24h"`), since the embed already
+// conveys the expiry intent. It returns the raw duration string (embedded
+// verbatim into the generated schema) or an error.
+func parseExpiryTag(tag string) (string, error) {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return "", fmt.Errorf("som.Expiry embed requires a duration via `som:\"<duration>\"` (e.g. som:\"24h\")")
+	}
+	if !validExpiryDuration.MatchString(tag) {
+		return "", fmt.Errorf("som.Expiry embed: %q is not a valid duration", tag)
+	}
+	return tag, nil
+}
 
 // activeFieldRegistry is set at the start of Parse() so that
 // ParseField / ParseFieldInternal can delegate to it.
@@ -101,11 +135,14 @@ func ParseField(t gotype.Type, outPkg string) (Field, error) {
 }
 
 func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field, error) {
-	var indexInfo *IndexInfo
-	var searchInfo *SearchInfo
+	var tagInfo *TagInfo
 	if isStructField {
 		somTag := t.Tag().Get("som")
-		indexInfo, searchInfo = parseSomTag(somTag)
+		var err error
+		tagInfo, err = parseSomTag(somTag)
+		if err != nil {
+			return nil, fmt.Errorf("field %s: %w", t.Name(), err)
+		}
 	}
 
 	ctx := &FieldContext{
@@ -120,74 +157,131 @@ func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field
 		return nil, err
 	}
 
-	if indexInfo != nil {
-		field.setIndex(indexInfo)
-	}
-	if searchInfo != nil {
-		field.setSearch(searchInfo)
+	if tagInfo != nil {
+		if tagInfo.DBName != "" {
+			field.setDBName(tagInfo.DBName)
+		}
+		if len(tagInfo.Indexes) > 0 {
+			field.setIndexes(tagInfo.Indexes)
+		}
+		if tagInfo.Search != nil {
+			field.setSearch(tagInfo.Search)
+		}
 	}
 
 	return field, nil
 }
 
-// parseSomTag parses the "som" struct tag and extracts index/search info.
-func parseSomTag(tag string) (index *IndexInfo, search *SearchInfo) {
+// TagInfo holds all parsed som struct tag data.
+type TagInfo struct {
+	DBName  string
+	Indexes []IndexInfo
+	Search  *SearchInfo
+}
+
+// ParseChangefeedTag extracts the changefeed duration from a som tag.
+// Tag format: som:"changefeed=2d" returns "2d"
+func ParseChangefeedTag(tag string) string {
 	if tag == "" {
+		return ""
+	}
+
+	parts := strings.Split(tag, ",")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if strings.HasPrefix(part, "changefeed=") {
+			return strings.TrimPrefix(part, "changefeed=")
+		}
+	}
+	return ""
+}
+
+// parseSomTag parses the "som" struct tag and extracts field metadata.
+// All parameterized options use key=value syntax:
+//
+//	som:"index"
+//	som:"index=my_index"
+//	som:"unique"
+//	som:"unique=composite_name"
+//	som:"name=db_field_name"
+//	som:"fulltext=english_search"
+//	som:"index,unique=login"
+func parseSomTag(tag string) (*TagInfo, error) {
+	if tag == "" || tag == "in" || tag == "out" {
 		return nil, nil
 	}
 
-	if tag == "in" || tag == "out" {
-		return nil, nil
-	}
+	info := &TagInfo{}
 
 	parts := strings.Split(tag, ",")
 
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
-
-		if strings.HasPrefix(part, "fulltext(") && strings.HasSuffix(part, ")") {
-			configName := part[9 : len(part)-1]
-			search = &SearchInfo{ConfigName: configName}
+		if part == "" {
 			continue
 		}
 
-		if part == "index" {
-			if index == nil {
-				index = &IndexInfo{}
-			}
-			continue
-		}
+		key, value, hasValue := strings.Cut(part, "=")
 
-		if part == "unique" || strings.HasPrefix(part, "unique(") {
-			if index == nil {
-				index = &IndexInfo{}
+		switch key {
+		case "index":
+			idx := IndexInfo{}
+			if hasValue {
+				if value == "" {
+					return nil, fmt.Errorf("invalid tag %q: index name must not be empty", part)
+				}
+				idx.Name = value
 			}
-			index.Unique = true
+			info.Indexes = append(info.Indexes, idx)
 
-			if strings.HasPrefix(part, "unique(") && strings.HasSuffix(part, ")") {
-				inner := part[7 : len(part)-1]
-				index.UniqueName = inner
+		case "unique":
+			idx := IndexInfo{Unique: true}
+			if hasValue {
+				if value == "" {
+					return nil, fmt.Errorf("invalid tag %q: unique name must not be empty", part)
+				}
+				idx.Name = value
 			}
-			continue
-		}
+			info.Indexes = append(info.Indexes, idx)
 
-		if strings.HasPrefix(part, "name:") {
-			name := strings.TrimPrefix(part, "name:")
-			if index == nil {
-				index = &IndexInfo{}
+		case "name":
+			if !hasValue || value == "" {
+				return nil, fmt.Errorf("invalid tag %q: name requires a value (name=db_field_name)", part)
 			}
-			index.Name = name
-			continue
+			if info.DBName != "" {
+				return nil, fmt.Errorf("invalid tag: name specified multiple times")
+			}
+			if !validDBName.MatchString(value) {
+				return nil, fmt.Errorf("invalid tag %q: name must match [a-z][a-z0-9_]*", part)
+			}
+			if ReservedDBNames[value] {
+				return nil, fmt.Errorf("invalid tag %q: %q is a reserved field name", part, value)
+			}
+			info.DBName = value
+
+		case "fulltext":
+			if !hasValue || value == "" {
+				return nil, fmt.Errorf("invalid tag %q: fulltext requires a config name (fulltext=english_search)", part)
+			}
+			info.Search = &SearchInfo{ConfigName: value}
+
+		case "changefeed":
+			// Handled separately at the node/edge level via ParseChangefeedTag.
+
+		default:
+			return nil, fmt.Errorf("unknown som tag %q", part)
 		}
 	}
 
-	return index, search
+	return info, nil
 }
 
 type Output struct {
 	PkgPath    string
 	Nodes      []*Node
 	Edges      []*Edge
+	Views      []*View
+	Sinks      []*Sink
 	Structs    []*Struct
 	Enums      []*Enum
 	EnumValues []*EnumValue
@@ -198,8 +292,11 @@ type Output struct {
 }
 
 type UsedFeatures struct {
-	UsesGoogleUUID bool
-	UsesGofrsUUID  bool
+	UsesGoogleUUID        bool
+	UsesGofrsUUID         bool
+	UsesOrbGeo            bool
+	UsesSimplefeaturesGeo bool
+	UsesGoGeomGeo         bool
 }
 
 func collectUsedFeatures(output *Output) *UsedFeatures {
@@ -214,6 +311,15 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 				features.UsesGoogleUUID = true
 			case UUIDPackageGofrs:
 				features.UsesGofrsUUID = true
+			}
+		case *FieldGeometry:
+			switch field.Package {
+			case GeoPackageOrb:
+				features.UsesOrbGeo = true
+			case GeoPackageSimplefeatures:
+				features.UsesSimplefeaturesGeo = true
+			case GeoPackageGoGeom:
+				features.UsesGoGeomGeo = true
 			}
 		case *FieldSlice:
 			checkField(field.Field)

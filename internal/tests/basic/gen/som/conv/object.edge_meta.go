@@ -2,9 +2,8 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	model "github.com/go-surreal/som/tests/basic/model"
+	cbor "som.test/gen/som/internal/cbor"
+	model "som.test/model"
 )
 
 type edgeMeta struct {
@@ -15,16 +14,20 @@ func (c *edgeMeta) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *edgeMeta) fields() map[string]any {
 	data := make(map[string]any, 2)
 
 	data["is_admin"] = c.IsAdmin
 	data["is_active"] = c.IsActive
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *edgeMeta) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
+	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}

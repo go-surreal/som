@@ -1,0 +1,191 @@
+//go:build embed
+
+package lib
+
+import (
+	"github.com/twpayne/go-geom"
+
+	"{{.GenerateOutPath}}/internal/types"
+)
+
+// GeoPointGG is a filter for geom.Point fields.
+type GeoPointGG[M any] struct {
+	*Geo[M, geom.Point, *GeoPointGG[M]]
+}
+
+func NewGeoPointGG[M any](key Key[M]) *GeoPointGG[M] {
+	conv := func(val geom.Point) any {
+		return &types.PointGG{Point: val}
+	}
+	return &GeoPointGG[M]{
+		Geo: NewGeo[M, geom.Point, *GeoPointGG[M]](key, conv),
+	}
+}
+
+type GeoPointGGPtr[M any] struct {
+	*GeoPointGG[M]
+	*Nillable[M]
+}
+
+func NewGeoPointGGPtr[M any](key Key[M]) *GeoPointGGPtr[M] {
+	return &GeoPointGGPtr[M]{
+		GeoPointGG: NewGeoPointGG[M](key),
+		Nillable:   NewNillable[M](key),
+	}
+}
+
+// GeoLineStringGG is a filter for geom.LineString fields.
+type GeoLineStringGG[M any] struct {
+	*Geo[M, geom.LineString, *GeoLineStringGG[M]]
+}
+
+func NewGeoLineStringGG[M any](key Key[M]) *GeoLineStringGG[M] {
+	conv := func(val geom.LineString) any {
+		return &types.LineStringGG{LineString: val}
+	}
+	return &GeoLineStringGG[M]{
+		Geo: NewGeo[M, geom.LineString, *GeoLineStringGG[M]](key, conv),
+	}
+}
+
+type GeoLineStringGGPtr[M any] struct {
+	*GeoLineStringGG[M]
+	*Nillable[M]
+}
+
+func NewGeoLineStringGGPtr[M any](key Key[M]) *GeoLineStringGGPtr[M] {
+	return &GeoLineStringGGPtr[M]{
+		GeoLineStringGG: NewGeoLineStringGG[M](key),
+		Nillable:        NewNillable[M](key),
+	}
+}
+
+// GeoPolygonGG is a filter for geom.Polygon fields.
+type GeoPolygonGG[M any] struct {
+	*Geo[M, geom.Polygon, *GeoPolygonGG[M]]
+}
+
+func NewGeoPolygonGG[M any](key Key[M]) *GeoPolygonGG[M] {
+	conv := func(val geom.Polygon) any {
+		return &types.PolygonGG{Polygon: val}
+	}
+	return &GeoPolygonGG[M]{
+		Geo: NewGeo[M, geom.Polygon, *GeoPolygonGG[M]](key, conv),
+	}
+}
+
+type GeoPolygonGGPtr[M any] struct {
+	*GeoPolygonGG[M]
+	*Nillable[M]
+}
+
+func NewGeoPolygonGGPtr[M any](key Key[M]) *GeoPolygonGGPtr[M] {
+	return &GeoPolygonGGPtr[M]{
+		GeoPolygonGG: NewGeoPolygonGG[M](key),
+		Nillable:     NewNillable[M](key),
+	}
+}
+
+// GeoMultiPointGG is a filter for geom.MultiPoint fields.
+type GeoMultiPointGG[M any] struct {
+	*Geo[M, geom.MultiPoint, *GeoMultiPointGG[M]]
+}
+
+func NewGeoMultiPointGG[M any](key Key[M]) *GeoMultiPointGG[M] {
+	conv := func(val geom.MultiPoint) any {
+		return &types.MultiPointGG{MultiPoint: val}
+	}
+	return &GeoMultiPointGG[M]{
+		Geo: NewGeo[M, geom.MultiPoint, *GeoMultiPointGG[M]](key, conv),
+	}
+}
+
+type GeoMultiPointGGPtr[M any] struct {
+	*GeoMultiPointGG[M]
+	*Nillable[M]
+}
+
+func NewGeoMultiPointGGPtr[M any](key Key[M]) *GeoMultiPointGGPtr[M] {
+	return &GeoMultiPointGGPtr[M]{
+		GeoMultiPointGG: NewGeoMultiPointGG[M](key),
+		Nillable:        NewNillable[M](key),
+	}
+}
+
+// GeoMultiLineStringGG is a filter for geom.MultiLineString fields.
+type GeoMultiLineStringGG[M any] struct {
+	*Geo[M, geom.MultiLineString, *GeoMultiLineStringGG[M]]
+}
+
+func NewGeoMultiLineStringGG[M any](key Key[M]) *GeoMultiLineStringGG[M] {
+	conv := func(val geom.MultiLineString) any {
+		return &types.MultiLineStringGG{MultiLineString: val}
+	}
+	return &GeoMultiLineStringGG[M]{
+		Geo: NewGeo[M, geom.MultiLineString, *GeoMultiLineStringGG[M]](key, conv),
+	}
+}
+
+type GeoMultiLineStringGGPtr[M any] struct {
+	*GeoMultiLineStringGG[M]
+	*Nillable[M]
+}
+
+func NewGeoMultiLineStringGGPtr[M any](key Key[M]) *GeoMultiLineStringGGPtr[M] {
+	return &GeoMultiLineStringGGPtr[M]{
+		GeoMultiLineStringGG: NewGeoMultiLineStringGG[M](key),
+		Nillable:             NewNillable[M](key),
+	}
+}
+
+// GeoMultiPolygonGG is a filter for geom.MultiPolygon fields.
+type GeoMultiPolygonGG[M any] struct {
+	*Geo[M, geom.MultiPolygon, *GeoMultiPolygonGG[M]]
+}
+
+func NewGeoMultiPolygonGG[M any](key Key[M]) *GeoMultiPolygonGG[M] {
+	conv := func(val geom.MultiPolygon) any {
+		return &types.MultiPolygonGG{MultiPolygon: val}
+	}
+	return &GeoMultiPolygonGG[M]{
+		Geo: NewGeo[M, geom.MultiPolygon, *GeoMultiPolygonGG[M]](key, conv),
+	}
+}
+
+type GeoMultiPolygonGGPtr[M any] struct {
+	*GeoMultiPolygonGG[M]
+	*Nillable[M]
+}
+
+func NewGeoMultiPolygonGGPtr[M any](key Key[M]) *GeoMultiPolygonGGPtr[M] {
+	return &GeoMultiPolygonGGPtr[M]{
+		GeoMultiPolygonGG: NewGeoMultiPolygonGG[M](key),
+		Nillable:          NewNillable[M](key),
+	}
+}
+
+// GeoCollectionGG is a filter for geom.GeometryCollection fields.
+type GeoCollectionGG[M any] struct {
+	*Geo[M, geom.GeometryCollection, *GeoCollectionGG[M]]
+}
+
+func NewGeoCollectionGG[M any](key Key[M]) *GeoCollectionGG[M] {
+	conv := func(val geom.GeometryCollection) any {
+		return &types.CollectionGG{GeometryCollection: val}
+	}
+	return &GeoCollectionGG[M]{
+		Geo: NewGeo[M, geom.GeometryCollection, *GeoCollectionGG[M]](key, conv),
+	}
+}
+
+type GeoCollectionGGPtr[M any] struct {
+	*GeoCollectionGG[M]
+	*Nillable[M]
+}
+
+func NewGeoCollectionGGPtr[M any](key Key[M]) *GeoCollectionGGPtr[M] {
+	return &GeoCollectionGGPtr[M]{
+		GeoCollectionGG: NewGeoCollectionGG[M](key),
+		Nillable:        NewNillable[M](key),
+	}
+}

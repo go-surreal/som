@@ -3,19 +3,22 @@ package basic
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
 func TestAsync(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{})
+	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldMonth: time.January})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +30,7 @@ func TestAsync(t *testing.T) {
 	assert.NilError(t, <-resCh.Err())
 	assert.Equal(t, 1, <-resCh.Val())
 
-	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{})
+	err = client.AllTypesRepo().Create(ctx, &model.AllTypes{FieldMonth: time.January})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,6 +44,8 @@ func TestAsync(t *testing.T) {
 }
 
 func TestAsyncQueries(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -48,6 +53,7 @@ func TestAsyncQueries(t *testing.T) {
 
 	err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
 		FieldString: "async_test",
+		FieldMonth:  time.January,
 	})
 	if err != nil {
 		t.Fatal(err)

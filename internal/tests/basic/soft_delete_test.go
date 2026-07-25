@@ -5,14 +5,16 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/gen/som/with"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/gen/som/filter"
+	"som.test/gen/som/with"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
 func TestSoftDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -72,6 +74,8 @@ func TestSoftDelete(t *testing.T) {
 }
 
 func TestSoftDeleteFetchRelation(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -104,6 +108,8 @@ func TestSoftDeleteFetchRelation(t *testing.T) {
 }
 
 func TestSoftDeleteFetchSliceRelation(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
@@ -162,6 +168,8 @@ func contains(slice []string, item string) bool {
 }
 
 func TestSoftDeleteRead(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -194,6 +202,8 @@ func TestSoftDeleteRead(t *testing.T) {
 }
 
 func TestSoftDeleteCount(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -223,6 +233,8 @@ func TestSoftDeleteCount(t *testing.T) {
 }
 
 func TestSoftDeleteFirstAndExists(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -260,6 +272,8 @@ func TestSoftDeleteFirstAndExists(t *testing.T) {
 }
 
 func TestSoftDeleteFilter(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -298,6 +312,8 @@ func TestSoftDeleteFilter(t *testing.T) {
 }
 
 func TestSoftDeleteErrorTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -321,6 +337,8 @@ func TestSoftDeleteErrorTypes(t *testing.T) {
 }
 
 func TestSoftDeleteEraseNonDeleted(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -340,6 +358,8 @@ func TestSoftDeleteEraseNonDeleted(t *testing.T) {
 }
 
 func TestSoftDeleteOptimisticLockConflict(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

@@ -20,6 +20,8 @@ users, err := client.UserRepo().Query().All(ctx)
 
 ### Get First Result
 
+Returns the first matching record, or `ErrNotFound` if none match:
+
 ```go
 user, err := client.UserRepo().Query().First(ctx)
 ```
@@ -43,7 +45,7 @@ Query methods return the query builder for chaining:
 ```go
 users, err := client.UserRepo().Query().
     Where(filter.User.IsActive.Equal(true)).
-    OrderBy(order.User.CreatedAt.Desc()).
+    Order(by.User.CreatedAt.Desc()).
     Limit(10).
     All(ctx)
 ```
@@ -56,14 +58,14 @@ While the query builder handles complex queries, repositories provide simple CRU
 // Create
 err := client.UserRepo().Create(ctx, user)
 
-// Read by ID
-user, err := client.UserRepo().Read(ctx, id)
+// Read by ID - returns (record, exists, error)
+user, exists, err := client.UserRepo().Read(ctx, id)
 
 // Update
 err := client.UserRepo().Update(ctx, user)
 
 // Delete
-err := client.UserRepo().Delete(ctx, id)
+err := client.UserRepo().Delete(ctx, user)
 ```
 
 ## Query Reuse

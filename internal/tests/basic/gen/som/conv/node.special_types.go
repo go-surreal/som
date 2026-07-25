@@ -2,13 +2,12 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
+	cbor "som.test/gen/som/internal/cbor"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
 )
 
 type SpecialTypes struct {
@@ -19,6 +18,10 @@ func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *SpecialTypes) fields() map[string]any {
 	data := make(map[string]any, 4)
 
 	// Embedded som.Node/Edge ID field
@@ -32,16 +35,16 @@ func (c *SpecialTypes) MarshalCBOR() ([]byte, error) {
 	data["name"] = c.Name
 	data["__som_lock_version"] = c.Version()
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
+	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
-	// Embedded som.Node/Edge ID field
+	// Embedded som.Node/Edge/View ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
@@ -93,6 +96,11 @@ func ToSpecialTypesPtr(data *SpecialTypes) *model.SpecialTypes {
 	}
 	result := data.SpecialTypes
 	return &result
+}
+
+func SpecialTypesFields(m *model.SpecialTypes) map[string]any {
+	c := SpecialTypes{*m}
+	return c.fields()
 }
 
 type specialTypesLink struct {

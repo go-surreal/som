@@ -4,29 +4,36 @@ package query
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	"github.com/go-surreal/som/tests/basic/gen/som/with"
+	som "som.test/gen/som"
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
+	"som.test/gen/som/internal/lib"
+	"som.test/gen/som/with"
 )
 
 // modelInfo holds type-specific conversion functions.
 // Passed directly to builder - no registry lookup needed.
 type modelInfo[M any] struct {
 	// UnmarshalAll unmarshals query results into []*M
-	UnmarshalAll func(unmarshal func([]byte, any) error, data []byte) ([]*M, error)
+	UnmarshalAll func(data []byte) ([]*M, error)
 
 	// UnmarshalOne unmarshals a single result into *M
-	UnmarshalOne func(unmarshal func([]byte, any) error, data []byte) (*M, error)
+	UnmarshalOne func(data []byte) (*M, error)
 
 	// UnmarshalSearchAll unmarshals search query results into []SearchResult[*M]
-	UnmarshalSearchAll func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*M], error)
+	UnmarshalSearchAll func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*M], error)
+
+	// Fields returns the DB-keyed value map for a model, using DB field names
+	// and DB-typed values. Used to derive pagination cursor values.
+	Fields func(*M) map[string]any
 }
 
 type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) string
@@ -67,6 +74,14 @@ func (b builder[M]) WithDeleted() Builder[M] {
 	return Builder[M]{b}
 }
 
+// WithExpired allows querying records that have passed their expiry.
+// By default, expired records are automatically filtered out.
+// This method only has an effect on models with a som.Expiry embed.
+func (b builder[M]) WithExpired() Builder[M] {
+	b.query.IncludeExpired = true
+	return Builder[M]{b}
+}
+
 // Range restricts the query to a range of record IDs.
 // This uses SurrealDB's native range syntax (e.g. table:start..end)
 // which avoids table scans and is much more performant than WHERE filters.
@@ -96,9 +111,9 @@ func (b builder[M]) OrderRandom() BuilderNoLive[M] {
 	return BuilderNoLive[M]{b}
 }
 
-// Offset skips the first x records for the result set.
-func (b builder[M]) Offset(offset int) BuilderNoLive[M] {
-	b.query.Offset = offset
+// Start skips the first x records for the result set.
+func (b builder[M]) Start(start int) BuilderNoLive[M] {
+	b.query.Start = start
 	return BuilderNoLive[M]{b}
 }
 
@@ -154,7 +169,7 @@ func (b builder[M]) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	var rawCount []internal.QueryResult[countResult]
-	err = b.db.Unmarshal(raw, &rawCount)
+	err = cbor.Unmarshal(raw, &rawCount)
 	if err != nil {
 		return 0, fmt.Errorf("could not count records: %w", err)
 	}
@@ -192,7 +207,7 @@ func (b builder[M]) All(ctx context.Context) ([]*M, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	return b.info.UnmarshalAll(b.db.Unmarshal, res)
+	return b.info.UnmarshalAll(res)
 }
 
 // AllAsync is the asynchronous version of All.
@@ -208,7 +223,7 @@ func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
 	var rawNodes []internal.QueryResult[idNode]
-	err = b.db.Unmarshal(res, &rawNodes)
+	err = cbor.Unmarshal(res, &rawNodes)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
 	}
@@ -272,12 +287,12 @@ func (b builder[M]) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 // Iteration stops on the first error encountered.
 func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, error] {
 	return func(yield func(*M, error) bool) {
-		offset := b.query.Offset
+		start := b.query.Start
 
 		for {
 			batchBuilder := b
 			batchBuilder.query.Limit = batchSize
-			batchBuilder.query.Offset = offset
+			batchBuilder.query.Start = start
 
 			results, err := batchBuilder.All(ctx)
 			if err != nil {
@@ -299,7 +314,7 @@ func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, er
 				return
 			}
 
-			offset += batchSize
+			start += batchSize
 		}
 	}
 }
@@ -309,12 +324,12 @@ func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, er
 // Iteration stops on the first error encountered.
 func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
-		offset := b.query.Offset
+		start := b.query.Start
 
 		for {
 			batchBuilder := b
 			batchBuilder.query.Limit = batchSize
-			batchBuilder.query.Offset = offset
+			batchBuilder.query.Start = start
 
 			ids, err := batchBuilder.AllIDs(ctx)
 			if err != nil {
@@ -336,7 +351,7 @@ func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[stri
 				return
 			}
 
-			offset += batchSize
+			start += batchSize
 		}
 	}
 }
@@ -344,7 +359,8 @@ func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[stri
 // Live registers the constructed query as a live query.
 // Whenever something in the database changes that matches the
 // query conditions, the result channel will receive an update.
-// If the context is canceled, the result channel will be closed.
+// If the context is canceled, a best-effort attempt is made to kill
+// the live query on the server and the result channel will be closed.
 //
 // Note: If you want both the current result set and live updates,
 // it is advised to execute the live query first. This is to ensure
@@ -356,7 +372,7 @@ func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
-	return live(ctx, resChan, b.db.Unmarshal, b.info), nil
+	return live(ctx, resChan, b.info), nil
 }
 
 // LiveCount is the live version of Count.
@@ -374,6 +390,7 @@ func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
 	}
 
 	countChan := make(chan int, 1)
+	countChan <- count
 
 	go func() {
 		defer close(countChan)
@@ -384,8 +401,8 @@ func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
 			case <-ctx.Done():
 				return
 
-			case res, open := <-resChan:
-				if !open {
+			case res, ok := <-resChan:
+				if !ok {
 					return
 				}
 
@@ -396,14 +413,22 @@ func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
 
 				case LiveDelete[*M]:
 					count--
+
+				case LiveKilled[*M]:
+					return
+
+				default:
+					continue
 				}
 
-				countChan <- count
+				select {
+				case <-ctx.Done():
+					return
+				case countChan <- count:
+				}
 			}
 		}
 	}()
-
-	countChan <- count
 
 	return countChan, nil
 }
@@ -443,6 +468,312 @@ func (b builder[M]) Debug(prefix ...string) Builder[M] {
 	)
 
 	return Builder[M]{b}
+}
+
+// Paginate starts a cursor-based (keyset) pagination request. Chain First or
+// Last with an optional After/Before cursor and the With* options, then call
+// Get. For example:
+//
+//	page, err := query.Order(by.User.CreatedAt.Desc()).
+//		Paginate().First(20).After(cursor).Get(ctx)
+func (b builder[M]) Paginate() PageBuilder[M] {
+	return PageBuilder[M]{builder: b}
+}
+
+// PageBuilder configures and executes a cursor-based pagination query.
+type PageBuilder[M any] struct {
+	builder builder[M]
+
+	first, last      int
+	after, before    string
+	totalCount       bool
+	accuratePageInfo bool
+}
+
+// First requests the first n items (forward pagination).
+func (p PageBuilder[M]) First(n int) PageBuilder[M] {
+	p.first = n
+	return p
+}
+
+// Last requests the last n items (backward pagination).
+func (p PageBuilder[M]) Last(n int) PageBuilder[M] {
+	p.last = n
+	return p
+}
+
+// After continues forward pagination after the given cursor.
+func (p PageBuilder[M]) After(cursor string) PageBuilder[M] {
+	p.after = cursor
+	return p
+}
+
+// Before continues backward pagination before the given cursor.
+func (p PageBuilder[M]) Before(cursor string) PageBuilder[M] {
+	p.before = cursor
+	return p
+}
+
+// WithTotalCount also fetches the total number of matching records, exposed as
+// Page.TotalCount. This runs an additional COUNT query.
+func (p PageBuilder[M]) WithTotalCount() PageBuilder[M] {
+	p.totalCount = true
+	return p
+}
+
+// WithAccuratePageInfo enables an extra query for exact HasPreviousPage/
+// HasNextPage on the first and last page.
+func (p PageBuilder[M]) WithAccuratePageInfo() PageBuilder[M] {
+	p.accuratePageInfo = true
+	return p
+}
+
+func (p PageBuilder[M]) backward() bool { return p.last > 0 || p.before != "" }
+
+func (p PageBuilder[M]) pageSize() int {
+	if p.first > 0 {
+		return p.first
+	}
+	return p.last
+}
+
+func (p PageBuilder[M]) cursor() string {
+	if p.after != "" {
+		return p.after
+	}
+	return p.before
+}
+
+func (p PageBuilder[M]) validate() error {
+	switch {
+	case p.first > 0 && p.last > 0:
+		return errors.New("cannot use both First and Last")
+	case p.after != "" && p.before != "":
+		return errors.New("cannot use both After and Before")
+	case p.first == 0 && p.last == 0:
+		return errors.New("must specify First or Last")
+	case p.first < 0 || p.last < 0:
+		return errors.New("page size must be positive")
+	case p.first > 0 && p.before != "":
+		return errors.New("cannot use Before with First (use After for forward pagination)")
+	case p.last > 0 && p.after != "":
+		return errors.New("cannot use After with Last (use Before for backward pagination)")
+	}
+	return nil
+}
+
+// Get executes the pagination query and returns the page.
+func (p PageBuilder[M]) Get(ctx context.Context) (*Page[M], error) {
+	if err := p.validate(); err != nil {
+		return nil, fmt.Errorf("invalid pagination options: %w", err)
+	}
+
+	b := p.builder
+	if b.query.SortRandom {
+		return nil, errors.New("cursor pagination is not compatible with random ordering")
+	}
+
+	// Sort keys default to id, and an id tiebreaker is always appended so the
+	// order is total and cursors are stable.
+	sorts := slices.Clone(b.query.Sort)
+	if len(sorts) == 0 || !slices.ContainsFunc(sorts, func(s *lib.SortBuilder) bool { return s.Field == "id" }) {
+		sorts = append(sorts, lib.NewSortBuilder("id", lib.SortAsc))
+	}
+
+	// Backward paging reverses the sort so LIMIT yields the last N; results are
+	// flipped back below. originalSorts drives cursor generation and, together
+	// with the backward flag, the keyset comparison direction.
+	originalSorts := sorts
+	backward := p.backward()
+	if backward {
+		sorts = reverseSorts(sorts)
+	}
+
+	whereLen := len(b.query.Where)
+	cursor := p.cursor()
+	if cursor != "" {
+		cursorData, err := lib.DecodeCursor(cursor)
+		if err != nil {
+			return nil, fmt.Errorf("invalid cursor: %w", err)
+		}
+		b.query.Where = append(b.query.Where, lib.CursorFilter[M](cursorData, originalSorts, backward))
+	}
+
+	// Fetch one extra row to detect whether a further page exists.
+	b.query.Sort = sorts
+	pageSize := p.pageSize()
+	b.query.Limit = pageSize + 1
+
+	items, err := b.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	hasMore := len(items) > pageSize
+	if hasMore {
+		items = items[:pageSize]
+	}
+	if backward {
+		slices.Reverse(items)
+	}
+
+	entries := make([]Entry[M], len(items))
+	for i, item := range items {
+		itemCursor, err := b.generateCursor(item, originalSorts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate cursor for item %d: %w", i, err)
+		}
+		entries[i] = Entry[M]{Node: item, Cursor: itemCursor}
+	}
+
+	pageInfo := PageInfo{}
+	if backward {
+		pageInfo.HasPreviousPage = hasMore
+		pageInfo.HasNextPage = cursor != ""
+	} else {
+		pageInfo.HasNextPage = hasMore
+		pageInfo.HasPreviousPage = cursor != ""
+	}
+	if len(entries) > 0 {
+		pageInfo.StartCursor = entries[0].Cursor
+		pageInfo.EndCursor = entries[len(entries)-1].Cursor
+	}
+
+	// Without a cursor the far side is assumed empty; opt in to probe it.
+	if p.accuratePageInfo && len(entries) > 0 && cursor == "" {
+		if backward {
+			pageInfo.HasNextPage = b.probeBeyond(ctx, entries[len(entries)-1].Cursor, originalSorts, whereLen, false)
+		} else {
+			pageInfo.HasPreviousPage = b.probeBeyond(ctx, entries[0].Cursor, originalSorts, whereLen, true)
+		}
+	}
+
+	totalCount := -1
+	if p.totalCount {
+		count, err := b.countMatching(ctx, whereLen)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get total count: %w", err)
+		}
+		totalCount = count
+	}
+
+	return &Page[M]{
+		Items:      items,
+		Entries:    entries,
+		PageInfo:   pageInfo,
+		TotalCount: totalCount,
+	}, nil
+}
+
+// GetAsync is the asynchronous version of Get.
+func (p PageBuilder[M]) GetAsync(ctx context.Context) *asyncResult[*Page[M]] {
+	return async(ctx, p.Get)
+}
+
+// probeBeyond reports whether any record exists on the far side of cursor,
+// used to compute accurate boundary page info. The backward flag selects the
+// probe direction; whereLen strips any previously appended cursor filter.
+func (b builder[M]) probeBeyond(ctx context.Context, cursor string, sorts []*lib.SortBuilder, whereLen int, backward bool) bool {
+	data, err := lib.DecodeCursor(cursor)
+	if err != nil {
+		return false
+	}
+	b.query.Where = append(b.query.Where[:whereLen:whereLen], lib.CursorFilter[M](data, sorts, backward))
+	if backward {
+		b.query.Sort = reverseSorts(sorts)
+	} else {
+		b.query.Sort = sorts
+	}
+	b.query.Limit = 1
+	items, err := b.All(ctx)
+	return err == nil && len(items) > 0
+}
+
+// countMatching returns the total number of matching records, ignoring the
+// cursor filter, ordering and pagination (COUNT with GROUP ALL rejects ORDER BY).
+func (b builder[M]) countMatching(ctx context.Context, whereLen int) (int, error) {
+	b.query.Where = b.query.Where[:whereLen]
+	b.query.Sort = nil
+	b.query.SortRandom = false
+	b.query.Limit = 0
+	b.query.Start = 0
+	return b.Count(ctx)
+}
+
+// reverseSorts creates a copy of sorts with reversed directions.
+func reverseSorts(sorts []*lib.SortBuilder) []*lib.SortBuilder {
+	reversed := make([]*lib.SortBuilder, len(sorts))
+	for i, s := range sorts {
+		order := lib.SortDesc
+		if s.Order == lib.SortDesc {
+			order = lib.SortAsc
+		}
+		reversed[i] = lib.NewSortBuilder(s.Field, order)
+		reversed[i].IsCollate = s.IsCollate
+		reversed[i].IsNumeric = s.IsNumeric
+	}
+	return reversed
+}
+
+// generateCursor creates an opaque cursor from an item and its sort fields.
+// Values are sourced from the conversion layer (DB field names, DB-typed
+// values) and stored as pre-encoded CBOR so they re-inject as query variables
+// byte-identically to how the same fields are encoded for regular queries.
+func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, error) {
+	if item == nil {
+		return "", nil
+	}
+
+	dbFields := b.info.Fields(item)
+
+	sortValues := make(map[string]cbor.RawMessage, len(sorts))
+	var id cbor.RawMessage
+
+	for _, s := range sorts {
+		val, ok := dbFields[s.Field]
+		if !ok {
+			if s.Field == "id" {
+				continue // handled by the tiebreaker/complex-ID checks below
+			}
+			// A missing sort value would drop a keyset term and silently
+			// corrupt paging, so reject it. Nested/computed sort fields are
+			// not part of the flat DB representation.
+			return "", fmt.Errorf("cannot paginate on sort field %q: only top-level stored fields are supported", s.Field)
+		}
+
+		raw, err := cbor.Marshal(val)
+		if err != nil {
+			return "", fmt.Errorf("could not encode cursor value for %q: %w", s.Field, err)
+		}
+
+		if s.Field == "id" {
+			id = raw
+		} else {
+			sortValues[s.Field] = raw
+		}
+	}
+
+	// Ensure the ID tiebreaker is always present, even if not part of the sort.
+	if id == nil {
+		if val, ok := dbFields["id"]; ok {
+			raw, err := cbor.Marshal(val)
+			if err != nil {
+				return "", fmt.Errorf("could not encode cursor id: %w", err)
+			}
+			id = raw
+		}
+	}
+
+	// Complex-ID models expose no single "id" field, so cursor pagination
+	// cannot form a stable tiebreaker. These models should use Range() instead.
+	if id == nil {
+		return "", errors.New("cursor pagination requires a string ID; use Range() for models with a complex ID")
+	}
+
+	return lib.EncodeCursor(lib.CursorData{
+		SortValues: sortValues,
+		ID:         id,
+	})
 }
 
 // Search adds full-text search conditions to the query.
@@ -491,9 +822,9 @@ func (b SearchBuilder[M]) Order(by ...lib.SearchSort) SearchBuilder[M] {
 	return b
 }
 
-// Offset skips the first x records for the result set.
-func (b SearchBuilder[M]) Offset(offset int) SearchBuilder[M] {
-	b.query.Offset = offset
+// Start skips the first x records for the result set.
+func (b SearchBuilder[M]) Start(start int) SearchBuilder[M] {
+	b.query.Start = start
 	return b
 }
 
@@ -550,7 +881,7 @@ func (b SearchBuilder[M]) AllMatches(ctx context.Context) ([]lib.SearchResult[*M
 	if err != nil {
 		return nil, fmt.Errorf("could not query search records: %w", err)
 	}
-	return b.info.UnmarshalSearchAll(b.db.Unmarshal, res, b.query.SearchClauses)
+	return b.info.UnmarshalSearchAll(res, b.query.SearchClauses)
 }
 
 // AllMatchesAsync is the asynchronous version of AllMatches.
@@ -614,9 +945,59 @@ func (b SearchBuilder[M]) Debug(prefix ...string) SearchBuilder[M] {
 // Use with SearchBuilder.Order() to sort search results by relevance score.
 var Score = lib.Score
 
-func unmarshalSearchAll[M, C any](unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
+// PageInfo holds cursor-pagination navigation metadata (Relay-style).
+type PageInfo struct {
+	// HasNextPage indicates whether more items exist after this page.
+	HasNextPage bool
+
+	// HasPreviousPage indicates whether more items exist before this page.
+	HasPreviousPage bool
+
+	// StartCursor is the cursor of the first item, empty if the page is empty.
+	StartCursor string
+
+	// EndCursor is the cursor of the last item, empty if the page is empty.
+	EndCursor string
+}
+
+// Entry pairs a record with its opaque per-item cursor (Relay edge).
+type Entry[M any] struct {
+	Node   *M
+	Cursor string
+}
+
+// Page is a cursor-paginated result set. It is pure data: safe to cache,
+// serialize or return without holding a database handle.
+type Page[M any] struct {
+	// Items holds the records for this page.
+	Items []*M
+
+	// Entries holds the records with their individual cursors (Relay-style).
+	Entries []Entry[M]
+
+	// PageInfo holds navigation metadata.
+	PageInfo PageInfo
+
+	// TotalCount is the total number of matching records, or -1 if it was not
+	// requested via WithTotalCount.
+	TotalCount int
+}
+
+// NextCursor returns the cursor to pass to a builder's After() to fetch the
+// page following this one. Only meaningful when PageInfo.HasNextPage is true.
+func (p *Page[M]) NextCursor() string {
+	return p.PageInfo.EndCursor
+}
+
+// PrevCursor returns the cursor to pass to a builder's Before() to fetch the
+// page preceding this one. Only meaningful when PageInfo.HasPreviousPage is true.
+func (p *Page[M]) PrevCursor() string {
+	return p.PageInfo.StartCursor
+}
+
+func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
 	var rawNodes []internal.QueryResult[searchRawResult[*C]]
-	if err := unmarshal(data, &rawNodes); err != nil {
+	if err := cbor.Unmarshal(data, &rawNodes); err != nil {
 		return nil, fmt.Errorf("could not unmarshal search records: %w", err)
 	}
 	if len(rawNodes) < 1 {

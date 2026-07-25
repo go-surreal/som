@@ -2,24 +2,44 @@
 package query
 
 import (
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	filter "github.com/go-surreal/som/tests/basic/gen/som/filter"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	filter "som.test/gen/som/filter"
+	lib "som.test/gen/som/internal/lib"
+	model "som.test/model"
 )
 
 // specialTypesModelInfo holds the model-specific unmarshal functions for SpecialTypes.
 var specialTypesModelInfo = modelInfo[model.SpecialTypes]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.SpecialTypes, error) {
-		return unmarshalAll(unmarshal, data, conv.ToSpecialTypesPtr)
+	Fields: conv.SpecialTypesFields,
+	UnmarshalAll: func(data []byte) ([]*model.SpecialTypes, error) {
+		return unmarshalAll(data, conv.ToSpecialTypesPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.SpecialTypes, error) {
-		return unmarshalOne(unmarshal, data, conv.ToSpecialTypesPtr)
+	UnmarshalOne: func(data []byte) (*model.SpecialTypes, error) {
+		return unmarshalOne(data, conv.ToSpecialTypesPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SpecialTypes], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToSpecialTypesPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.SpecialTypes], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToSpecialTypesPtr)
 	},
 }
+
+var specialTypesRangeFn = rangeFn[model.SpecialTypes](func(q *lib.Query[model.SpecialTypes], from som.RangeFrom, to som.RangeTo) string {
+	expr := ":"
+	if !from.IsOpen() {
+		expr += q.AsVar(from.Value().(som.UUID))
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		expr += q.AsVar(to.Value().(som.UUID))
+	}
+	return expr
+})
 
 // NewSpecialTypes creates a new query builder for SpecialTypes models.
 func NewSpecialTypes(db Database) Builder[model.SpecialTypes] {
@@ -27,8 +47,9 @@ func NewSpecialTypes(db Database) Builder[model.SpecialTypes] {
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialTypes.DeletedAt.Nil(true)
 	return Builder[model.SpecialTypes]{builder[model.SpecialTypes]{
-		db:    db,
-		info:  specialTypesModelInfo,
-		query: q,
+		db:      db,
+		info:    specialTypesModelInfo,
+		query:   q,
+		rangeFn: specialTypesRangeFn,
 	}}
 }

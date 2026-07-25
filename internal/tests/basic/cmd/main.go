@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/repo"
+	"som.test/gen/som/repo"
 )
 
 func main() {

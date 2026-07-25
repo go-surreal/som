@@ -18,6 +18,12 @@ const (
 type context struct {
 	varIndex int32
 	vars     map[string]any
+
+	// literal makes asVar inline values as SurrealQL literals instead of
+	// binding them as $-parameters. This is required when rendering static
+	// DDL such as a DEFINE TABLE ... AS SELECT view definition, which cannot
+	// carry query parameters.
+	literal bool
 }
 
 func (c *context) Vars() map[string]any {
@@ -26,6 +32,10 @@ func (c *context) Vars() map[string]any {
 
 // TODO: deduplicate same values in the same query
 func (c *context) asVar(val any) string {
+	if c.literal {
+		return literalValue(val)
+	}
+
 	index := intToLetters(c.varIndex)
 	c.varIndex++
 	c.vars[index] = val
@@ -43,7 +53,7 @@ type Query[T any] struct {
 	Sort       []*SortBuilder
 	SortRandom bool
 	Fetch      []string
-	Offset     int
+	Start      int
 	Limit      int
 	Timeout    time.Duration
 	Parallel   bool
@@ -56,6 +66,10 @@ type Query[T any] struct {
 	// Soft delete support for main queries (not fetched relations)
 	SoftDeleteFilter Filter[T] // Injected at initialization
 	IncludeDeleted   bool      // Flag to skip soft delete filter
+
+	// Expiry (TTL) support: when set, expired records are excluded from main queries.
+	ExpiryField    string // Database field name holding the expiry timestamp
+	IncludeExpired bool   // Flag to skip the expiry filter
 }
 
 func (q *Query[T]) AsVar(val any) string {
@@ -196,6 +210,11 @@ func (q Query[T]) render() string {
 		}
 	}
 
+	// 1b. Inject expiry filter to exclude expired records (if enabled and not disabled)
+	if !q.IncludeExpired && q.ExpiryField != "" {
+		whereParts = append(whereParts, "("+q.ExpiryField+" IS NONE OR "+q.ExpiryField+" > time::now())")
+	}
+
 	// 2. Add search conditions
 	if q.SearchWhere != "" {
 		whereParts = append(whereParts, q.SearchWhere)
@@ -240,9 +259,9 @@ func (q Query[T]) render() string {
 	}
 
 	// START must come after LIMIT.
-	if !q.live && q.Offset > 0 {
+	if !q.live && q.Start > 0 {
 		out.WriteString(" START ")
-		out.WriteString(strconv.Itoa(q.Offset))
+		out.WriteString(strconv.Itoa(q.Start))
 	}
 
 	if len(q.Fetch) > 0 {

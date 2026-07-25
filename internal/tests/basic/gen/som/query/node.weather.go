@@ -2,23 +2,24 @@
 package query
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
 )
 
 // weatherModelInfo holds the model-specific unmarshal functions for Weather.
 var weatherModelInfo = modelInfo[model.Weather]{
-	UnmarshalAll: func(unmarshal func([]byte, any) error, data []byte) ([]*model.Weather, error) {
-		return unmarshalAll(unmarshal, data, conv.ToWeatherPtr)
+	Fields: conv.WeatherFields,
+	UnmarshalAll: func(data []byte) ([]*model.Weather, error) {
+		return unmarshalAll(data, conv.ToWeatherPtr)
 	},
-	UnmarshalOne: func(unmarshal func([]byte, any) error, data []byte) (*model.Weather, error) {
-		return unmarshalOne(unmarshal, data, conv.ToWeatherPtr)
+	UnmarshalOne: func(data []byte) (*model.Weather, error) {
+		return unmarshalOne(data, conv.ToWeatherPtr)
 	},
-	UnmarshalSearchAll: func(unmarshal func([]byte, any) error, data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Weather], error) {
-		return unmarshalSearchAll(unmarshal, data, clauses, conv.ToWeatherPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Weather], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToWeatherPtr)
 	},
 }
 

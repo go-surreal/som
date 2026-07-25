@@ -1,0 +1,245 @@
+//go:build embed
+
+package cbor
+
+import (
+	"github.com/paulmach/orb"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
+)
+
+// Point helpers
+
+func UnmarshalPointOrb(data []byte) (orb.Point, error) {
+	var coords [2]float64
+	if err := Unmarshal(data, &coords); err != nil {
+		return orb.Point{}, err
+	}
+	return orb.Point{coords[0], coords[1]}, nil
+}
+
+func UnmarshalPointOrbPtr(data []byte) (*orb.Point, error) {
+	p, err := UnmarshalPointOrb(data)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// LineString helpers
+
+func UnmarshalLineStringOrb(data []byte) (orb.LineString, error) {
+	var coords [][2]float64
+	if err := Unmarshal(data, &coords); err != nil {
+		return nil, err
+	}
+	points := make(orb.LineString, len(coords))
+	for i, c := range coords {
+		points[i] = orb.Point{c[0], c[1]}
+	}
+	return points, nil
+}
+
+func UnmarshalLineStringOrbPtr(data []byte) (*orb.LineString, error) {
+	l, err := UnmarshalLineStringOrb(data)
+	if err != nil {
+		return nil, err
+	}
+	return &l, nil
+}
+
+// Polygon helpers
+
+func UnmarshalPolygonOrb(data []byte) (orb.Polygon, error) {
+	var rings [][][2]float64
+	if err := Unmarshal(data, &rings); err != nil {
+		return nil, err
+	}
+	polygon := make(orb.Polygon, len(rings))
+	for i, ring := range rings {
+		points := make(orb.Ring, len(ring))
+		for j, c := range ring {
+			points[j] = orb.Point{c[0], c[1]}
+		}
+		polygon[i] = points
+	}
+	return polygon, nil
+}
+
+func UnmarshalPolygonOrbPtr(data []byte) (*orb.Polygon, error) {
+	p, err := UnmarshalPolygonOrb(data)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// MultiPoint helpers
+
+func UnmarshalMultiPointOrb(data []byte) (orb.MultiPoint, error) {
+	var coords [][2]float64
+	if err := Unmarshal(data, &coords); err != nil {
+		return nil, err
+	}
+	points := make(orb.MultiPoint, len(coords))
+	for i, c := range coords {
+		points[i] = orb.Point{c[0], c[1]}
+	}
+	return points, nil
+}
+
+func UnmarshalMultiPointOrbPtr(data []byte) (*orb.MultiPoint, error) {
+	m, err := UnmarshalMultiPointOrb(data)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// MultiLineString helpers
+
+func UnmarshalMultiLineStringOrb(data []byte) (orb.MultiLineString, error) {
+	var lines [][][2]float64
+	if err := Unmarshal(data, &lines); err != nil {
+		return nil, err
+	}
+	multiLine := make(orb.MultiLineString, len(lines))
+	for i, line := range lines {
+		points := make(orb.LineString, len(line))
+		for j, c := range line {
+			points[j] = orb.Point{c[0], c[1]}
+		}
+		multiLine[i] = points
+	}
+	return multiLine, nil
+}
+
+func UnmarshalMultiLineStringOrbPtr(data []byte) (*orb.MultiLineString, error) {
+	m, err := UnmarshalMultiLineStringOrb(data)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// MultiPolygon helpers
+
+func UnmarshalMultiPolygonOrb(data []byte) (orb.MultiPolygon, error) {
+	var polys [][][][2]float64
+	if err := Unmarshal(data, &polys); err != nil {
+		return nil, err
+	}
+	multiPoly := make(orb.MultiPolygon, len(polys))
+	for i, poly := range polys {
+		polygon := make(orb.Polygon, len(poly))
+		for j, ring := range poly {
+			points := make(orb.Ring, len(ring))
+			for k, c := range ring {
+				points[k] = orb.Point{c[0], c[1]}
+			}
+			polygon[j] = points
+		}
+		multiPoly[i] = polygon
+	}
+	return multiPoly, nil
+}
+
+func UnmarshalMultiPolygonOrbPtr(data []byte) (*orb.MultiPolygon, error) {
+	m, err := UnmarshalMultiPolygonOrb(data)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// Collection helpers - Collection is complex so we use RawMessage approach
+
+func UnmarshalCollectionOrb(data []byte) (orb.Collection, error) {
+	var geometries []RawMessage
+	if err := Unmarshal(data, &geometries); err != nil {
+		return nil, err
+	}
+	collection := make(orb.Collection, 0, len(geometries))
+	for _, raw := range geometries {
+		var tag RawTag
+		if err := Unmarshal(raw, &tag); err != nil {
+			continue
+		}
+		switch tag.Number {
+		case models.TagGeometryPoint:
+			var coords [2]float64
+			if err := Unmarshal(tag.Content, &coords); err == nil {
+				collection = append(collection, orb.Point{coords[0], coords[1]})
+			}
+		case models.TagGeometryLine:
+			var coords [][2]float64
+			if err := Unmarshal(tag.Content, &coords); err == nil {
+				points := make(orb.LineString, len(coords))
+				for i, c := range coords {
+					points[i] = orb.Point{c[0], c[1]}
+				}
+				collection = append(collection, points)
+			}
+		case models.TagGeometryPolygon:
+			var rings [][][2]float64
+			if err := Unmarshal(tag.Content, &rings); err == nil {
+				polygon := make(orb.Polygon, len(rings))
+				for i, ring := range rings {
+					pts := make(orb.Ring, len(ring))
+					for j, c := range ring {
+						pts[j] = orb.Point{c[0], c[1]}
+					}
+					polygon[i] = pts
+				}
+				collection = append(collection, polygon)
+			}
+		case models.TagGeometryMultiPoint:
+			var coords [][2]float64
+			if err := Unmarshal(tag.Content, &coords); err == nil {
+				points := make(orb.MultiPoint, len(coords))
+				for i, c := range coords {
+					points[i] = orb.Point{c[0], c[1]}
+				}
+				collection = append(collection, points)
+			}
+		case models.TagGeometryMultiLine:
+			var lines [][][2]float64
+			if err := Unmarshal(tag.Content, &lines); err == nil {
+				multiLine := make(orb.MultiLineString, len(lines))
+				for i, line := range lines {
+					pts := make(orb.LineString, len(line))
+					for j, c := range line {
+						pts[j] = orb.Point{c[0], c[1]}
+					}
+					multiLine[i] = pts
+				}
+				collection = append(collection, multiLine)
+			}
+		case models.TagGeometryMultiPolygon:
+			var polys [][][][2]float64
+			if err := Unmarshal(tag.Content, &polys); err == nil {
+				multiPoly := make(orb.MultiPolygon, len(polys))
+				for i, poly := range polys {
+					polygon := make(orb.Polygon, len(poly))
+					for j, ring := range poly {
+						pts := make(orb.Ring, len(ring))
+						for k, c := range ring {
+							pts[k] = orb.Point{c[0], c[1]}
+						}
+						polygon[j] = pts
+					}
+					multiPoly[i] = polygon
+				}
+				collection = append(collection, multiPoly)
+			}
+		}
+	}
+	return collection, nil
+}
+
+func UnmarshalCollectionOrbPtr(data []byte) (*orb.Collection, error) {
+	c, err := UnmarshalCollectionOrb(data)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}

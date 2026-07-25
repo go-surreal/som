@@ -2,9 +2,8 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	model "github.com/go-surreal/som/tests/basic/model"
+	cbor "som.test/gen/som/internal/cbor"
+	model "som.test/model"
 )
 
 type credentials struct {
@@ -15,6 +14,10 @@ func (c *credentials) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *credentials) fields() map[string]any {
 	data := make(map[string]any, 3)
 
 	data["username"] = c.Username
@@ -23,11 +26,11 @@ func (c *credentials) MarshalCBOR() ([]byte, error) {
 		data["password_ptr"] = c.PasswordPtr
 	}
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *credentials) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
+	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}

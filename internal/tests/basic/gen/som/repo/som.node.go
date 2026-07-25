@@ -4,14 +4,35 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 	"strings"
+	"sync"
+	"sync/atomic"
 
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
+	som "som.test/gen/som"
+	"som.test/gen/som/internal"
+	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"golang.org/x/sync/singleflight"
 )
+
+func containsError(err error, msg string) bool {
+	if err == nil {
+		return false
+	}
+	var se connection.ServerError
+	if errors.As(err, &se) {
+		for cur := &se; cur != nil; cur = cur.Cause {
+			if strings.Contains(cur.Message, msg) {
+				return true
+			}
+		}
+		return false
+	}
+	return strings.Contains(err.Error(), msg)
+}
 
 // cacheInitGroup deduplicates concurrent cache initialization requests.
 var cacheInitGroup singleflight.Group
@@ -21,34 +42,173 @@ var cacheRefreshGroup singleflight.Group
 
 // RepoInfo holds type-specific conversion functions for repository operations.
 type RepoInfo[N any] struct {
-	// UnmarshalOne unmarshals a single result into *N
-	UnmarshalOne func(unmarshal func([]byte, any) error, data []byte) (*N, error)
-
-	// MarshalOne marshals *N for database write operations and returns the raw data
+	ReadOne    func(ctx context.Context, db *dbConn, id *models.RecordID) (*N, error)
+	CreateOne  func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*N, error)
+	CreateNew  func(ctx context.Context, db *dbConn, target string, data any) (*N, error)
+	UpdateOne  func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*N, error)
+	InsertAll  func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*N, error)
+	QueryOne   func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*N, error)
 	MarshalOne func(node *N) any
 }
 
+// hookKind enumerates the lifecycle events a hook may be registered for.
+type hookKind int
+
+const (
+	beforeCreate hookKind = iota
+	afterCreate
+	beforeUpdate
+	afterUpdate
+	beforeDelete
+	afterDelete
+	numHookKinds
+)
+
+type hook[N any] struct {
+	id uint64
+	fn func(ctx context.Context, node *N) error
+}
+
 type repo[N any, K any] struct {
-	db Database
+	db *dbConn
 
 	name     string
 	info     RepoInfo[N]
-	newID    func(string) RecordID
+	autoID   bool
 	recordID func(K) *models.RecordID
+
+	hookMu      sync.RWMutex
+	hookCounter atomic.Uint64
+	hooks       [numHookKinds][]hook[N]
+}
+
+func (r *repo[N, K]) registerHook(kind hookKind, fn func(ctx context.Context, node *N) error) func() {
+	id := r.hookCounter.Add(1)
+	r.hookMu.Lock()
+	r.hooks[kind] = append(r.hooks[kind], hook[N]{id: id, fn: fn})
+	r.hookMu.Unlock()
+	return func() {
+		r.hookMu.Lock()
+		defer r.hookMu.Unlock()
+		for i, h := range r.hooks[kind] {
+			if h.id == id {
+				r.hooks[kind] = slices.Delete(r.hooks[kind], i, i+1)
+				return
+			}
+		}
+	}
+}
+
+// invokeIface calls the model's optional lifecycle-hook interface for the given
+// event, if the model implements it.
+func (r *repo[N, K]) invokeIface(ctx context.Context, kind hookKind, node *N) error {
+	switch kind {
+	case beforeCreate:
+		if h, ok := any(node).(som.OnBeforeCreateHook); ok {
+			return h.OnBeforeCreate(ctx)
+		}
+	case afterCreate:
+		if h, ok := any(node).(som.OnAfterCreateHook); ok {
+			return h.OnAfterCreate(ctx)
+		}
+	case beforeUpdate:
+		if h, ok := any(node).(som.OnBeforeUpdateHook); ok {
+			return h.OnBeforeUpdate(ctx)
+		}
+	case afterUpdate:
+		if h, ok := any(node).(som.OnAfterUpdateHook); ok {
+			return h.OnAfterUpdate(ctx)
+		}
+	case beforeDelete:
+		if h, ok := any(node).(som.OnBeforeDeleteHook); ok {
+			return h.OnBeforeDelete(ctx)
+		}
+	case afterDelete:
+		if h, ok := any(node).(som.OnAfterDeleteHook); ok {
+			return h.OnAfterDelete(ctx)
+		}
+	}
+
+	return nil
+}
+
+// runHooks invokes the model's optional lifecycle-hook interface for the given
+// event, followed by every hook registered on the repository. It aborts on the
+// first error. Registered hooks are snapshotted under the lock so that mutating
+// the hook set from within a hook does not affect the current invocation.
+func (r *repo[N, K]) runHooks(ctx context.Context, kind hookKind, node *N) error {
+	if err := r.invokeIface(ctx, kind, node); err != nil {
+		return err
+	}
+
+	r.hookMu.RLock()
+	hooks := slices.Clone(r.hooks[kind])
+	r.hookMu.RUnlock()
+
+	for _, h := range hooks {
+		if err := h.fn(ctx, node); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// runHooksAll invokes the given hook event for every node in the batch. The
+// registered repository hooks are snapshotted once for the whole batch, so
+// mutating the hook set from within a hook does not affect the current call.
+func (r *repo[N, K]) runHooksAll(ctx context.Context, kind hookKind, nodes []*N) error {
+	r.hookMu.RLock()
+	hooks := slices.Clone(r.hooks[kind])
+	r.hookMu.RUnlock()
+
+	for _, node := range nodes {
+		if err := r.invokeIface(ctx, kind, node); err != nil {
+			return err
+		}
+
+		for _, h := range hooks {
+			if err := h.fn(ctx, node); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *repo[N, K]) OnBeforeCreate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeCreate, fn)
+}
+
+func (r *repo[N, K]) OnAfterCreate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterCreate, fn)
+}
+
+func (r *repo[N, K]) OnBeforeUpdate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeUpdate, fn)
+}
+
+func (r *repo[N, K]) OnAfterUpdate(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterUpdate, fn)
+}
+
+func (r *repo[N, K]) OnBeforeDelete(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(beforeDelete, fn)
+}
+
+func (r *repo[N, K]) OnAfterDelete(fn func(ctx context.Context, node *N) error) func() {
+	return r.registerHook(afterDelete, fn)
 }
 
 func (r *repo[N, K]) create(ctx context.Context, node *N) error {
-	if r.newID == nil {
+	if !r.autoID {
 		return fmt.Errorf("create without explicit ID is not supported for this model")
 	}
 	data := r.info.MarshalOne(node)
-	raw, err := r.db.Create(ctx, r.newID(r.name), data)
+	result, err := r.info.CreateNew(ctx, r.db, r.name, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
-	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, raw)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal response: %w", err)
 	}
 	*node = *result
 	return nil
@@ -56,26 +216,40 @@ func (r *repo[N, K]) create(ctx context.Context, node *N) error {
 
 func (r *repo[N, K]) createWithID(ctx context.Context, id K, node *N) error {
 	data := r.info.MarshalOne(node)
-	res, err := r.db.Create(ctx, *r.recordID(id), data)
+	result, err := r.info.CreateOne(ctx, r.db, *r.recordID(id), data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
-	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*node = *result
 	return nil
 }
 
+func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
+	data := make([]any, len(nodes))
+	for i, node := range nodes {
+		data[i] = r.info.MarshalOne(node)
+	}
+	statement := "INSERT INTO " + r.name + " $data"
+	results, err := r.info.InsertAll(ctx, r.db, statement, map[string]any{"data": data})
+	if err != nil {
+		return fmt.Errorf("could not insert entities: %w", err)
+	}
+	if len(results) != len(nodes) {
+		return fmt.Errorf("insert returned %d results, expected %d", len(results), len(nodes))
+	}
+	for i, result := range results {
+		if result == nil {
+			return fmt.Errorf("insert returned nil result at index %d", i)
+		}
+		*nodes[i] = *result
+	}
+	return nil
+}
+
 func (r *repo[N, K]) read(ctx context.Context, id *models.RecordID) (*N, bool, error) {
-	res, err := r.db.Select(ctx, id)
+	result, err := r.info.ReadOne(ctx, r.db, id)
 	if err != nil {
 		return nil, false, fmt.Errorf("could not read entity: %w", err)
-	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
-	if err != nil {
-		return nil, false, fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	if result == nil {
 		return nil, false, nil
@@ -85,16 +259,12 @@ func (r *repo[N, K]) read(ctx context.Context, id *models.RecordID) (*N, bool, e
 
 func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) error {
 	data := r.info.MarshalOne(node)
-	res, err := r.db.Update(ctx, id, data)
+	result, err := r.info.UpdateOne(ctx, r.db, id, data)
 	if err != nil {
-		if strings.Contains(err.Error(), "optimistic_lock_failed") {
-			return som.ErrOptimisticLock
+		if containsError(err, "optimistic_lock_failed") {
+			return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 		}
 		return fmt.Errorf("could not update entity: %w", err)
-	}
-	result, err := r.info.UnmarshalOne(r.db.Unmarshal, res)
-	if err != nil {
-		return fmt.Errorf("could not unmarshal entity: %w", err)
 	}
 	*node = *result
 	return nil
@@ -102,7 +272,7 @@ func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) e
 
 func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, softDelete bool, lockVersion *int) error {
 	if softDelete {
-		query := "LET $res = (UPDATE $id SET deleted_at = time::now()"
+		query := "UPDATE $id SET deleted_at = time::now()"
 		vars := map[string]any{
 			"id": id,
 		}
@@ -110,22 +280,22 @@ func (r *repo[N, K]) delete(ctx context.Context, id *models.RecordID, node *N, s
 			query += ", __som_lock_version = $lock_version"
 			vars["lock_version"] = *lockVersion
 		}
-		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL); IF array::len($res) = 0 { THROW 'record_already_deleted' };"
-		_, err := r.db.Query(ctx, query, vars)
+		query += " WHERE deleted_at IS NONE OR deleted_at IS NULL"
+		result, err := r.info.QueryOne(ctx, r.db, query, vars)
 		if err != nil {
-			if strings.Contains(err.Error(), "record_already_deleted") {
-				return som.ErrAlreadyDeleted
-			}
-			if lockVersion != nil && strings.Contains(err.Error(), "optimistic_lock_failed") {
-				return som.ErrOptimisticLock
+			if lockVersion != nil && containsError(err, "optimistic_lock_failed") {
+				return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
 			}
 			return fmt.Errorf("could not soft delete entity: %w", err)
 		}
-		return r.refresh(ctx, id, node)
+		if result == nil {
+			return som.ErrAlreadyDeleted
+		}
+		*node = *result
+		return nil
 	}
 
-	_, err := r.db.Delete(ctx, id)
-	if err != nil {
+	if err := dbDelete(ctx, r.db, id); err != nil {
 		return fmt.Errorf("could not delete entity: %w", err)
 	}
 	return nil

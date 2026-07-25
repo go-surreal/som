@@ -2,6 +2,7 @@
 package cbor
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -10,19 +11,15 @@ import (
 
 // DateTime marshaling helpers
 func MarshalDateTime(t time.Time) (RawMessage, error) {
-	content, err := Marshal([]int64{t.Unix(), int64(t.Nanosecond())})
-	if err != nil {
-		return nil, err
-	}
-	return Marshal(RawTag{
-		Content: content,
+	return Marshal(Tag{
 		Number:  models.TagCustomDatetime,
+		Content: []int64{t.Unix(), int64(t.Nanosecond())},
 	})
 }
 
 func MarshalDateTimePtr(t *time.Time) (RawMessage, error) {
 	if t == nil {
-		return Marshal(nil)
+		return None(), nil
 	}
 	return MarshalDateTime(*t)
 }
@@ -40,10 +37,13 @@ func UnmarshalDateTime(data []byte) (time.Time, error) {
 	if len(val) > 1 {
 		nano = val[1]
 	}
-	return time.Unix(secs, nano), nil
+	return time.Unix(secs, nano).UTC(), nil
 }
 
 func UnmarshalDateTimePtr(data []byte) (*time.Time, error) {
+	if IsNoneOrNull(data) {
+		return nil, nil
+	}
 	t, err := UnmarshalDateTime(data)
 	if err != nil {
 		return nil, err
@@ -56,19 +56,15 @@ func MarshalDuration(d time.Duration) (RawMessage, error) {
 	totalNanoseconds := d.Nanoseconds()
 	totalSeconds := totalNanoseconds / int64(time.Second)
 	remainingNanoseconds := totalNanoseconds % int64(time.Second)
-	content, err := Marshal([]int64{totalSeconds, remainingNanoseconds})
-	if err != nil {
-		return nil, err
-	}
-	return Marshal(RawTag{
-		Content: content,
+	return Marshal(Tag{
 		Number:  models.TagCustomDuration,
+		Content: []int64{totalSeconds, remainingNanoseconds},
 	})
 }
 
 func MarshalDurationPtr(d *time.Duration) (RawMessage, error) {
 	if d == nil {
-		return Marshal(nil)
+		return None(), nil
 	}
 	return MarshalDuration(*d)
 }
@@ -89,6 +85,9 @@ func UnmarshalDuration(data []byte) (time.Duration, error) {
 }
 
 func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
+	if IsNoneOrNull(data) {
+		return nil, nil
+	}
 	d, err := UnmarshalDuration(data)
 	if err != nil {
 		return nil, err
@@ -96,10 +95,22 @@ func UnmarshalDurationPtr(data []byte) (*time.Duration, error) {
 	return &d, nil
 }
 
-// None is a pre-encoded CBOR Tag 6 + null (0xc6 0xf6).
+// none is the canonical CBOR Tag 6 + null (0xc6 0xf6) encoding.
 // SurrealDB uses CBOR Tag 6 to represent NONE, which is accepted by option<T> fields.
-// Use this instead of nil when encoding array elements that should be NONE rather than NULL.
-var None RawMessage = []byte{0xc6, 0xf6}
+var none = [2]byte{0xc6, 0xf6}
+
+// cborNull is the single-byte CBOR null encoding.
+var cborNull = [1]byte{0xf6}
+
+// None returns a fresh copy of the pre-encoded CBOR NONE bytes.
+func None() RawMessage {
+	b := none
+	return b[:]
+}
+
+func IsNoneOrNull(data []byte) bool {
+	return bytes.Equal(data, none[:]) || bytes.Equal(data, cborNull[:])
+}
 
 func RecordIDToString(id any) (string, error) {
 	switch v := id.(type) {

@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
 func TestIterate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
@@ -111,6 +113,8 @@ func TestIterate(t *testing.T) {
 }
 
 func TestIterateID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()

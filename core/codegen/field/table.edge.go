@@ -6,11 +6,12 @@ import (
 )
 
 type EdgeTable struct {
-	Name   string
-	In     *Node
-	Out    *Node
-	Fields []Field
-	Source *parser.Edge
+	Name       string
+	In         *Node
+	Out        *Node
+	Fields     []Field
+	Changefeed string
+	Source     *parser.Edge
 }
 
 func (t *EdgeTable) NameGo() string {
@@ -31,4 +32,8 @@ func (t *EdgeTable) FileName() string {
 
 func (t *EdgeTable) GetFields() []Field {
 	return t.Fields
+}
+
+func (t *EdgeTable) HasChangefeed() bool {
+	return t.Changefeed != ""
 }

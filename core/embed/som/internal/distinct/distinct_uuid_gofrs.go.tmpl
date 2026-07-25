@@ -9,15 +9,16 @@ import (
 	"github.com/gofrs/uuid"
 
 	"{{.GenerateOutPath}}/internal"
+	"{{.GenerateOutPath}}/internal/cbor"
 	"{{.GenerateOutPath}}/internal/types"
 )
 
 func NewUUIDGofrsField[M any](key string) Field[M, uuid.UUID] {
 	return Field[M, uuid.UUID]{
 		Key: key,
-		Decode: func(unmarshal func([]byte, any) error, data []byte) ([]uuid.UUID, error) {
+		Decode: func(data []byte) ([]uuid.UUID, error) {
 			var raw []internal.QueryResult[DistinctResult[types.UUIDGofrs]]
-			if err := unmarshal(data, &raw); err != nil {
+			if err := cbor.Unmarshal(data, &raw); err != nil {
 				return nil, fmt.Errorf("could not unmarshal distinct values: %w", err)
 			}
 			if len(raw) < 1 || len(raw[0].Result) < 1 {

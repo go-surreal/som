@@ -10,8 +10,6 @@
 <p align="center">
     <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.25.7-informational" alt="Go 1.25.7"></a>
     &nbsp;
-    <a href="https://goreportcard.com/report/github.com/go-surreal/som"><img src="https://goreportcard.com/badge/github.com/go-surreal/som" alt="Go Report Card"></a>
-    &nbsp;
     <a href="https://github.com/go-surreal/som/actions/workflows/main.yml"><img src="https://github.com/go-surreal/som/actions/workflows/main.yml/badge.svg" alt="Main"></a>
     &nbsp;
     <a href="https://github.com/go-surreal/som/actions/workflows/codeql.yml"><img src="https://github.com/go-surreal/som/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
@@ -20,7 +18,7 @@
     &nbsp;
     <a href="https://discord.gg/surrealdb"><img src="https://img.shields.io/discord/902568124350599239?label=discord&color=5a66f6" alt="Discord"></a>
     &nbsp;
-    <img src="https://img.shields.io/github/contributors/marcbinz/som" alt="Contributors">
+    <img src="https://img.shields.io/github/contributors/go-surreal/som" alt="Contributors">
 </p>
 
 SOM (SurrealDB object mapper) is an ORM and query builder for [SurrealDB](https://surrealdb.com/) with built-in model
@@ -54,7 +52,7 @@ This facilitates multi-table, multi-depth document retrieval without complex JOI
 ## Getting started
 
 *Please note: This package is currently tested against version 
-[3.0.0](https://surrealdb.com/releases#v3-0-0)
+[3.1.5](https://surrealdb.com/releases#v3-1-5)
 of SurrealDB.*
 
 ### Disclaimer
@@ -220,8 +218,8 @@ As soon as this is fixed, Som will support these types as well.
 - [x] `time.Time`
 - [x] `time.Duration`
 - [ ] `time.Location`
-- [ ] `time.Weekday`?
-- [ ] `time.Month` etc.?
+- [x] `time.Weekday`
+- [x] `time.Month`
 - [ ] `big.Int`
 - [ ] `big.Float`
 - [x] `url.URL`

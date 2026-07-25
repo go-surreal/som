@@ -287,9 +287,9 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	case *Struct:
 		{
-			//if !ctx.isFromSlice {
-			//	return nil, nil // handled by filterFunc
-			//}
+			if !ctx.isFromSlice {
+				return nil, nil // handled by filterFunc
+			}
 		}
 
 	case *Byte:
@@ -368,6 +368,20 @@ func (f *Slice) filterExtra(ctx Context) jen.Code {
 			Block(
 				jen.Return(
 					jen.Qual(ctx.pkgLib(), "NewSearch").Types(def.TypeModel).Call(
+						keyAccess,
+						jen.Id("terms"),
+					),
+				),
+			),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("MatchesAny").
+			Params(jen.Id("terms").String()).
+			Qual(ctx.pkgLib(), "Search").Types(def.TypeModel).
+			Block(
+				jen.Return(
+					jen.Qual(ctx.pkgLib(), "NewSearchOr").Types(def.TypeModel).Call(
 						keyAccess,
 						jen.Id("terms"),
 					),
@@ -485,6 +499,31 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 			return nil
 		}
 
+	case *Struct:
+		sliceType := "Slice"
+		newFunc := "NewSlice"
+		if f.source.Pointer() {
+			sliceType = "SlicePtr"
+			newFunc = "NewSlicePtr"
+		}
+
+		return jen.Func().
+			Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).Id(f.NameGo()).
+			Params(
+				jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
+					Types(jen.Qual(f.SourcePkg, element.element.NameGo())),
+			).
+			Op("*").Qual(ctx.pkgLib(), sliceType).
+			Types(def.TypeModel, f.element.typeGo(), elemFilter).
+			Block(
+				jen.Id("key").Op(":=").Qual(ctx.pkgLib(), "StructField").Call(
+					jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase()), jen.Id("filters"),
+				),
+				jen.Return(jen.Qual(ctx.pkgLib(), newFunc).
+					Types(def.TypeModel, f.element.typeGo(), elemFilter).
+					Call(jen.Id("key"), makeElemFilter)),
+			)
+
 	default:
 		return nil
 	}
@@ -532,6 +571,8 @@ func (f *Slice) distinctElemType(ctx Context) jen.Code {
 		return jen.Qual(def.PkgURL, "URL")
 	case *Email:
 		return jen.Qual(f.TargetPkg, "Email")
+	case *SemVer:
+		return jen.Qual(f.TargetPkg, "SemVer")
 	default:
 		return nil
 	}
@@ -559,6 +600,8 @@ func (f *Slice) distinctElemInit(ctx Context) jen.Code {
 		return jen.Qual(ctx.pkgDistinct(), "NewURLField").Types(def.TypeModel).Call(key)
 	case *Email:
 		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "Email")).Call(key)
+	case *SemVer:
+		return jen.Qual(ctx.pkgDistinct(), "NewField").Types(def.TypeModel, jen.Qual(f.TargetPkg, "SemVer")).Call(key)
 	default:
 		return nil
 	}
@@ -589,7 +632,7 @@ func (f *Slice) cborMarshal(ctx Context) jen.Code {
 					jen.Id("i").Op(",").Id("v").Op(":=").Range().Add(srcSlice),
 				).Block(
 					jen.If(jen.Id("v").Op("==").Nil()).Block(
-						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Qual(ctx.pkgCBOR(), "None"),
+						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Qual(ctx.pkgCBOR(), "None").Call(),
 					).Else().Block(
 						jen.Id("convSlice").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Id("v")),
 					),
@@ -661,18 +704,60 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 			convFuncName += "Ptr"
 		}
 
-		// Determine the slice element type based on whether the struct element is a pointer
-		var sliceElemType jen.Code
 		if structElem.source.Pointer() {
-			sliceElemType = jen.Index().Op("*").Id(structElem.element.NameGoLower())
-		} else {
-			sliceElemType = jen.Index().Id(structElem.element.NameGoLower())
+			// For pointer element slices, unmarshal each element individually
+			// to correctly handle NONE/null as nil pointers.
+			innerSliceType := jen.Index().Add(f.element.typeGo())
+
+			var assignStmt jen.Code
+			if f.source.Pointer() {
+				assignStmt = jen.If(jen.Id("rawSlice").Op("==").Nil()).Block(
+					jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+				).Else().BlockFunc(func(bg *jen.Group) {
+					bg.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("rawSlice")))
+					bg.For(jen.Id("i").Op(",").Id("elem").Op(":=").Range().Id("rawSlice")).BlockFunc(func(fg *jen.Group) {
+						fg.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("elem"))).Block(
+							jen.Continue(),
+						)
+						fg.Var().Id("v").Id(structElem.element.NameGoLower())
+						fg.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("elem"), jen.Op("&").Id("v"))
+						fg.Id("result").Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Op("&").Id("v"))
+					})
+					bg.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("result")
+				})
+			} else {
+				assignStmt = jen.Block(
+					jen.Id("c").Dot(f.NameGo()).Op("=").Make(
+						f.typeGo(),
+						jen.Len(jen.Id("rawSlice")),
+					),
+					jen.For(
+						jen.Id("i").Op(",").Id("elem").Op(":=").Range().Id("rawSlice"),
+					).BlockFunc(func(fg *jen.Group) {
+						fg.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("elem"))).Block(
+							jen.Continue(),
+						)
+						fg.Var().Id("v").Id(structElem.element.NameGoLower())
+						fg.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("elem"), jen.Op("&").Id("v"))
+						fg.Id("c").Dot(f.NameGo()).Index(jen.Id("i")).Op("=").Id(convFuncName).Call(jen.Op("&").Id("v"))
+					}),
+				)
+			}
+
+			return jen.If(
+				jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+				jen.Id("ok"),
+			).BlockFunc(func(g *jen.Group) {
+				g.Var().Id("rawSlice").Index().Qual(ctx.pkgCBOR(), "RawMessage")
+				g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("rawSlice"))
+				g.Add(assignStmt)
+			})
 		}
 
-		// Determine the inner slice type (the model slice type)
+		// Non-pointer struct elements: unmarshal directly into typed slice.
+		sliceElemType := jen.Index().Id(structElem.element.NameGoLower())
 		innerSliceType := jen.Index().Add(f.element.typeGo())
 
-		// Build the assignment statement - handle pointer-to-slice case
 		var assignStmt jen.Code
 		if f.source.Pointer() {
 			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(

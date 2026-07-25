@@ -48,6 +48,8 @@
   * [Ordering & Pagination](querying/03_ordering_pagination.md)
   * [Live Queries](querying/04_live_queries.md)
   * [Full-Text Search](querying/05_fulltext_search.md)
+  * [Raw Queries](querying/06_raw_queries.md)
+  * [Transactions](querying/07_transactions.md)
 
 ## Relationships
 

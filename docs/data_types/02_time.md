@@ -10,7 +10,7 @@ Use `time.Time` for timestamps and dates:
 import "time"
 
 type Event struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name      string
     StartTime time.Time
@@ -74,7 +74,7 @@ Use `time.Duration` for time intervals:
 import "time"
 
 type Task struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name     string
     Duration time.Duration
@@ -122,7 +122,7 @@ Use pointers for optional time values:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     CreatedAt  time.Time   // Always set
     DeletedAt  *time.Time  // Optional, nil if not deleted
@@ -146,7 +146,7 @@ Use `som.Timestamps` for automatic tracking:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps  // Adds CreatedAt and UpdatedAt
 
     Name string

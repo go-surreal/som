@@ -8,20 +8,23 @@ type Field interface {
 	fmt.Stringer
 	field()
 	Name() string
+	DBName() string
 	Pointer() bool
 	setName(string)
+	setDBName(string)
 	setPointer(bool)
-	Index() *IndexInfo
+	Indexes() []IndexInfo
 	Search() *SearchInfo
-	setIndex(*IndexInfo)
+	setIndexes([]IndexInfo)
 	setSearch(*SearchInfo)
 	Validate() error
 }
 
 type fieldAtomic struct {
 	name    string
+	dbName  string
 	pointer bool
-	index   *IndexInfo
+	indexes []IndexInfo
 	search  *SearchInfo
 }
 
@@ -39,6 +42,14 @@ func (f *fieldAtomic) setName(name string) {
 	f.name = name
 }
 
+func (f *fieldAtomic) DBName() string {
+	return f.dbName
+}
+
+func (f *fieldAtomic) setDBName(name string) {
+	f.dbName = name
+}
+
 func (f *fieldAtomic) Pointer() bool {
 	return f.pointer
 }
@@ -47,12 +58,12 @@ func (f *fieldAtomic) setPointer(val bool) {
 	f.pointer = val
 }
 
-func (f *fieldAtomic) Index() *IndexInfo {
-	return f.index
+func (f *fieldAtomic) Indexes() []IndexInfo {
+	return f.indexes
 }
 
-func (f *fieldAtomic) setIndex(info *IndexInfo) {
-	f.index = info
+func (f *fieldAtomic) setIndexes(indexes []IndexInfo) {
+	f.indexes = indexes
 }
 
 func (f *fieldAtomic) Search() *SearchInfo {
@@ -153,11 +164,30 @@ func NewFieldDuration(name string) *FieldDuration {
 	return &FieldDuration{fieldAtomic: &fieldAtomic{name: name}}
 }
 
+type FieldMonth struct {
+	*fieldAtomic
+}
+
+func NewFieldMonth(name string) *FieldMonth {
+	return &FieldMonth{fieldAtomic: &fieldAtomic{name: name}}
+}
+
+type FieldWeekday struct {
+	*fieldAtomic
+}
+
+func NewFieldWeekday(name string) *FieldWeekday {
+	return &FieldWeekday{fieldAtomic: &fieldAtomic{name: name}}
+}
+
 type FieldTime struct {
 	*fieldAtomic
 	IsCreatedAt bool
 	IsUpdatedAt bool
 	IsDeletedAt bool
+	IsExpiresAt bool
+	// ExpiresIn holds the TTL duration (SurrealDB literal) for IsExpiresAt fields.
+	ExpiresIn string
 }
 
 func NewFieldTime(name string) *FieldTime {
@@ -182,6 +212,61 @@ func NewFieldUUID(name string, pkg UUIDPackage) *FieldUUID {
 			name: name,
 		},
 		Package: pkg,
+	}
+}
+
+type GeoPackage string
+
+const (
+	GeoPackageOrb            GeoPackage = "github.com/paulmach/orb"
+	GeoPackageSimplefeatures GeoPackage = "github.com/peterstace/simplefeatures/geom"
+	GeoPackageGoGeom         GeoPackage = "github.com/twpayne/go-geom"
+)
+
+type GeometryType int
+
+const (
+	GeometryPoint GeometryType = iota
+	GeometryLineString
+	GeometryPolygon
+	GeometryMultiPoint
+	GeometryMultiLineString
+	GeometryMultiPolygon
+	GeometryCollection
+)
+
+func (g GeometryType) String() string {
+	switch g {
+	case GeometryPoint:
+		return "Point"
+	case GeometryLineString:
+		return "LineString"
+	case GeometryPolygon:
+		return "Polygon"
+	case GeometryMultiPoint:
+		return "MultiPoint"
+	case GeometryMultiLineString:
+		return "MultiLineString"
+	case GeometryMultiPolygon:
+		return "MultiPolygon"
+	case GeometryCollection:
+		return "Collection"
+	default:
+		return "Unknown"
+	}
+}
+
+type FieldGeometry struct {
+	*fieldAtomic
+	Package GeoPackage
+	Type    GeometryType
+}
+
+func NewFieldGeometry(name string, pkg GeoPackage, typ GeometryType) *FieldGeometry {
+	return &FieldGeometry{
+		fieldAtomic: &fieldAtomic{name: name},
+		Package:     pkg,
+		Type:        typ,
 	}
 }
 
@@ -217,6 +302,14 @@ type FieldEmail struct {
 
 func NewFieldEmail(name string) *FieldEmail {
 	return &FieldEmail{fieldAtomic: &fieldAtomic{name: name}}
+}
+
+type FieldSemVer struct {
+	*fieldAtomic
+}
+
+func NewFieldSemVer(name string) *FieldSemVer {
+	return &FieldSemVer{fieldAtomic: &fieldAtomic{name: name}}
 }
 
 type FieldNode struct {

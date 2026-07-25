@@ -14,7 +14,7 @@ import (
 	"github.com/go-surreal/som/core/util/gomod"
 )
 
-func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverride string) error {
+func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bool, wireOverride string) error {
 	absDir, err := filepath.Abs(outPath)
 	if err != nil {
 		return fmt.Errorf("could not find absolute path: %v", err)
@@ -27,17 +27,6 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 
 	if check {
 		info, err := mod.CheckGoVersion()
-		if err != nil {
-			return err
-		}
-
-		if verbose && info != "" {
-			fmt.Println("ⓘ ", info)
-		}
-	}
-
-	if check {
-		info, err := mod.CheckSOMVersion(verbose)
 		if err != nil {
 			return err
 		}
@@ -69,10 +58,6 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 		wirePackage = mod.WirePackage()
 	}
 
-	if err := mod.Save(); err != nil {
-		return err
-	}
-
 	outPkg := path.Join(mod.Module(), strings.TrimPrefix(absDir, mod.Dir()))
 
 	out := fs.New()
@@ -86,6 +71,8 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 			[]parser.TypeHandler{
 				&structtype.NodeHandler{},
 				&structtype.EdgeHandler{},
+				&structtype.ViewHandler{},
+				&structtype.SinkHandler{},
 				&structtype.ComplexIDStructHandler{},
 				&structtype.EnumHandler{},
 				&structtype.EnumValueHandler{},
@@ -93,13 +80,19 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 			},
 			[]parser.FieldHandler{
 				&fieldtype.EmailHandler{},
+				&fieldtype.SemVerHandler{},
 				&fieldtype.PasswordHandler{},
 				&fieldtype.EnumHandler{},
 				&fieldtype.DurationHandler{},
 				&fieldtype.TimeHandler{},
+				&fieldtype.MonthHandler{},
+				&fieldtype.WeekdayHandler{},
+				&fieldtype.GeometryHandler{},
 				&fieldtype.URLHandler{},
 				&fieldtype.NodeRefHandler{},
 				&fieldtype.EdgeRefHandler{},
+				&fieldtype.ViewRefHandler{},
+				&fieldtype.SinkRefHandler{},
 				&fieldtype.UUIDHandler{},
 				&fieldtype.SliceHandler{},
 				&fieldtype.BoolHandler{},
@@ -114,6 +107,14 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 		}
 
 		usedFeatures = source.UsedFeatures
+
+		if err := checkLibVersions(mod, usedFeatures); err != nil {
+			return err
+		}
+	}
+
+	if err := mod.Save(); err != nil {
+		return err
 	}
 
 	// Generate static files with feature flags from parsing.
@@ -130,7 +131,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 		return nil
 	}
 
-	err = codegen.Build(source, out, outPkg, wirePackage)
+	err = codegen.Build(source, out, outPkg, wirePackage, noCountIndex)
 	if err != nil {
 		return fmt.Errorf("could not generate code: %w", err)
 	}
@@ -146,4 +147,33 @@ func Generate(inPath, outPath string, init, verbose, dry, check bool, wireOverri
 	}
 
 	return out.Flush(absDir)
+}
+
+func checkLibVersions(mod *gomod.GoMod, features *parser.UsedFeatures) error {
+	if features.UsesGoogleUUID {
+		if err := mod.CheckLibVersion(gomod.PkgUUIDGoogle, gomod.MinUUIDGoogleVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesGofrsUUID {
+		if err := mod.CheckLibVersion(gomod.PkgUUIDGofrs, gomod.MinUUIDGofrsVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesOrbGeo {
+		if err := mod.CheckLibVersion(gomod.PkgGeoOrb, gomod.MinGeoOrbVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesSimplefeaturesGeo {
+		if err := mod.CheckLibVersion(gomod.PkgGeoSimplefeatures, gomod.MinGeoSimplefeaturesVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesGoGeomGeo {
+		if err := mod.CheckLibVersion(gomod.PkgGeoGoGeom, gomod.MinGeoGoGeomVersion); err != nil {
+			return err
+		}
+	}
+	return nil
 }

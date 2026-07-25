@@ -121,7 +121,7 @@ func (e {{.TypeName}}) Create(ctx context.Context, edge *model.{{.EdgeNameGo}}) 
 		return fmt.Errorf("could not create relation: %w", err)
 	}
 	var rawResult []internal.QueryResult[conv.{{.EdgeNameGo}}]
-	err = e.db.Unmarshal(res, &rawResult)
+	err = cbor.Unmarshal(res, &rawResult)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}
@@ -153,6 +153,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		{Path: "context"},
 		{Path: "errors"},
 		{Path: "fmt"},
+		{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
 		{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
 		{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
 		{Alias: "model", Path: b.sourcePkgPath},

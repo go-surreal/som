@@ -5,14 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/by"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/gen/som/by"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
 func TestComplexIDObjectKey(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -20,8 +22,8 @@ func TestComplexIDObjectKey(t *testing.T) {
 
 	key := model.PersonKey{Name: "Alice", Age: 30}
 	person := &model.PersonObj{
-		Node: som.NewNode[model.PersonKey](key),
-		Email:      "alice@example.com",
+		Node:  som.NewNode[model.PersonKey](key),
+		Email: "alice@example.com",
 	}
 
 	// Create
@@ -62,6 +64,8 @@ func TestComplexIDObjectKey(t *testing.T) {
 }
 
 func TestComplexIDArrayKey(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -70,7 +74,7 @@ func TestComplexIDArrayKey(t *testing.T) {
 	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 	key := model.WeatherKey{City: "Berlin", Date: fixedDate}
 	w := &model.Weather{
-		Node:  som.NewNode[model.WeatherKey](key),
+		Node:        som.NewNode[model.WeatherKey](key),
 		Temperature: 22.5,
 	}
 
@@ -112,6 +116,8 @@ func TestComplexIDArrayKey(t *testing.T) {
 }
 
 func TestComplexIDZeroKeyErrors(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -173,6 +179,8 @@ func TestComplexIDZeroKeyErrors(t *testing.T) {
 }
 
 func TestComplexIDMultipleRecords(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -182,12 +190,12 @@ func TestComplexIDMultipleRecords(t *testing.T) {
 	key2 := model.PersonKey{Name: "Bob", Age: 25}
 
 	person1 := &model.PersonObj{
-		Node: som.NewNode[model.PersonKey](key1),
-		Email:      "alice@example.com",
+		Node:  som.NewNode[model.PersonKey](key1),
+		Email: "alice@example.com",
 	}
 	person2 := &model.PersonObj{
-		Node: som.NewNode[model.PersonKey](key2),
-		Email:      "bob@example.com",
+		Node:  som.NewNode[model.PersonKey](key2),
+		Email: "bob@example.com",
 	}
 
 	err := client.PersonObjRepo().CreateWithID(ctx, person1)
@@ -208,13 +216,15 @@ func TestComplexIDMultipleRecords(t *testing.T) {
 }
 
 func TestComplexIDNodeRef(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
 	// Create referenced nodes first.
-	member := &model.AllTypes{FieldString: "ref-member"}
+	member := &model.AllTypes{FieldString: "ref-member", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, member)
 	assert.NilError(t, err)
 	assert.Assert(t, member.ID() != "")
@@ -222,7 +232,7 @@ func TestComplexIDNodeRef(t *testing.T) {
 	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 	weatherKey := model.WeatherKey{City: "Berlin", Date: fixedDate}
 	weather := &model.Weather{
-		Node:  som.NewNode[model.WeatherKey](weatherKey),
+		Node:        som.NewNode[model.WeatherKey](weatherKey),
 		Temperature: 22.5,
 	}
 	err = client.WeatherRepo().CreateWithID(ctx, weather)
@@ -235,7 +245,7 @@ func TestComplexIDNodeRef(t *testing.T) {
 	}
 	tm := &model.TeamMember{
 		Node: som.NewNode[model.TeamMemberKey](tmKey),
-		Role:       "engineer",
+		Role: "engineer",
 	}
 	err = client.TeamMemberRepo().CreateWithID(ctx, tm)
 	assert.NilError(t, err)
@@ -275,6 +285,8 @@ func TestComplexIDNodeRef(t *testing.T) {
 }
 
 func TestComplexIDCacheNotSupported(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -289,6 +301,8 @@ func TestComplexIDCacheNotSupported(t *testing.T) {
 }
 
 func TestComplexIDQueryAll(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -303,8 +317,8 @@ func TestComplexIDQueryAll(t *testing.T) {
 
 	for i, key := range keys {
 		p := &model.PersonObj{
-			Node: som.NewNode[model.PersonKey](key),
-			Email:      emails[i],
+			Node:  som.NewNode[model.PersonKey](key),
+			Email: emails[i],
 		}
 		err := client.PersonObjRepo().CreateWithID(ctx, p)
 		assert.NilError(t, err)
@@ -320,6 +334,8 @@ func TestComplexIDQueryAll(t *testing.T) {
 }
 
 func TestComplexIDQueryFilter(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -334,8 +350,8 @@ func TestComplexIDQueryFilter(t *testing.T) {
 
 	for i, key := range keys {
 		p := &model.PersonObj{
-			Node: som.NewNode[model.PersonKey](key),
-			Email:      emails[i],
+			Node:  som.NewNode[model.PersonKey](key),
+			Email: emails[i],
 		}
 		err := client.PersonObjRepo().CreateWithID(ctx, p)
 		assert.NilError(t, err)
@@ -356,6 +372,8 @@ func TestComplexIDQueryFilter(t *testing.T) {
 }
 
 func TestComplexIDQuerySort(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -368,7 +386,7 @@ func TestComplexIDQuerySort(t *testing.T) {
 		fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 		key := model.WeatherKey{City: city, Date: fixedDate}
 		w := &model.Weather{
-			Node:  som.NewNode[model.WeatherKey](key),
+			Node:        som.NewNode[model.WeatherKey](key),
 			Temperature: temps[i],
 		}
 		err := client.WeatherRepo().CreateWithID(ctx, w)
@@ -395,6 +413,8 @@ func TestComplexIDQuerySort(t *testing.T) {
 }
 
 func TestComplexIDQueryLimitOffset(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -409,8 +429,8 @@ func TestComplexIDQueryLimitOffset(t *testing.T) {
 
 	for i, key := range keys {
 		p := &model.PersonObj{
-			Node: som.NewNode[model.PersonKey](key),
-			Email:      emails[i],
+			Node:  som.NewNode[model.PersonKey](key),
+			Email: emails[i],
 		}
 		err := client.PersonObjRepo().CreateWithID(ctx, p)
 		assert.NilError(t, err)
@@ -427,7 +447,7 @@ func TestComplexIDQueryLimitOffset(t *testing.T) {
 
 	offset, err := client.PersonObjRepo().Query().
 		Order(by.PersonObj.Email.Asc()).
-		Offset(1).
+		Start(1).
 		Limit(1).
 		All(ctx)
 	assert.NilError(t, err)
@@ -436,6 +456,8 @@ func TestComplexIDQueryLimitOffset(t *testing.T) {
 }
 
 func TestComplexIDQueryFirst(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -449,7 +471,7 @@ func TestComplexIDQueryFirst(t *testing.T) {
 			temp = 10.0
 		}
 		w := &model.Weather{
-			Node:  som.NewNode[model.WeatherKey](key),
+			Node:        som.NewNode[model.WeatherKey](key),
 			Temperature: temp,
 		}
 		err := client.WeatherRepo().CreateWithID(ctx, w)
@@ -465,6 +487,8 @@ func TestComplexIDQueryFirst(t *testing.T) {
 }
 
 func TestComplexIDFilterByObjectIDField(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -479,8 +503,8 @@ func TestComplexIDFilterByObjectIDField(t *testing.T) {
 
 	for i, key := range keys {
 		p := &model.PersonObj{
-			Node: som.NewNode[model.PersonKey](key),
-			Email:      emails[i],
+			Node:  som.NewNode[model.PersonKey](key),
+			Email: emails[i],
 		}
 		err := client.PersonObjRepo().CreateWithID(ctx, p)
 		assert.NilError(t, err)
@@ -503,6 +527,8 @@ func TestComplexIDFilterByObjectIDField(t *testing.T) {
 }
 
 func TestComplexIDFilterByArrayIDField(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -519,7 +545,7 @@ func TestComplexIDFilterByArrayIDField(t *testing.T) {
 	for i, city := range cities {
 		key := model.WeatherKey{City: city, Date: dates[i]}
 		w := &model.Weather{
-			Node:  som.NewNode[model.WeatherKey](key),
+			Node:        som.NewNode[model.WeatherKey](key),
 			Temperature: temps[i],
 		}
 		err := client.WeatherRepo().CreateWithID(ctx, w)
@@ -544,13 +570,15 @@ func TestComplexIDFilterByArrayIDField(t *testing.T) {
 }
 
 func TestComplexIDQueryNodeRef(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	member1 := &model.AllTypes{FieldString: "member-1"}
-	member2 := &model.AllTypes{FieldString: "member-2"}
+	member1 := &model.AllTypes{FieldString: "member-1", FieldMonth: time.January}
+	member2 := &model.AllTypes{FieldString: "member-2", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, member1)
 	assert.NilError(t, err)
 	err = client.AllTypesRepo().Create(ctx, member2)
@@ -558,7 +586,7 @@ func TestComplexIDQueryNodeRef(t *testing.T) {
 
 	fixedDate := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 	weather := &model.Weather{
-		Node:  som.NewNode[model.WeatherKey](model.WeatherKey{City: "Berlin", Date: fixedDate}),
+		Node:        som.NewNode[model.WeatherKey](model.WeatherKey{City: "Berlin", Date: fixedDate}),
 		Temperature: 22.5,
 	}
 	err = client.WeatherRepo().CreateWithID(ctx, weather)

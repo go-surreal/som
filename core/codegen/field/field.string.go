@@ -126,6 +126,20 @@ func (f *String) filterExtra(ctx Context) jen.Code {
 		jen.Line(),
 		jen.Func().
 			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
+			Id("MatchesAny").
+			Params(jen.Id("terms").String()).
+			Qual(ctx.pkgLib(), "Search").Types(def.TypeModel).
+			Block(
+				jen.Return(
+					jen.Qual(ctx.pkgLib(), "NewSearchOr").Types(def.TypeModel).Call(
+						jen.Id("f").Dot(embeddedType).Dot("Base").Dot("Key"),
+						jen.Id("terms"),
+					),
+				),
+			),
+		jen.Line(),
+		jen.Func().
+			Params(jen.Id("f").Id(wrapperName).Types(def.TypeModel)).
 			Id("key").
 			Params().
 			Qual(ctx.pkgLib(), "Key").Types(def.TypeModel).

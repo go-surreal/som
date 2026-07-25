@@ -9,6 +9,7 @@ const (
 	PkgFetch  = "with"
 	PkgConv   = "conv"
 	PkgRelate = "relate"
+	PkgIndex  = "index"
 	PkgField  = "field"
 	PkgRepo    = "repo"
 	PkgSomWire = "somwire"
@@ -26,11 +27,14 @@ const (
 	//PkgSom  = "github.com/go-surreal/som"
 	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"
 	PkgModels    = "github.com/surrealdb/surrealdb.go/pkg/models"
-	PkgCBOR      = "github.com/fxamacker/cbor/v2"
 
 	PkgURL        = "net/url"
 	PkgUUIDGoogle = "github.com/google/uuid"
 	PkgUUIDGofrs  = "github.com/gofrs/uuid"
+
+	PkgGeoOrb            = "github.com/paulmach/orb"
+	PkgGeoSimplefeatures = "github.com/peterstace/simplefeatures/geom"
+	PkgGeoGoGeom         = "github.com/twpayne/go-geom"
 )
 
 var (

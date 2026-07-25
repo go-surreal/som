@@ -2,13 +2,13 @@
 package conv
 
 import (
-	v2 "github.com/fxamacker/cbor/v2"
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
+	cbor "som.test/gen/som/internal/cbor"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
+	"time"
 )
 
 type AllTypes struct {
@@ -19,7 +19,11 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 91)
+	return cbor.Marshal(c.fields())
+}
+
+func (c *AllTypes) fields() map[string]any {
+	data := make(map[string]any, 100)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
@@ -140,6 +144,16 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldDurationSlice != nil {
 		data["field_duration_slice"] = c.FieldDurationSlice
 	}
+	data["field_month"] = int(c.FieldMonth)
+	if c.FieldMonthPtr != nil {
+		val := int(*c.FieldMonthPtr)
+		data["field_month_ptr"] = &val
+	}
+	data["field_weekday"] = int(c.FieldWeekday)
+	if c.FieldWeekdayPtr != nil {
+		val := int(*c.FieldWeekdayPtr)
+		data["field_weekday_ptr"] = &val
+	}
 	{
 		uuidVal := types.UUIDGoogle(c.FieldUUID)
 		data["field_uuid"] = &uuidVal
@@ -190,6 +204,16 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldEmailSlice != nil {
 		data["field_email_slice"] = c.FieldEmailSlice
 	}
+	data["field_sem_ver"] = fromSemVer(c.FieldSemVer)
+	if c.FieldSemVerPtr != nil {
+		data["field_sem_ver_ptr"] = fromSemVerPtr(c.FieldSemVerPtr)
+	}
+	if c.FieldSemVerNil != nil {
+		data["field_sem_ver_nil"] = fromSemVerPtr(c.FieldSemVerNil)
+	}
+	if c.FieldSemVerSlice != nil {
+		data["field_sem_ver_slice"] = c.FieldSemVerSlice
+	}
 	data["field_enum"] = c.FieldEnum
 	if c.FieldEnumPtr != nil {
 		data["field_enum_ptr"] = c.FieldEnumPtr
@@ -218,7 +242,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		convSlice := make([]any, len(c.FieldNestedDataPtrSlice))
 		for i, v := range c.FieldNestedDataPtrSlice {
 			if v == nil {
-				convSlice[i] = cbor.None
+				convSlice[i] = cbor.None()
 			} else {
 				convSlice[i] = fromNestedDataPtr(v)
 			}
@@ -229,7 +253,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 		convSlice := make([]any, len(*c.FieldNestedDataPtrSlicePtr))
 		for i, v := range *c.FieldNestedDataPtrSlicePtr {
 			if v == nil {
-				convSlice[i] = cbor.None
+				convSlice[i] = cbor.None()
 			} else {
 				convSlice[i] = fromNestedDataPtr(v)
 			}
@@ -294,19 +318,20 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldByteSlicePtr != nil {
 		data["field_byte_slice_ptr"] = c.FieldByteSlicePtr
 	}
+	data["custom_name"] = c.FieldRenamed
 	data["field_hook_status"] = c.FieldHookStatus
 	data["field_hook_detail"] = c.FieldHookDetail
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *AllTypes) UnmarshalCBOR(data []byte) error {
-	var rawMap map[string]v2.RawMessage
+	var rawMap map[string]cbor.RawMessage
 	if err := cbor.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
-	// Embedded som.Node/Edge ID field
+	// Embedded som.Node/Edge/View ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
@@ -469,6 +494,36 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	if raw, ok := rawMap["field_duration_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldDurationSlice)
 	}
+	if raw, ok := rawMap["field_month"]; ok {
+		var val int
+		cbor.Unmarshal(raw, &val)
+		c.FieldMonth = time.Month(val)
+	}
+	if raw, ok := rawMap["field_month_ptr"]; ok {
+		var val *int
+		cbor.Unmarshal(raw, &val)
+		if val != nil {
+			m := time.Month(*val)
+			c.FieldMonthPtr = &m
+		} else {
+			c.FieldMonthPtr = nil
+		}
+	}
+	if raw, ok := rawMap["field_weekday"]; ok {
+		var val int
+		cbor.Unmarshal(raw, &val)
+		c.FieldWeekday = time.Weekday(val)
+	}
+	if raw, ok := rawMap["field_weekday_ptr"]; ok {
+		var val *int
+		cbor.Unmarshal(raw, &val)
+		if val != nil {
+			w := time.Weekday(*val)
+			c.FieldWeekdayPtr = &w
+		} else {
+			c.FieldWeekdayPtr = nil
+		}
+	}
 	if raw, ok := rawMap["field_uuid"]; ok {
 		c.FieldUUID, _ = cbor.UnmarshalUUIDGoogle(raw)
 	}
@@ -529,6 +584,24 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	if raw, ok := rawMap["field_email_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldEmailSlice)
 	}
+	if raw, ok := rawMap["field_sem_ver"]; ok {
+		var convVal string
+		cbor.Unmarshal(raw, &convVal)
+		c.FieldSemVer = toSemVer(convVal)
+	}
+	if raw, ok := rawMap["field_sem_ver_ptr"]; ok {
+		var convVal *string
+		cbor.Unmarshal(raw, &convVal)
+		c.FieldSemVerPtr = toSemVerPtr(convVal)
+	}
+	if raw, ok := rawMap["field_sem_ver_nil"]; ok {
+		var convVal *string
+		cbor.Unmarshal(raw, &convVal)
+		c.FieldSemVerNil = toSemVerPtr(convVal)
+	}
+	if raw, ok := rawMap["field_sem_ver_slice"]; ok {
+		cbor.Unmarshal(raw, &c.FieldSemVerSlice)
+	}
 	if raw, ok := rawMap["field_enum"]; ok {
 		cbor.Unmarshal(raw, &c.FieldEnum)
 	}
@@ -565,24 +638,34 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		}
 	}
 	if raw, ok := rawMap["field_nested_data_ptr_slice"]; ok {
-		var convSlice []*nestedData
-		cbor.Unmarshal(raw, &convSlice)
+		var rawSlice []cbor.RawMessage
+		cbor.Unmarshal(raw, &rawSlice)
 		{
-			c.FieldNestedDataPtrSlice = make([]*model.NestedData, len(convSlice))
-			for i, v := range convSlice {
-				c.FieldNestedDataPtrSlice[i] = toNestedDataPtr(v)
+			c.FieldNestedDataPtrSlice = make([]*model.NestedData, len(rawSlice))
+			for i, elem := range rawSlice {
+				if cbor.IsNoneOrNull(elem) {
+					continue
+				}
+				var v nestedData
+				cbor.Unmarshal(elem, &v)
+				c.FieldNestedDataPtrSlice[i] = toNestedDataPtr(&v)
 			}
 		}
 	}
 	if raw, ok := rawMap["field_nested_data_ptr_slice_ptr"]; ok {
-		var convSlice []*nestedData
-		cbor.Unmarshal(raw, &convSlice)
-		if convSlice == nil {
+		var rawSlice []cbor.RawMessage
+		cbor.Unmarshal(raw, &rawSlice)
+		if rawSlice == nil {
 			c.FieldNestedDataPtrSlicePtr = nil
 		} else {
-			result := make([]*model.NestedData, len(convSlice))
-			for i, v := range convSlice {
-				result[i] = toNestedDataPtr(v)
+			result := make([]*model.NestedData, len(rawSlice))
+			for i, elem := range rawSlice {
+				if cbor.IsNoneOrNull(elem) {
+					continue
+				}
+				var v nestedData
+				cbor.Unmarshal(elem, &v)
+				result[i] = toNestedDataPtr(&v)
 			}
 			c.FieldNestedDataPtrSlicePtr = &result
 		}
@@ -657,6 +740,9 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	if raw, ok := rawMap["field_byte_slice_ptr"]; ok {
 		cbor.Unmarshal(raw, &c.FieldByteSlicePtr)
 	}
+	if raw, ok := rawMap["custom_name"]; ok {
+		cbor.Unmarshal(raw, &c.FieldRenamed)
+	}
 	if raw, ok := rawMap["field_hook_status"]; ok {
 		cbor.Unmarshal(raw, &c.FieldHookStatus)
 	}
@@ -686,6 +772,11 @@ func ToAllTypesPtr(data *AllTypes) *model.AllTypes {
 	}
 	result := data.AllTypes
 	return &result
+}
+
+func AllTypesFields(m *model.AllTypes) map[string]any {
+	c := AllTypes{*m}
+	return c.fields()
 }
 
 type allTypesLink struct {

@@ -62,16 +62,3 @@ func formatImportBlock(imports []goImport) string {
 
 	return "import (\n" + strings.Join(lines, "\n") + "\n)"
 }
-
-func formatGoComment(text string) string {
-	lines := strings.Split(strings.TrimSpace(text), "\n")
-	var out []string
-	for _, line := range lines {
-		if line == "" {
-			out = append(out, "//")
-		} else {
-			out = append(out, "// "+line)
-		}
-	}
-	return strings.Join(out, "\n")
-}

@@ -28,6 +28,76 @@ func (b *queryBuilder) build() error {
 		}
 	}
 
+	for _, view := range b.views {
+		if err := b.buildViewFile(view); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// buildViewFile generates the query builder constructor for a read-only view.
+// Views have no soft-delete filter and no ID range function.
+func (b *queryBuilder) buildViewFile(view *field.ViewTable) error {
+	pkgLib := b.relativePkgPath(def.PkgLib)
+	pkgConv := b.relativePkgPath(def.PkgConv)
+
+	f := jen.NewFile(b.pkgName)
+	f.PackageComment(string(embed.CodegenComment))
+
+	modelType := b.SourceQual(view.NameGo())
+	modelInfoVarName := view.NameGoLower() + "ModelInfo"
+	convFn := jen.Qual(pkgConv, "To"+view.NameGo()+"Ptr")
+
+	f.Line()
+	f.Commentf("%s holds the model-specific unmarshal functions for %s.", modelInfoVarName, view.NameGo())
+	f.Var().Id(modelInfoVarName).Op("=").Id("modelInfo").Types(modelType).Values(jen.Dict{
+		jen.Id("UnmarshalAll"): jen.Func().Params(
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Index().Op("*").Add(modelType), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalAll").Call(jen.Id("data"), convFn)),
+		),
+		jen.Id("UnmarshalOne"): jen.Func().Params(
+			jen.Id("data").Index().Byte(),
+		).Params(jen.Op("*").Add(modelType), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalOne").Call(jen.Id("data"), convFn)),
+		),
+		jen.Id("UnmarshalSearchAll"): jen.Func().Params(
+			jen.Id("data").Index().Byte(),
+			jen.Id("clauses").Index().Qual(pkgLib, "SearchClause"),
+		).Params(jen.Index().Qual(pkgLib, "SearchResult").Types(jen.Op("*").Add(modelType)), jen.Error()).Block(
+			jen.Return(jen.Id("unmarshalSearchAll").Call(jen.Id("data"), jen.Id("clauses"), convFn)),
+		),
+	})
+
+	f.Line()
+	f.Commentf("New%s creates a new query builder for %s views.", view.NameGo(), view.NameGo())
+	f.Func().Id("New" + view.NameGo()).
+		Params(
+			jen.Id("db").Id("Database"),
+		).
+		Id("Builder").Types(modelType).
+		BlockFunc(func(g *jen.Group) {
+			g.Id("q").Op(":=").Qual(pkgLib, "NewQuery").Types(modelType).Call(jen.Lit(view.NameDatabase()))
+
+			g.Return(
+				jen.Id("Builder").Types(modelType).
+					Values(
+						jen.Id("builder").Types(modelType).
+							Values(jen.Dict{
+								jen.Id("db"):    jen.Id("db"),
+								jen.Id("query"): jen.Id("q"),
+								jen.Id("info"):  jen.Id(modelInfoVarName),
+							}),
+					),
+			)
+		})
+
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), view.FileName()))); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -51,33 +121,33 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	f.Commentf("%s holds the model-specific unmarshal functions for %s.", modelInfoVarName, node.NameGo())
 	f.Var().Id(modelInfoVarName).Op("=").Id("modelInfo").Types(modelType).Values(jen.Dict{
 		jen.Id("UnmarshalAll"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Index().Op("*").Add(modelType), jen.Error()).Block(
-			jen.Return(jen.Id("unmarshalAll").Call(jen.Id("unmarshal"), jen.Id("data"), convFn)),
+			jen.Return(jen.Id("unmarshalAll").Call(jen.Id("data"), convFn)),
 		),
 		jen.Id("UnmarshalOne"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 		).Params(jen.Op("*").Add(modelType), jen.Error()).Block(
-			jen.Return(jen.Id("unmarshalOne").Call(jen.Id("unmarshal"), jen.Id("data"), convFn)),
+			jen.Return(jen.Id("unmarshalOne").Call(jen.Id("data"), convFn)),
 		),
 		jen.Id("UnmarshalSearchAll"): jen.Func().Params(
-			jen.Id("unmarshal").Func().Params(jen.Index().Byte(), jen.Any()).Error(),
 			jen.Id("data").Index().Byte(),
 			jen.Id("clauses").Index().Qual(pkgLib, "SearchClause"),
 		).Params(jen.Index().Qual(pkgLib, "SearchResult").Types(jen.Op("*").Add(modelType)), jen.Error()).Block(
-			jen.Return(jen.Id("unmarshalSearchAll").Call(jen.Id("unmarshal"), jen.Id("data"), jen.Id("clauses"), convFn)),
+			jen.Return(jen.Id("unmarshalSearchAll").Call(jen.Id("data"), jen.Id("clauses"), convFn)),
 		),
+		jen.Id("Fields"): jen.Qual(pkgConv, node.NameGo()+"Fields"),
 	})
 
 	if node.HasComplexID() {
 		b.generateRangeFn(f, node, pkgLib, somPkg, modelType, rangeFnVarName)
+	} else if node.HasStringID() {
+		b.generateStringIDRangeFn(f, node, pkgLib, somPkg, modelType, rangeFnVarName)
 	}
 
 	f.Line()
 	f.Commentf("New%s creates a new query builder for %s models.", node.NameGo(), node.NameGo())
-	f.Func().Id("New"+node.Name).
+	f.Func().Id("New" + node.Name).
 		Params(
 			jen.Id("db").Id("Database"),
 		).
@@ -92,13 +162,18 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 					Qual(pkgFilter, node.Name).Dot("DeletedAt").Dot("Nil").Call(jen.Lit(true))
 			}
 
+			if node.Source.Expiry {
+				g.Comment("Automatically exclude expired records")
+				g.Id("q").Dot("ExpiryField").Op("=").Lit("expires_at")
+			}
+
 			builderDict := jen.Dict{
 				jen.Id("db"):    jen.Id("db"),
 				jen.Id("query"): jen.Id("q"),
 				jen.Id("info"):  jen.Id(modelInfoVarName),
 			}
 
-			if node.HasComplexID() {
+			if node.HasComplexID() || node.HasStringID() {
 				builderDict[jen.Id("rangeFn")] = jen.Id(rangeFnVarName)
 			}
 
@@ -110,6 +185,33 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 					),
 			)
 		})
+
+	// Deferred: SurrealDB's INCLUDE ORIGINAL (change-feed pre-image) is intentionally
+	// not implemented. It is a table-level clause (DEFINE TABLE ... CHANGEFEED ...
+	// INCLUDE ORIGINAL), not a SHOW CHANGES option, and enabling it changes the wire
+	// format: an update arrives as {current, update: [reverse json-patch incl. text
+	// diff]} instead of a full record. Proper support needs a tag opt-in, schema
+	// emission, and a diff-aware decoder that reverse-applies the patch to rebuild the
+	// original. Tracked separately; see the changefeed feature notes.
+	if node.HasChangefeed() {
+		f.Line()
+		f.Func().Id("New"+node.Name+"Changes").
+			Params(
+				jen.Id("db").Id("Database"),
+			).
+			Id("ChangesBuilder").Types(b.SourceQual(node.Name), jen.Qual(pkgConv, node.Name)).
+			Block(
+				jen.Return(
+					jen.Id("ChangesBuilder").Types(b.SourceQual(node.Name), jen.Qual(pkgConv, node.Name)).
+						Values(jen.Dict{
+							jen.Id("db"):       jen.Id("db"),
+							jen.Id("table"):    jen.Lit(node.NameDatabase()),
+							jen.Id("convFrom"): jen.Qual(pkgConv, "From"+node.NameGo()+"Ptr"),
+							jen.Id("convTo"):   jen.Qual(pkgConv, "To"+node.NameGo()+"Ptr"),
+						}),
+				),
+			)
+	}
 
 	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
 		return err
@@ -195,4 +297,44 @@ func (b *queryBuilder) rangeFieldAsVar(node *field.NodeTable, sf parser.ComplexI
 	accessor := jen.Id(keyVar).Dot(sf.Name)
 	wrappedValue := fieldValueFrom(b.input, b.basePkg, sf, accessor)
 	return jen.Id("q").Dot("AsVar").Call(wrappedValue)
+}
+
+func (b *queryBuilder) generateStringIDRangeFn(
+	f *jen.File, node *field.NodeTable,
+	pkgLib, somPkg string, modelType jen.Code, varName string,
+) {
+	idTypeName := string(node.Source.IDType)
+
+	f.Line()
+	f.Var().Id(varName).Op("=").Id("rangeFn").Types(modelType).Call(
+		jen.Func().Params(
+			jen.Id("q").Op("*").Qual(pkgLib, "Query").Types(modelType),
+			jen.Id("from").Qual(somPkg, "RangeFrom"),
+			jen.Id("to").Qual(somPkg, "RangeTo"),
+		).String().BlockFunc(func(g *jen.Group) {
+			g.Id("expr").Op(":=").Lit(":")
+
+			g.If(jen.Op("!").Id("from").Dot("IsOpen").Call()).Block(
+				jen.Id("expr").Op("+=").Id("q").Dot("AsVar").Call(
+					jen.Id("from").Dot("Value").Call().Assert(jen.Qual(somPkg, idTypeName)),
+				),
+			)
+
+			g.If(jen.Op("!").Id("from").Dot("IsOpen").Call().Op("&&").Op("!").Id("from").Dot("IsInclusive").Call()).Block(
+				jen.Id("expr").Op("+=").Lit(">"),
+			)
+			g.Id("expr").Op("+=").Lit("..")
+			g.If(jen.Op("!").Id("to").Dot("IsOpen").Call().Op("&&").Id("to").Dot("IsInclusive").Call()).Block(
+				jen.Id("expr").Op("+=").Lit("="),
+			)
+
+			g.If(jen.Op("!").Id("to").Dot("IsOpen").Call()).Block(
+				jen.Id("expr").Op("+=").Id("q").Dot("AsVar").Call(
+					jen.Id("to").Dot("Value").Call().Assert(jen.Qual(somPkg, idTypeName)),
+				),
+			)
+
+			g.Return(jen.Id("expr"))
+		}),
+	)
 }

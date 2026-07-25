@@ -2,8 +2,8 @@
 package field
 
 import (
-	distinct "github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
-	model "github.com/go-surreal/som/tests/basic/model"
+	distinct "som.test/gen/som/internal/distinct"
+	model "som.test/model"
 )
 
 var Weather = newWeather[model.Weather]("")

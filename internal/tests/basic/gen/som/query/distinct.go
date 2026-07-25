@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/distinct"
+	"som.test/gen/som/internal/distinct"
 )
 
 func Distinct[M any, T any](ctx context.Context, b Builder[M], f distinct.Field[M, T]) ([]T, error) {
@@ -21,5 +21,5 @@ func Distinct[M any, T any](ctx context.Context, b Builder[M], f distinct.Field[
 		return nil, fmt.Errorf("could not execute distinct query: %w", err)
 	}
 
-	return f.Decode(b.db.Unmarshal, raw)
+	return f.Decode(raw)
 }

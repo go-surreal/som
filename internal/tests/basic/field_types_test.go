@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	gofrsuuid "github.com/gofrs/uuid"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -17,6 +17,8 @@ import (
 )
 
 func TestNumerics(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -28,6 +30,7 @@ func TestNumerics(t *testing.T) {
 
 	userMax := model.AllTypes{
 		FieldString: str,
+		FieldMonth:  time.January,
 		FieldInt:    math.MaxInt,
 		FieldInt8:   math.MaxInt8,
 		FieldInt16:  math.MaxInt16,
@@ -71,6 +74,7 @@ func TestNumerics(t *testing.T) {
 
 	userMin := model.AllTypes{
 		FieldString: str,
+		FieldMonth:  time.January,
 		FieldInt:    math.MinInt,
 		FieldInt8:   math.MinInt8,
 		FieldInt16:  math.MinInt16,
@@ -112,6 +116,8 @@ func TestNumerics(t *testing.T) {
 }
 
 func TestSlice(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -119,7 +125,7 @@ func TestSlice(t *testing.T) {
 
 	// initial nil slice
 
-	user := &model.AllTypes{}
+	user := &model.AllTypes{FieldMonth: time.January}
 
 	err := client.AllTypesRepo().Create(ctx, user)
 	if err != nil {
@@ -130,7 +136,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataSlice.IsEmpty(),
+			filter.AllTypes.FieldNestedDataSlice().IsEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -152,7 +158,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataSlice.Empty(true),
+			filter.AllTypes.FieldNestedDataSlice().Empty(true),
 		).
 		First(ctx)
 	if err != nil {
@@ -182,7 +188,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataSlice.NotEmpty(),
+			filter.AllTypes.FieldNestedDataSlice().NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -212,7 +218,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataSlice.NotEmpty(),
+			filter.AllTypes.FieldNestedDataSlice().NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -224,6 +230,66 @@ func TestSlice(t *testing.T) {
 	assert.Check(t, *user.FieldNestedDataSlice[0].IntPtr == num1)
 	assert.Check(t, *user.FieldNestedDataSlice[1].StringPtr == str2)
 	assert.Check(t, *user.FieldNestedDataSlice[1].IntPtr == num2)
+
+	// sub-filter: single condition
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataSlice(
+				filter.NestedData.StringPtr.Equal(str1),
+			).NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.FieldNestedDataSlice) == 2)
+
+	// sub-filter: multiple conditions (AND)
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataSlice(
+				filter.NestedData.StringPtr.Equal(str1),
+				filter.NestedData.IntPtr.Equal(&num1),
+			).NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.FieldNestedDataSlice) == 2)
+
+	// sub-filter: no match
+
+	users, err := client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataSlice(
+				filter.NestedData.StringPtr.Equal(str1),
+				filter.NestedData.IntPtr.Equal(&num2),
+			).NotEmpty(),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(users) == 0)
+
+	// sub-filter: without filters (same as calling without sub-filters)
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataSlice().NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.FieldNestedDataSlice) == 2)
 
 	// test FieldNestedDataPtrSlice ([]*NestedData)
 
@@ -239,7 +305,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataPtrSlice.NotEmpty(),
+			filter.AllTypes.FieldNestedDataPtrSlice().NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -249,6 +315,38 @@ func TestSlice(t *testing.T) {
 	assert.Check(t, len(user.FieldNestedDataPtrSlice) == 2)
 	assert.Check(t, user.FieldNestedDataPtrSlice[0] != nil && *user.FieldNestedDataPtrSlice[0].StringPtr == str1)
 	assert.Check(t, user.FieldNestedDataPtrSlice[1] != nil && *user.FieldNestedDataPtrSlice[1].StringPtr == str2)
+
+	// sub-filter on []*NestedData: match
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlice(
+				filter.NestedData.StringPtr.Equal(str2),
+				filter.NestedData.IntPtr.Equal(&num2),
+			).NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(user.FieldNestedDataPtrSlice) == 2)
+
+	// sub-filter on []*NestedData: no match
+
+	users, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlice(
+				filter.NestedData.StringPtr.Equal(str1),
+				filter.NestedData.IntPtr.Equal(&num2),
+			).NotEmpty(),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(users) == 0)
 
 	// test FieldNestedDataPtrSlicePtr (*[]*NestedData)
 
@@ -264,7 +362,7 @@ func TestSlice(t *testing.T) {
 
 	user, err = client.AllTypesRepo().Query().
 		Where(
-			filter.AllTypes.FieldNestedDataPtrSlicePtr.NotEmpty(),
+			filter.AllTypes.FieldNestedDataPtrSlicePtr().NotEmpty(),
 		).
 		First(ctx)
 	if err != nil {
@@ -274,6 +372,74 @@ func TestSlice(t *testing.T) {
 	assert.Check(t, user.FieldNestedDataPtrSlicePtr != nil)
 	assert.Check(t, len(*user.FieldNestedDataPtrSlicePtr) == 1)
 	assert.Check(t, (*user.FieldNestedDataPtrSlicePtr)[0] != nil && *(*user.FieldNestedDataPtrSlicePtr)[0].StringPtr == str1)
+
+	// sub-filter on *[]*NestedData: match
+
+	user, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlicePtr(
+				filter.NestedData.StringPtr.Equal(str1),
+			).NotEmpty(),
+		).
+		First(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user.FieldNestedDataPtrSlicePtr != nil)
+	assert.Check(t, len(*user.FieldNestedDataPtrSlicePtr) == 1)
+
+	// sub-filter on *[]*NestedData: no match
+
+	users, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlicePtr(
+				filter.NestedData.StringPtr.Equal("nonexistent"),
+			).NotEmpty(),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(users) == 0)
+
+	// Nil semantics on *[]*NestedData
+
+	user2 := &model.AllTypes{
+		FieldMonth: time.January,
+	}
+
+	err = client.AllTypesRepo().Create(ctx, user2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, user2.FieldNestedDataPtrSlicePtr == nil)
+
+	nilUsers, err := client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlicePtr().Nil(true),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Check(t, len(nilUsers) >= 1)
+
+	nonNilUsers, err := client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldNestedDataPtrSlicePtr().Nil(false),
+		).
+		All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, u := range nonNilUsers {
+		assert.Check(t, u.FieldNestedDataPtrSlicePtr != nil)
+	}
 
 	// test refresh with struct slice data
 
@@ -300,6 +466,8 @@ func TestSlice(t *testing.T) {
 }
 
 func TestSliceNilElements(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -311,6 +479,7 @@ func TestSliceNilElements(t *testing.T) {
 	n2 := 20
 
 	user := &model.AllTypes{
+		FieldMonth:          time.January,
 		FieldStringPtrSlice: []*string{&s1, nil, &s2},
 		FieldIntPtrSlice:    []*int{&n1, nil, &n2},
 	}
@@ -340,6 +509,7 @@ func TestSliceNilElements(t *testing.T) {
 	// *[]*string with nil elements
 	ptrSlice := []*string{&s1, nil, &s2}
 	user2 := &model.AllTypes{
+		FieldMonth:             time.January,
 		FieldStringPtrSlicePtr: &ptrSlice,
 	}
 
@@ -362,6 +532,7 @@ func TestSliceNilElements(t *testing.T) {
 	// []*NestedData with nil elements
 	nested := model.NestedData{StringPtr: &s1}
 	user3 := &model.AllTypes{
+		FieldMonth:              time.January,
 		FieldNestedDataPtrSlice: []*model.NestedData{&nested, nil},
 	}
 
@@ -383,6 +554,7 @@ func TestSliceNilElements(t *testing.T) {
 	r1 := model.RoleUser
 	r2 := model.RoleAdmin
 	user4 := &model.AllTypes{
+		FieldMonth:        time.January,
 		FieldEnumPtrSlice: []*model.Role{&r1, nil, &r2},
 	}
 
@@ -416,6 +588,7 @@ func TestSliceNilElements(t *testing.T) {
 	}
 
 	user5 := &model.AllTypes{
+		FieldMonth:        time.January,
 		FieldNodePtrSlice: []*model.SpecialTypes{node1, nil, node2},
 	}
 
@@ -434,12 +607,14 @@ func TestSliceNilElements(t *testing.T) {
 }
 
 func TestTimestamps(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	user := &model.AllTypes{}
+	user := &model.AllTypes{FieldMonth: time.January}
 
 	err := client.AllTypesRepo().Create(ctx, user)
 	if err != nil {
@@ -465,6 +640,8 @@ func TestTimestamps(t *testing.T) {
 }
 
 func TestURLTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -476,6 +653,7 @@ func TestURLTypes(t *testing.T) {
 	}
 
 	newModel := &model.AllTypes{
+		FieldMonth:  time.January,
 		FieldURLPtr: someURL,
 		FieldURL:    *someURL,
 	}
@@ -530,6 +708,8 @@ func TestURLTypes(t *testing.T) {
 }
 
 func TestDuration(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -538,6 +718,7 @@ func TestDuration(t *testing.T) {
 	ptr := time.Hour
 
 	userNew := &model.AllTypes{
+		FieldMonth:       time.January,
 		FieldDuration:    time.Minute,
 		FieldDurationPtr: &ptr,
 		FieldDurationNil: nil,
@@ -585,6 +766,8 @@ func TestDuration(t *testing.T) {
 }
 
 func TestUUID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -593,6 +776,7 @@ func TestUUID(t *testing.T) {
 	ptr := uuid.New()
 
 	userNew := &model.AllTypes{
+		FieldMonth:   time.January,
 		FieldUUID:    uuid.New(),
 		FieldUUIDPtr: &ptr,
 		FieldUUIDNil: nil,
@@ -640,6 +824,8 @@ func TestUUID(t *testing.T) {
 }
 
 func TestUUIDGofrs(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -648,6 +834,7 @@ func TestUUIDGofrs(t *testing.T) {
 	ptr := gofrsuuid.Must(gofrsuuid.NewV4())
 
 	userNew := &model.AllTypes{
+		FieldMonth:        time.January,
 		FieldUUIDGofrs:    gofrsuuid.Must(gofrsuuid.NewV4()),
 		FieldUUIDGofrsPtr: &ptr,
 		FieldUUIDGofrsNil: nil,
@@ -695,6 +882,8 @@ func TestUUIDGofrs(t *testing.T) {
 }
 
 func TestPassword(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -705,6 +894,7 @@ func TestPassword(t *testing.T) {
 	// Step 1: Create a model with a known password (password is now in Credentials struct)
 	modelIn := &model.AllTypes{
 		FieldString: "password_test_user",
+		FieldMonth:  time.January,
 		FieldCredentials: model.Credentials{
 			Username: "testuser",
 			Password: som.Password[som.Bcrypt](plainPassword),
@@ -780,6 +970,8 @@ func TestPassword(t *testing.T) {
 }
 
 func TestEmail(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -789,6 +981,7 @@ func TestEmail(t *testing.T) {
 	emailPtr := som.Email("admin@test.org")
 
 	userNew := &model.AllTypes{
+		FieldMonth:    time.January,
 		FieldEmail:    emailValue,
 		FieldEmailPtr: &emailPtr,
 		FieldEmailNil: nil,

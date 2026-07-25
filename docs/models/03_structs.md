@@ -15,7 +15,7 @@ type Address struct {
 }
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name    string
     Address Address  // Embedded struct - stored as nested object
@@ -42,7 +42,7 @@ Use pointers for optional embedded structs:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name    string
     Address *Address  // Optional, can be nil
@@ -99,7 +99,7 @@ type Address struct {
 }
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     Address Address
 }
 ```
@@ -130,7 +130,7 @@ type Settings struct {
 }
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps
 
     Name     string
@@ -151,13 +151,13 @@ type ContactInfo struct {
 }
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     Name    string
     Contact ContactInfo
 }
 
 type Company struct {
-    som.Node
+    som.Node[som.ULID]
     Name    string
     Contact ContactInfo  // Same struct
 }
@@ -184,7 +184,7 @@ type Profile struct {
 }
 
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     Profile Profile
 }
 ```
@@ -200,7 +200,7 @@ type Auditable struct {
 }
 
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
     Auditable  // Anonymous - fields promoted
 
     Title   string

@@ -6,23 +6,23 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 	gofrsuuid "github.com/gofrs/uuid"
 	"github.com/google/uuid"
 )
 
 type AllTypes struct {
-	som.Node[som.ULID]
+	som.Node[som.ULID] `som:"changefeed=1d"`
 	som.Timestamps
 
 	// basic types
 
-	FieldString            string     `som:"fulltext(english_search)"`
-	FieldStringPtr         *string    `som:"fulltext(english_search)"`
-	FieldOther             []string   `som:"fulltext(english_search)"`
-	FieldStringPtrSlice    []*string  `som:"fulltext(english_search)"`
-	FieldStringSlicePtr    *[]string  `som:"fulltext(english_search)"` // TODO: cannot be filtered for nil!
-	FieldStringPtrSlicePtr *[]*string `som:"fulltext(english_search)"`
+	FieldString            string     `som:"fulltext=english_search"`
+	FieldStringPtr         *string    `som:"fulltext=english_search"`
+	FieldOther             []string   `som:"fulltext=english_search"`
+	FieldStringPtrSlice    []*string  `som:"fulltext=english_search"`
+	FieldStringSlicePtr    *[]string  `som:"fulltext=english_search"` // TODO: cannot be filtered for nil!
+	FieldStringPtrSlicePtr *[]*string `som:"fulltext=english_search"`
 
 	FieldInt            int
 	FieldIntPtr         *int
@@ -92,6 +92,12 @@ type AllTypes struct {
 	FieldDurationNil   *time.Duration
 	FieldDurationSlice []time.Duration
 
+	FieldMonth    time.Month
+	FieldMonthPtr *time.Month
+
+	FieldWeekday    time.Weekday
+	FieldWeekdayPtr *time.Weekday
+
 	FieldUUID      uuid.UUID
 	FieldUUIDPtr   *uuid.UUID
 	FieldUUIDNil   *uuid.UUID
@@ -112,6 +118,11 @@ type AllTypes struct {
 	FieldEmailNil   *som.Email
 	FieldEmailSlice []som.Email
 
+	FieldSemVer      som.SemVer
+	FieldSemVerPtr   *som.SemVer
+	FieldSemVerNil   *som.SemVer
+	FieldSemVerSlice []som.SemVer
+
 	// enums
 
 	FieldEnum            Role
@@ -122,18 +133,18 @@ type AllTypes struct {
 
 	// structs
 
-	FieldCredentials             Credentials
-	FieldNestedDataPtr           *NestedData
-	FieldNestedDataSlice         []NestedData
-	FieldNestedDataPtrSlice      []*NestedData
-	FieldNestedDataPtrSlicePtr   *[]*NestedData
+	FieldCredentials           Credentials
+	FieldNestedDataPtr         *NestedData
+	FieldNestedDataSlice       []NestedData
+	FieldNestedDataPtrSlice    []*NestedData
+	FieldNestedDataPtrSlicePtr *[]*NestedData
 
 	// nodes
 
-	FieldNode       SpecialTypes   // node
-	FieldNodePtr    *SpecialTypes  // node pointer
-	FieldNodeSlice      []SpecialTypes // slice of Nodes
-	FieldNodeSliceSlice [][]SpecialTypes
+	FieldNode            SpecialTypes   // node
+	FieldNodePtr         *SpecialTypes  // node pointer
+	FieldNodeSlice       []SpecialTypes // slice of Nodes
+	FieldNodeSliceSlice  [][]SpecialTypes
 	FieldNodePtrSlice    []*SpecialTypes
 	FieldNodePtrSlicePtr *[]*SpecialTypes
 
@@ -158,6 +169,9 @@ type AllTypes struct {
 	//// MappedRoles  map[string]Role  // map of string and enum
 	//// MappedGroups map[string]Group // map of string and node
 	//// OtherMap     map[Role]string  // map of enum and string
+
+	// field name override
+	FieldRenamed string `som:"name=custom_name"`
 
 	// hook fields
 	FieldHookStatus string
@@ -228,8 +242,8 @@ type EdgeRelation struct {
 	som.Edge
 	som.Timestamps
 
-	AllTypes     AllTypes      `som:"in"`
-	SpecialTypes SpecialTypes  `som:"out"`
+	AllTypes     AllTypes     `som:"in"`
+	SpecialTypes SpecialTypes `som:"out"`
 
 	Meta EdgeMeta
 }
@@ -237,4 +251,14 @@ type EdgeRelation struct {
 type EdgeMeta struct {
 	IsAdmin  bool
 	IsActive bool
+}
+
+// AllTypesSummary is a read-only view aggregating AllTypes records,
+// grouped by FieldString.
+type AllTypesSummary struct {
+	som.View
+
+	Category string
+	Total    int
+	AvgValue float64
 }

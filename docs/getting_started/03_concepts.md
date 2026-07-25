@@ -4,20 +4,33 @@ This page introduces the fundamental concepts you need to understand when workin
 
 ## Nodes
 
-A **Node** represents a database record (similar to a row in SQL or a document in NoSQL). Any Go struct that embeds `som.Node` becomes a SurrealDB table.
+A **Node** represents a database record (similar to a row in SQL or a document in NoSQL). Any Go struct that embeds `som.Node[T]` becomes a SurrealDB table.
 
 ```go
 type User struct {
-    som.Node  // Required - makes this a database record
+    som.Node[som.ULID]  // Required - makes this a database record
 
     Name  string
     Email string
 }
 ```
 
-The embedded `som.Node` provides:
-- An `ID` field of type `*som.ID` (auto-generated ULID on create)
-- Table name derived from struct name (User → `user`)
+The embedded `som.Node[T]` provides:
+- An `ID()` method returning the node's ID (type depends on `T`)
+- Table name derived from struct name (User -> `user`)
+
+### ID Types
+
+The type parameter `T` determines the ID format:
+
+| Type | Description | Example ID |
+|------|-------------|------------|
+| `som.ULID` | ULID-based IDs (default choice) | `01HQMV8K2P...` |
+| `som.UUID` | UUID-based IDs | `550e8400-e29b-...` |
+| `som.Rand` | Random string IDs | `abc123def` |
+| Custom struct | Complex array/object IDs | `[city, date]` |
+
+> **Note**: `ID()` returns the raw ID value. The repository automatically prefixes it with the table name (e.g. `user:01HQMV8K2P...`) when storing and querying records.
 
 ## Timestamps
 
@@ -25,7 +38,7 @@ Embed `som.Timestamps` for automatic time tracking:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
     som.Timestamps  // Adds CreatedAt, UpdatedAt
 
     Name string
@@ -63,26 +76,15 @@ RELATE user:alice->follows->user:bob
 
 ## ID Handling
 
-SOM provides utilities for working with SurrealDB record IDs:
-
 ```go
 // After Create(), the ID is populated
 user := &model.User{Name: "Alice"}
 client.UserRepo().Create(ctx, user)
-fmt.Println(user.ID)  // user:01HQMV...
+fmt.Println(user.ID())  // 01HQMV... (raw ULID)
 
 // Create with specific ID
 client.UserRepo().CreateWithID(ctx, "alice", user)
 // Creates: user:alice
-
-// Create ID manually
-id := som.NewRecordID("user", "alice")
-
-// Create pointer to ID
-idPtr := som.MakeID("user", "alice")
-
-// Reference table for auto-generated IDs
-table := som.Table("user")
 ```
 
 ## Repositories
@@ -98,8 +100,11 @@ type UserRepo interface {
     // Create with specific ID
     CreateWithID(ctx context.Context, id string, user *model.User) error
 
+    // Bulk insert multiple records
+    Insert(ctx context.Context, users []*model.User) error
+
     // Read by ID - returns (model, exists, error)
-    Read(ctx context.Context, id *som.ID) (*model.User, bool, error)
+    Read(ctx context.Context, id string) (*model.User, bool, error)
 
     // Update existing record
     Update(ctx context.Context, user *model.User) error
@@ -110,8 +115,20 @@ type UserRepo interface {
     // Refresh record from database
     Refresh(ctx context.Context, user *model.User) error
 
+    // Rebuild all indexes for this table
+    // Index access (e.g. per-index Rebuild)
+    Index() *index.User
+
     // Get query builder
-    Query() query.Builder[model.User, conv.User]
+    Query() query.Builder[model.User]
+
+    // Lifecycle hooks
+    OnBeforeCreate(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterCreate(fn func(ctx context.Context, node *model.User) error) func()
+    OnBeforeUpdate(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterUpdate(fn func(ctx context.Context, node *model.User) error) func()
+    OnBeforeDelete(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterDelete(fn func(ctx context.Context, node *model.User) error) func()
 }
 ```
 
@@ -140,8 +157,7 @@ users, err := client.UserRepo().Query().
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `All(ctx)` | `([]*Model, error)` | All matching records |
-| `First(ctx)` | `(*Model, bool, error)` | First match (bool = exists) |
-| `One(ctx)` | `(*Model, bool, error)` | Exactly one (errors if multiple) |
+| `First(ctx)` | `(*Model, error)` | First match (returns `ErrNotFound` if none) |
 | `Count(ctx)` | `(int, error)` | Count of matches |
 | `Exists(ctx)` | `(bool, error)` | Whether any exist |
 | `Live(ctx)` | `(<-chan LiveResult, error)` | Real-time stream |
@@ -206,8 +222,8 @@ client.UserRepo().Query().
 
 SOM works through **code generation**. The workflow:
 
-1. **Define models** as Go structs with `som.Node` or `som.Edge`
-2. **Run generator**: `som gen ./model ./gen/som`
+1. **Define models** as Go structs with `som.Node[T]` or `som.Edge`
+2. **Run generator**: `som -i ./model`
 3. **Import and use** the generated packages
 
 Benefits:

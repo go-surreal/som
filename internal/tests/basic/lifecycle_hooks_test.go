@@ -6,13 +6,16 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
 func TestHookBeforeCreate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -35,6 +38,8 @@ func TestHookBeforeCreate(t *testing.T) {
 }
 
 func TestHookAfterCreate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -59,6 +64,8 @@ func TestHookAfterCreate(t *testing.T) {
 }
 
 func TestHookBeforeCreateAbort(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -83,6 +90,8 @@ func TestHookBeforeCreateAbort(t *testing.T) {
 }
 
 func TestHookBeforeUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -109,6 +118,8 @@ func TestHookBeforeUpdate(t *testing.T) {
 }
 
 func TestHookAfterUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -133,6 +144,8 @@ func TestHookAfterUpdate(t *testing.T) {
 }
 
 func TestHookBeforeDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -158,6 +171,8 @@ func TestHookBeforeDelete(t *testing.T) {
 }
 
 func TestHookAfterDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -187,6 +202,8 @@ func TestHookAfterDelete(t *testing.T) {
 }
 
 func TestHookCleanup(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -208,6 +225,8 @@ func TestHookCleanup(t *testing.T) {
 }
 
 func TestHookMultiple(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -236,12 +255,14 @@ func TestHookMultiple(t *testing.T) {
 }
 
 func TestModelHookBeforeCreate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookStatus: "active"}
+	rec := model.AllTypes{FieldHookStatus: "active", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -252,12 +273,14 @@ func TestModelHookBeforeCreate(t *testing.T) {
 }
 
 func TestModelHookAfterCreate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookDetail: "info"}
+	rec := model.AllTypes{FieldHookDetail: "info", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -265,12 +288,14 @@ func TestModelHookAfterCreate(t *testing.T) {
 }
 
 func TestModelHookBeforeUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookStatus: "init"}
+	rec := model.AllTypes{FieldHookStatus: "init", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -285,12 +310,14 @@ func TestModelHookBeforeUpdate(t *testing.T) {
 }
 
 func TestModelHookAfterUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookDetail: "info"}
+	rec := model.AllTypes{FieldHookDetail: "info", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -301,12 +328,14 @@ func TestModelHookAfterUpdate(t *testing.T) {
 }
 
 func TestModelHookBeforeDeleteAbort(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookStatus: "keep"}
+	rec := model.AllTypes{FieldHookStatus: "keep", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 
@@ -322,12 +351,14 @@ func TestModelHookBeforeDeleteAbort(t *testing.T) {
 }
 
 func TestModelHookAfterDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	rec := model.AllTypes{FieldHookStatus: "remove"}
+	rec := model.AllTypes{FieldHookStatus: "remove", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 	id := string(rec.ID())
@@ -345,6 +376,8 @@ func TestModelHookAfterDelete(t *testing.T) {
 }
 
 func TestModelHookAndRepoHookOrder(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -357,7 +390,7 @@ func TestModelHookAndRepoHookOrder(t *testing.T) {
 	})
 	defer unregister()
 
-	rec := model.AllTypes{FieldHookStatus: "orig"}
+	rec := model.AllTypes{FieldHookStatus: "orig", FieldMonth: time.January}
 	err := client.AllTypesRepo().Create(ctx, &rec)
 	assert.NilError(t, err)
 

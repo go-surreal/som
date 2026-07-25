@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	internal "som.test/gen/som/internal"
+	cbor "som.test/gen/som/internal/cbor"
+	model "som.test/model"
 )
 
 type edgeRelation struct {
@@ -41,7 +42,7 @@ func (e edgeRelation) Create(ctx context.Context, edge *model.EdgeRelation) erro
 		return fmt.Errorf("could not create relation: %w", err)
 	}
 	var rawResult []internal.QueryResult[conv.EdgeRelation]
-	err = e.db.Unmarshal(res, &rawResult)
+	err = cbor.Unmarshal(res, &rawResult)
 	if err != nil {
 		return fmt.Errorf("could not unmarshal relation: %w", err)
 	}

@@ -5,7 +5,7 @@ package conv
 import (
 	"net/url"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 )
 
 //
@@ -75,4 +75,32 @@ func toEmailPtr(val *string) *som.Email {
 	}
 	email := som.Email(*val)
 	return &email
+}
+
+//
+// -- SEMVER
+//
+
+func fromSemVer(val som.SemVer) string {
+	return string(val)
+}
+
+func fromSemVerPtr(val *som.SemVer) *string {
+	if val == nil {
+		return nil
+	}
+	str := string(*val)
+	return &str
+}
+
+func toSemVer(val string) som.SemVer {
+	return som.SemVer(val)
+}
+
+func toSemVerPtr(val *string) *som.SemVer {
+	if val == nil {
+		return nil
+	}
+	sv := som.SemVer(*val)
+	return &sv
 }
