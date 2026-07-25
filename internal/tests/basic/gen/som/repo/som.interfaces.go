@@ -15,7 +15,6 @@ type Client interface {
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
 	EphemeralRepo() EphemeralRepo
-	ChangefeedModelRepo() ChangefeedModelRepo
 	AllTypesRepo() AllTypesRepo
 	EventSummaryRepo() EventSummaryRepo
 	AllTypesSummaryRepo() AllTypesSummaryRepo
@@ -35,7 +34,6 @@ type ClientImpl struct {
 	personObjRepo       *personObj
 	locationRepo        *location
 	ephemeralRepo       *ephemeral
-	changefeedModelRepo *changefeedModel
 	allTypesRepo        *allTypes
 	eventSummaryRepo    *eventSummary
 	allTypesSummaryRepo *allTypesSummary

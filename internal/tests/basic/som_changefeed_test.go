@@ -10,17 +10,26 @@ import (
 	"gotest.tools/v3/assert"
 )
 
+// changefeed support is exercised via the AllTypes model, which carries the
+// `som:"changefeed=1d"` tag. Each test runs against its own isolated database,
+// so the change stream only ever contains that test's own mutations.
+func newChangefeedModel(name string) *model.AllTypes {
+	return &model.AllTypes{
+		FieldString: name,
+		FieldInt:    0,
+		FieldMonth:  time.January,
+	}
+}
+
 func TestChangefeedBasic(t *testing.T) {
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	repo := client.ChangefeedModelRepo()
+	repo := client.AllTypesRepo()
 
-	newModel := &model.ChangefeedModel{
-		Name: "test-changefeed",
-	}
+	newModel := newChangefeedModel("test-changefeed")
 
 	err := repo.Create(ctx, newModel)
 	assert.NilError(t, err)
@@ -36,7 +45,7 @@ func TestChangefeedBasic(t *testing.T) {
 	for _, entry := range entries {
 		assert.Check(t, entry.Versionstamp > 0, "versionstamp should be non-zero")
 		for _, updated := range entry.Updates {
-			if updated.Name == "test-changefeed" {
+			if updated.FieldString == "test-changefeed" {
 				foundRecord = true
 			}
 		}
@@ -50,16 +59,14 @@ func TestChangefeedUpdate(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	repo := client.ChangefeedModelRepo()
+	repo := client.AllTypesRepo()
 
-	newModel := &model.ChangefeedModel{
-		Name: "before-update",
-	}
+	newModel := newChangefeedModel("before-update")
 
 	err := repo.Create(ctx, newModel)
 	assert.NilError(t, err)
 
-	newModel.Name = "after-update"
+	newModel.FieldString = "after-update"
 	err = repo.Update(ctx, newModel)
 	assert.NilError(t, err)
 
@@ -70,7 +77,7 @@ func TestChangefeedUpdate(t *testing.T) {
 	var foundUpdate bool
 	for _, entry := range entries {
 		for _, updated := range entry.Updates {
-			if updated.Name == "after-update" {
+			if updated.FieldString == "after-update" {
 				foundUpdate = true
 			}
 		}
@@ -84,11 +91,9 @@ func TestChangefeedDelete(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	repo := client.ChangefeedModelRepo()
+	repo := client.AllTypesRepo()
 
-	newModel := &model.ChangefeedModel{
-		Name: "to-be-deleted",
-	}
+	newModel := newChangefeedModel("to-be-deleted")
 
 	err := repo.Create(ctx, newModel)
 	assert.NilError(t, err)
@@ -110,7 +115,7 @@ func TestChangefeedDelete(t *testing.T) {
 			foundDelete = true
 		}
 		for _, updated := range entry.Updates {
-			if updated.Name == "to-be-deleted" {
+			if updated.FieldString == "to-be-deleted" {
 				foundCreate = true
 			}
 			// Deleted records might appear as updates with matching ID
@@ -129,11 +134,11 @@ func TestChangefeedMultipleOperations(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	repo := client.ChangefeedModelRepo()
+	repo := client.AllTypesRepo()
 
-	model1 := &model.ChangefeedModel{Name: "model-1"}
-	model2 := &model.ChangefeedModel{Name: "model-2"}
-	model3 := &model.ChangefeedModel{Name: "model-3"}
+	model1 := newChangefeedModel("model-1")
+	model2 := newChangefeedModel("model-2")
+	model3 := newChangefeedModel("model-3")
 
 	err := repo.Create(ctx, model1)
 	assert.NilError(t, err)
@@ -144,7 +149,7 @@ func TestChangefeedMultipleOperations(t *testing.T) {
 	err = repo.Create(ctx, model3)
 	assert.NilError(t, err)
 
-	model1.Name = "model-1-updated"
+	model1.FieldString = "model-1-updated"
 	err = repo.Update(ctx, model1)
 	assert.NilError(t, err)
 
@@ -172,10 +177,10 @@ func TestChangefeedLimit(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	repo := client.ChangefeedModelRepo()
+	repo := client.AllTypesRepo()
 
 	for i := 0; i < 5; i++ {
-		m := &model.ChangefeedModel{Name: "limit-test"}
+		m := newChangefeedModel("limit-test")
 		err := repo.Create(ctx, m)
 		assert.NilError(t, err)
 	}
@@ -192,7 +197,7 @@ func TestChangefeedSinceRequired(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	repo := client.ChangefeedModelRepo()
+	repo := client.AllTypesRepo()
 
 	_, err := repo.Changes().Show(ctx)
 	assert.Check(t, err != nil, "expected error when Since() not called")
@@ -205,13 +210,13 @@ func TestChangefeedDescribe(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	repo := client.ChangefeedModelRepo()
+	repo := client.AllTypesRepo()
 
 	query := repo.Changes().Since(time.Now()).Limit(10)
 	desc := query.Describe()
 
 	assert.Check(t, strings.Contains(desc, "SHOW CHANGES"), "describe should contain SHOW CHANGES")
-	assert.Check(t, strings.Contains(desc, "changefeed_model"), "describe should contain table name")
+	assert.Check(t, strings.Contains(desc, "all_types"), "describe should contain table name")
 	assert.Check(t, strings.Contains(desc, "LIMIT"), "describe should contain LIMIT")
 }
 
@@ -221,14 +226,14 @@ func TestChangefeedVersionstampOrdering(t *testing.T) {
 	client, cleanup := prepareDatabase(ctx, t)
 	defer cleanup()
 
-	repo := client.ChangefeedModelRepo()
+	repo := client.AllTypesRepo()
 
 	// Create two records
-	model1 := &model.ChangefeedModel{Name: "versionstamp-test-1"}
+	model1 := newChangefeedModel("versionstamp-test-1")
 	err := repo.Create(ctx, model1)
 	assert.NilError(t, err)
 
-	model2 := &model.ChangefeedModel{Name: "versionstamp-test-2"}
+	model2 := newChangefeedModel("versionstamp-test-2")
 	err = repo.Create(ctx, model2)
 	assert.NilError(t, err)
 
@@ -249,10 +254,10 @@ func TestChangefeedVersionstampOrdering(t *testing.T) {
 	var foundModel1, foundModel2 bool
 	for _, entry := range entries {
 		for _, updated := range entry.Updates {
-			if updated.Name == "versionstamp-test-1" {
+			if updated.FieldString == "versionstamp-test-1" {
 				foundModel1 = true
 			}
-			if updated.Name == "versionstamp-test-2" {
+			if updated.FieldString == "versionstamp-test-2" {
 				foundModel2 = true
 			}
 		}

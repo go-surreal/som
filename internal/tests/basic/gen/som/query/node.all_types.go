@@ -50,3 +50,12 @@ func NewAllTypes(db Database) Builder[model.AllTypes] {
 		rangeFn: allTypesRangeFn,
 	}}
 }
+
+func NewAllTypesChanges(db Database) ChangesBuilder[model.AllTypes, conv.AllTypes] {
+	return ChangesBuilder[model.AllTypes, conv.AllTypes]{
+		convFrom: conv.FromAllTypesPtr,
+		convTo:   conv.ToAllTypesPtr,
+		db:       db,
+		table:    "all_types",
+	}
+}

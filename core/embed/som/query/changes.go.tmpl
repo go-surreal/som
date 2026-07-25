@@ -41,7 +41,11 @@ func (b ChangesBuilder[M, C]) Limit(n int) ChangesBuilder[M, C] {
 	return b
 }
 
-// TODO: Add IncludeOriginal() method for original record state
+// Note: INCLUDE ORIGINAL (change-feed pre-image) is not exposed here. It is a
+// table-level clause (DEFINE TABLE ... CHANGEFEED ... INCLUDE ORIGINAL), not a
+// SHOW CHANGES option, and it changes the response format: each update becomes a
+// {current, update: [json-patch ops]} pair instead of a full record. Supporting
+// it requires a changefeed tag opt-in, schema emission, and a diff-aware decoder.
 
 // Show executes the SHOW CHANGES query and returns typed change entries.
 func (b ChangesBuilder[M, C]) Show(ctx context.Context) ([]ChangeEntry[*M], error) {

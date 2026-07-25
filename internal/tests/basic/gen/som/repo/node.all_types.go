@@ -46,6 +46,10 @@ type AllTypesRepo interface {
 	// Index returns a new index instance for the AllTypes model.
 
 	Index() *index.AllTypes
+	// Changes returns a new changes query builder for the AllTypes model.
+	// This is only available for models with changefeed enabled.
+
+	Changes() query.ChangesBuilder[model.AllTypes, conv.AllTypes]
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
 	// If the hook returns an error, the create operation is aborted.
@@ -351,4 +355,10 @@ func (r *allTypes) Relate() *relate.AllTypes {
 // Index returns a new index instance for the AllTypes model.
 func (r *allTypes) Index() *index.AllTypes {
 	return index.NewAllTypes(r.db)
+}
+
+// Changes returns a new changes query builder for the AllTypes model.
+// This is only available for models with changefeed enabled.
+func (r *allTypes) Changes() query.ChangesBuilder[model.AllTypes, conv.AllTypes] {
+	return query.NewAllTypesChanges(r.db)
 }

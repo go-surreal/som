@@ -12,7 +12,7 @@ import (
 )
 
 type AllTypes struct {
-	som.Node[som.ULID]
+	som.Node[som.ULID] `som:"changefeed=1d"`
 	som.Timestamps
 
 	// basic types

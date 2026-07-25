@@ -24,7 +24,7 @@ func (q ChangesQuery) Build() *Result {
 	switch v := q.Since.(type) {
 	case time.Time:
 		// SurrealDB requires datetime literals in the format: d"2023-09-07T01:23:52Z"
-		// Parameters are not supported for SHOW CHANGES SINCE.
+		// Parameters are not supported for SHOW CHANGES SINCE (as of surrealdb v3.2.0).
 		out.WriteString(`d"`)
 		out.WriteString(v.UTC().Format(time.RFC3339Nano))
 		out.WriteString(`"`)
