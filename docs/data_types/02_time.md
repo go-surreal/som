@@ -38,8 +38,8 @@ events, err := client.EventRepo().Query().
 // Find events within a range
 events, err := client.EventRepo().Query().
     Where(
-        filter.Event.StartTime.GreaterThanOrEqual(startDate),
-        filter.Event.EndTime.LessThanOrEqual(endDate),
+        filter.Event.StartTime.GreaterThanEqual(startDate),
+        filter.Event.EndTime.LessThanEqual(endDate),
     ).
     All(ctx)
 ```
@@ -134,10 +134,10 @@ Query optional time fields:
 
 ```go
 // Find soft-deleted users
-filter.User.DeletedAt.IsNotNil()
+filter.User.DeletedAt.Nil(false)
 
 // Find users who have never logged in
-filter.User.LastLogin.IsNil()
+filter.User.LastLogin.Nil(true)
 ```
 
 ## Automatic Timestamps

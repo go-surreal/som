@@ -45,7 +45,7 @@ Numeric types cover all Go integer and floating-point types with arithmetic oper
 
 ```go
 type Product struct {
-    som.Node
+    som.Node[som.ULID]
 
     Price       float64  // Required float
     Quantity    int      // Required int
@@ -54,7 +54,7 @@ type Product struct {
 }
 
 type Metrics struct {
-    som.Node
+    som.Node[som.ULID]
 
     Count8   int8
     Count16  int16
@@ -96,10 +96,10 @@ filter.Product.Quantity.NotEqual(0)
 
 ```go
 // Value in set
-filter.Product.Quantity.In(1, 5, 10, 25, 50)
+filter.Product.Quantity.In([]int{1, 5, 10, 25, 50})
 
 // Value not in set
-filter.Product.Quantity.NotIn(0, -1)
+filter.Product.Quantity.NotIn([]int{0, -1})
 ```
 
 ### Comparison Operations
@@ -225,10 +225,10 @@ filter.Event.EpochNanos.AsTimeNanos().After(reference)
 
 ```go
 // Check if nil
-filter.Product.Discount.IsNil()
+filter.Product.Discount.Nil(true)
 
 // Check if not nil
-filter.Product.Discount.IsNotNil()
+filter.Product.Discount.Nil(false)
 ```
 
 ### Zero Value Check
@@ -289,7 +289,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Find affordable products
     affordable, _ := client.ProductRepo().Query().
@@ -302,7 +302,7 @@ func main() {
 
     // Products with discount
     discounted, _ := client.ProductRepo().Query().
-        Where(filter.Product.Discount.IsNotNil()).
+        Where(filter.Product.Discount.Nil(false)).
         All(ctx)
 
     // Calculate final price with 10% tax
@@ -336,8 +336,8 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `LessThan(val)` | Strictly less | Bool filter |
 | `LessThanEqual(val)` | Less or equal | Bool filter |
 | `GreaterThan(val)` | Strictly greater | Bool filter |
@@ -380,5 +380,5 @@ func main() {
 | `AsTimeNanos()` | To time | Time filter |
 | `Zero(bool)` | Check zero | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr) | Bool filter |
-| `IsNotNil()` | Not null (ptr) | Bool filter |
+| `Nil(true)` | Is null (ptr) | Bool filter |
+| `Nil(false)` | Not null (ptr) | Bool filter |

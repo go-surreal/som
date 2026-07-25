@@ -45,9 +45,9 @@ type User struct {
 }
 ```
 
-This adds:
-- `CreatedAt time.Time` - Set automatically on creation (readonly)
-- `UpdatedAt time.Time` - Updated automatically on every modification
+This adds two database fields, read via accessor methods:
+- `CreatedAt() time.Time` - set automatically on creation (readonly)
+- `UpdatedAt() time.Time` - updated automatically on every modification
 
 These fields are managed by SurrealDB and cannot be manually set.
 
@@ -60,18 +60,32 @@ type Follows struct {
     som.Edge        // Required - makes this a relationship
     som.Timestamps  // Optional
 
+    From  User `som:"in"`   // Required - source node
+    To    User `som:"out"`  // Required - target node
+
     Since time.Time // Edge metadata
 }
 ```
 
-Edges automatically have:
-- `ID` - Unique identifier for the edge itself
-- `In` - The source node (where the relationship starts)
-- `Out` - The target node (where the relationship points)
+The embedded `som.Edge` provides the edge's own `ID()`. The connected nodes are declared by you,
+tagged `som:"in"` and `som:"out"` — the field names are free.
 
-Creating edges uses the RELATE statement:
+For the edge to be usable it must also be declared as a field on the source node:
+
+```go
+type User struct {
+    som.Node[som.ULID]
+
+    Name    string
+    Follows []Follows
+}
 ```
-RELATE user:alice->follows->user:bob
+
+Edges are created through that node's repository, which issues a RELATE statement:
+
+```go
+err := client.UserRepo().Relate().Follows().Create(ctx, follows)
+// RELATE user:alice->follows->user:bob
 ```
 
 ## ID Handling
@@ -89,7 +103,7 @@ client.UserRepo().CreateWithID(ctx, "alice", user)
 
 ## Repositories
 
-For each Node and Edge, SOM generates a **Repository** with standard operations:
+For each Node, SOM generates a **Repository** with standard operations:
 
 ```go
 // Repository interface (generated)
@@ -115,7 +129,9 @@ type UserRepo interface {
     // Refresh record from database
     Refresh(ctx context.Context, user *model.User) error
 
-    // Rebuild all indexes for this table
+    // Edge creation for edges declared on this node
+    Relate() *relate.User
+
     // Index access (e.g. per-index Rebuild)
     Index() *index.User
 
@@ -135,10 +151,13 @@ type UserRepo interface {
 Access repositories through the client:
 
 ```go
-client.UserRepo()     // User repository
-client.PostRepo()     // Post repository
-client.FollowsRepo()  // Edge repository
+client.UserRepo()  // User repository
+client.PostRepo()  // Post repository
 ```
+
+Repositories exist for nodes, [views](../models/07_views.md) and
+[sinks](../models/08_sinks.md). Edges have none — they are created via `Relate()` on the source
+node's repository.
 
 ## Query Builder
 
@@ -160,11 +179,11 @@ users, err := client.UserRepo().Query().
 | `First(ctx)` | `(*Model, error)` | First match (returns `ErrNotFound` if none) |
 | `Count(ctx)` | `(int, error)` | Count of matches |
 | `Exists(ctx)` | `(bool, error)` | Whether any exist |
-| `Live(ctx)` | `(<-chan LiveResult, error)` | Real-time stream |
+| `Live(ctx)` | `(<-chan LiveResult[*Model], error)` | Real-time stream |
 
 ### Async Variants
 
-Every method has an async version:
+Most execution methods have an async version (`Live` does not — it already returns a channel):
 
 ```go
 result := client.UserRepo().Query().AllAsync(ctx)
@@ -187,12 +206,12 @@ filter.User.Name.Equal("Alice")
 filter.User.Age.GreaterThan(18)
 
 // String operations
-filter.User.Email.Contains("@gmail.com")
+filter.User.Email.Contains("@gmail.com").True()
 
 // Multiple conditions (AND)
 client.UserRepo().Query().
     Where(
-        filter.User.IsActive.IsTrue(),
+        filter.User.IsActive.True(),
         filter.User.Age.GreaterThan(18),
     )
 ```
@@ -224,6 +243,8 @@ SOM works through **code generation**. The workflow:
 
 1. **Define models** as Go structs with `som.Node[T]` or `som.Edge`
 2. **Run generator**: `som -i ./model`
+   (optionally with a `//go:build som` definition file for analyzers and views —
+   see [Schema Definitions](../code_generation/03_definitions.md))
 3. **Import and use** the generated packages
 
 Benefits:

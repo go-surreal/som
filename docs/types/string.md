@@ -15,7 +15,7 @@ The string type is the most feature-rich type in SOM, with over 50 filter operat
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name        string   // Required
     Bio         string   // Required
@@ -55,10 +55,10 @@ filter.User.Name.FuzzyNotMatch("*bot*")
 
 ```go
 // Value in set
-filter.User.Role.In("admin", "moderator", "user")
+filter.User.Role.In([]string{"admin", "moderator", "user"})
 
 // Value not in set
-filter.User.Status.NotIn("banned", "deleted")
+filter.User.Status.NotIn([]string{"banned", "deleted"})
 ```
 
 ### Comparison Operations
@@ -81,13 +81,13 @@ filter.User.Name.GreaterThanEqual("Alice")
 
 ```go
 // Contains substring
-filter.User.Email.Contains("@gmail")
+filter.User.Email.Contains("@gmail").True()
 
 // Starts with prefix
-filter.User.Name.StartsWith("Dr.")
+filter.User.Name.StartsWith("Dr.").True()
 
 // Ends with suffix
-filter.User.Email.EndsWith(".com")
+filter.User.Email.EndsWith(".com").True()
 ```
 
 ### Case Transformation
@@ -126,7 +126,7 @@ filter.Article.Title.Slug().Equal("hello-world")
 filter.User.Name.Slice(0, 3).Equal("Ali")
 
 // Split into array
-filter.User.Tags.Split(",").Contains("golang")
+filter.User.Tags.Split(",").Contains("golang").True()
 
 // Get words as array
 filter.Article.Title.Words().Len().GreaterThan(5)
@@ -135,7 +135,7 @@ filter.Article.Title.Words().Len().GreaterThan(5)
 filter.User.FullName.Concat(" Jr.").Equal("John Smith Jr.")
 
 // Join array elements
-filter.User.Tags.Join(", ").Contains("go")
+filter.User.Tags.Join(", ").Contains("go").True()
 ```
 
 ### Length Operations
@@ -157,52 +157,52 @@ These return boolean filters:
 
 ```go
 // Email validation
-filter.User.Email.IsEmail()
+filter.User.Email.IsEmail().True()
 
 // URL validation
-filter.User.Website.IsURL()
+filter.User.Website.IsURL().True()
 
 // Domain validation
-filter.User.Domain.IsDomain()
+filter.User.Domain.IsDomain().True()
 
 // UUID validation
-filter.User.ExternalID.IsUUID()
+filter.User.ExternalID.IsUUID().True()
 
 // Semantic version validation
-filter.Package.Version.IsSemVer()
+filter.Package.Version.IsSemVer().True()
 
 // DateTime format validation
-filter.User.BirthDate.IsDateTime("%Y-%m-%d")
+filter.User.BirthDate.IsDateTime("%Y-%m-%d").True()
 
 // IP address validation (any)
-filter.Server.Address.IsIP()
+filter.Server.Address.IsIP().True()
 
 // IPv4 validation
-filter.Server.IPv4.IsIPv4()
+filter.Server.IPv4.IsIPv4().True()
 
 // IPv6 validation
-filter.Server.IPv6.IsIPv6()
+filter.Server.IPv6.IsIPv6().True()
 
 // Latitude validation
-filter.Location.Lat.IsLatitude()
+filter.Location.Lat.IsLatitude().True()
 
 // Longitude validation
-filter.Location.Lng.IsLongitude()
+filter.Location.Lng.IsLongitude().True()
 
 // Alphabetic only
-filter.User.Name.IsAlpha()
+filter.User.Name.IsAlpha().True()
 
 // Alphanumeric
-filter.User.Username.IsAlphaNum()
+filter.User.Username.IsAlphaNum().True()
 
 // ASCII only
-filter.User.Code.IsAscii()
+filter.User.Code.IsAscii().True()
 
 // Hexadecimal
-filter.User.Color.IsHexadecimal()
+filter.User.Color.IsHexadecimal().True()
 
 // Numeric string
-filter.User.Phone.IsNumeric()
+filter.User.Phone.IsNumeric().True()
 ```
 
 ### Encoding Operations
@@ -216,10 +216,10 @@ filter.User.EncodedData.Base64Decode().Equal("decoded value")
 
 ```go
 // Check if nil
-filter.User.Nickname.IsNil()
+filter.User.Nickname.Nil(true)
 
 // Check if not nil
-filter.User.Nickname.IsNotNil()
+filter.User.Nickname.Nil(false)
 ```
 
 ### Zero Value Check
@@ -283,7 +283,7 @@ String filters support extensive chaining:
 
 ```go
 // Lowercase email domain check
-filter.User.Email.Lowercase().EndsWith("@company.com")
+filter.User.Email.Lowercase().EndsWith("@company.com").True()
 
 // Trim and check length
 filter.User.Bio.Trim().Len().LessThan(100)
@@ -292,7 +292,7 @@ filter.User.Bio.Trim().Len().LessThan(100)
 filter.Article.Title.Slug().Equal("my-article-title")
 
 // Complex chain
-filter.User.Name.Trim().Lowercase().StartsWith("admin")
+filter.User.Name.Trim().Lowercase().StartsWith("admin").True()
 ```
 
 ## Complete Example
@@ -309,13 +309,13 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Find users with gmail addresses
     gmailUsers, _ := client.UserRepo().Query().
         Where(
-            filter.User.Email.Lowercase().EndsWith("@gmail.com"),
-            filter.User.Email.IsEmail(),
+            filter.User.Email.Lowercase().EndsWith("@gmail.com").True(),
+            filter.User.Email.IsEmail().True(),
         ).
         Order(by.User.Name.Asc()).
         All(ctx)
@@ -345,8 +345,8 @@ func main() {
 | `NotEqual(val)` | Not equal | Bool filter |
 | `FuzzyMatch(pattern)` | Pattern match with wildcards | Bool filter |
 | `FuzzyNotMatch(pattern)` | Negated pattern match | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `LessThan(val)` | Lexicographic < | Bool filter |
 | `LessThanEqual(val)` | Lexicographic <= | Bool filter |
 | `GreaterThan(val)` | Lexicographic > | Bool filter |
@@ -386,5 +386,5 @@ func main() {
 | `Base64Decode()` | Decode base64 | String filter |
 | `Zero(bool)` | Check empty | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr) | Bool filter |
-| `IsNotNil()` | Is not null (ptr) | Bool filter |
+| `Nil(true)` | Is null (ptr) | Bool filter |
+| `Nil(false)` | Is not null (ptr) | Bool filter |

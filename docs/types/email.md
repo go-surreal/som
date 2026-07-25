@@ -15,7 +15,7 @@ The email type provides validated email address storage with user and host extra
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     PrimaryEmail   som.Email   // Required
     SecondaryEmail *som.Email  // Optional
@@ -61,13 +61,13 @@ filter.User.PrimaryEmail.NotEqual(som.Email("test@example.com"))
 
 ```go
 // Value in set
-filter.User.PrimaryEmail.In(
-    som.Email("alice@example.com"),
-    som.Email("bob@example.com"),
-)
+filter.User.PrimaryEmail.In([]som.Email{
+    "alice@example.com",
+    "bob@example.com",
+})
 
 // Value not in set
-filter.User.PrimaryEmail.NotIn(blockedEmails...)
+filter.User.PrimaryEmail.NotIn(blockedEmails)
 ```
 
 ### Comparison Operations
@@ -85,11 +85,11 @@ Extract email parts:
 ```go
 // User part (before @)
 filter.User.PrimaryEmail.User().Equal("alice")
-filter.User.PrimaryEmail.User().StartsWith("admin")
+filter.User.PrimaryEmail.User().StartsWith("admin").True()
 
 // Host part (after @)
 filter.User.PrimaryEmail.Host().Equal("example.com")
-filter.User.PrimaryEmail.Host().EndsWith(".edu")
+filter.User.PrimaryEmail.Host().EndsWith(".edu").True()
 ```
 
 ### String Operations on Components
@@ -99,21 +99,21 @@ After extracting email components, you can use string operations:
 ```go
 // String operations on user part
 filter.User.PrimaryEmail.User().Lowercase().Equal("alice")
-filter.User.PrimaryEmail.User().StartsWith("support")
+filter.User.PrimaryEmail.User().StartsWith("support").True()
 
 // String operations on host part
 filter.User.PrimaryEmail.Host().Lowercase().Equal("example.com")
-filter.User.PrimaryEmail.Host().EndsWith(".edu")
+filter.User.PrimaryEmail.Host().EndsWith(".edu").True()
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-filter.User.SecondaryEmail.IsNil()
+filter.User.SecondaryEmail.Nil(true)
 
 // Check if not nil
-filter.User.SecondaryEmail.IsNotNil()
+filter.User.SecondaryEmail.Nil(false)
 ```
 
 ### Zero Value Check
@@ -151,13 +151,13 @@ Email filters support component extraction, which returns String filters for fur
 filter.User.PrimaryEmail.Host().Equal("company.com")
 
 // Find admin users
-filter.User.PrimaryEmail.User().StartsWith("admin")
+filter.User.PrimaryEmail.User().StartsWith("admin").True()
 
 // Case-insensitive domain match (Host() returns String filter)
 filter.User.PrimaryEmail.Host().Lowercase().Equal("company.com")
 
 // Complex user filtering (User() returns String filter)
-filter.User.PrimaryEmail.User().Lowercase().Contains("support")
+filter.User.PrimaryEmail.User().Lowercase().Contains("support").True()
 ```
 
 ## Common Patterns
@@ -191,7 +191,7 @@ admins, _ := client.UserRepo().Query().
 
 ```go
 withSecondary, _ := client.UserRepo().Query().
-    Where(filter.User.SecondaryEmail.IsNotNil()).
+    Where(filter.User.SecondaryEmail.Nil(false)).
     All(ctx)
 ```
 
@@ -218,7 +218,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create user with email
     user := &model.User{
@@ -249,7 +249,7 @@ func main() {
 
     // Users with backup email configured
     withBackup, _ := client.UserRepo().Query().
-        Where(filter.User.SecondaryEmail.IsNotNil()).
+        Where(filter.User.SecondaryEmail.Nil(false)).
         All(ctx)
 
     // Case-insensitive search
@@ -269,12 +269,12 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `Zero(bool)` | Check empty | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr only) | Bool filter |
-| `IsNotNil()` | Not null (ptr only) | Bool filter |
+| `Nil(true)` | Is null (ptr only) | Bool filter |
+| `Nil(false)` | Not null (ptr only) | Bool filter |
 
 ### Component Extraction
 

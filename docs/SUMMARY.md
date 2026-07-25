@@ -25,6 +25,9 @@
   * [Enums](models/04_enums.md)
   * [Optimistic Locking](models/05_optimistic_locking.md)
   * [Soft Delete](models/06_soft_delete.md)
+  * [Views](models/07_views.md)
+  * [Sinks](models/08_sinks.md)
+  * [Expiry (TTL)](models/09_expiry.md)
 
 ## Data Types
 
@@ -39,6 +42,7 @@
 * [Code Generation](code_generation/README.md)
   * [CLI](code_generation/01_cli.md)
   * [Go Generate](code_generation/02_go_generate.md)
+  * [Schema Definitions](code_generation/03_definitions.md)
 
 ## Querying
 
@@ -50,6 +54,8 @@
   * [Full-Text Search](querying/05_fulltext_search.md)
   * [Raw Queries](querying/06_raw_queries.md)
   * [Transactions](querying/07_transactions.md)
+  * [Changefeed](querying/08_changefeed.md)
+  * [Distinct Values](querying/09_distinct.md)
 
 ## Relationships
 

@@ -30,7 +30,7 @@ This provides:
 import "github.com/google/uuid"
 
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
 
     ExternalID  uuid.UUID   // Required
     TrackingID  uuid.UUID   // Required
@@ -84,10 +84,10 @@ filter.Document.ExternalID.NotEqual(excludeID)
 
 ```go
 // Value in set
-filter.Document.ExternalID.In(id1, id2, id3)
+filter.Document.ExternalID.In([]uuid.UUID{id1, id2, id3})
 
 // Value not in set
-filter.Document.TrackingID.NotIn(blacklistedIDs...)
+filter.Document.TrackingID.NotIn(blacklistedIDs)
 ```
 
 ### Comparison Operations
@@ -112,10 +112,10 @@ filter.Document.ExternalID.GreaterThanEqual(referenceID)
 
 ```go
 // Check if nil
-filter.Document.ParentID.IsNil()
+filter.Document.ParentID.Nil(true)
 
 // Check if not nil
-filter.Document.ParentID.IsNotNil()
+filter.Document.ParentID.Nil(false)
 ```
 
 ### Zero Value Check
@@ -164,7 +164,7 @@ children, _ := client.DocumentRepo().Query().
 
 ```go
 roots, _ := client.DocumentRepo().Query().
-    Where(filter.Document.ParentID.IsNil()).
+    Where(filter.Document.ParentID.Nil(true)).
     All(ctx)
 ```
 
@@ -174,7 +174,7 @@ roots, _ := client.DocumentRepo().Query().
 targetIDs := []uuid.UUID{id1, id2, id3}
 
 docs, _ := client.DocumentRepo().Query().
-    Where(filter.Document.ExternalID.In(targetIDs...)).
+    Where(filter.Document.ExternalID.In(targetIDs)).
     All(ctx)
 ```
 
@@ -193,7 +193,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create document with UUIDs
     doc := &model.Document{
@@ -210,24 +210,24 @@ func main() {
 
     // Find documents with parent
     withParent, _ := client.DocumentRepo().Query().
-        Where(filter.Document.ParentID.IsNotNil()).
+        Where(filter.Document.ParentID.Nil(false)).
         All(ctx)
 
     // Find root documents
     roots, _ := client.DocumentRepo().Query().
-        Where(filter.Document.ParentID.IsNil()).
+        Where(filter.Document.ParentID.Nil(true)).
         All(ctx)
 
     // Bulk lookup
     ids := []uuid.UUID{id1, id2, id3}
     batch, _ := client.DocumentRepo().Query().
-        Where(filter.Document.ExternalID.In(ids...)).
+        Where(filter.Document.ExternalID.In(ids)).
         All(ctx)
 
     // Exclude specific documents
     excluded := []uuid.UUID{badID1, badID2}
     filtered, _ := client.DocumentRepo().Query().
-        Where(filter.Document.ExternalID.NotIn(excluded...)).
+        Where(filter.Document.ExternalID.NotIn(excluded)).
         All(ctx)
 }
 ```
@@ -238,13 +238,13 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `LessThan(val)` | Lexicographic < | Bool filter |
 | `LessThanEqual(val)` | Lexicographic <= | Bool filter |
 | `GreaterThan(val)` | Lexicographic > | Bool filter |
 | `GreaterThanEqual(val)` | Lexicographic >= | Bool filter |
 | `Zero(bool)` | Check nil UUID | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr) | Bool filter |
-| `IsNotNil()` | Not null (ptr) | Bool filter |
+| `Nil(true)` | Is null (ptr) | Bool filter |
+| `Nil(false)` | Not null (ptr) | Bool filter |

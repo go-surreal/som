@@ -24,10 +24,16 @@ Working directly with SurrealDB in Go requires manual query building, type conve
 - **Async operations**: All query methods have async variants for concurrent database access.
 - **Full-text search**: BM25-based relevance searching with highlighting and score sorting.
 - **Caching**: Optional request-scoped caching with lazy and eager modes.
+- **Views and sinks**: Database-maintained aggregates (`som.View`) fed by write-only ingestion
+  tables (`som.Sink`).
+- **Record lifecycle**: Automatic timestamps, optimistic locking, soft delete and expiry (TTL).
+- **Changefeed**: Replay historic changes of a table after the fact.
+- **Cursor pagination**: Stable keyset pagination with Relay-style page info.
 
 ## How It Works
 
-1. **Define models** as Go structs embedding `som.Node[T]` (for records) or `som.Edge` (for relationships)
+1. **Define models** as Go structs embedding `som.Node[T]` (records), `som.Edge`
+   (relationships), `som.View` (read-only) or `som.Sink` (write-only)
 2. **Run the generator** to produce type-safe database access code
 3. **Use the generated client** with full IDE autocompletion and compile-time safety
 

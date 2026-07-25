@@ -15,7 +15,7 @@ The boolean type represents true/false values with simple, focused filter operat
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     IsActive    bool   // Required
     IsAdmin     bool   // Required
@@ -64,10 +64,10 @@ filter.User.IsActive.Invert().True()  // Same as Is(false)
 
 ```go
 // Check if nil
-filter.User.IsVerified.IsNil()
+filter.User.IsVerified.Nil(true)
 
 // Check if not nil
-filter.User.IsVerified.IsNotNil()
+filter.User.IsVerified.Nil(false)
 ```
 
 ## Sorting
@@ -134,13 +134,13 @@ users, _ := client.UserRepo().Query().
 ```go
 // Users with verified status set
 verifiedSet, _ := client.UserRepo().Query().
-    Where(filter.User.IsVerified.IsNotNil()).
+    Where(filter.User.IsVerified.Nil(false)).
     All(ctx)
 
 // Users explicitly verified
 verified, _ := client.UserRepo().Query().
     Where(
-        filter.User.IsVerified.IsNotNil(),
+        filter.User.IsVerified.Nil(false),
         filter.User.IsVerified.True(),
     ).
     All(ctx)
@@ -149,7 +149,7 @@ verified, _ := client.UserRepo().Query().
 notVerified, _ := client.UserRepo().Query().
     Where(
         filter.Any(
-            filter.User.IsVerified.IsNil(),
+            filter.User.IsVerified.Nil(true),
             filter.User.IsVerified.False(),
         ),
     ).
@@ -170,7 +170,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Find active users
     activeUsers, _ := client.UserRepo().Query().
@@ -194,7 +194,7 @@ func main() {
     hasUnverified, _ := client.UserRepo().Query().
         Where(
             filter.Any(
-                filter.User.IsVerified.IsNil(),
+                filter.User.IsVerified.Nil(true),
                 filter.User.IsVerified.False(),
             ),
         ).
@@ -219,5 +219,5 @@ func main() {
 | `True()` | Check if true | Bool filter |
 | `False()` | Check if false | Bool filter |
 | `Invert()` | Logical NOT | Bool filter |
-| `IsNil()` | Is null (ptr only) | Bool filter |
-| `IsNotNil()` | Not null (ptr only) | Bool filter |
+| `Nil(true)` | Is null (ptr only) | Bool filter |
+| `Nil(false)` | Not null (ptr only) | Bool filter |

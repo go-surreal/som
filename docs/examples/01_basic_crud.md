@@ -40,9 +40,9 @@ import (
     "fmt"
     "log"
 
-    "yourproject/gen/som"
     "yourproject/gen/som/by"
     "yourproject/gen/som/filter"
+    "yourproject/gen/som/repo"
     "yourproject/model"
 )
 
@@ -50,7 +50,7 @@ func main() {
     ctx := context.Background()
 
     // Connect to database
-    client, err := som.NewClient(ctx, som.Config{
+    client, err := repo.NewClient(ctx, repo.Config{
         Address:   "ws://localhost:8000",
         Username:  "root",
         Password:  "root",
@@ -58,6 +58,12 @@ func main() {
         Database:  "crud",
     })
     if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    // Apply the generated schema
+    if err := client.ApplySchema(ctx); err != nil {
         log.Fatal(err)
     }
 
@@ -97,7 +103,7 @@ func main() {
 
     // QUERY
     activeUsers, err := client.UserRepo().Query().
-        Where(filter.User.IsActive.IsTrue()).
+        Where(filter.User.IsActive.True()).
         Order(by.User.Name.Asc()).
         All(ctx)
     if err != nil {
