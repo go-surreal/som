@@ -52,11 +52,13 @@ func (b *Base[M, T, F, S]) Equal(val T) Filter[M] {
 }
 
 func (b *Base[M, T, F, S]) NotEqual(val T) Filter[M] {
+	mapped := any(val)
+
 	if b.conv != nil {
-		return b.Key.op(OpNotEqual, b.conv(val))
+		mapped = b.conv(val)
 	}
 
-	return b.Key.op(OpNotEqual, val)
+	return b.notSet(OpNotEqual, mapped)
 }
 
 func (b *Base[M, T, F, S]) In(vals []T) Filter[M] {
@@ -74,17 +76,32 @@ func (b *Base[M, T, F, S]) In(vals []T) Filter[M] {
 }
 
 func (b *Base[M, T, F, S]) NotIn(vals []T) Filter[M] {
+	mapped := any(vals)
+
 	if b.conv != nil {
-		mapped := make([]any, len(vals))
+		m := make([]any, len(vals))
 
 		for i, val := range vals {
-			mapped[i] = b.conv(val)
+			m[i] = b.conv(val)
 		}
 
-		return b.Key.op(OpNotIn, mapped)
+		mapped = m
 	}
 
-	return b.Key.op(OpNotIn, vals)
+	return b.notSet(OpNotIn, mapped)
+}
+
+// notSet builds a negative comparison that also excludes unset (NONE/NULL)
+// records. In SurrealDB "NONE != value" and "NONE ∉ set" both evaluate to
+// true, so a bare negation would wrongly match records where the field is
+// not set. For required fields the extra guard is always true and thus a
+// no-op, so this stays correct for both optional and required fields.
+func (b *Base[M, T, F, S]) notSet(op Operator, val any) Filter[M] {
+	return filter[M](func(ctx *context, _ M) string {
+		field := strings.TrimPrefix(b.Key.render(ctx), ".")
+		return "(" + field + " " + string(op) + " " + ctx.asVar(val) +
+			" AND " + field + " != NONE AND " + field + " != NULL)"
+	})
 }
 
 func (b *Base[M, T, F, S]) Truth() *Bool[M] {
@@ -94,6 +111,9 @@ func (b *Base[M, T, F, S]) Truth() *Bool[M] {
 // TODO: value::diff($value, $value) and value::patch($value, $diff)
 // https://github.com/surrealdb/surrealdb/pull/4608
 
+// Zero compares against the Go zero value of the field type. For a pointer
+// field this is the element zero value (e.g. 0 or ""), NOT NONE, so Zero does
+// not detect an unset field. Use Nil to check for NONE/NULL instead.
 func (b *Base[M, T, F, S]) Zero(is bool) Filter[M] {
 	op := OpExactlyEqual
 
