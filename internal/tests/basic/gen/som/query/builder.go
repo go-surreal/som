@@ -662,8 +662,6 @@ func (p PageBuilder[M]) Get(ctx context.Context) (*Page[M], error) {
 		Entries:    entries,
 		PageInfo:   pageInfo,
 		TotalCount: totalCount,
-		source:     p,
-		size:       pageSize,
 	}, nil
 }
 
@@ -968,7 +966,8 @@ type Entry[M any] struct {
 	Cursor string
 }
 
-// Page is a cursor-paginated result set.
+// Page is a cursor-paginated result set. It is pure data: safe to cache,
+// serialize or return without holding a database handle.
 type Page[M any] struct {
 	// Items holds the records for this page.
 	Items []*M
@@ -982,28 +981,15 @@ type Page[M any] struct {
 	// TotalCount is the total number of matching records, or -1 if it was not
 	// requested via WithTotalCount.
 	TotalCount int
-
-	source PageBuilder[M]
-	size   int
 }
 
-// Next returns a request for the page after this one, preserving the original
-// query and options. Call Get on it to execute.
-func (p *Page[M]) Next() PageBuilder[M] {
-	next := p.source
-	next.first, next.after = p.size, p.PageInfo.EndCursor
-	next.last, next.before = 0, ""
-	return next
-}
+// NextCursor returns the cursor to pass to a builder's After() to fetch the
+// page following this one. Only meaningful when PageInfo.HasNextPage is true.
+func (p *Page[M]) NextCursor() string { return p.PageInfo.EndCursor }
 
-// Prev returns a request for the page before this one, preserving the original
-// query and options. Call Get on it to execute.
-func (p *Page[M]) Prev() PageBuilder[M] {
-	prev := p.source
-	prev.last, prev.before = p.size, p.PageInfo.StartCursor
-	prev.first, prev.after = 0, ""
-	return prev
-}
+// PrevCursor returns the cursor to pass to a builder's Before() to fetch the
+// page preceding this one. Only meaningful when PageInfo.HasPreviousPage is true.
+func (p *Page[M]) PrevCursor() string { return p.PageInfo.StartCursor }
 
 func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
 	var rawNodes []internal.QueryResult[searchRawResult[*C]]

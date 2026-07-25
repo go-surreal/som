@@ -191,14 +191,13 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 #### In-process loop
 
-For batch jobs that walk the whole set, `Page.Next()` carries the query, page
-size and options forward, so there's no cursor to thread by hand:
+For batch jobs that walk the whole set, hold the query builder and feed each
+page's `NextCursor()` back to `After()`:
 
 ```go
-page, err := client.UserRepo().Query().
-    Order(by.User.CreatedAt.Desc()).
-    Paginate().First(500).Get(ctx)
+q := client.UserRepo().Query().Order(by.User.CreatedAt.Desc())
 
+page, err := q.Paginate().First(500).Get(ctx)
 for {
     if err != nil {
         return err
@@ -207,11 +206,12 @@ for {
     if !page.PageInfo.HasNextPage {
         break
     }
-    page, err = page.Next().Get(ctx)
+    page, err = q.Paginate().First(500).After(page.NextCursor()).Get(ctx)
 }
 ```
 
-`Page.Prev()` is the backward equivalent.
+`PrevCursor()` + `Before()` is the backward equivalent. `Page` itself is pure
+data — it holds no database handle, so it is safe to cache, serialize or return.
 
 > For pure "process everything" jobs, `Iterate()` (below) is simpler — reach for
 > cursor pagination when you also need the cursors, `PageInfo`, or stable paging

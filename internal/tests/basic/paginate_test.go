@@ -31,10 +31,11 @@ func TestPaginateForward(t *testing.T) {
 		assert.NilError(t, err)
 	}
 
+	// The query builder is held once and reused for every page.
+	q := client.AllTypesRepo().Query().Order(by.AllTypes.FieldString.Asc())
+
 	// Page 1: first 2 ordered by FieldString ascending.
-	page1, err := client.AllTypesRepo().Query().
-		Order(by.AllTypes.FieldString.Asc()).
-		Paginate().First(2).WithTotalCount().Get(ctx)
+	page1, err := q.Paginate().First(2).WithTotalCount().Get(ctx)
 	assert.NilError(t, err)
 
 	assert.Equal(t, 2, len(page1.Items))
@@ -43,12 +44,10 @@ func TestPaginateForward(t *testing.T) {
 	assert.Equal(t, 5, page1.TotalCount)
 	assert.Equal(t, true, page1.PageInfo.HasNextPage)
 	assert.Equal(t, false, page1.PageInfo.HasPreviousPage)
-	assert.Assert(t, page1.PageInfo.EndCursor != "")
+	assert.Assert(t, page1.NextCursor() != "")
 
-	// Page 2: continue after page 1's end cursor.
-	page2, err := client.AllTypesRepo().Query().
-		Order(by.AllTypes.FieldString.Asc()).
-		Paginate().First(2).After(page1.PageInfo.EndCursor).Get(ctx)
+	// Page 2: continue after page 1 via its NextCursor.
+	page2, err := q.Paginate().First(2).After(page1.NextCursor()).Get(ctx)
 	assert.NilError(t, err)
 
 	assert.Equal(t, 2, len(page2.Items))
@@ -58,15 +57,19 @@ func TestPaginateForward(t *testing.T) {
 	assert.Equal(t, true, page2.PageInfo.HasPreviousPage)
 
 	// Page 3: last item, no further pages.
-	page3, err := client.AllTypesRepo().Query().
-		Order(by.AllTypes.FieldString.Asc()).
-		Paginate().First(2).After(page2.PageInfo.EndCursor).Get(ctx)
+	page3, err := q.Paginate().First(2).After(page2.NextCursor()).Get(ctx)
 	assert.NilError(t, err)
 
 	assert.Equal(t, 1, len(page3.Items))
 	assert.Equal(t, "e", page3.Items[0].FieldString)
 	assert.Equal(t, false, page3.PageInfo.HasNextPage)
 	assert.Equal(t, true, page3.PageInfo.HasPreviousPage)
+
+	// Navigate back to the preceding page via PrevCursor.
+	back, err := q.Paginate().Last(2).Before(page2.PrevCursor()).Get(ctx)
+	assert.NilError(t, err)
+	assert.Equal(t, "a", back.Items[0].FieldString)
+	assert.Equal(t, "b", back.Items[1].FieldString)
 }
 
 func TestPaginateBackward(t *testing.T) {
@@ -112,44 +115,6 @@ func TestPaginateBackward(t *testing.T) {
 	assert.Equal(t, true, prev.PageInfo.HasNextPage)
 }
 
-// TestPaginateNextPrev exercises the Page.Next()/Prev() navigation helpers,
-// which carry the original query, page size and options forward.
-func TestPaginateNextPrev(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	client, cleanup := prepareDatabase(ctx, t)
-	defer cleanup()
-
-	for _, n := range []string{"a", "b", "c", "d", "e"} {
-		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
-			FieldString: n,
-			FieldMonth:  time.January,
-		})
-		assert.NilError(t, err)
-	}
-
-	page1, err := client.AllTypesRepo().Query().
-		Order(by.AllTypes.FieldString.Asc()).
-		Paginate().First(2).Get(ctx)
-	assert.NilError(t, err)
-	assert.Equal(t, "a", page1.Items[0].FieldString)
-	assert.Equal(t, "b", page1.Items[1].FieldString)
-
-	page2, err := page1.Next().Get(ctx)
-	assert.NilError(t, err)
-	assert.Equal(t, "c", page2.Items[0].FieldString)
-	assert.Equal(t, "d", page2.Items[1].FieldString)
-
-	// Back to page 1 from page 2.
-	back, err := page2.Prev().Get(ctx)
-	assert.NilError(t, err)
-	assert.Equal(t, 2, len(back.Items))
-	assert.Equal(t, "a", back.Items[0].FieldString)
-	assert.Equal(t, "b", back.Items[1].FieldString)
-}
-
 // TestPaginateTypedCursor exercises a non-string sort key (time.Time) to
 // ensure cursor values are encoded with their DB type and compared correctly.
 func TestPaginateTypedCursor(t *testing.T) {
@@ -170,9 +135,9 @@ func TestPaginateTypedCursor(t *testing.T) {
 		assert.NilError(t, err)
 	}
 
-	page1, err := client.AllTypesRepo().Query().
-		Order(by.AllTypes.FieldTime.Desc()).
-		Paginate().First(2).Get(ctx)
+	q := client.AllTypesRepo().Query().Order(by.AllTypes.FieldTime.Desc())
+
+	page1, err := q.Paginate().First(2).Get(ctx)
 	assert.NilError(t, err)
 
 	assert.Equal(t, 2, len(page1.Items))
@@ -181,7 +146,7 @@ func TestPaginateTypedCursor(t *testing.T) {
 	assert.Equal(t, 3, page1.Items[1].FieldInt)
 	assert.Equal(t, true, page1.PageInfo.HasNextPage)
 
-	page2, err := page1.Next().Get(ctx)
+	page2, err := q.Paginate().First(2).After(page1.NextCursor()).Get(ctx)
 	assert.NilError(t, err)
 
 	assert.Equal(t, 2, len(page2.Items))
