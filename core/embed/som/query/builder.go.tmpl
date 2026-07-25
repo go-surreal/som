@@ -986,11 +986,15 @@ type Page[M any] struct {
 
 // NextCursor returns the cursor to pass to a builder's After() to fetch the
 // page following this one. Only meaningful when PageInfo.HasNextPage is true.
-func (p *Page[M]) NextCursor() string { return p.PageInfo.EndCursor }
+func (p *Page[M]) NextCursor() string {
+	return p.PageInfo.EndCursor
+}
 
 // PrevCursor returns the cursor to pass to a builder's Before() to fetch the
 // page preceding this one. Only meaningful when PageInfo.HasPreviousPage is true.
-func (p *Page[M]) PrevCursor() string { return p.PageInfo.StartCursor }
+func (p *Page[M]) PrevCursor() string {
+	return p.PageInfo.StartCursor
+}
 
 func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
 	var rawNodes []internal.QueryResult[searchRawResult[*C]]
