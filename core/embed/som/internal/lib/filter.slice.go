@@ -15,6 +15,11 @@ type Slice[M, E any, F field[M]] struct {
 	makeElemFilter makeFilter[M, F]
 }
 
+// valueType witnesses the field's Go value type (see Base.valueType).
+func (s *Slice[M, E, F]) valueType() []E {
+	return nil
+}
+
 // NewSlice creates a new slice filter.
 func NewSlice[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F]) *Slice[M, E, F] {
 	return &Slice[M, E, F]{

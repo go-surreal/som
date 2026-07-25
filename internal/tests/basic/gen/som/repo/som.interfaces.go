@@ -14,8 +14,12 @@ type Client interface {
 	SpecialRelationRepo() SpecialRelationRepo
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
+	EphemeralRepo() EphemeralRepo
 	ChangefeedModelRepo() ChangefeedModelRepo
 	AllTypesRepo() AllTypesRepo
+	EventSummaryRepo() EventSummaryRepo
+	AllTypesSummaryRepo() AllTypesSummaryRepo
+	EventLogRepo() EventLogRepo
 	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
 	Close()
@@ -30,6 +34,13 @@ type ClientImpl struct {
 	specialRelationRepo *specialRelation
 	personObjRepo       *personObj
 	locationRepo        *location
+	ephemeralRepo       *ephemeral
 	changefeedModelRepo *changefeedModel
 	allTypesRepo        *allTypes
+	eventSummaryRepo    *eventSummary
+	allTypesSummaryRepo *allTypesSummary
+	eventLogRepo        *eventLog
 }
+
+// expiryTables lists tables with a configured expiry, purged in the background.
+var expiryTables = []string{"ephemeral"}

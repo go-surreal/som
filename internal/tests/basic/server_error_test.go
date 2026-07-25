@@ -10,6 +10,21 @@ import (
 	"gotest.tools/v3/assert"
 )
 
+func TestServerError_KindHelpers(t *testing.T) {
+	t.Parallel()
+
+	notFound := &som.ServerError{Kind: som.KindNotFound, Message: "record not found"}
+	assert.Assert(t, som.IsNotFound(notFound))
+	assert.Assert(t, !som.IsNotAllowed(notFound))
+
+	notAllowed := &som.ServerError{Kind: som.KindNotAllowed, Message: "permission denied"}
+	assert.Assert(t, som.IsNotAllowed(notAllowed))
+	assert.Assert(t, !som.IsNotFound(notAllowed))
+
+	assert.Assert(t, !som.IsNotFound(errors.New("plain error")))
+	assert.Assert(t, !som.IsNotFound(nil))
+}
+
 func TestServerError_OptimisticLockUpdate(t *testing.T) {
 	t.Parallel()
 

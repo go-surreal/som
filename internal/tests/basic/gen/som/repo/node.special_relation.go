@@ -106,8 +106,8 @@ type SpecialRelationRepo interface {
 
 // specialRelationRepoInfo holds the model-specific conversion functions for SpecialRelation.
 var specialRelationRepoInfo = RepoInfo[model.SpecialRelation]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.SpecialRelation, error) {
-		raw, err := dbCreateNew[conv.SpecialRelation](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.SpecialRelation, error) {
+		raw, err := dbCreateNew[conv.SpecialRelation](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}
@@ -173,8 +173,7 @@ func (c *ClientImpl) SpecialRelationRepo() SpecialRelationRepo {
 			db:     c.db,
 			name:   "special_relation",
 			info:   specialRelationRepoInfo,
-			newID:  newID,
-			idFunc: "rand::string(20)",
+			autoID: true,
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_relation", parseStringID(id))
 				return &rid

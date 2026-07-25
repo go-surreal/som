@@ -121,7 +121,7 @@ func isSOMInternalField(f parser.Field) bool {
 	case *parser.FieldComplexID:
 		return true
 	case *parser.FieldTime:
-		return v.IsCreatedAt || v.IsUpdatedAt || v.IsDeletedAt
+		return v.IsCreatedAt || v.IsUpdatedAt || v.IsDeletedAt || v.IsExpiresAt
 	}
 	return false
 }

@@ -252,3 +252,13 @@ type EdgeMeta struct {
 	IsAdmin  bool
 	IsActive bool
 }
+
+// AllTypesSummary is a read-only view aggregating AllTypes records,
+// grouped by FieldString.
+type AllTypesSummary struct {
+	som.View
+
+	Category string
+	Total    int
+	AvgValue float64
+}

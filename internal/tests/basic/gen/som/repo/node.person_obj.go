@@ -88,8 +88,8 @@ type PersonObjRepo interface {
 
 // personObjRepoInfo holds the model-specific conversion functions for PersonObj.
 var personObjRepoInfo = RepoInfo[model.PersonObj]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.PersonObj, error) {
-		raw, err := dbCreateNew[conv.PersonObj](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.PersonObj, error) {
+		raw, err := dbCreateNew[conv.PersonObj](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}

@@ -2,17 +2,26 @@ package field
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
 )
 
+// idPart holds the database name and type of a single complex ID field,
+// used to build a literal (tuple/object) type for the record ID.
+type idPart struct {
+	dbName string
+	dbType string
+}
+
 type ComplexID struct {
 	*baseField
 
 	source  *parser.FieldComplexID
 	element Table
+	parts   []idPart
 }
 
 func (f *ComplexID) typeGo() jen.Code {
@@ -38,17 +47,33 @@ func (f *ComplexID) SchemaStatements(table, _ string) []string {
 	var typeDef string
 	switch f.source.Kind {
 	case parser.IDTypeArray:
-		typeDef = fmt.Sprintf("array<any, %d>", len(f.source.Fields))
-	case parser.IDTypeObject:
-		return []string{
-			fmt.Sprintf("DEFINE FIELD id ON TABLE %s TYPE object;", table),
+		types := make([]string, len(f.parts))
+		for i, p := range f.parts {
+			types[i] = p.dbType
 		}
+		typeDef = "[" + strings.Join(types, ", ") + "]"
+	case parser.IDTypeObject:
+		entries := make([]string, len(f.parts))
+		for i, p := range f.parts {
+			entries[i] = fmt.Sprintf("%s: %s", p.dbName, p.dbType)
+		}
+		typeDef = "{ " + strings.Join(entries, ", ") + " }"
 	default:
 		return nil
 	}
 	return []string{
 		fmt.Sprintf("DEFINE FIELD id ON TABLE %s TYPE %s;", table, typeDef),
 	}
+}
+
+// idPartType returns the database type of a complex ID field. ID parts are
+// always required, so any outer option<...> wrapper is stripped.
+func idPartType(f Field) string {
+	t := f.TypeDatabase()
+	if strings.HasPrefix(t, "option<") && strings.HasSuffix(t, ">") {
+		t = t[len("option<") : len(t)-1]
+	}
+	return t
 }
 
 func (f *ComplexID) CodeGen() *CodeGen {

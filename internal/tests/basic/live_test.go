@@ -344,13 +344,15 @@ func TestLiveQueryKilled(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	liveChan, err := client.AllTypesRepo().Query().Live(ctx)
+	liveChan, err := client.LocationRepo().Query().Live(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Remove the table to trigger a server-side kill of the live query.
-	_, err = client.Raw(ctx, "REMOVE TABLE all_types", nil)
+	// Location is used (not AllTypes) because a view is defined on AllTypes,
+	// and SurrealDB forbids REMOVE TABLE on a table a view depends on.
+	_, err = client.Raw(ctx, "REMOVE TABLE location", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -364,7 +366,7 @@ func TestLiveQueryKilled(t *testing.T) {
 			return
 		}
 
-		_, ok := res.(query.LiveKilled[*model.AllTypes])
+		_, ok := res.(query.LiveKilled[*model.Location])
 		if !ok {
 			t.Fatalf("expected LiveKilled event, got %T", res)
 		}

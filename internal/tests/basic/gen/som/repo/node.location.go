@@ -99,8 +99,8 @@ type LocationRepo interface {
 
 // locationRepoInfo holds the model-specific conversion functions for Location.
 var locationRepoInfo = RepoInfo[model.Location]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.Location, error) {
-		raw, err := dbCreateNew[conv.Location](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.Location, error) {
+		raw, err := dbCreateNew[conv.Location](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}
@@ -166,8 +166,7 @@ func (c *ClientImpl) LocationRepo() LocationRepo {
 			db:     c.db,
 			name:   "location",
 			info:   locationRepoInfo,
-			newID:  newULID,
-			idFunc: "rand::ulid()",
+			autoID: true,
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("location", parseStringID(id))
 				return &rid

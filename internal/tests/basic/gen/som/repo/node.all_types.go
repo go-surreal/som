@@ -99,8 +99,8 @@ type AllTypesRepo interface {
 
 // allTypesRepoInfo holds the model-specific conversion functions for AllTypes.
 var allTypesRepoInfo = RepoInfo[model.AllTypes]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.AllTypes, error) {
-		raw, err := dbCreateNew[conv.AllTypes](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.AllTypes, error) {
+		raw, err := dbCreateNew[conv.AllTypes](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}
@@ -166,8 +166,7 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 			db:     c.db,
 			name:   "all_types",
 			info:   allTypesRepoInfo,
-			newID:  newULID,
-			idFunc: "rand::ulid()",
+			autoID: true,
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("all_types", parseStringID(id))
 				return &rid

@@ -34,9 +34,22 @@ func (f *ID) SchemaStatements(table, prefix string) []string {
 
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(),
+			"DEFINE FIELD %s ON TABLE %s TYPE %s DEFAULT %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), f.idDefault(),
 		),
+	}
+}
+
+// idDefault returns the SurrealQL expression used to generate the record ID
+// server-side when none is provided on create.
+func (f *ID) idDefault() string {
+	switch f.source.Type {
+	case parser.IDTypeUUID:
+		return "rand::uuid()"
+	case parser.IDTypeRand:
+		return "rand::string(20)"
+	default:
+		return "rand::ulid()"
 	}
 }
 

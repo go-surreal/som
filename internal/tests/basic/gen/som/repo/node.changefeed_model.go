@@ -103,8 +103,8 @@ type ChangefeedModelRepo interface {
 
 // changefeedModelRepoInfo holds the model-specific conversion functions for ChangefeedModel.
 var changefeedModelRepoInfo = RepoInfo[model.ChangefeedModel]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.ChangefeedModel, error) {
-		raw, err := dbCreateNew[conv.ChangefeedModel](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.ChangefeedModel, error) {
+		raw, err := dbCreateNew[conv.ChangefeedModel](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}
@@ -170,8 +170,7 @@ func (c *ClientImpl) ChangefeedModelRepo() ChangefeedModelRepo {
 			db:     c.db,
 			name:   "changefeed_model",
 			info:   changefeedModelRepoInfo,
-			newID:  newULID,
-			idFunc: "rand::ulid()",
+			autoID: true,
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("changefeed_model", parseStringID(id))
 				return &rid

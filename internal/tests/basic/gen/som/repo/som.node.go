@@ -44,7 +44,7 @@ var cacheRefreshGroup singleflight.Group
 type RepoInfo[N any] struct {
 	ReadOne    func(ctx context.Context, db *dbConn, id *models.RecordID) (*N, error)
 	CreateOne  func(ctx context.Context, db *dbConn, id models.RecordID, data any) (*N, error)
-	CreateNew  func(ctx context.Context, db *dbConn, idExpr string, data any) (*N, error)
+	CreateNew  func(ctx context.Context, db *dbConn, target string, data any) (*N, error)
 	UpdateOne  func(ctx context.Context, db *dbConn, id *models.RecordID, data any) (*N, error)
 	InsertAll  func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*N, error)
 	QueryOne   func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*N, error)
@@ -74,8 +74,7 @@ type repo[N any, K any] struct {
 
 	name     string
 	info     RepoInfo[N]
-	newID    func(string) string
-	idFunc   string
+	autoID   bool
 	recordID func(K) *models.RecordID
 
 	hookMu      sync.RWMutex
@@ -203,11 +202,11 @@ func (r *repo[N, K]) OnAfterDelete(fn func(ctx context.Context, node *N) error) 
 }
 
 func (r *repo[N, K]) create(ctx context.Context, node *N) error {
-	if r.newID == nil {
+	if !r.autoID {
 		return fmt.Errorf("create without explicit ID is not supported for this model")
 	}
 	data := r.info.MarshalOne(node)
-	result, err := r.info.CreateNew(ctx, r.db, r.newID(r.name), data)
+	result, err := r.info.CreateNew(ctx, r.db, r.name, data)
 	if err != nil {
 		return fmt.Errorf("could not create entity: %w", err)
 	}
@@ -230,7 +229,7 @@ func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
 	for i, node := range nodes {
 		data[i] = r.info.MarshalOne(node)
 	}
-	statement := "INSERT INTO " + r.name + " (SELECT *, " + r.idFunc + " AS id FROM $data)"
+	statement := "INSERT INTO " + r.name + " $data"
 	results, err := r.info.InsertAll(ctx, r.db, statement, map[string]any{"data": data})
 	if err != nil {
 		return fmt.Errorf("could not insert entities: %w", err)

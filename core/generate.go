@@ -71,6 +71,8 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 			[]parser.TypeHandler{
 				&structtype.NodeHandler{},
 				&structtype.EdgeHandler{},
+				&structtype.ViewHandler{},
+				&structtype.SinkHandler{},
 				&structtype.ComplexIDStructHandler{},
 				&structtype.EnumHandler{},
 				&structtype.EnumValueHandler{},
@@ -89,6 +91,8 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 				&fieldtype.URLHandler{},
 				&fieldtype.NodeRefHandler{},
 				&fieldtype.EdgeRefHandler{},
+				&fieldtype.ViewRefHandler{},
+				&fieldtype.SinkRefHandler{},
 				&fieldtype.UUIDHandler{},
 				&fieldtype.SliceHandler{},
 				&fieldtype.BoolHandler{},
