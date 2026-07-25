@@ -170,7 +170,8 @@ func (c *ClientImpl) EphemeralRepo() EphemeralRepo {
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("ephemeral", parseUUID(id))
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.ephemeralRepo
 }

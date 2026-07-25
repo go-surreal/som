@@ -161,7 +161,8 @@ func (c *ClientImpl) PersonObjRepo() PersonObjRepo {
 					"name": key.Name,
 				})
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.personObjRepo
 }

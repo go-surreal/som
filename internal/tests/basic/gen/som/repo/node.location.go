@@ -170,7 +170,8 @@ func (c *ClientImpl) LocationRepo() LocationRepo {
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("location", parseStringID(id))
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.locationRepo
 }

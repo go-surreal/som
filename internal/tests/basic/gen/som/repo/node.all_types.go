@@ -174,7 +174,8 @@ func (c *ClientImpl) AllTypesRepo() AllTypesRepo {
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("all_types", parseStringID(id))
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.allTypesRepo
 }

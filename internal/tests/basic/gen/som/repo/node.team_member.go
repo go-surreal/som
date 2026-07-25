@@ -162,7 +162,8 @@ func (c *ClientImpl) TeamMemberRepo() TeamMemberRepo {
 					"member":   models.NewRecordID("all_types", string(key.Member.ID())),
 				})
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.teamMemberRepo
 }
