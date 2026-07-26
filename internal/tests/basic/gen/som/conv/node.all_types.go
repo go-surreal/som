@@ -774,11 +774,16 @@ func ToAllTypesPtr(data *AllTypes) *model.AllTypes {
 	return &result
 }
 
+// AllTypesFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func AllTypesFields(m *model.AllTypes) map[string]any {
 	c := AllTypes{*m}
 	return c.fields()
 }
 
+// allTypesLink is a AllTypes as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type allTypesLink struct {
 	AllTypes
 	ID *models.RecordID

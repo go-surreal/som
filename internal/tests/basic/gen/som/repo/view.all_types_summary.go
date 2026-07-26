@@ -8,7 +8,6 @@ import (
 
 type AllTypesSummaryRepo interface {
 	// Query returns a new read-only query builder for the AllTypesSummary view.
-
 	Query() query.Builder[model.AllTypesSummary]
 }
 

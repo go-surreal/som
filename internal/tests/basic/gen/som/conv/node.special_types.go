@@ -98,11 +98,16 @@ func ToSpecialTypesPtr(data *SpecialTypes) *model.SpecialTypes {
 	return &result
 }
 
+// SpecialTypesFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func SpecialTypesFields(m *model.SpecialTypes) map[string]any {
 	c := SpecialTypes{*m}
 	return c.fields()
 }
 
+// specialTypesLink is a SpecialTypes as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type specialTypesLink struct {
 	SpecialTypes
 	ID *models.RecordID

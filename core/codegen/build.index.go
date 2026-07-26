@@ -5,10 +5,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
-	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
 	"github.com/iancoleman/strcase"
@@ -49,44 +47,30 @@ func (b *indexBuilder) build() error {
 }
 
 func (b *indexBuilder) buildFile(nameGo, fileName string, entries []indexEntry) error {
-	f := jen.NewFile(b.pkgName)
+	tmpl := `
+		func New{{.NameGo}}(db Database) *{{.NameGo}} {
+			return &{{.NameGo}}{db: db}
+		}
 
-	f.PackageComment(string(embed.CodegenComment))
+		type {{.NameGo}} struct {
+			db Database
+		}
+		{{range .Entries}}
+		func (i *{{$.NameGo}}) {{.GoName}}() *rebuildable {
+			return &rebuildable{db: i.db, table: "{{.TableName}}", name: "{{.IndexName}}"}
+		}
+		{{end -}}
+	`
 
-	f.Line()
-	f.Func().Id("New" + nameGo).
-		Params(jen.Id("db").Id("Database")).
-		Op("*").Id(nameGo).
-		Block(
-			jen.Return(jen.Op("&").Id(nameGo).Values(
-				jen.Id("db").Op(":").Id("db"),
-			)),
-		)
+	data := map[string]any{
+		"NameGo":  nameGo,
+		"Entries": entries,
+	}
 
-	f.Line()
-	f.Type().Id(nameGo).Struct(
-		jen.Id("db").Id("Database"),
+	return newGoFile(b.pkgName).render(
+		b.fs.Writer(path.Join(b.path(), fileName)),
+		"index", tmpl, data,
 	)
-
-	for _, entry := range entries {
-		f.Line()
-		f.Func().Params(jen.Id("i").Op("*").Id(nameGo)).
-			Id(entry.GoName).Params().
-			Op("*").Id("rebuildable").
-			Block(
-				jen.Return(jen.Op("&").Id("rebuildable").Values(
-					jen.Id("db").Op(":").Id("i").Dot("db"),
-					jen.Id("table").Op(":").Lit(entry.TableName),
-					jen.Id("name").Op(":").Lit(entry.IndexName),
-				)),
-			)
-	}
-
-	if err := f.Render(b.fs.Writer(path.Join(b.path(), fileName))); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (b *indexBuilder) collectIndexEntries(tableName string, fields []field.Field, softDelete bool) []indexEntry {

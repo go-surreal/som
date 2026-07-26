@@ -3,66 +3,55 @@ package codegen
 import (
 	"path/filepath"
 
-	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
-	"github.com/go-surreal/som/core/embed"
 )
 
+// buildWireFile generates the provider set for the configured wire package.
 func (b *build) buildWireFile() error {
-	pkgRepo := b.relativePkgPath(def.PkgRepo)
-
-	f := jen.NewFile(def.PkgSomWire)
-	f.PackageComment(string(embed.CodegenComment))
-
-	// var Providers = wire.NewSet(...)
-	f.Var().Id("Providers").Op("=").Qual(b.wirePackage, "NewSet").CustomFunc(jen.Options{
-		Open:      "(",
-		Close:     ")",
-		Separator: ",",
-		Multi:     true,
-	}, func(g *jen.Group) {
-		g.Id("ProvideClient")
-		g.Qual(b.wirePackage, "Bind").Call(
-			jen.New(jen.Qual(pkgRepo, "Client")),
-			jen.New(jen.Op("*").Qual(pkgRepo, "ClientImpl")),
+	tmpl := `
+		var Providers = wire.NewSet(
+			ProvideClient,
+			wire.Bind(new(repo.Client), new(*repo.ClientImpl)),
+			{{range .Repos}}
+			Provide{{.NameGo}}Repo,
+			{{- end}}
 		)
-		first := true
-		for _, node := range b.input.nodes {
-			if first {
-				g.Add(jen.Line(), jen.Id("Provide"+node.NameGo()+"Repo"))
-				first = false
-			} else {
-				g.Id("Provide" + node.NameGo() + "Repo")
-			}
-		}
-	})
 
-	// func ProvideClient(ctx context.Context, conf repo.Config) (*repo.ClientImpl, func(), error)
-	f.Line()
-	f.Func().Id("ProvideClient").Params(
-		jen.Id("ctx").Qual("context", "Context"),
-		jen.Id("conf").Qual(pkgRepo, "Config"),
-	).Params(
-		jen.Op("*").Qual(pkgRepo, "ClientImpl"),
-		jen.Func().Params(),
-		jen.Error(),
-	).Block(
-		jen.List(jen.Id("client"), jen.Err()).Op(":=").Qual(pkgRepo, "NewClient").Call(jen.Id("ctx"), jen.Id("conf")),
-		jen.If(jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Nil(), jen.Nil(), jen.Err()),
-		),
-		jen.Id("cleanup").Op(":=").Func().Params().Block(jen.Id("client").Dot("Close").Call()),
-		jen.Return(jen.Id("client"), jen.Id("cleanup"), jen.Nil()),
-	)
+		func ProvideClient(ctx context.Context, conf repo.Config) (*repo.ClientImpl, func(), error) {
+			client, err := repo.NewClient(ctx, conf)
+			if err != nil {
+				return nil, nil, err
+			}
+			cleanup := func() {
+				client.Close()
+			}
+			return client, cleanup, nil
+		}
+		{{range .Repos}}
+		func Provide{{.NameGo}}Repo(client *repo.ClientImpl) repo.{{.NameGo}}Repo {
+			return client.{{.NameGo}}Repo()
+		}
+		{{end -}}
+	`
+
+	var repos []repoRef
 
 	for _, node := range b.input.nodes {
-		f.Line()
-		f.Func().Id("Provide"+node.NameGo()+"Repo").Params(
-			jen.Id("client").Op("*").Qual(pkgRepo, "ClientImpl"),
-		).Qual(pkgRepo, node.NameGo()+"Repo").Block(
-			jen.Return(jen.Id("client").Dot(node.NameGo() + "Repo").Call()),
-		)
+		repos = append(repos, repoRef{node.NameGo(), node.NameGoLower()})
 	}
 
-	return f.Render(b.fs.Writer(filepath.Join(def.PkgSomWire, "providers.go")))
+	data := map[string]any{
+		"Repos": repos,
+	}
+
+	file := newGoFile(def.PkgSomWire,
+		goImport{Path: "context"},
+		goImport{Alias: "wire", Path: b.wirePackage},
+		goImport{Alias: "repo", Path: b.relativePkgPath(def.PkgRepo)},
+	)
+
+	return file.render(
+		b.fs.Writer(filepath.Join(def.PkgSomWire, "providers.go")),
+		"wire", tmpl, data,
+	)
 }

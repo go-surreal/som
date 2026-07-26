@@ -316,11 +316,16 @@ func ToLocationPtr(data *Location) *model.Location {
 	return &result
 }
 
+// LocationFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func LocationFields(m *model.Location) map[string]any {
 	c := Location{*m}
 	return c.fields()
 }
 
+// locationLink is a Location as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type locationLink struct {
 	Location
 	ID *models.RecordID

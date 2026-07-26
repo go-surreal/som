@@ -335,6 +335,7 @@ func (f allTypesFieldStringPtrSlicePtr[M]) key() lib.Key[M] {
 	return f.StringPtrSlicePtr.Slice.Key
 }
 
+// allTypesEdges is the AllTypes as reached through a graph traversal.
 type allTypesEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

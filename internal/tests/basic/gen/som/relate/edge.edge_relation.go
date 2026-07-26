@@ -19,7 +19,6 @@ type edgeRelation struct {
 
 // Create creates a new edge between the given nodes.
 // Note: The ID type if both nodes must be a string or number for now.
-
 func (e edgeRelation) Create(ctx context.Context, edge *model.EdgeRelation) error {
 	if edge == nil {
 		return errors.New("the given edge must not be nil")

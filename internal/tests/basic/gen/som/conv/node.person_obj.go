@@ -89,11 +89,16 @@ func ToPersonObjPtr(data *PersonObj) *model.PersonObj {
 	return &result
 }
 
+// PersonObjFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func PersonObjFields(m *model.PersonObj) map[string]any {
 	c := PersonObj{*m}
 	return c.fields()
 }
 
+// personObjLink is a PersonObj as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type personObjLink struct {
 	PersonObj
 	ID *models.RecordID

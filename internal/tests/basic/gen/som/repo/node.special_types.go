@@ -17,41 +17,29 @@ import (
 
 type SpecialTypesRepo interface {
 	// Query returns a new query builder for the SpecialTypes model.
-
 	Query() query.Builder[model.SpecialTypes]
 	// Create creates a new record for the SpecialTypes model.
-
 	Create(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Insert creates multiple records in a single operation.
 	// Before- and after-create hooks are invoked for each node.
-
 	Insert(ctx context.Context, nodes []*model.SpecialTypes) error
 	// CreateWithID creates a new record with the given ID for the SpecialTypes model.
-
 	CreateWithID(ctx context.Context, id string, specialTypes *model.SpecialTypes) error
 	// Read returns the record for the given ID, if it exists.
-
 	Read(ctx context.Context, id string) (*model.SpecialTypes, bool, error)
 	// Update updates the record for the given SpecialTypes model.
-
 	Update(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Delete deletes the record for the given SpecialTypes model.
-
 	Delete(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Erase permanently deletes the record from the database.
-
 	Erase(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Restore un-deletes a soft-deleted record.
-
 	Restore(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Refresh refreshes the given model with the current database state.
-
 	Refresh(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Relate returns a new relate builder for the SpecialTypes model.
-
 	Relate() *relate.SpecialTypes
 	// Index returns a new index instance for the SpecialTypes model.
-
 	Index() *index.SpecialTypes
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
@@ -60,7 +48,6 @@ type SpecialTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeCreate(fn func(ctx context.Context, node *model.SpecialTypes) error) func()
 	// OnAfterCreate registers a hook that runs after a record has been created.
 	// If the hook returns an error, the error is returned to the caller.
@@ -68,7 +55,6 @@ type SpecialTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterCreate(fn func(ctx context.Context, node *model.SpecialTypes) error) func()
 	// OnBeforeUpdate registers a hook that runs before a record is updated.
 	// If the hook returns an error, the update operation is aborted.
@@ -76,7 +62,6 @@ type SpecialTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.SpecialTypes) error) func()
 	// OnAfterUpdate registers a hook that runs after a record has been updated.
 	// If the hook returns an error, the error is returned to the caller.
@@ -84,7 +69,6 @@ type SpecialTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterUpdate(fn func(ctx context.Context, node *model.SpecialTypes) error) func()
 	// OnBeforeDelete registers a hook that runs before a record is deleted.
 	// If the hook returns an error, the delete operation is aborted.
@@ -92,7 +76,6 @@ type SpecialTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeDelete(fn func(ctx context.Context, node *model.SpecialTypes) error) func()
 	// OnAfterDelete registers a hook that runs after a record has been deleted.
 	// If the hook returns an error, the error is returned to the caller.
@@ -100,7 +83,6 @@ type SpecialTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterDelete(fn func(ctx context.Context, node *model.SpecialTypes) error) func()
 }
 
@@ -177,7 +159,8 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_types", parseUUID(id))
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.specialTypesRepo
 }

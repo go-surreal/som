@@ -1,12 +1,12 @@
 package codegen
 
 import (
+	"path"
+
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
-	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/util/fs"
-	"path"
 )
 
 type sortBuilder struct {
@@ -21,13 +21,13 @@ func newSortBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *sortBuild
 
 func (b *sortBuilder) build() error {
 	for _, node := range b.nodes {
-		if err := b.buildNodeFile(node); err != nil {
+		if err := b.buildFile(node); err != nil {
 			return err
 		}
 	}
 
 	for _, object := range b.objects {
-		if err := b.buildObjectFile(object); err != nil {
+		if err := b.buildFile(object); err != nil {
 			return err
 		}
 	}
@@ -35,142 +35,122 @@ func (b *sortBuilder) build() error {
 	return nil
 }
 
-func (b *sortBuilder) buildNodeFile(node *field.NodeTable) error {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		TargetPkg: b.basePkg,
-		Table:     node,
+// buildFile generates the sort accessors for a single table or object. Only
+// tables get an exported entry point, objects are reached through the field
+// they are nested under.
+func (b *sortBuilder) buildFile(elem field.Element) error {
+	tmpl := `
+		{{- if .IsTable}}
+		var {{.NameGo}} = new{{.NameGo}}[model.{{.NameGo}}]("")
+		{{end}}
+		func new{{.NameGo}}[M any](key string) {{.NameGoLower}}[M] {
+			return {{.InitLiteral}}
+		}
+
+		{{.StructType}}
+		{{range .FieldFuncs}}
+		{{.}}
+		{{end -}}
+	`
+
+	_, isTable := elem.(*field.NodeTable)
+
+	file := newGoFile(b.pkgName,
+		goImport{Alias: "lib", Path: b.relativePkgPath(def.PkgLib)},
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
+
+	data := map[string]any{
+		"NameGo":      elem.NameGo(),
+		"NameGoLower": elem.NameGoLower(),
+		"IsTable":     isTable,
+		"InitLiteral": file.code(b.initLiteral(elem)),
+		"StructType":  file.decl(b.structType(elem)),
+		"FieldFuncs":  b.fieldFuncs(file, elem),
 	}
 
-	f := jen.NewFile(b.pkgName)
+	return file.render(
+		b.fs.Writer(path.Join(b.path(), elem.FileName())),
+		"sort", tmpl, data,
+	)
+}
 
-	f.PackageComment(string(embed.CodegenComment))
+// initLiteral returns the composite literal initialising one sort accessor per
+// field of the given element.
+func (b *sortBuilder) initLiteral(elem field.Element) jen.Code {
+	values := jen.Dict{
+		jen.Id("key"): jen.Id("key"),
+	}
 
-	f.Line()
-	f.Var().Id(node.Name).Op("=").Id("new" + node.Name).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+	for i, f := range definedFields(elem) {
+		if code := f.CodeGen().SortInit(b.fieldContext(elem, i)); code != nil {
+			values[jen.Id(f.NameGo())] = code
+		}
+	}
 
-	f.Line()
-	f.Add(b.byNew(node))
+	return jen.Id(elem.NameGoLower()).Types(def.TypeModel).Values(values)
+}
 
-	f.Line()
-	f.Type().Id(node.NameGoLower()).
+// structType returns the type declaration of the accessor struct, holding one
+// accessor per field of the given element.
+func (b *sortBuilder) structType(elem field.Element) jen.Code {
+	return jen.Type().Id(elem.NameGoLower()).
 		Types(jen.Add(def.TypeModel).Any()).
 		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").String())
-			for _, f := range node.Fields {
-				if code := f.CodeGen().SortDefine(fieldCtx); code != nil {
+			g.Id("key").String()
+
+			for i, f := range definedFields(elem) {
+				if code := f.CodeGen().SortDefine(b.fieldContext(elem, i)); code != nil {
 					g.Add(code)
 				}
 			}
 		})
+}
 
-	for _, fld := range node.GetFields() {
-		if code := fld.CodeGen().SortFunc(fieldCtx); code != nil {
-			f.Line()
-			f.Add(code)
+// fieldFuncs returns the accessor functions of those fields that need one,
+// like nested objects and slices.
+func (b *sortBuilder) fieldFuncs(file *goFile, elem field.Element) []string {
+	var funcs []string
+
+	for _, f := range elem.GetFields() {
+		if code := f.CodeGen().SortFunc(b.fieldContext(elem, 0)); code != nil {
+			funcs = append(funcs, file.decl(code))
 		}
 	}
 
-	if err := f.Render(b.fs.Writer(path.Join(b.path(), node.FileName()))); err != nil {
-		return err
-	}
-
-	return nil
+	return funcs
 }
 
-func (b *sortBuilder) byNew(node *field.NodeTable) jen.Code {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		TargetPkg: b.basePkg,
-		Table:     node,
-	}
-
-	return jen.Func().Id("new" + node.Name).
-		Types(jen.Add(def.TypeModel).Any()).
-		Params(jen.Id("key").String()).
-		Id(node.NameGoLower()).Types(def.TypeModel).
-		Block(
-			jen.Return(
-				jen.Id(node.NameGoLower()).Types(def.TypeModel).
-					Values(jen.DictFunc(func(d jen.Dict) {
-						d[jen.Id("key")] = jen.Id("key")
-						for _, f := range node.Fields {
-							if code := f.CodeGen().SortInit(fieldCtx); code != nil {
-								d[jen.Id(f.NameGo())] = code
-							}
-						}
-					})),
-			),
-		)
+func (b *sortBuilder) fieldContext(elem field.Element, index int) field.Context {
+	return fieldContextFor(b.sourcePkgPath, b.basePkg, elem, index)
 }
 
-func (b *sortBuilder) buildObjectFile(object *field.DatabaseObject) error {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		TargetPkg: b.basePkg,
-		Table:     object,
+// definedFields returns the fields an accessor struct is built from. In
+// contrast to GetFields, these include the fields of the embedded som types.
+func definedFields(elem field.Element) []field.Field {
+	switch elem := elem.(type) {
+	case *field.NodeTable:
+		return elem.Fields
+
+	case *field.DatabaseObject:
+		return elem.Fields
+
+	default:
+		return elem.GetFields()
 	}
-
-	f := jen.NewFile(b.pkgName)
-
-	f.PackageComment(string(embed.CodegenComment))
-
-	f.Line()
-	f.Add(b.byNewObject(object))
-
-	f.Line()
-	f.Type().Id(object.NameGoLower()).
-		Types(jen.Add(def.TypeModel).Any()).
-		StructFunc(func(g *jen.Group) {
-			g.Add(jen.Id("key").String())
-			for _, fld := range object.Fields {
-				if code := fld.CodeGen().SortDefine(fieldCtx); code != nil {
-					g.Add(code)
-				}
-			}
-		})
-
-	for _, fld := range object.GetFields() {
-		if code := fld.CodeGen().SortFunc(fieldCtx); code != nil {
-			f.Line()
-			f.Add(code)
-		}
-	}
-
-	if err := f.Render(b.fs.Writer(path.Join(b.path(), object.FileName()))); err != nil {
-		return err
-	}
-
-	return nil
 }
 
-func (b *sortBuilder) byNewObject(object *field.DatabaseObject) jen.Code {
-	fieldCtx := field.Context{
-		SourcePkg: b.sourcePkgPath,
-		TargetPkg: b.basePkg,
-		Table:     object,
+func fieldContextFor(sourcePkg, targetPkg string, elem field.Element, index int) field.Context {
+	ctx := field.Context{
+		SourcePkg: sourcePkg,
+		TargetPkg: targetPkg,
+		Table:     elem,
 	}
 
-	return jen.Func().Id("new" + object.Name).
-		Types(jen.Add(def.TypeModel).Any()).
-		Params(jen.Id("key").String()).
-		Id(object.NameGoLower()).Types(def.TypeModel).
-		Block(
-			jen.Return(
-				jen.Id(object.NameGoLower()).Types(def.TypeModel).
-					Values(jen.DictFunc(func(d jen.Dict) {
-						d[jen.Id("key")] = jen.Id("key")
-						for i, f := range object.Fields {
-							fCtx := fieldCtx
-							if object.IsArrayIndexed {
-								idx := i
-								fCtx.ArrayIndex = &idx
-							}
-							if code := f.CodeGen().SortInit(fCtx); code != nil {
-								d[jen.Id(f.NameGo())] = code
-							}
-						}
-					})),
-			),
-		)
+	// The fields of an array based complex ID are addressed by their position.
+	if object, ok := elem.(*field.DatabaseObject); ok && object.IsArrayIndexed {
+		ctx.ArrayIndex = &index
+	}
+
+	return ctx
 }
