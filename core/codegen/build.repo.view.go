@@ -13,7 +13,6 @@ func (b *build) buildViewRepoFile(view *field.ViewTable) error {
 	tmpl := `
 		type {{.NameGo}}Repo interface {
 			// Query returns a new read-only query builder for the {{.NameGo}} view.
-
 			Query() query.Builder[model.{{.NameGo}}]
 		}
 
@@ -43,12 +42,13 @@ func (b *build) buildViewRepoFile(view *field.ViewTable) error {
 		"NameGoLower": view.NameGoLower(),
 	}
 
-	return renderGoFileWithImports(
+	file := newGoFile(def.PkgRepo,
+		goImport{Alias: "query", Path: b.relativePkgPath(def.PkgQuery)},
+		goImport{Alias: "model", Path: b.input.sourcePkgPath},
+	)
+
+	return file.render(
 		b.fs.Writer(filepath.Join(def.PkgRepo, view.FileName())),
-		def.PkgRepo, "repoView", tmpl, data,
-		[]goImport{
-			{Alias: "query", Path: b.relativePkgPath(def.PkgQuery)},
-			{Alias: "model", Path: b.input.sourcePkgPath},
-		},
+		"repoView", tmpl, data,
 	)
 }

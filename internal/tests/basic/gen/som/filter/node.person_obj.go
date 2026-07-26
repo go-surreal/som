@@ -24,6 +24,7 @@ func (n personObj[M]) ID() personKey[M] {
 	return newPersonKey[M](lib.Fn(lib.Field(n.Key, "id"), "meta::id"))
 }
 
+// personObjEdges is the PersonObj as reached through a graph traversal.
 type personObjEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

@@ -85,12 +85,9 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 		"EdgeFields": edgeFields,
 	}
 
-	return renderGoFile(
+	return newGoFile(b.pkgName).render(
 		b.fs.Writer(path.Join(b.path(), node.FileName())),
-		b.pkgName,
-		"relateNode",
-		tmpl,
-		data,
+		"relateNode", tmpl, data,
 	)
 }
 
@@ -102,7 +99,6 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 
 		// Create creates a new edge between the given nodes.
 		// Note: The ID type if both nodes must be a string or number for now.
-
 		func (e {{.TypeName}}) Create(ctx context.Context, edge *model.{{.EdgeNameGo}}) error {
 			if edge == nil {
 				return errors.New("the given edge must not be nil")
@@ -149,43 +145,43 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		}
 	`
 
+	file := newGoFile(b.pkgName,
+		goImport{Path: "context"},
+		goImport{Path: "errors"},
+		goImport{Path: "fmt"},
+		goImport{Alias: "models", Path: def.PkgModels},
+		goImport{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
+		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
+		goImport{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
+
 	data := map[string]any{
 		"TypeName":   edge.NameGoLower(),
 		"EdgeNameGo": edge.NameGo(),
 		"EdgeNameDB": edge.NameDatabase(),
 		"InNameGo":   edge.In.NameGo(),
 		"InNameDB":   edge.In.Table().NameDatabase(),
-		"InIDValue":  b.edgeNodeIDValue(edge.In),
+		"InIDValue":  file.code(b.edgeNodeIDValue(edge.In)),
 		"OutNameGo":  edge.Out.NameGo(),
 		"OutNameDB":  edge.Out.Table().NameDatabase(),
-		"OutIDValue": b.edgeNodeIDValue(edge.Out),
+		"OutIDValue": file.code(b.edgeNodeIDValue(edge.Out)),
 	}
 
-	return renderGoFileWithImports(
+	return file.render(
 		b.fs.Writer(path.Join(b.path(), edge.FileName())),
-		b.pkgName, "relateEdge", tmpl, data,
-		[]goImport{
-			{Path: "context"},
-			{Path: "errors"},
-			{Path: "fmt"},
-			{Alias: "models", Path: def.PkgModels},
-			{Alias: "som", Path: b.relativePkgPath()},
-			{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
-			{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
-			{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
-			{Alias: "model", Path: b.sourcePkgPath},
-		},
+		"relateEdge", tmpl, data,
 	)
 }
 
 // edgeNodeIDValue returns the expression for the record ID of the given node
 // of an edge.
-func (b *relateBuilder) edgeNodeIDValue(node *field.Node) string {
+func (b *relateBuilder) edgeNodeIDValue(node *field.Node) jen.Code {
 	id := jen.Id("edge").Dot(node.Table().NameGo()).Dot("ID").Call()
 
 	if node.Table().Source.IDType == parser.IDTypeUUID {
-		return renderCode(jen.Qual(b.relativePkgPath(), "UUID").Call(id))
+		return jen.Qual(b.relativePkgPath(), "UUID").Call(id)
 	}
 
-	return renderCode(id)
+	return id
 }

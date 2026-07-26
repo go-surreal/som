@@ -8,7 +8,6 @@ import (
 
 type EventSummaryRepo interface {
 	// Query returns a new read-only query builder for the EventSummary view.
-
 	Query() query.Builder[model.EventSummary]
 }
 

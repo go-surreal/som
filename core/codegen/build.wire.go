@@ -44,13 +44,14 @@ func (b *build) buildWireFile() error {
 		"Repos": repos,
 	}
 
-	return renderGoFileWithImports(
+	file := newGoFile(def.PkgSomWire,
+		goImport{Path: "context"},
+		goImport{Alias: "wire", Path: b.wirePackage},
+		goImport{Alias: "repo", Path: b.relativePkgPath(def.PkgRepo)},
+	)
+
+	return file.render(
 		b.fs.Writer(filepath.Join(def.PkgSomWire, "providers.go")),
-		def.PkgSomWire, "wire", tmpl, data,
-		[]goImport{
-			{Path: "context"},
-			{Alias: "wire", Path: b.wirePackage},
-			{Alias: "repo", Path: b.relativePkgPath(def.PkgRepo)},
-		},
+		"wire", tmpl, data,
 	)
 }

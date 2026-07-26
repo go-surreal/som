@@ -22,6 +22,7 @@ type weatherKey[M any] struct {
 	Date *lib.Time[M]
 }
 
+// weatherKeyEdges is the WeatherKey as reached through a graph traversal.
 type weatherKeyEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

@@ -66,12 +66,13 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 		"Relations":   fetchRelations(node),
 	}
 
-	return renderGoFileWithImports(
+	file := newGoFile(b.pkgName,
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
+
+	return file.render(
 		b.fs.Writer(path.Join(b.path(), node.FileName())),
-		b.pkgName, "fetch", tmpl, data,
-		[]goImport{
-			{Alias: "model", Path: b.sourcePkgPath},
-		},
+		"fetch", tmpl, data,
 	)
 }
 

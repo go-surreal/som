@@ -131,11 +131,16 @@ func ToTeamMemberPtr(data *TeamMember) *model.TeamMember {
 	return &result
 }
 
+// TeamMemberFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func TeamMemberFields(m *model.TeamMember) map[string]any {
 	c := TeamMember{*m}
 	return c.fields()
 }
 
+// teamMemberLink is a TeamMember as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type teamMemberLink struct {
 	TeamMember
 	ID *models.RecordID

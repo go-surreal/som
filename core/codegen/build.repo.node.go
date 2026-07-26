@@ -1,7 +1,6 @@
 package codegen
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -15,64 +14,48 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 	tmpl := `
 		type {{.NameGo}}Repo interface {
 			// Query returns a new query builder for the {{.NameGo}} model.
-
 			Query() query.Builder[model.{{.NameGo}}]
 			{{- if not .HasComplexID}}
 			// Create creates a new record for the {{.NameGo}} model.
-
 			Create(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Insert creates multiple records in a single operation.
 			// Before- and after-create hooks are invoked for each node.
-
 			Insert(ctx context.Context, nodes []*model.{{.NameGo}}) error
 			// CreateWithID creates a new record with the given ID for the {{.NameGo}} model.
-
 			CreateWithID(ctx context.Context, id string, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Read returns the record for the given ID, if it exists.
-
 			Read(ctx context.Context, id string) (*model.{{.NameGo}}, bool, error)
 			{{- else}}
 			// CreateWithID creates a new record with the given key for the {{.NameGo}} model.
-
 			CreateWithID(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Read returns the record for the given key, if it exists.
-
 			Read(ctx context.Context, key {{.KeyType}}) (*model.{{.NameGo}}, bool, error)
 			{{- end}}
 			// Update updates the record for the given {{.NameGo}} model.
-
 			Update(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Delete deletes the record for the given {{.NameGo}} model.
-
 			Delete(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			{{- if .SoftDelete}}
 			// Erase permanently deletes the record from the database.
-
 			Erase(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Restore un-deletes a soft-deleted record.
-
 			Restore(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			{{- end}}
 			// Refresh refreshes the given model with the current database state.
-
 			Refresh(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			{{- if not .HasComplexID}}
 			// Relate returns a new relate builder for the {{.NameGo}} model.
-
 			Relate() *relate.{{.NameGo}}
 			{{- end}}
 			// Index returns a new index instance for the {{.NameGo}} model.
-
 			Index() *index.{{.NameGo}}
 			{{- if .HasChangefeed}}
 			// Changes returns a new changes query builder for the {{.NameGo}} model.
 			// This is only available for models with changefeed enabled.
-
 			Changes() query.ChangesBuilder[model.{{.NameGo}}, conv.{{.NameGo}}]
 			{{- end}}
 
 			{{range .Hooks}}{{.Comment}}
-
 			{{.Name}}(fn func(ctx context.Context, node *model.{{$.NameGo}}) error) func()
 			{{end -}}
 		}
@@ -395,6 +378,19 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		{{end -}}
 	`
 
+	file := newGoFile(def.PkgRepo,
+		goImport{Path: "context"},
+		goImport{Path: "errors"},
+		goImport{Path: "fmt"},
+		goImport{Alias: "som", Path: b.relativePkgPath()},
+		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
+		goImport{Alias: "index", Path: b.relativePkgPath(def.PkgIndex)},
+		goImport{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
+		goImport{Alias: "query", Path: b.relativePkgPath(def.PkgQuery)},
+		goImport{Alias: "relate", Path: b.relativePkgPath(def.PkgRelate)},
+		goImport{Alias: "model", Path: b.input.sourcePkgPath},
+	)
+
 	data := map[string]any{
 		"NameGo":           node.NameGo(),
 		"NameGoLower":      node.NameGoLower(),
@@ -404,31 +400,17 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		"HasChangefeed":    node.HasChangefeed(),
 		"SoftDelete":       node.Source.SoftDelete,
 		"OptimisticLock":   node.Source.OptimisticLock,
-		"RepoLiteral":      b.repoLiteral(node),
-		"RecordIDFromNode": b.recordIDFromNode(node),
+		"RepoLiteral":      file.code(b.repoLiteral(node)),
+		"RecordIDFromNode": file.code(b.recordIDFromNode(node)),
 		"Hooks":            repoHooks(),
 
-		"IDCheck":  func(errMsg string) string { return b.idEmptyCheck(node, errMsg) },
-		"RunHooks": func(kind string) string { return runHooksCall(node, kind) },
+		"IDCheck":  func(errMsg string) string { return file.code(b.idEmptyCheck(node, errMsg)) },
+		"RunHooks": func(kind string) string { return file.code(runHooksCall(node, kind)) },
 	}
 
-	return renderGoFileWithImports(
+	return file.render(
 		b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName())),
-		def.PkgRepo, "repoNode", tmpl, data,
-		[]goImport{
-			{Path: "context"},
-			{Path: "errors"},
-			{Path: "fmt"},
-			{Alias: "models", Path: def.PkgModels},
-			{Alias: "som", Path: b.relativePkgPath()},
-			{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
-			{Alias: "index", Path: b.relativePkgPath(def.PkgIndex)},
-			{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
-			{Alias: "types", Path: b.relativePkgPath(def.PkgTypes)},
-			{Alias: "query", Path: b.relativePkgPath(def.PkgQuery)},
-			{Alias: "relate", Path: b.relativePkgPath(def.PkgRelate)},
-			{Alias: "model", Path: b.input.sourcePkgPath},
-		},
+		"repoNode", tmpl, data,
 	)
 }
 
@@ -472,13 +454,13 @@ func repoHooks() []repoHook {
 
 // runHooksCall emits a call to the generic repo.runHooks for the given hook
 // kind against the node under operation, returning on error.
-func runHooksCall(node *field.NodeTable, kind string) string {
-	return renderCode(jen.If(
+func runHooksCall(node *field.NodeTable, kind string) jen.Code {
+	return jen.If(
 		jen.Err().Op(":=").Id("r").Dot("runHooks").Call(
 			jen.Id("ctx"), jen.Id(kind), jen.Id(node.NameGoLower()),
 		),
 		jen.Err().Op("!=").Nil(),
-	).Block(jen.Return(jen.Err())))
+	).Block(jen.Return(jen.Err()))
 }
 
 // keyType returns the type of the record key, which is the complex ID struct
@@ -493,7 +475,7 @@ func (b *build) keyType(node *field.NodeTable) string {
 
 // repoLiteral returns the composite literal for the generic repo the node
 // repository is built upon.
-func (b *build) repoLiteral(node *field.NodeTable) string {
+func (b *build) repoLiteral(node *field.NodeTable) jen.Code {
 	values := []jen.Code{
 		jen.Line().Id("db").Op(":").Id("c").Dot("db"),
 		jen.Line().Id("name").Op(":").Lit(node.NameDatabase()),
@@ -509,9 +491,9 @@ func (b *build) repoLiteral(node *field.NodeTable) string {
 		jen.Line(),
 	)
 
-	return renderCode(jen.Op("&").Id("repo").
+	return jen.Op("&").Id("repo").
 		Types(jen.Id("model."+node.NameGo()), jen.Id(b.keyType(node))).
-		Values(values...))
+		Values(values...)
 }
 
 // recordIDFunc returns the function literal that converts a record key into
@@ -545,29 +527,31 @@ func (b *build) recordIDFunc(node *field.NodeTable) jen.Code {
 
 // recordIDFromNode returns the expression building the record ID from the ID
 // of the node under operation.
-func (b *build) recordIDFromNode(node *field.NodeTable) string {
-	if node.HasComplexID() {
-		return fmt.Sprintf("r.recordID(%s.ID())", node.NameGoLower())
+func (b *build) recordIDFromNode(node *field.NodeTable) jen.Code {
+	id := jen.Id(node.NameGoLower()).Dot("ID").Call()
+
+	if !node.HasComplexID() {
+		id = jen.String().Call(id)
 	}
 
-	return fmt.Sprintf("r.recordID(string(%s.ID()))", node.NameGoLower())
+	return jen.Id("r").Dot("recordID").Call(id)
 }
 
 // idEmptyCheck emits the guard clauses ensuring that the ID of the node under
 // operation is set. For complex IDs referencing other nodes, the ID of each
 // referenced node is checked instead.
-func (b *build) idEmptyCheck(node *field.NodeTable, errMsg string) string {
+func (b *build) idEmptyCheck(node *field.NodeTable, errMsg string) jen.Code {
 	id := jen.Id(node.NameGoLower()).Dot("ID").Call()
 
 	if !node.HasComplexID() {
-		return renderCode(emptyStringCheck(id, errMsg))
+		return emptyStringCheck(id, errMsg)
 	}
 
 	cid := node.Source.ComplexID
 
 	if !cid.HasNodeRef() {
-		return renderCode(jen.Var().Id("zeroKey").Id(b.keyType(node)).Line().
-			Add(zeroValueCheck(id, "zeroKey", errMsg)))
+		return jen.Var().Id("zeroKey").Id(b.keyType(node)).Line().
+			Add(zeroValueCheck(id, "zeroKey", errMsg))
 	}
 
 	var checks []jen.Code
@@ -598,23 +582,7 @@ func (b *build) idEmptyCheck(node *field.NodeTable, errMsg string) string {
 		}
 	}
 
-	return renderCode(joinStatements(checks))
-}
-
-// joinStatements combines the given statements into a single code fragment,
-// one statement per line.
-func joinStatements(codes []jen.Code) jen.Code {
-	stmt := jen.Null()
-
-	for i, code := range codes {
-		if i > 0 {
-			stmt.Line()
-		}
-
-		stmt.Add(code)
-	}
-
-	return stmt
+	return joinStatements(checks)
 }
 
 func emptyStringCheck(expr jen.Code, errMsg string) jen.Code {

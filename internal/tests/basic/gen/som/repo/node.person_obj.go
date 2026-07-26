@@ -15,25 +15,18 @@ import (
 
 type PersonObjRepo interface {
 	// Query returns a new query builder for the PersonObj model.
-
 	Query() query.Builder[model.PersonObj]
 	// CreateWithID creates a new record with the given key for the PersonObj model.
-
 	CreateWithID(ctx context.Context, personObj *model.PersonObj) error
 	// Read returns the record for the given key, if it exists.
-
 	Read(ctx context.Context, key model.PersonKey) (*model.PersonObj, bool, error)
 	// Update updates the record for the given PersonObj model.
-
 	Update(ctx context.Context, personObj *model.PersonObj) error
 	// Delete deletes the record for the given PersonObj model.
-
 	Delete(ctx context.Context, personObj *model.PersonObj) error
 	// Refresh refreshes the given model with the current database state.
-
 	Refresh(ctx context.Context, personObj *model.PersonObj) error
 	// Index returns a new index instance for the PersonObj model.
-
 	Index() *index.PersonObj
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
@@ -42,7 +35,6 @@ type PersonObjRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeCreate(fn func(ctx context.Context, node *model.PersonObj) error) func()
 	// OnAfterCreate registers a hook that runs after a record has been created.
 	// If the hook returns an error, the error is returned to the caller.
@@ -50,7 +42,6 @@ type PersonObjRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterCreate(fn func(ctx context.Context, node *model.PersonObj) error) func()
 	// OnBeforeUpdate registers a hook that runs before a record is updated.
 	// If the hook returns an error, the update operation is aborted.
@@ -58,7 +49,6 @@ type PersonObjRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.PersonObj) error) func()
 	// OnAfterUpdate registers a hook that runs after a record has been updated.
 	// If the hook returns an error, the error is returned to the caller.
@@ -66,7 +56,6 @@ type PersonObjRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterUpdate(fn func(ctx context.Context, node *model.PersonObj) error) func()
 	// OnBeforeDelete registers a hook that runs before a record is deleted.
 	// If the hook returns an error, the delete operation is aborted.
@@ -74,7 +63,6 @@ type PersonObjRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeDelete(fn func(ctx context.Context, node *model.PersonObj) error) func()
 	// OnAfterDelete registers a hook that runs after a record has been deleted.
 	// If the hook returns an error, the error is returned to the caller.
@@ -82,7 +70,6 @@ type PersonObjRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterDelete(fn func(ctx context.Context, node *model.PersonObj) error) func()
 }
 

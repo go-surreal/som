@@ -22,6 +22,7 @@ type eventLog[M any] struct {
 	Value    *lib.Float[M, float64]
 }
 
+// eventLogEdges is the EventLog as reached through a graph traversal.
 type eventLogEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

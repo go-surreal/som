@@ -15,11 +15,9 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 		type {{.NameGo}}Repo interface {
 			// Create writes a new {{.NameGo}} record. The record is discarded
 			// immediately after write (DROP table); nothing is returned.
-
 			Create(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Insert writes multiple {{.NameGo}} records in a single operation.
 			// The records are discarded immediately after write (DROP table).
-
 			Insert(ctx context.Context, {{.NameGoLower}}s []*model.{{.NameGo}}) error
 		}
 
@@ -68,14 +66,15 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 		"NameDB":      sink.NameDatabase(),
 	}
 
-	return renderGoFileWithImports(
+	file := newGoFile(def.PkgRepo,
+		goImport{Path: "context"},
+		goImport{Path: "errors"},
+		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
+		goImport{Alias: "model", Path: b.input.sourcePkgPath},
+	)
+
+	return file.render(
 		b.fs.Writer(filepath.Join(def.PkgRepo, sink.FileName())),
-		def.PkgRepo, "repoSink", tmpl, data,
-		[]goImport{
-			{Path: "context"},
-			{Path: "errors"},
-			{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
-			{Alias: "model", Path: b.input.sourcePkgPath},
-		},
+		"repoSink", tmpl, data,
 	)
 }

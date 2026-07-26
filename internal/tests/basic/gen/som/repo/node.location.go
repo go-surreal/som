@@ -16,35 +16,25 @@ import (
 
 type LocationRepo interface {
 	// Query returns a new query builder for the Location model.
-
 	Query() query.Builder[model.Location]
 	// Create creates a new record for the Location model.
-
 	Create(ctx context.Context, location *model.Location) error
 	// Insert creates multiple records in a single operation.
 	// Before- and after-create hooks are invoked for each node.
-
 	Insert(ctx context.Context, nodes []*model.Location) error
 	// CreateWithID creates a new record with the given ID for the Location model.
-
 	CreateWithID(ctx context.Context, id string, location *model.Location) error
 	// Read returns the record for the given ID, if it exists.
-
 	Read(ctx context.Context, id string) (*model.Location, bool, error)
 	// Update updates the record for the given Location model.
-
 	Update(ctx context.Context, location *model.Location) error
 	// Delete deletes the record for the given Location model.
-
 	Delete(ctx context.Context, location *model.Location) error
 	// Refresh refreshes the given model with the current database state.
-
 	Refresh(ctx context.Context, location *model.Location) error
 	// Relate returns a new relate builder for the Location model.
-
 	Relate() *relate.Location
 	// Index returns a new index instance for the Location model.
-
 	Index() *index.Location
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
@@ -53,7 +43,6 @@ type LocationRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeCreate(fn func(ctx context.Context, node *model.Location) error) func()
 	// OnAfterCreate registers a hook that runs after a record has been created.
 	// If the hook returns an error, the error is returned to the caller.
@@ -61,7 +50,6 @@ type LocationRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterCreate(fn func(ctx context.Context, node *model.Location) error) func()
 	// OnBeforeUpdate registers a hook that runs before a record is updated.
 	// If the hook returns an error, the update operation is aborted.
@@ -69,7 +57,6 @@ type LocationRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.Location) error) func()
 	// OnAfterUpdate registers a hook that runs after a record has been updated.
 	// If the hook returns an error, the error is returned to the caller.
@@ -77,7 +64,6 @@ type LocationRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterUpdate(fn func(ctx context.Context, node *model.Location) error) func()
 	// OnBeforeDelete registers a hook that runs before a record is deleted.
 	// If the hook returns an error, the delete operation is aborted.
@@ -85,7 +71,6 @@ type LocationRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeDelete(fn func(ctx context.Context, node *model.Location) error) func()
 	// OnAfterDelete registers a hook that runs after a record has been deleted.
 	// If the hook returns an error, the error is returned to the caller.
@@ -93,7 +78,6 @@ type LocationRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterDelete(fn func(ctx context.Context, node *model.Location) error) func()
 }
 

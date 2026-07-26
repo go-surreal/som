@@ -6,7 +6,6 @@ import (
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/codegen/field"
-	"github.com/go-surreal/som/core/embed"
 	"github.com/go-surreal/som/core/parser"
 	"github.com/go-surreal/som/core/util/fs"
 )
@@ -16,7 +15,6 @@ type convBuilder struct {
 }
 
 func newConvBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *convBuilder {
-	jen.Add()
 	return &convBuilder{
 		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
@@ -56,109 +54,353 @@ func (b *convBuilder) build() error {
 	return nil
 }
 
+// buildFile generates the CBOR conversion type for a single table or object.
+// It is a shallow wrapper embedding the model, adding the CBOR marshalling
+// that maps between Go field names and their database counterparts.
 func (b *convBuilder) buildFile(elem field.Element) error {
-	fieldCtx := field.Context{
+	tmpl := `
+		type {{.TypeName}} struct {
+			model.{{.NameGo}}
+		}
+
+		func (c *{{.TypeName}}) MarshalCBOR() ([]byte, error) {
+			if c == nil {
+				return cbor.Marshal(nil)
+			}
+			return cbor.Marshal(c.fields())
+		}
+
+		func (c *{{.TypeName}}) fields() map[string]any {
+			data := make(map[string]any, {{.FieldCount}})
+			{{if .MarshalsID}}
+			// Embedded som.Node/Edge ID field
+			{{.MarshalID}}
+			{{end}}
+			{{.MarshalFields}}
+
+			return data
+		}
+
+		func (c *{{.TypeName}}) UnmarshalCBOR(data []byte) error {
+			var rawMap map[string]cbor.RawMessage
+			if err := cbor.Unmarshal(data, &rawMap); err != nil {
+				return err
+			}
+			{{if .UnmarshalsID}}
+			// Embedded som.Node/Edge/View ID field
+			{{.UnmarshalID}}
+			{{end}}
+			{{.UnmarshalFields}}
+
+			return nil
+		}
+
+		func {{.FromPrefix}}{{.NameGo}}(data model.{{.NameGo}}) {{.TypeName}} {
+			return {{.TypeName}}{ {{.NameGo}}: data}
+		}
+		func {{.FromPrefix}}{{.NameGo}}Ptr(data *model.{{.NameGo}}) *{{.TypeName}} {
+			if data == nil {
+				return nil
+			}
+			return &{{.TypeName}}{ {{.NameGo}}: *data}
+		}
+
+		func {{.ToPrefix}}{{.NameGo}}(data {{.ToParam}}) model.{{.NameGo}} {
+			return data.{{.NameGo}}
+		}
+		func {{.ToPrefix}}{{.NameGo}}Ptr(data *{{.TypeName}}) *model.{{.NameGo}} {
+			if data == nil {
+				return nil
+			}
+			result := data.{{.NameGo}}
+			return &result
+		}
+		{{if .IsNode}}
+		// {{.NameGo}}Fields returns the database keyed value map of a model. It is used by
+		// the query builder to derive pagination cursor values with correct database field
+		// names and types.
+		func {{.NameGo}}Fields(m *model.{{.NameGo}}) map[string]any {
+			c := {{.TypeName}}{*m}
+			return c.fields()
+		}
+
+		// {{.NameGoLower}}Link is a {{.NameGo}} as referenced by another record. It marshals
+		// to its record ID only, but unmarshals from either a record ID or a fetched record.
+		type {{.NameGoLower}}Link struct {
+			{{.TypeName}}
+			ID *models.RecordID
+		}
+
+		func (f *{{.NameGoLower}}Link) MarshalCBOR() ([]byte, error) {
+			if f == nil {
+				return nil, nil
+			}
+			return cbor.Marshal(f.ID)
+		}
+
+		func (f *{{.NameGoLower}}Link) UnmarshalCBOR(data []byte) error {
+			if err := cbor.Unmarshal(data, &f.ID); err == nil {
+				return nil
+			}
+			type alias {{.NameGoLower}}Link
+			var link alias
+			err := cbor.Unmarshal(data, &link)
+			if err == nil {
+				*f = {{.NameGoLower}}Link(link)
+			}
+			return err
+		}
+
+		func from{{.NameGo}}Link(link *{{.NameGoLower}}Link) model.{{.NameGo}} {
+			if link == nil {
+				return model.{{.NameGo}}{}
+			}
+			res := {{.TypeName}}(link.{{.NameGo}})
+			return To{{.NameGo}}(res)
+		}
+
+		func from{{.NameGo}}LinkPtr(link *{{.NameGoLower}}Link) *model.{{.NameGo}} {
+			if link == nil {
+				return nil
+			}
+			res := {{.TypeName}}(link.{{.NameGo}})
+			out := To{{.NameGo}}(res)
+			return &out
+		}
+
+		func to{{.NameGo}}Link(node model.{{.NameGo}}) *{{.NameGoLower}}Link {
+			{{.LinkIDChecks}}
+			rid := models.NewRecordID("{{.NameDB}}", {{.LinkID}})
+			link := {{.NameGoLower}}Link{ {{.TypeName}}: From{{.NameGo}}(node), ID: &rid}
+			return &link
+		}
+
+		func to{{.NameGo}}LinkPtr(node *model.{{.NameGo}}) *{{.NameGoLower}}Link {
+			if node == nil {
+				return nil
+			}
+			{{.LinkIDChecks}}
+			rid := models.NewRecordID("{{.NameDB}}", {{.LinkID}})
+			link := {{.NameGoLower}}Link{ {{.TypeName}}: From{{.NameGo}}(*node), ID: &rid}
+			return &link
+		}
+		{{end -}}
+	`
+
+	ctx := field.Context{
 		SourcePkg: b.sourcePkgPath,
 		TargetPkg: b.basePkg,
 		Table:     elem,
 	}
 
-	f := jen.NewFile(b.pkgName)
-
-	f.PackageComment(string(embed.CodegenComment))
-
-	_, isNode := elem.(*field.NodeTable)
+	node, isNode := elem.(*field.NodeTable)
 	_, isEdge := elem.(*field.EdgeTable)
 	_, isView := elem.(*field.ViewTable)
 	_, isSink := elem.(*field.SinkTable)
 
+	// Objects are not tables of their own, so their conversion type is unexported.
+	isTable := isNode || isEdge || isView || isSink
+
+	// The ID is marshalled for nodes and edges only. Views are read-only and their
+	// ID may be a composite (e.g. a GROUP BY key) that cannot be re-wrapped, so it
+	// is never written back. Sinks are write-only and never read back at all.
+	marshalsID := isNode || isEdge
+	unmarshalsID := isNode || isEdge || isView
+
 	typeName := elem.NameGoLower()
-	if isNode || isEdge || isView || isSink {
+	fromPrefix, toPrefix := "from", "to"
+
+	if isTable {
 		typeName = elem.NameGo()
+		fromPrefix, toPrefix = "From", "To"
 	}
 
-	f.Line()
-	f.Type().Id(typeName).Struct(
-		jen.Add(b.SourceQual(elem.NameGo())),
+	// Edges are only ever converted back by pointer.
+	toParam := typeName
+	if isEdge {
+		toParam = "*" + typeName
+	}
+
+	file := newGoFile(b.pkgName,
+		goImport{Alias: "models", Path: def.PkgModels},
+		goImport{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
+		goImport{Alias: "model", Path: b.sourcePkgPath},
 	)
 
-	f.Line()
-	f.Add(b.buildMarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge, isView))
+	data := map[string]any{
+		"NameGo":      elem.NameGo(),
+		"NameGoLower": elem.NameGoLower(),
+		"NameDB":      elem.NameDatabase(),
+		"TypeName":    typeName,
+		"ToParam":     toParam,
+		"FromPrefix":  fromPrefix,
+		"ToPrefix":    toPrefix,
+		"IsNode":      isNode,
+		"FieldCount":  b.fieldCount(elem, isNode, isEdge),
 
-	f.Line()
-	f.Add(b.buildFields(elem, typeName, fieldCtx, isNode, isEdge))
+		"MarshalsID":      marshalsID,
+		"UnmarshalsID":    unmarshalsID,
+		"MarshalFields":   file.code(b.fieldCodes(elem, ctx, (*field.CodeGen).CBORMarshal)),
+		"UnmarshalFields": file.code(b.fieldCodes(elem, ctx, (*field.CodeGen).CBORUnmarshal)),
+	}
 
-	f.Line()
-	f.Add(b.buildUnmarshalCBOR(elem, typeName, fieldCtx, isNode, isEdge, isView))
+	if marshalsID {
+		data["MarshalID"] = file.code(b.marshalID(elem, isNode))
+	}
 
-	f.Line()
-	f.Add(b.buildFrom(elem))
+	if unmarshalsID {
+		data["UnmarshalID"] = file.code(b.unmarshalID(elem, isNode, isView))
+	}
 
-	f.Line()
-	f.Add(b.buildTo(elem))
+	if isNode {
+		data["LinkIDChecks"] = file.code(b.linkIDChecks(node))
+		data["LinkID"] = file.code(b.nodeIDValue(node, "node"))
+	}
 
-	if node, ok := elem.(*field.NodeTable); ok {
-		f.Line()
-		f.Add(b.buildNodeFields(node, typeName))
+	return file.render(
+		b.fs.Writer(path.Join(b.path(), elem.FileName())),
+		"conv", tmpl, data,
+	)
+}
 
-		f.Line()
-		f.Type().Id(node.NameGoLower()+"Link").Struct(
-			jen.Id(node.NameGo()),
-			jen.Id("ID").Op("*").Qual(def.PkgModels, "RecordID"),
+// fieldCount pre-sizes the value map of the fields method.
+func (b *convBuilder) fieldCount(elem field.Element, isNode, isEdge bool) int {
+	count := 0
+
+	if isNode || isEdge {
+		if node, ok := elem.(*field.NodeTable); !ok || !node.HasComplexID() {
+			count++
+		}
+	}
+
+	for _, f := range elem.GetFields() {
+		if f.NameDatabase() != "id" {
+			count++
+		}
+	}
+
+	return count
+}
+
+// fieldCodes returns the marshal or unmarshal statements of all fields. The ID
+// field is skipped, as it is handled separately for tables.
+func (b *convBuilder) fieldCodes(
+	elem field.Element, ctx field.Context,
+	codeOf func(*field.CodeGen, field.Context) jen.Code,
+) jen.Code {
+	var codes []jen.Code
+
+	for _, f := range elem.GetFields() {
+		if f.NameDatabase() == "id" {
+			continue
+		}
+
+		if code := codeOf(f.CodeGen(), ctx); code != nil {
+			codes = append(codes, code)
+		}
+	}
+
+	return joinStatements(codes)
+}
+
+// marshalID returns the statement writing the record ID of a node or edge.
+// Complex IDs are not written back, as their sub-fields are populated from the
+// record ID instead.
+func (b *convBuilder) marshalID(elem field.Element, isNode bool) jen.Code {
+	node, _ := elem.(*field.NodeTable)
+
+	if isNode && node.HasComplexID() {
+		return jen.Null()
+	}
+
+	var idValue jen.Code = jen.Id("c").Dot("ID").Call()
+	if isNode {
+		idValue = b.nodeIDValue(node, "c")
+	}
+
+	return jen.If(jen.Id("c").Dot("ID").Call().Op("!=").Lit("")).Block(
+		jen.Id("data").Index(jen.Lit("id")).Op("=").Qual(def.PkgModels, "NewRecordID").Call(
+			jen.Lit(elem.NameDatabase()), idValue,
+		),
+	)
+}
+
+// unmarshalID returns the statement reading the embedded ID of a table.
+func (b *convBuilder) unmarshalID(elem field.Element, isNode, isView bool) jen.Code {
+	cborPkg := b.relativePkgPath(def.PkgCBORHelpers)
+
+	if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
+		return b.unmarshalComplexID(node)
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
+		jen.Id("ok"),
+	).BlockFunc(func(g *jen.Group) {
+		g.Var().Id("recordID").Op("*").Qual(def.PkgModels, "RecordID")
+		g.If(
+			jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
+			jen.Err().Op("!=").Nil(),
+		).Block(jen.Return(jen.Err()))
+		g.Var().Id("idStr").String()
+
+		if isView {
+			// A view's record id may be an array/object (e.g. a GROUP BY composite
+			// key), so it is stored as the full record-id string representation.
+			g.If(jen.Id("recordID").Op("!=").Nil()).Block(
+				jen.Id("idStr").Op("=").Id("recordID").Dot("String").Call(),
+			)
+		} else {
+			g.If(jen.Id("recordID").Op("!=").Nil()).Block(
+				jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(cborPkg, "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
+				jen.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Err()),
+				),
+				jen.Id("idStr").Op("=").Id("s"),
+			)
+		}
+
+		switch {
+		case isNode:
+			node := elem.(*field.NodeTable)
+			idType := jen.Qual(b.relativePkgPath(), string(node.Source.IDType))
+
+			g.Id("c").Dot("Node").Op("=").Qual(b.relativePkgPath(), "NewNode").
+				Types(idType).Call(idType.Clone().Call(jen.Id("idStr")))
+
+		case isView:
+			g.Id("c").Dot("View").Op("=").Qual(b.relativePkgPath(), "NewView").Call(jen.Id("idStr"))
+
+		default:
+			g.Id("c").Dot("Edge").Op("=").Qual(b.relativePkgPath(), "NewEdge").Call(jen.Id("idStr"))
+		}
+	})
+}
+
+// linkIDChecks returns the guard clauses that keep a link nil as long as the
+// ID of the referenced node is not set.
+func (b *convBuilder) linkIDChecks(node *field.NodeTable) jen.Code {
+	var stmts []jen.Code
+
+	switch {
+	case !node.HasComplexID():
+		stmts = append(stmts, jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
+			jen.Return(jen.Nil()),
+		))
+
+	case !node.Source.ComplexID.HasNodeRef():
+		stmts = append(stmts,
+			jen.Var().Id("zeroKey").Add(b.SourceQual(node.Source.ComplexID.StructName)),
+			jen.If(jen.Id("node").Dot("ID").Call().Op("==").Id("zeroKey")).Block(
+				jen.Return(jen.Nil()),
+			),
 		)
 
-		f.Line()
-		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGoLower()+"Link")).
-			Id("MarshalCBOR").Params().
-			Params(jen.Index().Byte(), jen.Error()).
-			Block(
-				jen.If(jen.Id("f").Op("==").Nil()).Block(
-					jen.Return(jen.Nil(), jen.Nil()),
-				),
-				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("f").Dot("ID"))),
-			)
-
-		f.Line()
-		f.Func().Params(jen.Id("f").Op("*").Id(node.NameGoLower()+"Link")).
-			Id("UnmarshalCBOR").Params(jen.Id("data").Index().Byte()).
-			Error().
-			Block(
-				jen.If(
-					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("f").Dot("ID")),
-					jen.Err().Op("==").Nil(),
-				).Block(
-					jen.Return(jen.Nil()),
-				),
-
-				jen.Type().Id("alias").Id(node.NameGoLower()+"Link"),
-				jen.Var().Id("link").Id("alias"),
-
-				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("link")),
-				jen.If(jen.Err().Op("==").Nil()).Block(
-					jen.Op("*").Id("f").Op("=").Id(node.NameGoLower()+"Link").Call(jen.Id("link")),
-				),
-
-				jen.Return(jen.Err()),
-			)
-
-		f.Line()
-		f.Add(b.buildFromLink(node))
-
-		f.Line()
-		f.Add(b.buildFromLinkPtr(node))
-
-		f.Line()
-		f.Add(b.buildToLink(node))
-
-		f.Line()
-		f.Add(b.buildToLinkPtr(node))
+	default:
+		b.addLinkNodeRefFieldChecks(&stmts, node.Source.ComplexID, "node")
 	}
 
-	if err := f.Render(b.fs.Writer(path.Join(b.path(), elem.FileName()))); err != nil {
-		return err
-	}
-
-	return nil
+	return joinStatements(stmts)
 }
 
 func (b *convBuilder) nodeIDValue(node *field.NodeTable, varName string) jen.Code {
@@ -190,11 +432,11 @@ func (b *convBuilder) complexNodeIDValue(node *field.NodeTable, varName string) 
 	return jen.Map(jen.String()).Any().Values(dict)
 }
 
-func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
+func (b *convBuilder) unmarshalComplexID(node *field.NodeTable) jen.Code {
 	cid := node.Source.ComplexID
 	cborPkg := path.Join(b.basePkg, "internal/cbor")
 
-	g.If(
+	return jen.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
 		jen.Id("ok"),
 	).BlockFunc(func(bg *jen.Group) {
@@ -377,378 +619,6 @@ func (b *convBuilder) unmarshalNodeRefComplex(g *jen.Group, sf parser.ComplexIDF
 func (b *convBuilder) marshalFieldValue(sf parser.ComplexIDField, varName string) jen.Code {
 	accessor := jen.Id(varName).Dot("ID").Call().Dot(sf.Name)
 	return fieldValueFrom(b.input, b.basePkg, sf, accessor)
-}
-
-func (b *convBuilder) buildFrom(elem field.Element) jen.Code {
-	localName := elem.NameGoLower()
-	methodPrefix := "from"
-
-	_, isNode := elem.(*field.NodeTable)
-	_, isEdge := elem.(*field.EdgeTable)
-	_, isView := elem.(*field.ViewTable)
-	_, isSink := elem.(*field.SinkTable)
-
-	if isNode || isEdge || isView || isSink {
-		localName = elem.NameGo()
-		methodPrefix = "From"
-	}
-
-	return jen.Add(
-		// NO PTR - shallow wrapper: just embed
-		jen.Func().
-			Id(methodPrefix+elem.NameGo()).
-			Params(jen.Id("data").Add(b.SourceQual(elem.NameGo()))).
-			Id(localName).
-			Block(
-				jen.Return(jen.Id(localName).Values(jen.Dict{
-					jen.Id(elem.NameGo()): jen.Id("data"), // ONE field copy
-				})),
-			),
-
-		jen.Line(),
-
-		// PTR - shallow wrapper: just embed
-		jen.Func().
-			Id(methodPrefix+elem.NameGo()+"Ptr").
-			Params(jen.Id("data").Op("*").Add(b.SourceQual(elem.NameGo()))).
-			Op("*").Id(localName).
-			Block(
-				jen.If(jen.Id("data").Op("==").Nil()).Block(
-					jen.Return(jen.Nil()),
-				),
-
-				jen.Return(jen.Op("&").Id(localName).Values(jen.Dict{
-					jen.Id(elem.NameGo()): jen.Op("*").Id("data"), // ONE field copy
-				})),
-			),
-	)
-}
-
-func (b *convBuilder) buildMarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge, isView bool) jen.Code {
-	return jen.Func().
-		Params(jen.Id("c").Op("*").Id(typeName)).
-		Id("MarshalCBOR").Params().
-		Params(jen.Index().Byte(), jen.Error()).
-		Block(
-			jen.If(jen.Id("c").Op("==").Nil()).Block(
-				jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Nil())),
-			),
-			jen.Return(jen.Qual(path.Join(b.basePkg, "internal/cbor"), "Marshal").Call(jen.Id("c").Dot("fields").Call())),
-		)
-}
-
-// buildFields generates a fields() method that builds the DB-keyed value map.
-// It is used by MarshalCBOR and, for nodes, exposed via <Type>Fields for
-// cursor-based pagination which needs DB field names and DB-typed values.
-func (b *convBuilder) buildFields(elem field.Element, typeName string, ctx field.Context, isNode, isEdge bool) jen.Code {
-	return jen.Func().
-		Params(jen.Id("c").Op("*").Id(typeName)).
-		Id("fields").Params().
-		Map(jen.String()).Any().
-		BlockFunc(func(g *jen.Group) {
-			// Count fields for pre-sized map allocation.
-			// Views are read-only and never marshal an id (their id may be a
-			// composite that cannot be re-wrapped), so only nodes/edges count it.
-			fieldCount := 0
-			if isNode || isEdge {
-				if node, ok := elem.(*field.NodeTable); !ok || !node.HasComplexID() {
-					fieldCount++
-				}
-			}
-			for _, f := range elem.GetFields() {
-				if f.NameDatabase() != "id" {
-					fieldCount++
-				}
-			}
-
-			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Any(), jen.Lit(fieldCount))
-
-			// Marshal ID field for nodes and edges. Views are read-only and
-			// their id (possibly a composite GROUP BY key) is not marshaled.
-			if isNode || isEdge {
-				tableName := elem.NameDatabase()
-				g.Line()
-				g.Comment("Embedded som.Node/Edge ID field")
-
-				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
-					// Complex IDs: no ID marshaling needed, sub-fields are populated from the record ID.
-				} else {
-					var idValue jen.Code
-					if node, ok := elem.(*field.NodeTable); ok {
-						idValue = b.nodeIDValue(node, "c")
-					} else {
-						idValue = jen.Id("c").Dot("ID").Call()
-					}
-
-					g.If(jen.Id("c").Dot("ID").Call().Op("!=").Lit("")).Block(
-						jen.Id("data").Index(jen.Lit("id")).Op("=").Qual(def.PkgModels, "NewRecordID").Call(
-							jen.Lit(tableName), idValue,
-						),
-					)
-				}
-			}
-
-			// Marshal all fields
-			g.Line()
-			for _, f := range elem.GetFields() {
-				// Skip ID field (handled specially for nodes/edges)
-				if f.NameDatabase() == "id" {
-					continue
-				}
-
-				// Generate marshal code for this field using field's CodeGen method
-				if code := f.CodeGen().CBORMarshal(ctx); code != nil {
-					g.Add(code)
-				}
-			}
-
-			g.Line()
-			g.Return(jen.Id("data"))
-		})
-}
-
-// buildNodeFields generates an exported <Type>Fields package function that
-// returns the DB-keyed value map for a model. Used by the query builder to
-// derive pagination cursor values with correct DB field names and types.
-func (b *convBuilder) buildNodeFields(node *field.NodeTable, typeName string) jen.Code {
-	return jen.Func().
-		Id(node.NameGo() + "Fields").
-		Params(jen.Id("m").Op("*").Add(b.SourceQual(node.NameGo()))).
-		Map(jen.String()).Any().
-		Block(
-			jen.Id("c").Op(":=").Id(typeName).Values(jen.Op("*").Id("m")),
-			jen.Return(jen.Id("c").Dot("fields").Call()),
-		)
-}
-
-func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ctx field.Context, isNode, isEdge, isView bool) jen.Code {
-	return jen.Func().
-		Params(jen.Id("c").Op("*").Id(typeName)).
-		Id("UnmarshalCBOR").Params(jen.Id("data").Index().Byte()).
-		Error().
-		BlockFunc(func(g *jen.Group) {
-			g.Var().Id("rawMap").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
-			g.If(
-				jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(
-					jen.Id("data"),
-					jen.Op("&").Id("rawMap"),
-				),
-				jen.Err().Op("!=").Nil(),
-			).Block(
-				jen.Return(jen.Err()),
-			)
-
-			// Unmarshal ID field for nodes, edges and views
-			if isNode || isEdge || isView {
-				g.Line()
-				g.Comment("Embedded som.Node/Edge/View ID field")
-				if node, ok := elem.(*field.NodeTable); ok && node.HasComplexID() {
-					b.unmarshalComplexID(g, node)
-				} else {
-					g.If(
-						jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
-						jen.Id("ok"),
-					).BlockFunc(func(bg *jen.Group) {
-						bg.Var().Id("recordID").Op("*").Qual(def.PkgModels, "RecordID")
-						bg.If(
-							jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
-							jen.Err().Op("!=").Nil(),
-						).Block(jen.Return(jen.Err()))
-						bg.Var().Id("idStr").String()
-						if isView {
-							// A view's record id may be an array/object (e.g. a
-							// GROUP BY composite key), so it is stored as the full
-							// record-id string representation.
-							bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
-								jen.Id("idStr").Op("=").Id("recordID").Dot("String").Call(),
-							)
-						} else {
-							bg.If(jen.Id("recordID").Op("!=").Nil()).Block(
-								jen.List(jen.Id("s"), jen.Err()).Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "RecordIDToString").Call(jen.Id("recordID").Dot("ID")),
-								jen.If(jen.Err().Op("!=").Nil()).Block(
-									jen.Return(jen.Err()),
-								),
-								jen.Id("idStr").Op("=").Id("s"),
-							)
-						}
-
-						if isNode {
-							node := elem.(*field.NodeTable)
-							bg.Id("c").Dot("Node").Op("=").Qual(b.relativePkgPath(), "NewNode").Types(
-								jen.Qual(b.relativePkgPath(), string(node.Source.IDType)),
-							).Call(jen.Qual(b.relativePkgPath(), string(node.Source.IDType)).Call(jen.Id("idStr")))
-						} else if isView {
-							bg.Id("c").Dot("View").Op("=").Qual(b.relativePkgPath(), "NewView").Call(jen.Id("idStr"))
-						} else {
-							bg.Id("c").Dot("Edge").Op("=").Qual(b.relativePkgPath(), "NewEdge").Call(jen.Id("idStr"))
-						}
-					})
-				}
-			}
-
-			// Unmarshal all fields
-			g.Line()
-			for _, f := range elem.GetFields() {
-				// Skip ID field (handled specially for nodes/edges)
-				if f.NameDatabase() == "id" {
-					continue
-				}
-
-				// Generate unmarshal code for this field using field's CodeGen method
-				if code := f.CodeGen().CBORUnmarshal(ctx); code != nil {
-					g.Add(code)
-				}
-			}
-
-			g.Line()
-			g.Return(jen.Nil())
-		})
-}
-
-func (b *convBuilder) buildTo(elem field.Element) jen.Code {
-	localName := elem.NameGoLower()
-	methodPrefix := "to"
-
-	_, isNode := elem.(*field.NodeTable)
-	_, isEdge := elem.(*field.EdgeTable)
-	_, isView := elem.(*field.ViewTable)
-	_, isSink := elem.(*field.SinkTable)
-
-	if isNode || isEdge || isView || isSink {
-		localName = elem.NameGo()
-		methodPrefix = "To"
-	}
-
-	ptr := jen.Empty()
-	if isEdge {
-		ptr = jen.Op("*")
-	}
-
-	return jen.Add(
-		// NO PTR - shallow wrapper: just unwrap
-		jen.Func().
-			Id(methodPrefix+elem.NameGo()).
-			Params(jen.Id("data").Add(ptr).Id(localName)).
-			Add(b.SourceQual(elem.NameGo())).
-			Block(
-				jen.Return(jen.Id("data").Dot(elem.NameGo())), // Just unwrap the embedding
-			),
-
-		jen.Line(),
-
-		// PTR - shallow wrapper: just unwrap
-		jen.Func().
-			Id(methodPrefix+elem.NameGo()+"Ptr").
-			Params(jen.Id("data").Op("*").Id(localName)).
-			Op("*").Add(b.SourceQual(elem.NameGo())).
-			Block(
-				jen.If(jen.Id("data").Op("==").Nil()).Block(
-					jen.Return(jen.Nil()),
-				),
-
-				jen.Id("result").Op(":=").Id("data").Dot(elem.NameGo()),
-				jen.Return(jen.Op("&").Id("result")), // Unwrap and return pointer
-			),
-	)
-}
-
-func (b *convBuilder) buildFromLink(node *field.NodeTable) jen.Code {
-	return jen.Func().
-		Id("from" + node.NameGo() + "Link").
-		Params(jen.Id("link").Op("*").Id(node.NameGoLower() + "Link")).
-		Add(b.SourceQual(node.NameGo())).
-		BlockFunc(func(g *jen.Group) {
-			g.If(jen.Id("link").Op("==").Nil()).Block(
-				jen.Return(jen.Add(b.SourceQual(node.NameGo())).Values()),
-			)
-			g.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo()))
-			g.Return(jen.Id("To" + node.NameGo()).Call(jen.Id("res")))
-		})
-}
-
-func (b *convBuilder) buildFromLinkPtr(node *field.NodeTable) jen.Code {
-	return jen.Func().
-		Id("from" + node.NameGo() + "LinkPtr").
-		Params(jen.Id("link").Op("*").Id(node.NameGoLower() + "Link")).
-		Op("*").Add(b.SourceQual(node.NameGo())).
-		BlockFunc(func(g *jen.Group) {
-			g.If(jen.Id("link").Op("==").Nil()).Block(
-				jen.Return(jen.Nil()),
-			)
-			g.Id("res").Op(":=").Id(node.NameGo()).Call(jen.Id("link").Dot(node.NameGo()))
-			g.Id("out").Op(":=").Id("To" + node.NameGo()).Call(jen.Id("res"))
-			g.Return(jen.Op("&").Id("out"))
-		})
-}
-
-func (b *convBuilder) buildToLink(node *field.NodeTable) jen.Code {
-	return b.buildToLinkCommon(node, false)
-}
-
-func (b *convBuilder) buildToLinkPtr(node *field.NodeTable) jen.Code {
-	return b.buildToLinkCommon(node, true)
-}
-
-func (b *convBuilder) buildToLinkCommon(node *field.NodeTable, isPtr bool) jen.Code {
-	tableName := node.NameDatabase()
-	idVal := b.nodeIDValue(node, "node")
-
-	var stmts []jen.Code
-
-	if isPtr {
-		stmts = append(stmts, jen.If(jen.Id("node").Op("==").Nil()).Block(
-			jen.Return(jen.Nil()),
-		))
-	}
-
-	if node.HasComplexID() {
-		cid := node.Source.ComplexID
-		if !cid.HasNodeRef() {
-			stmts = append(stmts,
-				jen.Var().Id("zeroKey").Add(b.SourceQual(cid.StructName)),
-				jen.If(jen.Id("node").Dot("ID").Call().Op("==").Id("zeroKey")).Block(
-					jen.Return(jen.Nil()),
-				),
-			)
-		} else {
-			b.addLinkNodeRefFieldChecks(&stmts, cid, "node")
-		}
-	} else {
-		stmts = append(stmts, jen.If(jen.Id("node").Dot("ID").Call().Op("==").Lit("")).Block(
-			jen.Return(jen.Nil()),
-		))
-	}
-
-	var fromArg jen.Code
-	if isPtr {
-		fromArg = jen.Op("*").Id("node")
-	} else {
-		fromArg = jen.Id("node")
-	}
-
-	stmts = append(stmts,
-		jen.Id("rid").Op(":=").Qual(def.PkgModels, "NewRecordID").Call(
-			jen.Lit(tableName), idVal,
-		),
-		jen.Id("link").Op(":=").Id(node.NameGoLower()+"Link").Values(
-			jen.Id(node.NameGo()).Op(":").Id("From"+node.NameGo()).Call(fromArg),
-			jen.Id("ID").Op(":").Op("&").Id("rid"),
-		),
-		jen.Return(jen.Op("&").Id("link")),
-	)
-
-	funcName := "to" + node.NameGo() + "Link"
-	paramType := jen.Add(b.SourceQual(node.NameGo()))
-	if isPtr {
-		funcName += "Ptr"
-		paramType = jen.Op("*").Add(b.SourceQual(node.NameGo()))
-	}
-
-	return jen.Func().
-		Id(funcName).
-		Params(jen.Id("node").Add(paramType)).
-		Op("*").Id(node.NameGoLower() + "Link").
-		Block(stmts...)
 }
 
 func (b *convBuilder) addLinkNodeRefFieldChecks(stmts *[]jen.Code, cid *parser.FieldComplexID, varName string) {

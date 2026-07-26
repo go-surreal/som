@@ -63,13 +63,14 @@ func (b *build) buildInterfaceFile() error {
 		"ExpiryTables": expiryTables,
 	}
 
-	return renderGoFileWithImports(
+	file := newGoFile(def.PkgRepo,
+		goImport{Path: "context"},
+		goImport{Path: "sync"},
+		goImport{Alias: "som", Path: b.relativePkgPath()},
+	)
+
+	return file.render(
 		b.fs.Writer(filepath.Join(def.PkgRepo, filenameInterfaces)),
-		def.PkgRepo, "repoClient", tmpl, data,
-		[]goImport{
-			{Path: "context"},
-			{Path: "sync"},
-			{Alias: "som", Path: b.relativePkgPath()},
-		},
+		"repoClient", tmpl, data,
 	)
 }

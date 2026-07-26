@@ -24,6 +24,7 @@ func (n weather[M]) ID() weatherKey[M] {
 	return newWeatherKey[M](lib.Fn(lib.Field(n.Key, "id"), "meta::id"))
 }
 
+// weatherEdges is the Weather as reached through a graph traversal.
 type weatherEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

@@ -39,6 +39,8 @@ func (b *queryBuilder) build() error {
 func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	hasRangeFn := node.HasComplexID() || node.HasStringID()
 
+	file := b.newQueryFile()
+
 	data := map[string]any{
 		"NameGo":        node.NameGo(),
 		"NameGoLower":   node.NameGoLower(),
@@ -50,10 +52,10 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		"SoftDelete":    node.Source.SoftDelete,
 		"Expiry":        node.Source.Expiry,
 
-		"RangeBound": func(bound string) string { return b.rangeBound(node, bound) },
+		"RangeBound": func(bound string) string { return file.code(b.rangeBound(node, bound)) },
 	}
 
-	return b.renderQueryFile(node.FileName(), data)
+	return b.renderQueryFile(file, node.FileName(), data)
 }
 
 // buildViewFile generates the query builder constructor for a read-only view.
@@ -65,7 +67,17 @@ func (b *queryBuilder) buildViewFile(view *field.ViewTable) error {
 		"Kind":        "views",
 	}
 
-	return b.renderQueryFile(view.FileName(), data)
+	return b.renderQueryFile(b.newQueryFile(), view.FileName(), data)
+}
+
+func (b *queryBuilder) newQueryFile() *goFile {
+	return newGoFile(b.pkgName,
+		goImport{Alias: "som", Path: b.relativePkgPath()},
+		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
+		goImport{Alias: "filter", Path: b.relativePkgPath(def.PkgFilter)},
+		goImport{Alias: "lib", Path: b.relativePkgPath(def.PkgLib)},
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
 }
 
 // renderQueryFile generates the model info and the query builder constructor
@@ -79,7 +91,7 @@ func (b *queryBuilder) buildViewFile(view *field.ViewTable) error {
 // diff]} instead of a full record. Proper support needs a tag opt-in, schema
 // emission, and a diff-aware decoder that reverse-applies the patch to rebuild the
 // original. Tracked separately; see the changefeed feature notes.
-func (b *queryBuilder) renderQueryFile(fileName string, data map[string]any) error {
+func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[string]any) error {
 	tmpl := `
 		// {{.NameGoLower}}ModelInfo holds the model-specific unmarshal functions for {{.NameGo}}.
 		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}]{
@@ -147,38 +159,29 @@ func (b *queryBuilder) renderQueryFile(fileName string, data map[string]any) err
 		{{end -}}
 	`
 
-	return renderGoFileWithImports(
+	return file.render(
 		b.fs.Writer(path.Join(b.path(), fileName)),
-		b.pkgName, "query", tmpl, data,
-		[]goImport{
-			{Alias: "models", Path: def.PkgModels},
-			{Alias: "som", Path: b.relativePkgPath()},
-			{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
-			{Alias: "filter", Path: b.relativePkgPath(def.PkgFilter)},
-			{Alias: "lib", Path: b.relativePkgPath(def.PkgLib)},
-			{Alias: "types", Path: b.relativePkgPath(def.PkgTypes)},
-			{Alias: "model", Path: b.sourcePkgPath},
-		},
+		"query", tmpl, data,
 	)
 }
 
 // rangeBound emits the statements that append the given range bound to the
 // record ID range expression.
-func (b *queryBuilder) rangeBound(node *field.NodeTable, bound string) string {
+func (b *queryBuilder) rangeBound(node *field.NodeTable, bound string) jen.Code {
 	value := jen.Id(bound).Dot("Value").Call()
 	expr := jen.Id("expr").Op("+=")
 
 	if !node.HasComplexID() {
 		idType := jen.Qual(b.relativePkgPath(), string(node.Source.IDType))
 
-		return renderCode(expr.Id("q").Dot("AsVar").Call(value.Assert(idType)))
+		return expr.Id("q").Dot("AsVar").Call(value.Assert(idType))
 	}
 
 	cid := node.Source.ComplexID
 	keyType := b.SourceQual(cid.StructName)
 
-	return renderCode(jen.Id("key").Op(":=").Add(value.Assert(keyType)).Line().
-		Add(expr.Add(b.rangeBoundExpr(node, cid, "key"))))
+	return jen.Id("key").Op(":=").Add(value.Assert(keyType)).Line().
+		Add(expr.Add(b.rangeBoundExpr(node, cid, "key")))
 }
 
 func (b *queryBuilder) rangeBoundExpr(node *field.NodeTable, cid *parser.FieldComplexID, keyVar string) jen.Code {

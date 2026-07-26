@@ -16,39 +16,28 @@ import (
 
 type AllTypesRepo interface {
 	// Query returns a new query builder for the AllTypes model.
-
 	Query() query.Builder[model.AllTypes]
 	// Create creates a new record for the AllTypes model.
-
 	Create(ctx context.Context, allTypes *model.AllTypes) error
 	// Insert creates multiple records in a single operation.
 	// Before- and after-create hooks are invoked for each node.
-
 	Insert(ctx context.Context, nodes []*model.AllTypes) error
 	// CreateWithID creates a new record with the given ID for the AllTypes model.
-
 	CreateWithID(ctx context.Context, id string, allTypes *model.AllTypes) error
 	// Read returns the record for the given ID, if it exists.
-
 	Read(ctx context.Context, id string) (*model.AllTypes, bool, error)
 	// Update updates the record for the given AllTypes model.
-
 	Update(ctx context.Context, allTypes *model.AllTypes) error
 	// Delete deletes the record for the given AllTypes model.
-
 	Delete(ctx context.Context, allTypes *model.AllTypes) error
 	// Refresh refreshes the given model with the current database state.
-
 	Refresh(ctx context.Context, allTypes *model.AllTypes) error
 	// Relate returns a new relate builder for the AllTypes model.
-
 	Relate() *relate.AllTypes
 	// Index returns a new index instance for the AllTypes model.
-
 	Index() *index.AllTypes
 	// Changes returns a new changes query builder for the AllTypes model.
 	// This is only available for models with changefeed enabled.
-
 	Changes() query.ChangesBuilder[model.AllTypes, conv.AllTypes]
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
@@ -57,7 +46,6 @@ type AllTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeCreate(fn func(ctx context.Context, node *model.AllTypes) error) func()
 	// OnAfterCreate registers a hook that runs after a record has been created.
 	// If the hook returns an error, the error is returned to the caller.
@@ -65,7 +53,6 @@ type AllTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterCreate(fn func(ctx context.Context, node *model.AllTypes) error) func()
 	// OnBeforeUpdate registers a hook that runs before a record is updated.
 	// If the hook returns an error, the update operation is aborted.
@@ -73,7 +60,6 @@ type AllTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.AllTypes) error) func()
 	// OnAfterUpdate registers a hook that runs after a record has been updated.
 	// If the hook returns an error, the error is returned to the caller.
@@ -81,7 +67,6 @@ type AllTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterUpdate(fn func(ctx context.Context, node *model.AllTypes) error) func()
 	// OnBeforeDelete registers a hook that runs before a record is deleted.
 	// If the hook returns an error, the delete operation is aborted.
@@ -89,7 +74,6 @@ type AllTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeDelete(fn func(ctx context.Context, node *model.AllTypes) error) func()
 	// OnAfterDelete registers a hook that runs after a record has been deleted.
 	// If the hook returns an error, the error is returned to the caller.
@@ -97,7 +81,6 @@ type AllTypesRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterDelete(fn func(ctx context.Context, node *model.AllTypes) error) func()
 }
 

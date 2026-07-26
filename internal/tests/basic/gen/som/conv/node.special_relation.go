@@ -119,11 +119,16 @@ func ToSpecialRelationPtr(data *SpecialRelation) *model.SpecialRelation {
 	return &result
 }
 
+// SpecialRelationFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func SpecialRelationFields(m *model.SpecialRelation) map[string]any {
 	c := SpecialRelation{*m}
 	return c.fields()
 }
 
+// specialRelationLink is a SpecialRelation as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type specialRelationLink struct {
 	SpecialRelation
 	ID *models.RecordID

@@ -22,6 +22,7 @@ type personKey[M any] struct {
 	Age  *lib.Int[M, int]
 }
 
+// personKeyEdges is the PersonKey as reached through a graph traversal.
 type personKeyEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

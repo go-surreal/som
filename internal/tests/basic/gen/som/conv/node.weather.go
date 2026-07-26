@@ -96,11 +96,16 @@ func ToWeatherPtr(data *Weather) *model.Weather {
 	return &result
 }
 
+// WeatherFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func WeatherFields(m *model.Weather) map[string]any {
 	c := Weather{*m}
 	return c.fields()
 }
 
+// weatherLink is a Weather as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type weatherLink struct {
 	Weather
 	ID *models.RecordID

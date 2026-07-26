@@ -106,11 +106,16 @@ func ToEphemeralPtr(data *Ephemeral) *model.Ephemeral {
 	return &result
 }
 
+// EphemeralFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func EphemeralFields(m *model.Ephemeral) map[string]any {
 	c := Ephemeral{*m}
 	return c.fields()
 }
 
+// ephemeralLink is a Ephemeral as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type ephemeralLink struct {
 	Ephemeral
 	ID *models.RecordID
