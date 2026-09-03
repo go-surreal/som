@@ -21,6 +21,10 @@ const (
 	PkgDistinct    = "internal/distinct"
 
 	IndexPrefix = "__som__"
+
+	// MetaTable stores the hash of each expensive schema object (index, view),
+	// so that re-applying an unchanged schema does not rebuild it.
+	MetaTable = "__som__schema"
 )
 
 const (

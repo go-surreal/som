@@ -34,7 +34,7 @@ func (f *Month) SchemaStatements(table, prefix string) []string {
 
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s ASSERT %s$value >= 1 AND $value <= 12;",
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s ASSERT %s$value >= 1 AND $value <= 12;",
 			prefix+f.NameDatabase(), table, f.TypeDatabase(), nilCheck,
 		),
 	}

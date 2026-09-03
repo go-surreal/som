@@ -37,7 +37,7 @@ func (f *Byte) SchemaStatements(table, prefix string) []string {
 
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s %s;",
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s %s;",
 			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
 		),
 	}
