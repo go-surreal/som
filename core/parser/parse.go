@@ -294,6 +294,7 @@ type Output struct {
 type UsedFeatures struct {
 	UsesGoogleUUID        bool
 	UsesGofrsUUID         bool
+	UsesStdUUID           bool
 	UsesOrbGeo            bool
 	UsesSimplefeaturesGeo bool
 	UsesGoGeomGeo         bool
@@ -311,6 +312,8 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 				features.UsesGoogleUUID = true
 			case UUIDPackageGofrs:
 				features.UsesGofrsUUID = true
+			case UUIDPackageStd:
+				features.UsesStdUUID = true
 			}
 		case *FieldGeometry:
 			switch field.Package {

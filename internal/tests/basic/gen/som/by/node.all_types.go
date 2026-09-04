@@ -58,6 +58,9 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldUUIDGofrsPtr: lib.NewBaseSort[M](keyed(key, "field_uuid_gofrs_ptr")),
 		FieldUUIDNil:      lib.NewBaseSort[M](keyed(key, "field_uuid_nil")),
 		FieldUUIDPtr:      lib.NewBaseSort[M](keyed(key, "field_uuid_ptr")),
+		FieldUUIDStd:      lib.NewBaseSort[M](keyed(key, "field_uuid_std")),
+		FieldUUIDStdNil:   lib.NewBaseSort[M](keyed(key, "field_uuid_std_nil")),
+		FieldUUIDStdPtr:   lib.NewBaseSort[M](keyed(key, "field_uuid_std_ptr")),
 		FieldUint16:       lib.NewBaseSort[M](keyed(key, "field_uint_16")),
 		FieldUint16Ptr:    lib.NewBaseSort[M](keyed(key, "field_uint_16_ptr")),
 		FieldUint32:       lib.NewBaseSort[M](keyed(key, "field_uint_32")),
@@ -116,6 +119,9 @@ type allTypes[M any] struct {
 	FieldUUIDGofrs    *lib.BaseSort[M]
 	FieldUUIDGofrsPtr *lib.BaseSort[M]
 	FieldUUIDGofrsNil *lib.BaseSort[M]
+	FieldUUIDStd      *lib.BaseSort[M]
+	FieldUUIDStdPtr   *lib.BaseSort[M]
+	FieldUUIDStdNil   *lib.BaseSort[M]
 	FieldURL          *lib.BaseSort[M]
 	FieldURLPtr       *lib.BaseSort[M]
 	FieldURLNil       *lib.BaseSort[M]

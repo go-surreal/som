@@ -13,7 +13,10 @@ const fileGoMod = "go.mod"
 
 const (
 	minSupportedGoVersion = "1.24"    // suffix '.0' omitted on purpose!
-	maxSupportedGoVersion = "1.26.99" // allow for future patch versions
+	maxSupportedGoVersion = "1.27.99" // allow for future patch versions
+
+	// minStdUUIDGoVersion is the go release that introduced the stdlib uuid package.
+	minStdUUIDGoVersion = "1.27"
 
 	pkgDriver = "github.com/surrealdb/surrealdb.go"
 
@@ -26,6 +29,7 @@ const (
 
 	PkgUUIDGoogle = "github.com/google/uuid"
 	PkgUUIDGofrs  = "github.com/gofrs/uuid"
+	PkgUUIDStd    = "uuid"
 
 	requiredDriverVersion = "v1.6.0"
 
@@ -150,6 +154,30 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 	}
 
 	return "", nil
+}
+
+// CheckStdUUIDSupport verifies that the go version declared in go.mod is new
+// enough for the stdlib uuid package. Unlike the third-party uuid packages
+// there is no requirement to add, so a too old version can only be reported.
+func (m *GoMod) CheckStdUUIDSupport() error {
+	goVersion, err := versionOrdinal(m.file.Go.Version)
+	if err != nil {
+		return fmt.Errorf("could not parse go version: %w", err)
+	}
+
+	minVersion, err := versionOrdinal(minStdUUIDGoVersion)
+	if err != nil {
+		return fmt.Errorf("could not parse min go version for stdlib uuid: %w", err)
+	}
+
+	if goVersion < minVersion {
+		return fmt.Errorf(
+			"the stdlib uuid package requires go %s or later, but go.mod declares %s",
+			minStdUUIDGoVersion, m.file.Go.Version,
+		)
+	}
+
+	return nil
 }
 
 // CheckLibVersion checks that a library dependency in go.mod meets the minimum
