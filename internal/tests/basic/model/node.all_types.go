@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	stduuid "uuid"
 	"time"
 
 	"som.test/gen/som"
@@ -107,6 +108,11 @@ type AllTypes struct {
 	FieldUUIDGofrsPtr   *gofrsuuid.UUID
 	FieldUUIDGofrsNil   *gofrsuuid.UUID
 	FieldUUIDGofrsSlice []gofrsuuid.UUID
+
+	FieldUUIDStd      stduuid.UUID
+	FieldUUIDStdPtr   *stduuid.UUID
+	FieldUUIDStdNil   *stduuid.UUID
+	FieldUUIDStdSlice []stduuid.UUID
 
 	FieldURL      url.URL
 	FieldURLPtr   *url.URL

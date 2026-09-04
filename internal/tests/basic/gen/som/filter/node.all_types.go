@@ -9,6 +9,7 @@ import (
 	lib "som.test/gen/som/internal/lib"
 	model "som.test/model"
 	"time"
+	uuid2 "uuid"
 )
 
 var AllTypes = newAllTypes[model.AllTypes](lib.NewKey[model.AllTypes]())
@@ -94,6 +95,10 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldUUIDNil:            lib.NewUUIDGooglePtr[M](lib.Field(key, "field_uuid_nil")),
 		FieldUUIDPtr:            lib.NewUUIDGooglePtr[M](lib.Field(key, "field_uuid_ptr")),
 		FieldUUIDSlice:          lib.NewSliceMaker[M, uuid1.UUID, *lib.UUIDGoogle[M]](lib.NewUUIDGoogle[M])(lib.Field(key, "field_uuid_slice")),
+		FieldUUIDStd:            lib.NewUUIDStd[M](lib.Field(key, "field_uuid_std")),
+		FieldUUIDStdNil:         lib.NewUUIDStdPtr[M](lib.Field(key, "field_uuid_std_nil")),
+		FieldUUIDStdPtr:         lib.NewUUIDStdPtr[M](lib.Field(key, "field_uuid_std_ptr")),
+		FieldUUIDStdSlice:       lib.NewSliceMaker[M, uuid2.UUID, *lib.UUIDStd[M]](lib.NewUUIDStd[M])(lib.Field(key, "field_uuid_std_slice")),
 		FieldUint16:             lib.NewInt[M, uint16](lib.Field(key, "field_uint_16")),
 		FieldUint16Ptr:          lib.NewIntPtr[M, *uint16](lib.Field(key, "field_uint_16_ptr")),
 		FieldUint32:             lib.NewInt[M, uint32](lib.Field(key, "field_uint_32")),
@@ -171,6 +176,10 @@ type allTypes[M any] struct {
 	FieldUUIDGofrsPtr       *lib.UUIDGofrsPtr[M]
 	FieldUUIDGofrsNil       *lib.UUIDGofrsPtr[M]
 	FieldUUIDGofrsSlice     *lib.Slice[M, uuid.UUID, *lib.UUIDGofrs[M]]
+	FieldUUIDStd            *lib.UUIDStd[M]
+	FieldUUIDStdPtr         *lib.UUIDStdPtr[M]
+	FieldUUIDStdNil         *lib.UUIDStdPtr[M]
+	FieldUUIDStdSlice       *lib.Slice[M, uuid2.UUID, *lib.UUIDStd[M]]
 	FieldURL                *lib.URL[M]
 	FieldURLPtr             *lib.URLPtr[M]
 	FieldURLNil             *lib.URLPtr[M]
