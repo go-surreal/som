@@ -12,6 +12,7 @@ type Client interface {
 	TeamMemberRepo() TeamMemberRepo
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
+	SlugRepo() SlugRepo
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
 	EphemeralRepo() EphemeralRepo
@@ -31,6 +32,7 @@ type ClientImpl struct {
 	teamMemberRepo      *teamMember
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
+	slugRepo            *slug
 	personObjRepo       *personObj
 	locationRepo        *location
 	ephemeralRepo       *ephemeral

@@ -67,6 +67,15 @@ if err := client.ApplySchema(ctx); err != nil {
 Call this once on startup (or as part of a deployment step) after connecting. The statements
 are idempotent, so repeated calls are safe.
 
+Tables, fields and analyzers are defined with `OVERWRITE`, so a changed definition always
+reaches an existing database. Indexes and views are guarded by a hash stored in the
+`__som__schema` table and are only rebuilt once their generated definition actually changes —
+re-applying an unchanged schema does not reindex or recompute anything.
+
+`ApplySchema` converges definitions, it does not migrate data. Renames, backfills and
+removals of tables or fields that no longer exist in the models are not performed, since
+that intent cannot be derived from the model structs.
+
 ## Version Verification
 
 When creating a client, SOM automatically verifies that the connected SurrealDB server meets the minimum required version (currently **3.2.0**). If the version check fails, `NewClient` returns a `som.ErrUnsupportedVersion` error:

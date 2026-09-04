@@ -97,11 +97,18 @@ type UUID string
 
 type Rand string
 
+// String is an ID type for record IDs that are supplied by the
+// application. Unlike ULID, UUID and Rand it is not generated
+// server-side, so records must always be created with an explicit ID.
+type String string
+
 func (ULID) isNodeID() {}
 
 func (UUID) isNodeID() {}
 
 func (Rand) isNodeID() {}
+
+func (String) isNodeID() {}
 
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.

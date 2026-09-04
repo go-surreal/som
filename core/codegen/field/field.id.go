@@ -32,9 +32,18 @@ func (f *ID) TypeDatabase() string {
 func (f *ID) SchemaStatements(table, prefix string) []string {
 	// TODO: assert := "string::is::ulid(record::id($value))"
 
+	if f.source.Type == parser.IDTypeString {
+		return []string{
+			fmt.Sprintf(
+				"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
+				prefix+f.NameDatabase(), table, f.TypeDatabase(),
+			),
+		}
+	}
+
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s DEFAULT %s;",
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s DEFAULT %s;",
 			prefix+f.NameDatabase(), table, f.TypeDatabase(), f.idDefault(),
 		),
 	}

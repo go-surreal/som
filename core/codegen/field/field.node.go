@@ -31,7 +31,7 @@ func (f *Node) TypeDatabase() string {
 func (f *Node) SchemaStatements(table, prefix string) []string {
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
 			prefix+f.NameDatabase(), table, f.TypeDatabase(),
 		),
 	}

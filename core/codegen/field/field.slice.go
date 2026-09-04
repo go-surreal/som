@@ -63,7 +63,7 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 
 	statements := []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
 			prefix+f.NameDatabase(), table, dbType,
 		),
 	}

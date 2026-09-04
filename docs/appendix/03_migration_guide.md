@@ -126,7 +126,7 @@ type User struct {
 }
 ```
 
-Available ID types: `som.ULID`, `som.UUID`, `som.Rand`.
+Available ID types: `som.ULID`, `som.UUID`, `som.Rand`, `som.String`.
 
 **Complex IDs**: For array or object-based IDs, create a key struct:
 ```go

@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"path"
@@ -15,7 +16,12 @@ import (
 const filenameSchema = "schema.surql"
 
 func (b *build) buildSchemaFile() error {
-	statements := []string{string(embed.CodegenComment), ""}
+	statements := []string{
+		string(embed.CodegenComment),
+		"",
+		fmt.Sprintf("DEFINE TABLE OVERWRITE %s SCHEMALESS PERMISSIONS FULL;", def.MetaTable),
+		"",
+	}
 
 	// Generate DEFINE ANALYZER statements first
 	if b.input.define != nil {
@@ -31,7 +37,7 @@ func (b *build) buildSchemaFile() error {
 	var indexStatements []string
 
 	for _, node := range b.input.nodes {
-		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL", node.NameDatabase())
+		statement := fmt.Sprintf("DEFINE TABLE OVERWRITE %s SCHEMAFULL TYPE NORMAL", node.NameDatabase())
 		if node.Changefeed != "" {
 			statement += fmt.Sprintf(" CHANGEFEED %s", node.Changefeed)
 		}
@@ -48,8 +54,8 @@ func (b *build) buildSchemaFile() error {
 		// Index expires_at to keep expiry purge deletes efficient.
 		if node.Source.Expiry {
 			indexName := fmt.Sprintf(def.IndexPrefix+"%s_expires_at", node.NameDatabase())
-			indexStatements = append(indexStatements,
-				fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS expires_at CONCURRENTLY;", indexName, node.NameDatabase()))
+			indexStatements = append(indexStatements, guardRebuild("index:"+indexName,
+				fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS expires_at CONCURRENTLY;", indexName, node.NameDatabase())))
 		}
 
 		statements = append(statements, "")
@@ -57,7 +63,7 @@ func (b *build) buildSchemaFile() error {
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED",
+			"DEFINE TABLE OVERWRITE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
 			edge.Out.NameDatabase(), // TODO: can be OR'ed with "|"
@@ -83,7 +89,7 @@ func (b *build) buildSchemaFile() error {
 	// defined so writes are validated and dependent view SELECTs typecheck.
 	// No indexes are emitted — there are no rows to index.
 	for _, sink := range b.input.sinks {
-		statement := fmt.Sprintf("DEFINE TABLE %s DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", sink.NameDatabase())
+		statement := fmt.Sprintf("DEFINE TABLE OVERWRITE %s DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", sink.NameDatabase())
 		statements = append(statements, statement)
 
 		for _, f := range sink.GetFields() {
@@ -103,7 +109,14 @@ func (b *build) buildSchemaFile() error {
 		if statement == "" {
 			continue // view without a definition (see buildViewStatement)
 		}
-		statements = append(statements, statement, "")
+
+		// A view cannot be redefined via OVERWRITE: SurrealDB re-materializes
+		// its rows onto the already existing keys and fails with AlreadyExists.
+		// It has to be removed first, which recomputes the whole view.
+		statements = append(statements, guardRebuild("view:"+view.NameDatabase(),
+			fmt.Sprintf("REMOVE TABLE IF EXISTS %s;", view.NameDatabase()),
+			statement,
+		), "")
 	}
 
 	// Append index statements at the end
@@ -117,6 +130,28 @@ func (b *build) buildSchemaFile() error {
 	b.fs.Write(path.Join(def.PkgRepo, "schema", filenameSchema), []byte(content))
 
 	return nil
+}
+
+// guardRebuild wraps DDL that forces a full rebuild when applied (index
+// builds, view materialization) into a hash check against the meta table.
+// Table, field and analyzer definitions are cheap metadata writes and are
+// applied unconditionally via OVERWRITE, but re-running an index or view
+// definition costs time proportional to the row count. Applying an unchanged
+// schema must stay a no-op, so those statements only run once their generated
+// form actually differs from what the database was last given.
+func guardRebuild(key string, statements ...string) string {
+	body := strings.Join(statements, "\n\t")
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
+
+	return fmt.Sprintf(
+		"IF (SELECT VALUE hash FROM ONLY type::record(%q, %q)) != %q {\n"+
+			"\t%s\n"+
+			"\tUPSERT type::record(%q, %q) SET hash = %q;\n"+
+			"};",
+		def.MetaTable, key, hash,
+		body,
+		def.MetaTable, key, hash,
+	)
 }
 
 // buildViewStatement builds the DEFINE TABLE ... AS SELECT statement for a
@@ -192,7 +227,7 @@ func (b *build) buildViewStatement(view *field.ViewTable) (string, error) {
 
 func buildAnalyzerStatement(analyzer parser.AnalyzerDef) string {
 	var parts []string
-	parts = append(parts, fmt.Sprintf("DEFINE ANALYZER %s", analyzer.Name))
+	parts = append(parts, fmt.Sprintf("DEFINE ANALYZER OVERWRITE %s", analyzer.Name))
 
 	if len(analyzer.Tokenizers) > 0 {
 		parts = append(parts, fmt.Sprintf("TOKENIZERS %s", strings.Join(analyzer.Tokenizers, ", ")))
@@ -237,8 +272,9 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 	var statements []string
 
 	if !b.noCountIndex {
-		stmt := fmt.Sprintf("DEFINE INDEX "+def.IndexPrefix+"%s_count ON %s COUNT;", tableName, tableName)
-		statements = append(statements, stmt)
+		indexName := fmt.Sprintf(def.IndexPrefix+"%s_count", tableName)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s COUNT;", indexName, tableName)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	// Collect composite unique index fields grouped by name
@@ -249,8 +285,8 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 
 	if softDelete {
 		indexName := fmt.Sprintf(def.IndexPrefix+"%s_deleted_at", tableName)
-		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
-		statements = append(statements, stmt)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	// Generate composite unique index statements
@@ -258,8 +294,8 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 		// Index name format: __som__<table>_unique_<name>
 		indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, uniqueName)
 		fieldsStr := strings.Join(fieldPaths, ", ")
-		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldsStr)
-		statements = append(statements, stmt)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldsStr)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	return statements
@@ -280,16 +316,16 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			} else if indexInfo.Unique {
 				// Simple unique index on single field
 				indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
-				*statements = append(*statements, stmt)
+				stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			} else {
 				// Regular (non-unique) index
 				indexName := indexInfo.Name
 				if indexName == "" {
 					indexName = fmt.Sprintf(def.IndexPrefix+"%s_index_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
 				}
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s CONCURRENTLY;", indexName, tableName, fieldPath)
-				*statements = append(*statements, stmt)
+				stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s CONCURRENTLY;", indexName, tableName, fieldPath)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			}
 		}
 
@@ -300,7 +336,7 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			if searchDef != nil {
 				// Index name format: __som__<table>_search_<field>
 				indexName := fmt.Sprintf(def.IndexPrefix+"%s_search_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s FULLTEXT ANALYZER %s",
+				stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s FULLTEXT ANALYZER %s",
 					indexName, tableName, fieldPath, searchDef.AnalyzerName)
 				if searchDef.HasBM25 {
 					stmt += fmt.Sprintf(" BM25(%g, %g)", searchDef.BM25K1, searchDef.BM25B)
@@ -314,7 +350,7 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 					stmt += " CONCURRENTLY"
 				}
 				stmt += ";"
-				*statements = append(*statements, stmt)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			}
 		}
 

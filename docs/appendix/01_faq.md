@@ -35,7 +35,7 @@ Code generation provides:
 
 ### What's the difference between som.Node[T] and som.Edge?
 
-- **som.Node[T]** - A database record/table. The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, or a custom struct).
+- **som.Node[T]** - A database record/table. The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, `som.String`, or a custom struct).
 - **som.Edge** - A relationship between two nodes. Provides the edge's own ID; you declare the
   connected nodes yourself as two fields tagged `som:"in"` and `som:"out"`. Edges have no
   repository — they are created via `Relate()` on the source node's repository.

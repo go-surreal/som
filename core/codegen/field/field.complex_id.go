@@ -62,7 +62,7 @@ func (f *ComplexID) SchemaStatements(table, _ string) []string {
 		return nil
 	}
 	return []string{
-		fmt.Sprintf("DEFINE FIELD id ON TABLE %s TYPE %s;", table, typeDef),
+		fmt.Sprintf("DEFINE FIELD OVERWRITE id ON TABLE %s TYPE %s;", table, typeDef),
 	}
 }
 
