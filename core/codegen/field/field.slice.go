@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/dave/jennifer/jen"
@@ -658,6 +659,33 @@ func (f *Slice) cborMarshal(ctx Context) jen.Code {
 		)
 	}
 
+	// url.URL has no CBOR representation of its own, so each element is converted
+	// through types.URL, which encodes it as a plain string.
+	if urlElem, ok := f.element.(*URL); ok {
+		typeURL := jen.Op("*").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "URL")
+
+		srcSlice := jen.Id("c").Dot(f.NameGo())
+		if f.source.Pointer() {
+			srcSlice = jen.Op("*").Id("c").Dot(f.NameGo())
+		}
+
+		var convElem jen.Code
+		if urlElem.source.Pointer() {
+			convElem = jen.Params(typeURL).Call(jen.Id("src").Index(jen.Id("i")))
+		} else {
+			convElem = jen.Params(typeURL).Call(jen.Op("&").Id("src").Index(jen.Id("i")))
+		}
+
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("src").Op(":=").Add(srcSlice),
+			jen.Id("convSlice").Op(":=").Make(jen.Index().Add(typeURL), jen.Len(jen.Id("src"))),
+			jen.For(jen.Id("i").Op(":=").Range().Id("src")).Block(
+				jen.Id("convSlice").Index(jen.Id("i")).Op("=").Add(convElem),
+			),
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("convSlice"),
+		)
+	}
+
 	// For node slices, convert each element to a link (only ID, not full object)
 	if nodeElem, ok := f.element.(*Node); ok {
 		convFuncName := "to" + nodeElem.table.NameGo() + "Link"
@@ -790,6 +818,51 @@ func (f *Slice) cborUnmarshal(ctx Context) jen.Code {
 			jen.Id("ok"),
 		).BlockFunc(func(g *jen.Group) {
 			g.Var().Id("convSlice").Add(sliceElemType)
+			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convSlice"))
+			g.Add(assignStmt)
+		})
+	}
+
+	// Elements are decoded as types.URL (a plain string) and converted back to url.URL.
+	if urlElem, ok := f.element.(*URL); ok {
+		typesURL := jen.Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "URL")
+
+		var convSliceType, convElem jen.Code
+		if urlElem.source.Pointer() {
+			convSliceType = jen.Index().Op("*").Add(typesURL)
+			convElem = jen.Params(jen.Op("*").Qual(def.PkgURL, "URL")).Call(jen.Id("v"))
+		} else {
+			convSliceType = jen.Index().Add(typesURL)
+			convElem = jen.Qual(def.PkgURL, "URL").Call(jen.Id("v"))
+		}
+
+		innerSliceType := jen.Index().Add(f.element.typeGo())
+
+		var assignStmt jen.Code
+		if f.source.Pointer() {
+			assignStmt = jen.If(jen.Id("convSlice").Op("==").Nil()).Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+			).Else().Block(
+				jen.Id("result").Op(":=").Make(innerSliceType, jen.Len(jen.Id("convSlice"))),
+				jen.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice")).Block(
+					jen.Id("result").Index(jen.Id("i")).Op("=").Add(convElem),
+				),
+				jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("result"),
+			)
+		} else {
+			assignStmt = jen.Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Make(f.typeGo(), jen.Len(jen.Id("convSlice"))),
+				jen.For(jen.Id("i").Op(",").Id("v").Op(":=").Range().Id("convSlice")).Block(
+					jen.Id("c").Dot(f.NameGo()).Index(jen.Id("i")).Op("=").Add(convElem),
+				),
+			)
+		}
+
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).BlockFunc(func(g *jen.Group) {
+			g.Var().Id("convSlice").Add(convSliceType)
 			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convSlice"))
 			g.Add(assignStmt)
 		})

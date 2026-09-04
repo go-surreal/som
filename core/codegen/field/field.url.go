@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -19,7 +20,7 @@ func (f *URL) typeGo() jen.Code {
 }
 
 func (f *URL) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).String()
+	return f.typeGo()
 }
 
 func (f *URL) TypeDatabase() string {
@@ -105,39 +106,48 @@ func (f *URL) sortInit(ctx Context) jen.Code {
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 
-func (f *URL) cborMarshal(_ Context) jen.Code {
-	convFuncName := "fromURL"
-	if f.source.Pointer() {
-		convFuncName += "Ptr"
-	}
+func (f *URL) cborMarshal(ctx Context) jen.Code {
+	typeURL := jen.Op("*").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "URL")
 
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
-			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo())),
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").
+				Params(typeURL).Call(jen.Id("c").Dot(f.NameGo())),
 		)
 	}
 
-	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").
+		Params(typeURL).Call(jen.Op("&").Id("c").Dot(f.NameGo()))
 }
 
 func (f *URL) cborUnmarshal(ctx Context) jen.Code {
+	typesPkg := path.Join(ctx.TargetPkg, def.PkgTypes)
+
 	if f.source.Pointer() {
 		return jen.If(
 			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 			jen.Id("ok"),
 		).BlockFunc(func(g *jen.Group) {
-			g.Var().Id("convVal").Op("*").String()
-			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-			g.Id("c").Dot(f.NameGo()).Op("=").Id("toURLPtr").Call(jen.Id("convVal"))
+			g.If(jen.Qual(ctx.pkgCBOR(), "IsNoneOrNull").Call(jen.Id("raw"))).Block(
+				jen.Id("c").Dot(f.NameGo()).Op("=").Nil(),
+			).Else().Block(
+				jen.Var().Id("convVal").Qual(def.PkgURL, "URL"),
+				jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(
+					jen.Id("raw"),
+					jen.Params(jen.Op("*").Qual(typesPkg, "URL")).Call(jen.Op("&").Id("convVal")),
+				),
+				jen.Id("c").Dot(f.NameGo()).Op("=").Op("&").Id("convVal"),
+			)
 		})
 	}
 
 	return jen.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
-	).BlockFunc(func(g *jen.Group) {
-		g.Var().Id("convVal").String()
-		g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-		g.Id("c").Dot(f.NameGo()).Op("=").Id("toURL").Call(jen.Id("convVal"))
-	})
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(
+			jen.Id("raw"),
+			jen.Params(jen.Op("*").Qual(typesPkg, "URL")).Call(jen.Op("&").Id("c").Dot(f.NameGo())),
+		),
+	)
 }
