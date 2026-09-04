@@ -47,6 +47,20 @@ func (t *NodeTable) HasStringID() bool {
 		return false
 	}
 	switch t.Source.IDType {
+	case parser.IDTypeULID, parser.IDTypeUUID, parser.IDTypeRand, parser.IDTypeString:
+		return true
+	}
+	return false
+}
+
+// HasAutoID reports whether record IDs for this table are generated
+// server-side when none is provided. It is false for som.String and for
+// complex (array/object) IDs, which must always be supplied explicitly.
+func (t *NodeTable) HasAutoID() bool {
+	if t.Source == nil {
+		return false
+	}
+	switch t.Source.IDType {
 	case parser.IDTypeULID, parser.IDTypeUUID, parser.IDTypeRand:
 		return true
 	}

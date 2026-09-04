@@ -106,7 +106,7 @@ type User struct {
 ```
 
 In order for it to be considered by the generator, it must embed `som.Node[T]`, where `T` is the
-ID type (`som.ULID`, `som.UUID`, `som.Rand` or a custom key struct):
+ID type (`som.ULID`, `som.UUID`, `som.Rand`, `som.String` or a custom key struct):
 
 ```go
 package model

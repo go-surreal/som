@@ -28,6 +28,7 @@ The type parameter `T` determines the ID format:
 | `som.ULID` | ULID-based IDs (default choice) | `01HQMV8K2P...` |
 | `som.UUID` | UUID-based IDs | `550e8400-e29b-...` |
 | `som.Rand` | Random string IDs | `abc123def` |
+| `som.String` | Application-supplied string IDs | `john` |
 | Custom struct | Complex array/object IDs | `[city, date]` |
 
 > **Note**: `ID()` returns the raw ID value. The repository automatically prefixes it with the table name (e.g. `user:01HQMV8K2P...`) when storing and querying records.
