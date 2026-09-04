@@ -2,7 +2,8 @@
 
 ## Prerequisites
 
-- **Go 1.25 or later** - SOM uses generics and iterators extensively
+- **Go 1.27.1** - SOM uses generics, iterators and generic methods extensively. During this phase of the project,
+  only ever the latest version of Go is supported.
 - **SurrealDB 3.x** - Tested against version 3.2.0
 
 ## Install SOM Generator

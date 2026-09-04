@@ -14,7 +14,9 @@ SOM is currently in **early development** and considered experimental. It works 
 
 ### What Go version is required?
 
-Go 1.25 or later is required due to heavy use of generics and iterators.
+Go 1.27.1 is required due to heavy use of generics, iterators and generic methods. During this phase of the
+project, only ever the latest version of Go is supported - older versions might work, but can break without
+notice.
 
 ### What SurrealDB version is supported?
 
