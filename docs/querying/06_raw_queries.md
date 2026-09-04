@@ -22,8 +22,7 @@ if err != nil {
 Use `Scan` to unmarshal the result set into a slice:
 
 ```go
-var users []map[string]any
-err := result.Scan(&users)
+users, err := result.Scan[map[string]any]()
 ```
 
 ### Single Row
@@ -31,8 +30,7 @@ err := result.Scan(&users)
 Use `ScanOne` to unmarshal the first row. Returns `som.ErrNotFound` if the result set is empty:
 
 ```go
-var user map[string]any
-err := result.ScanOne(&user)
+user, err := result.ScanOne[map[string]any]()
 
 if errors.Is(err, som.ErrNotFound) {
     // No matching record
@@ -76,8 +74,7 @@ type UserSummary struct {
     Count int    `json:"count"`
 }
 
-var summaries []UserSummary
-err := result.Scan(&summaries)
+summaries, err := result.Scan[UserSummary]()
 ```
 
 ## When to Use Raw Queries

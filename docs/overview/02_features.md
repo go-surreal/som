@@ -423,8 +423,7 @@ Execute arbitrary SurrealQL when the query builder doesn't cover your use case:
 ```go
 result, err := client.Raw(ctx, "SELECT * FROM user WHERE age > $min", som.Params{"min": 18})
 
-var users []map[string]any
-err = result.Scan(&users)
+users, err := result.Scan[map[string]any]()
 ```
 
 ### Transactions

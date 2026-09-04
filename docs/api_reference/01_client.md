@@ -138,8 +138,7 @@ if err != nil {
     return err
 }
 
-var users []map[string]any
-err = result.Scan(&users)
+users, err := result.Scan[map[string]any]()
 ```
 
 See [Raw Queries](../querying/06_raw_queries.md) for full documentation.

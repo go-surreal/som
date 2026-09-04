@@ -423,42 +423,49 @@ func NewRawResult(data []byte) *RawResult {
 	return &RawResult{data: data}
 }
 
-// Scan unmarshals the first statement's result set into dest.
-// dest should be a pointer to a slice for multi-row results.
+// Scan unmarshals the first statement's result set into a slice of T.
 // For multi-statement queries, only the first statement's results are decoded.
-func (r *RawResult) Scan(dest any) error {
+func (r *RawResult) Scan[T any]() ([]T, error) {
 	if r.data == nil {
-		return nil
+		return nil, nil
 	}
 	var raw []internal.QueryResult[cbor.RawMessage]
 	if err := cbor.Unmarshal(r.data, &raw); err != nil {
-		return fmt.Errorf("could not decode raw query result: %w", err)
+		return nil, fmt.Errorf("could not decode raw query result: %w", err)
 	}
 	if len(raw) < 1 {
-		return nil
+		return nil, nil
 	}
 	// Re-wrap the raw messages into a CBOR array so they can be
 	// unmarshalled into the caller's typed slice without reflection.
 	// This is cheap: Marshal on []RawMessage only prepends an array header.
 	resultBytes, err := cbor.Marshal(raw[0].Result)
 	if err != nil {
-		return fmt.Errorf("could not re-encode result: %w", err)
+		return nil, fmt.Errorf("could not re-encode result: %w", err)
 	}
-	return cbor.Unmarshal(resultBytes, dest)
+	var out []T
+	if err := cbor.Unmarshal(resultBytes, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
-// ScanOne unmarshals the first row of the first statement's result set into dest.
+// ScanOne unmarshals the first row of the first statement's result set into T.
 // Returns ErrNotFound if no results.
-func (r *RawResult) ScanOne(dest any) error {
+func (r *RawResult) ScanOne[T any]() (T, error) {
+	var out T
 	if r.data == nil {
-		return ErrNotFound
+		return out, ErrNotFound
 	}
 	var raw []internal.QueryResult[cbor.RawMessage]
 	if err := cbor.Unmarshal(r.data, &raw); err != nil {
-		return fmt.Errorf("could not decode raw query result: %w", err)
+		return out, fmt.Errorf("could not decode raw query result: %w", err)
 	}
 	if len(raw) < 1 || len(raw[0].Result) < 1 {
-		return ErrNotFound
+		return out, ErrNotFound
 	}
-	return cbor.Unmarshal(raw[0].Result[0], dest)
+	if err := cbor.Unmarshal(raw[0].Result[0], &out); err != nil {
+		return out, err
+	}
+	return out, nil
 }
