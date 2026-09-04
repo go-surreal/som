@@ -300,6 +300,7 @@ type Weather struct {
 |------|-------------------|------|-------|
 | `uuid.UUID` (google) | Equal, NotEqual, In, NotIn | Yes | CBOR Tag 37 |
 | `uuid.UUID` (gofrs) | Equal, NotEqual, In, NotIn | Yes | CBOR Tag 37 |
+| `uuid.UUID` (stdlib) | Equal, NotEqual, In, NotIn | Yes | CBOR Tag 37, requires go 1.27 |
 | `url.URL` | Equal, NotEqual | Yes | - |
 | `som.Email` | Equal, In, User(), Host() | Yes | - |
 | `som.Password[A]` | Zero, IsNil (auto-hashed) | No | - |

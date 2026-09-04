@@ -18,6 +18,8 @@ func (f *UUID) uuidPkg() string {
 	switch f.source.Package {
 	case parser.UUIDPackageGofrs:
 		return def.PkgUUIDGofrs
+	case parser.UUIDPackageStd:
+		return def.PkgUUIDStd
 	default:
 		return def.PkgUUIDGoogle
 	}
@@ -27,6 +29,8 @@ func (f *UUID) uuidTypeName() string {
 	switch f.source.Package {
 	case parser.UUIDPackageGofrs:
 		return "UUIDGofrs"
+	case parser.UUIDPackageStd:
+		return "UUIDStd"
 	default:
 		return "UUIDGoogle"
 	}

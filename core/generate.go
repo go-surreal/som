@@ -160,6 +160,11 @@ func checkLibVersions(mod *gomod.GoMod, features *parser.UsedFeatures) error {
 			return err
 		}
 	}
+	if features.UsesStdUUID {
+		if err := mod.CheckStdUUIDSupport(); err != nil {
+			return err
+		}
+	}
 	if features.UsesOrbGeo {
 		if err := mod.CheckLibVersion(gomod.PkgGeoOrb, gomod.MinGeoOrbVersion); err != nil {
 			return err
