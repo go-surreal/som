@@ -192,7 +192,7 @@ func (r *specialRelation) Query() query.Builder[model.SpecialRelation] {
 }
 
 // Create creates a new record for the SpecialRelation model.
-// The ID will be generated automatically as a ULID.
+// The ID will be generated automatically as a Rand.
 // Before- and after-create hooks are invoked.
 func (r *specialRelation) Create(ctx context.Context, specialRelation *model.SpecialRelation) error {
 	if specialRelation == nil {

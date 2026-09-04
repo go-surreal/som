@@ -190,6 +190,19 @@ func (b *build) keyTypeCode(node *field.NodeTable) jen.Code {
 	return jen.String()
 }
 
+// insertComment returns the doc comment for the generated Insert method. For
+// som.String models the IDs cannot be generated server-side, so they must be
+// set on every node instead of being left empty.
+func (b *build) insertComment(node *field.NodeTable) string {
+	if node.HasAutoID() {
+		return "Insert creates multiple records in a single operation.\n" +
+			"Before- and after-create hooks are invoked for each node."
+	}
+	return "Insert creates multiple records in a single operation.\n" +
+		"Every node must have a non-empty ID set.\n" +
+		"Before- and after-create hooks are invoked for each node."
+}
+
 func (b *build) recordIDFuncCode(node *field.NodeTable) jen.Code {
 	if node.HasComplexID() {
 		return b.complexRecordIDFunc(node)
@@ -259,7 +272,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		g.Add(comment("Query returns a new query builder for the " + node.NameGo() + " model."))
 		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
 
-		if !node.HasComplexID() {
+		if node.HasAutoID() {
 			g.Add(comment("Create creates a new record for the " + node.NameGo() + " model."))
 			g.Id("Create").Call(
 				jen.Id("ctx").Qual("context", "Context"),
@@ -268,7 +281,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		}
 
 		if !node.HasComplexID() {
-			g.Add(comment("Insert creates multiple records in a single operation.\nBefore- and after-create hooks are invoked for each node."))
+			g.Add(comment(b.insertComment(node)))
 			g.Id("Insert").Call(
 				jen.Id("ctx").Qual("context", "Context"),
 				jen.Id("nodes").Index().Op("*").Add(b.input.SourceQual(node.NameGo())),
@@ -470,7 +483,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		jen.Add(jen.Line(), jen.Id("name").Op(":").Lit(node.NameDatabase())),
 		jen.Add(jen.Line(), jen.Id("info").Op(":").Id(repoInfoVarName)),
 	)
-	if !node.HasComplexID() {
+	if node.HasAutoID() {
 		repoInitValues = append(repoInitValues,
 			jen.Add(jen.Line(), jen.Id("autoID").Op(":").Lit(true)),
 		)
@@ -522,12 +535,12 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 			)),
 		)
 
-	// Create (string ID only)
-	if !node.HasComplexID() {
+	// Create (auto-generated ID only)
+	if node.HasAutoID() {
 		f.Line().
 			Add(comment(`
 Create creates a new record for the `+node.NameGo()+` model.
-The ID will be generated automatically as a ULID.
+The ID will be generated automatically as a `+string(node.Source.IDType)+`.
 Before- and after-create hooks are invoked.
 		`)).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
@@ -623,8 +636,7 @@ Before- and after-create hooks are invoked.
 	// Insert (string ID only - complex-ID models cannot use table-level INSERT)
 	if !node.HasComplexID() {
 		f.Line().
-			Add(comment("Insert creates multiple records in a single operation.\n"+
-				"Before- and after-create hooks are invoked for each node.")).
+			Add(comment(b.insertComment(node))).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 			Id("Insert").
 			Params(
@@ -639,8 +651,13 @@ Before- and after-create hooks are invoked.
 				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
 					inner.If(jen.Id("n").Op("==").Nil()).
 						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("slice contains nil node"))))
-					inner.If(jen.Id("n").Dot("ID").Call().Op("!=").Lit("")).
-						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node already has an id"))))
+					if node.HasAutoID() {
+						inner.If(jen.Id("n").Dot("ID").Call().Op("!=").Lit("")).
+							Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node already has an id"))))
+					} else {
+						inner.If(jen.Id("n").Dot("ID").Call().Op("==").Lit("")).
+							Block(jen.Return(jen.Qual(b.relativePkgPath(), "ErrEmptyID")))
+					}
 				})
 
 				g.If(jen.Err().Op(":=").Id("r").Dot("runHooksAll").Call(

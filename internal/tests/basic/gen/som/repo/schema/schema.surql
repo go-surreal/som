@@ -26,6 +26,10 @@ DEFINE FIELD OVERWRITE title ON TABLE special_relation TYPE string;
 DEFINE FIELD OVERWRITE author ON TABLE special_relation TYPE option<record<special_types>>;
 DEFINE FIELD OVERWRITE authors ON TABLE special_relation TYPE option<array<record<special_types> | null>>;
 
+DEFINE TABLE OVERWRITE slug SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE id ON TABLE slug TYPE string;
+DEFINE FIELD OVERWRITE title ON TABLE slug TYPE string;
+
 DEFINE TABLE OVERWRITE person_obj SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE person_obj TYPE { name: string, age: int };
 DEFINE FIELD OVERWRITE email ON TABLE person_obj TYPE string;
@@ -241,6 +245,10 @@ IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__spec
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__special_relation_deleted_at")) != "05e385b10fe1080b43073257b06e73212d28bfb6ecc2458bb1cf886781818171" {
 	DEFINE INDEX OVERWRITE __som__special_relation_deleted_at ON special_relation FIELDS deleted_at CONCURRENTLY;
 	UPSERT type::record("__som__schema", "index:__som__special_relation_deleted_at") SET hash = "05e385b10fe1080b43073257b06e73212d28bfb6ecc2458bb1cf886781818171";
+};
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__slug_count")) != "cf650d879c489483a4dca45d956ebfbbc41c2b9e6c2ca718ee811a7ffc9a8dd2" {
+	DEFINE INDEX OVERWRITE __som__slug_count ON slug COUNT;
+	UPSERT type::record("__som__schema", "index:__som__slug_count") SET hash = "cf650d879c489483a4dca45d956ebfbbc41c2b9e6c2ca718ee811a7ffc9a8dd2";
 };
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__person_obj_count")) != "c31ae8cfa0dd2d0151ad8531d12bf669ed7b9b65a18afe70dd84e6355f80ca35" {
 	DEFINE INDEX OVERWRITE __som__person_obj_count ON person_obj COUNT;

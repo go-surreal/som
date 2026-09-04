@@ -45,7 +45,23 @@ client.UserRepo().CreateWithID(ctx, "john", user)
 | `som.ULID` | ULID-based IDs (recommended) | `01HQMV8K2P...` |
 | `som.UUID` | UUID-based IDs | `550e8400-e29b-...` |
 | `som.Rand` | Random string IDs | `abc123def` |
+| `som.String` | Application-supplied string IDs | `john` |
 | Custom struct | Complex array or object IDs | See [Complex IDs](#complex-id-types) |
+
+`som.ULID`, `som.UUID` and `som.Rand` are generated server-side, so records can be
+created without an ID via `Create`. `som.String` is never generated: the repository
+does not expose `Create` for such models, only `CreateWithID` (and `Insert`, which
+requires every node to already carry a non-empty ID).
+
+```go
+type Slug struct {
+    som.Node[som.String]
+    Title string
+}
+
+// No Create method - the ID must always be given
+client.SlugRepo().CreateWithID(ctx, "hello-world", slug)
+```
 
 ### Complex ID Types
 

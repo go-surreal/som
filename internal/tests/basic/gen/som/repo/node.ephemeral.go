@@ -185,7 +185,7 @@ func (r *ephemeral) Query() query.Builder[model.Ephemeral] {
 }
 
 // Create creates a new record for the Ephemeral model.
-// The ID will be generated automatically as a ULID.
+// The ID will be generated automatically as a UUID.
 // Before- and after-create hooks are invoked.
 func (r *ephemeral) Create(ctx context.Context, ephemeral *model.Ephemeral) error {
 	if ephemeral == nil {

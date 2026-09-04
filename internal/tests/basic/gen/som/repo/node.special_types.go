@@ -192,7 +192,7 @@ func (r *specialTypes) Query() query.Builder[model.SpecialTypes] {
 }
 
 // Create creates a new record for the SpecialTypes model.
-// The ID will be generated automatically as a ULID.
+// The ID will be generated automatically as a UUID.
 // Before- and after-create hooks are invoked.
 func (r *specialTypes) Create(ctx context.Context, specialTypes *model.SpecialTypes) error {
 	if specialTypes == nil {

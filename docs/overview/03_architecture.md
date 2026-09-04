@@ -126,7 +126,7 @@ type User struct {
 // Creates table: user
 ```
 
-The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, or a custom struct with `som.ArrayID`/`som.ObjectID`).
+The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, `som.String`, or a custom struct with `som.ArrayID`/`som.ObjectID`).
 
 ### Edges
 
