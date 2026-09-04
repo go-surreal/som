@@ -9,6 +9,7 @@ import (
 	distinct "som.test/gen/som/internal/distinct"
 	model "som.test/model"
 	"time"
+	uuid2 "uuid"
 )
 
 var AllTypes = newAllTypes[model.AllTypes]("")
@@ -87,6 +88,10 @@ func newAllTypes[M any](key string) allTypes[M] {
 		FieldUUIDNil:            distinct.NewUUIDGooglePtrField[M](keyed(key, "field_uuid_nil")),
 		FieldUUIDPtr:            distinct.NewUUIDGooglePtrField[M](keyed(key, "field_uuid_ptr")),
 		FieldUUIDSlice:          distinct.NewUUIDGoogleField[M](keyed(key, "field_uuid_slice")),
+		FieldUUIDStd:            distinct.NewUUIDStdField[M](keyed(key, "field_uuid_std")),
+		FieldUUIDStdNil:         distinct.NewUUIDStdPtrField[M](keyed(key, "field_uuid_std_nil")),
+		FieldUUIDStdPtr:         distinct.NewUUIDStdPtrField[M](keyed(key, "field_uuid_std_ptr")),
+		FieldUUIDStdSlice:       distinct.NewUUIDStdField[M](keyed(key, "field_uuid_std_slice")),
 		FieldUint16:             distinct.NewField[M, uint16](keyed(key, "field_uint_16")),
 		FieldUint16Ptr:          distinct.NewField[M, uint16](keyed(key, "field_uint_16_ptr")),
 		FieldUint32:             distinct.NewField[M, uint32](keyed(key, "field_uint_32")),
@@ -161,6 +166,10 @@ type allTypes[M any] struct {
 	FieldUUIDGofrsPtr       distinct.Field[M, uuid1.UUID]
 	FieldUUIDGofrsNil       distinct.Field[M, uuid1.UUID]
 	FieldUUIDGofrsSlice     distinct.Field[M, uuid1.UUID]
+	FieldUUIDStd            distinct.Field[M, uuid2.UUID]
+	FieldUUIDStdPtr         distinct.Field[M, uuid2.UUID]
+	FieldUUIDStdNil         distinct.Field[M, uuid2.UUID]
+	FieldUUIDStdSlice       distinct.Field[M, uuid2.UUID]
 	FieldURL                distinct.Field[M, url.URL]
 	FieldURLPtr             distinct.Field[M, url.URL]
 	FieldURLNil             distinct.Field[M, url.URL]
