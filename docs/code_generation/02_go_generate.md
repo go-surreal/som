@@ -58,7 +58,7 @@ steps:
   - uses: actions/checkout@v4
   - uses: actions/setup-go@v5
     with:
-      go-version: '1.25'
+      go-version: '1.27.1'
   - run: go generate ./...
   - run: git diff --exit-code  # Fail if generated code differs
 ```

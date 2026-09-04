@@ -1,6 +1,6 @@
 module github.com/go-surreal/som
 
-go 1.26.0
+go 1.27.1
 
 retract [v0.0.0, v0.19.99] // only the latest version is supported for now
 

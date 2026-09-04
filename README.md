@@ -8,7 +8,7 @@
 <hr />
 
 <p align="center">
-    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.25.7-informational" alt="Go 1.25.7"></a>
+    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.27.1-informational" alt="Go 1.27.1"></a>
     &nbsp;
     <a href="https://github.com/go-surreal/som/actions/workflows/main.yml"><img src="https://github.com/go-surreal/som/actions/workflows/main.yml/badge.svg" alt="Main"></a>
     &nbsp;
@@ -273,12 +273,12 @@ Up until version 1.0 though, breaking changes might be introduced at any time (m
 
 ### Compatibility
 
-This go project makes heavy use of generics. As this feature has been introduced with go 1.18, that version is the 
-earliest to be supported by this library.
+This go project makes heavy use of generics, iterators and generic methods. During this phase of the project, only 
+the latest version of go is supported - currently go 1.27.1. Older versions might still work, but could also break 
+at any time, with any new release and without further notice.
 
-In general, the two latest (minor) versions of go - and within those, only the latest patch - will be supported 
-officially. This means that older versions might still work, but could also break at any time, with any new 
-release and without further notice.
+Once the project reaches a stable release, this will be relaxed to the two latest (minor) versions of go - and 
+within those, only the latest patch.
 
 Deprecating an "outdated" go version does not yield a new major version of this library. There will be no support for 
 older versions whatsoever. This rather hard handling is intended, because it is the official handling for the go 
