@@ -200,6 +200,7 @@ type UUIDPackage string
 const (
 	UUIDPackageGoogle UUIDPackage = "github.com/google/uuid"
 	UUIDPackageGofrs  UUIDPackage = "github.com/gofrs/uuid"
+	UUIDPackageStd    UUIDPackage = "uuid"
 )
 
 type FieldUUID struct {

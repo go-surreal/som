@@ -31,8 +31,7 @@ func TestRawQuery_Scan(t *testing.T) {
 	result, err := client.Raw(ctx, "SELECT * FROM all_types WHERE field_string = $name", som.Params{"name": "raw_test"})
 	assert.NilError(t, err)
 
-	var rows []map[string]any
-	err = result.Scan(&rows)
+	rows, err := result.Scan[map[string]any]()
 	assert.NilError(t, err)
 	assert.Equal(t, 3, len(rows))
 }
@@ -55,8 +54,7 @@ func TestRawQuery_ScanOne(t *testing.T) {
 	result, err := client.Raw(ctx, "SELECT * FROM all_types WHERE field_string = $name", som.Params{"name": "scan_one_test"})
 	assert.NilError(t, err)
 
-	var row map[string]any
-	err = result.ScanOne(&row)
+	row, err := result.ScanOne[map[string]any]()
 	assert.NilError(t, err)
 	assert.Equal(t, "scan_one_test", row["field_string"])
 }
@@ -72,8 +70,7 @@ func TestRawQuery_ScanOne_NotFound(t *testing.T) {
 	result, err := client.Raw(ctx, "SELECT * FROM all_types WHERE field_string = 'does_not_exist'", nil)
 	assert.NilError(t, err)
 
-	var row map[string]any
-	err = result.ScanOne(&row)
+	_, err = result.ScanOne[map[string]any]()
 	assert.Assert(t, errors.Is(err, som.ErrNotFound))
 }
 
@@ -88,8 +85,7 @@ func TestRawQuery_NoParams(t *testing.T) {
 	result, err := client.Raw(ctx, "SELECT * FROM all_types LIMIT 0", nil)
 	assert.NilError(t, err)
 
-	var rows []map[string]any
-	err = result.Scan(&rows)
+	rows, err := result.Scan[map[string]any]()
 	assert.NilError(t, err)
 	assert.Equal(t, 0, len(rows))
 }
@@ -130,8 +126,7 @@ func TestRawQuery_ParamBinding(t *testing.T) {
 	)
 	assert.NilError(t, err)
 
-	var rows []map[string]any
-	err = result.Scan(&rows)
+	rows, err := result.Scan[map[string]any]()
 	assert.NilError(t, err)
 	assert.Equal(t, 1, len(rows))
 }

@@ -300,6 +300,7 @@ type Weather struct {
 |------|-------------------|------|-------|
 | `uuid.UUID` (google) | Equal, NotEqual, In, NotIn | Yes | CBOR Tag 37 |
 | `uuid.UUID` (gofrs) | Equal, NotEqual, In, NotIn | Yes | CBOR Tag 37 |
+| `uuid.UUID` (stdlib) | Equal, NotEqual, In, NotIn | Yes | CBOR Tag 37, requires go 1.27 |
 | `url.URL` | Equal, NotEqual | Yes | - |
 | `som.Email` | Equal, In, User(), Host() | Yes | - |
 | `som.Password[A]` | Zero, IsNil (auto-hashed) | No | - |
@@ -423,8 +424,7 @@ Execute arbitrary SurrealQL when the query builder doesn't cover your use case:
 ```go
 result, err := client.Raw(ctx, "SELECT * FROM user WHERE age > $min", som.Params{"min": 18})
 
-var users []map[string]any
-err = result.Scan(&users)
+users, err := result.Scan[map[string]any]()
 ```
 
 ### Transactions

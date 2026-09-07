@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"net/url"
+	stduuid "uuid"
 	"testing"
 	"time"
 
@@ -867,6 +868,64 @@ func TestUUIDGofrs(t *testing.T) {
 			filter.AllTypes.FieldUUIDGofrs.Equal(modelIn.FieldUUIDGofrs),
 			filter.AllTypes.FieldUUIDGofrsPtr.Equal(*modelIn.FieldUUIDGofrsPtr),
 			filter.AllTypes.FieldUUIDGofrsNil.Nil(true),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
+		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
+	)
+}
+
+func TestUUIDStd(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ptr := stduuid.NewV7()
+
+	userNew := &model.AllTypes{
+		FieldMonth:      time.January,
+		FieldUUIDStd:    stduuid.New(),
+		FieldUUIDStdPtr: &ptr,
+		FieldUUIDStdNil: nil,
+	}
+
+	modelIn := userNew
+
+	err := client.AllTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	modelOut, exists, err := client.AllTypesRepo().Read(ctx, string(modelIn.ID()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
+		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
+	)
+
+	modelOut, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldUUIDStd.Equal(modelIn.FieldUUIDStd),
+			filter.AllTypes.FieldUUIDStdPtr.Equal(*modelIn.FieldUUIDStdPtr),
+			filter.AllTypes.FieldUUIDStdNil.Nil(true),
 		).
 		First(ctx)
 

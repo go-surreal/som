@@ -256,7 +256,7 @@ func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ids []string
+	ids := make([]string, 0, len(refs))
 	for _, ref := range refs {
 		ids = append(ids, ref.id)
 	}

@@ -19,7 +19,7 @@ func (f *SemVer) typeGo() jen.Code {
 }
 
 func (f *SemVer) typeConv(_ Context) jen.Code {
-	return jen.Add(f.ptr()).String()
+	return f.typeGo()
 }
 
 func (f *SemVer) TypeDatabase() string {
@@ -102,38 +102,20 @@ func (f *SemVer) sortInit(ctx Context) jen.Code {
 }
 
 func (f *SemVer) cborMarshal(_ Context) jen.Code {
-	convFuncName := "fromSemVer"
-	if f.source.Pointer() {
-		convFuncName += "Ptr"
-	}
-
 	if f.source.Pointer() {
 		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
-			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo())),
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
 		)
 	}
 
-	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id(convFuncName).Call(jen.Id("c").Dot(f.NameGo()))
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
 }
 
 func (f *SemVer) cborUnmarshal(ctx Context) jen.Code {
-	if f.source.Pointer() {
-		return jen.If(
-			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
-			jen.Id("ok"),
-		).BlockFunc(func(g *jen.Group) {
-			g.Var().Id("convVal").Op("*").String()
-			g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-			g.Id("c").Dot(f.NameGo()).Op("=").Id("toSemVerPtr").Call(jen.Id("convVal"))
-		})
-	}
-
 	return jen.If(
 		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
 		jen.Id("ok"),
-	).BlockFunc(func(g *jen.Group) {
-		g.Var().Id("convVal").String()
-		g.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("convVal"))
-		g.Id("c").Dot(f.NameGo()).Op("=").Id("toSemVer").Call(jen.Id("convVal"))
-	})
+	).Block(
+		jen.Qual(ctx.pkgCBOR(), "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("c").Dot(f.NameGo())),
+	)
 }
