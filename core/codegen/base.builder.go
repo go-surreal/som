@@ -227,6 +227,13 @@ func (b *build) addIDEmptyCheck(g *jen.Group, node *field.NodeTable, varName str
 	}
 }
 
+// addPartialCheck rejects model instances that only hold their record id,
+// because writing them back would wipe all other fields of the record.
+func (b *build) addPartialCheck(g *jen.Group, varName string) {
+	g.If(jen.Id(varName).Dot("IsPartial").Call()).
+		Block(jen.Return(jen.Qual(b.relativePkgPath(), "ErrPartialModel")))
+}
+
 func (b *build) addNodeRefFieldChecks(g *jen.Group, cid *parser.FieldComplexID, varName string) {
 	for _, sf := range cid.Fields {
 		fn, ok := sf.Field.(*parser.FieldNode)
@@ -780,6 +787,8 @@ Before- and after-update hooks are invoked.
 			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
 
+			b.addPartialCheck(g, node.NameGoLower())
+
 			b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot update "+node.NameGo()+" without existing record ID")
 
 			b.addBeforeHooks(g, node, "Update")
@@ -811,6 +820,8 @@ Before- and after-delete hooks are invoked.
 				Block(
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				)
+
+			b.addPartialCheck(g, node.NameGoLower())
 
 			b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot delete "+node.NameGo()+" without existing record ID")
 
@@ -867,6 +878,8 @@ Use this to permanently remove soft-deleted records.
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					)
 
+				b.addPartialCheck(g, node.NameGoLower())
+
 				b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot erase "+node.NameGo()+" without existing record ID")
 
 				g.Return(
@@ -897,6 +910,8 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 					Block(
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					)
+
+				b.addPartialCheck(g, node.NameGoLower())
 
 				b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot restore "+node.NameGo()+" without existing record ID")
 

@@ -296,6 +296,9 @@ func (r *ephemeral) Update(ctx context.Context, ephemeral *model.Ephemeral) erro
 	if ephemeral == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if ephemeral.IsPartial() {
+		return som.ErrPartialModel
+	}
 	if ephemeral.ID() == "" {
 		return errors.New("cannot update Ephemeral without existing record ID")
 	}
@@ -316,6 +319,9 @@ func (r *ephemeral) Update(ctx context.Context, ephemeral *model.Ephemeral) erro
 func (r *ephemeral) Delete(ctx context.Context, ephemeral *model.Ephemeral) error {
 	if ephemeral == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if ephemeral.IsPartial() {
+		return som.ErrPartialModel
 	}
 	if ephemeral.ID() == "" {
 		return errors.New("cannot delete Ephemeral without existing record ID")

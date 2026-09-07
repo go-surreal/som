@@ -213,6 +213,9 @@ func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) erro
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if personObj.IsPartial() {
+		return som.ErrPartialModel
+	}
 	var zeroKey model.PersonKey
 	if personObj.ID() == zeroKey {
 		return errors.New("cannot update PersonObj without existing record ID")
@@ -234,6 +237,9 @@ func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) erro
 func (r *personObj) Delete(ctx context.Context, personObj *model.PersonObj) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if personObj.IsPartial() {
+		return som.ErrPartialModel
 	}
 	var zeroKey model.PersonKey
 	if personObj.ID() == zeroKey {

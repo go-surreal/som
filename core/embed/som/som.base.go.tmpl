@@ -35,6 +35,10 @@ var ErrEmptyID = errors.New("id cannot be empty")
 // ErrEmptyResponse is returned when the database returns an unexpected empty response.
 var ErrEmptyResponse = errors.New("empty response")
 
+// ErrPartialModel is returned when a write operation is attempted with a model
+// instance that was only partially loaded, e.g. an unresolved record link.
+var ErrPartialModel = errors.New("model is only partially loaded")
+
 // ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
@@ -85,6 +89,58 @@ var (
 	IsTokenExpired          = connection.IsTokenExpired
 	IsInvalidAuth           = connection.IsInvalidAuth
 )
+
+// Marker is a bit set describing the load state of a model instance.
+// It is set by the generated code whenever a record is read from the
+// database. A model instance built by the application has a zero Marker.
+type Marker uint32
+
+const (
+	// MarkerLoaded is set on every model instance that originates from a
+	// database record.
+	MarkerLoaded Marker = 1 << iota
+
+	// MarkerPartial is set on model instances that only hold part of the
+	// underlying record, namely record links that were not resolved via
+	// Fetch. Such an instance carries its id, but none of its fields, and
+	// must therefore not be written back to the database.
+	MarkerPartial
+)
+
+// Has reports whether all of the given flags are set.
+func (m Marker) Has(flags Marker) bool {
+	return m&flags == flags
+}
+
+type marker struct {
+	flags Marker
+}
+
+// Marker returns the load state of the model instance.
+func (m marker) Marker() Marker {
+	return m.flags
+}
+
+// IsPartial reports whether the model instance was only partially loaded,
+// e.g. as a record link that was not resolved via Fetch. Partial instances
+// hold their id, but no field values, so they cannot be updated or deleted.
+func (m marker) IsPartial() bool {
+	return m.flags.Has(MarkerPartial)
+}
+
+func (m *marker) setMarker(flags Marker) {
+	m.flags = flags
+}
+
+type markable interface {
+	setMarker(Marker)
+}
+
+// SetMarker sets the load state of a node, edge or view.
+// It is called by the generated code and not meant for manual use.
+func SetMarker(target markable, flags Marker) {
+	target.setMarker(flags)
+}
 
 // nodeID is a marker type for all ID types.
 type nodeID interface {
@@ -184,6 +240,7 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 }
 
 type Node[T nodeID] struct {
+	marker
 	id T
 }
 
@@ -200,6 +257,7 @@ func (Node[T]) isNode() {}
 // Edge describes an edge between two Node elements.
 // It may have its own fields.
 type Edge struct {
+	marker
 	id string
 }
 
@@ -223,6 +281,7 @@ func (e Edge) ID() string {
 // written. They do NOT refresh when the linked record itself changes, so a
 // view may hold stale linked data.
 type View struct {
+	marker
 	id string
 }
 

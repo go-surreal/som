@@ -296,6 +296,9 @@ func (r *location) Update(ctx context.Context, location *model.Location) error {
 	if location == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if location.IsPartial() {
+		return som.ErrPartialModel
+	}
 	if location.ID() == "" {
 		return errors.New("cannot update Location without existing record ID")
 	}
@@ -316,6 +319,9 @@ func (r *location) Update(ctx context.Context, location *model.Location) error {
 func (r *location) Delete(ctx context.Context, location *model.Location) error {
 	if location == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if location.IsPartial() {
+		return som.ErrPartialModel
 	}
 	if location.ID() == "" {
 		return errors.New("cannot delete Location without existing record ID")

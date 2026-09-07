@@ -300,6 +300,9 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if allTypes.IsPartial() {
+		return som.ErrPartialModel
+	}
 	if allTypes.ID() == "" {
 		return errors.New("cannot update AllTypes without existing record ID")
 	}
@@ -320,6 +323,9 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if allTypes.IsPartial() {
+		return som.ErrPartialModel
 	}
 	if allTypes.ID() == "" {
 		return errors.New("cannot delete AllTypes without existing record ID")

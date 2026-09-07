@@ -58,6 +58,9 @@ func (c *EventSummary) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.AvgValue)
 	}
 
+	// Mark the instance as fully loaded from the database
+	som.SetMarker(&c.View, som.MarkerLoaded)
+
 	return nil
 }
 

@@ -303,6 +303,9 @@ func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTy
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if specialTypes.IsPartial() {
+		return som.ErrPartialModel
+	}
 	if specialTypes.ID() == "" {
 		return errors.New("cannot update SpecialTypes without existing record ID")
 	}
@@ -323,6 +326,9 @@ func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTy
 func (r *specialTypes) Delete(ctx context.Context, specialTypes *model.SpecialTypes) error {
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if specialTypes.IsPartial() {
+		return som.ErrPartialModel
 	}
 	if specialTypes.ID() == "" {
 		return errors.New("cannot delete SpecialTypes without existing record ID")
@@ -350,6 +356,9 @@ func (r *specialTypes) Erase(ctx context.Context, specialTypes *model.SpecialTyp
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if specialTypes.IsPartial() {
+		return som.ErrPartialModel
+	}
 	if specialTypes.ID() == "" {
 		return errors.New("cannot erase SpecialTypes without existing record ID")
 	}
@@ -361,6 +370,9 @@ func (r *specialTypes) Erase(ctx context.Context, specialTypes *model.SpecialTyp
 func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialTypes) error {
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if specialTypes.IsPartial() {
+		return som.ErrPartialModel
 	}
 	if specialTypes.ID() == "" {
 		return errors.New("cannot restore SpecialTypes without existing record ID")

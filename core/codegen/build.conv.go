@@ -125,9 +125,16 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 				jen.If(
 					jen.Err().Op(":=").Qual(path.Join(b.basePkg, "internal/cbor"), "Unmarshal").Call(jen.Id("data"), jen.Op("&").Id("f").Dot("ID")),
 					jen.Err().Op("==").Nil(),
-				).Block(
-					jen.Return(jen.Nil()),
-				),
+				).BlockFunc(func(g *jen.Group) {
+					g.Comment("The link was not fetched, so only its record id is known.")
+					b.unmarshalLinkID(g, node)
+					g.Add(b.setMarker(
+						jen.Id("f").Dot(node.NameGo()),
+						node.Source.IDEmbed,
+						jen.Qual(b.relativePkgPath(), "MarkerLoaded").Op("|").Qual(b.relativePkgPath(), "MarkerPartial"),
+					))
+					g.Return(jen.Nil())
+				}),
 
 				jen.Type().Id("alias").Id(node.NameGoLower()+"Link"),
 				jen.Var().Id("link").Id("alias"),
@@ -190,7 +197,6 @@ func (b *convBuilder) complexNodeIDValue(node *field.NodeTable, varName string) 
 }
 
 func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
-	cid := node.Source.ComplexID
 	cborPkg := path.Join(b.basePkg, "internal/cbor")
 
 	g.If(
@@ -203,46 +209,77 @@ func (b *convBuilder) unmarshalComplexID(g *jen.Group, node *field.NodeTable) {
 			jen.Err().Op("!=").Nil(),
 		).Block(jen.Return(jen.Err()))
 
-		bg.If(jen.Id("recordID").Op("!=").Nil()).BlockFunc(func(inner *jen.Group) {
-			// Re-marshal recordID.ID to raw CBOR bytes for typed unmarshal
-			inner.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("recordID").Dot("ID"))
-			inner.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
-			if cid.Kind == parser.IDTypeArray {
-				inner.Var().Id("rawArr").Index().Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
-				inner.If(
-					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
-					jen.Err().Op("!=").Nil(),
-				).Block(jen.Return(jen.Err()))
-				inner.If(jen.Len(jen.Id("rawArr")).Op(">=").Lit(len(cid.Fields))).BlockFunc(func(arrBlock *jen.Group) {
-					arrBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
+		b.unmarshalComplexIDInto(bg, node, jen.Id("c"))
+	})
+}
 
-					for i, sf := range cid.Fields {
-						arrBlock.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
-					}
+// unmarshalLinkID generates the decoding of the record id of an unfetched link
+// into the embedded som.Node of the link's model.
+func (b *convBuilder) unmarshalLinkID(g *jen.Group, node *field.NodeTable) {
+	if node.HasComplexID() {
+		g.Id("recordID").Op(":=").Id("f").Dot("ID")
+		b.unmarshalComplexIDInto(g, node, jen.Id("f").Dot(node.NameGo()))
+		return
+	}
 
-					arrBlock.Id("c").Dot(node.Source.IDEmbed).Op("=").
-						Qual(b.relativePkgPath(), "NewNode").Types(
-						jen.Qual(b.sourcePkgPath, cid.StructName),
-					).Call(jen.Id("key"))
-				})
-			} else {
-				inner.Var().Id("rawObj").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
-				inner.If(
-					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
-					jen.Err().Op("!=").Nil(),
-				).Block(jen.Return(jen.Err()))
-				inner.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
+	idType := string(node.Source.IDType)
 
-				for _, sf := range cid.Fields {
-					inner.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawObj").Index(jen.Lit(sf.DBName)), cborPkg))
+	g.If(jen.Id("f").Dot("ID").Op("!=").Nil()).Block(
+		jen.List(jen.Id("idStr"), jen.Err()).Op(":=").
+			Qual(path.Join(b.basePkg, "internal/cbor"), "RecordIDToString").Call(jen.Id("f").Dot("ID").Dot("ID")),
+		jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err())),
+		jen.Id("f").Dot(node.NameGo()).Dot(node.Source.IDEmbed).Op("=").
+			Qual(b.relativePkgPath(), "NewNode").Types(jen.Qual(b.relativePkgPath(), idType)).
+			Call(jen.Qual(b.relativePkgPath(), idType).Call(jen.Id("idStr"))),
+	)
+}
+
+// unmarshalComplexIDInto generates the decoding of a complex record id into the
+// embedded som.Node of the given target. It expects a *models.RecordID variable
+// named recordID to be in scope.
+func (b *convBuilder) unmarshalComplexIDInto(g *jen.Group, node *field.NodeTable, target jen.Code) {
+	cid := node.Source.ComplexID
+	cborPkg := path.Join(b.basePkg, "internal/cbor")
+
+	g.If(jen.Id("recordID").Op("!=").Nil()).BlockFunc(func(inner *jen.Group) {
+		// Re-marshal recordID.ID to raw CBOR bytes for typed unmarshal
+		inner.List(jen.Id("idRaw"), jen.Err()).Op(":=").Qual(cborPkg, "Marshal").Call(jen.Id("recordID").Dot("ID"))
+		inner.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
+		if cid.Kind == parser.IDTypeArray {
+			inner.Var().Id("rawArr").Index().Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
+			inner.If(
+				jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawArr")),
+				jen.Err().Op("!=").Nil(),
+			).Block(jen.Return(jen.Err()))
+			inner.If(jen.Len(jen.Id("rawArr")).Op(">=").Lit(len(cid.Fields))).BlockFunc(func(arrBlock *jen.Group) {
+				arrBlock.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
+
+				for i, sf := range cid.Fields {
+					arrBlock.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawArr").Index(jen.Lit(i)), cborPkg))
 				}
 
-				inner.Id("c").Dot(node.Source.IDEmbed).Op("=").
+				arrBlock.Add(target).Dot(node.Source.IDEmbed).Op("=").
 					Qual(b.relativePkgPath(), "NewNode").Types(
 					jen.Qual(b.sourcePkgPath, cid.StructName),
 				).Call(jen.Id("key"))
+			})
+		} else {
+			inner.Var().Id("rawObj").Map(jen.String()).Qual(path.Join(b.basePkg, "internal/cbor"), "RawMessage")
+			inner.If(
+				jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("idRaw"), jen.Op("&").Id("rawObj")),
+				jen.Err().Op("!=").Nil(),
+			).Block(jen.Return(jen.Err()))
+			inner.Var().Id("key").Qual(b.sourcePkgPath, cid.StructName)
+
+			for _, sf := range cid.Fields {
+				inner.Add(b.unmarshalFieldAssign("key", sf, jen.Id("rawObj").Index(jen.Lit(sf.DBName)), cborPkg))
 			}
-		})
+
+			inner.Add(target).Dot(node.Source.IDEmbed).Op("=").
+				Qual(b.relativePkgPath(), "NewNode").Types(
+				jen.Qual(b.sourcePkgPath, cid.StructName),
+			).Call(jen.Id("key"))
+		}
 	})
 }
 
@@ -601,9 +638,35 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 				}
 			}
 
+			if isNode || isEdge || isView {
+				g.Line()
+				g.Comment("Mark the instance as fully loaded from the database")
+				g.Add(b.setMarker(jen.Id("c"), embedName(isNode, isEdge), jen.Qual(b.relativePkgPath(), "MarkerLoaded")))
+			}
+
 			g.Line()
 			g.Return(jen.Nil())
 		})
+}
+
+func embedName(isNode, isEdge bool) string {
+	switch {
+	case isNode:
+		return "Node"
+	case isEdge:
+		return "Edge"
+	default:
+		return "View"
+	}
+}
+
+// setMarker generates a som.SetMarker call for the embedded som.Node/Edge/View
+// of the given receiver.
+func (b *convBuilder) setMarker(receiver jen.Code, embed string, flags jen.Code) jen.Code {
+	return jen.Qual(b.relativePkgPath(), "SetMarker").Call(
+		jen.Op("&").Add(receiver).Dot(embed),
+		flags,
+	)
 }
 
 func (b *convBuilder) buildTo(elem field.Element) jen.Code {

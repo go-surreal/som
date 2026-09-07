@@ -151,6 +151,39 @@ client.PostRepo().Query().
 > Soft-delete filtering does **not** apply to fetched relations — deleted records are still
 > returned. Filter them in application code if needed.
 
+## Unfetched Links
+
+Without `Fetch()`, a linked model only carries its record ID — all other fields are zero. Such an
+instance is flagged as partially loaded:
+
+```go
+post, _, err := client.PostRepo().Read(ctx, id)
+
+post.Author.ID()         // set
+post.Author.Name         // "" — not loaded
+post.Author.IsPartial()  // true
+```
+
+Writing a partial model back would overwrite the record with its zero values, so `Update`,
+`Delete`, `Erase` and `Restore` reject them with `som.ErrPartialModel`. Use `Refresh` (or a `Read`)
+to load the full record first:
+
+```go
+if err := client.UserRepo().Refresh(ctx, post.Author); err != nil {
+    return err
+}
+```
+
+The marker itself is a bit set available on every node, edge and view:
+
+```go
+m := post.Marker()
+m.Has(som.MarkerLoaded)   // instance came from the database
+m.Has(som.MarkerPartial)  // only the record ID is populated
+```
+
+Models built by the application have a zero marker, so they are neither loaded nor partial.
+
 ## When to Use Each
 
 ### Record Links

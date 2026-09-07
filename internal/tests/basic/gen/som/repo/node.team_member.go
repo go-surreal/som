@@ -217,6 +217,9 @@ func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) e
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if teamMember.IsPartial() {
+		return som.ErrPartialModel
+	}
 	if teamMember.ID().Member.ID() == "" {
 		return errors.New("Member.ID must not be empty")
 	}
@@ -241,6 +244,9 @@ func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) e
 func (r *teamMember) Delete(ctx context.Context, teamMember *model.TeamMember) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if teamMember.IsPartial() {
+		return som.ErrPartialModel
 	}
 	if teamMember.ID().Member.ID() == "" {
 		return errors.New("Member.ID must not be empty")

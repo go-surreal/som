@@ -72,6 +72,9 @@ func (c *Weather) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.Temperature)
 	}
 
+	// Mark the instance as fully loaded from the database
+	som.SetMarker(&c.Node, som.MarkerLoaded)
+
 	return nil
 }
 
@@ -115,6 +118,33 @@ func (f *weatherLink) MarshalCBOR() ([]byte, error) {
 
 func (f *weatherLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		recordID := f.ID
+		if recordID != nil {
+			idRaw, err := cbor.Marshal(recordID.ID)
+			if err != nil {
+				return err
+			}
+			var rawArr []cbor.RawMessage
+			if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
+				return err
+			}
+			if len(rawArr) >= 2 {
+				var key model.WeatherKey
+				if err := cbor.Unmarshal(rawArr[0], &key.City); err != nil {
+					return err
+				}
+				{
+					var DateErr error
+					key.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
+					if DateErr != nil {
+						return DateErr
+					}
+				}
+				f.Weather.Node = som.NewNode[model.WeatherKey](key)
+			}
+		}
+		som.SetMarker(&f.Weather.Node, som.MarkerLoaded|som.MarkerPartial)
 		return nil
 	}
 	type alias weatherLink

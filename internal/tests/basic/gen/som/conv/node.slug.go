@@ -59,6 +59,9 @@ func (c *Slug) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.Title)
 	}
 
+	// Mark the instance as fully loaded from the database
+	som.SetMarker(&c.Node, som.MarkerLoaded)
+
 	return nil
 }
 
@@ -102,6 +105,15 @@ func (f *slugLink) MarshalCBOR() ([]byte, error) {
 
 func (f *slugLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		if f.ID != nil {
+			idStr, err := cbor.RecordIDToString(f.ID.ID)
+			if err != nil {
+				return err
+			}
+			f.Slug.Node = som.NewNode[som.String](som.String(idStr))
+		}
+		som.SetMarker(&f.Slug.Node, som.MarkerLoaded|som.MarkerPartial)
 		return nil
 	}
 	type alias slugLink

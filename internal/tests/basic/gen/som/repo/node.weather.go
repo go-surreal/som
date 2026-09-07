@@ -211,6 +211,9 @@ func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if weather.IsPartial() {
+		return som.ErrPartialModel
+	}
 	var zeroKey model.WeatherKey
 	if weather.ID() == zeroKey {
 		return errors.New("cannot update Weather without existing record ID")
@@ -232,6 +235,9 @@ func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 func (r *weather) Delete(ctx context.Context, weather *model.Weather) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if weather.IsPartial() {
+		return som.ErrPartialModel
 	}
 	var zeroKey model.WeatherKey
 	if weather.ID() == zeroKey {
