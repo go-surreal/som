@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.21.0] - 2026-09-07
+
+
+### Added
+
+- Add som.String for application-supplied record IDs ([#537](https://github.com/go-surreal/som/pull/537))
+- Generic RawResult.Scan and ScanOne ([#541](https://github.com/go-surreal/som/pull/541))
+- Support stdlib uuid.UUID ([#542](https://github.com/go-surreal/som/pull/542))
+
+### Changed
+
+- Preallocate ID slice in AllIDs ([#539](https://github.com/go-surreal/som/pull/539))
+- Decode raw query results just once ([#540](https://github.com/go-surreal/som/pull/540))
+- Emit string newtypes directly, wrap url.URL ([#543](https://github.com/go-surreal/som/pull/543))
+- Page Iterate via keyset cursor instead of offset ([#544](https://github.com/go-surreal/som/pull/544))
+
+### Fixed
+
+- Make schema application idempotent ([#535](https://github.com/go-surreal/som/pull/535))
+
+### Documentation
+
+- Overhaul gitbook docs to match current API ([#527](https://github.com/go-surreal/som/pull/527))
+
 ## [v0.20.0] - 2026-07-25
 
 
@@ -545,6 +569,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.0.1] - 2022-12-03
 
+[v0.21.0]: https://github.com/go-surreal/som/compare/v0.20.0...v0.21.0
 [v0.20.0]: https://github.com/go-surreal/som/compare/v0.19.0...v0.20.0
 [v0.19.0]: https://github.com/go-surreal/som/compare/v0.18.0...v0.19.0
 [v0.18.0]: https://github.com/go-surreal/som/compare/v0.17.0...v0.18.0
