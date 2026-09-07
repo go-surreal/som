@@ -18,8 +18,12 @@ SOM provides optional request-scoped caching for repository Read operations. The
 Creates a cache for the specified model type. Returns a context with caching enabled and a cleanup function that must be called.
 
 ```go
-func WithCache[T Model](ctx context.Context, opts ...CacheOption) (context.Context, func())
+func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func())
 ```
+
+`T` must be a node model. Caching is not available for nodes with a
+[complex ID](../models/01_nodes.md#complex-id-types) — those reads return
+`som.ErrCacheNotSupported`.
 
 The cleanup function removes the cache from the global store and marks it as cleaned. After cleanup, any Read using that context returns `ErrCacheAlreadyCleaned`.
 

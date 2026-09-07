@@ -4,7 +4,7 @@ package field
 import (
 	uuid "github.com/google/uuid"
 	distinct "som.test/gen/som/internal/distinct"
-	"time"
+	time "time"
 )
 
 func newNestedData[M any](key string) nestedData[M] {

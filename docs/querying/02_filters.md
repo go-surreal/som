@@ -14,6 +14,8 @@ users, err := client.UserRepo().Query().
     All(ctx)
 ```
 
+Filters live in the generated `filter` package, one accessor per model and field.
+
 ## Multiple Filters (AND)
 
 Multiple filters in a single `Where()` call are combined with AND:
@@ -21,9 +23,9 @@ Multiple filters in a single `Where()` call are combined with AND:
 ```go
 users, err := client.UserRepo().Query().
     Where(
-        filter.User.IsActive.IsTrue(),
+        filter.User.IsActive.True(),
         filter.User.Age.GreaterThan(18),
-        filter.User.Email.Contains("@company.com"),
+        filter.User.Email.Contains("@company.com").True(),
     ).
     All(ctx)
 ```
@@ -43,13 +45,30 @@ users, err := client.UserRepo().Query().
     All(ctx)
 ```
 
+### Negation
+
+`filter.Not()` inverts a filter. The model type has to be given explicitly:
+
+```go
+users, err := client.UserRepo().Query().
+    Where(
+        filter.Not[model.User](
+            filter.User.Status.Equal("archived"),
+        ),
+    ).
+    All(ctx)
+```
+
+> `NotEqual` and `NotIn` deliberately exclude records where the field is unset (`NONE`).
+> Use `filter.Not(...)` combined with `Nil(true)` if you want those included.
+
 Use `filter.All()` explicitly for AND:
 
 ```go
 users, err := client.UserRepo().Query().
     Where(
         filter.All(
-            filter.User.IsActive.IsTrue(),
+            filter.User.IsActive.True(),
             filter.User.Age.GreaterThan(18),
         ),
     ).
@@ -64,22 +83,22 @@ Available on all comparable field types:
 |-----------|-------------|---------|
 | `Equal(val)` | Equals | `filter.User.Name.Equal("John")` |
 | `NotEqual(val)` | Not equals | `filter.User.Name.NotEqual("John")` |
-| `In(vals...)` | In list | `filter.User.Status.In("active", "pending")` |
-| `NotIn(vals...)` | Not in list | `filter.User.Status.NotIn("deleted")` |
+| `In(vals []T)` | In list | `filter.User.Status.In([]string{"active", "pending"})` |
+| `NotIn(vals []T)` | Not in list | `filter.User.Status.NotIn([]string{"deleted"})` |
 
 ## Comparison Operations (Numeric, Time, String)
 
 | Operation | Description |
 |-----------|-------------|
 | `LessThan(val)` | Less than |
-| `LessThanOrEqual(val)` | Less than or equal |
+| `LessThanEqual(val)` | Less than or equal |
 | `GreaterThan(val)` | Greater than |
-| `GreaterThanOrEqual(val)` | Greater than or equal |
+| `GreaterThanEqual(val)` | Greater than or equal |
 | `Between(from, to)` | Value within range (inclusive by default) |
 
 ```go
 filter.User.Age.GreaterThan(18)
-filter.User.Age.LessThanOrEqual(65)
+filter.User.Age.LessThanEqual(65)
 filter.User.CreatedAt.GreaterThan(lastWeek)
 ```
 
@@ -117,18 +136,25 @@ Strings have the most extensive filter operations:
 
 ### Pattern Matching
 
-| Operation | Description | SurrealQL |
-|-----------|-------------|-----------|
-| `Contains(s)` | Contains substring | `CONTAINS` |
-| `StartsWith(s)` | Starts with | `string::startsWith()` |
-| `EndsWith(s)` | Ends with | `string::endsWith()` |
-| `FuzzyMatch(s)` | Fuzzy match | `~` |
-| `FuzzyNotMatch(s)` | Fuzzy not match | `!~` |
+| Operation | Returns | Description |
+|-----------|---------|-------------|
+| `Contains(s)` | bool expression | Contains substring |
+| `StartsWith(s)` | bool expression | Starts with |
+| `EndsWith(s)` | bool expression | Ends with |
+| `Matches(regex)` | bool expression | Matches a regular expression |
+| `FuzzyMatch(s)` | filter | Fuzzy match (`~`) |
+| `FuzzyNotMatch(s)` | filter | Fuzzy not match (`!~`) |
+
+Operations that return a **bool expression** are not filters yet — finish them with `.True()`,
+`.False()` or `.Is(bool)`:
 
 ```go
-filter.User.Email.Contains("@gmail")
-filter.User.Name.StartsWith("John")
-filter.User.Email.EndsWith(".com")
+filter.User.Email.Contains("@gmail").True()
+filter.User.Name.StartsWith("John").True()
+filter.User.Email.EndsWith(".com").False()   // does NOT end with ".com"
+
+// FuzzyMatch is already a filter
+filter.User.Name.FuzzyMatch("jon")
 ```
 
 ### Validation
@@ -149,13 +175,19 @@ filter.User.Email.EndsWith(".com")
 | `IsNumeric()` | Numeric string |
 | `IsSemVer()` | Semantic version |
 | `IsUUID()` | Valid UUID |
+| `IsULID()` | Valid ULID |
+| `IsHexadecimal()` | Hexadecimal string |
 | `IsDateTime(format)` | Valid datetime |
 
+All validation operations return a bool expression, so they also need `.True()` / `.False()`:
+
 ```go
-filter.User.Email.IsEmail()
-filter.User.Website.IsURL()
-filter.User.ExternalID.IsUUID()
+filter.User.Email.IsEmail().True()
+filter.User.Website.IsURL().True()
+filter.User.ExternalID.IsUUID().False()
 ```
+
+Additional checks: `IsHexadecimal()`, `IsULID()`.
 
 ### Transformation (for comparison)
 
@@ -176,14 +208,19 @@ filter.User.Email.Lowercase().Equal("john@example.com")
 
 | Operation | Description |
 |-----------|-------------|
-| `Len()` | String length |
-| `Split(sep)` | Split into array |
-| `Words()` | Split into words |
+| `Len()` | String length (numeric) |
+| `Split(sep)` | Split into a slice filter |
+| `Words()` | Split into words (slice filter) |
 | `Slice(start, end)` | Substring |
 | `Replace(old, new)` | Replace substring |
 | `Repeat(n)` | Repeat n times |
-| `Concat(strings...)` | Concatenate |
-| `Join(strings...)` | Join with separator |
+| `Capitalize()` | Capitalize |
+| `Concat(vals...)` | Concatenate (bool expression) |
+| `Join(vals...)` | Join with separator |
+
+String similarity and distance helpers are available as well: `SimilarityFuzzy`,
+`SimilarityJaro`, `SimilarityJaroWinkler`, `DistanceLevenshtein`, `DistanceHamming`,
+`DistanceDamerauLevenshtein`, `DistanceOsa` and their normalized variants.
 
 ```go
 // Filter by string length
@@ -213,13 +250,16 @@ filter.Account.Balance.Abs().GreaterThan(100)
 
 | Operation | Description |
 |-----------|-------------|
-| `Equal(bool)` | Equals value |
-| `IsTrue()` | Is true |
-| `IsFalse()` | Is false |
+| `Is(val)` | Equals the given value |
+| `True()` | Is true |
+| `False()` | Is false |
+| `Invert()` | Negate the expression (returns a bool expression) |
 
 ```go
-filter.User.IsActive.IsTrue()
-filter.User.IsDeleted.IsFalse()
+filter.User.IsActive.True()
+filter.User.IsDeleted.False()
+filter.User.IsActive.Is(false)
+filter.User.IsActive.Invert().True()   // same as Is(false)
 ```
 
 ## Time Operations
@@ -262,46 +302,51 @@ filter.Session.Duration.After(time.Hour)
 
 | Operation | Description |
 |-----------|-------------|
-| `IsNil()` | Is null |
-| `IsNotNil()` | Is not null |
+| `Nil(true)` | Is `NONE` or `NULL` |
+| `Nil(false)` | Is set |
+
+Pointer fields additionally expose all operations of their underlying type.
 
 ```go
 // Find soft-deleted users
-filter.User.DeletedAt.IsNotNil()
+filter.User.DeletedAt.Nil(false)
 
 // Find users without avatar
-filter.User.AvatarURL.IsNil()
+filter.User.AvatarURL.Nil(true)
 ```
 
 ## Slice Operations
 
 | Operation | Description |
 |-----------|-------------|
-| `Length()` / `Len()` | Array length |
+| `Len()` | Array length (numeric) |
 | `Contains(val)` | Contains element |
-| `ContainsAll(vals...)` | Contains all elements |
-| `ContainsAny(vals...)` | Contains any element |
-| `ContainsNone(vals...)` | Contains no elements |
-| `Empty()` | Is empty |
-| `NotEmpty()` | Is not empty |
-| `Intersects(vals...)` | Has common elements |
-| `Inside(vals...)` | All elements in list |
+| `ContainsNot(val)` | Does not contain element |
+| `ContainsAll(vals []E)` | Contains all elements |
+| `ContainsAny(vals []E)` | Contains any element |
+| `ContainsNone(vals []E)` | Contains no elements |
+| `Empty(is bool)` | Is / is not empty |
+| `IsEmpty()` / `NotEmpty()` | Convenience wrappers around `Empty` |
+| `AnyIn(vals []E)` / `AllIn(vals []E)` / `NoneIn(vals []E)` | Membership of the slice values |
+| `AnyEqual(val)` / `AllEqual(val)` | Element comparison |
+| `At(i)` / `First()` / `Last()` / `Min()` / `Max()` | Element access, returns the element filter |
+| `Distinct()`, `Reverse()`, `SortAsc()`, `SortDesc()`, `Union(vals)`, `Intersect(vals)`, `Diff(vals)` | Slice transformations |
 
 ```go
 // Has at least one tag
 filter.Post.Tags.NotEmpty()
 
 // Has specific tag
-filter.Post.Tags.Contains("golang")
+filter.Post.Tags.Contains("golang").True()
 
 // Has any of these tags
-filter.Post.Tags.ContainsAny("golang", "rust", "python")
+filter.Post.Tags.ContainsAny([]string{"golang", "rust", "python"})
 
 // Has all required tags
-filter.Post.Tags.ContainsAll("featured", "published")
+filter.Post.Tags.ContainsAll([]string{"featured", "published"})
 
 // More than 5 tags
-filter.Post.Tags.Length().GreaterThan(5)
+filter.Post.Tags.Len().GreaterThan(5)
 ```
 
 ## Nested Field Filters
@@ -310,17 +355,17 @@ Filter on embedded struct fields:
 
 ```go
 // Filter by nested city
-filter.User.Address.City.Equal("Berlin")
+filter.User.Address().City.Equal("Berlin")
 
 // Deeply nested
-filter.User.Address.Coordinates.Lat.GreaterThan(52.0)
+filter.User.Address().Coordinates.Lat.GreaterThan(52.0)
 ```
 
 ## Enum Filters
 
 ```go
 filter.User.Status.Equal(model.StatusActive)
-filter.User.Status.In(model.StatusActive, model.StatusPending)
+filter.User.Status.In([]model.Status{model.StatusActive, model.StatusPending})
 filter.User.Status.NotEqual(model.StatusDeleted)
 ```
 
@@ -330,15 +375,15 @@ filter.User.Status.NotEqual(model.StatusDeleted)
 users, err := client.UserRepo().Query().
     Where(
         // Active users
-        filter.User.IsActive.IsTrue(),
+        filter.User.IsActive.True(),
 
         // Created this month
         filter.User.CreatedAt.After(startOfMonth),
 
         // Has email from allowed domains
         filter.Any(
-            filter.User.Email.EndsWith("@company.com"),
-            filter.User.Email.EndsWith("@partner.com"),
+            filter.User.Email.EndsWith("@company.com").True(),
+            filter.User.Email.EndsWith("@partner.com").True(),
         ),
 
         // Age between 18 and 65
@@ -348,7 +393,7 @@ users, err := client.UserRepo().Query().
         filter.User.Roles.NotEmpty(),
 
         // In Berlin
-        filter.User.Address.City.Equal("Berlin"),
+        filter.User.Address().City.Equal("Berlin"),
     ).
     Order(by.User.CreatedAt.Desc()).
     Limit(100).
@@ -363,7 +408,7 @@ Filters can be combined with full-text search conditions:
 results, err := client.ArticleRepo().Query().
     Search(filter.Article.Content.Matches("golang tutorial")).
     Where(
-        filter.Article.Published.IsTrue(),
+        filter.Article.Published.True(),
         filter.Article.Category.Equal("programming"),
     ).
     AllMatches(ctx)

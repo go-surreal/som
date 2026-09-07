@@ -17,7 +17,7 @@ The URL type handles web addresses using Go's `net/url.URL` with component parsi
 import "net/url"
 
 type Bookmark struct {
-    som.Node
+    som.Node[som.ULID]
 
     Title   string
     Link    url.URL   // Required
@@ -71,10 +71,10 @@ filter.Bookmark.Link.NotEqual(*excludeURL)
 
 ```go
 // Value in set
-filter.Bookmark.Link.In(url1, url2, url3)
+filter.Bookmark.Link.In([]url.URL{url1, url2, url3})
 
 // Value not in set
-filter.Bookmark.Link.NotIn(blockedURLs...)
+filter.Bookmark.Link.NotIn(blockedURLs)
 ```
 
 ### Comparison Operations
@@ -100,10 +100,10 @@ filter.Bookmark.Link.Host().Equal("example.com:8080")
 filter.Bookmark.Link.Port().Equal("443")
 
 // Path
-filter.Bookmark.Link.Path().StartsWith("/api/")
+filter.Bookmark.Link.Path().StartsWith("/api/").True()
 
 // Query string
-filter.Bookmark.Link.Query().Contains("utm_source")
+filter.Bookmark.Link.Query().Contains("utm_source").True()
 
 // Fragment (after #)
 filter.Bookmark.Link.Fragment().Equal("section1")
@@ -113,10 +113,10 @@ filter.Bookmark.Link.Fragment().Equal("section1")
 
 ```go
 // Check if nil
-filter.Bookmark.Favicon.IsNil()
+filter.Bookmark.Favicon.Nil(true)
 
 // Check if not nil
-filter.Bookmark.Favicon.IsNotNil()
+filter.Bookmark.Favicon.Nil(false)
 ```
 
 ### Zero Value Check
@@ -148,13 +148,13 @@ URL filters support component extraction and string operations:
 filter.Bookmark.Link.Domain().Equal("github.com")
 
 // Find API endpoints
-filter.Bookmark.Link.Path().StartsWith("/api/v2/")
+filter.Bookmark.Link.Path().StartsWith("/api/v2/").True()
 
 // Find URLs with specific query parameter
-filter.Bookmark.Link.Query().Contains("page=")
+filter.Bookmark.Link.Query().Contains("page=").True()
 
 // Find HTTPS URLs (via string contains)
-filter.Bookmark.Link.Host().StartsWith("https://")
+filter.Bookmark.Link.Host().StartsWith("https://").True()
 ```
 
 ## Common Patterns
@@ -191,7 +191,7 @@ devServers, _ := client.BookmarkRepo().Query().
 ```go
 // Bookmarks with favicon configured
 withFavicon, _ := client.BookmarkRepo().Query().
-    Where(filter.Bookmark.Favicon.IsNotNil()).
+    Where(filter.Bookmark.Favicon.Nil(false)).
     All(ctx)
 ```
 
@@ -210,7 +210,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create bookmark
     link, _ := url.Parse("https://github.com/go-surreal/som")
@@ -247,7 +247,7 @@ func main() {
 
     // Bookmarks without favicons
     noFavicon, _ := client.BookmarkRepo().Query().
-        Where(filter.Bookmark.Favicon.IsNil()).
+        Where(filter.Bookmark.Favicon.Nil(true)).
         All(ctx)
 }
 ```
@@ -258,8 +258,8 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `LessThan(val)` | Lexicographic < | Bool filter |
 | `LessThanEqual(val)` | Lexicographic <= | Bool filter |
 | `GreaterThan(val)` | Lexicographic > | Bool filter |
@@ -272,5 +272,5 @@ func main() {
 | `Fragment()` | Extract fragment | String filter |
 | `Zero(bool)` | Check empty URL | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr) | Bool filter |
-| `IsNotNil()` | Not null (ptr) | Bool filter |
+| `Nil(true)` | Is null (ptr) | Bool filter |
+| `Nil(false)` | Not null (ptr) | Bool filter |

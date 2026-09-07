@@ -4,11 +4,11 @@ package filter
 import (
 	uuid "github.com/gofrs/uuid"
 	uuid1 "github.com/google/uuid"
-	"net/url"
+	url "net/url"
 	som "som.test/gen/som"
 	lib "som.test/gen/som/internal/lib"
 	model "som.test/model"
-	"time"
+	time "time"
 )
 
 var AllTypes = newAllTypes[model.AllTypes](lib.NewKey[model.AllTypes]())

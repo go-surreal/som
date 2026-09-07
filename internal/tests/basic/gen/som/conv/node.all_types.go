@@ -8,7 +8,7 @@ import (
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
-	"time"
+	time "time"
 )
 
 type AllTypes struct {

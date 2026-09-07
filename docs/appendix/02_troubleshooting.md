@@ -8,7 +8,7 @@ Common issues and solutions when working with SOM.
 
 **Problem**: The generator doesn't find any models.
 
-**Solution**: Ensure your structs embed `som.Node[T]` or `som.Edge`:
+**Solution**: Ensure your structs embed `som.Node[T]`, `som.Edge`, `som.View` or `som.Sink`:
 
 ```go
 type User struct {
@@ -48,20 +48,32 @@ go mod tidy
 4. Check for unsupported types (see [Supported Types](../data_types/01_primitives.md))
 5. Report the issue on GitHub with reproduction steps
 
-### Edge missing In/Out fields
+### Edge missing in/out fields
 
-**Problem**: Edge generates but doesn't have In/Out relationships.
+**Problem**: Generation fails with `missing 'in' field` / `missing 'out' field`.
 
-**Solution**: Ensure your edge has both fields with proper tags:
+**Solution**: An edge needs exactly one field tagged `som:"in"` and one tagged `som:"out"`, both
+node types used as values:
 
 ```go
 type Follows struct {
     som.Edge
 
-    In  *User `som:"in"`   // Must have som:"in" tag
-    Out *User `som:"out"`  // Must have som:"out" tag
+    From User `som:"in"`   // exactly one som:"in"
+    To   User `som:"out"`  // exactly one som:"out"
 
     // Additional fields...
+}
+```
+
+Additionally, the source node must declare the edge as a field for the `Relate()` and filter
+accessors to be generated:
+
+```go
+type User struct {
+    som.Node[som.ULID]
+
+    Follows []Follows
 }
 ```
 
@@ -81,7 +93,7 @@ type Follows struct {
 
 2. Check the address format:
    ```go
-   client, err := som.NewClient(ctx, som.Config{
+   client, err := repo.NewClient(ctx, repo.Config{
        Address:   "ws://localhost:8000",  // WebSocket protocol
        // or
        Address:   "http://localhost:8000", // HTTP protocol
@@ -158,7 +170,7 @@ type Follows struct {
    ```go
    // This is AND (both must be true)
    query.Where(
-       filter.User.IsActive.IsTrue(),
+       filter.User.IsActive.True(),
        filter.User.Age.GreaterThan(18),
    )
 
@@ -180,7 +192,7 @@ type Follows struct {
 3. Check nil handling for optional fields:
    ```go
    // Optional fields might be nil
-   filter.User.DeletedAt.IsNil()  // Not deleted
+   filter.User.DeletedAt.Nil(true)  // Not deleted
    ```
 
 ### Live query not receiving updates
@@ -220,7 +232,7 @@ type Follows struct {
 
    // Good - fetches only what you need
    users, _ := client.UserRepo().Query().
-       Where(filter.User.IsActive.IsTrue()).
+       Where(filter.User.IsActive.True()).
        Limit(100).
        All(ctx)
    ```
@@ -228,11 +240,11 @@ type Follows struct {
 2. Use `Count` or `Exists` when you don't need full records:
    ```go
    count, _ := client.UserRepo().Query().
-       Where(filter.User.IsActive.IsTrue()).
+       Where(filter.User.IsActive.True()).
        Count(ctx)
    ```
 
-3. Consider indexing frequently queried fields in SurrealDB
+3. Index frequently queried fields with the `som:"index"` / `som:"unique"` tag
 
 ### High memory usage
 

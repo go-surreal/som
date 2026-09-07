@@ -87,6 +87,7 @@ const (
 	IDTypeULID   IDType = "ULID"
 	IDTypeUUID   IDType = "UUID"
 	IDTypeRand   IDType = "Rand"
+	IDTypeString IDType = "String"
 	IDTypeArray  IDType = "Array"
 	IDTypeObject IDType = "Object"
 )

@@ -58,7 +58,7 @@ The generator creates the following structure:
 
 ```
 gen/som/
-├── som.base.go         # Base types (Node, Edge, ID utilities)
+├── som.base.go         # Base types (Node, Edge, View, Sink, errors)
 ├── by/                 # Sort helpers
 │   └── <model>.go      # Per-model ordering
 ├── constant/           # Generated constants
@@ -72,7 +72,9 @@ gen/som/
 │   └── <model>.go      # Per-model query builder
 ├── relate/             # Edge relationship builders
 │   └── <edge>.go       # Per-edge relate builder
-├── repo/               # Repository implementations
+├── repo/               # Client and repository implementations
+│   ├── som.client.go   # NewClient, Config
+│   ├── schema/         # Generated schema.surql
 │   └── <model>.go      # Per-model repository
 ├── filter/             # Filter condition builders
 │   └── <model>.go      # Per-model filters
@@ -84,16 +86,20 @@ gen/som/
 
 ### `som` (root)
 
-Core types and client:
+Core types, errors and helpers:
 
 - `Node[T]` - Base type for database records (generic over ID type)
 - `Edge` - Base type for relationships
+- `View` / `Sink` - Read-only views and write-only ingestion tables
 - `Timestamps` - Auto-managed timestamp fields
 - `OptimisticLock` - Version-based conflict detection
 - `SoftDelete` - Non-destructive deletion
-- `Email`, `Password[A]`, `SemVer` - Special types
+- `Expiry` - Time-to-live for records
+- `Email`, `Password[A]`, `SemVer`, `Enum` - Special types
 - `ULID`, `UUID`, `Rand` - ID types
 - `ArrayID`, `ObjectID` - Complex ID markers
+- `ServerError`, `Err*` values, `Kind*` constants, `Is*` helpers - error handling
+- `TxStart`, `TxCommit`, `TxCancel`, `WithCache` - transactions and caching
 
 ### `repo`
 
@@ -119,7 +125,7 @@ Fluent query builders:
 
 ```go
 client.UserRepo().Query().
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Order(by.User.Name.Asc()).
     Limit(10).
     All(ctx)
@@ -130,7 +136,7 @@ client.UserRepo().Query().
 Type-safe filter conditions:
 
 ```go
-filter.User.Email.Contains("@example.com")
+filter.User.Email.Contains("@example.com").True()
 filter.User.Age.GreaterThan(18)
 filter.User.CreatedAt.After(lastWeek)
 ```
@@ -149,8 +155,8 @@ by.User.CreatedAt.Desc()
 Fetch paths for eager loading:
 
 ```go
-query.Fetch(with.User.Posts...)
-query.Fetch(with.Post.Author...)
+query.Fetch(with.User.Posts())
+query.Fetch(with.Post.Author())
 ```
 
 ### `conv`
@@ -159,14 +165,33 @@ Internal converters between model and database representations. Not typically us
 
 ### `relate`
 
-Edge relationship builders:
+Edge creation builders, reached via the source node's repository:
 
 ```go
-client.FollowsRepo().Relate().
-    From(alice).
-    To(bob).
-    Create(ctx, follows)
+client.UserRepo().Relate().Follows().Create(ctx, follows)
 ```
+
+### `field`
+
+Field references for `query.Distinct`:
+
+```go
+categories, err := query.Distinct(ctx, client.ArticleRepo().Query(), field.Article.Category)
+```
+
+### `index`
+
+Index handles, e.g. for rebuilding:
+
+```go
+err := client.UserRepo().Index().Count().Rebuild(ctx)
+```
+
+### `define`
+
+Builders for analyzers, search configurations and view projections, used from the
+`//go:build som` definition file. See
+[Schema Definitions](03_definitions.md).
 
 ## Version Pinning
 
@@ -190,7 +215,7 @@ Run the generator whenever you:
 
 ### Models not detected
 
-Ensure structs embed `som.Node[T]` or `som.Edge`:
+Ensure structs embed `som.Node[T]`, `som.Edge`, `som.View` or `som.Sink`:
 
 ```go
 type User struct {

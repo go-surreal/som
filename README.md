@@ -8,7 +8,7 @@
 <hr />
 
 <p align="center">
-    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.25.7-informational" alt="Go 1.25.7"></a>
+    <a href="https://go.dev/doc/devel/release"><img src="https://img.shields.io/badge/go-1.27.1-informational" alt="Go 1.27.1"></a>
     &nbsp;
     <a href="https://github.com/go-surreal/som/actions/workflows/main.yml"><img src="https://github.com/go-surreal/som/actions/workflows/main.yml/badge.svg" alt="Main"></a>
     &nbsp;
@@ -105,32 +105,33 @@ type User struct {
 }
 ```
 
-In order for it to be considered by the generator, it must embed `som.Node`:
+In order for it to be considered by the generator, it must embed `som.Node[T]`, where `T` is the
+ID type (`som.ULID`, `som.UUID`, `som.Rand`, `som.String` or a custom key struct):
 
 ```go
 package model
 
-import "github.com/go-surreal/som"
+import "<root>/gen/som"
 
 type User struct {
-    som.Node
-    
-    // ID string `som:"id"` --> provided by som!
-    
-    Username string `som:"username"`
-    Password string `som:"password"`
-    Email    string `som:"email"`
+    som.Node[som.ULID]
+
+    // ID string --> provided by som!
+
+    Username string
+    Password string
+    Email    string
 }
 ```
 
 Now, we can generate the client code:
 
 ```
-go run github.com/go-surreal/som/cmd/som@latest gen <in_model_path> <out_gen_path>
+go run github.com/go-surreal/som@latest -i <in_model_path> -o <out_gen_path>
 
 // e.g.
 
-go run github.com/go-surreal/som/cmd/som@latest gen <root>/model <root>/gen/som
+go run github.com/go-surreal/som@latest -i ./model
 ```
 
 With the generated client, we can now perform operations on the database:
@@ -142,8 +143,8 @@ import (
     "context"
     "log"
     
-    "<root>/gen/som"
     "<root>/gen/som/filter"
+    "<root>/gen/som/repo"
     "<root>/model"
 )
 
@@ -151,7 +152,7 @@ func main() {
     ctx := context.Background()
 
     // create a new client
-    client, err := som.NewClient(ctx, som.Config{
+    client, err := repo.NewClient(ctx, repo.Config{
         Address:   "ws://localhost:8000",
         Username:  "root",
         Password:  "root",
@@ -160,6 +161,12 @@ func main() {
     })
     
     if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    // apply the generated schema
+    if err := client.ApplySchema(ctx); err != nil {
         log.Fatal(err)
     }
     
@@ -266,12 +273,12 @@ Up until version 1.0 though, breaking changes might be introduced at any time (m
 
 ### Compatibility
 
-This go project makes heavy use of generics. As this feature has been introduced with go 1.18, that version is the 
-earliest to be supported by this library.
+This go project makes heavy use of generics, iterators and generic methods. During this phase of the project, only 
+the latest version of go is supported - currently go 1.27.1. Older versions might still work, but could also break 
+at any time, with any new release and without further notice.
 
-In general, the two latest (minor) versions of go - and within those, only the latest patch - will be supported 
-officially. This means that older versions might still work, but could also break at any time, with any new 
-release and without further notice.
+Once the project reaches a stable release, this will be relaxed to the two latest (minor) versions of go - and 
+within those, only the latest patch.
 
 Deprecating an "outdated" go version does not yield a new major version of this library. There will be no support for 
 older versions whatsoever. This rather hard handling is intended, because it is the official handling for the go 

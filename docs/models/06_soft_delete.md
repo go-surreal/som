@@ -138,10 +138,10 @@ if err != nil {
 }
 
 // Record is completely gone
-user, exists, _ := client.UserRepo().Query().WithDeleted().
+_, err = client.UserRepo().Query().WithDeleted().
     Where(filter.User.ID.Equal(userID)).
     First(ctx)
-// exists == false
+// errors.Is(err, som.ErrNotFound) == true
 ```
 
 ## Querying Soft-Deleted Records
@@ -181,6 +181,9 @@ deletedUsers, _ := client.UserRepo().Query().
     Where(filter.User.DeletedAt.Nil(false)).
     All(ctx)
 ```
+
+`DeletedAt` is exposed on the model as the `SoftDelete.DeletedAt()` accessor and as a filter
+field of the same name.
 
 ## Fetching Related Records
 
@@ -318,7 +321,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create a user
     user := &model.User{

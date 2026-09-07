@@ -14,6 +14,9 @@ SOM is an ORM and query builder for [SurrealDB](https://surrealdb.com/) with bui
 - **Code generation**: Automatically generates repository and query builder code from your Go models
 - **Native Go experience**: Work with your domain models directly, no manual mapping required
 - **Graph support**: First-class support for SurrealDB's graph capabilities via edges
+- **Real-time & history**: Live queries plus changefeed replay
+- **Table flavours**: Nodes, edges, read-only views and write-only sinks
+- **Lifecycle helpers**: Timestamps, optimistic locking, soft delete and expiry (TTL)
 
 ## Quick Links
 

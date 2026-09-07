@@ -38,7 +38,7 @@ doc := &model.Document{
 ### Querying by UUID
 
 ```go
-doc, exists, err := client.DocumentRepo().Query().
+doc, err := client.DocumentRepo().Query().
     Where(filter.Document.ExternalID.Equal(targetUUID)).
     First(ctx)
 ```
@@ -49,15 +49,15 @@ doc, exists, err := client.DocumentRepo().Query().
 |-----------|-------------|
 | `Equal(uuid)` | Equals value |
 | `NotEqual(uuid)` | Not equals value |
-| `In(uuids...)` | In list |
-| `NotIn(uuids...)` | Not in list |
+| `In(uuids []T)` | In list |
+| `NotIn(uuids []T)` | Not in list |
 
 ```go
 // Find specific document
 filter.Document.ExternalID.Equal(targetUUID)
 
 // Find multiple documents
-filter.Document.TrackingID.In(uuid1, uuid2, uuid3)
+filter.Document.TrackingID.In([]uuid.UUID{uuid1, uuid2, uuid3})
 ```
 
 ## URL
@@ -114,10 +114,10 @@ Query optional fields:
 
 ```go
 // Find users with a profile
-filter.User.ProfileID.IsNotNil()
+filter.User.ProfileID.Nil(false)
 
 // Find users without a website
-filter.User.Website.IsNil()
+filter.User.Website.Nil(true)
 ```
 
 ## UUID (gofrs)

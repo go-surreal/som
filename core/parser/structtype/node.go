@@ -115,6 +115,8 @@ func ParseIDType(t gotype.Type) parser.IDType {
 				return parser.IDTypeUUID
 			case "Rand":
 				return parser.IDTypeRand
+			case "String":
+				return parser.IDTypeString
 			case "ULID":
 				return parser.IDTypeULID
 			}

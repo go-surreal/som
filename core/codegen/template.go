@@ -158,7 +158,17 @@ func renderFragments(pkg string, pinned []goImport, fragments []codeFragment) ([
 		return nil, nil, nil
 	}
 
-	imports, err := fragmentImports(pkg, pinned, fragments)
+	names, err := resolveNames(pkg, pinned, fragments)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Only the packages that cannot keep their own name have to be pinned. The
+	// others are named by jennifer the same way anyway, and pinning them would
+	// make it spell out their name as an alias.
+	names = renamedImports(names)
+
+	imports, err := fragmentImports(pkg, names, fragments)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -166,7 +176,7 @@ func renderFragments(pkg string, pinned []goImport, fragments []codeFragment) ([
 	codes := make([]string, 0, len(fragments))
 
 	for _, fragment := range fragments {
-		code, err := renderFragment(pkg, imports, fragment)
+		code, err := renderFragment(pkg, names, fragment)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -177,16 +187,55 @@ func renderFragments(pkg string, pinned []goImport, fragments []codeFragment) ([
 	return codes, imports, nil
 }
 
-// fragmentImports returns the packages jennifer resolves for all fragments of a
-// file. This is what makes the imports of a fragment known without the builders
-// having to know upfront which packages a field type may pull in.
-func fragmentImports(pkg string, pinned []goImport, fragments []codeFragment) ([]goImport, error) {
+// resolveNames returns the name to render every involved package by. Packages
+// the template refers to keep theirs, so a fragment pulling in a colliding one
+// gets aliased by jennifer instead.
+func resolveNames(pkg string, pinned []goImport, fragments []codeFragment) ([]goImport, error) {
 	file := newFragmentFile(pkg, pinned)
+
+	// Jennifer only assigns a name to a package that is actually referenced, so
+	// the pinned ones have to be referenced here as well - which is also why
+	// this file is not the one the imports are taken from.
+	for _, imp := range pinned {
+		file.Var().Id("_").Op("=").Qual(imp.Path, "_")
+	}
 
 	for _, fragment := range fragments {
 		addFragment(file, fragment)
 	}
 
+	return fileImports(file)
+}
+
+// renamedImports returns those imports that cannot be referenced by the name
+// of their package, because another package already uses it.
+func renamedImports(imports []goImport) []goImport {
+	var renamed []goImport
+
+	for _, imp := range imports {
+		if imp.Alias != "" && imp.Alias != path.Base(imp.Path) {
+			renamed = append(renamed, imp)
+		}
+	}
+
+	return renamed
+}
+
+// fragmentImports returns the packages the fragments of a file reference. This
+// is what makes the imports of a fragment known without the builders having to
+// know upfront which packages a field type may pull in.
+func fragmentImports(pkg string, names []goImport, fragments []codeFragment) ([]goImport, error) {
+	file := newFragmentFile(pkg, names)
+
+	for _, fragment := range fragments {
+		addFragment(file, fragment)
+	}
+
+	return fileImports(file)
+}
+
+// fileImports renders the given file and returns its import block.
+func fileImports(file *jen.File) ([]goImport, error) {
 	source, err := renderFile(file)
 	if err != nil {
 		return nil, err
@@ -226,7 +275,7 @@ func renderFragment(pkg string, pinned []goImport, fragment codeFragment) (strin
 		return "", err
 	}
 
-	parsed, err := parser.ParseFile(token.NewFileSet(), "", source, parser.SkipObjectResolution)
+	parsed, err := parser.ParseFile(token.NewFileSet(), "", source, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
 		return "", fmt.Errorf("could not parse code fragment: %w", err)
 	}

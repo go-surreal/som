@@ -17,7 +17,7 @@ Node references are always pointers to other Node types:
 
 ```go
 type Post struct {
-    som.Node
+    som.Node[som.ULID]
 
     Title   string
     Content string
@@ -26,7 +26,7 @@ type Post struct {
 }
 
 type Comment struct {
-    som.Node
+    som.Node[som.ULID]
 
     Text   string
     Author *User  // Reference to User
@@ -66,16 +66,16 @@ client.PostRepo().Create(ctx, post)
 
 ```go
 // Filter by referenced record's ID
-filter.Post.Author.ID().Equal(userID)
+filter.Post.Author().ID.Equal(userID)
 
 // Not equal
-filter.Post.Author.ID().NotEqual(excludeUserID)
+filter.Post.Author().ID.NotEqual(excludeUserID)
 
 // In set
-filter.Post.Author.ID().In(authorID1, authorID2)
+filter.Post.Author().ID.In([]string{authorID1, authorID2})
 
 // Not in set
-filter.Post.Author.ID().NotIn(bannedIDs...)
+filter.Post.Author().ID.NotIn(bannedIDs)
 ```
 
 ### Nested Field Filtering
@@ -84,16 +84,16 @@ Access fields of the referenced record:
 
 ```go
 // Filter by author's name
-filter.Post.Author.Name.Equal("Alice")
+filter.Post.Author().Name.Equal("Alice")
 
 // Filter by author's email
-filter.Post.Author.Email.EndsWith("@company.com")
+filter.Post.Author().Email.EndsWith("@company.com").True()
 
 // Filter by author's status
-filter.Post.Author.IsActive.True()
+filter.Post.Author().IsActive.True()
 
 // Chain nested fields
-filter.Post.Author.Email.Lowercase().Contains("@admin")
+filter.Post.Author().Email.Lowercase().Contains("@admin").True()
 ```
 
 ### Deep Nesting
@@ -112,10 +112,10 @@ filter.Comment.Post.Author.IsActive.True()
 
 ```go
 // Posts with author
-filter.Post.Author.IsNotNil()
+filter.Post.Author().Nil(false)
 
 // Posts without editor
-filter.Post.Editor.IsNil()
+filter.Post.Editor.Nil(true)
 ```
 
 ## Sorting
@@ -145,7 +145,7 @@ import "yourproject/gen/som/with"
 
 // Fetch author with posts
 posts, _ := client.PostRepo().Query().
-    Fetch(with.Post.Author...).
+    Fetch(with.Post.Author()).
     All(ctx)
 
 for _, post := range posts {
@@ -158,8 +158,8 @@ for _, post := range posts {
 
 ```go
 posts, _ := client.PostRepo().Query().
-    Fetch(with.Post.Author...).
-    Fetch(with.Post.Editor...).
+    Fetch(with.Post.Author()).
+    Fetch(with.Post.Editor()).
     All(ctx)
 ```
 
@@ -167,8 +167,8 @@ posts, _ := client.PostRepo().Query().
 
 ```go
 comments, _ := client.CommentRepo().Query().
-    Fetch(with.Comment.Post...).
-    Fetch(with.Comment.Author...).
+    Fetch(with.Comment.Post()).
+    Fetch(with.Comment.Author()).
     All(ctx)
 
 // Access nested: comment.Post.Title
@@ -181,7 +181,7 @@ comments, _ := client.CommentRepo().Query().
 ```go
 // Posts by specific author
 authorPosts, _ := client.PostRepo().Query().
-    Where(filter.Post.Author.ID().Equal(author.ID())).
+    Where(filter.Post.Author().ID.Equal(author.ID())).
     All(ctx)
 ```
 
@@ -190,7 +190,7 @@ authorPosts, _ := client.PostRepo().Query().
 ```go
 // Posts by active authors
 activePosts, _ := client.PostRepo().Query().
-    Where(filter.Post.Author.IsActive.True()).
+    Where(filter.Post.Author().IsActive.True()).
     All(ctx)
 ```
 
@@ -199,7 +199,7 @@ activePosts, _ := client.PostRepo().Query().
 ```go
 // Posts needing an editor
 needsEditor, _ := client.PostRepo().Query().
-    Where(filter.Post.Editor.IsNil()).
+    Where(filter.Post.Editor.Nil(true)).
     All(ctx)
 ```
 
@@ -207,7 +207,7 @@ needsEditor, _ := client.PostRepo().Query().
 
 ```go
 type Category struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name   string
     Parent *Category  // Self-reference
@@ -215,12 +215,12 @@ type Category struct {
 
 // Find root categories
 roots, _ := client.CategoryRepo().Query().
-    Where(filter.Category.Parent.IsNil()).
+    Where(filter.Category.Parent.Nil(true)).
     All(ctx)
 
 // Find children of specific category
 children, _ := client.CategoryRepo().Query().
-    Where(filter.Category.Parent.ID().Equal(parentID)).
+    Where(filter.Category.Parent.ID.Equal(parentID)).
     All(ctx)
 ```
 
@@ -239,7 +239,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create author
     author := &model.User{Name: "Alice", IsActive: true}
@@ -254,22 +254,22 @@ func main() {
 
     // Find posts by author ID
     authorPosts, _ := client.PostRepo().Query().
-        Where(filter.Post.Author.ID().Equal(author.ID())).
+        Where(filter.Post.Author().ID.Equal(author.ID())).
         All(ctx)
 
     // Find posts by author name
     alicePosts, _ := client.PostRepo().Query().
-        Where(filter.Post.Author.Name.Equal("Alice")).
+        Where(filter.Post.Author().Name.Equal("Alice")).
         All(ctx)
 
     // Find posts by active authors only
     activePosts, _ := client.PostRepo().Query().
-        Where(filter.Post.Author.IsActive.True()).
+        Where(filter.Post.Author().IsActive.True()).
         All(ctx)
 
     // Posts without editor
     unedited, _ := client.PostRepo().Query().
-        Where(filter.Post.Editor.IsNil()).
+        Where(filter.Post.Editor.Nil(true)).
         All(ctx)
 
     // Sort by author name
@@ -279,7 +279,7 @@ func main() {
 
     // Fetch with eager loading
     postsWithAuthor, _ := client.PostRepo().Query().
-        Fetch(with.Post.Author...).
+        Fetch(with.Post.Author()).
         All(ctx)
 
     for _, p := range postsWithAuthor {
@@ -290,7 +290,7 @@ func main() {
     comments, _ := client.CommentRepo().Query().
         Where(
             filter.Comment.Post.Author.IsActive.True(),
-            filter.Comment.Author.Name.StartsWith("Admin"),
+            filter.Comment.Author().Name.StartsWith("Admin").True(),
         ).
         All(ctx)
 }
@@ -302,8 +302,8 @@ func main() {
 |-----------|-------------|---------|
 | `ID()` | Access record ID | ID filter |
 | `<FieldName>` | Access nested field | Field's filter type |
-| `IsNil()` | Reference is null | Bool filter |
-| `IsNotNil()` | Reference is not null | Bool filter |
+| `Nil(true)` | Reference is null | Bool filter |
+| `Nil(false)` | Reference is not null | Bool filter |
 
 ### ID Filter Operations
 
@@ -311,16 +311,16 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(id)` | ID equals | Bool filter |
 | `NotEqual(id)` | ID not equals | Bool filter |
-| `In(ids...)` | ID in set | Bool filter |
-| `NotIn(ids...)` | ID not in set | Bool filter |
+| `In(ids []T)` | ID in set | Bool filter |
+| `NotIn(ids []T)` | ID not in set | Bool filter |
 
 ### Nested Field Access
 
 All fields of the referenced node type are accessible:
 
 ```go
-filter.Post.Author.Name        // String filter
-filter.Post.Author.Email       // Email filter
-filter.Post.Author.IsActive    // Bool filter
-filter.Post.Author.CreatedAt   // Time filter
+filter.Post.Author().Name        // String filter
+filter.Post.Author().Email       // Email filter
+filter.Post.Author().IsActive    // Bool filter
+filter.Post.Author().CreatedAt   // Time filter
 ```

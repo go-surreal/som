@@ -4,11 +4,11 @@ package field
 import (
 	uuid1 "github.com/gofrs/uuid"
 	uuid "github.com/google/uuid"
-	"net/url"
+	url "net/url"
 	som "som.test/gen/som"
 	distinct "som.test/gen/som/internal/distinct"
 	model "som.test/model"
-	"time"
+	time "time"
 )
 
 var AllTypes = newAllTypes[model.AllTypes]("")

@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"path"
@@ -19,7 +20,7 @@ const filenameSchema = "schema.surql"
 // the shape of the resulting SurrealQL stays readable.
 var (
 	tableStmt = template.Must(template.New("table").Parse(
-		`DEFINE TABLE {{.Name}}{{if .Drop}} DROP{{end}} SCHEMAFULL TYPE {{.Type}}` +
+		`DEFINE TABLE OVERWRITE {{.Name}}{{if .Drop}} DROP{{end}} SCHEMAFULL TYPE {{.Type}}` +
 			`{{if .In}} IN {{.In}} OUT {{.Out}} ENFORCED{{end}}` +
 			`{{if .Changefeed}} CHANGEFEED {{.Changefeed}}{{end}} PERMISSIONS FULL;`,
 	))
@@ -31,14 +32,14 @@ var (
 	))
 
 	searchIndexStmt = template.Must(template.New("searchIndex").Parse(
-		`DEFINE INDEX {{.Name}} ON {{.Table}} FIELDS {{.Field}} FULLTEXT ANALYZER {{.Analyzer}}` +
+		`DEFINE INDEX OVERWRITE {{.Name}} ON {{.Table}} FIELDS {{.Field}} FULLTEXT ANALYZER {{.Analyzer}}` +
 			`{{if .BM25}} BM25({{.BM25K1}}, {{.BM25B}}){{else}} BM25{{end}}` +
 			`{{if .Highlights}} HIGHLIGHTS{{end}}` +
 			`{{if .Concurrently}} CONCURRENTLY{{end}};`,
 	))
 
 	analyzerStmt = template.Must(template.New("analyzer").Parse(
-		`DEFINE ANALYZER {{.Name}}` +
+		`DEFINE ANALYZER OVERWRITE {{.Name}}` +
 			`{{if .Tokenizers}} TOKENIZERS {{.Tokenizers}}{{end}}` +
 			`{{if .Filters}} FILTERS {{.Filters}}{{end}};`,
 	))
@@ -56,7 +57,12 @@ type tableDef struct {
 }
 
 func (b *build) buildSchemaFile() error {
-	statements := []string{string(embed.CodegenComment), ""}
+	statements := []string{
+		string(embed.CodegenComment),
+		"",
+		fmt.Sprintf("DEFINE TABLE OVERWRITE %s SCHEMALESS PERMISSIONS FULL;", def.MetaTable),
+		"",
+	}
 
 	// Generate DEFINE ANALYZER statements first
 	if b.input.define != nil {
@@ -103,8 +109,8 @@ func (b *build) buildSchemaFile() error {
 		// Index expires_at to keep expiry purge deletes efficient.
 		if node.Source.Expiry {
 			indexName := fmt.Sprintf(def.IndexPrefix+"%s_expires_at", node.NameDatabase())
-			indexStatements = append(indexStatements,
-				fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS expires_at CONCURRENTLY;", indexName, node.NameDatabase()))
+			indexStatements = append(indexStatements, guardRebuild("index:"+indexName,
+				fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS expires_at CONCURRENTLY;", indexName, node.NameDatabase())))
 		}
 
 		statements = append(statements, "")
@@ -172,7 +178,13 @@ func (b *build) buildSchemaFile() error {
 		if statement == "" {
 			continue // view without a definition (see buildViewStatement)
 		}
-		statements = append(statements, statement, "")
+		// A view cannot be redefined via OVERWRITE: SurrealDB re-materializes
+		// its rows onto the already existing keys and fails with AlreadyExists.
+		// It has to be removed first, which recomputes the whole view.
+		statements = append(statements, guardRebuild("view:"+view.NameDatabase(),
+			fmt.Sprintf("REMOVE TABLE IF EXISTS %s;", view.NameDatabase()),
+			statement,
+		), "")
 	}
 
 	// Append index statements at the end
@@ -186,6 +198,28 @@ func (b *build) buildSchemaFile() error {
 	b.fs.Write(path.Join(def.PkgRepo, "schema", filenameSchema), []byte(content))
 
 	return nil
+}
+
+// guardRebuild wraps DDL that forces a full rebuild when applied (index
+// builds, view materialization) into a hash check against the meta table.
+// Table, field and analyzer definitions are cheap metadata writes and are
+// applied unconditionally via OVERWRITE, but re-running an index or view
+// definition costs time proportional to the row count. Applying an unchanged
+// schema must stay a no-op, so those statements only run once their generated
+// form actually differs from what the database was last given.
+func guardRebuild(key string, statements ...string) string {
+	body := strings.Join(statements, "\n\t")
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
+
+	return fmt.Sprintf(
+		"IF (SELECT VALUE hash FROM ONLY type::record(%q, %q)) != %q {\n"+
+			"\t%s\n"+
+			"\tUPSERT type::record(%q, %q) SET hash = %q;\n"+
+			"};",
+		def.MetaTable, key, hash,
+		body,
+		def.MetaTable, key, hash,
+	)
 }
 
 // buildViewStatement builds the DEFINE TABLE ... AS SELECT statement for a
@@ -289,8 +323,9 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 	var statements []string
 
 	if !b.noCountIndex {
-		stmt := fmt.Sprintf("DEFINE INDEX "+def.IndexPrefix+"%s_count ON %s COUNT;", tableName, tableName)
-		statements = append(statements, stmt)
+		indexName := fmt.Sprintf(def.IndexPrefix+"%s_count", tableName)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s COUNT;", indexName, tableName)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	// Collect composite unique index fields grouped by name
@@ -303,8 +338,8 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 
 	if softDelete {
 		indexName := fmt.Sprintf(def.IndexPrefix+"%s_deleted_at", tableName)
-		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
-		statements = append(statements, stmt)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	// Generate composite unique index statements
@@ -312,8 +347,8 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 		// Index name format: __som__<table>_unique_<name>
 		indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, uniqueName)
 		fieldsStr := strings.Join(fieldPaths, ", ")
-		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldsStr)
-		statements = append(statements, stmt)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldsStr)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	return statements, nil
@@ -334,16 +369,16 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			} else if indexInfo.Unique {
 				// Simple unique index on single field
 				indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
-				*statements = append(*statements, stmt)
+				stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			} else {
 				// Regular (non-unique) index
 				indexName := indexInfo.Name
 				if indexName == "" {
 					indexName = fmt.Sprintf(def.IndexPrefix+"%s_index_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
 				}
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s CONCURRENTLY;", indexName, tableName, fieldPath)
-				*statements = append(*statements, stmt)
+				stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s CONCURRENTLY;", indexName, tableName, fieldPath)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			}
 		}
 
@@ -370,7 +405,7 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 					return err
 				}
 
-				*statements = append(*statements, stmt)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			}
 		}
 

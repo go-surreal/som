@@ -16,10 +16,11 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			// Query returns a new query builder for the {{.NameGo}} model.
 			Query() query.Builder[model.{{.NameGo}}]
 			{{- if not .HasComplexID}}
+			{{- if .HasAutoID}}
 			// Create creates a new record for the {{.NameGo}} model.
 			Create(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
-			// Insert creates multiple records in a single operation.
-			// Before- and after-create hooks are invoked for each node.
+			{{- end}}
+			{{.InsertComment}}
 			Insert(ctx context.Context, nodes []*model.{{.NameGo}}) error
 			// CreateWithID creates a new record with the given ID for the {{.NameGo}} model.
 			CreateWithID(ctx context.Context, id string, {{.NameGoLower}} *model.{{.NameGo}}) error
@@ -138,9 +139,9 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		func (r *{{.NameGoLower}}) Query() query.Builder[model.{{.NameGo}}] {
 			return query.New{{.NameGo}}(r.db)
 		}
-		{{if not .HasComplexID}}
+		{{if .HasAutoID}}
 		// Create creates a new record for the {{.NameGo}} model.
-		// The ID will be generated automatically as a ULID.
+		// The ID will be generated automatically as a {{.IDType}}.
 		// Before- and after-create hooks are invoked.
 		func (r *{{.NameGoLower}}) Create(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error {
 			if {{.NameGoLower}} == nil {
@@ -156,7 +157,8 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			{{call .RunHooks "afterCreate"}}
 			return nil
 		}
-
+		{{end}}
+		{{if not .HasComplexID}}
 		// CreateWithID creates a new record for the {{.NameGo}} model with the given id.
 		// Before- and after-create hooks are invoked.
 		func (r *{{.NameGoLower}}) CreateWithID(ctx context.Context, id string, {{.NameGoLower}} *model.{{.NameGo}}) error {
@@ -177,8 +179,7 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			return nil
 		}
 
-		// Insert creates multiple records in a single operation.
-		// Before- and after-create hooks are invoked for each node.
+		{{.InsertComment}}
 		func (r *{{.NameGoLower}}) Insert(ctx context.Context, nodes []*model.{{.NameGo}}) error {
 			if len(nodes) == 0 {
 				return nil
@@ -187,9 +188,15 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 				if n == nil {
 					return errors.New("slice contains nil node")
 				}
+				{{- if .HasAutoID}}
 				if n.ID() != "" {
 					return errors.New("node already has an id")
 				}
+				{{- else}}
+				if n.ID() == "" {
+					return som.ErrEmptyID
+				}
+				{{- end}}
 			}
 			if err := r.runHooksAll(ctx, beforeCreate, nodes); err != nil {
 				return err
@@ -397,6 +404,9 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		"NameDB":           node.NameDatabase(),
 		"KeyType":          b.keyType(node),
 		"HasComplexID":     node.HasComplexID(),
+		"HasAutoID":        node.HasAutoID(),
+		"IDType":           string(node.Source.IDType),
+		"InsertComment":    insertComment(node),
 		"HasChangefeed":    node.HasChangefeed(),
 		"SoftDelete":       node.Source.SoftDelete,
 		"OptimisticLock":   node.Source.OptimisticLock,
@@ -412,6 +422,19 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName())),
 		"repoNode", tmpl, data,
 	)
+}
+
+// insertComment returns the doc comment of the generated Insert method. For
+// models without server-generated IDs the ID cannot be left empty, so it has
+// to be set on every node instead.
+func insertComment(node *field.NodeTable) string {
+	comment := "Insert creates multiple records in a single operation.\n"
+
+	if !node.HasAutoID() {
+		comment += "Every node must have a non-empty ID set.\n"
+	}
+
+	return formatGoComment(comment + "Before- and after-create hooks are invoked for each node.")
 }
 
 // repoHook describes one of the hook registration methods of a repository.
@@ -482,7 +505,7 @@ func (b *build) repoLiteral(node *field.NodeTable) jen.Code {
 		jen.Line().Id("info").Op(":").Id(node.NameGoLower() + "RepoInfo"),
 	}
 
-	if !node.HasComplexID() {
+	if node.HasAutoID() {
 		values = append(values, jen.Line().Id("autoID").Op(":").True())
 	}
 

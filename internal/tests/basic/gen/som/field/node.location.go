@@ -4,7 +4,7 @@ package field
 import (
 	distinct "som.test/gen/som/internal/distinct"
 	model "som.test/model"
-	"time"
+	time "time"
 )
 
 var Location = newLocation[model.Location]("")

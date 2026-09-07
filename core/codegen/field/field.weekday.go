@@ -34,7 +34,7 @@ func (f *Weekday) SchemaStatements(table, prefix string) []string {
 
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s ASSERT %s$value >= 0 AND $value <= 6;",
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s ASSERT %s$value >= 0 AND $value <= 6;",
 			prefix+f.NameDatabase(), table, f.TypeDatabase(), nilCheck,
 		),
 	}

@@ -3,7 +3,7 @@ package field
 
 import (
 	distinct "som.test/gen/som/internal/distinct"
-	"time"
+	time "time"
 )
 
 func newWeatherKey[M any](key string) weatherKey[M] {

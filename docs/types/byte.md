@@ -17,7 +17,7 @@ The byte type handles single byte values and byte slices for binary data storage
 
 ```go
 type Packet struct {
-    som.Node
+    som.Node[som.ULID]
 
     Header    byte   // Required single byte
     TypeFlag  *byte  // Optional single byte
@@ -56,10 +56,10 @@ filter.Packet.Header.Zero(false)  // Is not 0x00
 
 ```go
 // Check if nil
-filter.Packet.TypeFlag.IsNil()
+filter.Packet.TypeFlag.Nil(true)
 
 // Check if not nil
-filter.Packet.TypeFlag.IsNotNil()
+filter.Packet.TypeFlag.Nil(false)
 ```
 
 ### Sorting
@@ -78,7 +78,7 @@ query.Order(by.Packet.Header.Desc())
 
 ```go
 type Document struct {
-    som.Node
+    som.Node[som.ULID]
 
     Data     []byte   // Required binary data
     Checksum *[]byte  // Optional binary data
@@ -121,18 +121,18 @@ Convert byte slice to base64 string for string operations:
 filter.Document.Data.Base64Encode().Equal("SGVsbG8gV29ybGQ=")
 
 // Base64 with string operations
-filter.Document.Data.Base64Encode().StartsWith("SGVs")
-filter.Document.Data.Base64Encode().Contains("bG8=")
+filter.Document.Data.Base64Encode().StartsWith("SGVs").True()
+filter.Document.Data.Base64Encode().Contains("bG8=").True()
 ```
 
 ### Nil Operations (Pointer Types Only)
 
 ```go
 // Check if nil
-filter.Document.Checksum.IsNil()
+filter.Document.Checksum.Nil(true)
 
 // Check if not nil
-filter.Document.Checksum.IsNotNil()
+filter.Document.Checksum.Nil(false)
 ```
 
 ## Creating Byte Values
@@ -191,7 +191,7 @@ docs, _ := client.DocumentRepo().Query().
 ```go
 // Documents that have a checksum
 withChecksum, _ := client.DocumentRepo().Query().
-    Where(filter.Document.Checksum.IsNotNil()).
+    Where(filter.Document.Checksum.Nil(false)).
     All(ctx)
 ```
 
@@ -209,7 +209,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create document with binary data
     doc := &model.Document{
@@ -229,7 +229,7 @@ func main() {
 
     // Find documents with checksum
     withChecksum, _ := client.DocumentRepo().Query().
-        Where(filter.Document.Checksum.IsNotNil()).
+        Where(filter.Document.Checksum.Nil(false)).
         All(ctx)
 
     // Create packet with single byte
@@ -254,12 +254,12 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `Zero(bool)` | Check if zero | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr only) | Bool filter |
-| `IsNotNil()` | Not null (ptr only) | Bool filter |
+| `Nil(true)` | Is null (ptr only) | Bool filter |
+| `Nil(false)` | Not null (ptr only) | Bool filter |
 
 ### Byte Slice
 
@@ -267,10 +267,10 @@ func main() {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `Zero(bool)` | Check if empty | Bool filter |
 | `Truth()` | To boolean | Bool filter |
 | `Base64Encode()` | Convert to base64 | String filter |
-| `IsNil()` | Is null (ptr only) | Bool filter |
-| `IsNotNil()` | Not null (ptr only) | Bool filter |
+| `Nil(true)` | Is null (ptr only) | Bool filter |
+| `Nil(false)` | Not null (ptr only) | Bool filter |
