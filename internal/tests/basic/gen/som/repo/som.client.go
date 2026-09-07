@@ -222,11 +222,15 @@ func (c *dbConn) Query(ctx context.Context, statement string, vars map[string]an
 		return nil, err
 	}
 
-	var result *[]surrealdb.QueryResult[any]
+	// cbor.RawMessage keeps each statement result as untouched wire bytes:
+	// surrealdb.Query does not materialise them and the re-marshal below only
+	// writes the surrounding array and struct wrappers. Decoding into the
+	// caller's target type happens exactly once, at the call site.
+	var result *[]surrealdb.QueryResult[cbor.RawMessage]
 	if tx != nil {
-		result, err = surrealdb.Query[any](ctx, tx, statement, vars)
+		result, err = surrealdb.Query[cbor.RawMessage](ctx, tx, statement, vars)
 	} else {
-		result, err = surrealdb.Query[any](ctx, c.conn, statement, vars)
+		result, err = surrealdb.Query[cbor.RawMessage](ctx, c.conn, statement, vars)
 	}
 	if err != nil {
 		return nil, err

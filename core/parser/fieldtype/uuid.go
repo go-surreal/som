@@ -11,8 +11,12 @@ func (h *UUIDHandler) Match(elem gotype.Type, _ *parser.FieldContext) bool {
 	if elem.Kind() != gotype.Array {
 		return false
 	}
-	pkgPath := elem.PkgPath()
-	return pkgPath == string(parser.UUIDPackageGoogle) || pkgPath == string(parser.UUIDPackageGofrs)
+	switch parser.UUIDPackage(elem.PkgPath()) {
+	case parser.UUIDPackageGoogle, parser.UUIDPackageGofrs, parser.UUIDPackageStd:
+		return true
+	default:
+		return false
+	}
 }
 
 func (h *UUIDHandler) Parse(t gotype.Type, elem gotype.Type, _ *parser.FieldContext) (parser.Field, error) {

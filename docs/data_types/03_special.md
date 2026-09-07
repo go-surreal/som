@@ -134,7 +134,25 @@ type Resource struct {
 }
 ```
 
-Both `google/uuid` and `gofrs/uuid` are encoded identically using CBOR Tag 37.
+## UUID (stdlib)
+
+Since go 1.27 the standard library ships a `uuid` package, which SOM supports as well:
+
+```go
+import "uuid"
+
+type Resource struct {
+    som.Node[som.ULID]
+
+    ExternalID uuid.UUID
+}
+```
+
+The stdlib package only provides version 4 and version 7 UUIDs. If the model needs
+version 1, 5 or 6, `google/uuid` or `gofrs/uuid` are still required.
+
+All three of `google/uuid`, `gofrs/uuid` and the stdlib `uuid` are encoded identically
+using CBOR Tag 37.
 
 ## Built-in Special Types
 
@@ -199,6 +217,7 @@ Filter operations include `Equal`, `Compare`, `Major()`, `Minor()`, and `Patch()
 | `time.Weekday` | `time` | - | Day of the week |
 | `uuid.UUID` | `github.com/google/uuid` | 37 | Universally unique identifier |
 | `uuid.UUID` | `github.com/gofrs/uuid` | 37 | Universally unique identifier |
+| `uuid.UUID` | `uuid` (stdlib, go 1.27+) | 37 | Universally unique identifier |
 | `url.URL` | `net/url` | - | Web address |
 | `som.Email` | generated | - | Email address string |
 | `som.Password[A]` | generated | - | Auto-hashed password |

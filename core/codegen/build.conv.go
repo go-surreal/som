@@ -522,6 +522,8 @@ func (b *convBuilder) unmarshalFieldAssign(keyVar string, sf parser.ComplexIDFie
 			unmarshalFunc = "UnmarshalUUIDGoogle"
 		case parser.UUIDPackageGofrs:
 			unmarshalFunc = "UnmarshalUUIDGofrs"
+		case parser.UUIDPackageStd:
+			unmarshalFunc = "UnmarshalUUIDStd"
 		default:
 			unmarshalFunc = "UnmarshalUUIDGoogle"
 		}

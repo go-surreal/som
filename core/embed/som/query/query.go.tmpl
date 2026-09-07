@@ -45,8 +45,10 @@ func (r recordID) String() string {
 	return fmt.Sprintf("%s:%v", r.Table, r.ID)
 }
 
+// idNode keeps the record ID in its raw CBOR form, so it can be re-injected
+// as a query variable byte-identically to how the DB encoded it.
 type idNode struct {
-	ID recordID
+	ID cbor.RawMessage
 }
 
 type countResult struct {

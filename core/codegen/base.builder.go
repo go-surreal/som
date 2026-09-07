@@ -26,6 +26,7 @@ func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error 
 	if features != nil {
 		tmpl.UsesGoogleUUID = features.UsesGoogleUUID
 		tmpl.UsesGofrsUUID = features.UsesGofrsUUID
+		tmpl.UsesStdUUID = features.UsesStdUUID
 		tmpl.UsesOrbGeo = features.UsesOrbGeo
 		tmpl.UsesSimplefeaturesGeo = features.UsesSimplefeaturesGeo
 		tmpl.UsesGoGeomGeo = features.UsesGoGeomGeo
