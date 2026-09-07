@@ -216,8 +216,16 @@ func (b builder[M]) AllAsync(ctx context.Context) *asyncResult[[]*M] {
 	return async(ctx, b.All)
 }
 
-// AllIDs returns the IDs of all records matching the conditions of the query.
-func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
+// recordRef pairs the string form of a record ID with its raw CBOR encoding,
+// which doubles as the keyset cursor value for ID-only iteration.
+type recordRef struct {
+	id  string
+	raw cbor.RawMessage
+}
+
+// allIDRefs returns the IDs of all matching records, both as strings and in
+// their raw DB encoding.
+func (b builder[M]) allIDRefs(ctx context.Context) ([]recordRef, error) {
 	req := b.query.BuildAsAllIDs()
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -231,9 +239,26 @@ func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
 	if len(rawNodes) < 1 {
 		return nil, nil
 	}
-	var ids []string
+	refs := make([]recordRef, 0, len(rawNodes[0].Result))
 	for _, rawNode := range rawNodes[0].Result {
-		ids = append(ids, rawNode.ID.String())
+		var id recordID
+		if err := cbor.Unmarshal(rawNode.ID, &id); err != nil {
+			return nil, fmt.Errorf("could not unmarshal record id: %w", err)
+		}
+		refs = append(refs, recordRef{id: id.String(), raw: rawNode.ID})
+	}
+	return refs, nil
+}
+
+// AllIDs returns the IDs of all records matching the conditions of the query.
+func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
+	refs, err := b.allIDRefs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for _, ref := range refs {
+		ids = append(ids, ref.id)
 	}
 	return ids, nil
 }
@@ -283,17 +308,51 @@ func (b builder[M]) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 	return async(ctx, b.FirstID)
 }
 
+// totalOrderSorts returns the query's own sort with an id tiebreaker appended,
+// making the order total so batch boundaries are unambiguous and keyset
+// cursors are stable.
+func (b builder[M]) totalOrderSorts() []*lib.SortBuilder {
+	sorts := slices.Clone(b.query.Sort)
+	if !slices.ContainsFunc(sorts, func(s *lib.SortBuilder) bool { return s.Field == "id" }) {
+		sorts = append(sorts, lib.NewSortBuilder("id", lib.SortAsc))
+	}
+	return sorts
+}
+
 // Iterate returns an iterator that yields records in batches.
 // The batchSize parameter controls how many records are fetched per database query.
 // Iteration stops on the first error encountered.
+//
+// Batches are seeked via a keyset cursor rather than an offset, so walking a
+// large result set stays linear instead of re-scanning the skipped prefix on
+// every batch. Queries that cannot produce a cursor (random ordering, models
+// with a complex ID, or a sort on a field that is not stored top-level) fall
+// back to offset paging.
 func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, error] {
 	return func(yield func(*M, error) bool) {
+		if batchSize < 1 {
+			yield(nil, errors.New("batch size must be positive"))
+			return
+		}
+
+		sorts := b.totalOrderSorts()
+		whereLen := len(b.query.Where)
 		start := b.query.Start
+		yielded := 0
+
+		keyset := !b.query.SortRandom
+		var cursor *lib.CursorData
 
 		for {
 			batchBuilder := b
+			batchBuilder.query.Sort = sorts
 			batchBuilder.query.Limit = batchSize
-			batchBuilder.query.Start = start
+			batchBuilder.query.Start = start + yielded
+
+			if cursor != nil {
+				batchBuilder.query.Where = append(b.query.Where[:whereLen:whereLen], lib.CursorFilter[M](*cursor, sorts, false))
+				batchBuilder.query.Start = 0
+			}
 
 			results, err := batchBuilder.All(ctx)
 			if err != nil {
@@ -309,13 +368,21 @@ func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, er
 				if !yield(node, nil) {
 					return
 				}
+				yielded++
 			}
 
 			if len(results) < batchSize {
 				return
 			}
 
-			start += batchSize
+			if keyset {
+				data, err := b.cursorData(results[len(results)-1], sorts)
+				if err != nil {
+					keyset, cursor = false, nil
+					continue
+				}
+				cursor = &data
+			}
 		}
 	}
 }
@@ -323,36 +390,61 @@ func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, er
 // IterateID returns an iterator that yields record IDs in batches.
 // The batchSize parameter controls how many IDs are fetched per database query.
 // Iteration stops on the first error encountered.
+//
+// Batches are seeked via a keyset cursor on the record ID rather than an
+// offset. Since the query only selects ids, a sort on any other field leaves
+// no cursor value to seek on and falls back to offset paging.
 func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
+		if batchSize < 1 {
+			yield("", errors.New("batch size must be positive"))
+			return
+		}
+
+		sorts := b.totalOrderSorts()
+		whereLen := len(b.query.Where)
 		start := b.query.Start
+		yielded := 0
+
+		keyset := !b.query.SortRandom &&
+			!slices.ContainsFunc(b.query.Sort, func(s *lib.SortBuilder) bool { return s.Field != "id" })
+		var cursor *lib.CursorData
 
 		for {
 			batchBuilder := b
+			batchBuilder.query.Sort = sorts
 			batchBuilder.query.Limit = batchSize
-			batchBuilder.query.Start = start
+			batchBuilder.query.Start = start + yielded
 
-			ids, err := batchBuilder.AllIDs(ctx)
+			if cursor != nil {
+				batchBuilder.query.Where = append(b.query.Where[:whereLen:whereLen], lib.CursorFilter[M](*cursor, sorts, false))
+				batchBuilder.query.Start = 0
+			}
+
+			refs, err := batchBuilder.allIDRefs(ctx)
 			if err != nil {
 				yield("", err)
 				return
 			}
 
-			if len(ids) == 0 {
+			if len(refs) == 0 {
 				return
 			}
 
-			for _, id := range ids {
-				if !yield(id, nil) {
+			for _, ref := range refs {
+				if !yield(ref.id, nil) {
 					return
 				}
+				yielded++
 			}
 
-			if len(ids) < batchSize {
+			if len(refs) < batchSize {
 				return
 			}
 
-			start += batchSize
+			if keyset {
+				cursor = &lib.CursorData{ID: refs[len(refs)-1].raw}
+			}
 		}
 	}
 }
@@ -576,10 +668,7 @@ func (p PageBuilder[M]) Get(ctx context.Context) (*Page[M], error) {
 
 	// Sort keys default to id, and an id tiebreaker is always appended so the
 	// order is total and cursors are stable.
-	sorts := slices.Clone(b.query.Sort)
-	if len(sorts) == 0 || !slices.ContainsFunc(sorts, func(s *lib.SortBuilder) bool { return s.Field == "id" }) {
-		sorts = append(sorts, lib.NewSortBuilder("id", lib.SortAsc))
-	}
+	sorts := b.totalOrderSorts()
 
 	// Backward paging reverses the sort so LIMIT yields the last N; results are
 	// flipped back below. originalSorts drives cursor generation and, together
@@ -725,6 +814,16 @@ func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, e
 		return "", nil
 	}
 
+	data, err := b.cursorData(item, sorts)
+	if err != nil {
+		return "", err
+	}
+
+	return lib.EncodeCursor(data)
+}
+
+// cursorData extracts the keyset position of an item for the given sort fields.
+func (b builder[M]) cursorData(item *M, sorts []*lib.SortBuilder) (lib.CursorData, error) {
 	dbFields := b.info.Fields(item)
 
 	sortValues := make(map[string]cbor.RawMessage, len(sorts))
@@ -739,12 +838,12 @@ func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, e
 			// A missing sort value would drop a keyset term and silently
 			// corrupt paging, so reject it. Nested/computed sort fields are
 			// not part of the flat DB representation.
-			return "", fmt.Errorf("cannot paginate on sort field %q: only top-level stored fields are supported", s.Field)
+			return lib.CursorData{}, fmt.Errorf("cannot paginate on sort field %q: only top-level stored fields are supported", s.Field)
 		}
 
 		raw, err := cbor.Marshal(val)
 		if err != nil {
-			return "", fmt.Errorf("could not encode cursor value for %q: %w", s.Field, err)
+			return lib.CursorData{}, fmt.Errorf("could not encode cursor value for %q: %w", s.Field, err)
 		}
 
 		if s.Field == "id" {
@@ -759,7 +858,7 @@ func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, e
 		if val, ok := dbFields["id"]; ok {
 			raw, err := cbor.Marshal(val)
 			if err != nil {
-				return "", fmt.Errorf("could not encode cursor id: %w", err)
+				return lib.CursorData{}, fmt.Errorf("could not encode cursor id: %w", err)
 			}
 			id = raw
 		}
@@ -768,13 +867,13 @@ func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, e
 	// Complex-ID models expose no single "id" field, so cursor pagination
 	// cannot form a stable tiebreaker. These models should use Range() instead.
 	if id == nil {
-		return "", errors.New("cursor pagination requires a string ID; use Range() for models with a complex ID")
+		return lib.CursorData{}, errors.New("cursor pagination requires a string ID; use Range() for models with a complex ID")
 	}
 
-	return lib.EncodeCursor(lib.CursorData{
+	return lib.CursorData{
 		SortValues: sortValues,
 		ID:         id,
-	})
+	}, nil
 }
 
 // Search adds full-text search conditions to the query.
