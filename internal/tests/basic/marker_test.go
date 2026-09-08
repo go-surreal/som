@@ -143,9 +143,11 @@ func TestMarkerFromCache(t *testing.T) {
 	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx)
 	defer cacheCleanup()
 
+	// The flag is set before the record is published to the cache, so it is
+	// already present on the read that populated it.
 	first, _, err := client.SpecialTypesRepo().Read(cachedCtx, string(record.ID()))
 	assert.NilError(t, err)
-	assert.Assert(t, !first.Marker().Has(som.MarkerFromCache), "the first read populates the cache")
+	assert.Assert(t, first.Marker().Has(som.MarkerFromCache))
 
 	second, _, err := client.SpecialTypesRepo().Read(cachedCtx, string(record.ID()))
 	assert.NilError(t, err)

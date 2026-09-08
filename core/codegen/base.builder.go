@@ -774,21 +774,15 @@ If caching is enabled via som.WithCache, it will be used.
 						jen.Id("idFunc").Op(":").Id("idFunc"),
 					),
 				),
-				jen.List(jen.Id("record"), jen.Id("exists"), jen.Id("fromCache"), jen.Err()).Op(":=").
-					Id("r").Dot("readWithCache").Call(
-					jen.Id("ctx"),
-					jen.Id("id"),
-					jen.Id("rid"),
-					jen.Id("cache"),
-					jen.Id("refreshFuncs"),
+				jen.Return(
+					jen.Id("r").Dot("readWithCache").Call(
+						jen.Id("ctx"),
+						jen.Id("id"),
+						jen.Id("rid"),
+						jen.Id("cache"),
+						jen.Id("refreshFuncs"),
+					),
 				),
-				jen.If(jen.Err().Op("!=").Nil()).Block(
-					jen.Return(jen.Nil(), jen.False(), jen.Err()),
-				),
-				jen.If(jen.Id("fromCache").Op("&&").Id("record").Op("!=").Nil()).Block(
-					b.addMarker(jen.Id("record"), node.Source.IDEmbed, jen.Qual(b.relativePkgPath("internal"), "MarkerFromCache")),
-				),
-				jen.Return(jen.Id("record"), jen.Id("exists"), jen.Nil()),
 			)
 	}
 

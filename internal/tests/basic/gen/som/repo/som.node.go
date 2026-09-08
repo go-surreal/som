@@ -356,41 +356,42 @@ func loadEagerRecords[N any](
 }
 
 // readWithCache attempts to read from cache first, falling back to DB if needed.
-// If cache is in eager mode and record not found, returns (nil, false, false, nil).
+// If cache is in eager mode and record not found, returns (nil, false, nil).
 // If cache is in lazy mode and record not found, queries DB and populates cache.
 // For eager mode with TTL, expired caches are automatically refreshed.
-// The third return value reports whether the record was served from the cache.
-func (r *repo[N, K]) readWithCache(ctx context.Context, cacheKey string, rid *models.RecordID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, bool, error) {
+func (r *repo[N, K]) readWithCache(ctx context.Context, cacheKey string, rid *models.RecordID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
 	if c == nil {
-		record, exists, err := r.read(ctx, rid)
-		return record, exists, false, err
+		return r.read(ctx, rid)
 	}
 
 	// Check if eager cache needs refresh due to TTL expiration
 	if c.isEager() && c.isLoaded() && c.isExpired() && refreshFuncs != nil {
 		if err := r.refreshEagerCache(ctx, c, refreshFuncs); err != nil {
-			return nil, false, false, err
+			return nil, false, err
 		}
 	}
 
 	if record, found := c.get(cacheKey); found {
-		return record, true, true, nil
+		return record, true, nil
 	}
 
 	if c.isEager() && c.isLoaded() {
-		return nil, false, false, nil
+		return nil, false, nil
 	}
 
 	record, exists, err := r.read(ctx, rid)
 	if err != nil {
-		return nil, false, false, err
+		return nil, false, err
 	}
 
 	if exists && record != nil {
+		// The marker must be set before the record is published to the cache,
+		// because cached records are shared between all readers afterwards.
+		internal.AddMarkerAny(record, internal.MarkerFromCache)
 		c.set(cacheKey, record)
 	}
 
-	return record, exists, false, nil
+	return record, exists, nil
 }
 
 // refreshEagerCache reloads all records for an expired eager cache.
@@ -404,6 +405,10 @@ func (r *repo[N, K]) refreshEagerCache(ctx context.Context, c *cache[N], funcs *
 		records, err := loadEagerRecords(ctx, funcs.countAll, funcs.queryAll, c.getMaxSize())
 		if err != nil {
 			return nil, err
+		}
+
+		for _, record := range records {
+			internal.AddMarkerAny(record, internal.MarkerFromCache)
 		}
 
 		c.refreshWith(records, funcs.idFunc)
@@ -477,6 +482,10 @@ func getOrCreateCache[N any](
 			records, err := loadEagerRecords(ctx, countAll, queryAll, opts.MaxSize)
 			if err != nil {
 				return nil, err
+			}
+
+			for _, record := range records {
+				internal.AddMarkerAny(record, internal.MarkerFromCache)
 			}
 
 			c = newCacheWithAll(records, idFunc, opts.TTL, opts.MaxSize)

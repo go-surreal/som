@@ -169,7 +169,7 @@ m := user.Marker()
 m.Has(som.MarkerLoaded)     // instance originates from a database record
 m.Has(som.MarkerPartial)    // not all fields are loaded (also: user.IsPartial())
 m.Has(som.MarkerDeleted)    // record was permanently deleted
-m.Has(som.MarkerFromCache)  // served from an in-process cache, not a fresh read
+m.Has(som.MarkerFromCache)  // held by an in-process cache, shared and possibly stale
 ```
 
 A model built by the application has a zero marker. Markers are read-only: only the generated code

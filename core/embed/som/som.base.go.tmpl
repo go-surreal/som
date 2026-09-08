@@ -117,9 +117,10 @@ const (
 	// further write operations on them are rejected.
 	MarkerDeleted = internal.MarkerDeleted
 
-	// MarkerFromCache is set on model instances that were served from an
-	// in-process cache (see WithCache) instead of a database read. It is
-	// purely informational.
+	// MarkerFromCache is set on model instances that are held by an in-process
+	// cache (see WithCache). Such an instance is shared by every reader of that
+	// cache entry, so it must not be mutated and may be stale. It is purely
+	// informational.
 	MarkerFromCache = internal.MarkerFromCache
 )
 

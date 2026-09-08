@@ -287,14 +287,7 @@ func (r *ephemeral) Read(ctx context.Context, id string) (*model.Ephemeral, bool
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.Ephemeral]{cacheID: internal.GetCacheKey[model.Ephemeral](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	record, exists, fromCache, err := r.readWithCache(ctx, id, rid, cache, refreshFuncs)
-	if err != nil {
-		return nil, false, err
-	}
-	if fromCache && record != nil {
-		internal.AddMarker(&record.Node, internal.MarkerFromCache)
-	}
-	return record, exists, nil
+	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.

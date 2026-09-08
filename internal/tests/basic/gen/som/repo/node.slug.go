@@ -263,14 +263,7 @@ func (r *slug) Read(ctx context.Context, id string) (*model.Slug, bool, error) {
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.Slug]{cacheID: internal.GetCacheKey[model.Slug](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	record, exists, fromCache, err := r.readWithCache(ctx, id, rid, cache, refreshFuncs)
-	if err != nil {
-		return nil, false, err
-	}
-	if fromCache && record != nil {
-		internal.AddMarker(&record.Node, internal.MarkerFromCache)
-	}
-	return record, exists, nil
+	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
 }
 
 // Update updates the record for the given model.

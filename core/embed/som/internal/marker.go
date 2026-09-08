@@ -22,8 +22,9 @@ const (
 	// further write operations on them are rejected.
 	MarkerDeleted
 
-	// MarkerFromCache is set on model instances that were served from an
-	// in-process cache instead of a database read. It is purely informational.
+	// MarkerFromCache is set on model instances that are held by an in-process
+	// cache. Such an instance is shared by every reader of that cache entry,
+	// so it must not be mutated and may be stale. It is purely informational.
 	MarkerFromCache
 )
 
@@ -73,4 +74,12 @@ func SetMarker(target markable, flags Marker) {
 // AddMarker adds the given flags to the load state of a node, edge or view.
 func AddMarker(target markable, flags Marker) {
 	target.addMarker(flags)
+}
+
+// AddMarkerAny adds the given flags to the load state of v, if v is a node,
+// edge or view. It exists for generic code that cannot name the model type.
+func AddMarkerAny(v any, flags Marker) {
+	if target, ok := v.(markable); ok {
+		target.addMarker(flags)
+	}
 }
