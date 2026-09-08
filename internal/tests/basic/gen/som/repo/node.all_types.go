@@ -300,6 +300,12 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if allTypes.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if allTypes.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if allTypes.ID() == "" {
 		return errors.New("cannot update AllTypes without existing record ID")
 	}
@@ -321,6 +327,12 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if allTypes.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if allTypes.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if allTypes.ID() == "" {
 		return errors.New("cannot delete AllTypes without existing record ID")
 	}
@@ -330,6 +342,7 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 	if err := r.delete(ctx, r.recordID(string(allTypes.ID())), allTypes, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&allTypes.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, allTypes); err != nil {
 		return err
 	}

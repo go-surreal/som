@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
@@ -65,6 +66,9 @@ func (c *PersonObj) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.Email)
 	}
 
+	// Mark the instance as fully loaded from the database
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
+
 	return nil
 }
 
@@ -108,6 +112,27 @@ func (f *personObjLink) MarshalCBOR() ([]byte, error) {
 
 func (f *personObjLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		recordID := f.ID
+		if recordID != nil {
+			idRaw, err := cbor.Marshal(recordID.ID)
+			if err != nil {
+				return err
+			}
+			var rawObj map[string]cbor.RawMessage
+			if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
+				return err
+			}
+			var key model.PersonKey
+			if err := cbor.Unmarshal(rawObj["name"], &key.Name); err != nil {
+				return err
+			}
+			if err := cbor.Unmarshal(rawObj["age"], &key.Age); err != nil {
+				return err
+			}
+			f.PersonObj.Node = som.NewNode[model.PersonKey](key)
+		}
+		internal.SetMarker(&f.PersonObj.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias personObjLink

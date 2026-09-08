@@ -228,6 +228,20 @@ _, _, err := client.GroupRepo().Read(ctx, id)
 7. With TTL enabled, the entire cache expires and refreshes automatically on next access
 8. During TTL refresh, MaxSize is re-checked; returns `ErrCacheSizeLimitExceeded` if exceeded
 
+### Cached Records and Markers
+
+A record held by a cache carries the `som.MarkerFromCache` flag
+(see [Model Markers](02_repository.md#model-markers)):
+
+```go
+user, _, err := client.UserRepo().Read(cachedCtx, id)
+user.Marker().Has(som.MarkerFromCache)  // true
+```
+
+The flag is set when the record enters the cache, so it is also present on the read that populated
+it. Because the cache stores and returns the same pointer, the flag marks exactly what matters: the
+instance is shared with every other reader of that entry, must not be mutated, and may be stale.
+
 ### Cleanup Lifecycle
 
 1. `WithCache` generates a unique cache ID and stores it in the context
