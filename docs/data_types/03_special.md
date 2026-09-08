@@ -38,7 +38,7 @@ doc := &model.Document{
 ### Querying by UUID
 
 ```go
-doc, exists, err := client.DocumentRepo().Query().
+doc, err := client.DocumentRepo().Query().
     Where(filter.Document.ExternalID.Equal(targetUUID)).
     First(ctx)
 ```
@@ -49,15 +49,15 @@ doc, exists, err := client.DocumentRepo().Query().
 |-----------|-------------|
 | `Equal(uuid)` | Equals value |
 | `NotEqual(uuid)` | Not equals value |
-| `In(uuids...)` | In list |
-| `NotIn(uuids...)` | Not in list |
+| `In(uuids []T)` | In list |
+| `NotIn(uuids []T)` | Not in list |
 
 ```go
 // Find specific document
 filter.Document.ExternalID.Equal(targetUUID)
 
 // Find multiple documents
-filter.Document.TrackingID.In(uuid1, uuid2, uuid3)
+filter.Document.TrackingID.In([]uuid.UUID{uuid1, uuid2, uuid3})
 ```
 
 ## URL
@@ -114,10 +114,10 @@ Query optional fields:
 
 ```go
 // Find users with a profile
-filter.User.ProfileID.IsNotNil()
+filter.User.ProfileID.Nil(false)
 
 // Find users without a website
-filter.User.Website.IsNil()
+filter.User.Website.Nil(true)
 ```
 
 ## UUID (gofrs)
@@ -134,7 +134,25 @@ type Resource struct {
 }
 ```
 
-Both `google/uuid` and `gofrs/uuid` are encoded identically using CBOR Tag 37.
+## UUID (stdlib)
+
+Since go 1.27 the standard library ships a `uuid` package, which SOM supports as well:
+
+```go
+import "uuid"
+
+type Resource struct {
+    som.Node[som.ULID]
+
+    ExternalID uuid.UUID
+}
+```
+
+The stdlib package only provides version 4 and version 7 UUIDs. If the model needs
+version 1, 5 or 6, `google/uuid` or `gofrs/uuid` are still required.
+
+All three of `google/uuid`, `gofrs/uuid` and the stdlib `uuid` are encoded identically
+using CBOR Tag 37.
 
 ## Built-in Special Types
 
@@ -199,6 +217,7 @@ Filter operations include `Equal`, `Compare`, `Major()`, `Minor()`, and `Patch()
 | `time.Weekday` | `time` | - | Day of the week |
 | `uuid.UUID` | `github.com/google/uuid` | 37 | Universally unique identifier |
 | `uuid.UUID` | `github.com/gofrs/uuid` | 37 | Universally unique identifier |
+| `uuid.UUID` | `uuid` (stdlib, go 1.27+) | 37 | Universally unique identifier |
 | `url.URL` | `net/url` | - | Web address |
 | `som.Email` | generated | - | Email address string |
 | `som.Password[A]` | generated | - | Auto-hashed password |

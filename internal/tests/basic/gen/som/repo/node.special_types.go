@@ -5,17 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	index "github.com/go-surreal/som/tests/basic/gen/som/index"
-	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
-	relate "github.com/go-surreal/som/tests/basic/gen/som/relate"
-	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
-	"sync"
-	"sync/atomic"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	index "som.test/gen/som/index"
+	internal "som.test/gen/som/internal"
+	query "som.test/gen/som/query"
+	relate "som.test/gen/som/relate"
+	with "som.test/gen/som/with"
+	model "som.test/model"
 )
 
 type SpecialTypesRepo interface {
@@ -53,6 +51,9 @@ type SpecialTypesRepo interface {
 	// Relate returns a new relate builder for the SpecialTypes model.
 
 	Relate() *relate.SpecialTypes
+	// Fetch fetches related records for the given model.
+
+	Fetch(ctx context.Context, specialTypes *model.SpecialTypes, fetch ...with.Fetch_[model.SpecialTypes]) error
 	// Index returns a new index instance for the SpecialTypes model.
 
 	Index() *index.SpecialTypes
@@ -109,8 +110,8 @@ type SpecialTypesRepo interface {
 
 // specialTypesRepoInfo holds the model-specific conversion functions for SpecialTypes.
 var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.SpecialTypes, error) {
-		raw, err := dbCreateNew[conv.SpecialTypes](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.SpecialTypes, error) {
+		raw, err := dbCreateNew[conv.SpecialTypes](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}
@@ -176,8 +177,7 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 			db:     c.db,
 			name:   "special_types",
 			info:   specialTypesRepoInfo,
-			newID:  newUUID,
-			idFunc: "rand::uuid()",
+			autoID: true,
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("special_types", parseUUID(id))
 				return &rid
@@ -188,176 +188,6 @@ func (c *ClientImpl) SpecialTypesRepo() SpecialTypesRepo {
 
 type specialTypes struct {
 	*repo[model.SpecialTypes, string]
-	mu           sync.RWMutex
-	beforeCreate []specialTypesHook
-	afterCreate  []specialTypesHook
-	beforeUpdate []specialTypesHook
-	afterUpdate  []specialTypesHook
-	beforeDelete []specialTypesHook
-	afterDelete  []specialTypesHook
-}
-
-type specialTypesHook struct {
-	id uint64
-	fn func(ctx context.Context, node *model.SpecialTypes) error
-}
-
-var specialTypesHookCounter atomic.Uint64
-
-// OnBeforeCreate registers a hook that runs before a record is created.
-// If the hook returns an error, the create operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialTypes) OnBeforeCreate(fn func(ctx context.Context, node *model.SpecialTypes) error) func() {
-	id := specialTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeCreate = append(r.beforeCreate, specialTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeCreate {
-			if h.id == id {
-				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterCreate registers a hook that runs after a record has been created.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialTypes) OnAfterCreate(fn func(ctx context.Context, node *model.SpecialTypes) error) func() {
-	id := specialTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterCreate = append(r.afterCreate, specialTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterCreate {
-			if h.id == id {
-				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeUpdate registers a hook that runs before a record is updated.
-// If the hook returns an error, the update operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialTypes) OnBeforeUpdate(fn func(ctx context.Context, node *model.SpecialTypes) error) func() {
-	id := specialTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeUpdate = append(r.beforeUpdate, specialTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeUpdate {
-			if h.id == id {
-				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterUpdate registers a hook that runs after a record has been updated.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialTypes) OnAfterUpdate(fn func(ctx context.Context, node *model.SpecialTypes) error) func() {
-	id := specialTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterUpdate = append(r.afterUpdate, specialTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterUpdate {
-			if h.id == id {
-				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeDelete registers a hook that runs before a record is deleted.
-// If the hook returns an error, the delete operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialTypes) OnBeforeDelete(fn func(ctx context.Context, node *model.SpecialTypes) error) func() {
-	id := specialTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeDelete = append(r.beforeDelete, specialTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeDelete {
-			if h.id == id {
-				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterDelete registers a hook that runs after a record has been deleted.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *specialTypes) OnAfterDelete(fn func(ctx context.Context, node *model.SpecialTypes) error) func() {
-	id := specialTypesHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterDelete = append(r.afterDelete, specialTypesHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterDelete {
-			if h.id == id {
-				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
-				return
-			}
-		}
-	}
 }
 
 // Query returns a new query builder for the SpecialTypes model.
@@ -366,7 +196,7 @@ func (r *specialTypes) Query() query.Builder[model.SpecialTypes] {
 }
 
 // Create creates a new record for the SpecialTypes model.
-// The ID will be generated automatically as a ULID.
+// The ID will be generated automatically as a UUID.
 // Before- and after-create hooks are invoked.
 func (r *specialTypes) Create(ctx context.Context, specialTypes *model.SpecialTypes) error {
 	if specialTypes == nil {
@@ -375,36 +205,14 @@ func (r *specialTypes) Create(ctx context.Context, specialTypes *model.SpecialTy
 	if specialTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(specialTypes).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]specialTypesHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, specialTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, specialTypes); err != nil {
+		return err
 	}
 	if err := r.create(ctx, specialTypes); err != nil {
 		return err
 	}
-	if h, ok := any(specialTypes).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]specialTypesHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, specialTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, specialTypes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -421,36 +229,14 @@ func (r *specialTypes) CreateWithID(ctx context.Context, id string, specialTypes
 	if specialTypes.ID() != "" {
 		return errors.New("given node already has an id")
 	}
-	if h, ok := any(specialTypes).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]specialTypesHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, specialTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, specialTypes); err != nil {
+		return err
 	}
 	if err := r.createWithID(ctx, id, specialTypes); err != nil {
 		return err
 	}
-	if h, ok := any(specialTypes).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]specialTypesHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, specialTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, specialTypes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -469,40 +255,14 @@ func (r *specialTypes) Insert(ctx context.Context, nodes []*model.SpecialTypes) 
 			return errors.New("node already has an id")
 		}
 	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]specialTypesHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnBeforeCreateHook); ok {
-			if err := h.OnBeforeCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range beforeCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
+	if err := r.runHooksAll(ctx, beforeCreate, nodes); err != nil {
+		return err
 	}
 	if err := r.insert(ctx, nodes); err != nil {
 		return err
 	}
-	r.mu.RLock()
-	afterCreateHooks := make([]specialTypesHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, n := range nodes {
-		if h, ok := any(n).(som.OnAfterCreateHook); ok {
-			if err := h.OnAfterCreate(ctx); err != nil {
-				return err
-			}
-		}
-		for _, h := range afterCreateHooks {
-			if err := h.fn(ctx, n); err != nil {
-				return err
-			}
-		}
+	if err := r.runHooksAll(ctx, afterCreate, nodes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -550,36 +310,14 @@ func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTy
 	if specialTypes.ID() == "" {
 		return errors.New("cannot update SpecialTypes without existing record ID")
 	}
-	if h, ok := any(specialTypes).(som.OnBeforeUpdateHook); ok {
-		if err := h.OnBeforeUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeUpdateHooks := make([]specialTypesHook, len(r.beforeUpdate))
-	copy(beforeUpdateHooks, r.beforeUpdate)
-	r.mu.RUnlock()
-	for _, h := range beforeUpdateHooks {
-		if err := h.fn(ctx, specialTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeUpdate, specialTypes); err != nil {
+		return err
 	}
 	if err := r.update(ctx, r.recordID(string(specialTypes.ID())), specialTypes); err != nil {
 		return err
 	}
-	if h, ok := any(specialTypes).(som.OnAfterUpdateHook); ok {
-		if err := h.OnAfterUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterUpdateHooks := make([]specialTypesHook, len(r.afterUpdate))
-	copy(afterUpdateHooks, r.afterUpdate)
-	r.mu.RUnlock()
-	for _, h := range afterUpdateHooks {
-		if err := h.fn(ctx, specialTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterUpdate, specialTypes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -596,37 +334,15 @@ func (r *specialTypes) Delete(ctx context.Context, specialTypes *model.SpecialTy
 	if specialTypes.SoftDelete.IsDeleted() {
 		return som.ErrAlreadyDeleted
 	}
-	if h, ok := any(specialTypes).(som.OnBeforeDeleteHook); ok {
-		if err := h.OnBeforeDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeDeleteHooks := make([]specialTypesHook, len(r.beforeDelete))
-	copy(beforeDeleteHooks, r.beforeDelete)
-	r.mu.RUnlock()
-	for _, h := range beforeDeleteHooks {
-		if err := h.fn(ctx, specialTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeDelete, specialTypes); err != nil {
+		return err
 	}
 	version := specialTypes.Version()
 	if err := r.delete(ctx, r.recordID(string(specialTypes.ID())), specialTypes, true, &version); err != nil {
 		return err
 	}
-	if h, ok := any(specialTypes).(som.OnAfterDeleteHook); ok {
-		if err := h.OnAfterDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterDeleteHooks := make([]specialTypesHook, len(r.afterDelete))
-	copy(afterDeleteHooks, r.afterDelete)
-	r.mu.RUnlock()
-	for _, h := range afterDeleteHooks {
-		if err := h.fn(ctx, specialTypes); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterDelete, specialTypes); err != nil {
+		return err
 	}
 	return nil
 }
@@ -684,6 +400,34 @@ func (r *specialTypes) Refresh(ctx context.Context, specialTypes *model.SpecialT
 		return errors.New("cannot refresh SpecialTypes without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(string(specialTypes.ID())), specialTypes)
+}
+
+// Fetch fetches related records for the given model based on the specified fetch fields.
+// The model is updated in-place with the fetched relations.
+func (r *specialTypes) Fetch(ctx context.Context, specialTypes *model.SpecialTypes, fetch ...with.Fetch_[model.SpecialTypes]) error {
+	if specialTypes == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if specialTypes.ID() == "" {
+		return errors.New("cannot fetch SpecialTypes without existing record ID")
+	}
+	var requestedBits uint64
+	for _, f := range fetch {
+		if field := fmt.Sprintf("%v", f); field != "" {
+			requestedBits |= with.SpecialTypesFetchBit(field)
+		}
+	}
+	alreadyFetched := specialTypes.Node.GetFetched()
+	if requestedBits&^alreadyFetched == 0 {
+		return nil
+	}
+	allBits := alreadyFetched | requestedBits
+	fetchFields := with.SpecialTypesFetchFields(allBits)
+	err := r.fetch(ctx, r.recordID(string(specialTypes.ID())), specialTypes, fetchFields)
+	if err == nil {
+		specialTypes.Node.SetFetched(allBits)
+	}
+	return err
 }
 
 // Relate returns a new relate instance for the SpecialTypes model.

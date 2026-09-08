@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	stduuid "uuid"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 	gofrsuuid "github.com/gofrs/uuid"
 	"github.com/google/uuid"
 )
 
 type AllTypes struct {
-	som.Node[som.ULID]
+	som.Node[som.ULID] `som:"changefeed=1d"`
 	som.Timestamps
 
 	// basic types
@@ -108,6 +109,11 @@ type AllTypes struct {
 	FieldUUIDGofrsNil   *gofrsuuid.UUID
 	FieldUUIDGofrsSlice []gofrsuuid.UUID
 
+	FieldUUIDStd      stduuid.UUID
+	FieldUUIDStdPtr   *stduuid.UUID
+	FieldUUIDStdNil   *stduuid.UUID
+	FieldUUIDStdSlice []stduuid.UUID
+
 	FieldURL      url.URL
 	FieldURLPtr   *url.URL
 	FieldURLNil   *url.URL
@@ -133,18 +139,18 @@ type AllTypes struct {
 
 	// structs
 
-	FieldCredentials             Credentials
-	FieldNestedDataPtr           *NestedData
-	FieldNestedDataSlice         []NestedData
-	FieldNestedDataPtrSlice      []*NestedData
-	FieldNestedDataPtrSlicePtr   *[]*NestedData
+	FieldCredentials           Credentials
+	FieldNestedDataPtr         *NestedData
+	FieldNestedDataSlice       []NestedData
+	FieldNestedDataPtrSlice    []*NestedData
+	FieldNestedDataPtrSlicePtr *[]*NestedData
 
 	// nodes
 
-	FieldNode       SpecialTypes   // node
-	FieldNodePtr    *SpecialTypes  // node pointer
-	FieldNodeSlice      []SpecialTypes // slice of Nodes
-	FieldNodeSliceSlice [][]SpecialTypes
+	FieldNode            SpecialTypes   // node
+	FieldNodePtr         *SpecialTypes  // node pointer
+	FieldNodeSlice       []SpecialTypes // slice of Nodes
+	FieldNodeSliceSlice  [][]SpecialTypes
 	FieldNodePtrSlice    []*SpecialTypes
 	FieldNodePtrSlicePtr *[]*SpecialTypes
 
@@ -242,8 +248,8 @@ type EdgeRelation struct {
 	som.Edge
 	som.Timestamps
 
-	AllTypes     AllTypes      `som:"in"`
-	SpecialTypes SpecialTypes  `som:"out"`
+	AllTypes     AllTypes     `som:"in"`
+	SpecialTypes SpecialTypes `som:"out"`
 
 	Meta EdgeMeta
 }
@@ -251,4 +257,14 @@ type EdgeRelation struct {
 type EdgeMeta struct {
 	IsAdmin  bool
 	IsActive bool
+}
+
+// AllTypesSummary is a read-only view aggregating AllTypes records,
+// grouped by FieldString.
+type AllTypesSummary struct {
+	som.View
+
+	Category string
+	Total    int
+	AvgValue float64
 }

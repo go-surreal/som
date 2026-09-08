@@ -18,7 +18,7 @@ Define an enum by creating a string type with constants:
 ```go
 package model
 
-type Status string
+type Status som.Enum
 
 const (
     StatusActive   Status = "active"
@@ -26,11 +26,8 @@ const (
     StatusPending  Status = "pending"
 )
 
-// Enum marker method (required)
-func (s Status) Enum() {}
-
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name   string
     Status Status   // Required enum
@@ -41,7 +38,7 @@ type User struct {
 ### Multiple Enums
 
 ```go
-type Role string
+type Role som.Enum
 
 const (
     RoleAdmin     Role = "admin"
@@ -50,7 +47,6 @@ const (
     RoleGuest     Role = "guest"
 )
 
-func (r Role) Enum() {}
 ```
 
 ## Schema
@@ -79,10 +75,10 @@ filter.User.Status.NotEqual(model.StatusPending)
 
 ```go
 // Value in set
-filter.User.Role.In(model.RoleAdmin, model.RoleModerator)
+filter.User.Role.In([]model.Role{model.RoleAdmin, model.RoleModerator})
 
 // Value not in set
-filter.User.Role.NotIn(model.RoleGuest)
+filter.User.Role.NotIn([]model.Role{model.RoleGuest})
 ```
 
 ### Comparison Operations
@@ -99,10 +95,10 @@ filter.User.Status.GreaterThan(model.StatusActive)
 
 ```go
 // Check if nil
-filter.User.Role.IsNil()
+filter.User.Role.Nil(true)
 
 // Check if not nil
-filter.User.Role.IsNotNil()
+filter.User.Role.Nil(false)
 ```
 
 ### Zero Value Check
@@ -142,7 +138,7 @@ activeUsers, _ := client.UserRepo().Query().
 // Admins or moderators
 privilegedUsers, _ := client.UserRepo().Query().
     Where(
-        filter.User.Role.In(model.RoleAdmin, model.RoleModerator),
+        filter.User.Role.In([]model.Role{model.RoleAdmin, model.RoleModerator}),
     ).
     All(ctx)
 ```
@@ -161,7 +157,7 @@ nonGuests, _ := client.UserRepo().Query().
 ```go
 // Users with role set, or default to user
 usersWithRole, _ := client.UserRepo().Query().
-    Where(filter.User.Role.IsNotNil()).
+    Where(filter.User.Role.Nil(false)).
     All(ctx)
 ```
 
@@ -183,7 +179,7 @@ Enums can be used in slices:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Name  string
     Roles []Role  // Multiple roles
@@ -201,7 +197,7 @@ admins, _ := client.UserRepo().Query().
 // Users with any privileged role
 privileged, _ := client.UserRepo().Query().
     Where(
-        filter.User.Roles.ContainsAny(model.RoleAdmin, model.RoleModerator),
+        filter.User.Roles.ContainsAny([]model.Role{model.RoleAdmin, model.RoleModerator}),
     ).
     All(ctx)
 ```
@@ -221,7 +217,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create user with enum
     user := &model.User{
@@ -240,13 +236,13 @@ func main() {
     // Find admins and moderators
     privileged, _ := client.UserRepo().Query().
         Where(
-            filter.User.Role.In(model.RoleAdmin, model.RoleModerator),
+            filter.User.Role.In([]model.Role{model.RoleAdmin, model.RoleModerator}),
         ).
         All(ctx)
 
     // Find users without role assigned
     noRole, _ := client.UserRepo().Query().
-        Where(filter.User.Role.IsNil()).
+        Where(filter.User.Role.Nil(true)).
         All(ctx)
 
     // Exclude pending users
@@ -318,13 +314,13 @@ if user.Status == "" {
 |-----------|-------------|---------|
 | `Equal(val)` | Exact match | Bool filter |
 | `NotEqual(val)` | Not equal | Bool filter |
-| `In(vals...)` | Value in set | Bool filter |
-| `NotIn(vals...)` | Value not in set | Bool filter |
+| `In(vals []T)` | Value in set | Bool filter |
+| `NotIn(vals []T)` | Value not in set | Bool filter |
 | `LessThan(val)` | Lexicographic < | Bool filter |
 | `LessThanEqual(val)` | Lexicographic <= | Bool filter |
 | `GreaterThan(val)` | Lexicographic > | Bool filter |
 | `GreaterThanEqual(val)` | Lexicographic >= | Bool filter |
 | `Zero(bool)` | Check empty | Bool filter |
 | `Truth()` | To boolean | Bool filter |
-| `IsNil()` | Is null (ptr) | Bool filter |
-| `IsNotNil()` | Not null (ptr) | Bool filter |
+| `Nil(true)` | Is null (ptr) | Bool filter |
+| `Nil(false)` | Not null (ptr) | Bool filter |

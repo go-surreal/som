@@ -2,8 +2,8 @@
 package conv
 
 import (
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	model "github.com/go-surreal/som/tests/basic/model"
+	cbor "som.test/gen/som/internal/cbor"
+	model "som.test/model"
 )
 
 type personKey struct {
@@ -14,12 +14,16 @@ func (c *personKey) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *personKey) fields() map[string]any {
 	data := make(map[string]any, 2)
 
 	data["name"] = c.Name
 	data["age"] = c.Age
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *personKey) UnmarshalCBOR(data []byte) error {

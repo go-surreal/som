@@ -1,0 +1,36 @@
+{{- /* gotype: github.com/go-surreal/som/core/embed.Template */ -}}
+//go:build embed
+
+package lib
+
+import (
+	"uuid"
+
+	"{{.GenerateOutPath}}/internal/types"
+)
+
+type UUIDStd[M any] struct {
+	*Base[M, uuid.UUID, *UUIDStd[M], *Slice[M, uuid.UUID, *UUIDStd[M]]]
+}
+
+func NewUUIDStd[M any](key Key[M]) *UUIDStd[M] {
+	conv := func(val uuid.UUID) any {
+		return types.UUIDStd(val)
+	}
+
+	return &UUIDStd[M]{
+		Base: NewBaseConv[M, uuid.UUID, *UUIDStd[M], *Slice[M, uuid.UUID, *UUIDStd[M]]](key, conv),
+	}
+}
+
+type UUIDStdPtr[M any] struct {
+	*UUIDStd[M]
+	*Nillable[M]
+}
+
+func NewUUIDStdPtr[M any](key Key[M]) *UUIDStdPtr[M] {
+	return &UUIDStdPtr[M]{
+		UUIDStd:  NewUUIDStd[M](key),
+		Nillable: NewNillable[M](key),
+	}
+}

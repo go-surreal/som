@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 	"github.com/paulmach/orb"
 	sfgeom "github.com/peterstace/simplefeatures/geom"
 	"github.com/twpayne/go-geom"

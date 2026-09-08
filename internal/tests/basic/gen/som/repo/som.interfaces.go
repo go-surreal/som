@@ -3,6 +3,7 @@ package repo
 
 import (
 	"context"
+	som "som.test/gen/som"
 	"sync"
 )
 
@@ -11,9 +12,15 @@ type Client interface {
 	TeamMemberRepo() TeamMemberRepo
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
+	SlugRepo() SlugRepo
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
+	EphemeralRepo() EphemeralRepo
 	AllTypesRepo() AllTypesRepo
+	EventSummaryRepo() EventSummaryRepo
+	AllTypesSummaryRepo() AllTypesSummaryRepo
+	EventLogRepo() EventLogRepo
+	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
 	Close()
 }
@@ -25,7 +32,15 @@ type ClientImpl struct {
 	teamMemberRepo      *teamMember
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
+	slugRepo            *slug
 	personObjRepo       *personObj
 	locationRepo        *location
+	ephemeralRepo       *ephemeral
 	allTypesRepo        *allTypes
+	eventSummaryRepo    *eventSummary
+	allTypesSummaryRepo *allTypesSummary
+	eventLogRepo        *eventLog
 }
+
+// expiryTables lists tables with a configured expiry, purged in the background.
+var expiryTables = []string{"ephemeral"}

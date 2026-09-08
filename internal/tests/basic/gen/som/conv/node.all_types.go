@@ -2,12 +2,13 @@
 package conv
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"net/url"
+	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
+	cbor "som.test/gen/som/internal/cbor"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
 	"time"
 )
 
@@ -19,7 +20,11 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
-	data := make(map[string]any, 100)
+	return cbor.Marshal(c.fields())
+}
+
+func (c *AllTypes) fields() map[string]any {
+	data := make(map[string]any, 104)
 
 	// Embedded som.Node/Edge ID field
 	if c.ID() != "" {
@@ -180,32 +185,52 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	if c.FieldUUIDGofrsSlice != nil {
 		data["field_uuid_gofrs_slice"] = c.FieldUUIDGofrsSlice
 	}
-	data["field_url"] = fromURL(c.FieldURL)
+	{
+		uuidVal := types.UUIDStd(c.FieldUUIDStd)
+		data["field_uuid_std"] = &uuidVal
+	}
+	if c.FieldUUIDStdPtr != nil {
+		uuidVal := types.UUIDStd(*c.FieldUUIDStdPtr)
+		data["field_uuid_std_ptr"] = &uuidVal
+	}
+	if c.FieldUUIDStdNil != nil {
+		uuidVal := types.UUIDStd(*c.FieldUUIDStdNil)
+		data["field_uuid_std_nil"] = &uuidVal
+	}
+	if c.FieldUUIDStdSlice != nil {
+		data["field_uuid_std_slice"] = c.FieldUUIDStdSlice
+	}
+	data["field_url"] = (*types.URL)(&c.FieldURL)
 	if c.FieldURLPtr != nil {
-		data["field_url_ptr"] = fromURLPtr(c.FieldURLPtr)
+		data["field_url_ptr"] = (*types.URL)(c.FieldURLPtr)
 	}
 	if c.FieldURLNil != nil {
-		data["field_url_nil"] = fromURLPtr(c.FieldURLNil)
+		data["field_url_nil"] = (*types.URL)(c.FieldURLNil)
 	}
 	if c.FieldURLSlice != nil {
-		data["field_url_slice"] = c.FieldURLSlice
+		src := c.FieldURLSlice
+		convSlice := make([]*types.URL, len(src))
+		for i := range src {
+			convSlice[i] = (*types.URL)(&src[i])
+		}
+		data["field_url_slice"] = convSlice
 	}
-	data["field_email"] = fromEmail(c.FieldEmail)
+	data["field_email"] = c.FieldEmail
 	if c.FieldEmailPtr != nil {
-		data["field_email_ptr"] = fromEmailPtr(c.FieldEmailPtr)
+		data["field_email_ptr"] = c.FieldEmailPtr
 	}
 	if c.FieldEmailNil != nil {
-		data["field_email_nil"] = fromEmailPtr(c.FieldEmailNil)
+		data["field_email_nil"] = c.FieldEmailNil
 	}
 	if c.FieldEmailSlice != nil {
 		data["field_email_slice"] = c.FieldEmailSlice
 	}
-	data["field_sem_ver"] = fromSemVer(c.FieldSemVer)
+	data["field_sem_ver"] = c.FieldSemVer
 	if c.FieldSemVerPtr != nil {
-		data["field_sem_ver_ptr"] = fromSemVerPtr(c.FieldSemVerPtr)
+		data["field_sem_ver_ptr"] = c.FieldSemVerPtr
 	}
 	if c.FieldSemVerNil != nil {
-		data["field_sem_ver_nil"] = fromSemVerPtr(c.FieldSemVerNil)
+		data["field_sem_ver_nil"] = c.FieldSemVerNil
 	}
 	if c.FieldSemVerSlice != nil {
 		data["field_sem_ver_slice"] = c.FieldSemVerSlice
@@ -318,7 +343,7 @@ func (c *AllTypes) MarshalCBOR() ([]byte, error) {
 	data["field_hook_status"] = c.FieldHookStatus
 	data["field_hook_detail"] = c.FieldHookDetail
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *AllTypes) UnmarshalCBOR(data []byte) error {
@@ -327,7 +352,7 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	// Embedded som.Node/Edge ID field
+	// Embedded som.Node/Edge/View ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
@@ -544,56 +569,69 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 	if raw, ok := rawMap["field_uuid_gofrs_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldUUIDGofrsSlice)
 	}
+	if raw, ok := rawMap["field_uuid_std"]; ok {
+		c.FieldUUIDStd, _ = cbor.UnmarshalUUIDStd(raw)
+	}
+	if raw, ok := rawMap["field_uuid_std_ptr"]; ok {
+		c.FieldUUIDStdPtr, _ = cbor.UnmarshalUUIDStdPtr(raw)
+	}
+	if raw, ok := rawMap["field_uuid_std_nil"]; ok {
+		c.FieldUUIDStdNil, _ = cbor.UnmarshalUUIDStdPtr(raw)
+	}
+	if raw, ok := rawMap["field_uuid_std_slice"]; ok {
+		cbor.Unmarshal(raw, &c.FieldUUIDStdSlice)
+	}
 	if raw, ok := rawMap["field_url"]; ok {
-		var convVal string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldURL = toURL(convVal)
+		cbor.Unmarshal(raw, (*types.URL)(&c.FieldURL))
 	}
 	if raw, ok := rawMap["field_url_ptr"]; ok {
-		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldURLPtr = toURLPtr(convVal)
+		if cbor.IsNoneOrNull(raw) {
+			c.FieldURLPtr = nil
+		} else {
+			var convVal url.URL
+			cbor.Unmarshal(raw, (*types.URL)(&convVal))
+			c.FieldURLPtr = &convVal
+		}
 	}
 	if raw, ok := rawMap["field_url_nil"]; ok {
-		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldURLNil = toURLPtr(convVal)
+		if cbor.IsNoneOrNull(raw) {
+			c.FieldURLNil = nil
+		} else {
+			var convVal url.URL
+			cbor.Unmarshal(raw, (*types.URL)(&convVal))
+			c.FieldURLNil = &convVal
+		}
 	}
 	if raw, ok := rawMap["field_url_slice"]; ok {
-		cbor.Unmarshal(raw, &c.FieldURLSlice)
+		var convSlice []types.URL
+		cbor.Unmarshal(raw, &convSlice)
+		{
+			c.FieldURLSlice = make([]url.URL, len(convSlice))
+			for i, v := range convSlice {
+				c.FieldURLSlice[i] = url.URL(v)
+			}
+		}
 	}
 	if raw, ok := rawMap["field_email"]; ok {
-		var convVal string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldEmail = toEmail(convVal)
+		cbor.Unmarshal(raw, &c.FieldEmail)
 	}
 	if raw, ok := rawMap["field_email_ptr"]; ok {
-		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldEmailPtr = toEmailPtr(convVal)
+		cbor.Unmarshal(raw, &c.FieldEmailPtr)
 	}
 	if raw, ok := rawMap["field_email_nil"]; ok {
-		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldEmailNil = toEmailPtr(convVal)
+		cbor.Unmarshal(raw, &c.FieldEmailNil)
 	}
 	if raw, ok := rawMap["field_email_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldEmailSlice)
 	}
 	if raw, ok := rawMap["field_sem_ver"]; ok {
-		var convVal string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldSemVer = toSemVer(convVal)
+		cbor.Unmarshal(raw, &c.FieldSemVer)
 	}
 	if raw, ok := rawMap["field_sem_ver_ptr"]; ok {
-		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldSemVerPtr = toSemVerPtr(convVal)
+		cbor.Unmarshal(raw, &c.FieldSemVerPtr)
 	}
 	if raw, ok := rawMap["field_sem_ver_nil"]; ok {
-		var convVal *string
-		cbor.Unmarshal(raw, &convVal)
-		c.FieldSemVerNil = toSemVerPtr(convVal)
+		cbor.Unmarshal(raw, &c.FieldSemVerNil)
 	}
 	if raw, ok := rawMap["field_sem_ver_slice"]; ok {
 		cbor.Unmarshal(raw, &c.FieldSemVerSlice)
@@ -768,6 +806,11 @@ func ToAllTypesPtr(data *AllTypes) *model.AllTypes {
 	}
 	result := data.AllTypes
 	return &result
+}
+
+func AllTypesFields(m *model.AllTypes) map[string]any {
+	c := AllTypes{*m}
+	return c.fields()
 }
 
 type allTypesLink struct {

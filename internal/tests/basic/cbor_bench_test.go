@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/conv"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/gen/som/conv"
+	"som.test/model"
 	"github.com/google/uuid"
 )
 
@@ -16,7 +16,7 @@ func BenchmarkConvMarshal(b *testing.B) {
 
 	c := conv.AllTypes{
 		AllTypes: model.AllTypes{
-			Node:     som.NewNode[som.ULID](som.ULID(uuid.New().String())),
+			Node:          som.NewNode[som.ULID](som.ULID(uuid.New().String())),
 			FieldString:   "test string",
 			FieldInt:      42,
 			FieldFloat64:  3.14,
@@ -44,7 +44,7 @@ func BenchmarkConvUnmarshal(b *testing.B) {
 
 	c := conv.AllTypes{
 		AllTypes: model.AllTypes{
-			Node:     som.NewNode[som.ULID](som.ULID(uuid.New().String())),
+			Node:          som.NewNode[som.ULID](som.ULID(uuid.New().String())),
 			FieldString:   "test string",
 			FieldInt:      42,
 			FieldFloat64:  3.14,
@@ -78,7 +78,7 @@ func BenchmarkConvRoundTrip(b *testing.B) {
 
 	c := conv.AllTypes{
 		AllTypes: model.AllTypes{
-			Node:     som.NewNode[som.ULID](som.ULID(uuid.New().String())),
+			Node:          som.NewNode[som.ULID](som.ULID(uuid.New().String())),
 			FieldString:   "test string",
 			FieldInt:      42,
 			FieldFloat64:  3.14,

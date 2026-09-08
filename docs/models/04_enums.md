@@ -1,27 +1,28 @@
 # Enums
 
-SOM provides support for enumerated types through the `som.Enum` interface. Enums are stored as strings in SurrealDB but provide type safety in Go.
+SOM supports enumerated types via `som.Enum`. Enums are stored as strings in SurrealDB but keep
+type safety in Go.
 
 ## Defining an Enum
 
-Create an enum by defining a string type and implementing the `som.Enum` interface:
+Declare a type whose underlying type is `som.Enum`, inside your model package:
 
 ```go
 package model
 
-type Status string
+import "yourproject/gen/som"
+
+type Status som.Enum
 
 const (
     StatusPending  Status = "pending"
     StatusActive   Status = "active"
     StatusInactive Status = "inactive"
 )
-
-// Implement som.Enum interface
-func (s Status) Enum() {}
 ```
 
-The `Enum()` method is a marker that tells SOM to treat this type as an enumeration.
+Any type declared as `som.Enum` in the model package is picked up by the generator as an
+enumeration. No marker method is required; the constants define the allowed values.
 
 ## Using Enums in Models
 
@@ -49,7 +50,7 @@ type Order struct {
 Define constants for all valid values:
 
 ```go
-type Priority string
+type Priority som.Enum
 
 const (
     PriorityLow    Priority = "low"
@@ -58,7 +59,6 @@ const (
     PriorityCritical Priority = "critical"
 )
 
-func (p Priority) Enum() {}
 ```
 
 ## Type-Safe Queries
@@ -73,10 +73,10 @@ users, err := client.UserRepo().Query().
 
 // Filter with In (multiple values)
 users, err := client.UserRepo().Query().
-    Where(filter.User.Status.In(
+    Where(filter.User.Status.In([]model.Status{
         model.StatusActive,
         model.StatusPending,
-    )).
+    })).
     All(ctx)
 
 // Filter with NotEqual
@@ -93,15 +93,15 @@ Enum fields support these operations:
 |-----------|-------------|
 | `Equal(val)` | Equals value |
 | `NotEqual(val)` | Not equals value |
-| `In(vals...)` | Value is one of |
-| `NotIn(vals...)` | Value is not one of |
+| `In(vals []T)` | Value is one of |
+| `NotIn(vals []T)` | Value is not one of |
 
 ## Enum Slices
 
 Use slices of enums for multiple values:
 
 ```go
-type Role string
+type Role som.Enum
 
 const (
     RoleAdmin  Role = "admin"
@@ -109,7 +109,6 @@ const (
     RoleViewer Role = "viewer"
 )
 
-func (r Role) Enum() {}
 
 type User struct {
     som.Node[som.ULID]
@@ -129,10 +128,10 @@ users, err := client.UserRepo().Query().
 
 // Find users with any of these roles
 users, err := client.UserRepo().Query().
-    Where(filter.User.Roles.ContainsAny(
+    Where(filter.User.Roles.ContainsAny([]model.Role{
         model.RoleAdmin,
         model.RoleEditor,
-    )).
+    })).
     All(ctx)
 ```
 
@@ -155,7 +154,7 @@ Filter optional enums:
 ```go
 // Find users with priority set
 users, err := client.UserRepo().Query().
-    Where(filter.User.Priority.IsNotNil()).
+    Where(filter.User.Priority.Nil(false)).
     All(ctx)
 
 // Find high priority users
@@ -197,7 +196,7 @@ const (
 
 ```go
 // order_status.go
-type OrderStatus string
+type OrderStatus som.Enum
 
 const (
     OrderStatusPending   OrderStatus = "pending"
@@ -205,7 +204,6 @@ const (
     // ...
 )
 
-func (s OrderStatus) Enum() {}
 ```
 
 ### Document Valid Values
@@ -213,7 +211,7 @@ func (s OrderStatus) Enum() {}
 ```go
 // PaymentMethod represents accepted payment types.
 // Valid values: credit_card, debit_card, bank_transfer, crypto
-type PaymentMethod string
+type PaymentMethod som.Enum
 
 const (
     PaymentCreditCard   PaymentMethod = "credit_card"
@@ -222,7 +220,6 @@ const (
     PaymentCrypto       PaymentMethod = "crypto"
 )
 
-func (p PaymentMethod) Enum() {}
 ```
 
 ## Benefits

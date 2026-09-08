@@ -23,6 +23,27 @@ var ReservedDBNames = map[string]bool{
 	"created_at": true,
 	"updated_at": true,
 	"deleted_at": true,
+	"expires_at": true,
+}
+
+// validExpiryDuration matches SurrealDB duration literals as used in the som.Expiry struct tag,
+// e.g. "24h", "7d", "1w", "500ms". Units follow SurrealDB semantics, which are
+// broader than Go's time.ParseDuration (it additionally supports d, w and y).
+var validExpiryDuration = regexp.MustCompile(`^([0-9]+(ns|us|µs|ms|s|m|h|d|w|y))+$`)
+
+// parseExpiryTag validates the duration declared on a som.Expiry embed. The whole
+// som tag value is the duration (e.g. `som:"24h"`), since the embed already
+// conveys the expiry intent. It returns the raw duration string (embedded
+// verbatim into the generated schema) or an error.
+func parseExpiryTag(tag string) (string, error) {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return "", fmt.Errorf("som.Expiry embed requires a duration via `som:\"<duration>\"` (e.g. som:\"24h\")")
+	}
+	if !validExpiryDuration.MatchString(tag) {
+		return "", fmt.Errorf("som.Expiry embed: %q is not a valid duration", tag)
+	}
+	return tag, nil
 }
 
 // activeFieldRegistry is set at the start of Parse() so that
@@ -158,6 +179,23 @@ type TagInfo struct {
 	Search  *SearchInfo
 }
 
+// ParseChangefeedTag extracts the changefeed duration from a som tag.
+// Tag format: som:"changefeed=2d" returns "2d"
+func ParseChangefeedTag(tag string) string {
+	if tag == "" {
+		return ""
+	}
+
+	parts := strings.Split(tag, ",")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if strings.HasPrefix(part, "changefeed=") {
+			return strings.TrimPrefix(part, "changefeed=")
+		}
+	}
+	return ""
+}
+
 // parseSomTag parses the "som" struct tag and extracts field metadata.
 // All parameterized options use key=value syntax:
 //
@@ -227,6 +265,9 @@ func parseSomTag(tag string) (*TagInfo, error) {
 			}
 			info.Search = &SearchInfo{ConfigName: value}
 
+		case "changefeed":
+			// Handled separately at the node/edge level via ParseChangefeedTag.
+
 		default:
 			return nil, fmt.Errorf("unknown som tag %q", part)
 		}
@@ -239,6 +280,8 @@ type Output struct {
 	PkgPath    string
 	Nodes      []*Node
 	Edges      []*Edge
+	Views      []*View
+	Sinks      []*Sink
 	Structs    []*Struct
 	Enums      []*Enum
 	EnumValues []*EnumValue
@@ -249,11 +292,12 @@ type Output struct {
 }
 
 type UsedFeatures struct {
-	UsesGoogleUUID       bool
-	UsesGofrsUUID        bool
-	UsesOrbGeo           bool
+	UsesGoogleUUID        bool
+	UsesGofrsUUID         bool
+	UsesStdUUID           bool
+	UsesOrbGeo            bool
 	UsesSimplefeaturesGeo bool
-	UsesGoGeomGeo        bool
+	UsesGoGeomGeo         bool
 }
 
 func collectUsedFeatures(output *Output) *UsedFeatures {
@@ -268,6 +312,8 @@ func collectUsedFeatures(output *Output) *UsedFeatures {
 				features.UsesGoogleUUID = true
 			case UUIDPackageGofrs:
 				features.UsesGofrsUUID = true
+			case UUIDPackageStd:
+				features.UsesStdUUID = true
 			}
 		case *FieldGeometry:
 			switch field.Package {

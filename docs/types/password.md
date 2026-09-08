@@ -26,14 +26,14 @@ SOM supports four password hashing algorithms:
 
 ```go
 type User struct {
-    som.Node
+    som.Node[som.ULID]
 
     Username string
     Password som.Password[som.Bcrypt]  // Required, using Bcrypt
 }
 
 type Admin struct {
-    som.Node
+    som.Node[som.ULID]
 
     Email    string
     Password som.Password[som.Argon2]   // Required, using Argon2
@@ -147,10 +147,10 @@ This uses the appropriate crypto comparison function for the password's algorith
 
 ```go
 // Check if optional password is set
-filter.Admin.Recovery.IsNil()
+filter.Admin.Recovery.Nil(true)
 
 // Check if optional password exists
-filter.Admin.Recovery.IsNotNil()
+filter.Admin.Recovery.Nil(false)
 ```
 
 ### Zero Value Check
@@ -192,7 +192,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    client, _ := som.NewClient(ctx, som.Config{...})
+    client, _ := repo.NewClient(ctx, repo.Config{...})
 
     // Create user with password
     user := &model.User{
@@ -212,7 +212,7 @@ func main() {
 
     // Find users with recovery password set
     adminsWithRecovery, _ := client.AdminRepo().Query().
-        Where(filter.Admin.Recovery.IsNotNil()).
+        Where(filter.Admin.Recovery.Nil(false)).
         All(ctx)
 }
 ```

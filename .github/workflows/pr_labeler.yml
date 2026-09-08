@@ -13,11 +13,11 @@ jobs:
     timeout-minutes: 1
     steps:
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: .github/labeler.yml
 
-      - uses: actions/labeler@v6
+      - uses: actions/labeler@v7
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           sync-labels: true

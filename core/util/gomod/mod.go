@@ -13,9 +13,11 @@ const fileGoMod = "go.mod"
 
 const (
 	minSupportedGoVersion = "1.24"    // suffix '.0' omitted on purpose!
-	maxSupportedGoVersion = "1.26.99" // allow for future patch versions
+	maxSupportedGoVersion = "1.27.99" // allow for future patch versions
 
-	pkgSOM    = "github.com/go-surreal/som"
+	// minStdUUIDGoVersion is the go release that introduced the stdlib uuid package.
+	minStdUUIDGoVersion = "1.27"
+
 	pkgDriver = "github.com/surrealdb/surrealdb.go"
 
 	pkgGoogleWire = "github.com/google/wire"
@@ -27,9 +29,9 @@ const (
 
 	PkgUUIDGoogle = "github.com/google/uuid"
 	PkgUUIDGofrs  = "github.com/gofrs/uuid"
+	PkgUUIDStd    = "uuid"
 
-	requiredSOMVersion    = "v0.17.0"
-	requiredDriverVersion = "v1.4.0"
+	requiredDriverVersion = "v1.7.0"
 
 	MinGeoOrbVersion            = "v0.12.0"
 	MinGeoSimplefeaturesVersion = "v0.58.0"
@@ -116,53 +118,6 @@ func (m *GoMod) CheckGoVersion() (string, error) {
 	return "", nil
 }
 
-func (m *GoMod) CheckSOMVersion(checkLatest bool) (string, error) {
-	for _, require := range m.file.Require {
-		if require.Mod.Path != pkgSOM {
-			continue
-		}
-
-		somVersion, err := versionOrdinal(require.Mod.Version)
-		if err != nil {
-			return "", fmt.Errorf("could not parse som version: %w", err)
-		}
-
-		reqVersion, err := versionOrdinal(requiredSOMVersion)
-		if err != nil {
-			return "", fmt.Errorf("could not parse required som version: %w", err)
-		}
-
-		if somVersion != reqVersion {
-			fmt.Printf("go.mod: setting som version to %s\n", requiredSOMVersion)
-
-			if err := m.file.AddRequire(pkgSOM, requiredSOMVersion); err != nil {
-				return "", err
-			}
-		}
-
-		if checkLatest {
-			latestVersion, err := SOMVersion()
-			if err != nil {
-				return "", fmt.Errorf("could not check latest som version: %w", err)
-			}
-
-			if somVersion < latestVersion {
-				return fmt.Sprintf("newer version of som available: %s (currently: %s)", latestVersion, somVersion), nil
-			}
-		}
-
-		return "", nil
-	}
-
-	fmt.Printf("go.mod: adding som version %s\n", requiredSOMVersion)
-
-	if err := m.file.AddRequire(pkgSOM, requiredSOMVersion); err != nil {
-		return "", err
-	}
-
-	return "", nil
-}
-
 func (m *GoMod) CheckDriverVersion() (string, error) {
 	for _, require := range m.file.Require {
 		if require.Mod.Path != pkgDriver {
@@ -199,6 +154,30 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 	}
 
 	return "", nil
+}
+
+// CheckStdUUIDSupport verifies that the go version declared in go.mod is new
+// enough for the stdlib uuid package. Unlike the third-party uuid packages
+// there is no requirement to add, so a too old version can only be reported.
+func (m *GoMod) CheckStdUUIDSupport() error {
+	goVersion, err := versionOrdinal(m.file.Go.Version)
+	if err != nil {
+		return fmt.Errorf("could not parse go version: %w", err)
+	}
+
+	minVersion, err := versionOrdinal(minStdUUIDGoVersion)
+	if err != nil {
+		return fmt.Errorf("could not parse min go version for stdlib uuid: %w", err)
+	}
+
+	if goVersion < minVersion {
+		return fmt.Errorf(
+			"the stdlib uuid package requires go %s or later, but go.mod declares %s",
+			minStdUUIDGoVersion, m.file.Go.Version,
+		)
+	}
+
+	return nil
 }
 
 // CheckLibVersion checks that a library dependency in go.mod meets the minimum

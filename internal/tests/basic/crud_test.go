@@ -6,15 +6,17 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"gotest.tools/v3/assert"
 )
 
 func TestWithDatabase(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -65,6 +67,8 @@ func TestWithDatabase(t *testing.T) {
 }
 
 func TestMonthWeekdayPointers(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -155,6 +159,8 @@ func TestMonthWeekdayPointers(t *testing.T) {
 }
 
 func TestRefresh(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -181,6 +187,8 @@ func TestRefresh(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -221,6 +229,8 @@ func TestInsert(t *testing.T) {
 }
 
 func TestInsertEmpty(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -234,6 +244,8 @@ func TestInsertEmpty(t *testing.T) {
 }
 
 func TestInsertValidation(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

@@ -1,0 +1,52 @@
+{{- /* gotype: github.com/go-surreal/som/core/embed.Template */ -}}
+//go:build embed
+
+// Package aggregate provides aggregate functions for read-only view
+// projections. Each function wraps a filter field reference and produces an
+// aggregate expression (count, sum, mean, ...) usable as a view projection.
+//
+// Aggregates are deliberately functions rather than methods on filter fields:
+// this keeps them out of the WHERE clause, where aggregates are invalid.
+//
+// Only the incrementally-maintained aggregate set supported by SurrealDB
+// views is exposed (count, sum, mean, min, max, variance, stddev).
+package aggregate
+
+import (
+	"{{.GenerateOutPath}}/internal/lib"
+)
+
+// Count counts the non-null values of the field within each group.
+func Count[M any](f lib.KeyProvider[M]) *lib.Int[M, int] {
+	return lib.Count(f)
+}
+
+// Sum sums the field's values within each group.
+func Sum[M any](f lib.KeyProvider[M]) *lib.Float[M, float64] {
+	return lib.Sum(f)
+}
+
+// Mean returns the arithmetic mean of the field's values within each group.
+func Mean[M any](f lib.KeyProvider[M]) *lib.Float[M, float64] {
+	return lib.Mean(f)
+}
+
+// Min returns the minimum value of the field within each group.
+func Min[M any](f lib.KeyProvider[M]) *lib.Float[M, float64] {
+	return lib.Min(f)
+}
+
+// Max returns the maximum value of the field within each group.
+func Max[M any](f lib.KeyProvider[M]) *lib.Float[M, float64] {
+	return lib.Max(f)
+}
+
+// Variance returns the variance of the field's values within each group.
+func Variance[M any](f lib.KeyProvider[M]) *lib.Float[M, float64] {
+	return lib.Variance(f)
+}
+
+// StdDev returns the standard deviation of the field's values within each group.
+func StdDev[M any](f lib.KeyProvider[M]) *lib.Float[M, float64] {
+	return lib.StdDev(f)
+}

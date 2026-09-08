@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
 )
 
 type Database interface {
@@ -44,8 +44,10 @@ func (r recordID) String() string {
 	return fmt.Sprintf("%s:%v", r.Table, r.ID)
 }
 
+// idNode keeps the record ID in its raw CBOR form, so it can be re-injected
+// as a query variable byte-identically to how the DB encoded it.
 type idNode struct {
-	ID recordID
+	ID cbor.RawMessage
 }
 
 type countResult struct {
@@ -197,6 +199,8 @@ func live[M any](
 	ctx context.Context,
 	in <-chan []byte,
 	info modelInfo[M],
+	fetchBits uint64,
+	setFetched func(*M, uint64),
 ) <-chan LiveResult[*M] {
 	out := make(chan LiveResult[*M], 1)
 
@@ -209,12 +213,16 @@ func live[M any](
 			case <-ctx.Done():
 				return
 
-			case data, open := <-in:
-				if !open {
+			case data, ok := <-in:
+				if !ok {
 					return
 				}
 
-				out <- toLiveResult(data, info)
+				select {
+				case <-ctx.Done():
+					return
+				case out <- toLiveResult(data, info, fetchBits, setFetched):
+				}
 			}
 		}
 	}()
@@ -225,6 +233,8 @@ func live[M any](
 func toLiveResult[M any](
 	in []byte,
 	info modelInfo[M],
+	fetchBits uint64,
+	setFetched func(*M, uint64),
 ) LiveResult[*M] {
 	var response liveResponse
 
@@ -246,6 +256,9 @@ func toLiveResult[M any](
 
 		if out.err == nil {
 			out.res = result
+			if fetchBits != 0 && setFetched != nil {
+				setFetched(out.res, fetchBits)
+			}
 		}
 
 		return &liveCreate[*M]{
@@ -262,6 +275,9 @@ func toLiveResult[M any](
 
 		if out.err == nil {
 			out.res = result
+			if fetchBits != 0 && setFetched != nil {
+				setFetched(out.res, fetchBits)
+			}
 		}
 
 		return &liveUpdate[*M]{
@@ -278,11 +294,17 @@ func toLiveResult[M any](
 
 		if out.err == nil {
 			out.res = result
+			if fetchBits != 0 && setFetched != nil {
+				setFetched(out.res, fetchBits)
+			}
 		}
 
 		return &liveDelete[*M]{
 			liveResult: out,
 		}
+
+	case "killed":
+		return &liveKilled[*M]{}
 
 	default:
 		return &liveResult[*M]{
@@ -310,6 +332,10 @@ type LiveDelete[M any] interface {
 	delete()
 }
 
+type LiveKilled[M any] interface {
+	killed()
+}
+
 type liveCreate[M any] struct {
 	liveResult[M]
 }
@@ -327,6 +353,12 @@ type liveDelete[M any] struct {
 }
 
 func (*liveDelete[M]) delete() {}
+
+type liveKilled[M any] struct{}
+
+func (*liveKilled[M]) live() {}
+
+func (*liveKilled[M]) killed() {}
 
 type liveResult[M any] struct {
 	res M

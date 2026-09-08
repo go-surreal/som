@@ -9,12 +9,14 @@ Each model gets a typed repository accessor on the client:
 ```go
 userRepo := client.UserRepo()
 postRepo := client.PostRepo()
-followsRepo := client.FollowsRepo()  // Edge repository
 ```
+
+Edges do not get their own repository — they are created via the `Relate()` builder of the
+node they start from.
 
 ## Repository Interface
 
-Generated interface for each model:
+Generated interface for each node model:
 
 ```go
 type UserRepo interface {
@@ -26,6 +28,9 @@ type UserRepo interface {
     Delete(ctx context.Context, user *model.User) error
     Refresh(ctx context.Context, user *model.User) error
     Query() query.Builder[model.User]
+
+    // Edge creation for edges starting at this node
+    Relate() *relate.User
 
     // Index access (e.g. per-index Rebuild)
     Index() *index.User
@@ -39,6 +44,17 @@ type UserRepo interface {
     OnAfterDelete(fn func(ctx context.Context, node *model.User) error) func()
 }
 ```
+
+Additional methods appear depending on the features a model uses:
+
+| Method | Present when |
+|--------|--------------|
+| `Erase(ctx, m)` / `Restore(ctx, m)` | Model embeds `som.SoftDelete` |
+| `Changes()` | Model has a changefeed (`som:"changefeed=<duration>"`) |
+
+Models with a [complex ID](../models/01_nodes.md#complex-id-types) differ slightly: there is no
+`Create` or `Insert` (the ID is part of the record), `CreateWithID(ctx, m)` takes only the model,
+and `Read(ctx, key)` takes the typed key struct instead of a string.
 
 ## Create
 
@@ -174,7 +190,7 @@ query := client.UserRepo().Query()
 
 // Chain methods
 users, err := query.
-    Where(filter.User.IsActive.IsTrue()).
+    Where(filter.User.IsActive.True()).
     Order(by.User.Name.Asc()).
     Limit(10).
     All(ctx)
@@ -213,39 +229,46 @@ Available hooks:
 
 Each hook returns an unregister function. Call it to remove the hook.
 
-## Edge Repository (Relate)
+## Relate (Edges)
 
-Edge repositories have an additional `Relate()` method:
+Edges are created through the repository of the node the edge starts from. `Relate()` returns a
+builder with one accessor per edge field declared on that node:
 
 ```go
-type FollowsRepo interface {
-    // Standard CRUD methods...
-    Create(ctx context.Context, follows *model.Follows) error
-    // ...
+type User struct {
+    som.Node[som.ULID]
 
-    // Edge-specific: Relate builder
-    Relate() *relate.Follows
+    Follows []Follows  // edge field
+}
+
+type Follows struct {
+    som.Edge
+
+    From  User `som:"in"`
+    To    User `som:"out"`
+    Since time.Time
 }
 ```
-
-Using Relate:
 
 ```go
 follows := &model.Follows{
+    From:  *alice,   // must already exist (ID set)
+    To:    *bob,     // must already exist (ID set)
     Since: time.Now(),
 }
 
-err := client.FollowsRepo().Relate().
-    From(alice).
-    To(bob).
-    Create(ctx, follows)
+err := client.UserRepo().Relate().Follows().Create(ctx, follows)
 ```
+
+The `in`/`out` node values must carry a non-empty ID, and the edge's own ID must be empty.
+After a successful `Create`, the edge is populated with its generated ID and any database
+defaults. `Update` and `Delete` on edges are not implemented yet.
 
 ## Complete Example
 
 ```go
-func UserService(ctx context.Context, client *som.Client) error {
-    repo := client.UserRepo()
+func UserService(ctx context.Context, client repo.Client) error {
+    userRepo := client.UserRepo()
 
     // Create
     user := &model.User{
@@ -253,13 +276,13 @@ func UserService(ctx context.Context, client *som.Client) error {
         Email:    "alice@example.com",
         IsActive: true,
     }
-    if err := repo.Create(ctx, user); err != nil {
+    if err := userRepo.Create(ctx, user); err != nil {
         return fmt.Errorf("create: %w", err)
     }
     log.Printf("Created user: %s", user.ID())
 
     // Read
-    found, exists, err := repo.Read(ctx, string(user.ID()))
+    found, exists, err := userRepo.Read(ctx, string(user.ID()))
     if err != nil {
         return fmt.Errorf("read: %w", err)
     }
@@ -270,14 +293,14 @@ func UserService(ctx context.Context, client *som.Client) error {
 
     // Update
     user.Name = "Alice Smith"
-    if err := repo.Update(ctx, user); err != nil {
+    if err := userRepo.Update(ctx, user); err != nil {
         return fmt.Errorf("update: %w", err)
     }
     log.Printf("Updated user")
 
     // Query
-    activeUsers, err := repo.Query().
-        Where(filter.User.IsActive.IsTrue()).
+    activeUsers, err := userRepo.Query().
+        Where(filter.User.IsActive.True()).
         All(ctx)
     if err != nil {
         return fmt.Errorf("query: %w", err)
@@ -285,7 +308,7 @@ func UserService(ctx context.Context, client *som.Client) error {
     log.Printf("Found %d active users", len(activeUsers))
 
     // Delete
-    if err := repo.Delete(ctx, user); err != nil {
+    if err := userRepo.Delete(ctx, user); err != nil {
         return fmt.Errorf("delete: %w", err)
     }
     log.Printf("Deleted user")

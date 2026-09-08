@@ -77,12 +77,14 @@ func (b *SearchBuilder) toJSON() searchJSON {
 // Definitions holds all user-defined configurations.
 type Definitions struct {
 	Searches []*SearchBuilder
+	Views    []ViewDefinition
 }
 
 // defineOutputJSON is the JSON structure for all definitions.
 type defineOutputJSON struct {
 	Analyzers []analyzerJSON `json:"analyzers"`
 	Searches  []searchJSON   `json:"searches"`
+	Views     []viewDefJSON  `json:"views"`
 }
 
 // ToJSON serializes all definitions to JSON.
@@ -97,6 +99,10 @@ func (d Definitions) ToJSON() ([]byte, error) {
 			output.Analyzers = append(output.Analyzers, s.analyzer.toJSON())
 		}
 		output.Searches = append(output.Searches, s.toJSON())
+	}
+
+	for _, v := range d.Views {
+		output.Views = append(output.Views, v.viewDef())
 	}
 
 	return json.Marshal(output)

@@ -2,11 +2,11 @@
 package conv
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	som "som.test/gen/som"
+	cbor "som.test/gen/som/internal/cbor"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
 )
 
 type TeamMember struct {
@@ -17,13 +17,17 @@ func (c *TeamMember) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *TeamMember) fields() map[string]any {
 	data := make(map[string]any, 1)
 
 	// Embedded som.Node/Edge ID field
 
 	data["role"] = c.Role
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *TeamMember) UnmarshalCBOR(data []byte) error {
@@ -32,7 +36,7 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	// Embedded som.Node/Edge ID field
+	// Embedded som.Node/Edge/View ID field
 	if raw, ok := rawMap["id"]; ok {
 		var recordID *models.RecordID
 		if err := cbor.Unmarshal(raw, &recordID); err != nil {
@@ -125,6 +129,11 @@ func ToTeamMemberPtr(data *TeamMember) *model.TeamMember {
 	}
 	result := data.TeamMember
 	return &result
+}
+
+func TeamMemberFields(m *model.TeamMember) map[string]any {
+	c := TeamMember{*m}
+	return c.fields()
 }
 
 type teamMemberLink struct {

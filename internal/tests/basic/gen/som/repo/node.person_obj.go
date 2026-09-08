@@ -4,16 +4,15 @@ package repo
 import (
 	"context"
 	"errors"
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	index "github.com/go-surreal/som/tests/basic/gen/som/index"
-	internal "github.com/go-surreal/som/tests/basic/gen/som/internal"
-	query "github.com/go-surreal/som/tests/basic/gen/som/query"
-	model "github.com/go-surreal/som/tests/basic/model"
+	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
-	"slices"
-	"sync"
-	"sync/atomic"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	index "som.test/gen/som/index"
+	internal "som.test/gen/som/internal"
+	query "som.test/gen/som/query"
+	with "som.test/gen/som/with"
+	model "som.test/model"
 )
 
 type PersonObjRepo interface {
@@ -35,6 +34,9 @@ type PersonObjRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, personObj *model.PersonObj) error
+	// Fetch fetches related records for the given model.
+
+	Fetch(ctx context.Context, personObj *model.PersonObj, fetch ...with.Fetch_[model.PersonObj]) error
 	// Index returns a new index instance for the PersonObj model.
 
 	Index() *index.PersonObj
@@ -91,8 +93,8 @@ type PersonObjRepo interface {
 
 // personObjRepoInfo holds the model-specific conversion functions for PersonObj.
 var personObjRepoInfo = RepoInfo[model.PersonObj]{
-	CreateNew: func(ctx context.Context, db *dbConn, idExpr string, data any) (*model.PersonObj, error) {
-		raw, err := dbCreateNew[conv.PersonObj](ctx, db, idExpr, data)
+	CreateNew: func(ctx context.Context, db *dbConn, target string, data any) (*model.PersonObj, error) {
+		raw, err := dbCreateNew[conv.PersonObj](ctx, db, target, data)
 		if err != nil {
 			return nil, err
 		}
@@ -171,176 +173,6 @@ func (c *ClientImpl) PersonObjRepo() PersonObjRepo {
 
 type personObj struct {
 	*repo[model.PersonObj, model.PersonKey]
-	mu           sync.RWMutex
-	beforeCreate []personObjHook
-	afterCreate  []personObjHook
-	beforeUpdate []personObjHook
-	afterUpdate  []personObjHook
-	beforeDelete []personObjHook
-	afterDelete  []personObjHook
-}
-
-type personObjHook struct {
-	id uint64
-	fn func(ctx context.Context, node *model.PersonObj) error
-}
-
-var personObjHookCounter atomic.Uint64
-
-// OnBeforeCreate registers a hook that runs before a record is created.
-// If the hook returns an error, the create operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *personObj) OnBeforeCreate(fn func(ctx context.Context, node *model.PersonObj) error) func() {
-	id := personObjHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeCreate = append(r.beforeCreate, personObjHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeCreate {
-			if h.id == id {
-				r.beforeCreate = slices.Delete(r.beforeCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterCreate registers a hook that runs after a record has been created.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *personObj) OnAfterCreate(fn func(ctx context.Context, node *model.PersonObj) error) func() {
-	id := personObjHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterCreate = append(r.afterCreate, personObjHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterCreate {
-			if h.id == id {
-				r.afterCreate = slices.Delete(r.afterCreate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeUpdate registers a hook that runs before a record is updated.
-// If the hook returns an error, the update operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *personObj) OnBeforeUpdate(fn func(ctx context.Context, node *model.PersonObj) error) func() {
-	id := personObjHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeUpdate = append(r.beforeUpdate, personObjHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeUpdate {
-			if h.id == id {
-				r.beforeUpdate = slices.Delete(r.beforeUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterUpdate registers a hook that runs after a record has been updated.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *personObj) OnAfterUpdate(fn func(ctx context.Context, node *model.PersonObj) error) func() {
-	id := personObjHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterUpdate = append(r.afterUpdate, personObjHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterUpdate {
-			if h.id == id {
-				r.afterUpdate = slices.Delete(r.afterUpdate, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnBeforeDelete registers a hook that runs before a record is deleted.
-// If the hook returns an error, the delete operation is aborted.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *personObj) OnBeforeDelete(fn func(ctx context.Context, node *model.PersonObj) error) func() {
-	id := personObjHookCounter.Add(1)
-	r.mu.Lock()
-	r.beforeDelete = append(r.beforeDelete, personObjHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.beforeDelete {
-			if h.id == id {
-				r.beforeDelete = slices.Delete(r.beforeDelete, i, i+1)
-				return
-			}
-		}
-	}
-}
-
-// OnAfterDelete registers a hook that runs after a record has been deleted.
-// If the hook returns an error, the error is returned to the caller.
-// Returns a function that, when called, removes this hook.
-//
-// Note: Hooks are local to this application instance and are not
-// distributed across multiple instances of the application.
-func (r *personObj) OnAfterDelete(fn func(ctx context.Context, node *model.PersonObj) error) func() {
-	id := personObjHookCounter.Add(1)
-	r.mu.Lock()
-	r.afterDelete = append(r.afterDelete, personObjHook{
-		fn: fn,
-		id: id,
-	})
-	r.mu.Unlock()
-	return func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		for i, h := range r.afterDelete {
-			if h.id == id {
-				r.afterDelete = slices.Delete(r.afterDelete, i, i+1)
-				return
-			}
-		}
-	}
 }
 
 // Query returns a new query builder for the PersonObj model.
@@ -359,36 +191,14 @@ func (r *personObj) CreateWithID(ctx context.Context, personObj *model.PersonObj
 	if personObj.ID() == zeroKey {
 		return errors.New("node must have a non-zero ID")
 	}
-	if h, ok := any(personObj).(som.OnBeforeCreateHook); ok {
-		if err := h.OnBeforeCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeCreateHooks := make([]personObjHook, len(r.beforeCreate))
-	copy(beforeCreateHooks, r.beforeCreate)
-	r.mu.RUnlock()
-	for _, h := range beforeCreateHooks {
-		if err := h.fn(ctx, personObj); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeCreate, personObj); err != nil {
+		return err
 	}
 	if err := r.createWithID(ctx, personObj.ID(), personObj); err != nil {
 		return err
 	}
-	if h, ok := any(personObj).(som.OnAfterCreateHook); ok {
-		if err := h.OnAfterCreate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterCreateHooks := make([]personObjHook, len(r.afterCreate))
-	copy(afterCreateHooks, r.afterCreate)
-	r.mu.RUnlock()
-	for _, h := range afterCreateHooks {
-		if err := h.fn(ctx, personObj); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterCreate, personObj); err != nil {
+		return err
 	}
 	return nil
 }
@@ -412,36 +222,14 @@ func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) erro
 	if personObj.ID() == zeroKey {
 		return errors.New("cannot update PersonObj without existing record ID")
 	}
-	if h, ok := any(personObj).(som.OnBeforeUpdateHook); ok {
-		if err := h.OnBeforeUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeUpdateHooks := make([]personObjHook, len(r.beforeUpdate))
-	copy(beforeUpdateHooks, r.beforeUpdate)
-	r.mu.RUnlock()
-	for _, h := range beforeUpdateHooks {
-		if err := h.fn(ctx, personObj); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeUpdate, personObj); err != nil {
+		return err
 	}
 	if err := r.update(ctx, r.recordID(personObj.ID()), personObj); err != nil {
 		return err
 	}
-	if h, ok := any(personObj).(som.OnAfterUpdateHook); ok {
-		if err := h.OnAfterUpdate(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterUpdateHooks := make([]personObjHook, len(r.afterUpdate))
-	copy(afterUpdateHooks, r.afterUpdate)
-	r.mu.RUnlock()
-	for _, h := range afterUpdateHooks {
-		if err := h.fn(ctx, personObj); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterUpdate, personObj); err != nil {
+		return err
 	}
 	return nil
 }
@@ -456,36 +244,14 @@ func (r *personObj) Delete(ctx context.Context, personObj *model.PersonObj) erro
 	if personObj.ID() == zeroKey {
 		return errors.New("cannot delete PersonObj without existing record ID")
 	}
-	if h, ok := any(personObj).(som.OnBeforeDeleteHook); ok {
-		if err := h.OnBeforeDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	beforeDeleteHooks := make([]personObjHook, len(r.beforeDelete))
-	copy(beforeDeleteHooks, r.beforeDelete)
-	r.mu.RUnlock()
-	for _, h := range beforeDeleteHooks {
-		if err := h.fn(ctx, personObj); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, beforeDelete, personObj); err != nil {
+		return err
 	}
 	if err := r.delete(ctx, r.recordID(personObj.ID()), personObj, false, nil); err != nil {
 		return err
 	}
-	if h, ok := any(personObj).(som.OnAfterDeleteHook); ok {
-		if err := h.OnAfterDelete(ctx); err != nil {
-			return err
-		}
-	}
-	r.mu.RLock()
-	afterDeleteHooks := make([]personObjHook, len(r.afterDelete))
-	copy(afterDeleteHooks, r.afterDelete)
-	r.mu.RUnlock()
-	for _, h := range afterDeleteHooks {
-		if err := h.fn(ctx, personObj); err != nil {
-			return err
-		}
+	if err := r.runHooks(ctx, afterDelete, personObj); err != nil {
+		return err
 	}
 	return nil
 }
@@ -500,6 +266,35 @@ func (r *personObj) Refresh(ctx context.Context, personObj *model.PersonObj) err
 		return errors.New("cannot refresh PersonObj without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(personObj.ID()), personObj)
+}
+
+// Fetch fetches related records for the given model based on the specified fetch fields.
+// The model is updated in-place with the fetched relations.
+func (r *personObj) Fetch(ctx context.Context, personObj *model.PersonObj, fetch ...with.Fetch_[model.PersonObj]) error {
+	if personObj == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	var zeroKey model.PersonKey
+	if personObj.ID() == zeroKey {
+		return errors.New("cannot fetch PersonObj without existing record ID")
+	}
+	var requestedBits uint64
+	for _, f := range fetch {
+		if field := fmt.Sprintf("%v", f); field != "" {
+			requestedBits |= with.PersonObjFetchBit(field)
+		}
+	}
+	alreadyFetched := personObj.Node.GetFetched()
+	if requestedBits&^alreadyFetched == 0 {
+		return nil
+	}
+	allBits := alreadyFetched | requestedBits
+	fetchFields := with.PersonObjFetchFields(allBits)
+	err := r.fetch(ctx, r.recordID(personObj.ID()), personObj, fetchFields)
+	if err == nil {
+		personObj.Node.SetFetched(allBits)
+	}
+	return err
 }
 
 // Index returns a new index instance for the PersonObj model.

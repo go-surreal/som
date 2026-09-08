@@ -92,13 +92,21 @@ func ParseEdge(v gotype.Type, outPkg string) (*parser.Edge, error) {
 
 		if f.IsAnonymous() {
 			if f.Elem().PkgPath() == outPkg && f.Name() == "Edge" {
+				edge.Changefeed = parser.ParseChangefeedTag(f.Tag().Get("som"))
 				edge.Fields = append(edge.Fields,
 					parser.NewFieldID("ID", parser.IDTypeULID),
 				)
 				continue
 			}
 
-			if parser.ParseFeature(f, internalPkg, &features, &edge.Fields) {
+			matched, err := parser.ParseFeature(f, internalPkg, &features, &edge.Fields)
+			if err != nil {
+				return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+			}
+			if matched {
+				if features.Expiry {
+					return nil, fmt.Errorf("model %s: som.Expiry is not supported on edges", v.Name())
+				}
 				continue
 			}
 

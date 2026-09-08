@@ -13,6 +13,8 @@ const (
 )
 
 func TestGenComments(t *testing.T) {
+	t.Parallel()
+
 	err := filepath.WalkDir("./gen/som", func(path string, d fs.DirEntry, subErr error) error {
 		if d.IsDir() {
 			return nil

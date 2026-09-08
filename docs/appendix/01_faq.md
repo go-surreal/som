@@ -14,11 +14,13 @@ SOM is currently in **early development** and considered experimental. It works 
 
 ### What Go version is required?
 
-Go 1.25 or later is required due to heavy use of generics and iterators.
+Go 1.27.1 is required due to heavy use of generics, iterators and generic methods. During this phase of the
+project, only ever the latest version of Go is supported - older versions might work, but can break without
+notice.
 
 ### What SurrealDB version is supported?
 
-SOM is tested against SurrealDB [3.0.2](https://surrealdb.com/releases#v3-0-2). Compatibility with older versions is not guaranteed.
+SOM is tested against SurrealDB [3.2.0](https://surrealdb.com/releases#v3-2-0). Compatibility with older versions is not guaranteed.
 
 ## Technical
 
@@ -33,8 +35,12 @@ Code generation provides:
 
 ### What's the difference between som.Node[T] and som.Edge?
 
-- **som.Node[T]** - A database record/table. The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, or a custom struct).
-- **som.Edge** - A relationship between two nodes. Has an ID plus `In` and `Out` fields with `som:"in"` and `som:"out"` tags.
+- **som.Node[T]** - A database record/table. The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, `som.String`, or a custom struct).
+- **som.Edge** - A relationship between two nodes. Provides the edge's own ID; you declare the
+  connected nodes yourself as two fields tagged `som:"in"` and `som:"out"`. Edges have no
+  repository — they are created via `Relate()` on the source node's repository.
+- **som.View** - A read-only table computed by the database (`DEFINE TABLE ... AS SELECT`).
+- **som.Sink** - A write-only ingestion table whose rows are discarded after the write.
 
 ### Why does Read return (record, bool, error)?
 
@@ -74,11 +80,11 @@ type User struct {
 }
 ```
 
-Query with `IsNil()` and `IsNotNil()`:
+Query with `Nil(true)` and `Nil(false)`:
 
 ```go
-filter.User.Nickname.IsNotNil()  // Has a nickname
-filter.User.Age.IsNil()          // Age not set
+filter.User.Nickname.Nil(false)  // Has a nickname
+filter.User.Age.Nil(true)          // Age not set
 ```
 
 ### How do automatic timestamps work?
@@ -101,7 +107,9 @@ Both are managed by SurrealDB and read-only in your code.
 
 ### Can I use raw SurrealQL queries?
 
-Currently, SOM focuses on the type-safe query builder. Raw query support may be added in the future.
+Yes. `client.Raw(ctx, statement, som.Params{...})` executes arbitrary SurrealQL and returns a
+result that can be scanned into your own types. See
+[Raw Queries](../querying/06_raw_queries.md).
 
 ### How do I handle database migrations?
 
@@ -121,7 +129,7 @@ Currently not supported:
 
 ### The generator isn't finding my models
 
-Ensure your structs embed `som.Node[T]` or `som.Edge`:
+Ensure your structs embed `som.Node[T]`, `som.Edge`, `som.View` or `som.Sink`:
 
 ```go
 type User struct {
@@ -152,16 +160,19 @@ fmt.Println(user.ID())  // Use ID() method, not a field
 
 ### Live query channel closes unexpectedly
 
-Check context cancellation and error handling:
+The channel closes when the context is cancelled or the server terminates the subscription. The
+latter arrives as a `LiveKilled` event:
 
 ```go
 for update := range updates {
-    if update.Error != nil {
-        log.Printf("Error: %v", update.Error)
-        // Connection lost, consider reconnecting
-        break
+    switch res := update.(type) {
+    case query.LiveKilled[*model.User]:
+        // server terminated the live query; re-subscribe if needed
+        return
+    case query.LiveUpdate[*model.User]:
+        user, err := res.Get()
+        ...
     }
-    // Process update
 }
 ```
 

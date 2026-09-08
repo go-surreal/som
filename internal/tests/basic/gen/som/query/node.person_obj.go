@@ -2,14 +2,16 @@
 package query
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	with "som.test/gen/som/with"
+	model "som.test/model"
 )
 
 // personObjModelInfo holds the model-specific unmarshal functions for PersonObj.
 var personObjModelInfo = modelInfo[model.PersonObj]{
+	Fields: conv.PersonObjFields,
 	UnmarshalAll: func(data []byte) ([]*model.PersonObj, error) {
 		return unmarshalAll(data, conv.ToPersonObjPtr)
 	},
@@ -45,9 +47,11 @@ var personObjRangeFn = rangeFn[model.PersonObj](func(q *lib.Query[model.PersonOb
 func NewPersonObj(db Database) Builder[model.PersonObj] {
 	q := lib.NewQuery[model.PersonObj]("person_obj")
 	return Builder[model.PersonObj]{builder[model.PersonObj]{
-		db:      db,
-		info:    personObjModelInfo,
-		query:   q,
-		rangeFn: personObjRangeFn,
+		db:           db,
+		fetchBitFn:   with.PersonObjFetchBit,
+		info:         personObjModelInfo,
+		query:        q,
+		rangeFn:      personObjRangeFn,
+		setFetchedFn: with.PersonObjSetFetched,
 	}}
 }

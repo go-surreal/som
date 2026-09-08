@@ -1,7 +1,9 @@
 package codegen
 
 import (
+	"crypto/sha256"
 	"fmt"
+	"os"
 	"path"
 	"strings"
 
@@ -14,7 +16,12 @@ import (
 const filenameSchema = "schema.surql"
 
 func (b *build) buildSchemaFile() error {
-	statements := []string{string(embed.CodegenComment), ""}
+	statements := []string{
+		string(embed.CodegenComment),
+		"",
+		fmt.Sprintf("DEFINE TABLE OVERWRITE %s SCHEMALESS PERMISSIONS FULL;", def.MetaTable),
+		"",
+	}
 
 	// Generate DEFINE ANALYZER statements first
 	if b.input.define != nil {
@@ -30,7 +37,11 @@ func (b *build) buildSchemaFile() error {
 	var indexStatements []string
 
 	for _, node := range b.input.nodes {
-		statement := fmt.Sprintf("DEFINE TABLE %s SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", node.NameDatabase())
+		statement := fmt.Sprintf("DEFINE TABLE OVERWRITE %s SCHEMAFULL TYPE NORMAL", node.NameDatabase())
+		if node.Changefeed != "" {
+			statement += fmt.Sprintf(" CHANGEFEED %s", node.Changefeed)
+		}
+		statement += " PERMISSIONS FULL;"
 		statements = append(statements, statement)
 
 		for _, f := range node.GetFields() {
@@ -40,16 +51,27 @@ func (b *build) buildSchemaFile() error {
 		// Build indexes for this table (handles both simple and composite)
 		indexStatements = append(indexStatements, b.buildTableIndexStatements(node.NameDatabase(), node.GetFields(), node.Source.SoftDelete)...)
 
+		// Index expires_at to keep expiry purge deletes efficient.
+		if node.Source.Expiry {
+			indexName := fmt.Sprintf(def.IndexPrefix+"%s_expires_at", node.NameDatabase())
+			indexStatements = append(indexStatements, guardRebuild("index:"+indexName,
+				fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS expires_at CONCURRENTLY;", indexName, node.NameDatabase())))
+		}
+
 		statements = append(statements, "")
 	}
 
 	for _, edge := range b.input.edges {
 		statement := fmt.Sprintf(
-			"DEFINE TABLE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED PERMISSIONS FULL;",
+			"DEFINE TABLE OVERWRITE %s SCHEMAFULL TYPE RELATION IN %s OUT %s ENFORCED",
 			edge.NameDatabase(),
 			edge.In.NameDatabase(),
 			edge.Out.NameDatabase(), // TODO: can be OR'ed with "|"
 		)
+		if edge.Changefeed != "" {
+			statement += fmt.Sprintf(" CHANGEFEED %s", edge.Changefeed)
+		}
+		statement += " PERMISSIONS FULL;"
 		statements = append(statements, statement)
 
 		for _, f := range edge.GetFields() {
@@ -60,6 +82,41 @@ func (b *build) buildSchemaFile() error {
 		indexStatements = append(indexStatements, b.buildTableIndexStatements(edge.NameDatabase(), edge.GetFields(), edge.Source.SoftDelete)...)
 
 		statements = append(statements, "")
+	}
+
+	// Sinks are write-only ingestion tables: records are accepted (firing
+	// any dependent views/events) but discarded via DROP. Fields are still
+	// defined so writes are validated and dependent view SELECTs typecheck.
+	// No indexes are emitted — there are no rows to index.
+	for _, sink := range b.input.sinks {
+		statement := fmt.Sprintf("DEFINE TABLE OVERWRITE %s DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;", sink.NameDatabase())
+		statements = append(statements, statement)
+
+		for _, f := range sink.GetFields() {
+			statements = append(statements, f.SchemaStatements(sink.NameDatabase(), "")...)
+		}
+
+		statements = append(statements, "")
+	}
+
+	// Views are read-only, pre-computed tables defined via AS SELECT.
+	// They are emitted after the source tables they depend on.
+	for _, view := range b.input.views {
+		statement, err := b.buildViewStatement(view)
+		if err != nil {
+			return err
+		}
+		if statement == "" {
+			continue // view without a definition (see buildViewStatement)
+		}
+
+		// A view cannot be redefined via OVERWRITE: SurrealDB re-materializes
+		// its rows onto the already existing keys and fails with AlreadyExists.
+		// It has to be removed first, which recomputes the whole view.
+		statements = append(statements, guardRebuild("view:"+view.NameDatabase(),
+			fmt.Sprintf("REMOVE TABLE IF EXISTS %s;", view.NameDatabase()),
+			statement,
+		), "")
 	}
 
 	// Append index statements at the end
@@ -75,9 +132,102 @@ func (b *build) buildSchemaFile() error {
 	return nil
 }
 
+// guardRebuild wraps DDL that forces a full rebuild when applied (index
+// builds, view materialization) into a hash check against the meta table.
+// Table, field and analyzer definitions are cheap metadata writes and are
+// applied unconditionally via OVERWRITE, but re-running an index or view
+// definition costs time proportional to the row count. Applying an unchanged
+// schema must stay a no-op, so those statements only run once their generated
+// form actually differs from what the database was last given.
+func guardRebuild(key string, statements ...string) string {
+	body := strings.Join(statements, "\n\t")
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
+
+	return fmt.Sprintf(
+		"IF (SELECT VALUE hash FROM ONLY type::record(%q, %q)) != %q {\n"+
+			"\t%s\n"+
+			"\tUPSERT type::record(%q, %q) SET hash = %q;\n"+
+			"};",
+		def.MetaTable, key, hash,
+		body,
+		def.MetaTable, key, hash,
+	)
+}
+
+// buildViewStatement builds the DEFINE TABLE ... AS SELECT statement for a
+// read-only view, joining the view model (its projected columns) with the
+// SELECT definition supplied via a //go:build som definition file.
+func (b *build) buildViewStatement(view *field.ViewTable) (string, error) {
+	var def *parser.ViewDef
+	if b.input.define != nil {
+		for i := range b.input.define.Views {
+			v := &b.input.define.Views[i]
+			if v.View != view.NameGo() {
+				continue
+			}
+			if def != nil {
+				return "", fmt.Errorf(
+					"view %s: multiple definitions found; multi-source views are not yet supported (SurrealDB #5593)",
+					view.NameGo(),
+				)
+			}
+			def = v
+		}
+	}
+
+	if def == nil {
+		// A view struct with no definition yet is not fatal: it lets the
+		// read stack be generated first, so define.View can reference the
+		// view's own filter refs, then a second gen emits the DDL. Warn and
+		// skip emitting a statement for this view.
+		fmt.Fprintf(os.Stderr,
+			"warning: view %s has no definition; skipping its schema statement. "+
+				"Declare it via define.View in a //go:build som file, then regenerate.\n",
+			view.NameGo(),
+		)
+		return "", nil
+	}
+
+	if len(def.Projections) == 0 {
+		return "", fmt.Errorf("view %s: definition has no projections", view.NameGo())
+	}
+
+	// A view may select from a node, an edge (relation) or a write-only
+	// sink table (the sink→view ingestion pattern).
+	var sourceDB string
+	if node := b.input.findNodeByName(def.Source); node != nil {
+		sourceDB = node.NameDatabase()
+	} else if edge := b.input.findEdgeByName(def.Source); edge != nil {
+		sourceDB = edge.NameDatabase()
+	} else if sink := b.input.findSinkByName(def.Source); sink != nil {
+		sourceDB = sink.NameDatabase()
+	} else {
+		return "", fmt.Errorf("view %s: unknown source model %q", view.NameGo(), def.Source)
+	}
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "DEFINE TABLE %s TYPE NORMAL AS SELECT %s FROM %s",
+		view.NameDatabase(),
+		strings.Join(def.Projections, ", "),
+		sourceDB,
+	)
+
+	if def.Where != "" {
+		fmt.Fprintf(&sb, " WHERE %s", def.Where)
+	}
+
+	if len(def.GroupBy) > 0 {
+		fmt.Fprintf(&sb, " GROUP BY %s", strings.Join(def.GroupBy, ", "))
+	}
+
+	sb.WriteString(";")
+
+	return sb.String(), nil
+}
+
 func buildAnalyzerStatement(analyzer parser.AnalyzerDef) string {
 	var parts []string
-	parts = append(parts, fmt.Sprintf("DEFINE ANALYZER %s", analyzer.Name))
+	parts = append(parts, fmt.Sprintf("DEFINE ANALYZER OVERWRITE %s", analyzer.Name))
 
 	if len(analyzer.Tokenizers) > 0 {
 		parts = append(parts, fmt.Sprintf("TOKENIZERS %s", strings.Join(analyzer.Tokenizers, ", ")))
@@ -122,8 +272,9 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 	var statements []string
 
 	if !b.noCountIndex {
-		stmt := fmt.Sprintf("DEFINE INDEX "+def.IndexPrefix+"%s_count ON %s COUNT;", tableName, tableName)
-		statements = append(statements, stmt)
+		indexName := fmt.Sprintf(def.IndexPrefix+"%s_count", tableName)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s COUNT;", indexName, tableName)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	// Collect composite unique index fields grouped by name
@@ -134,8 +285,8 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 
 	if softDelete {
 		indexName := fmt.Sprintf(def.IndexPrefix+"%s_deleted_at", tableName)
-		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
-		statements = append(statements, stmt)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS deleted_at CONCURRENTLY;", indexName, tableName)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	// Generate composite unique index statements
@@ -143,8 +294,8 @@ func (b *build) buildTableIndexStatements(tableName string, fields []field.Field
 		// Index name format: __som__<table>_unique_<name>
 		indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, uniqueName)
 		fieldsStr := strings.Join(fieldPaths, ", ")
-		stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldsStr)
-		statements = append(statements, stmt)
+		stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldsStr)
+		statements = append(statements, guardRebuild("index:"+indexName, stmt))
 	}
 
 	return statements
@@ -165,16 +316,16 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			} else if indexInfo.Unique {
 				// Simple unique index on single field
 				indexName := fmt.Sprintf(def.IndexPrefix+"%s_unique_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
-				*statements = append(*statements, stmt)
+				stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s UNIQUE;", indexName, tableName, fieldPath)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			} else {
 				// Regular (non-unique) index
 				indexName := indexInfo.Name
 				if indexName == "" {
 					indexName = fmt.Sprintf(def.IndexPrefix+"%s_index_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
 				}
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s CONCURRENTLY;", indexName, tableName, fieldPath)
-				*statements = append(*statements, stmt)
+				stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s CONCURRENTLY;", indexName, tableName, fieldPath)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			}
 		}
 
@@ -185,7 +336,7 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 			if searchDef != nil {
 				// Index name format: __som__<table>_search_<field>
 				indexName := fmt.Sprintf(def.IndexPrefix+"%s_search_%s", tableName, strings.ReplaceAll(fieldPath, ".", "_"))
-				stmt := fmt.Sprintf("DEFINE INDEX %s ON %s FIELDS %s FULLTEXT ANALYZER %s",
+				stmt := fmt.Sprintf("DEFINE INDEX OVERWRITE %s ON %s FIELDS %s FULLTEXT ANALYZER %s",
 					indexName, tableName, fieldPath, searchDef.AnalyzerName)
 				if searchDef.HasBM25 {
 					stmt += fmt.Sprintf(" BM25(%g, %g)", searchDef.BM25K1, searchDef.BM25B)
@@ -199,7 +350,7 @@ func (b *build) collectIndexes(tableName, fieldPrefix string, fields []field.Fie
 					stmt += " CONCURRENTLY"
 				}
 				stmt += ";"
-				*statements = append(*statements, stmt)
+				*statements = append(*statements, guardRebuild("index:"+indexName, stmt))
 			}
 		}
 

@@ -115,6 +115,8 @@ func ParseIDType(t gotype.Type) parser.IDType {
 				return parser.IDTypeUUID
 			case "Rand":
 				return parser.IDTypeRand
+			case "String":
+				return parser.IDTypeString
 			case "ULID":
 				return parser.IDTypeULID
 			}
@@ -234,6 +236,8 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 
 		if f.IsAnonymous() {
 			if f.Name() == "Node" && IsGenericNodeFromSom(f.Elem(), outPkg, "Node") {
+				node.Changefeed = parser.ParseChangefeedTag(f.Tag().Get("som"))
+
 				if IsKnownStringIDType(f.Elem()) {
 					gen := ParseIDType(f.Elem())
 					node.IDType = gen
@@ -255,7 +259,11 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 				continue
 			}
 
-			if parser.ParseFeature(f, internalPkg, &features, &node.Fields) {
+			matched, err := parser.ParseFeature(f, internalPkg, &features, &node.Fields)
+			if err != nil {
+				return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+			}
+			if matched {
 				continue
 			}
 
@@ -275,6 +283,9 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 	}
 
 	parser.ApplyFeatures(features, &node.Timestamps, &node.OptimisticLock, &node.SoftDelete, &node.Fields)
+
+	node.Expiry = features.Expiry
+	node.ExpiryDuration = features.ExpiryDuration
 
 	return node, nil
 }

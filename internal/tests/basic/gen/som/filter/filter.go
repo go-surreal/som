@@ -3,7 +3,7 @@
 package filter
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
+	"som.test/gen/som/internal/lib"
 )
 
 func All[M any](filters ...lib.Filter[M]) lib.Filter[M] {
@@ -12,4 +12,8 @@ func All[M any](filters ...lib.Filter[M]) lib.Filter[M] {
 
 func Any[M any](filters ...lib.Filter[M]) lib.Filter[M] {
 	return lib.Any[M](filters)
+}
+
+func Not[M any](f lib.Filter[M]) lib.Filter[M] {
+	return lib.Not[M]{Filter: f}
 }

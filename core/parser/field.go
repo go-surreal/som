@@ -87,6 +87,7 @@ const (
 	IDTypeULID   IDType = "ULID"
 	IDTypeUUID   IDType = "UUID"
 	IDTypeRand   IDType = "Rand"
+	IDTypeString IDType = "String"
 	IDTypeArray  IDType = "Array"
 	IDTypeObject IDType = "Object"
 )
@@ -185,6 +186,9 @@ type FieldTime struct {
 	IsCreatedAt bool
 	IsUpdatedAt bool
 	IsDeletedAt bool
+	IsExpiresAt bool
+	// ExpiresIn holds the TTL duration (SurrealDB literal) for IsExpiresAt fields.
+	ExpiresIn string
 }
 
 func NewFieldTime(name string) *FieldTime {
@@ -196,6 +200,7 @@ type UUIDPackage string
 const (
 	UUIDPackageGoogle UUIDPackage = "github.com/google/uuid"
 	UUIDPackageGofrs  UUIDPackage = "github.com/gofrs/uuid"
+	UUIDPackageStd    UUIDPackage = "uuid"
 )
 
 type FieldUUID struct {

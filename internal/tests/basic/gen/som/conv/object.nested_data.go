@@ -2,9 +2,9 @@
 package conv
 
 import (
-	cbor "github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
+	cbor "som.test/gen/som/internal/cbor"
+	types "som.test/gen/som/internal/types"
+	model "som.test/model"
 )
 
 type nestedData struct {
@@ -15,6 +15,10 @@ func (c *nestedData) MarshalCBOR() ([]byte, error) {
 	if c == nil {
 		return cbor.Marshal(nil)
 	}
+	return cbor.Marshal(c.fields())
+}
+
+func (c *nestedData) fields() map[string]any {
 	data := make(map[string]any, 4)
 
 	if c.StringPtr != nil {
@@ -31,7 +35,7 @@ func (c *nestedData) MarshalCBOR() ([]byte, error) {
 		data["uuid_ptr"] = &uuidVal
 	}
 
-	return cbor.Marshal(data)
+	return data
 }
 
 func (c *nestedData) UnmarshalCBOR(data []byte) error {

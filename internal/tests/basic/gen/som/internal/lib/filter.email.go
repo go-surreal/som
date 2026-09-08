@@ -3,7 +3,7 @@
 package lib
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 )
 
 // Email is a filter builder for email values.

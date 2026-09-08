@@ -2,15 +2,17 @@
 package query
 
 import (
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	types "github.com/go-surreal/som/tests/basic/gen/som/internal/types"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	types "som.test/gen/som/internal/types"
+	with "som.test/gen/som/with"
+	model "som.test/model"
 )
 
 // weatherModelInfo holds the model-specific unmarshal functions for Weather.
 var weatherModelInfo = modelInfo[model.Weather]{
+	Fields: conv.WeatherFields,
 	UnmarshalAll: func(data []byte) ([]*model.Weather, error) {
 		return unmarshalAll(data, conv.ToWeatherPtr)
 	},
@@ -46,9 +48,11 @@ var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], fr
 func NewWeather(db Database) Builder[model.Weather] {
 	q := lib.NewQuery[model.Weather]("weather")
 	return Builder[model.Weather]{builder[model.Weather]{
-		db:      db,
-		info:    weatherModelInfo,
-		query:   q,
-		rangeFn: weatherRangeFn,
+		db:           db,
+		fetchBitFn:   with.WeatherFetchBit,
+		info:         weatherModelInfo,
+		query:        q,
+		rangeFn:      weatherRangeFn,
+		setFetchedFn: with.WeatherSetFetched,
 	}}
 }

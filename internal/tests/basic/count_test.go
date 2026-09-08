@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
@@ -16,6 +16,8 @@ const (
 )
 
 func TestQueryCount(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

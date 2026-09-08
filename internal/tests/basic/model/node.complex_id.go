@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 )
 
 type WeatherKey struct {
@@ -30,7 +30,7 @@ type PersonObj struct {
 
 type TeamMemberKey struct {
 	som.ObjectID
-	Member  AllTypes
+	Member   AllTypes
 	Forecast Weather
 }
 

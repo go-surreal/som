@@ -8,6 +8,11 @@ type Bool[M any] struct {
 	Key[M]
 }
 
+// valueType witnesses the field's Go value type (see Base.valueType).
+func (b *Bool[M]) valueType() bool {
+	return false
+}
+
 type BoolPtr[M any] struct {
 	*Bool[M]
 	*Nillable[M]

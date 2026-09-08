@@ -32,6 +32,7 @@ func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error 
 	if features != nil {
 		tmpl.UsesGoogleUUID = features.UsesGoogleUUID
 		tmpl.UsesGofrsUUID = features.UsesGofrsUUID
+		tmpl.UsesStdUUID = features.UsesStdUUID
 		tmpl.UsesOrbGeo = features.UsesOrbGeo
 		tmpl.UsesSimplefeaturesGeo = features.UsesSimplefeaturesGeo
 		tmpl.UsesGoGeomGeo = features.UsesGoGeomGeo
@@ -81,6 +82,18 @@ func (b *build) build() error {
 		}
 	}
 
+	for _, view := range b.input.views {
+		if err := b.buildViewRepoFile(view); err != nil {
+			return err
+		}
+	}
+
+	for _, sink := range b.input.sinks {
+		if err := b.buildSinkRepoFile(sink); err != nil {
+			return err
+		}
+	}
+
 	builders := []builder{
 		b.newQueryBuilder(),
 		b.newFilterBuilder(),
@@ -117,6 +130,23 @@ func (b *build) buildInterfaceFile() error {
 			g.Id(node.NameGo() + "Repo").Call().Id(node.NameGo() + "Repo")
 		}
 
+		for _, view := range b.input.views {
+			g.Id(view.NameGo() + "Repo").Call().Id(view.NameGo() + "Repo")
+		}
+
+		for _, sink := range b.input.sinks {
+			g.Id(sink.NameGo() + "Repo").Call().Id(sink.NameGo() + "Repo")
+		}
+
+		g.Id("Raw").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("query").String(),
+			jen.Id("params").Qual(b.relativePkgPath(), "Params"),
+		).Parens(jen.List(
+			jen.Op("*").Qual(b.relativePkgPath(), "RawResult"),
+			jen.Error(),
+		))
+
 		g.Id("ApplySchema").Call(jen.Id("ctx").Qual("context", "Context")).Error()
 		g.Id("Close").Call()
 	})
@@ -127,6 +157,23 @@ func (b *build) buildInterfaceFile() error {
 		g.Id("mu").Qual("sync", "Mutex")
 		for _, node := range b.input.nodes {
 			g.Id(node.NameGoLower() + "Repo").Op("*").Id(node.NameGoLower())
+		}
+		for _, view := range b.input.views {
+			g.Id(view.NameGoLower() + "Repo").Op("*").Id(view.NameGoLower())
+		}
+		for _, sink := range b.input.sinks {
+			g.Id(sink.NameGoLower() + "Repo").Op("*").Id(sink.NameGoLower())
+		}
+	})
+
+	// expiryTables lists the database tables that have an expiry (TTL) configured.
+	// The client runs a background purge over these tables (see runExpiryPurge).
+	f.Line().Comment("expiryTables lists tables with a configured expiry, purged in the background.")
+	f.Var().Id("expiryTables").Op("=").Index().String().ValuesFunc(func(g *jen.Group) {
+		for _, node := range b.input.nodes {
+			if node.Source.Expiry {
+				g.Lit(node.NameDatabase())
+			}
 		}
 	})
 
@@ -142,6 +189,19 @@ func (b *build) keyTypeCode(node *field.NodeTable) jen.Code {
 		return b.input.SourceQual(node.Source.ComplexID.StructName)
 	}
 	return jen.String()
+}
+
+// insertComment returns the doc comment for the generated Insert method. For
+// som.String models the IDs cannot be generated server-side, so they must be
+// set on every node instead of being left empty.
+func (b *build) insertComment(node *field.NodeTable) string {
+	if node.HasAutoID() {
+		return "Insert creates multiple records in a single operation.\n" +
+			"Before- and after-create hooks are invoked for each node."
+	}
+	return "Insert creates multiple records in a single operation.\n" +
+		"Every node must have a non-empty ID set.\n" +
+		"Before- and after-create hooks are invoked for each node."
 }
 
 func (b *build) recordIDFuncCode(node *field.NodeTable) jen.Code {
@@ -209,11 +269,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 	//
 	// type {NodeName}Repo interface {...}
 	//
-	f.Line().Type().Id(node.NameGo()+"Repo").InterfaceFunc(func(g *jen.Group) {
+	f.Line().Type().Id(node.NameGo() + "Repo").InterfaceFunc(func(g *jen.Group) {
 		g.Add(comment("Query returns a new query builder for the " + node.NameGo() + " model."))
 		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(node.NameGo()))
 
-		if !node.HasComplexID() {
+		if node.HasAutoID() {
 			g.Add(comment("Create creates a new record for the " + node.NameGo() + " model."))
 			g.Id("Create").Call(
 				jen.Id("ctx").Qual("context", "Context"),
@@ -222,7 +282,7 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		}
 
 		if !node.HasComplexID() {
-			g.Add(comment("Insert creates multiple records in a single operation.\nBefore- and after-create hooks are invoked for each node."))
+			g.Add(comment(b.insertComment(node)))
 			g.Id("Insert").Call(
 				jen.Id("ctx").Qual("context", "Context"),
 				jen.Id("nodes").Index().Op("*").Add(b.input.SourceQual(node.NameGo())),
@@ -313,6 +373,12 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		g.Add(comment("Index returns a new index instance for the " + node.NameGo() + " model."))
 		g.Id("Index").Call().Op("*").Qual(b.relativePkgPath(def.PkgIndex), node.NameGo())
 
+		if node.HasChangefeed() {
+			g.Add(comment("Changes returns a new changes query builder for the " + node.NameGo() + " model.\nThis is only available for models with changefeed enabled."))
+			g.Id("Changes").Call().Qual(pkgQuery, "ChangesBuilder").
+				Types(b.input.SourceQual(node.NameGo()), jen.Qual(pkgConv, node.NameGo()))
+		}
+
 		g.Line()
 
 		for _, event := range []string{"Create", "Update", "Delete"} {
@@ -377,10 +443,10 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
 			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
 		),
-		jen.Id("CreateNew"): jen.Func().Params(ctxParam, dbParam, jen.Id("idExpr").String(), jen.Id("data").Any()).Params(
+		jen.Id("CreateNew"): jen.Func().Params(ctxParam, dbParam, jen.Id("target").String(), jen.Id("data").Any()).Params(
 			jen.Op("*").Add(sourceType), jen.Error(),
 		).Block(
-			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbCreateNew").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("idExpr"), jen.Id("data")),
+			jen.List(jen.Id("raw"), jen.Err()).Op(":=").Id("dbCreateNew").Types(convType).Call(jen.Id("ctx"), jen.Id("db"), jen.Id("target"), jen.Id("data")),
 			jen.If(jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Nil(), jen.Err())),
 			jen.Return(convFn.Clone().Call(jen.Id("raw")), jen.Nil()),
 		),
@@ -425,10 +491,9 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 		jen.Add(jen.Line(), jen.Id("name").Op(":").Lit(node.NameDatabase())),
 		jen.Add(jen.Line(), jen.Id("info").Op(":").Id(repoInfoVarName)),
 	)
-	if !node.HasComplexID() {
+	if node.HasAutoID() {
 		repoInitValues = append(repoInitValues,
-			jen.Add(jen.Line(), jen.Id("newID").Op(":").Id(idFuncName(node))),
-			jen.Add(jen.Line(), jen.Id("idFunc").Op(":").Lit(idSurrealFunc(node))),
+			jen.Add(jen.Line(), jen.Id("autoID").Op(":").Lit(true)),
 		)
 	}
 	repoInitValues = append(repoInitValues,
@@ -437,11 +502,11 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 
 	f.Line().
 		Add(comment(`
-` + node.NameGo() + `Repo returns the repository instance for the ` + node.NameGo() + ` model.
+`+node.NameGo()+`Repo returns the repository instance for the `+node.NameGo()+` model.
 The instance is cached as a singleton on the client.
 		`)).
 		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
-		Id(node.NameGo() + "Repo").Params().Id(node.NameGo() + "Repo").
+		Id(node.NameGo()+"Repo").Params().Id(node.NameGo()+"Repo").
 		Block(
 			jen.Id("c").Dot("mu").Dot("Lock").Call(),
 			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
@@ -459,91 +524,10 @@ The instance is cached as a singleton on the client.
 			jen.Return(jen.Id("c").Dot(node.NameGoLower()+"Repo")),
 		)
 
-	hookEvents := []string{"Create", "Update", "Delete"}
-
 	f.Line()
-	f.Type().Id(node.NameGoLower()).StructFunc(func(g *jen.Group) {
-		g.Op("*").Id("repo").Types(b.input.SourceQual(node.NameGo()), keyType)
-		g.Id("mu").Qual("sync", "RWMutex")
-		for _, event := range hookEvents {
-			for _, timing := range []string{"before", "after"} {
-				g.Id(timing + event).Index().Id(node.NameGoLower() + "Hook")
-			}
-		}
-	})
-
-	f.Line()
-	f.Type().Id(node.NameGoLower() + "Hook").Struct(
-		jen.Id("id").Uint64(),
-		jen.Id("fn").Func().Params(
-			jen.Id("ctx").Qual("context", "Context"),
-			jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
-		).Error(),
+	f.Type().Id(node.NameGoLower()).Struct(
+		jen.Op("*").Id("repo").Types(b.input.SourceQual(node.NameGo()), keyType),
 	)
-
-	f.Line()
-	f.Var().Id(node.NameGoLower() + "HookCounter").Qual("sync/atomic", "Uint64")
-
-	for _, event := range hookEvents {
-		for _, timing := range []string{"Before", "After"} {
-			methodName := "On" + timing + event
-			fieldName := strings.ToLower(timing) + event
-
-			var hookComment string
-			switch timing {
-			case "Before":
-				hookComment = methodName + " registers a hook that runs before a record is " + strings.ToLower(event) + "d.\n" +
-					"If the hook returns an error, the " + strings.ToLower(event) + " operation is aborted.\n" +
-					"Returns a function that, when called, removes this hook.\n" +
-					"\n" +
-					"Note: Hooks are local to this application instance and are not\n" +
-					"distributed across multiple instances of the application."
-			case "After":
-				hookComment = methodName + " registers a hook that runs after a record has been " + strings.ToLower(event) + "d.\n" +
-					"If the hook returns an error, the error is returned to the caller.\n" +
-					"Returns a function that, when called, removes this hook.\n" +
-					"\n" +
-					"Note: Hooks are local to this application instance and are not\n" +
-					"distributed across multiple instances of the application."
-			}
-
-			f.Line().
-				Add(comment(hookComment)).
-				Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
-				Id(methodName).
-				Params(jen.Id("fn").Func().Params(
-					jen.Id("ctx").Qual("context", "Context"),
-					jen.Id("node").Op("*").Add(b.input.SourceQual(node.NameGo())),
-				).Error()).
-				Func().Params().
-				Block(
-					jen.Id("id").Op(":=").Id(node.NameGoLower()+"HookCounter").Dot("Add").Call(jen.Lit(1)),
-					jen.Id("r").Dot("mu").Dot("Lock").Call(),
-					jen.Id("r").Dot(fieldName).Op("=").Append(
-						jen.Id("r").Dot(fieldName),
-						jen.Id(node.NameGoLower()+"Hook").Values(jen.Dict{
-							jen.Id("id"): jen.Id("id"),
-							jen.Id("fn"): jen.Id("fn"),
-						}),
-					),
-					jen.Id("r").Dot("mu").Dot("Unlock").Call(),
-					jen.Return(jen.Func().Params().Block(
-						jen.Id("r").Dot("mu").Dot("Lock").Call(),
-						jen.Defer().Id("r").Dot("mu").Dot("Unlock").Call(),
-						jen.For(jen.Id("i").Op(",").Id("h").Op(":=").Range().Id("r").Dot(fieldName)).Block(
-							jen.If(jen.Id("h").Dot("id").Op("==").Id("id")).Block(
-								jen.Id("r").Dot(fieldName).Op("=").Qual("slices", "Delete").Call(
-									jen.Id("r").Dot(fieldName),
-									jen.Id("i"),
-									jen.Id("i").Op("+").Lit(1),
-								),
-								jen.Return(),
-							),
-						),
-					)),
-				)
-		}
-	}
 
 	// Query
 	f.Line().
@@ -559,12 +543,12 @@ Query returns a new query builder for the `+node.NameGo()+` model.
 			)),
 		)
 
-	// Create (string ID only)
-	if !node.HasComplexID() {
+	// Create (auto-generated ID only)
+	if node.HasAutoID() {
 		f.Line().
 			Add(comment(`
 Create creates a new record for the `+node.NameGo()+` model.
-The ID will be generated automatically as a ULID.
+The ID will be generated automatically as a `+string(node.Source.IDType)+`.
 Before- and after-create hooks are invoked.
 		`)).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
@@ -660,8 +644,7 @@ Before- and after-create hooks are invoked.
 	// Insert (string ID only - complex-ID models cannot use table-level INSERT)
 	if !node.HasComplexID() {
 		f.Line().
-			Add(comment("Insert creates multiple records in a single operation.\n"+
-				"Before- and after-create hooks are invoked for each node.")).
+			Add(comment(b.insertComment(node))).
 			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 			Id("Insert").
 			Params(
@@ -670,65 +653,32 @@ Before- and after-create hooks are invoked.
 			).
 			Error().
 			BlockFunc(func(g *jen.Group) {
-				somPkg := b.relativePkgPath()
-
 				g.If(jen.Len(jen.Id("nodes")).Op("==").Lit(0)).
 					Block(jen.Return(jen.Nil()))
 
 				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).BlockFunc(func(inner *jen.Group) {
 					inner.If(jen.Id("n").Op("==").Nil()).
 						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("slice contains nil node"))))
-					inner.If(jen.Id("n").Dot("ID").Call().Op("!=").Lit("")).
-						Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node already has an id"))))
+					if node.HasAutoID() {
+						inner.If(jen.Id("n").Dot("ID").Call().Op("!=").Lit("")).
+							Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("node already has an id"))))
+					} else {
+						inner.If(jen.Id("n").Dot("ID").Call().Op("==").Lit("")).
+							Block(jen.Return(jen.Qual(b.relativePkgPath(), "ErrEmptyID")))
+					}
 				})
 
-				// Snapshot before-create hooks once
-				g.Id("r").Dot("mu").Dot("RLock").Call()
-				g.Id("beforeCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("beforeCreate")))
-				g.Copy(jen.Id("beforeCreateHooks"), jen.Id("r").Dot("beforeCreate"))
-				g.Id("r").Dot("mu").Dot("RUnlock").Call()
-
-				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
-					jen.If(
-						jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnBeforeCreateHook")),
-						jen.Id("ok"),
-					).Block(
-						jen.If(jen.Err().Op(":=").Id("h").Dot("OnBeforeCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-					),
-					jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("beforeCreateHooks")).Block(
-						jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-					),
-				)
+				g.If(jen.Err().Op(":=").Id("r").Dot("runHooksAll").Call(
+					jen.Id("ctx"), jen.Id("beforeCreate"), jen.Id("nodes"),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 				g.If(jen.Err().Op(":=").Id("r").Dot("insert").Call(
 					jen.Id("ctx"), jen.Id("nodes"),
 				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
-				// Snapshot after-create hooks once
-				g.Id("r").Dot("mu").Dot("RLock").Call()
-				g.Id("afterCreateHooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot("afterCreate")))
-				g.Copy(jen.Id("afterCreateHooks"), jen.Id("r").Dot("afterCreate"))
-				g.Id("r").Dot("mu").Dot("RUnlock").Call()
-
-				g.For(jen.List(jen.Id("_"), jen.Id("n")).Op(":=").Range().Id("nodes")).Block(
-					jen.If(
-						jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id("n")).Assert(jen.Qual(somPkg, "OnAfterCreateHook")),
-						jen.Id("ok"),
-					).Block(
-						jen.If(jen.Err().Op(":=").Id("h").Dot("OnAfterCreate").Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-					),
-					jen.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id("afterCreateHooks")).Block(
-						jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id("n")), jen.Err().Op("!=").Nil()).Block(
-							jen.Return(jen.Err()),
-						),
-					),
-				)
+				g.If(jen.Err().Op(":=").Id("r").Dot("runHooksAll").Call(
+					jen.Id("ctx"), jen.Id("afterCreate"), jen.Id("nodes"),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 
 				g.Return(jen.Nil())
 			})
@@ -1120,11 +1070,177 @@ Index returns a new index instance for the `+node.NameGo()+` model.
 			),
 		)
 
+	// Changes (changefeed only)
+	if node.HasChangefeed() {
+		f.Line().
+			Add(comment(`
+Changes returns a new changes query builder for the `+node.NameGo()+` model.
+This is only available for models with changefeed enabled.
+		`)).
+			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+			Id("Changes").Params().
+			Qual(pkgQuery, "ChangesBuilder").
+			Types(
+				b.input.SourceQual(node.NameGo()),
+				jen.Qual(pkgConv, node.NameGo()),
+			).
+			Block(
+				jen.Return(jen.Qual(pkgQuery, "New"+node.NameGo()+"Changes").Call(
+					jen.Id("r").Dot("db"),
+				)),
+			)
+	}
+
 	if err := f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, node.FileName()))); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// buildViewRepoFile generates the read-only repository for a view. Views
+// expose only Query() — no create/update/delete/relate/index operations.
+func (b *build) buildViewRepoFile(view *field.ViewTable) error {
+	pkgQuery := b.relativePkgPath(def.PkgQuery)
+
+	f := jen.NewFile(def.PkgRepo)
+	f.PackageComment(string(embed.CodegenComment))
+
+	// <View>Repo interface { Query() ... }
+	f.Line().Type().Id(view.NameGo() + "Repo").InterfaceFunc(func(g *jen.Group) {
+		g.Add(comment("Query returns a new read-only query builder for the " + view.NameGo() + " view."))
+		g.Id("Query").Call().Qual(pkgQuery, "Builder").Types(b.input.SourceQual(view.NameGo()))
+	})
+
+	// func (c *ClientImpl) <View>Repo() <View>Repo { ... }
+	f.Line().
+		Add(comment(view.NameGo()+"Repo returns the repository instance for the "+view.NameGo()+" view.\nThe instance is cached as a singleton on the client.")).
+		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
+		Id(view.NameGo()+"Repo").Params().Id(view.NameGo()+"Repo").
+		Block(
+			jen.Id("c").Dot("mu").Dot("Lock").Call(),
+			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
+			jen.If(jen.Id("c").Dot(view.NameGoLower()+"Repo").Op("==").Nil()).Block(
+				jen.Id("c").Dot(view.NameGoLower()+"Repo").Op("=").
+					Op("&").Id(view.NameGoLower()).Values(jen.Dict{
+					jen.Id("db"): jen.Id("c").Dot("db"),
+				}),
+			),
+			jen.Return(jen.Id("c").Dot(view.NameGoLower()+"Repo")),
+		)
+
+	// type <viewLower> struct { db *dbConn }
+	f.Line().Type().Id(view.NameGoLower()).Struct(
+		jen.Id("db").Op("*").Id("dbConn"),
+	)
+
+	// func (r *<viewLower>) Query() query.Builder[model.View] { return query.New<View>(r.db) }
+	f.Line().
+		Add(comment("Query returns a new read-only query builder for the "+view.NameGo()+" view.")).
+		Func().Params(jen.Id("r").Op("*").Id(view.NameGoLower())).
+		Id("Query").Params().
+		Qual(pkgQuery, "Builder").Types(b.input.SourceQual(view.NameGo())).
+		Block(
+			jen.Return(jen.Qual(pkgQuery, "New"+view.NameGo()).Call(jen.Id("r").Dot("db"))),
+		)
+
+	return f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, view.FileName())))
+}
+
+// buildSinkRepoFile generates the write-only repository for a sink. Sinks
+// expose only Create and Insert — the written rows are discarded by the
+// DROP table, so nothing is read back, queried, updated or deleted.
+func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
+	pkgConv := b.relativePkgPath(def.PkgConv)
+
+	name := sink.NameGo()
+	lower := sink.NameGoLower()
+	table := sink.NameDatabase()
+	modelType := b.input.SourceQual(name)
+	fromPtr := jen.Qual(pkgConv, "From"+name+"Ptr")
+
+	f := jen.NewFile(def.PkgRepo)
+	f.PackageComment(string(embed.CodegenComment))
+
+	// <Sink>Repo interface { Create(...) error; Insert(...) error }
+	f.Line().Type().Id(name + "Repo").InterfaceFunc(func(g *jen.Group) {
+		g.Add(comment("Create writes a new " + name + " record. The record is discarded\nimmediately after write (DROP table); nothing is returned."))
+		g.Id("Create").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id(lower).Op("*").Add(modelType),
+		).Error()
+		g.Add(comment("Insert writes multiple " + name + " records in a single operation.\nThe records are discarded immediately after write (DROP table)."))
+		g.Id("Insert").Call(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id(lower+"s").Index().Op("*").Add(modelType),
+		).Error()
+	})
+
+	// func (c *ClientImpl) <Sink>Repo() <Sink>Repo { ... }
+	f.Line().
+		Add(comment(name+"Repo returns the repository instance for the "+name+" sink.\nThe instance is cached as a singleton on the client.")).
+		Func().Params(jen.Id("c").Op("*").Id("ClientImpl")).
+		Id(name+"Repo").Params().Id(name+"Repo").
+		Block(
+			jen.Id("c").Dot("mu").Dot("Lock").Call(),
+			jen.Defer().Id("c").Dot("mu").Dot("Unlock").Call(),
+			jen.If(jen.Id("c").Dot(lower+"Repo").Op("==").Nil()).Block(
+				jen.Id("c").Dot(lower+"Repo").Op("=").
+					Op("&").Id(lower).Values(jen.Dict{
+					jen.Id("db"): jen.Id("c").Dot("db"),
+				}),
+			),
+			jen.Return(jen.Id("c").Dot(lower+"Repo")),
+		)
+
+	// type <sinkLower> struct { db *dbConn }
+	f.Line().Type().Id(lower).Struct(
+		jen.Id("db").Op("*").Id("dbConn"),
+	)
+
+	// func (r *<sinkLower>) Create(ctx, m *model.Sink) error { ... }
+	f.Line().
+		Add(comment("Create writes a new "+name+" record; the row is discarded after write.")).
+		Func().Params(jen.Id("r").Op("*").Id(lower)).
+		Id("Create").Params(
+		jen.Id("ctx").Qual("context", "Context"),
+		jen.Id(lower).Op("*").Add(modelType),
+	).Error().
+		Block(
+			jen.If(jen.Id(lower).Op("==").Nil()).Block(
+				jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed record must not be nil"))),
+			),
+			jen.Return(jen.Id("dbInsertVoid").Call(
+				jen.Id("ctx"), jen.Id("r").Dot("db"), jen.Lit(table),
+				jen.Index().Any().Values(fromPtr.Clone().Call(jen.Id(lower))),
+			)),
+		)
+
+	// func (r *<sinkLower>) Insert(ctx, ms []*model.Sink) error { ... }
+	f.Line().
+		Add(comment("Insert writes multiple "+name+" records; the rows are discarded after write.")).
+		Func().Params(jen.Id("r").Op("*").Id(lower)).
+		Id("Insert").Params(
+		jen.Id("ctx").Qual("context", "Context"),
+		jen.Id(lower+"s").Index().Op("*").Add(modelType),
+	).Error().
+		Block(
+			jen.If(jen.Len(jen.Id(lower+"s")).Op("==").Lit(0)).Block(
+				jen.Return(jen.Nil()),
+			),
+			jen.Id("data").Op(":=").Make(jen.Index().Any(), jen.Len(jen.Id(lower+"s"))),
+			jen.For(jen.List(jen.Id("i"), jen.Id("s")).Op(":=").Range().Id(lower+"s")).Block(
+				jen.If(jen.Id("s").Op("==").Nil()).Block(
+					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("slice contains nil record"))),
+				),
+				jen.Id("data").Index(jen.Id("i")).Op("=").Add(fromPtr.Clone().Call(jen.Id("s"))),
+			),
+			jen.Return(jen.Id("dbInsertVoid").Call(
+				jen.Id("ctx"), jen.Id("r").Dot("db"), jen.Lit(table), jen.Id("data"),
+			)),
+		)
+
+	return f.Render(b.fs.Writer(filepath.Join(def.PkgRepo, sink.FileName())))
 }
 
 func (b *build) newQueryBuilder() builder {
@@ -1208,53 +1324,19 @@ func (b *build) fieldValue(sf parser.ComplexIDField, keyVar string) jen.Code {
 //
 
 func (b *build) addBeforeHooks(g *jen.Group, node *field.NodeTable, event string) {
-	somPkg := b.relativePkgPath()
-	hookIface := "OnBefore" + event + "Hook"
-	fieldName := "before" + event
-
-	g.If(
-		jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id(node.NameGoLower())).Assert(jen.Qual(somPkg, hookIface)),
-		jen.Id("ok"),
-	).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("OnBefore"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Err()),
-		),
-	)
-
-	g.Id("r").Dot("mu").Dot("RLock").Call()
-	g.Id(fieldName+"Hooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot(fieldName)))
-	g.Copy(jen.Id(fieldName+"Hooks"), jen.Id("r").Dot(fieldName))
-	g.Id("r").Dot("mu").Dot("RUnlock").Call()
-	g.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id(fieldName + "Hooks")).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id(node.NameGoLower())), jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Err()),
-		),
-	)
+	b.addRunHooks(g, jen.Id(node.NameGoLower()), "before"+event)
 }
 
 func (b *build) addAfterHooks(g *jen.Group, node *field.NodeTable, event string) {
-	somPkg := b.relativePkgPath()
-	hookIface := "OnAfter" + event + "Hook"
-	fieldName := "after" + event
+	b.addRunHooks(g, jen.Id(node.NameGoLower()), "after"+event)
+}
 
-	g.If(
-		jen.List(jen.Id("h"), jen.Id("ok")).Op(":=").Any().Call(jen.Id(node.NameGoLower())).Assert(jen.Qual(somPkg, hookIface)),
-		jen.Id("ok"),
-	).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("OnAfter"+event).Call(jen.Id("ctx")), jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Err()),
-		),
-	)
-
-	g.Id("r").Dot("mu").Dot("RLock").Call()
-	g.Id(fieldName+"Hooks").Op(":=").Make(jen.Index().Id(node.NameGoLower()+"Hook"), jen.Len(jen.Id("r").Dot(fieldName)))
-	g.Copy(jen.Id(fieldName+"Hooks"), jen.Id("r").Dot(fieldName))
-	g.Id("r").Dot("mu").Dot("RUnlock").Call()
-	g.For(jen.List(jen.Id("_"), jen.Id("h")).Op(":=").Range().Id(fieldName + "Hooks")).Block(
-		jen.If(jen.Err().Op(":=").Id("h").Dot("fn").Call(jen.Id("ctx"), jen.Id(node.NameGoLower())), jen.Err().Op("!=").Nil()).Block(
-			jen.Return(jen.Err()),
-		),
-	)
+// addRunHooks emits a call to the generic repo.runHooks for the given hook kind
+// against the provided node expression, returning on error.
+func (b *build) addRunHooks(g *jen.Group, nodeExpr jen.Code, kind string) {
+	g.If(jen.Err().Op(":=").Id("r").Dot("runHooks").Call(
+		jen.Id("ctx"), jen.Id(kind), nodeExpr,
+	), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 }
 
 func (b *build) stringRecordIDFunc(node *field.NodeTable) jen.Code {
@@ -1269,28 +1351,6 @@ func (b *build) stringRecordIDFunc(node *field.NodeTable) jen.Code {
 		),
 		jen.Return(jen.Op("&").Id("rid")),
 	)
-}
-
-func idFuncName(node *field.NodeTable) string {
-	switch node.Source.IDType {
-	case parser.IDTypeUUID:
-		return "newUUID"
-	case parser.IDTypeRand:
-		return "newID"
-	default:
-		return "newULID" // ULID is the default ID type (used by the Node alias)
-	}
-}
-
-func idSurrealFunc(node *field.NodeTable) string {
-	switch node.Source.IDType {
-	case parser.IDTypeUUID:
-		return "rand::uuid()"
-	case parser.IDTypeRand:
-		return "rand::string(20)"
-	default:
-		return "rand::ulid()"
-	}
 }
 
 func comment(text string) jen.Code {

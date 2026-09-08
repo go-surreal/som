@@ -7,15 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/field"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/gen/som/query"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som/field"
+	"som.test/gen/som/filter"
+	"som.test/gen/som/query"
+	"som.test/model"
 	"github.com/google/uuid"
 	"gotest.tools/v3/assert"
 )
 
 func TestDistinct(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

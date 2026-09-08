@@ -18,6 +18,8 @@ func (f *UUID) uuidPkg() string {
 	switch f.source.Package {
 	case parser.UUIDPackageGofrs:
 		return def.PkgUUIDGofrs
+	case parser.UUIDPackageStd:
+		return def.PkgUUIDStd
 	default:
 		return def.PkgUUIDGoogle
 	}
@@ -27,6 +29,8 @@ func (f *UUID) uuidTypeName() string {
 	switch f.source.Package {
 	case parser.UUIDPackageGofrs:
 		return "UUIDGofrs"
+	case parser.UUIDPackageStd:
+		return "UUIDStd"
 	default:
 		return "UUIDGoogle"
 	}
@@ -51,7 +55,7 @@ func (f *UUID) TypeDatabase() string {
 func (f *UUID) SchemaStatements(table, prefix string) []string {
 	return []string{
 		fmt.Sprintf(
-			"DEFINE FIELD %s ON TABLE %s TYPE %s;",
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
 			prefix+f.NameDatabase(), table, f.TypeDatabase(),
 		),
 	}

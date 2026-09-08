@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal"
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/cbor"
+	"som.test/gen/som/internal"
+	"som.test/gen/som/internal/cbor"
 	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
@@ -37,6 +37,11 @@ var ErrEmptyResponse = errors.New("empty response")
 // ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
+// ErrUnsupportedVersion is returned when the connected SurrealDB instance
+// is running a version older than the minimum required (3.2.0), or when
+// the version string returned by the server cannot be parsed.
+var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
+
 // ServerError is a structured error from SurrealDB v3.
 // Use errors.As to extract structured details from errors returned by SOM:
 //
@@ -45,6 +50,40 @@ var ErrCacheNotSupported = errors.New("caching is not supported for nodes with c
 //	    fmt.Println(se.Kind, se.Message, se.Details)
 //	}
 type ServerError = connection.ServerError
+
+// ServerError kind constants, re-exported from the driver so callers can
+// compare against ServerError.Kind without importing the connection package.
+const (
+	KindValidation    = connection.KindValidation
+	KindConfiguration = connection.KindConfiguration
+	KindThrown        = connection.KindThrown
+	KindQuery         = connection.KindQuery
+	KindSerialization = connection.KindSerialization
+	KindNotAllowed    = connection.KindNotAllowed
+	KindNotFound      = connection.KindNotFound
+	KindAlreadyExists = connection.KindAlreadyExists
+	KindConnection    = connection.KindConnection
+	KindInternal      = connection.KindInternal
+)
+
+// ServerError classification helpers, re-exported from the driver. Each
+// unwraps err to a *ServerError and reports whether it matches the given
+// kind, so callers can branch on failure type without importing the
+// connection package or matching on message strings.
+var (
+	IsNotFound              = connection.IsNotFound
+	IsNotAllowed            = connection.IsNotAllowed
+	IsTransactionConflict   = connection.IsTransactionConflict
+	IsTimedOut              = connection.IsTimedOut
+	IsNotExecuted           = connection.IsNotExecuted
+	IsCancelled             = connection.IsCancelled
+	IsParseError            = connection.IsParseError
+	IsDeserialization       = connection.IsDeserialization
+	IsLiveQueryNotSupported = connection.IsLiveQueryNotSupported
+	IsScriptingBlocked      = connection.IsScriptingBlocked
+	IsTokenExpired          = connection.IsTokenExpired
+	IsInvalidAuth           = connection.IsInvalidAuth
+)
 
 // nodeID is a marker type for all ID types.
 type nodeID interface {
@@ -57,23 +96,30 @@ type UUID string
 
 type Rand string
 
+// String is an ID type for record IDs that are supplied by the
+// application. Unlike ULID, UUID and Rand it is not generated
+// server-side, so records must always be created with an explicit ID.
+type String string
+
 func (ULID) isNodeID() {}
 
 func (UUID) isNodeID() {}
 
 func (Rand) isNodeID() {}
 
-func (ArrayID) isNodeID() {}
-
-func (ObjectID) isNodeID() {}
+func (String) isNodeID() {}
 
 // ArrayID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an array.
 type ArrayID struct{}
 
+func (ArrayID) isNodeID() {}
+
 // ObjectID is a marker type embedded in key structs to indicate
 // that the record ID should be encoded as an object.
 type ObjectID struct{}
+
+func (ObjectID) isNodeID() {}
 
 type rangeBound struct {
 	val       any
@@ -137,7 +183,8 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 }
 
 type Node[T nodeID] struct {
-	id T
+	id      T
+	fetched uint64
 }
 
 func NewNode[T nodeID](id T) Node[T] {
@@ -146,6 +193,14 @@ func NewNode[T nodeID](id T) Node[T] {
 
 func (n Node[T]) ID() T {
 	return n.id
+}
+
+func (n *Node[T]) SetFetched(bits uint64) {
+	n.fetched |= bits
+}
+
+func (n Node[T]) GetFetched() uint64 {
+	return n.fetched
 }
 
 func (Node[T]) isNode() {}
@@ -165,6 +220,42 @@ func NewEdge(id string) Edge {
 func (e Edge) ID() string {
 	return e.id
 }
+
+// View describes a read-only, pre-computed table view backed by a
+// SurrealDB DEFINE TABLE ... AS SELECT statement. View rows are computed
+// from a source table and cannot be created, updated or deleted through
+// the generated repository.
+//
+// Caution: values projected from linked tables (via record links or graph
+// traversal, e.g. ->product.name) are frozen at the time the source row is
+// written. They do NOT refresh when the linked record itself changes, so a
+// view may hold stale linked data.
+type View struct {
+	id string
+}
+
+func NewView(id string) View {
+	return View{id: id}
+}
+
+func (v View) ID() string {
+	return v.id
+}
+
+func (View) isView() {}
+
+// Sink describes a write-only ingestion table backed by a SurrealDB
+// DEFINE TABLE ... DROP statement. Records created through a Sink are
+// accepted — firing any pre-computed table views (som.View) and events
+// that select from it — but are NOT persisted: the row is discarded
+// immediately after write. A Sink therefore exposes only Create and
+// Insert; it has no id and cannot be read, queried, updated or deleted.
+//
+// Typical use: feeding an aggregating view from a high-volume event or
+// log stream where only the aggregate is kept, not the raw records.
+type Sink struct{}
+
+func (Sink) isSink() {}
 
 type node interface {
 	isNode()
@@ -192,6 +283,8 @@ type Timestamps = internal.Timestamps
 type OptimisticLock = internal.OptimisticLock
 
 type SoftDelete = internal.SoftDelete
+
+type Expiry = internal.Expiry
 
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
@@ -322,4 +415,65 @@ type OnBeforeDeleteHook interface {
 // It is not distributed across multiple instances of the application.
 type OnAfterDeleteHook interface {
 	OnAfterDelete(ctx context.Context) error
+}
+
+// Params is a map of named parameters for raw queries.
+type Params map[string]any
+
+// RawResult holds the result of a raw query.
+// For multi-statement queries, only the first statement's result set is used.
+type RawResult struct {
+	data []byte
+}
+
+// NewRawResult creates a new RawResult from raw query response data.
+func NewRawResult(data []byte) *RawResult {
+	return &RawResult{data: data}
+}
+
+// Scan unmarshals the first statement's result set into a slice of T.
+// For multi-statement queries, only the first statement's results are decoded.
+func (r *RawResult) Scan[T any]() ([]T, error) {
+	if r.data == nil {
+		return nil, nil
+	}
+	var raw []internal.QueryResult[cbor.RawMessage]
+	if err := cbor.Unmarshal(r.data, &raw); err != nil {
+		return nil, fmt.Errorf("could not decode raw query result: %w", err)
+	}
+	if len(raw) < 1 {
+		return nil, nil
+	}
+	// Re-wrap the raw messages into a CBOR array so they can be
+	// unmarshalled into the caller's typed slice without reflection.
+	// This is cheap: Marshal on []RawMessage only prepends an array header.
+	resultBytes, err := cbor.Marshal(raw[0].Result)
+	if err != nil {
+		return nil, fmt.Errorf("could not re-encode result: %w", err)
+	}
+	var out []T
+	if err := cbor.Unmarshal(resultBytes, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ScanOne unmarshals the first row of the first statement's result set into T.
+// Returns ErrNotFound if no results.
+func (r *RawResult) ScanOne[T any]() (T, error) {
+	var out T
+	if r.data == nil {
+		return out, ErrNotFound
+	}
+	var raw []internal.QueryResult[cbor.RawMessage]
+	if err := cbor.Unmarshal(r.data, &raw); err != nil {
+		return out, fmt.Errorf("could not decode raw query result: %w", err)
+	}
+	if len(raw) < 1 || len(raw[0].Result) < 1 {
+		return out, ErrNotFound
+	}
+	if err := cbor.Unmarshal(raw[0].Result[0], &out); err != nil {
+		return out, err
+	}
+	return out, nil
 }

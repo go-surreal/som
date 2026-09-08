@@ -36,17 +36,6 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		}
 	}
 
-	if check {
-		info, err := mod.CheckSOMVersion(verbose)
-		if err != nil {
-			return err
-		}
-
-		if verbose && info != "" {
-			fmt.Println("ⓘ ", info)
-		}
-	}
-
 	info, err := mod.CheckDriverVersion()
 	if err != nil {
 		return err
@@ -82,6 +71,8 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 			[]parser.TypeHandler{
 				&structtype.NodeHandler{},
 				&structtype.EdgeHandler{},
+				&structtype.ViewHandler{},
+				&structtype.SinkHandler{},
 				&structtype.ComplexIDStructHandler{},
 				&structtype.EnumHandler{},
 				&structtype.EnumValueHandler{},
@@ -100,6 +91,8 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 				&fieldtype.URLHandler{},
 				&fieldtype.NodeRefHandler{},
 				&fieldtype.EdgeRefHandler{},
+				&fieldtype.ViewRefHandler{},
+				&fieldtype.SinkRefHandler{},
 				&fieldtype.UUIDHandler{},
 				&fieldtype.SliceHandler{},
 				&fieldtype.BoolHandler{},
@@ -164,6 +157,11 @@ func checkLibVersions(mod *gomod.GoMod, features *parser.UsedFeatures) error {
 	}
 	if features.UsesGofrsUUID {
 		if err := mod.CheckLibVersion(gomod.PkgUUIDGofrs, gomod.MinUUIDGofrsVersion); err != nil {
+			return err
+		}
+	}
+	if features.UsesStdUUID {
+		if err := mod.CheckStdUUIDSupport(); err != nil {
 			return err
 		}
 	}

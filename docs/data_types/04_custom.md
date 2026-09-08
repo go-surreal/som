@@ -7,14 +7,13 @@ SOM provides custom types for common patterns that aren't covered by Go's standa
 Enums provide type-safe enumerated values. See [Enums](../models/04_enums.md) for detailed documentation.
 
 ```go
-type Status string
+type Status som.Enum
 
 const (
     StatusActive   Status = "active"
     StatusInactive Status = "inactive"
 )
 
-func (s Status) Enum() {}
 ```
 
 ## som.Email
@@ -32,7 +31,7 @@ Filter operations:
 
 ```go
 filter.User.Email.Equal("john@example.com")
-filter.User.Email.In("a@example.com", "b@example.com")
+filter.User.Email.In([]som.Email{"a@example.com", "b@example.com"})
 filter.User.Email.User()    // Extract user part
 filter.User.Email.Host()    // Extract host part
 ```

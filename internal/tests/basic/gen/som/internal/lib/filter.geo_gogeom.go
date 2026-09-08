@@ -5,7 +5,7 @@ package lib
 import (
 	"github.com/twpayne/go-geom"
 
-	"github.com/go-surreal/som/tests/basic/gen/som/internal/types"
+	"som.test/gen/som/internal/types"
 )
 
 // GeoPointGG is a filter for geom.Point fields.

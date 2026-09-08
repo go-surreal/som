@@ -3,7 +3,7 @@
 package lib
 
 import (
-	"github.com/go-surreal/som/tests/basic/gen/som"
+	"som.test/gen/som"
 )
 
 // PasswordAlgorithm represents the encryption algorithm used for password hashing.

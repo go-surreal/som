@@ -5,12 +5,29 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
+func TestServerError_KindHelpers(t *testing.T) {
+	t.Parallel()
+
+	notFound := &som.ServerError{Kind: som.KindNotFound, Message: "record not found"}
+	assert.Assert(t, som.IsNotFound(notFound))
+	assert.Assert(t, !som.IsNotAllowed(notFound))
+
+	notAllowed := &som.ServerError{Kind: som.KindNotAllowed, Message: "permission denied"}
+	assert.Assert(t, som.IsNotAllowed(notAllowed))
+	assert.Assert(t, !som.IsNotFound(notAllowed))
+
+	assert.Assert(t, !som.IsNotFound(errors.New("plain error")))
+	assert.Assert(t, !som.IsNotFound(nil))
+}
+
 func TestServerError_OptimisticLockUpdate(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -41,6 +58,8 @@ func TestServerError_OptimisticLockUpdate(t *testing.T) {
 }
 
 func TestServerError_OptimisticLockSoftDelete(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -63,6 +82,8 @@ func TestServerError_OptimisticLockSoftDelete(t *testing.T) {
 }
 
 func TestServerError_AlreadyDeleted(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -82,6 +103,8 @@ func TestServerError_AlreadyDeleted(t *testing.T) {
 }
 
 func TestServerError_OptimisticLockRestore(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

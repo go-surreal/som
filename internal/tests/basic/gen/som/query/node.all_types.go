@@ -2,13 +2,16 @@
 package query
 
 import (
-	conv "github.com/go-surreal/som/tests/basic/gen/som/conv"
-	lib "github.com/go-surreal/som/tests/basic/gen/som/internal/lib"
-	model "github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	conv "som.test/gen/som/conv"
+	lib "som.test/gen/som/internal/lib"
+	with "som.test/gen/som/with"
+	model "som.test/model"
 )
 
 // allTypesModelInfo holds the model-specific unmarshal functions for AllTypes.
 var allTypesModelInfo = modelInfo[model.AllTypes]{
+	Fields: conv.AllTypesFields,
 	UnmarshalAll: func(data []byte) ([]*model.AllTypes, error) {
 		return unmarshalAll(data, conv.ToAllTypesPtr)
 	},
@@ -20,12 +23,42 @@ var allTypesModelInfo = modelInfo[model.AllTypes]{
 	},
 }
 
+var allTypesRangeFn = rangeFn[model.AllTypes](func(q *lib.Query[model.AllTypes], from som.RangeFrom, to som.RangeTo) string {
+	expr := ":"
+	if !from.IsOpen() {
+		expr += q.AsVar(from.Value().(som.ULID))
+	}
+	if !from.IsOpen() && !from.IsInclusive() {
+		expr += ">"
+	}
+	expr += ".."
+	if !to.IsOpen() && to.IsInclusive() {
+		expr += "="
+	}
+	if !to.IsOpen() {
+		expr += q.AsVar(to.Value().(som.ULID))
+	}
+	return expr
+})
+
 // NewAllTypes creates a new query builder for AllTypes models.
 func NewAllTypes(db Database) Builder[model.AllTypes] {
 	q := lib.NewQuery[model.AllTypes]("all_types")
 	return Builder[model.AllTypes]{builder[model.AllTypes]{
-		db:    db,
-		info:  allTypesModelInfo,
-		query: q,
+		db:           db,
+		fetchBitFn:   with.AllTypesFetchBit,
+		info:         allTypesModelInfo,
+		query:        q,
+		rangeFn:      allTypesRangeFn,
+		setFetchedFn: with.AllTypesSetFetched,
 	}}
+}
+
+func NewAllTypesChanges(db Database) ChangesBuilder[model.AllTypes, conv.AllTypes] {
+	return ChangesBuilder[model.AllTypes, conv.AllTypes]{
+		convFrom: conv.FromAllTypesPtr,
+		convTo:   conv.ToAllTypesPtr,
+		db:       db,
+		table:    "all_types",
+	}
 }

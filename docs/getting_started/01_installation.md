@@ -2,8 +2,9 @@
 
 ## Prerequisites
 
-- **Go 1.25 or later** - SOM uses generics and iterators extensively
-- **SurrealDB 3.x** - Tested against version 3.0.0
+- **Go 1.27.1** - SOM uses generics, iterators and generic methods extensively. During this phase of the project,
+  only ever the latest version of Go is supported.
+- **SurrealDB 3.x** - Tested against version 3.2.0
 
 ## Install SOM Generator
 
@@ -99,9 +100,10 @@ The generated code is a self-contained Go module. Import it in your application:
 
 ```go
 import (
-    "yourproject/gen/som"
-    "yourproject/gen/som/filter"
-    "yourproject/gen/som/by"
+    "yourproject/gen/som"        // base types, errors, transactions
+    "yourproject/gen/som/repo"   // client and repositories
+    "yourproject/gen/som/filter" // filters
+    "yourproject/gen/som/by"     // sorting
 )
 ```
 
@@ -110,7 +112,7 @@ import (
 ### Using Docker (Recommended)
 
 ```bash
-docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.0.0 \
+docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.2.0 \
     start --user root --pass root
 ```
 
@@ -128,7 +130,7 @@ surreal start --user root --pass root --bind 0.0.0.0:8000
 version: '3'
 services:
   surrealdb:
-    image: surrealdb/surrealdb:v3.0.0
+    image: surrealdb/surrealdb:v3.2.0
     ports:
       - "8000:8000"
     command: start --user root --pass root
@@ -145,13 +147,13 @@ import (
     "context"
     "log"
 
-    "yourproject/gen/som"
+    "yourproject/gen/som/repo"
 )
 
 func main() {
     ctx := context.Background()
 
-    client, err := som.NewClient(ctx, som.Config{
+    client, err := repo.NewClient(ctx, repo.Config{
         Address:   "ws://localhost:8000",
         Username:  "root",
         Password:  "root",

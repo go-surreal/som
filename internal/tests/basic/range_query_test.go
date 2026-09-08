@@ -5,15 +5,17 @@ import (
 	"testing"
 	"time"
 
-	som "github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/by"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/gen/som/query"
-	"github.com/go-surreal/som/tests/basic/model"
+	som "som.test/gen/som"
+	"som.test/gen/som/by"
+	"som.test/gen/som/filter"
+	"som.test/gen/som/query"
+	"som.test/model"
 	"gotest.tools/v3/assert"
 )
 
 func TestRangeQueryDescribe(t *testing.T) {
+	t.Parallel()
+
 	start := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 	end := time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC)
 
@@ -92,7 +94,61 @@ func TestRangeQueryDescribe(t *testing.T) {
 	})
 }
 
+func TestRangeQueryStringIDDescribe(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ULID full range", func(t *testing.T) {
+		desc := query.NewAllTypes(nil).Range(
+			som.From(som.ULID("01HY5E8ZQA1BCD2EF3GH4JK5MN")),
+			som.To(som.ULID("01HY5E8ZQA9ZZZ9ZZ9ZZ9ZZ9ZZ")),
+		).Describe()
+
+		assert.Equal(t,
+			"SELECT * FROM all_types:$A..$B",
+			desc,
+		)
+	})
+
+	t.Run("ULID open-ended to end", func(t *testing.T) {
+		desc := query.NewAllTypes(nil).Range(
+			som.From(som.ULID("01HY5E8ZQA1BCD2EF3GH4JK5MN")),
+			som.ToEnd(),
+		).Describe()
+
+		assert.Equal(t,
+			"SELECT * FROM all_types:$A..",
+			desc,
+		)
+	})
+
+	t.Run("ULID open-ended from start", func(t *testing.T) {
+		desc := query.NewAllTypes(nil).Range(
+			som.FromStart(),
+			som.To(som.ULID("01HY5E8ZQA9ZZZ9ZZ9ZZ9ZZ9ZZ")),
+		).Describe()
+
+		assert.Equal(t,
+			"SELECT * FROM all_types:..$A",
+			desc,
+		)
+	})
+
+	t.Run("ULID exclusive from inclusive to", func(t *testing.T) {
+		desc := query.NewAllTypes(nil).Range(
+			som.FromExclusive(som.ULID("01HY5E8ZQA1BCD2EF3GH4JK5MN")),
+			som.ToInclusive(som.ULID("01HY5E8ZQA9ZZZ9ZZ9ZZ9ZZ9ZZ")),
+		).Describe()
+
+		assert.Equal(t,
+			"SELECT * FROM all_types:$A>..=$B",
+			desc,
+		)
+	})
+}
+
 func TestRangeQueryArrayID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -210,6 +266,8 @@ func TestRangeQueryArrayID(t *testing.T) {
 }
 
 func TestRangeQueryObjectID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

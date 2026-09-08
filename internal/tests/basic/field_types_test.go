@@ -4,12 +4,13 @@ import (
 	"context"
 	"math"
 	"net/url"
+	stduuid "uuid"
 	"testing"
 	"time"
 
-	"github.com/go-surreal/som/tests/basic/gen/som"
-	"github.com/go-surreal/som/tests/basic/gen/som/filter"
-	"github.com/go-surreal/som/tests/basic/model"
+	"som.test/gen/som"
+	"som.test/gen/som/filter"
+	"som.test/model"
 	gofrsuuid "github.com/gofrs/uuid"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -17,6 +18,8 @@ import (
 )
 
 func TestNumerics(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -114,6 +117,8 @@ func TestNumerics(t *testing.T) {
 }
 
 func TestSlice(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -462,6 +467,8 @@ func TestSlice(t *testing.T) {
 }
 
 func TestSliceNilElements(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -601,6 +608,8 @@ func TestSliceNilElements(t *testing.T) {
 }
 
 func TestTimestamps(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -632,6 +641,8 @@ func TestTimestamps(t *testing.T) {
 }
 
 func TestURLTypes(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -698,6 +709,8 @@ func TestURLTypes(t *testing.T) {
 }
 
 func TestDuration(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -754,6 +767,8 @@ func TestDuration(t *testing.T) {
 }
 
 func TestUUID(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -810,6 +825,8 @@ func TestUUID(t *testing.T) {
 }
 
 func TestUUIDGofrs(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -865,7 +882,67 @@ func TestUUIDGofrs(t *testing.T) {
 	)
 }
 
+func TestUUIDStd(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ptr := stduuid.NewV7()
+
+	userNew := &model.AllTypes{
+		FieldMonth:      time.January,
+		FieldUUIDStd:    stduuid.New(),
+		FieldUUIDStdPtr: &ptr,
+		FieldUUIDStdNil: nil,
+	}
+
+	modelIn := userNew
+
+	err := client.AllTypesRepo().Create(ctx, modelIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	modelOut, exists, err := client.AllTypesRepo().Read(ctx, string(modelIn.ID()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !exists {
+		t.Fatal("model not found")
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
+		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
+	)
+
+	modelOut, err = client.AllTypesRepo().Query().
+		Where(
+			filter.AllTypes.FieldUUIDStd.Equal(modelIn.FieldUUIDStd),
+			filter.AllTypes.FieldUUIDStdPtr.Equal(*modelIn.FieldUUIDStdPtr),
+			filter.AllTypes.FieldUUIDStdNil.Nil(true),
+		).
+		First(ctx)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.DeepEqual(t, modelIn, modelOut,
+		cmpopts.IgnoreUnexported(som.Node[som.ULID]{}, som.Node[som.UUID]{}, som.Timestamps{}, som.OptimisticLock{}, som.SoftDelete{}),
+		cmpopts.IgnoreFields(model.Credentials{}, "Password", "PasswordPtr"),
+		cmpopts.IgnoreFields(model.AllTypes{}, "FieldHookStatus", "FieldHookDetail"),
+	)
+}
+
 func TestPassword(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)
@@ -952,6 +1029,8 @@ func TestPassword(t *testing.T) {
 }
 
 func TestEmail(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	client, cleanup := prepareDatabase(ctx, t)

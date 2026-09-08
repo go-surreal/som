@@ -25,6 +25,7 @@ type Template struct {
 	GenerateOutPath      string
 	UsesGoogleUUID       bool
 	UsesGofrsUUID        bool
+	UsesStdUUID          bool
 	UsesOrbGeo           bool
 	UsesSimplefeaturesGeo bool
 	UsesGoGeomGeo        bool
@@ -37,6 +38,7 @@ const (
 	FileAlways FileCondition = iota
 	FileIfGoogleUUID
 	FileIfGofrsUUID
+	FileIfStdUUID
 	FileIfOrbGeo
 	FileIfSimplefeaturesGeo
 	FileIfGoGeomGeo
@@ -52,6 +54,10 @@ var fileConditions = map[string]FileCondition{
 	"internal/cbor/helpers_uuid_gofrs.go":        FileIfGofrsUUID,
 	"internal/distinct/distinct_uuid_google.go":  FileIfGoogleUUID,
 	"internal/distinct/distinct_uuid_gofrs.go":   FileIfGofrsUUID,
+	"internal/types/uuid_std.go":                 FileIfStdUUID,
+	"internal/lib/filter.uuid_std.go":            FileIfStdUUID,
+	"internal/cbor/helpers_uuid_std.go":          FileIfStdUUID,
+	"internal/distinct/distinct_uuid_std.go":     FileIfStdUUID,
 	// Geo files - orb
 	"internal/types/geo_orb.go":        FileIfOrbGeo,
 	"internal/lib/filter.geo_orb.go":   FileIfOrbGeo,
@@ -100,6 +106,10 @@ func Read(tmpl *Template) ([]*File, error) {
 				}
 			case FileIfGofrsUUID:
 				if !tmpl.UsesGofrsUUID {
+					return nil // Skip this file
+				}
+			case FileIfStdUUID:
+				if !tmpl.UsesStdUUID {
 					return nil // Skip this file
 				}
 			case FileIfOrbGeo:
