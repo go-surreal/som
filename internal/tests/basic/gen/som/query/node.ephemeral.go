@@ -5,7 +5,6 @@ import (
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -47,11 +46,9 @@ func NewEphemeral(db Database) Builder[model.Ephemeral] {
 	// Automatically exclude expired records
 	q.ExpiryField = "expires_at"
 	return Builder[model.Ephemeral]{builder[model.Ephemeral]{
-		db:           db,
-		fetchBitFn:   with.EphemeralFetchBit,
-		info:         ephemeralModelInfo,
-		query:        q,
-		rangeFn:      ephemeralRangeFn,
-		setFetchedFn: with.EphemeralSetFetched,
+		db:      db,
+		info:    ephemeralModelInfo,
+		query:   q,
+		rangeFn: ephemeralRangeFn,
 	}}
 }

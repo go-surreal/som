@@ -199,8 +199,6 @@ func live[M any](
 	ctx context.Context,
 	in <-chan []byte,
 	info modelInfo[M],
-	fetchBits uint64,
-	setFetched func(*M, uint64),
 ) <-chan LiveResult[*M] {
 	out := make(chan LiveResult[*M], 1)
 
@@ -221,7 +219,7 @@ func live[M any](
 				select {
 				case <-ctx.Done():
 					return
-				case out <- toLiveResult(data, info, fetchBits, setFetched):
+				case out <- toLiveResult(data, info):
 				}
 			}
 		}
@@ -233,8 +231,6 @@ func live[M any](
 func toLiveResult[M any](
 	in []byte,
 	info modelInfo[M],
-	fetchBits uint64,
-	setFetched func(*M, uint64),
 ) LiveResult[*M] {
 	var response liveResponse
 
@@ -256,9 +252,6 @@ func toLiveResult[M any](
 
 		if out.err == nil {
 			out.res = result
-			if fetchBits != 0 && setFetched != nil {
-				setFetched(out.res, fetchBits)
-			}
 		}
 
 		return &liveCreate[*M]{
@@ -275,9 +268,6 @@ func toLiveResult[M any](
 
 		if out.err == nil {
 			out.res = result
-			if fetchBits != 0 && setFetched != nil {
-				setFetched(out.res, fetchBits)
-			}
 		}
 
 		return &liveUpdate[*M]{
@@ -294,9 +284,6 @@ func toLiveResult[M any](
 
 		if out.err == nil {
 			out.res = result
-			if fetchBits != 0 && setFetched != nil {
-				setFetched(out.res, fetchBits)
-			}
 		}
 
 		return &liveDelete[*M]{

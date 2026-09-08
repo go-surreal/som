@@ -5,7 +5,6 @@ import (
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -45,11 +44,9 @@ var slugRangeFn = rangeFn[model.Slug](func(q *lib.Query[model.Slug], from som.Ra
 func NewSlug(db Database) Builder[model.Slug] {
 	q := lib.NewQuery[model.Slug]("slug")
 	return Builder[model.Slug]{builder[model.Slug]{
-		db:           db,
-		fetchBitFn:   with.SlugFetchBit,
-		info:         slugModelInfo,
-		query:        q,
-		rangeFn:      slugRangeFn,
-		setFetchedFn: with.SlugSetFetched,
+		db:      db,
+		info:    slugModelInfo,
+		query:   q,
+		rangeFn: slugRangeFn,
 	}}
 }

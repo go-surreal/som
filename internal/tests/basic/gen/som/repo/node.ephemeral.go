@@ -362,7 +362,8 @@ func (r *ephemeral) Refresh(ctx context.Context, ephemeral *model.Ephemeral) err
 }
 
 // Fetch fetches related records for the given model based on the specified fetch fields.
-// The model is updated in-place with the fetched relations.
+// The model is updated in-place with the fetched relations. Resolved relations are no
+// longer marked as partial, so IsPartial reports whether a relation was fetched.
 func (r *ephemeral) Fetch(ctx context.Context, ephemeral *model.Ephemeral, fetch ...with.Fetch_[model.Ephemeral]) error {
 	if ephemeral == nil {
 		return errors.New("the passed node must not be nil")
@@ -370,23 +371,13 @@ func (r *ephemeral) Fetch(ctx context.Context, ephemeral *model.Ephemeral, fetch
 	if ephemeral.ID() == "" {
 		return errors.New("cannot fetch Ephemeral without existing record ID")
 	}
-	var requestedBits uint64
+	var fields []string
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
-			requestedBits |= with.EphemeralFetchBit(field)
+			fields = append(fields, field)
 		}
 	}
-	alreadyFetched := ephemeral.Node.GetFetched()
-	if requestedBits&^alreadyFetched == 0 {
-		return nil
-	}
-	allBits := alreadyFetched | requestedBits
-	fetchFields := with.EphemeralFetchFields(allBits)
-	err := r.fetch(ctx, r.recordID(string(ephemeral.ID())), ephemeral, fetchFields)
-	if err == nil {
-		ephemeral.Node.SetFetched(allBits)
-	}
-	return err
+	return r.fetch(ctx, r.recordID(string(ephemeral.ID())), ephemeral, fields)
 }
 
 // Relate returns a new relate instance for the Ephemeral model.

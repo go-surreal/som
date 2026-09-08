@@ -7,7 +7,6 @@ import (
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
 	types "som.test/gen/som/internal/types"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -49,11 +48,9 @@ var teamMemberRangeFn = rangeFn[model.TeamMember](func(q *lib.Query[model.TeamMe
 func NewTeamMember(db Database) Builder[model.TeamMember] {
 	q := lib.NewQuery[model.TeamMember]("team_member")
 	return Builder[model.TeamMember]{builder[model.TeamMember]{
-		db:           db,
-		fetchBitFn:   with.TeamMemberFetchBit,
-		info:         teamMemberModelInfo,
-		query:        q,
-		rangeFn:      teamMemberRangeFn,
-		setFetchedFn: with.TeamMemberSetFetched,
+		db:      db,
+		info:    teamMemberModelInfo,
+		query:   q,
+		rangeFn: teamMemberRangeFn,
 	}}
 }

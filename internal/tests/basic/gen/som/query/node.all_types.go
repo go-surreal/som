@@ -5,7 +5,6 @@ import (
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -45,12 +44,10 @@ var allTypesRangeFn = rangeFn[model.AllTypes](func(q *lib.Query[model.AllTypes],
 func NewAllTypes(db Database) Builder[model.AllTypes] {
 	q := lib.NewQuery[model.AllTypes]("all_types")
 	return Builder[model.AllTypes]{builder[model.AllTypes]{
-		db:           db,
-		fetchBitFn:   with.AllTypesFetchBit,
-		info:         allTypesModelInfo,
-		query:        q,
-		rangeFn:      allTypesRangeFn,
-		setFetchedFn: with.AllTypesSetFetched,
+		db:      db,
+		info:    allTypesModelInfo,
+		query:   q,
+		rangeFn: allTypesRangeFn,
 	}}
 }
 

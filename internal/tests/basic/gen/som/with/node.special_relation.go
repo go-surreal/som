@@ -3,31 +3,6 @@ package with
 
 import model "som.test/model"
 
-const (
-	specialRelationFetchedAuthor uint64 = 1 << iota
-)
-
-func SpecialRelationFetchBit(field string) uint64 {
-	switch field {
-	case "author":
-		return specialRelationFetchedAuthor
-	default:
-		return 0
-	}
-}
-
-func SpecialRelationFetchFields(bits uint64) []string {
-	var fields []string
-	if bits&specialRelationFetchedAuthor != 0 {
-		fields = append(fields, "author")
-	}
-	return fields
-}
-
-func SpecialRelationSetFetched(m *model.SpecialRelation, bits uint64) {
-	m.Node.SetFetched(bits)
-}
-
 var SpecialRelation = specialRelation[model.SpecialRelation]("")
 
 type specialRelation[M any] string

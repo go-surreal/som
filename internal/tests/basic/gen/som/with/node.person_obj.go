@@ -3,22 +3,6 @@ package with
 
 import model "som.test/model"
 
-func PersonObjFetchBit(field string) uint64 {
-	switch field {
-	default:
-		return 0
-	}
-}
-
-func PersonObjFetchFields(bits uint64) []string {
-	var fields []string
-	return fields
-}
-
-func PersonObjSetFetched(m *model.PersonObj, bits uint64) {
-	m.Node.SetFetched(bits)
-}
-
 var PersonObj = personObj[model.PersonObj]("")
 
 type personObj[M any] string

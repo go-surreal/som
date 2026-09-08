@@ -282,7 +282,8 @@ func (r *personObj) Refresh(ctx context.Context, personObj *model.PersonObj) err
 }
 
 // Fetch fetches related records for the given model based on the specified fetch fields.
-// The model is updated in-place with the fetched relations.
+// The model is updated in-place with the fetched relations. Resolved relations are no
+// longer marked as partial, so IsPartial reports whether a relation was fetched.
 func (r *personObj) Fetch(ctx context.Context, personObj *model.PersonObj, fetch ...with.Fetch_[model.PersonObj]) error {
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
@@ -291,23 +292,13 @@ func (r *personObj) Fetch(ctx context.Context, personObj *model.PersonObj, fetch
 	if personObj.ID() == zeroKey {
 		return errors.New("cannot fetch PersonObj without existing record ID")
 	}
-	var requestedBits uint64
+	var fields []string
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
-			requestedBits |= with.PersonObjFetchBit(field)
+			fields = append(fields, field)
 		}
 	}
-	alreadyFetched := personObj.Node.GetFetched()
-	if requestedBits&^alreadyFetched == 0 {
-		return nil
-	}
-	allBits := alreadyFetched | requestedBits
-	fetchFields := with.PersonObjFetchFields(allBits)
-	err := r.fetch(ctx, r.recordID(personObj.ID()), personObj, fetchFields)
-	if err == nil {
-		personObj.Node.SetFetched(allBits)
-	}
-	return err
+	return r.fetch(ctx, r.recordID(personObj.ID()), personObj, fields)
 }
 
 // Index returns a new index instance for the PersonObj model.

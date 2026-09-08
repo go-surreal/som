@@ -3,22 +3,6 @@ package with
 
 import model "som.test/model"
 
-func SlugFetchBit(field string) uint64 {
-	switch field {
-	default:
-		return 0
-	}
-}
-
-func SlugFetchFields(bits uint64) []string {
-	var fields []string
-	return fields
-}
-
-func SlugSetFetched(m *model.Slug, bits uint64) {
-	m.Node.SetFetched(bits)
-}
-
 var Slug = slug[model.Slug]("")
 
 type slug[M any] string

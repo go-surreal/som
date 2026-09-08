@@ -431,7 +431,8 @@ func (r *specialTypes) Refresh(ctx context.Context, specialTypes *model.SpecialT
 }
 
 // Fetch fetches related records for the given model based on the specified fetch fields.
-// The model is updated in-place with the fetched relations.
+// The model is updated in-place with the fetched relations. Resolved relations are no
+// longer marked as partial, so IsPartial reports whether a relation was fetched.
 func (r *specialTypes) Fetch(ctx context.Context, specialTypes *model.SpecialTypes, fetch ...with.Fetch_[model.SpecialTypes]) error {
 	if specialTypes == nil {
 		return errors.New("the passed node must not be nil")
@@ -439,23 +440,13 @@ func (r *specialTypes) Fetch(ctx context.Context, specialTypes *model.SpecialTyp
 	if specialTypes.ID() == "" {
 		return errors.New("cannot fetch SpecialTypes without existing record ID")
 	}
-	var requestedBits uint64
+	var fields []string
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
-			requestedBits |= with.SpecialTypesFetchBit(field)
+			fields = append(fields, field)
 		}
 	}
-	alreadyFetched := specialTypes.Node.GetFetched()
-	if requestedBits&^alreadyFetched == 0 {
-		return nil
-	}
-	allBits := alreadyFetched | requestedBits
-	fetchFields := with.SpecialTypesFetchFields(allBits)
-	err := r.fetch(ctx, r.recordID(string(specialTypes.ID())), specialTypes, fetchFields)
-	if err == nil {
-		specialTypes.Node.SetFetched(allBits)
-	}
-	return err
+	return r.fetch(ctx, r.recordID(string(specialTypes.ID())), specialTypes, fields)
 }
 
 // Relate returns a new relate instance for the SpecialTypes model.

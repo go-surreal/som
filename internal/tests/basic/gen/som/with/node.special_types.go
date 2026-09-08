@@ -3,22 +3,6 @@ package with
 
 import model "som.test/model"
 
-func SpecialTypesFetchBit(field string) uint64 {
-	switch field {
-	default:
-		return 0
-	}
-}
-
-func SpecialTypesFetchFields(bits uint64) []string {
-	var fields []string
-	return fields
-}
-
-func SpecialTypesSetFetched(m *model.SpecialTypes, bits uint64) {
-	m.Node.SetFetched(bits)
-}
-
 var SpecialTypes = specialTypes[model.SpecialTypes]("")
 
 type specialTypes[M any] string

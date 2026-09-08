@@ -3,22 +3,6 @@ package with
 
 import model "som.test/model"
 
-func WeatherFetchBit(field string) uint64 {
-	switch field {
-	default:
-		return 0
-	}
-}
-
-func WeatherFetchFields(bits uint64) []string {
-	var fields []string
-	return fields
-}
-
-func WeatherSetFetched(m *model.Weather, bits uint64) {
-	m.Node.SetFetched(bits)
-}
-
 var Weather = weather[model.Weather]("")
 
 type weather[M any] string

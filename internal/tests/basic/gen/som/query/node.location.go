@@ -5,7 +5,6 @@ import (
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -45,11 +44,9 @@ var locationRangeFn = rangeFn[model.Location](func(q *lib.Query[model.Location],
 func NewLocation(db Database) Builder[model.Location] {
 	q := lib.NewQuery[model.Location]("location")
 	return Builder[model.Location]{builder[model.Location]{
-		db:           db,
-		fetchBitFn:   with.LocationFetchBit,
-		info:         locationModelInfo,
-		query:        q,
-		rangeFn:      locationRangeFn,
-		setFetchedFn: with.LocationSetFetched,
+		db:      db,
+		info:    locationModelInfo,
+		query:   q,
+		rangeFn: locationRangeFn,
 	}}
 }

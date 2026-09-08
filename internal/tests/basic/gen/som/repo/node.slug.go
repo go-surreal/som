@@ -338,7 +338,8 @@ func (r *slug) Refresh(ctx context.Context, slug *model.Slug) error {
 }
 
 // Fetch fetches related records for the given model based on the specified fetch fields.
-// The model is updated in-place with the fetched relations.
+// The model is updated in-place with the fetched relations. Resolved relations are no
+// longer marked as partial, so IsPartial reports whether a relation was fetched.
 func (r *slug) Fetch(ctx context.Context, slug *model.Slug, fetch ...with.Fetch_[model.Slug]) error {
 	if slug == nil {
 		return errors.New("the passed node must not be nil")
@@ -346,23 +347,13 @@ func (r *slug) Fetch(ctx context.Context, slug *model.Slug, fetch ...with.Fetch_
 	if slug.ID() == "" {
 		return errors.New("cannot fetch Slug without existing record ID")
 	}
-	var requestedBits uint64
+	var fields []string
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
-			requestedBits |= with.SlugFetchBit(field)
+			fields = append(fields, field)
 		}
 	}
-	alreadyFetched := slug.Node.GetFetched()
-	if requestedBits&^alreadyFetched == 0 {
-		return nil
-	}
-	allBits := alreadyFetched | requestedBits
-	fetchFields := with.SlugFetchFields(allBits)
-	err := r.fetch(ctx, r.recordID(string(slug.ID())), slug, fetchFields)
-	if err == nil {
-		slug.Node.SetFetched(allBits)
-	}
-	return err
+	return r.fetch(ctx, r.recordID(string(slug.ID())), slug, fields)
 }
 
 // Relate returns a new relate instance for the Slug model.

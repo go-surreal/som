@@ -37,60 +37,6 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 
 	typeName := node.NameGoLower()
 
-	var fetchableFields []*field.Node
-	for _, fld := range node.GetFields() {
-		if nodeField, ok := fld.(*field.Node); ok {
-			fetchableFields = append(fetchableFields, nodeField)
-		}
-	}
-
-	if len(fetchableFields) > 0 {
-		f.Line()
-		f.Const().DefsFunc(func(g *jen.Group) {
-			for i, nodeField := range fetchableFields {
-				constName := typeName + "Fetched" + nodeField.NameGo()
-				if i == 0 {
-					g.Id(constName).Uint64().Op("=").Lit(1).Op("<<").Iota()
-				} else {
-					g.Id(constName)
-				}
-			}
-		})
-	}
-
-	f.Line()
-	f.Func().Id(node.NameGo() + "FetchBit").Params(jen.Id("field").String()).Uint64().Block(
-		jen.Switch(jen.Id("field")).BlockFunc(func(g *jen.Group) {
-			for _, nodeField := range fetchableFields {
-				g.Case(jen.Lit(nodeField.NameDatabase())).Block(
-					jen.Return(jen.Id(typeName + "Fetched" + nodeField.NameGo())),
-				)
-			}
-			g.Default().Block(
-				jen.Return(jen.Lit(0)),
-			)
-		}),
-	)
-
-	f.Line()
-	f.Func().Id(node.NameGo() + "FetchFields").Params(jen.Id("bits").Uint64()).Index().String().BlockFunc(func(g *jen.Group) {
-		g.Var().Id("fields").Index().String()
-		for _, nodeField := range fetchableFields {
-			g.If(jen.Id("bits").Op("&").Id(typeName+"Fetched"+nodeField.NameGo()).Op("!=").Lit(0)).Block(
-				jen.Id("fields").Op("=").Append(jen.Id("fields"), jen.Lit(nodeField.NameDatabase())),
-			)
-		}
-		g.Return(jen.Id("fields"))
-	})
-
-	f.Line()
-	f.Func().Id(node.NameGo() + "SetFetched").Params(
-		jen.Id("m").Op("*").Add(b.SourceQual(node.NameGo())),
-		jen.Id("bits").Uint64(),
-	).Block(
-		jen.Id("m").Dot("Node").Dot("SetFetched").Call(jen.Id("bits")),
-	)
-
 	f.Line()
 	f.Var().Id(node.Name).Op("=").Id(typeName).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
 

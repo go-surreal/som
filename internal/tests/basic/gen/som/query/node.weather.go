@@ -6,7 +6,6 @@ import (
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
 	types "som.test/gen/som/internal/types"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -48,11 +47,9 @@ var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], fr
 func NewWeather(db Database) Builder[model.Weather] {
 	q := lib.NewQuery[model.Weather]("weather")
 	return Builder[model.Weather]{builder[model.Weather]{
-		db:           db,
-		fetchBitFn:   with.WeatherFetchBit,
-		info:         weatherModelInfo,
-		query:        q,
-		rangeFn:      weatherRangeFn,
-		setFetchedFn: with.WeatherSetFetched,
+		db:      db,
+		info:    weatherModelInfo,
+		query:   q,
+		rangeFn: weatherRangeFn,
 	}}
 }

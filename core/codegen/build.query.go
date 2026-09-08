@@ -110,8 +110,6 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 
 	f.PackageComment(string(embed.CodegenComment))
 
-	pkgWith := b.relativePkgPath(def.PkgFetch)
-
 	modelType := b.SourceQual(node.Name)
 
 	modelInfoVarName := node.NameGoLower() + "ModelInfo"
@@ -170,11 +168,9 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 			}
 
 			builderDict := jen.Dict{
-				jen.Id("db"):           jen.Id("db"),
-				jen.Id("query"):        jen.Id("q"),
-				jen.Id("info"):         jen.Id(modelInfoVarName),
-				jen.Id("fetchBitFn"):   jen.Qual(pkgWith, node.NameGo()+"FetchBit"),
-				jen.Id("setFetchedFn"): jen.Qual(pkgWith, node.NameGo()+"SetFetched"),
+				jen.Id("db"):    jen.Id("db"),
+				jen.Id("query"): jen.Id("q"),
+				jen.Id("info"):  jen.Id(modelInfoVarName),
 			}
 
 			if node.HasComplexID() || node.HasStringID() {

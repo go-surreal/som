@@ -6,7 +6,6 @@ import (
 	conv "som.test/gen/som/conv"
 	filter "som.test/gen/som/filter"
 	lib "som.test/gen/som/internal/lib"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -48,11 +47,9 @@ func NewSpecialTypes(db Database) Builder[model.SpecialTypes] {
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialTypes.DeletedAt.Nil(true)
 	return Builder[model.SpecialTypes]{builder[model.SpecialTypes]{
-		db:           db,
-		fetchBitFn:   with.SpecialTypesFetchBit,
-		info:         specialTypesModelInfo,
-		query:        q,
-		rangeFn:      specialTypesRangeFn,
-		setFetchedFn: with.SpecialTypesSetFetched,
+		db:      db,
+		info:    specialTypesModelInfo,
+		query:   q,
+		rangeFn: specialTypesRangeFn,
 	}}
 }

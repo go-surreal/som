@@ -1036,7 +1036,8 @@ Refresh refreshes the given model with the remote data.
 	f.Line().
 		Add(comment(`
 Fetch fetches related records for the given model based on the specified fetch fields.
-The model is updated in-place with the fetched relations.
+The model is updated in-place with the fetched relations. Resolved relations are no
+longer marked as partial, so IsPartial reports whether a relation was fetched.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
 		Id("Fetch").
@@ -1054,31 +1055,21 @@ The model is updated in-place with the fetched relations.
 
 			b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot fetch "+node.NameGo()+" without existing record ID")
 
-			g.Var().Id("requestedBits").Uint64()
+			g.Var().Id("fields").Index().String()
 			g.For(jen.List(jen.Id("_"), jen.Id("f")).Op(":=").Range().Id("fetch")).Block(
 				jen.If(jen.Id("field").Op(":=").Qual("fmt", "Sprintf").Call(jen.Lit("%v"), jen.Id("f")).Op(";").Id("field").Op("!=").Lit("")).Block(
-					jen.Id("requestedBits").Op("|=").Qual(pkgWith, node.NameGo()+"FetchBit").Call(jen.Id("field")),
+					jen.Id("fields").Op("=").Append(jen.Id("fields"), jen.Id("field")),
 				),
 			)
 
-			g.Id("alreadyFetched").Op(":=").Id(node.NameGoLower()).Dot("Node").Dot("GetFetched").Call()
-			g.If(jen.Id("requestedBits").Op("&^").Id("alreadyFetched").Op("==").Lit(0)).Block(
-				jen.Return(jen.Nil()),
+			g.Return(
+				jen.Id("r").Dot("fetch").Call(
+					jen.Id("ctx"),
+					b.recordIDFromNode(node),
+					jen.Id(node.NameGoLower()),
+					jen.Id("fields"),
+				),
 			)
-
-			g.Id("allBits").Op(":=").Id("alreadyFetched").Op("|").Id("requestedBits")
-			g.Id("fetchFields").Op(":=").Qual(pkgWith, node.NameGo()+"FetchFields").Call(jen.Id("allBits"))
-
-			g.Id("err").Op(":=").Id("r").Dot("fetch").Call(
-				jen.Id("ctx"),
-				b.recordIDFromNode(node),
-				jen.Id(node.NameGoLower()),
-				jen.Id("fetchFields"),
-			)
-			g.If(jen.Id("err").Op("==").Nil()).Block(
-				jen.Id(node.NameGoLower()).Dot("Node").Dot("SetFetched").Call(jen.Id("allBits")),
-			)
-			g.Return(jen.Id("err"))
 		})
 
 	// Relate (string ID only)

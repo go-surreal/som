@@ -295,7 +295,8 @@ func (r *teamMember) Refresh(ctx context.Context, teamMember *model.TeamMember) 
 }
 
 // Fetch fetches related records for the given model based on the specified fetch fields.
-// The model is updated in-place with the fetched relations.
+// The model is updated in-place with the fetched relations. Resolved relations are no
+// longer marked as partial, so IsPartial reports whether a relation was fetched.
 func (r *teamMember) Fetch(ctx context.Context, teamMember *model.TeamMember, fetch ...with.Fetch_[model.TeamMember]) error {
 	if teamMember == nil {
 		return errors.New("the passed node must not be nil")
@@ -307,23 +308,13 @@ func (r *teamMember) Fetch(ctx context.Context, teamMember *model.TeamMember, fe
 	if teamMember.ID().Forecast.ID() == zeroForecastKey {
 		return errors.New("Forecast.ID must not be empty")
 	}
-	var requestedBits uint64
+	var fields []string
 	for _, f := range fetch {
 		if field := fmt.Sprintf("%v", f); field != "" {
-			requestedBits |= with.TeamMemberFetchBit(field)
+			fields = append(fields, field)
 		}
 	}
-	alreadyFetched := teamMember.Node.GetFetched()
-	if requestedBits&^alreadyFetched == 0 {
-		return nil
-	}
-	allBits := alreadyFetched | requestedBits
-	fetchFields := with.TeamMemberFetchFields(allBits)
-	err := r.fetch(ctx, r.recordID(teamMember.ID()), teamMember, fetchFields)
-	if err == nil {
-		teamMember.Node.SetFetched(allBits)
-	}
-	return err
+	return r.fetch(ctx, r.recordID(teamMember.ID()), teamMember, fields)
 }
 
 // Index returns a new index instance for the TeamMember model.

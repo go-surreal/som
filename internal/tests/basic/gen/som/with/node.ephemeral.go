@@ -3,22 +3,6 @@ package with
 
 import model "som.test/model"
 
-func EphemeralFetchBit(field string) uint64 {
-	switch field {
-	default:
-		return 0
-	}
-}
-
-func EphemeralFetchFields(bits uint64) []string {
-	var fields []string
-	return fields
-}
-
-func EphemeralSetFetched(m *model.Ephemeral, bits uint64) {
-	m.Node.SetFetched(bits)
-}
-
 var Ephemeral = ephemeral[model.Ephemeral]("")
 
 type ephemeral[M any] string

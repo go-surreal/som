@@ -5,7 +5,6 @@ import (
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -47,11 +46,9 @@ var personObjRangeFn = rangeFn[model.PersonObj](func(q *lib.Query[model.PersonOb
 func NewPersonObj(db Database) Builder[model.PersonObj] {
 	q := lib.NewQuery[model.PersonObj]("person_obj")
 	return Builder[model.PersonObj]{builder[model.PersonObj]{
-		db:           db,
-		fetchBitFn:   with.PersonObjFetchBit,
-		info:         personObjModelInfo,
-		query:        q,
-		rangeFn:      personObjRangeFn,
-		setFetchedFn: with.PersonObjSetFetched,
+		db:      db,
+		info:    personObjModelInfo,
+		query:   q,
+		rangeFn: personObjRangeFn,
 	}}
 }

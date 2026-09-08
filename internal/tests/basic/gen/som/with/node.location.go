@@ -3,22 +3,6 @@ package with
 
 import model "som.test/model"
 
-func LocationFetchBit(field string) uint64 {
-	switch field {
-	default:
-		return 0
-	}
-}
-
-func LocationFetchFields(bits uint64) []string {
-	var fields []string
-	return fields
-}
-
-func LocationSetFetched(m *model.Location, bits uint64) {
-	m.Node.SetFetched(bits)
-}
-
 var Location = location[model.Location]("")
 
 type location[M any] string

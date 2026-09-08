@@ -6,7 +6,6 @@ import (
 	conv "som.test/gen/som/conv"
 	filter "som.test/gen/som/filter"
 	lib "som.test/gen/som/internal/lib"
-	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -48,11 +47,9 @@ func NewSpecialRelation(db Database) Builder[model.SpecialRelation] {
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialRelation.DeletedAt.Nil(true)
 	return Builder[model.SpecialRelation]{builder[model.SpecialRelation]{
-		db:           db,
-		fetchBitFn:   with.SpecialRelationFetchBit,
-		info:         specialRelationModelInfo,
-		query:        q,
-		rangeFn:      specialRelationRangeFn,
-		setFetchedFn: with.SpecialRelationSetFetched,
+		db:      db,
+		info:    specialRelationModelInfo,
+		query:   q,
+		rangeFn: specialRelationRangeFn,
 	}}
 }

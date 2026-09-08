@@ -3,22 +3,6 @@ package with
 
 import model "som.test/model"
 
-func TeamMemberFetchBit(field string) uint64 {
-	switch field {
-	default:
-		return 0
-	}
-}
-
-func TeamMemberFetchFields(bits uint64) []string {
-	var fields []string
-	return fields
-}
-
-func TeamMemberSetFetched(m *model.TeamMember, bits uint64) {
-	m.Node.SetFetched(bits)
-}
-
 var TeamMember = teamMember[model.TeamMember]("")
 
 type teamMember[M any] string

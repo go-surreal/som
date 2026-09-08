@@ -40,12 +40,10 @@ type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) st
 
 // M is a placeholder for the model type.
 type builder[M any] struct {
-	db           Database
-	query        lib.Query[M]
-	info         modelInfo[M]
-	rangeFn      rangeFn[M]
-	fetchBitFn   func(string) uint64
-	setFetchedFn func(*M, uint64)
+	db      Database
+	query   lib.Query[M]
+	info    modelInfo[M]
+	rangeFn rangeFn[M]
 }
 
 type Builder[M any] struct {
@@ -209,24 +207,7 @@ func (b builder[M]) All(ctx context.Context) ([]*M, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query records: %w", err)
 	}
-	nodes, err := b.info.UnmarshalAll(res)
-	if err != nil {
-		return nil, err
-	}
-
-	var fetchBits uint64
-	if b.fetchBitFn != nil {
-		for _, field := range b.query.Fetch {
-			fetchBits |= b.fetchBitFn(field)
-		}
-	}
-	if fetchBits != 0 && b.setFetchedFn != nil {
-		for _, node := range nodes {
-			b.setFetchedFn(node, fetchBits)
-		}
-	}
-
-	return nodes, nil
+	return b.info.UnmarshalAll(res)
 }
 
 // AllAsync is the asynchronous version of All.
@@ -483,14 +464,7 @@ func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
-	var fetchBits uint64
-	if b.fetchBitFn != nil {
-		for _, field := range b.query.Fetch {
-			fetchBits |= b.fetchBitFn(field)
-		}
-	}
-
-	return live(ctx, resChan, b.info, fetchBits, b.setFetchedFn), nil
+	return live(ctx, resChan, b.info), nil
 }
 
 // LiveCount is the live version of Count.

@@ -227,8 +227,7 @@ func (u UUID) MarshalCBOR() ([]byte, error) {
 
 type Node[T nodeID] struct {
 	marker
-	id      T
-	fetched uint64
+	id T
 }
 
 func NewNode[T nodeID](id T) Node[T] {
@@ -237,14 +236,6 @@ func NewNode[T nodeID](id T) Node[T] {
 
 func (n Node[T]) ID() T {
 	return n.id
-}
-
-func (n *Node[T]) SetFetched(bits uint64) {
-	n.fetched |= bits
-}
-
-func (n Node[T]) GetFetched() uint64 {
-	return n.fetched
 }
 
 func (Node[T]) isNode() {}
