@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
@@ -72,6 +73,9 @@ func (c *Weather) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.Temperature)
 	}
 
+	// Mark the instance as fully loaded from the database
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
+
 	return nil
 }
 
@@ -120,6 +124,33 @@ func (f *weatherLink) MarshalCBOR() ([]byte, error) {
 
 func (f *weatherLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		recordID := f.ID
+		if recordID != nil {
+			idRaw, err := cbor.Marshal(recordID.ID)
+			if err != nil {
+				return err
+			}
+			var rawArr []cbor.RawMessage
+			if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
+				return err
+			}
+			if len(rawArr) >= 2 {
+				var key model.WeatherKey
+				if err := cbor.Unmarshal(rawArr[0], &key.City); err != nil {
+					return err
+				}
+				{
+					var DateErr error
+					key.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
+					if DateErr != nil {
+						return DateErr
+					}
+				}
+				f.Weather.Node = som.NewNode[model.WeatherKey](key)
+			}
+		}
+		internal.SetMarker(&f.Weather.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias weatherLink

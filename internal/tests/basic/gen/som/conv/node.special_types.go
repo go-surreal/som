@@ -74,6 +74,9 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 		c.OptimisticLock.SetVersion(v)
 	}
 
+	// Mark the instance as fully loaded from the database
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
+
 	return nil
 }
 
@@ -122,6 +125,15 @@ func (f *specialTypesLink) MarshalCBOR() ([]byte, error) {
 
 func (f *specialTypesLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		if f.ID != nil {
+			idStr, err := cbor.RecordIDToString(f.ID.ID)
+			if err != nil {
+				return err
+			}
+			f.SpecialTypes.Node = som.NewNode[som.UUID](som.UUID(idStr))
+		}
+		internal.SetMarker(&f.SpecialTypes.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias specialTypesLink

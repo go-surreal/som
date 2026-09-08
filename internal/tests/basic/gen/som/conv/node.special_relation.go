@@ -95,6 +95,9 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 		}
 	}
 
+	// Mark the instance as fully loaded from the database
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
+
 	return nil
 }
 
@@ -143,6 +146,15 @@ func (f *specialRelationLink) MarshalCBOR() ([]byte, error) {
 
 func (f *specialRelationLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		if f.ID != nil {
+			idStr, err := cbor.RecordIDToString(f.ID.ID)
+			if err != nil {
+				return err
+			}
+			f.SpecialRelation.Node = som.NewNode[som.Rand](som.Rand(idStr))
+		}
+		internal.SetMarker(&f.SpecialRelation.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias specialRelationLink

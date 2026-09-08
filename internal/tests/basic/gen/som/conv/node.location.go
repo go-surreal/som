@@ -292,6 +292,9 @@ func (c *Location) UnmarshalCBOR(data []byte) error {
 		c.SFMultiPolygon, _ = cbor.UnmarshalMultiPolygonSF(raw)
 	}
 
+	// Mark the instance as fully loaded from the database
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
+
 	return nil
 }
 
@@ -340,6 +343,15 @@ func (f *locationLink) MarshalCBOR() ([]byte, error) {
 
 func (f *locationLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		if f.ID != nil {
+			idStr, err := cbor.RecordIDToString(f.ID.ID)
+			if err != nil {
+				return err
+			}
+			f.Location.Node = som.NewNode[som.ULID](som.ULID(idStr))
+		}
+		internal.SetMarker(&f.Location.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias locationLink

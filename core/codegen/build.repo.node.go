@@ -10,6 +10,11 @@ import (
 	"github.com/go-surreal/som/core/parser"
 )
 
+// buildNodeRepoFile generates the repository for a node.
+//
+// Update, Delete, Erase and Restore reject model instances that must not be
+// written back: writing a partial model would wipe all fields it does not
+// hold, writing a deleted one would recreate the record.
 func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 	tmpl := `
 		type {{.NameGo}}Repo interface {
@@ -275,6 +280,12 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			if {{.NameGoLower}} == nil {
 				return errors.New("the passed node must not be nil")
 			}
+			if {{.NameGoLower}}.IsPartial() {
+				return som.ErrPartialModel
+			}
+			if {{.NameGoLower}}.Marker().Has(som.MarkerDeleted) {
+				return som.ErrDeletedModel
+			}
 			{{call .IDCheck (printf "cannot update %s without existing record ID" .NameGo)}}
 			{{call .RunHooks "beforeUpdate"}}
 			if err := r.update(ctx, {{.RecordIDFromNode}}, {{.NameGoLower}}); err != nil {
@@ -289,6 +300,12 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		func (r *{{.NameGoLower}}) Delete(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error {
 			if {{.NameGoLower}} == nil {
 				return errors.New("the passed node must not be nil")
+			}
+			if {{.NameGoLower}}.IsPartial() {
+				return som.ErrPartialModel
+			}
+			if {{.NameGoLower}}.Marker().Has(som.MarkerDeleted) {
+				return som.ErrDeletedModel
 			}
 			{{call .IDCheck (printf "cannot delete %s without existing record ID" .NameGo)}}
 			{{- if .SoftDelete}}
@@ -307,6 +324,9 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 				return err
 			}
 			{{- end}}
+			{{- if not .SoftDelete}}
+			internal.AddMarker(&{{.NameGoLower}}.{{.IDEmbed}}, internal.MarkerDeleted)
+			{{- end}}
 			{{call .RunHooks "afterDelete"}}
 			return nil
 		}
@@ -318,8 +338,18 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			if {{.NameGoLower}} == nil {
 				return errors.New("the passed node must not be nil")
 			}
+			if {{.NameGoLower}}.IsPartial() {
+				return som.ErrPartialModel
+			}
+			if {{.NameGoLower}}.Marker().Has(som.MarkerDeleted) {
+				return som.ErrDeletedModel
+			}
 			{{call .IDCheck (printf "cannot erase %s without existing record ID" .NameGo)}}
-			return r.delete(ctx, {{.RecordIDFromNode}}, {{.NameGoLower}}, false, nil)
+			if err := r.delete(ctx, {{.RecordIDFromNode}}, {{.NameGoLower}}, false, nil); err != nil {
+				return err
+			}
+			internal.AddMarker(&{{.NameGoLower}}.{{.IDEmbed}}, internal.MarkerDeleted)
+			return nil
 		}
 
 		// Restore un-deletes a soft-deleted record.
@@ -327,6 +357,12 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		func (r *{{.NameGoLower}}) Restore(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error {
 			if {{.NameGoLower}} == nil {
 				return errors.New("the passed node must not be nil")
+			}
+			if {{.NameGoLower}}.IsPartial() {
+				return som.ErrPartialModel
+			}
+			if {{.NameGoLower}}.Marker().Has(som.MarkerDeleted) {
+				return som.ErrDeletedModel
 			}
 			{{call .IDCheck (printf "cannot restore %s without existing record ID" .NameGo)}}
 			if !{{.NameGoLower}}.SoftDelete.IsDeleted() {
@@ -405,6 +441,7 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		"KeyType":          b.keyType(node),
 		"HasComplexID":     node.HasComplexID(),
 		"HasAutoID":        node.HasAutoID(),
+		"IDEmbed":          node.Source.IDEmbed,
 		"IDType":           string(node.Source.IDType),
 		"InsertComment":    insertComment(node),
 		"HasChangefeed":    node.HasChangefeed(),
