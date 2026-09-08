@@ -155,6 +155,35 @@ if err != nil {
 }
 ```
 
+After a permanent delete the in-memory model is flagged as deleted and rejected by all further
+write operations (see [Model Markers](#model-markers)). For soft-delete models `Delete` only sets
+`deleted_at`, so the model stays writable and can be restored; `Erase` flags it as deleted.
+
+## Model Markers
+
+Every node, edge and view carries a bit set describing how the instance was loaded:
+
+```go
+m := user.Marker()
+
+m.Has(som.MarkerLoaded)     // instance originates from a database record
+m.Has(som.MarkerPartial)    // not all fields are loaded (also: user.IsPartial())
+m.Has(som.MarkerDeleted)    // record was permanently deleted
+m.Has(som.MarkerFromCache)  // held by an in-process cache, shared and possibly stale
+```
+
+A model built by the application has a zero marker. Markers are read-only: only the generated code
+can set them, application code just reads them via `Marker()` and `IsPartial()`.
+
+`Update`, `Delete`, `Erase` and `Restore` reject instances that must not be written back:
+
+| State | Error |
+| --- | --- |
+| Partially loaded, e.g. an unfetched record link | `som.ErrPartialModel` |
+| Permanently deleted via `Delete` or `Erase` | `som.ErrDeletedModel` |
+
+`Refresh` is always allowed — it is the way to turn a partial instance into a full one.
+
 ## Refresh
 
 Reload a record from the database:

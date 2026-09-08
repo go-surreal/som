@@ -307,6 +307,12 @@ func (r *specialRelation) Update(ctx context.Context, specialRelation *model.Spe
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if specialRelation.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if specialRelation.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if specialRelation.ID() == "" {
 		return errors.New("cannot update SpecialRelation without existing record ID")
 	}
@@ -327,6 +333,12 @@ func (r *specialRelation) Update(ctx context.Context, specialRelation *model.Spe
 func (r *specialRelation) Delete(ctx context.Context, specialRelation *model.SpecialRelation) error {
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if specialRelation.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if specialRelation.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if specialRelation.ID() == "" {
 		return errors.New("cannot delete SpecialRelation without existing record ID")
@@ -353,10 +365,20 @@ func (r *specialRelation) Erase(ctx context.Context, specialRelation *model.Spec
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if specialRelation.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if specialRelation.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if specialRelation.ID() == "" {
 		return errors.New("cannot erase SpecialRelation without existing record ID")
 	}
-	return r.delete(ctx, r.recordID(string(specialRelation.ID())), specialRelation, false, nil)
+	if err := r.delete(ctx, r.recordID(string(specialRelation.ID())), specialRelation, false, nil); err != nil {
+		return err
+	}
+	internal.AddMarker(&specialRelation.Node, internal.MarkerDeleted)
+	return nil
 }
 
 // Restore un-deletes a soft-deleted record.
@@ -364,6 +386,12 @@ func (r *specialRelation) Erase(ctx context.Context, specialRelation *model.Spec
 func (r *specialRelation) Restore(ctx context.Context, specialRelation *model.SpecialRelation) error {
 	if specialRelation == nil {
 		return errors.New("the passed node must not be nil")
+	}
+	if specialRelation.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if specialRelation.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if specialRelation.ID() == "" {
 		return errors.New("cannot restore SpecialRelation without existing record ID")

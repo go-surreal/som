@@ -277,6 +277,12 @@ func (r *slug) Update(ctx context.Context, slug *model.Slug) error {
 	if slug == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if slug.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if slug.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if slug.ID() == "" {
 		return errors.New("cannot update Slug without existing record ID")
 	}
@@ -298,6 +304,12 @@ func (r *slug) Delete(ctx context.Context, slug *model.Slug) error {
 	if slug == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if slug.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if slug.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if slug.ID() == "" {
 		return errors.New("cannot delete Slug without existing record ID")
 	}
@@ -307,6 +319,7 @@ func (r *slug) Delete(ctx context.Context, slug *model.Slug) error {
 	if err := r.delete(ctx, r.recordID(string(slug.ID())), slug, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&slug.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, slug); err != nil {
 		return err
 	}

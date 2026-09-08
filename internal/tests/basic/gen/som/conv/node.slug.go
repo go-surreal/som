@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
@@ -59,6 +60,9 @@ func (c *Slug) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.Title)
 	}
 
+	// Mark the instance as fully loaded from the database
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
+
 	return nil
 }
 
@@ -102,6 +106,15 @@ func (f *slugLink) MarshalCBOR() ([]byte, error) {
 
 func (f *slugLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		if f.ID != nil {
+			idStr, err := cbor.RecordIDToString(f.ID.ID)
+			if err != nil {
+				return err
+			}
+			f.Slug.Node = som.NewNode[som.String](som.String(idStr))
+		}
+		internal.SetMarker(&f.Slug.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias slugLink

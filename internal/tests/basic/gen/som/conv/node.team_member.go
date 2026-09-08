@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
@@ -107,6 +108,9 @@ func (c *TeamMember) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.Role)
 	}
 
+	// Mark the instance as fully loaded from the database
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
+
 	return nil
 }
 
@@ -150,6 +154,68 @@ func (f *teamMemberLink) MarshalCBOR() ([]byte, error) {
 
 func (f *teamMemberLink) UnmarshalCBOR(data []byte) error {
 	if err := cbor.Unmarshal(data, &f.ID); err == nil {
+		// The link was not fetched, so only its record id is known.
+		recordID := f.ID
+		if recordID != nil {
+			idRaw, err := cbor.Marshal(recordID.ID)
+			if err != nil {
+				return err
+			}
+			var rawObj map[string]cbor.RawMessage
+			if err := cbor.Unmarshal(idRaw, &rawObj); err != nil {
+				return err
+			}
+			var key model.TeamMemberKey
+			{
+				var rid *models.RecordID
+				if err := cbor.Unmarshal(rawObj["member"], &rid); err != nil {
+					return err
+				}
+				if rid != nil {
+					idRaw, err := cbor.Marshal(rid.ID)
+					if err != nil {
+						return err
+					}
+					var idStr string
+					if err := cbor.Unmarshal(idRaw, &idStr); err != nil {
+						return err
+					}
+					key.Member = model.AllTypes{Node: som.NewNode[som.ULID](som.ULID(idStr))}
+				}
+			}
+			{
+				var rid *models.RecordID
+				if err := cbor.Unmarshal(rawObj["forecast"], &rid); err != nil {
+					return err
+				}
+				if rid != nil {
+					idRaw, err := cbor.Marshal(rid.ID)
+					if err != nil {
+						return err
+					}
+					var rawArr []cbor.RawMessage
+					if err := cbor.Unmarshal(idRaw, &rawArr); err != nil {
+						return err
+					}
+					if len(rawArr) >= 2 {
+						var innerKey model.WeatherKey
+						if err := cbor.Unmarshal(rawArr[0], &innerKey.City); err != nil {
+							return err
+						}
+						{
+							var DateErr error
+							innerKey.Date, DateErr = cbor.UnmarshalDateTime(rawArr[1])
+							if DateErr != nil {
+								return DateErr
+							}
+						}
+						key.Forecast = model.Weather{Node: som.NewNode[model.WeatherKey](innerKey)}
+					}
+				}
+			}
+			f.TeamMember.Node = som.NewNode[model.TeamMemberKey](key)
+		}
+		internal.SetMarker(&f.TeamMember.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias teamMemberLink

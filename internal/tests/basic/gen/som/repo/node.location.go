@@ -301,6 +301,12 @@ func (r *location) Update(ctx context.Context, location *model.Location) error {
 	if location == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if location.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if location.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if location.ID() == "" {
 		return errors.New("cannot update Location without existing record ID")
 	}
@@ -322,6 +328,12 @@ func (r *location) Delete(ctx context.Context, location *model.Location) error {
 	if location == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if location.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if location.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if location.ID() == "" {
 		return errors.New("cannot delete Location without existing record ID")
 	}
@@ -331,6 +343,7 @@ func (r *location) Delete(ctx context.Context, location *model.Location) error {
 	if err := r.delete(ctx, r.recordID(string(location.ID())), location, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&location.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, location); err != nil {
 		return err
 	}

@@ -77,6 +77,9 @@ func (c *EdgeRelation) UnmarshalCBOR(data []byte) error {
 		c.Meta = toEdgeMeta(convVal)
 	}
 
+	// Mark the instance as fully loaded from the database
+	internal.SetMarker(&c.Edge, internal.MarkerLoaded)
+
 	return nil
 }
 

@@ -218,6 +218,12 @@ func (r *personObj) Update(ctx context.Context, personObj *model.PersonObj) erro
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if personObj.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if personObj.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	var zeroKey model.PersonKey
 	if personObj.ID() == zeroKey {
 		return errors.New("cannot update PersonObj without existing record ID")
@@ -240,6 +246,12 @@ func (r *personObj) Delete(ctx context.Context, personObj *model.PersonObj) erro
 	if personObj == nil {
 		return errors.New("the passed node must not be nil")
 	}
+	if personObj.IsPartial() {
+		return som.ErrPartialModel
+	}
+	if personObj.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	var zeroKey model.PersonKey
 	if personObj.ID() == zeroKey {
 		return errors.New("cannot delete PersonObj without existing record ID")
@@ -250,6 +262,7 @@ func (r *personObj) Delete(ctx context.Context, personObj *model.PersonObj) erro
 	if err := r.delete(ctx, r.recordID(personObj.ID()), personObj, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&personObj.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, personObj); err != nil {
 		return err
 	}

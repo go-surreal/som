@@ -227,6 +227,29 @@ func (b *build) addIDEmptyCheck(g *jen.Group, node *field.NodeTable, varName str
 	}
 }
 
+// addWriteMarkerChecks rejects model instances that must not be written back,
+// namely partially loaded and permanently deleted ones.
+func (b *build) addWriteMarkerChecks(g *jen.Group, varName string) {
+	// Writing a partial model back would wipe all fields it does not hold.
+	g.If(jen.Id(varName).Dot("IsPartial").Call()).
+		Block(jen.Return(jen.Qual(b.relativePkgPath(), "ErrPartialModel")))
+
+	// Writing a deleted model back would recreate the record.
+	g.If(jen.Id(varName).Dot("Marker").Call().Dot("Has").Call(
+		jen.Qual(b.relativePkgPath(), "MarkerDeleted"),
+	)).Block(jen.Return(jen.Qual(b.relativePkgPath(), "ErrDeletedModel")))
+}
+
+// addMarker generates the marker call for the embedded som.Node/Edge/View of
+// the given model variable. The marker is set through the internal package, so
+// that application code cannot change it.
+func (b *build) addMarker(receiver jen.Code, embed string, flags jen.Code) jen.Code {
+	return jen.Qual(b.relativePkgPath("internal"), "AddMarker").Call(
+		jen.Op("&").Add(receiver).Dot(embed),
+		flags,
+	)
+}
+
 func (b *build) addNodeRefFieldChecks(g *jen.Group, cid *parser.FieldComplexID, varName string) {
 	for _, sf := range cid.Fields {
 		fn, ok := sf.Field.(*parser.FieldNode)
@@ -787,6 +810,8 @@ Before- and after-update hooks are invoked.
 			g.If(jen.Id(node.NameGoLower()).Op("==").Nil()).
 				Block(jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))))
 
+			b.addWriteMarkerChecks(g, node.NameGoLower())
+
 			b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot update "+node.NameGo()+" without existing record ID")
 
 			b.addBeforeHooks(g, node, "Update")
@@ -819,6 +844,8 @@ Before- and after-delete hooks are invoked.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				)
 
+			b.addWriteMarkerChecks(g, node.NameGoLower())
+
 			b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot delete "+node.NameGo()+" without existing record ID")
 
 			if node.Source.SoftDelete {
@@ -848,6 +875,14 @@ Before- and after-delete hooks are invoked.
 				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
 			}
 
+			if !node.Source.SoftDelete {
+				g.Add(b.addMarker(
+					jen.Id(node.NameGoLower()),
+					node.Source.IDEmbed,
+					jen.Qual(b.relativePkgPath("internal"), "MarkerDeleted"),
+				))
+			}
+
 			b.addAfterHooks(g, node, "Delete")
 
 			g.Return(jen.Nil())
@@ -874,17 +909,25 @@ Use this to permanently remove soft-deleted records.
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					)
 
+				b.addWriteMarkerChecks(g, node.NameGoLower())
+
 				b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot erase "+node.NameGo()+" without existing record ID")
 
-				g.Return(
-					jen.Id("r").Dot("delete").Call(
-						jen.Id("ctx"),
-						b.recordIDFromNode(node),
-						jen.Id(node.NameGoLower()),
-						jen.Lit(false),
-						jen.Nil(),
-					),
-				)
+				g.If(jen.Err().Op(":=").Id("r").Dot("delete").Call(
+					jen.Id("ctx"),
+					b.recordIDFromNode(node),
+					jen.Id(node.NameGoLower()),
+					jen.Lit(false),
+					jen.Nil(),
+				), jen.Err().Op("!=").Nil()).Block(jen.Return(jen.Err()))
+
+				g.Add(b.addMarker(
+					jen.Id(node.NameGoLower()),
+					node.Source.IDEmbed,
+					jen.Qual(b.relativePkgPath("internal"), "MarkerDeleted"),
+				))
+
+				g.Return(jen.Nil())
 			})
 
 		f.Line().
@@ -904,6 +947,8 @@ Sets deleted_at to NONE and refreshes the in-memory object.
 					Block(
 						jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 					)
+
+				b.addWriteMarkerChecks(g, node.NameGoLower())
 
 				b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot restore "+node.NameGo()+" without existing record ID")
 
