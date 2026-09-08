@@ -287,7 +287,14 @@ func (r *ephemeral) Read(ctx context.Context, id string) (*model.Ephemeral, bool
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.Ephemeral]{cacheID: internal.GetCacheKey[model.Ephemeral](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	record, exists, fromCache, err := r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	if err != nil {
+		return nil, false, err
+	}
+	if fromCache && record != nil {
+		internal.AddMarker(&record.Node, internal.MarkerFromCache)
+	}
+	return record, exists, nil
 }
 
 // Update updates the record for the given model.
@@ -298,6 +305,9 @@ func (r *ephemeral) Update(ctx context.Context, ephemeral *model.Ephemeral) erro
 	}
 	if ephemeral.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if ephemeral.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if ephemeral.ID() == "" {
 		return errors.New("cannot update Ephemeral without existing record ID")
@@ -323,6 +333,9 @@ func (r *ephemeral) Delete(ctx context.Context, ephemeral *model.Ephemeral) erro
 	if ephemeral.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if ephemeral.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if ephemeral.ID() == "" {
 		return errors.New("cannot delete Ephemeral without existing record ID")
 	}
@@ -332,6 +345,7 @@ func (r *ephemeral) Delete(ctx context.Context, ephemeral *model.Ephemeral) erro
 	if err := r.delete(ctx, r.recordID(string(ephemeral.ID())), ephemeral, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&ephemeral.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, ephemeral); err != nil {
 		return err
 	}

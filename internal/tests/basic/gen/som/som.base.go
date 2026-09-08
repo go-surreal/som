@@ -38,6 +38,10 @@ var ErrEmptyResponse = errors.New("empty response")
 // instance that was only partially loaded, e.g. an unresolved record link.
 var ErrPartialModel = errors.New("model is only partially loaded")
 
+// ErrDeletedModel is returned when a write operation is attempted with a model
+// instance that was permanently deleted from the database.
+var ErrDeletedModel = errors.New("model has been deleted")
+
 // ErrCacheNotSupported is returned when caching is enabled for a node with a complex ID.
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
@@ -90,56 +94,38 @@ var (
 )
 
 // Marker is a bit set describing the load state of a model instance.
-// It is set by the generated code whenever a record is read from the
-// database. A model instance built by the application has a zero Marker.
-type Marker uint32
+// It is set by the generated code whenever a record is read from or written
+// to the database. A model instance built by the application has a zero
+// Marker. Every node, edge and view exposes it via the Marker method.
+type Marker = internal.Marker
 
 const (
 	// MarkerLoaded is set on every model instance that originates from a
 	// database record.
-	MarkerLoaded Marker = 1 << iota
+	MarkerLoaded = internal.MarkerLoaded
 
-	// MarkerPartial is set on model instances that only hold part of the
-	// underlying record, namely record links that were not resolved via
-	// Fetch. Such an instance carries its id, but none of its fields, and
-	// must therefore not be written back to the database.
-	MarkerPartial
+	// MarkerPartial is set on model instances that do not hold all fields of
+	// the underlying record and must therefore not be written back to the
+	// database. Currently the only such instances are record links that were
+	// not resolved via Fetch, which carry just their record id. Future
+	// partial loads (e.g. field projections) will use the same flag.
+	MarkerPartial = internal.MarkerPartial
+
+	// MarkerDeleted is set on model instances that were permanently deleted
+	// from the database. Writing them back would recreate the record, so all
+	// further write operations on them are rejected.
+	MarkerDeleted = internal.MarkerDeleted
+
+	// MarkerFromCache is set on model instances that were served from an
+	// in-process cache (see WithCache) instead of a database read. It is
+	// purely informational.
+	MarkerFromCache = internal.MarkerFromCache
 )
 
-// Has reports whether all of the given flags are set.
-func (m Marker) Has(flags Marker) bool {
-	return m&flags == flags
-}
-
-type marker struct {
-	flags Marker
-}
-
-// Marker returns the load state of the model instance.
-func (m marker) Marker() Marker {
-	return m.flags
-}
-
-// IsPartial reports whether the model instance was only partially loaded,
-// e.g. as a record link that was not resolved via Fetch. Partial instances
-// hold their id, but no field values, so they cannot be updated or deleted.
-func (m marker) IsPartial() bool {
-	return m.flags.Has(MarkerPartial)
-}
-
-func (m *marker) setMarker(flags Marker) {
-	m.flags = flags
-}
-
-type markable interface {
-	setMarker(Marker)
-}
-
-// SetMarker sets the load state of a node, edge or view.
-// It is called by the generated code and not meant for manual use.
-func SetMarker(target markable, flags Marker) {
-	target.setMarker(flags)
-}
+// marker is embedded into Node, Edge and View. As an unexported alias it
+// keeps the embedded field itself inaccessible to application code, which
+// only sees the promoted Marker and IsPartial methods.
+type marker = internal.LoadMarker
 
 // nodeID is a marker type for all ID types.
 type nodeID interface {

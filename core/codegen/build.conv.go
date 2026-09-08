@@ -131,7 +131,8 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 					g.Add(b.setMarker(
 						jen.Id("f").Dot(node.NameGo()),
 						node.Source.IDEmbed,
-						jen.Qual(b.relativePkgPath(), "MarkerLoaded").Op("|").Qual(b.relativePkgPath(), "MarkerPartial"),
+						jen.Qual(b.relativePkgPath("internal"), "MarkerLoaded").
+							Op("|").Qual(b.relativePkgPath("internal"), "MarkerPartial"),
 					))
 					g.Return(jen.Nil())
 				}),
@@ -641,7 +642,7 @@ func (b *convBuilder) buildUnmarshalCBOR(elem field.Element, typeName string, ct
 			if isNode || isEdge || isView {
 				g.Line()
 				g.Comment("Mark the instance as fully loaded from the database")
-				g.Add(b.setMarker(jen.Id("c"), embedName(isNode, isEdge), jen.Qual(b.relativePkgPath(), "MarkerLoaded")))
+				g.Add(b.setMarker(jen.Id("c"), embedName(isNode, isEdge), jen.Qual(b.relativePkgPath("internal"), "MarkerLoaded")))
 			}
 
 			g.Line()
@@ -660,10 +661,11 @@ func embedName(isNode, isEdge bool) string {
 	}
 }
 
-// setMarker generates a som.SetMarker call for the embedded som.Node/Edge/View
-// of the given receiver.
+// setMarker generates the marker call for the embedded som.Node/Edge/View of
+// the given receiver. The marker is set through the internal package, so that
+// application code cannot change it.
 func (b *convBuilder) setMarker(receiver jen.Code, embed string, flags jen.Code) jen.Code {
-	return jen.Qual(b.relativePkgPath(), "SetMarker").Call(
+	return jen.Qual(b.relativePkgPath("internal"), "SetMarker").Call(
 		jen.Op("&").Add(receiver).Dot(embed),
 		flags,
 	)

@@ -83,7 +83,7 @@ func (c *Ephemeral) UnmarshalCBOR(data []byte) error {
 	}
 
 	// Mark the instance as fully loaded from the database
-	som.SetMarker(&c.Node, som.MarkerLoaded)
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
 
 	return nil
 }
@@ -136,7 +136,7 @@ func (f *ephemeralLink) UnmarshalCBOR(data []byte) error {
 			}
 			f.Ephemeral.Node = som.NewNode[som.UUID](som.UUID(idStr))
 		}
-		som.SetMarker(&f.Ephemeral.Node, som.MarkerLoaded|som.MarkerPartial)
+		internal.SetMarker(&f.Ephemeral.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias ephemeralLink

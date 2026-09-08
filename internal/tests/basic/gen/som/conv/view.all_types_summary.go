@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
@@ -59,7 +60,7 @@ func (c *AllTypesSummary) UnmarshalCBOR(data []byte) error {
 	}
 
 	// Mark the instance as fully loaded from the database
-	som.SetMarker(&c.View, som.MarkerLoaded)
+	internal.SetMarker(&c.View, internal.MarkerLoaded)
 
 	return nil
 }

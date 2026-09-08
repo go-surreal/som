@@ -75,7 +75,7 @@ func (c *SpecialTypes) UnmarshalCBOR(data []byte) error {
 	}
 
 	// Mark the instance as fully loaded from the database
-	som.SetMarker(&c.Node, som.MarkerLoaded)
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
 
 	return nil
 }
@@ -128,7 +128,7 @@ func (f *specialTypesLink) UnmarshalCBOR(data []byte) error {
 			}
 			f.SpecialTypes.Node = som.NewNode[som.UUID](som.UUID(idStr))
 		}
-		som.SetMarker(&f.SpecialTypes.Node, som.MarkerLoaded|som.MarkerPartial)
+		internal.SetMarker(&f.SpecialTypes.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias specialTypesLink

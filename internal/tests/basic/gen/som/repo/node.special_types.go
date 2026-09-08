@@ -294,7 +294,14 @@ func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.SpecialTypes]{cacheID: internal.GetCacheKey[model.SpecialTypes](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	record, exists, fromCache, err := r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	if err != nil {
+		return nil, false, err
+	}
+	if fromCache && record != nil {
+		internal.AddMarker(&record.Node, internal.MarkerFromCache)
+	}
+	return record, exists, nil
 }
 
 // Update updates the record for the given model.
@@ -305,6 +312,9 @@ func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTy
 	}
 	if specialTypes.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if specialTypes.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if specialTypes.ID() == "" {
 		return errors.New("cannot update SpecialTypes without existing record ID")
@@ -329,6 +339,9 @@ func (r *specialTypes) Delete(ctx context.Context, specialTypes *model.SpecialTy
 	}
 	if specialTypes.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if specialTypes.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if specialTypes.ID() == "" {
 		return errors.New("cannot delete SpecialTypes without existing record ID")
@@ -359,10 +372,17 @@ func (r *specialTypes) Erase(ctx context.Context, specialTypes *model.SpecialTyp
 	if specialTypes.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if specialTypes.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if specialTypes.ID() == "" {
 		return errors.New("cannot erase SpecialTypes without existing record ID")
 	}
-	return r.delete(ctx, r.recordID(string(specialTypes.ID())), specialTypes, false, nil)
+	if err := r.delete(ctx, r.recordID(string(specialTypes.ID())), specialTypes, false, nil); err != nil {
+		return err
+	}
+	internal.AddMarker(&specialTypes.Node, internal.MarkerDeleted)
+	return nil
 }
 
 // Restore un-deletes a soft-deleted record.
@@ -373,6 +393,9 @@ func (r *specialTypes) Restore(ctx context.Context, specialTypes *model.SpecialT
 	}
 	if specialTypes.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if specialTypes.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if specialTypes.ID() == "" {
 		return errors.New("cannot restore SpecialTypes without existing record ID")

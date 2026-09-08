@@ -174,15 +174,8 @@ if err := client.UserRepo().Refresh(ctx, post.Author); err != nil {
 }
 ```
 
-The marker itself is a bit set available on every node, edge and view:
-
-```go
-m := post.Marker()
-m.Has(som.MarkerLoaded)   // instance came from the database
-m.Has(som.MarkerPartial)  // only the record ID is populated
-```
-
-Models built by the application have a zero marker, so they are neither loaded nor partial.
+The marker itself is a bit set available on every node, edge and view — see
+[Model Markers](../api_reference/02_repository.md#model-markers) for all flags.
 
 ## When to Use Each
 

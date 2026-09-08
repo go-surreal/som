@@ -1,0 +1,76 @@
+//go:build embed
+
+package internal
+
+// Marker is a bit set describing the load state of a model instance.
+type Marker uint32
+
+const (
+	// MarkerLoaded is set on every model instance that originates from a
+	// database record.
+	MarkerLoaded Marker = 1 << iota
+
+	// MarkerPartial is set on model instances that do not hold all fields of
+	// the underlying record and must therefore not be written back to the
+	// database. Currently the only such instances are record links that were
+	// not resolved via Fetch, which carry just their record id. Future
+	// partial loads (e.g. field projections) will use the same flag.
+	MarkerPartial
+
+	// MarkerDeleted is set on model instances that were permanently deleted
+	// from the database. Writing them back would recreate the record, so all
+	// further write operations on them are rejected.
+	MarkerDeleted
+
+	// MarkerFromCache is set on model instances that were served from an
+	// in-process cache instead of a database read. It is purely informational.
+	MarkerFromCache
+)
+
+// Has reports whether all of the given flags are set.
+func (m Marker) Has(flags Marker) bool {
+	return m&flags == flags
+}
+
+// LoadMarker holds the load state of a model instance. It is embedded into
+// som.Node, som.Edge and som.View under an unexported name, so that model
+// instances expose the state read-only, while only the generated code can
+// change it.
+type LoadMarker struct {
+	flags Marker
+}
+
+// Marker returns the load state of the model instance.
+func (m LoadMarker) Marker() Marker {
+	return m.flags
+}
+
+// IsPartial reports whether the model instance was only partially loaded,
+// e.g. as a record link that was not resolved via Fetch. Partial instances
+// hold their id, but no field values, so they cannot be written back.
+func (m LoadMarker) IsPartial() bool {
+	return m.flags.Has(MarkerPartial)
+}
+
+func (m *LoadMarker) setMarker(flags Marker) {
+	m.flags = flags
+}
+
+func (m *LoadMarker) addMarker(flags Marker) {
+	m.flags |= flags
+}
+
+type markable interface {
+	setMarker(Marker)
+	addMarker(Marker)
+}
+
+// SetMarker replaces the load state of a node, edge or view.
+func SetMarker(target markable, flags Marker) {
+	target.setMarker(flags)
+}
+
+// AddMarker adds the given flags to the load state of a node, edge or view.
+func AddMarker(target markable, flags Marker) {
+	target.addMarker(flags)
+}

@@ -356,39 +356,41 @@ func loadEagerRecords[N any](
 }
 
 // readWithCache attempts to read from cache first, falling back to DB if needed.
-// If cache is in eager mode and record not found, returns (nil, false, nil).
+// If cache is in eager mode and record not found, returns (nil, false, false, nil).
 // If cache is in lazy mode and record not found, queries DB and populates cache.
 // For eager mode with TTL, expired caches are automatically refreshed.
-func (r *repo[N, K]) readWithCache(ctx context.Context, cacheKey string, rid *models.RecordID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, error) {
+// The third return value reports whether the record was served from the cache.
+func (r *repo[N, K]) readWithCache(ctx context.Context, cacheKey string, rid *models.RecordID, c *cache[N], refreshFuncs *eagerRefreshFuncs[N]) (*N, bool, bool, error) {
 	if c == nil {
-		return r.read(ctx, rid)
+		record, exists, err := r.read(ctx, rid)
+		return record, exists, false, err
 	}
 
 	// Check if eager cache needs refresh due to TTL expiration
 	if c.isEager() && c.isLoaded() && c.isExpired() && refreshFuncs != nil {
 		if err := r.refreshEagerCache(ctx, c, refreshFuncs); err != nil {
-			return nil, false, err
+			return nil, false, false, err
 		}
 	}
 
 	if record, found := c.get(cacheKey); found {
-		return record, true, nil
+		return record, true, true, nil
 	}
 
 	if c.isEager() && c.isLoaded() {
-		return nil, false, nil
+		return nil, false, false, nil
 	}
 
 	record, exists, err := r.read(ctx, rid)
 	if err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 
 	if exists && record != nil {
 		c.set(cacheKey, record)
 	}
 
-	return record, exists, nil
+	return record, exists, false, nil
 }
 
 // refreshEagerCache reloads all records for an expired eager cache.

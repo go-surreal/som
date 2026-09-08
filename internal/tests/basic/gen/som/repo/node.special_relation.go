@@ -294,7 +294,14 @@ func (r *specialRelation) Read(ctx context.Context, id string) (*model.SpecialRe
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.SpecialRelation]{cacheID: internal.GetCacheKey[model.SpecialRelation](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	record, exists, fromCache, err := r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	if err != nil {
+		return nil, false, err
+	}
+	if fromCache && record != nil {
+		internal.AddMarker(&record.Node, internal.MarkerFromCache)
+	}
+	return record, exists, nil
 }
 
 // Update updates the record for the given model.
@@ -305,6 +312,9 @@ func (r *specialRelation) Update(ctx context.Context, specialRelation *model.Spe
 	}
 	if specialRelation.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if specialRelation.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if specialRelation.ID() == "" {
 		return errors.New("cannot update SpecialRelation without existing record ID")
@@ -329,6 +339,9 @@ func (r *specialRelation) Delete(ctx context.Context, specialRelation *model.Spe
 	}
 	if specialRelation.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if specialRelation.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if specialRelation.ID() == "" {
 		return errors.New("cannot delete SpecialRelation without existing record ID")
@@ -358,10 +371,17 @@ func (r *specialRelation) Erase(ctx context.Context, specialRelation *model.Spec
 	if specialRelation.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if specialRelation.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if specialRelation.ID() == "" {
 		return errors.New("cannot erase SpecialRelation without existing record ID")
 	}
-	return r.delete(ctx, r.recordID(string(specialRelation.ID())), specialRelation, false, nil)
+	if err := r.delete(ctx, r.recordID(string(specialRelation.ID())), specialRelation, false, nil); err != nil {
+		return err
+	}
+	internal.AddMarker(&specialRelation.Node, internal.MarkerDeleted)
+	return nil
 }
 
 // Restore un-deletes a soft-deleted record.
@@ -372,6 +392,9 @@ func (r *specialRelation) Restore(ctx context.Context, specialRelation *model.Sp
 	}
 	if specialRelation.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if specialRelation.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if specialRelation.ID() == "" {
 		return errors.New("cannot restore SpecialRelation without existing record ID")

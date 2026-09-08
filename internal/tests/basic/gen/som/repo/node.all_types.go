@@ -291,7 +291,14 @@ func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, 
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.AllTypes]{cacheID: internal.GetCacheKey[model.AllTypes](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	record, exists, fromCache, err := r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	if err != nil {
+		return nil, false, err
+	}
+	if fromCache && record != nil {
+		internal.AddMarker(&record.Node, internal.MarkerFromCache)
+	}
+	return record, exists, nil
 }
 
 // Update updates the record for the given model.
@@ -302,6 +309,9 @@ func (r *allTypes) Update(ctx context.Context, allTypes *model.AllTypes) error {
 	}
 	if allTypes.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if allTypes.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if allTypes.ID() == "" {
 		return errors.New("cannot update AllTypes without existing record ID")
@@ -327,6 +337,9 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 	if allTypes.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if allTypes.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if allTypes.ID() == "" {
 		return errors.New("cannot delete AllTypes without existing record ID")
 	}
@@ -336,6 +349,7 @@ func (r *allTypes) Delete(ctx context.Context, allTypes *model.AllTypes) error {
 	if err := r.delete(ctx, r.recordID(string(allTypes.ID())), allTypes, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&allTypes.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, allTypes); err != nil {
 		return err
 	}

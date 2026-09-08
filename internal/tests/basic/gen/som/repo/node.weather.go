@@ -214,6 +214,9 @@ func (r *weather) Update(ctx context.Context, weather *model.Weather) error {
 	if weather.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if weather.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	var zeroKey model.WeatherKey
 	if weather.ID() == zeroKey {
 		return errors.New("cannot update Weather without existing record ID")
@@ -239,6 +242,9 @@ func (r *weather) Delete(ctx context.Context, weather *model.Weather) error {
 	if weather.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if weather.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	var zeroKey model.WeatherKey
 	if weather.ID() == zeroKey {
 		return errors.New("cannot delete Weather without existing record ID")
@@ -249,6 +255,7 @@ func (r *weather) Delete(ctx context.Context, weather *model.Weather) error {
 	if err := r.delete(ctx, r.recordID(weather.ID()), weather, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&weather.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, weather); err != nil {
 		return err
 	}

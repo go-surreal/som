@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
@@ -66,7 +67,7 @@ func (c *PersonObj) UnmarshalCBOR(data []byte) error {
 	}
 
 	// Mark the instance as fully loaded from the database
-	som.SetMarker(&c.Node, som.MarkerLoaded)
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
 
 	return nil
 }
@@ -131,7 +132,7 @@ func (f *personObjLink) UnmarshalCBOR(data []byte) error {
 			}
 			f.PersonObj.Node = som.NewNode[model.PersonKey](key)
 		}
-		som.SetMarker(&f.PersonObj.Node, som.MarkerLoaded|som.MarkerPartial)
+		internal.SetMarker(&f.PersonObj.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias personObjLink

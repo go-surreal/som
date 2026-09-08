@@ -220,6 +220,9 @@ func (r *teamMember) Update(ctx context.Context, teamMember *model.TeamMember) e
 	if teamMember.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if teamMember.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if teamMember.ID().Member.ID() == "" {
 		return errors.New("Member.ID must not be empty")
 	}
@@ -248,6 +251,9 @@ func (r *teamMember) Delete(ctx context.Context, teamMember *model.TeamMember) e
 	if teamMember.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if teamMember.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if teamMember.ID().Member.ID() == "" {
 		return errors.New("Member.ID must not be empty")
 	}
@@ -261,6 +267,7 @@ func (r *teamMember) Delete(ctx context.Context, teamMember *model.TeamMember) e
 	if err := r.delete(ctx, r.recordID(teamMember.ID()), teamMember, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&teamMember.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, teamMember); err != nil {
 		return err
 	}

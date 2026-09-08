@@ -96,7 +96,7 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 	}
 
 	// Mark the instance as fully loaded from the database
-	som.SetMarker(&c.Node, som.MarkerLoaded)
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
 
 	return nil
 }
@@ -149,7 +149,7 @@ func (f *specialRelationLink) UnmarshalCBOR(data []byte) error {
 			}
 			f.SpecialRelation.Node = som.NewNode[som.Rand](som.Rand(idStr))
 		}
-		som.SetMarker(&f.SpecialRelation.Node, som.MarkerLoaded|som.MarkerPartial)
+		internal.SetMarker(&f.SpecialRelation.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias specialRelationLink

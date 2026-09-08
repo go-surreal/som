@@ -287,7 +287,14 @@ func (r *location) Read(ctx context.Context, id string) (*model.Location, bool, 
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.Location]{cacheID: internal.GetCacheKey[model.Location](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	record, exists, fromCache, err := r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	if err != nil {
+		return nil, false, err
+	}
+	if fromCache && record != nil {
+		internal.AddMarker(&record.Node, internal.MarkerFromCache)
+	}
+	return record, exists, nil
 }
 
 // Update updates the record for the given model.
@@ -298,6 +305,9 @@ func (r *location) Update(ctx context.Context, location *model.Location) error {
 	}
 	if location.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if location.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if location.ID() == "" {
 		return errors.New("cannot update Location without existing record ID")
@@ -323,6 +333,9 @@ func (r *location) Delete(ctx context.Context, location *model.Location) error {
 	if location.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if location.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if location.ID() == "" {
 		return errors.New("cannot delete Location without existing record ID")
 	}
@@ -332,6 +345,7 @@ func (r *location) Delete(ctx context.Context, location *model.Location) error {
 	if err := r.delete(ctx, r.recordID(string(location.ID())), location, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&location.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, location); err != nil {
 		return err
 	}

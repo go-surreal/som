@@ -4,6 +4,7 @@ package conv
 import (
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
 	som "som.test/gen/som"
+	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
@@ -73,7 +74,7 @@ func (c *Weather) UnmarshalCBOR(data []byte) error {
 	}
 
 	// Mark the instance as fully loaded from the database
-	som.SetMarker(&c.Node, som.MarkerLoaded)
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
 
 	return nil
 }
@@ -144,7 +145,7 @@ func (f *weatherLink) UnmarshalCBOR(data []byte) error {
 				f.Weather.Node = som.NewNode[model.WeatherKey](key)
 			}
 		}
-		som.SetMarker(&f.Weather.Node, som.MarkerLoaded|som.MarkerPartial)
+		internal.SetMarker(&f.Weather.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias weatherLink

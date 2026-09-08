@@ -293,7 +293,7 @@ func (c *Location) UnmarshalCBOR(data []byte) error {
 	}
 
 	// Mark the instance as fully loaded from the database
-	som.SetMarker(&c.Node, som.MarkerLoaded)
+	internal.SetMarker(&c.Node, internal.MarkerLoaded)
 
 	return nil
 }
@@ -346,7 +346,7 @@ func (f *locationLink) UnmarshalCBOR(data []byte) error {
 			}
 			f.Location.Node = som.NewNode[som.ULID](som.ULID(idStr))
 		}
-		som.SetMarker(&f.Location.Node, som.MarkerLoaded|som.MarkerPartial)
+		internal.SetMarker(&f.Location.Node, internal.MarkerLoaded|internal.MarkerPartial)
 		return nil
 	}
 	type alias locationLink

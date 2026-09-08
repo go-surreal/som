@@ -263,7 +263,14 @@ func (r *slug) Read(ctx context.Context, id string) (*model.Slug, bool, error) {
 	if cache != nil && cache.isEager() {
 		refreshFuncs = &eagerRefreshFuncs[model.Slug]{cacheID: internal.GetCacheKey[model.Slug](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
-	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	record, exists, fromCache, err := r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+	if err != nil {
+		return nil, false, err
+	}
+	if fromCache && record != nil {
+		internal.AddMarker(&record.Node, internal.MarkerFromCache)
+	}
+	return record, exists, nil
 }
 
 // Update updates the record for the given model.
@@ -274,6 +281,9 @@ func (r *slug) Update(ctx context.Context, slug *model.Slug) error {
 	}
 	if slug.IsPartial() {
 		return som.ErrPartialModel
+	}
+	if slug.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
 	}
 	if slug.ID() == "" {
 		return errors.New("cannot update Slug without existing record ID")
@@ -299,6 +309,9 @@ func (r *slug) Delete(ctx context.Context, slug *model.Slug) error {
 	if slug.IsPartial() {
 		return som.ErrPartialModel
 	}
+	if slug.Marker().Has(som.MarkerDeleted) {
+		return som.ErrDeletedModel
+	}
 	if slug.ID() == "" {
 		return errors.New("cannot delete Slug without existing record ID")
 	}
@@ -308,6 +321,7 @@ func (r *slug) Delete(ctx context.Context, slug *model.Slug) error {
 	if err := r.delete(ctx, r.recordID(string(slug.ID())), slug, false, nil); err != nil {
 		return err
 	}
+	internal.AddMarker(&slug.Node, internal.MarkerDeleted)
 	if err := r.runHooks(ctx, afterDelete, slug); err != nil {
 		return err
 	}

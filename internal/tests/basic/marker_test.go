@@ -75,6 +75,84 @@ func TestMarkerPartialLink(t *testing.T) {
 	assert.NilError(t, err)
 }
 
+func TestMarkerDeleted(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	slug := model.Slug{Title: "Post"}
+	err := client.SlugRepo().CreateWithID(ctx, "post", &slug)
+	assert.NilError(t, err)
+	assert.Assert(t, !slug.Marker().Has(som.MarkerDeleted))
+
+	err = client.SlugRepo().Delete(ctx, &slug)
+	assert.NilError(t, err)
+
+	assert.Assert(t, slug.Marker().Has(som.MarkerDeleted), "a hard-deleted instance is flagged")
+	assert.ErrorIs(t, client.SlugRepo().Update(ctx, &slug), som.ErrDeletedModel)
+	assert.ErrorIs(t, client.SlugRepo().Delete(ctx, &slug), som.ErrDeletedModel)
+}
+
+func TestMarkerDeletedSoftDelete(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	record := model.SpecialTypes{Name: "Author"}
+	err := client.SpecialTypesRepo().Create(ctx, &record)
+	assert.NilError(t, err)
+
+	err = client.SpecialTypesRepo().Delete(ctx, &record)
+	assert.NilError(t, err)
+
+	assert.Assert(t, !record.Marker().Has(som.MarkerDeleted), "a soft delete does not flag the instance")
+
+	err = client.SpecialTypesRepo().Restore(ctx, &record)
+	assert.NilError(t, err)
+
+	err = client.SpecialTypesRepo().Erase(ctx, &record)
+	assert.NilError(t, err)
+
+	assert.Assert(t, record.Marker().Has(som.MarkerDeleted), "an erased instance is flagged")
+	assert.ErrorIs(t, client.SpecialTypesRepo().Update(ctx, &record), som.ErrDeletedModel)
+	assert.ErrorIs(t, client.SpecialTypesRepo().Restore(ctx, &record), som.ErrDeletedModel)
+}
+
+func TestMarkerFromCache(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	record := model.SpecialTypes{Name: "Author"}
+	err := client.SpecialTypesRepo().Create(ctx, &record)
+	assert.NilError(t, err)
+
+	uncached, _, err := client.SpecialTypesRepo().Read(ctx, string(record.ID()))
+	assert.NilError(t, err)
+	assert.Assert(t, !uncached.Marker().Has(som.MarkerFromCache))
+
+	cachedCtx, cacheCleanup := som.WithCache[model.SpecialTypes](ctx)
+	defer cacheCleanup()
+
+	first, _, err := client.SpecialTypesRepo().Read(cachedCtx, string(record.ID()))
+	assert.NilError(t, err)
+	assert.Assert(t, !first.Marker().Has(som.MarkerFromCache), "the first read populates the cache")
+
+	second, _, err := client.SpecialTypesRepo().Read(cachedCtx, string(record.ID()))
+	assert.NilError(t, err)
+	assert.Assert(t, second.Marker().Has(som.MarkerFromCache))
+	assert.Assert(t, second.Marker().Has(som.MarkerLoaded))
+}
+
 func TestMarkerFetchedLink(t *testing.T) {
 	t.Parallel()
 
