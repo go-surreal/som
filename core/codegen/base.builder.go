@@ -349,6 +349,18 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			))
 		}
 
+		if b.input.hasFragments(node) {
+			g.Add(comment("Expand returns the full record a fragment of " + node.NameGo() + " was projected from, if it still exists."))
+			g.Id("Expand").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("fragment").Qual(b.relativePkgPath(), "FragmentOf").Types(b.input.SourceQual(node.NameGo())),
+			).Parens(jen.List(
+				jen.Op("*").Add(b.input.SourceQual(node.NameGo())),
+				jen.Bool(),
+				jen.Error(),
+			))
+		}
+
 		g.Add(comment("Update updates the record for the given " + node.NameGo() + " model."))
 		g.Id("Update").Call(
 			jen.Id("ctx").Qual("context", "Context"),
@@ -784,6 +796,43 @@ If caching is enabled via som.WithCache, it will be used.
 					),
 				),
 			)
+	}
+
+	// Expand
+	if b.input.hasFragments(node) {
+		f.Line().
+			Add(comment(`
+Expand returns the full record the given fragment was projected from, if it
+still exists. The returned bool indicates whether the record was found or not.
+		`)).
+			Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
+			Id("Expand").
+			Params(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("fragment").Qual(b.relativePkgPath(), "FragmentOf").Types(b.input.SourceQual(node.NameGo())),
+			).
+			Params(jen.Op("*").Add(b.input.SourceQual(node.NameGo())), jen.Bool(), jen.Error()).
+			BlockFunc(func(g *jen.Group) {
+				g.List(jen.Id("rid"), jen.Id("ok")).Op(":=").
+					Qual(b.relativePkgPath("internal"), "FragmentRecordID").Call(jen.Id("fragment"))
+				g.If(jen.Op("!").Id("ok")).Block(
+					jen.Return(jen.Nil(), jen.False(), jen.Qual(b.relativePkgPath(), "ErrEmptyID")),
+				)
+
+				if node.HasComplexID() {
+					// A complex key cannot be rebuilt from the record id without
+					// decoding it again, so the record is read by its raw id.
+					g.Return(jen.Id("r").Dot("read").Call(jen.Id("ctx"), jen.Id("rid")))
+					return
+				}
+
+				g.List(jen.Id("id"), jen.Err()).Op(":=").
+					Qual(b.relativePkgPath("internal/cbor"), "RecordIDToString").Call(jen.Id("rid").Dot("ID"))
+				g.If(jen.Err().Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.False(), jen.Err()),
+				)
+				g.Return(jen.Id("r").Dot("Read").Call(jen.Id("ctx"), jen.Id("id")))
+			})
 	}
 
 	// Update

@@ -161,7 +161,7 @@ write operations (see [Model Markers](#model-markers)). For soft-delete models `
 
 ## Model Markers
 
-Every node, edge and view carries a bit set describing how the instance was loaded:
+Every node, edge, view and fragment carries a bit set describing how the instance was loaded:
 
 ```go
 m := user.Marker()
@@ -183,6 +183,13 @@ can set them, application code just reads them via `Marker()` and `IsPartial()`.
 | Permanently deleted via `Delete` or `Erase` | `som.ErrDeletedModel` |
 
 `Refresh` is always allowed — it is the way to turn a partial instance into a full one.
+
+A [fragment](../models/10_fragments.md) is always partial. It is not accepted by the write
+methods at all, since they take the node model; use `Expand` to load the full record:
+
+```go
+person, exists, err := client.PersonRepo().Expand(ctx, card)
+```
 
 ## Refresh
 

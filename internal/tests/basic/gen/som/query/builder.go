@@ -823,8 +823,12 @@ func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, e
 
 // cursorData extracts the keyset position of an item for the given sort fields.
 func (b builder[M]) cursorData(item *M, sorts []*lib.SortBuilder) (lib.CursorData, error) {
-	dbFields := b.info.Fields(item)
+	return cursorDataOf(b.info.Fields(item), sorts)
+}
 
+// cursorDataOf extracts the keyset position from the DB-keyed value map of a
+// record for the given sort fields.
+func cursorDataOf(dbFields map[string]any, sorts []*lib.SortBuilder) (lib.CursorData, error) {
 	sortValues := make(map[string]cbor.RawMessage, len(sorts))
 	var id cbor.RawMessage
 
