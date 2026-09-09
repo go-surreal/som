@@ -298,7 +298,62 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 			return &link
 		}
 
-		{{.FetchedBits}}
+		{{if .Relations}}
+		// The relations of {{.NameGo}}, as bits of its load state.
+		const (
+			{{- range $i, $rel := .Relations}}
+			{{$rel.Bit}}{{if not $i}} internal.Relations = 1 << iota{{end}}
+			{{- end}}
+		)
+
+		// {{.NameGoLower}}FetchedBits reports which relations of the decoded record hold no
+		// unresolved links. A relation without any link counts as resolved.
+		func {{.NameGoLower}}FetchedBits(c *{{.NameGo}}) internal.Relations {
+			var relations internal.Relations
+			{{range $rel := .Relations}}
+			{{$rel.Check}}
+			{{end}}
+			return relations
+		}
+
+		// {{.NameGo}}Resolved reports whether the given relation path of the model was
+		// loaded from the database. The path is followed segment by segment, so a
+		// nested path is only resolved if every relation along it was fetched.
+		{{- if .Skipped}}
+		//
+		// The relation {{.Skipped}} is not tracked: its field nests links deeper than a
+		// slice, so it is reported as not resolved and loaded again on every call.
+		{{- end}}
+		func {{.NameGo}}Resolved(m *model.{{.NameGo}}, path string) bool {
+			head, rest, _ := strings.Cut(path, ".")
+			switch head {
+			{{- range $rel := .Relations}}
+			case "{{$rel.NameDB}}":
+				if !internal.Fetched(m).Has({{$rel.Bit}}) {
+					return false
+				}
+				if rest == "" {
+					return true
+				}
+				{{$rel.Nested}}
+			{{- end}}
+			}
+
+			// An unknown relation is never resolved, so it is always fetched again.
+			return false
+		}
+		{{else}}
+		// {{.NameGo}}Resolved reports whether the given relation path of the model was
+		// loaded from the database. The model has no relations, so no path is.
+		{{- if .Skipped}}
+		//
+		// The relation {{.Skipped}} is not tracked: its field nests links deeper than a
+		// slice, so it is reported as not resolved and loaded again on every call.
+		{{- end}}
+		func {{.NameGo}}Resolved(_ *model.{{.NameGo}}, _ string) bool {
+			return false
+		}
+		{{end -}}
 		{{end -}}
 	`
 
@@ -345,6 +400,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	}
 
 	file := newGoFile(b.pkgName,
+		goImport{Path: "strings"},
 		goImport{Alias: "models", Path: def.PkgModels},
 		goImport{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
 		goImport{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
@@ -378,12 +434,12 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 	}
 
 	if isNode {
-		fetched, err := b.fetchedBits(node)
-		if err != nil {
+		if err := checkRelationLimit(node.NameGo(), len(relations(node))); err != nil {
 			return err
 		}
 
-		data["FetchedBits"] = file.decl(fetched)
+		data["Relations"] = b.relationData(file, node)
+		data["Skipped"] = strings.Join(skippedRelations(node), ", ")
 		data["HasRelations"] = len(relations(node)) > 0
 		data["FetchedBitsCall"] = file.code(b.fetchedBitsCall(node))
 		data["IDEmbed"] = node.Source.IDEmbed
@@ -941,132 +997,41 @@ func bitName(node *field.NodeTable, rel relation) string {
 	return node.NameGoLower() + "Fetched" + rel.field.NameGo()
 }
 
-// fetchedBits returns the bit constants of a node's relations, the function
-// deriving them from a decoded record, and the function reporting whether a
-// relation path is resolved.
-func (b *convBuilder) fetchedBits(node *field.NodeTable) (jen.Code, error) {
-	f := jen.Null()
-	rels := relations(node)
+// relationData returns the per-relation values the conversion template needs:
+// the bit of a relation, the check deriving it from a decoded record and the
+// descent into the relation's target node.
+func (b *convBuilder) relationData(file *goFile, node *field.NodeTable) []map[string]string {
+	var out []map[string]string
 
-	if err := checkRelationLimit(node.NameGo(), len(rels)); err != nil {
-		return nil, err
-	}
-
-	skippedNote := func() {
-		skipped := skippedRelations(node)
-		if len(skipped) < 1 {
-			return
-		}
-		f.Comment("").Line()
-		f.Commentf("The relation %s is not tracked: its field nests links deeper than a", strings.Join(skipped, ", ")).Line()
-		f.Comment("slice, so it is reported as not resolved and loaded again on every call.").Line()
-	}
-
-	// A node without relations still needs the Resolved function, as it may be
-	// the target of a path that reaches further than the node can offer.
-	if len(rels) < 1 {
-		f.Commentf("%sResolved reports whether the given relation path of the model was", node.NameGo()).Line()
-		f.Comment("loaded from the database. The model has no relations, so no path is.").Line()
-		skippedNote()
-		f.Func().Id(node.NameGo()+"Resolved").
-			Params(
-				jen.Id("_").Op("*").Add(b.SourceQual(node.NameGo())),
-				jen.Id("_").String(),
-			).
-			Bool().
-			Block(jen.Return(jen.False()))
-
-		return f, nil
-	}
-
-	pkgInternal := b.relativePkgPath("internal")
-
-	f.Commentf("The relations of %s, as bits of its load state.", node.NameGo()).Line()
-	f.Const().DefsFunc(func(g *jen.Group) {
-		for i, rel := range rels {
-			if i == 0 {
-				g.Id(bitName(node, rel)).Qual(pkgInternal, "Relations").Op("=").Lit(1).Op("<<").Iota()
-				continue
-			}
-			g.Id(bitName(node, rel))
-		}
-	}).Line().Line()
-
-	f.Commentf("%sFetchedBits reports which relations of the decoded record hold no", node.NameGoLower()).Line()
-	f.Comment("unresolved links. A relation without any link counts as resolved.").Line()
-	f.Func().Id(node.NameGoLower()+"FetchedBits").
-		Params(jen.Id("c").Op("*").Id(node.NameGo())).
-		Qual(pkgInternal, "Relations").
-		BlockFunc(func(g *jen.Group) {
-			g.Var().Id("relations").Qual(pkgInternal, "Relations")
-
-			for _, rel := range rels {
-				g.Line()
-				b.addFetchedBit(g, node, rel)
-			}
-
-			g.Line()
-			g.Return(jen.Id("relations"))
-		}).Line().Line()
-
-	f.Commentf("%sResolved reports whether the given relation path of the model was", node.NameGo()).Line()
-	f.Comment("loaded from the database. The path is followed segment by segment, so a").Line()
-	f.Comment("nested path is only resolved if every relation along it was fetched.").Line()
-	skippedNote()
-	f.Func().Id(node.NameGo()+"Resolved").
-		Params(
-			jen.Id("m").Op("*").Add(b.SourceQual(node.NameGo())),
-			jen.Id("path").String(),
-		).
-		Bool().
-		BlockFunc(func(g *jen.Group) {
-			g.List(jen.Id("head"), jen.Id("rest"), jen.Id("_")).Op(":=").
-				Qual("strings", "Cut").Call(jen.Id("path"), jen.Lit("."))
-
-			g.Switch(jen.Id("head")).BlockFunc(func(sg *jen.Group) {
-				for _, rel := range rels {
-					sg.Case(jen.Lit(rel.field.NameDatabase())).BlockFunc(func(cg *jen.Group) {
-						cg.If(
-							jen.Op("!").Qual(pkgInternal, "Fetched").Call(jen.Id("m")).
-								Dot("Has").Call(jen.Id(bitName(node, rel))),
-						).Block(
-							jen.Return(jen.False()),
-						)
-						cg.If(jen.Id("rest").Op("==").Lit("")).Block(
-							jen.Return(jen.True()),
-						)
-						b.addNestedResolved(cg, rel)
-					})
-				}
-			})
-
-			g.Line()
-			g.Comment("An unknown relation is never resolved, so it is always fetched again.")
-			g.Return(jen.False())
+	for _, rel := range relations(node) {
+		out = append(out, map[string]string{
+			"NameDB": rel.field.NameDatabase(),
+			"Bit":    bitName(node, rel),
+			"Check":  file.code(b.fetchedBit(node, rel)),
+			"Nested": file.code(b.nestedResolved(rel)),
 		})
+	}
 
-	return f, nil
+	return out
 }
 
-// addFetchedBit generates the check that sets the bit of a single relation.
-func (b *convBuilder) addFetchedBit(g *jen.Group, node *field.NodeTable, rel relation) {
+// fetchedBit returns the check that sets the bit of a single relation.
+func (b *convBuilder) fetchedBit(node *field.NodeTable, rel relation) jen.Code {
 	accessor := jen.Id("c").Dot(rel.field.NameGo())
 	setBit := jen.Id("relations").Op("|=").Id(bitName(node, rel))
 
 	if !rel.slice {
 		if rel.elemPtr {
-			g.If(jen.Add(accessor).Op("==").Nil().Op("||").Op("!").Add(accessor.Clone()).Dot("IsPartial").Call()).
+			return jen.If(jen.Add(accessor).Op("==").Nil().Op("||").Op("!").Add(accessor.Clone()).Dot("IsPartial").Call()).
 				Block(setBit)
-			return
 		}
 
-		g.If(jen.Op("!").Add(accessor).Dot("IsPartial").Call()).Block(setBit)
-		return
+		return jen.If(jen.Op("!").Add(accessor).Dot("IsPartial").Call()).Block(setBit)
 	}
 
 	// A slice is fetched as a whole, so it only counts as resolved if none of
 	// its elements is still a partial link.
-	g.BlockFunc(func(bg *jen.Group) {
+	return jen.BlockFunc(func(bg *jen.Group) {
 		if rel.slicePtr {
 			bg.If(jen.Add(accessor).Op("==").Nil()).Block(
 				setBit,
@@ -1102,30 +1067,32 @@ func (b *convBuilder) elemPartialCheck(rel relation) jen.Code {
 	)
 }
 
-// addNestedResolved generates the descent into the target node of a relation,
-// for the remaining segments of a path.
-func (b *convBuilder) addNestedResolved(g *jen.Group, rel relation) {
+// nestedResolved returns the descent into the target node of a relation, for
+// the remaining segments of a path.
+func (b *convBuilder) nestedResolved(rel relation) jen.Code {
 	accessor := jen.Id("m").Dot(rel.field.NameGo())
 	resolvedFn := rel.target.NameGo() + "Resolved"
 
 	if !rel.slice {
 		if rel.elemPtr {
-			g.If(jen.Add(accessor).Op("==").Nil()).Block(
-				jen.Return(jen.True()),
-			)
-			g.Return(jen.Id(resolvedFn).Call(accessor.Clone(), jen.Id("rest")))
-			return
+			return joinStatements([]jen.Code{
+				jen.If(jen.Add(accessor).Op("==").Nil()).Block(
+					jen.Return(jen.True()),
+				),
+				jen.Return(jen.Id(resolvedFn).Call(accessor.Clone(), jen.Id("rest"))),
+			})
 		}
 
-		g.Return(jen.Id(resolvedFn).Call(jen.Op("&").Add(accessor), jen.Id("rest")))
-		return
+		return jen.Return(jen.Id(resolvedFn).Call(jen.Op("&").Add(accessor), jen.Id("rest")))
 	}
+
+	var stmts []jen.Code
 
 	elems := accessor
 	if rel.slicePtr {
-		g.If(jen.Add(accessor).Op("==").Nil()).Block(
+		stmts = append(stmts, jen.If(jen.Add(accessor).Op("==").Nil()).Block(
 			jen.Return(jen.True()),
-		)
+		))
 		elems = jen.Op("*").Add(accessor.Clone())
 	}
 
@@ -1134,15 +1101,19 @@ func (b *convBuilder) addNestedResolved(g *jen.Group, rel relation) {
 		arg = jen.Op("&").Id("v")
 	}
 
-	g.For(jen.List(jen.Id("_"), jen.Id("v")).Op(":=").Range().Add(elems)).BlockFunc(func(fg *jen.Group) {
-		if rel.elemPtr {
-			fg.If(jen.Id("v").Op("==").Nil()).Block(jen.Continue())
-		}
-		fg.If(jen.Op("!").Id(resolvedFn).Call(arg, jen.Id("rest"))).Block(
-			jen.Return(jen.False()),
-		)
-	})
-	g.Return(jen.True())
+	stmts = append(stmts,
+		jen.For(jen.List(jen.Id("_"), jen.Id("v")).Op(":=").Range().Add(elems)).BlockFunc(func(fg *jen.Group) {
+			if rel.elemPtr {
+				fg.If(jen.Id("v").Op("==").Nil()).Block(jen.Continue())
+			}
+			fg.If(jen.Op("!").Id(resolvedFn).Call(arg, jen.Id("rest"))).Block(
+				jen.Return(jen.False()),
+			)
+		}),
+		jen.Return(jen.True()),
+	)
+
+	return joinStatements(stmts)
 }
 
 // fetchedBitsCall returns the call flagging the resolved relations of a decoded
