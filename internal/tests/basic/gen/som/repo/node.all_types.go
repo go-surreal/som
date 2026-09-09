@@ -4,13 +4,16 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
+	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -43,6 +46,9 @@ type AllTypesRepo interface {
 	// Relate returns a new relate builder for the AllTypes model.
 
 	Relate() *relate.AllTypes
+	// Resolve loads the given relations of the model from the database.
+
+	Resolve(ctx context.Context, allTypes *model.AllTypes, fetch ...with.Fetch_[model.AllTypes]) error
 	// Index returns a new index instance for the AllTypes model.
 
 	Index() *index.AllTypes
@@ -130,6 +136,14 @@ var allTypesRepoInfo = RepoInfo[model.AllTypes]{
 	},
 	MarshalOne: func(node *model.AllTypes) any {
 		return conv.FromAllTypesPtr(node)
+	},
+	MergeOne: func(node *model.AllTypes, data []byte) error {
+		into := conv.FromAllTypesPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToAllTypesPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.AllTypes, error) {
 		raw, err := dbQueryOne[conv.AllTypes](ctx, db, stmt, vars)
@@ -358,6 +372,32 @@ func (r *allTypes) Refresh(ctx context.Context, allTypes *model.AllTypes) error 
 		return errors.New("cannot refresh AllTypes without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(string(allTypes.ID())), allTypes)
+}
+
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *allTypes) Resolve(ctx context.Context, allTypes *model.AllTypes, fetch ...with.Fetch_[model.AllTypes]) error {
+	if allTypes == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if allTypes.ID() == "" {
+		return errors.New("cannot resolve AllTypes without existing record ID")
+	}
+	// Relations that are already loaded are not requested again.
+	var paths []string
+	for _, f := range fetch {
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.AllTypesResolved(allTypes, path) || slices.Contains(paths, path) {
+			continue
+		}
+		paths = append(paths, path)
+	}
+	return r.resolve(ctx, r.recordID(string(allTypes.ID())), allTypes, paths)
 }
 
 // Relate returns a new relate instance for the AllTypes model.

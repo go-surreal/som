@@ -54,7 +54,6 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 		if nodeField, ok := fld.(*field.Node); ok {
 			relatedTable := nodeField.Table()
 			f.Line()
-			// Add comment for soft-delete relations
 			if relatedTable.Source != nil && relatedTable.Source.SoftDelete {
 				f.Comment(nodeField.NameGo() + " returns a fetch accessor for the " + nodeField.NameDatabase() + " relation.")
 				f.Comment("Note: Soft-delete filtering does not apply to fetched relations.")
@@ -73,7 +72,6 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 			if nodeElement, ok := sliceField.Element().(*field.Node); ok {
 				relatedTable := nodeElement.Table()
 				f.Line()
-				// Add comment for soft-delete relations
 				if relatedTable.Source != nil && relatedTable.Source.SoftDelete {
 					f.Comment(sliceField.NameGo() + " returns a fetch accessor for the " + sliceField.NameDatabase() + " slice relation.")
 					f.Comment("Note: Soft-delete filtering does not apply to fetched relations.")

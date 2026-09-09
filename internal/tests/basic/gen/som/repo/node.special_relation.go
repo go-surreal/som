@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
+	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -50,6 +52,9 @@ type SpecialRelationRepo interface {
 	// Relate returns a new relate builder for the SpecialRelation model.
 
 	Relate() *relate.SpecialRelation
+	// Resolve loads the given relations of the model from the database.
+
+	Resolve(ctx context.Context, specialRelation *model.SpecialRelation, fetch ...with.Fetch_[model.SpecialRelation]) error
 	// Index returns a new index instance for the SpecialRelation model.
 
 	Index() *index.SpecialRelation
@@ -133,6 +138,14 @@ var specialRelationRepoInfo = RepoInfo[model.SpecialRelation]{
 	},
 	MarshalOne: func(node *model.SpecialRelation) any {
 		return conv.FromSpecialRelationPtr(node)
+	},
+	MergeOne: func(node *model.SpecialRelation, data []byte) error {
+		into := conv.FromSpecialRelationPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToSpecialRelationPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.SpecialRelation, error) {
 		raw, err := dbQueryOne[conv.SpecialRelation](ctx, db, stmt, vars)
@@ -417,6 +430,32 @@ func (r *specialRelation) Refresh(ctx context.Context, specialRelation *model.Sp
 		return errors.New("cannot refresh SpecialRelation without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(string(specialRelation.ID())), specialRelation)
+}
+
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *specialRelation) Resolve(ctx context.Context, specialRelation *model.SpecialRelation, fetch ...with.Fetch_[model.SpecialRelation]) error {
+	if specialRelation == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if specialRelation.ID() == "" {
+		return errors.New("cannot resolve SpecialRelation without existing record ID")
+	}
+	// Relations that are already loaded are not requested again.
+	var paths []string
+	for _, f := range fetch {
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.SpecialRelationResolved(specialRelation, path) || slices.Contains(paths, path) {
+			continue
+		}
+		paths = append(paths, path)
+	}
+	return r.resolve(ctx, r.recordID(string(specialRelation.ID())), specialRelation, paths)
 }
 
 // Relate returns a new relate instance for the SpecialRelation model.

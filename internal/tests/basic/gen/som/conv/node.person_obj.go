@@ -189,3 +189,9 @@ func toPersonObjLinkPtr(node *model.PersonObj) *personObjLink {
 	link := personObjLink{PersonObj: FromPersonObj(*node), ID: &rid}
 	return &link
 }
+
+// PersonObjResolved reports whether the given relation path of the model was
+// loaded from the database. The model has no relations, so no path is.
+func PersonObjResolved(_ *model.PersonObj, _ string) bool {
+	return false
+}
