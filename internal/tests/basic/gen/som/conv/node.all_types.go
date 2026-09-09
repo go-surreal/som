@@ -9,6 +9,7 @@ import (
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
+	"strings"
 	"time"
 )
 
@@ -784,6 +785,9 @@ func (c *AllTypes) UnmarshalCBOR(data []byte) error {
 		cbor.Unmarshal(raw, &c.FieldHookDetail)
 	}
 
+	// Flag the relations that hold no unresolved links
+	internal.AddFetched(&c.Node, allTypesFetchedBits(c))
+
 	// Mark the instance as fully loaded from the database
 	internal.SetMarker(&c.Node, internal.MarkerLoaded)
 
@@ -886,4 +890,154 @@ func toAllTypesLinkPtr(node *model.AllTypes) *allTypesLink {
 	rid := models.NewRecordID("all_types", node.ID())
 	link := allTypesLink{AllTypes: FromAllTypes(*node), ID: &rid}
 	return &link
+}
+
+// The relations of AllTypes, as bits of its load state.
+const (
+	allTypesFetchedFieldNode internal.Relations = 1 << iota
+	allTypesFetchedFieldNodePtr
+	allTypesFetchedFieldNodeSlice
+	allTypesFetchedFieldNodePtrSlice
+	allTypesFetchedFieldNodePtrSlicePtr
+)
+
+// allTypesFetchedBits reports which relations of the decoded record hold no
+// unresolved links. A relation without any link counts as resolved.
+func allTypesFetchedBits(c *AllTypes) internal.Relations {
+	var relations internal.Relations
+
+	if !c.FieldNode.IsPartial() {
+		relations |= allTypesFetchedFieldNode
+	}
+
+	if c.FieldNodePtr == nil || !c.FieldNodePtr.IsPartial() {
+		relations |= allTypesFetchedFieldNodePtr
+	}
+
+	{
+		resolved := true
+		for _, v := range c.FieldNodeSlice {
+			if v.IsPartial() {
+				resolved = false
+				break
+			}
+		}
+		if resolved {
+			relations |= allTypesFetchedFieldNodeSlice
+		}
+	}
+
+	{
+		resolved := true
+		for _, v := range c.FieldNodePtrSlice {
+			if v != nil && v.IsPartial() {
+				resolved = false
+				break
+			}
+		}
+		if resolved {
+			relations |= allTypesFetchedFieldNodePtrSlice
+		}
+	}
+
+	{
+		if c.FieldNodePtrSlicePtr == nil {
+			relations |= allTypesFetchedFieldNodePtrSlicePtr
+		} else {
+			resolved := true
+			for _, v := range *c.FieldNodePtrSlicePtr {
+				if v != nil && v.IsPartial() {
+					resolved = false
+					break
+				}
+			}
+			if resolved {
+				relations |= allTypesFetchedFieldNodePtrSlicePtr
+			}
+		}
+	}
+
+	return relations
+}
+
+// AllTypesResolved reports whether the given relation path of the model was
+// loaded from the database. The path is followed segment by segment, so a
+// nested path is only resolved if every relation along it was fetched.
+//
+// The relation FieldNodeSliceSlice is not tracked: its field nests links deeper than a
+// slice, so it is reported as not resolved and loaded again on every call.
+func AllTypesResolved(m *model.AllTypes, path string) bool {
+	head, rest, _ := strings.Cut(path, ".")
+	switch head {
+	case "field_node":
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNode) {
+			return false
+		}
+		if rest == "" {
+			return true
+		}
+		return SpecialTypesResolved(&m.FieldNode, rest)
+	case "field_node_ptr":
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNodePtr) {
+			return false
+		}
+		if rest == "" {
+			return true
+		}
+		if m.FieldNodePtr == nil {
+			return true
+		}
+		return SpecialTypesResolved(m.FieldNodePtr, rest)
+	case "field_node_slice":
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNodeSlice) {
+			return false
+		}
+		if rest == "" {
+			return true
+		}
+		for _, v := range m.FieldNodeSlice {
+			if !SpecialTypesResolved(&v, rest) {
+				return false
+			}
+		}
+		return true
+	case "field_node_ptr_slice":
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNodePtrSlice) {
+			return false
+		}
+		if rest == "" {
+			return true
+		}
+		for _, v := range m.FieldNodePtrSlice {
+			if v == nil {
+				continue
+			}
+			if !SpecialTypesResolved(v, rest) {
+				return false
+			}
+		}
+		return true
+	case "field_node_ptr_slice_ptr":
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNodePtrSlicePtr) {
+			return false
+		}
+		if rest == "" {
+			return true
+		}
+		if m.FieldNodePtrSlicePtr == nil {
+			return true
+		}
+		for _, v := range *m.FieldNodePtrSlicePtr {
+			if v == nil {
+				continue
+			}
+			if !SpecialTypesResolved(v, rest) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// An unknown relation is never resolved, so it is always fetched again.
+	return false
 }

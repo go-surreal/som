@@ -4,13 +4,16 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
+	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -43,6 +46,9 @@ type LocationRepo interface {
 	// Relate returns a new relate builder for the Location model.
 
 	Relate() *relate.Location
+	// Resolve loads the given relations of the model from the database.
+
+	Resolve(ctx context.Context, location *model.Location, fetch ...with.Fetch_[model.Location]) error
 	// Index returns a new index instance for the Location model.
 
 	Index() *index.Location
@@ -126,6 +132,14 @@ var locationRepoInfo = RepoInfo[model.Location]{
 	},
 	MarshalOne: func(node *model.Location) any {
 		return conv.FromLocationPtr(node)
+	},
+	MergeOne: func(node *model.Location, data []byte) error {
+		into := conv.FromLocationPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToLocationPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.Location, error) {
 		raw, err := dbQueryOne[conv.Location](ctx, db, stmt, vars)
@@ -354,6 +368,32 @@ func (r *location) Refresh(ctx context.Context, location *model.Location) error 
 		return errors.New("cannot refresh Location without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(string(location.ID())), location)
+}
+
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *location) Resolve(ctx context.Context, location *model.Location, fetch ...with.Fetch_[model.Location]) error {
+	if location == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if location.ID() == "" {
+		return errors.New("cannot resolve Location without existing record ID")
+	}
+	// Relations that are already loaded are not requested again.
+	var paths []string
+	for _, f := range fetch {
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.LocationResolved(location, path) || slices.Contains(paths, path) {
+			continue
+		}
+		paths = append(paths, path)
+	}
+	return r.resolve(ctx, r.recordID(string(location.ID())), location, paths)
 }
 
 // Relate returns a new relate instance for the Location model.

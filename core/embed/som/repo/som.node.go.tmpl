@@ -14,6 +14,7 @@ import (
 
 	som "{{.GenerateOutPath}}"
 	"{{.GenerateOutPath}}/internal"
+	"{{.GenerateOutPath}}/internal/cbor"
 	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"golang.org/x/sync/singleflight"
@@ -50,6 +51,10 @@ type RepoInfo[N any] struct {
 	InsertAll  func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) ([]*N, error)
 	QueryOne   func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*N, error)
 	MarshalOne func(node *N) any
+
+	// MergeOne unmarshals a record into an existing node, leaving the fields
+	// that are absent from the response untouched.
+	MergeOne func(node *N, data []byte) error
 }
 
 // hookKind enumerates the lifecycle events a hook may be registered for.
@@ -506,6 +511,84 @@ func getOrCreateCache[N any](
 		return nil, nil
 	}
 	return result.(*cache[N]), nil
+}
+
+// resolve loads the given relation paths of an existing node. Only the fields
+// holding those relations are selected, so that the response can be merged into
+// the node without touching anything else: the generated unmarshaler assigns
+// per response key, hence fields that were not selected keep their value and
+// relations resolved by an earlier call stay resolved.
+func (r *repo[N, K]) resolve(ctx context.Context, id *models.RecordID, node *N, paths []string) error {
+	if len(paths) == 0 {
+		return nil
+	}
+
+	statement := fmt.Sprintf(
+		"SELECT %s FROM $id FETCH %s",
+		strings.Join(projection(paths), ", "),
+		strings.Join(fetchClause(paths), ", "),
+	)
+	vars := map[string]any{"id": id}
+
+	data, err := r.db.Query(ctx, statement, vars)
+	if err != nil {
+		return fmt.Errorf("could not resolve relations: %w", err)
+	}
+
+	var results []internal.QueryResult[cbor.RawMessage]
+	if err := cbor.Unmarshal(data, &results); err != nil {
+		return fmt.Errorf("could not unmarshal resolved relations: %w", err)
+	}
+	if len(results) < 1 || len(results[0].Result) < 1 {
+		return som.ErrNotFound
+	}
+
+	// The response holds a subset of the record, so the load state of the node
+	// must not be derived from it. It is restored after the merge.
+	flags, fetched := internal.MarkerAny(node), internal.Fetched(node)
+
+	if err := r.info.MergeOne(node, results[0].Result[0]); err != nil {
+		return fmt.Errorf("could not merge resolved relations: %w", err)
+	}
+
+	internal.SetMarkerAny(node, flags)
+	internal.AddFetchedAny(node, fetched)
+
+	return nil
+}
+
+// projection returns the record fields to select for the given relation paths,
+// which are the distinct first segments. Anything below a segment arrives as
+// part of that field.
+func projection(paths []string) []string {
+	fields := make([]string, 0, len(paths))
+	for _, path := range paths {
+		field, _, _ := strings.Cut(path, ".")
+		if !slices.Contains(fields, field) {
+			fields = append(fields, field)
+		}
+	}
+	return fields
+}
+
+// fetchClause returns the FETCH targets for the given relation paths. A nested
+// path only resolves if its parents are fetched as well, so every prefix is
+// listed alongside the path itself.
+func fetchClause(paths []string) []string {
+	targets := make([]string, 0, len(paths))
+	for _, path := range paths {
+		for i, c := range path {
+			if c == '.' {
+				if prefix := path[:i]; !slices.Contains(targets, prefix) {
+					targets = append(targets, prefix)
+				}
+			}
+		}
+		if !slices.Contains(targets, path) {
+			targets = append(targets, path)
+		}
+	}
+	return targets
 }
 
 func parseStringID(id string) any {

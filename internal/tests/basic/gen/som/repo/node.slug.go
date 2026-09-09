@@ -4,13 +4,16 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
+	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -41,6 +44,9 @@ type SlugRepo interface {
 	// Relate returns a new relate builder for the Slug model.
 
 	Relate() *relate.Slug
+	// Resolve loads the given relations of the model from the database.
+
+	Resolve(ctx context.Context, slug *model.Slug, fetch ...with.Fetch_[model.Slug]) error
 	// Index returns a new index instance for the Slug model.
 
 	Index() *index.Slug
@@ -124,6 +130,14 @@ var slugRepoInfo = RepoInfo[model.Slug]{
 	},
 	MarshalOne: func(node *model.Slug) any {
 		return conv.FromSlugPtr(node)
+	},
+	MergeOne: func(node *model.Slug, data []byte) error {
+		into := conv.FromSlugPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToSlugPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.Slug, error) {
 		raw, err := dbQueryOne[conv.Slug](ctx, db, stmt, vars)
@@ -330,6 +344,32 @@ func (r *slug) Refresh(ctx context.Context, slug *model.Slug) error {
 		return errors.New("cannot refresh Slug without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(string(slug.ID())), slug)
+}
+
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *slug) Resolve(ctx context.Context, slug *model.Slug, fetch ...with.Fetch_[model.Slug]) error {
+	if slug == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if slug.ID() == "" {
+		return errors.New("cannot resolve Slug without existing record ID")
+	}
+	// Relations that are already loaded are not requested again.
+	var paths []string
+	for _, f := range fetch {
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.SlugResolved(slug, path) || slices.Contains(paths, path) {
+			continue
+		}
+		paths = append(paths, path)
+	}
+	return r.resolve(ctx, r.recordID(string(slug.ID())), slug, paths)
 }
 
 // Relate returns a new relate instance for the Slug model.
