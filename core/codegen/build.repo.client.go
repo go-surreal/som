@@ -17,10 +17,11 @@ type repoRef struct {
 // buildInterfaceFile generates the client interface and its implementation,
 // holding one cached repository instance per table.
 func (b *build) buildInterfaceFile() error {
+	// Note: the space in "{ {{" is required, as "{{{" would start a template action.
 	tmpl := `
 		type Client interface {
-			{{- range .Repos}}
-			{{.NameGo}}Repo() {{.NameGo}}Repo
+			{{- range $repo := .Repos}}
+			{{$repo.NameGo}}Repo() {{$repo.NameGo}}Repo
 			{{- end}}
 			Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 			ApplySchema(ctx context.Context) error
@@ -30,13 +31,13 @@ func (b *build) buildInterfaceFile() error {
 		type ClientImpl struct {
 			db *dbConn
 			mu sync.Mutex
-			{{- range .Repos}}
-			{{.NameGoLower}}Repo *{{.NameGoLower}}
+			{{- range $repo := .Repos}}
+			{{$repo.NameGoLower}}Repo *{{$repo.NameGoLower}}
 			{{- end}}
 		}
 
 		// expiryTables lists tables with a configured expiry, purged in the background.
-		var expiryTables = []string{ {{- range $i, $t := .ExpiryTables}}{{if $i}}, {{end}}"{{$t}}"{{end -}} }
+		var expiryTables = []string{ {{- range $i, $table := .ExpiryTables}}{{if $i}}, {{end}}"{{$table}}"{{end -}} }
 	`
 
 	var repos []repoRef

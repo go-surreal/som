@@ -55,9 +55,9 @@ func (b *indexBuilder) buildFile(nameGo, fileName string, entries []indexEntry) 
 		type {{.NameGo}} struct {
 			db Database
 		}
-		{{range .Entries}}
-		func (i *{{$.NameGo}}) {{.GoName}}() *rebuildable {
-			return &rebuildable{db: i.db, table: "{{.TableName}}", name: "{{.IndexName}}"}
+		{{range $entry := .Entries}}
+		func (i *{{$.NameGo}}) {{$entry.GoName}}() *rebuildable {
+			return &rebuildable{db: i.db, table: "{{$entry.TableName}}", name: "{{$entry.IndexName}}"}
 		}
 		{{end -}}
 	`

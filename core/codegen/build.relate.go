@@ -54,9 +54,9 @@ func (b *relateBuilder) buildNodeFile(node *field.NodeTable) error {
 		type {{.NameGo}} struct {
 			db Database
 		}
-		{{range .EdgeFields}}
-		func (n {{$.NameGo}}) {{.FieldName}}() {{.EdgeTypeLower}} {
-			return {{.EdgeTypeLower}}(n)
+		{{range $edge := .EdgeFields}}
+		func (n {{$.NameGo}}) {{$edge.FieldName}}() {{$edge.EdgeTypeLower}} {
+			return {{$edge.EdgeTypeLower}}(n)
 		}
 		{{end}}
 	`

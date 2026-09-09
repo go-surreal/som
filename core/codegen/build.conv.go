@@ -58,6 +58,7 @@ func (b *convBuilder) build() error {
 // It is a shallow wrapper embedding the model, adding the CBOR marshalling
 // that maps between Go field names and their database counterparts.
 func (b *convBuilder) buildFile(elem field.Element) error {
+	// Note: the space in "{ {{" is required, as "{{{" would start a template action.
 	tmpl := `
 		type {{.TypeName}} struct {
 			model.{{.NameGo}}

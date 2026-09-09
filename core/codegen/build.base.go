@@ -1,8 +1,10 @@
 package codegen
 
 import (
-	"github.com/go-surreal/som/core/util/fs"
 	"path"
+
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/util/fs"
 )
 
 type builder interface {
@@ -38,4 +40,34 @@ func (b *baseBuilder) path() string {
 
 func (b *baseBuilder) relativePkgPath(pkg ...string) string {
 	return path.Join(append([]string{b.basePkg}, pkg...)...)
+}
+
+// definedFields returns the fields an accessor struct is built from. In
+// contrast to GetFields, these include the fields of the embedded som types.
+func definedFields(elem field.Element) []field.Field {
+	switch elem := elem.(type) {
+	case *field.NodeTable:
+		return elem.Fields
+
+	case *field.DatabaseObject:
+		return elem.Fields
+
+	default:
+		return elem.GetFields()
+	}
+}
+
+func fieldContextFor(sourcePkg, targetPkg string, elem field.Element, index int) field.Context {
+	ctx := field.Context{
+		SourcePkg: sourcePkg,
+		TargetPkg: targetPkg,
+		Table:     elem,
+	}
+
+	// The fields of an array based complex ID are addressed by their position.
+	if object, ok := elem.(*field.DatabaseObject); ok && object.IsArrayIndexed {
+		ctx.ArrayIndex = &index
+	}
+
+	return ctx
 }

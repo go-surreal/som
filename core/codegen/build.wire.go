@@ -12,8 +12,8 @@ func (b *build) buildWireFile() error {
 		var Providers = wire.NewSet(
 			ProvideClient,
 			wire.Bind(new(repo.Client), new(*repo.ClientImpl)),
-			{{range .Repos}}
-			Provide{{.NameGo}}Repo,
+			{{range $repo := .Repos}}
+			Provide{{$repo.NameGo}}Repo,
 			{{- end}}
 		)
 
@@ -27,9 +27,9 @@ func (b *build) buildWireFile() error {
 			}
 			return client, cleanup, nil
 		}
-		{{range .Repos}}
-		func Provide{{.NameGo}}Repo(client *repo.ClientImpl) repo.{{.NameGo}}Repo {
-			return client.{{.NameGo}}Repo()
+		{{range $repo := .Repos}}
+		func Provide{{$repo.NameGo}}Repo(client *repo.ClientImpl) repo.{{$repo.NameGo}}Repo {
+			return client.{{$repo.NameGo}}Repo()
 		}
 		{{end -}}
 	`

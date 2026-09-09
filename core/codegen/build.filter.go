@@ -69,11 +69,11 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 		{{.NewFunc}}
 
 		{{.StructType}}
-		{{range .FieldFuncs}}
-		{{.}}
+		{{range $fn := .FieldFuncs}}
+		{{$fn}}
 		{{end}}
-		{{- range .FieldExtras}}
-		{{.}}
+		{{- range $extra := .FieldExtras}}
+		{{$extra}}
 		{{end}}
 		{{- if .Edge}}
 		type {{.NameGoLower}}In[M any] struct {
@@ -109,8 +109,8 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 			lib.Filter[M]
 			lib.Key[M]
 		}
-		{{range .EdgeFuncs}}
-		{{.}}
+		{{range $edgeFn := .EdgeFuncs}}
+		{{$edgeFn}}
 		{{end -}}
 		{{end -}}
 	`

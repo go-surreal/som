@@ -48,14 +48,14 @@ func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 		type {{.NameGoLower}}[M any] string
 
 		func (n {{.NameGoLower}}[M]) fetch(M) {}
-		{{range .Relations}}
-		{{- if .SoftDelete}}
-		// {{.NameGo}} returns a fetch accessor for the {{.NameDB}} {{.Kind}}.
+		{{range $rel := .Relations}}
+		{{- if $rel.SoftDelete}}
+		// {{$rel.NameGo}} returns a fetch accessor for the {{$rel.NameDB}} {{$rel.Kind}}.
 		// Note: Soft-delete filtering does not apply to fetched relations.
 		// All related records are returned regardless of their soft-delete status.
 		{{- end}}
-		func (n {{$.NameGoLower}}[M]) {{.NameGo}}() {{.TargetLower}}[M] {
-			return {{.TargetLower}}[M](keyed(n, "{{.NameDB}}"))
+		func (n {{$.NameGoLower}}[M]) {{$rel.NameGo}}() {{$rel.TargetLower}}[M] {
+			return {{$rel.TargetLower}}[M](keyed(n, "{{$rel.NameDB}}"))
 		}
 		{{end -}}
 	`

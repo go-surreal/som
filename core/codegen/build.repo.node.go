@@ -61,8 +61,8 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			Changes() query.ChangesBuilder[model.{{.NameGo}}, conv.{{.NameGo}}]
 			{{- end}}
 
-			{{range .Hooks}}{{.Comment}}
-			{{.Name}}(fn func(ctx context.Context, node *model.{{$.NameGo}}) error) func()
+			{{range $hook := .Hooks}}{{$hook.Comment}}
+			{{$hook.Name}}(fn func(ctx context.Context, node *model.{{$.NameGo}}) error) func()
 			{{end -}}
 		}
 
