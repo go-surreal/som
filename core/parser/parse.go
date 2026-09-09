@@ -282,6 +282,7 @@ type Output struct {
 	Edges      []*Edge
 	Views      []*View
 	Sinks      []*Sink
+	Fragments  []*Fragment
 	Structs    []*Struct
 	Enums      []*Enum
 	EnumValues []*EnumValue

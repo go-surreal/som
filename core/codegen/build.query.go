@@ -34,6 +34,56 @@ func (b *queryBuilder) build() error {
 		}
 	}
 
+	for _, fragment := range b.fragments {
+		if err := b.buildFragmentFile(fragment); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// buildFragmentFile registers the projection and the conversion functions of a
+// fragment. The ...As query terminals are generic over the fragment type only,
+// so they look the registered info up instead of receiving it.
+func (b *queryBuilder) buildFragmentFile(fragment *field.FragmentTable) error {
+	pkgConv := b.relativePkgPath(def.PkgConv)
+
+	f := jen.NewFile(b.pkgName)
+	f.PackageComment(string(embed.CodegenComment))
+
+	modelType := b.SourceQual(fragment.NameGo())
+	convFn := jen.Qual(pkgConv, "To"+fragment.NameGo()+"Ptr")
+
+	f.Line()
+	f.Commentf("init registers %s as a fragment of %s.", fragment.NameGo(), fragment.Parent.NameGo())
+	f.Func().Id("init").Params().Block(
+		jen.Id("registerFragment").Types(modelType).Call(
+			jen.Id("fragmentInfo").Types(modelType).Values(jen.Dict{
+				jen.Id("Fields"): jen.Index().String().ValuesFunc(func(g *jen.Group) {
+					for _, name := range fragment.Projection() {
+						g.Lit(name)
+					}
+				}),
+				jen.Id("UnmarshalAll"): jen.Func().Params(
+					jen.Id("data").Index().Byte(),
+				).Params(jen.Index().Op("*").Add(modelType), jen.Error()).Block(
+					jen.Return(jen.Id("unmarshalAll").Call(jen.Id("data"), convFn)),
+				),
+				jen.Id("UnmarshalOne"): jen.Func().Params(
+					jen.Id("data").Index().Byte(),
+				).Params(jen.Op("*").Add(modelType), jen.Error()).Block(
+					jen.Return(jen.Id("unmarshalOne").Call(jen.Id("data"), convFn.Clone())),
+				),
+				jen.Id("FieldsOf"): jen.Qual(pkgConv, fragment.NameGo()+"Fields"),
+			}),
+		),
+	)
+
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), fragment.FileName()))); err != nil {
+		return err
+	}
+
 	return nil
 }
 

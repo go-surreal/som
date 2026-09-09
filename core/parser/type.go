@@ -39,6 +39,16 @@ type View struct {
 	Fields []Field
 }
 
+// Fragment is a projection of a Node: a struct holding a subset of the node's
+// fields. It has no table of its own — fragments narrow the select list of a
+// query on the parent node's table. Its fields are taken over from the parent
+// node, so that the database name and type of a field cannot diverge.
+type Fragment struct {
+	Name   string
+	Parent string
+	Fields []Field
+}
+
 // Sink is a write-only ingestion table backed by a DEFINE TABLE ... DROP
 // statement. It has a struct shape (its columns) like a Node but no ID,
 // no features and only create operations; rows are discarded immediately

@@ -54,6 +54,159 @@ func (b *convBuilder) build() error {
 		}
 	}
 
+	for _, fragment := range b.fragments {
+		if err := b.buildFragmentFile(fragment); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// buildFragmentFile generates the conversion layer for a fragment. A fragment
+// is read-only, so it only decodes: the record id into the embedded
+// som.Fragment and the projected fields into the model.
+func (b *convBuilder) buildFragmentFile(fragment *field.FragmentTable) error {
+	// The field code generation is bound to the table the fields belong to, so
+	// that a fragment reuses the conversion helpers of its parent node.
+	fieldCtx := field.Context{
+		SourcePkg: b.sourcePkgPath,
+		TargetPkg: b.basePkg,
+		Table:     fragment.Parent,
+	}
+
+	cborPkg := path.Join(b.basePkg, "internal/cbor")
+	internalPkg := b.relativePkgPath("internal")
+
+	f := jen.NewFile(b.pkgName)
+	f.PackageComment(string(embed.CodegenComment))
+
+	typeName := fragment.NameGo()
+
+	f.Line()
+	f.Type().Id(typeName).Struct(
+		jen.Add(b.SourceQual(fragment.NameGo())),
+	)
+
+	f.Line()
+	f.Func().
+		Params(jen.Id("c").Op("*").Id(typeName)).
+		Id("fields").Params().
+		Map(jen.String()).Any().
+		BlockFunc(func(g *jen.Group) {
+			g.Id("data").Op(":=").Make(jen.Map(jen.String()).Any(), jen.Lit(len(fragment.Fields)+1))
+
+			g.Line()
+			g.Comment("Embedded som.Fragment record id")
+			g.If(
+				jen.List(jen.Id("rid"), jen.Id("ok")).Op(":=").
+					Qual(internalPkg, "FragmentRecordID").Call(jen.Id("c").Dot(fragment.NameGo())),
+				jen.Id("ok"),
+			).Block(
+				jen.Id("data").Index(jen.Lit("id")).Op("=").Id("rid"),
+			)
+
+			g.Line()
+			for _, fld := range fragment.Fields {
+				if code := fld.CodeGen().CBORMarshal(fieldCtx); code != nil {
+					g.Add(code)
+				}
+			}
+
+			g.Line()
+			g.Return(jen.Id("data"))
+		})
+
+	f.Line()
+	f.Func().
+		Params(jen.Id("c").Op("*").Id(typeName)).
+		Id("UnmarshalCBOR").Params(jen.Id("data").Index().Byte()).
+		Error().
+		BlockFunc(func(g *jen.Group) {
+			g.Var().Id("rawMap").Map(jen.String()).Qual(cborPkg, "RawMessage")
+			g.If(
+				jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(
+					jen.Id("data"),
+					jen.Op("&").Id("rawMap"),
+				),
+				jen.Err().Op("!=").Nil(),
+			).Block(
+				jen.Return(jen.Err()),
+			)
+
+			g.Line()
+			g.Comment("Embedded som.Fragment record id")
+			g.If(
+				jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit("id")),
+				jen.Id("ok"),
+			).BlockFunc(func(bg *jen.Group) {
+				bg.Var().Id("recordID").Op("*").Qual(def.PkgModels, "RecordID")
+				bg.If(
+					jen.Err().Op(":=").Qual(cborPkg, "Unmarshal").Call(jen.Id("raw"), jen.Op("&").Id("recordID")),
+					jen.Err().Op("!=").Nil(),
+				).Block(jen.Return(jen.Err()))
+				bg.Qual(internalPkg, "SetFragmentRecordID").Call(
+					jen.Op("&").Id("c").Dot(fragment.NameGo()).Dot("Fragment"),
+					jen.Id("recordID"),
+				)
+			})
+
+			g.Line()
+			for _, fld := range fragment.Fields {
+				if code := fld.CodeGen().CBORUnmarshal(fieldCtx); code != nil {
+					g.Add(code)
+				}
+			}
+
+			g.Line()
+			g.Comment("A fragment holds only a subset of the record's fields")
+			g.Qual(internalPkg, "SetMarker").Call(
+				jen.Op("&").Id("c").Dot(fragment.NameGo()).Dot("Fragment"),
+				jen.Qual(internalPkg, "MarkerLoaded").Op("|").Qual(internalPkg, "MarkerPartial"),
+			)
+
+			g.Line()
+			g.Return(jen.Nil())
+		})
+
+	f.Line()
+	f.Func().
+		Id("To" + fragment.NameGo()).
+		Params(jen.Id("data").Id(typeName)).
+		Add(b.SourceQual(fragment.NameGo())).
+		Block(
+			jen.Return(jen.Id("data").Dot(fragment.NameGo())),
+		)
+
+	f.Line()
+	f.Func().
+		Id("To" + fragment.NameGo() + "Ptr").
+		Params(jen.Id("data").Op("*").Id(typeName)).
+		Op("*").Add(b.SourceQual(fragment.NameGo())).
+		Block(
+			jen.If(jen.Id("data").Op("==").Nil()).Block(
+				jen.Return(jen.Nil()),
+			),
+			jen.Id("result").Op(":=").Id("data").Dot(fragment.NameGo()),
+			jen.Return(jen.Op("&").Id("result")),
+		)
+
+	f.Line()
+	f.Commentf("%sFields returns the DB-keyed value map of the fragment, used to", fragment.NameGo())
+	f.Comment("derive pagination cursor values.")
+	f.Func().
+		Id(fragment.NameGo() + "Fields").
+		Params(jen.Id("m").Op("*").Add(b.SourceQual(fragment.NameGo()))).
+		Map(jen.String()).Any().
+		Block(
+			jen.Id("c").Op(":=").Id(typeName).Values(jen.Op("*").Id("m")),
+			jen.Return(jen.Id("c").Dot("fields").Call()),
+		)
+
+	if err := f.Render(b.fs.Writer(path.Join(b.path(), fragment.FileName()))); err != nil {
+		return err
+	}
+
 	return nil
 }
 

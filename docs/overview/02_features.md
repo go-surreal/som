@@ -202,6 +202,23 @@ type EventLog struct {
 
 See [Sinks](../models/08_sinks.md).
 
+### Fragments
+
+Projections of a node model, narrowing the select list to the fields that are needed:
+
+```go
+type PersonCard struct {
+    som.Fragment[Person]
+
+    Name string
+    Age  int
+}
+
+cards, _ := client.PersonRepo().Query().AllAs[model.PersonCard](ctx)
+```
+
+See [Fragments](../models/10_fragments.md).
+
 ### Expiry (TTL)
 
 Time-limited records with automatic read filtering and background purge:

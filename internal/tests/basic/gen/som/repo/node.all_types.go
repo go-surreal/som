@@ -11,6 +11,7 @@ import (
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
+	cbor "som.test/gen/som/internal/cbor"
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
 	with "som.test/gen/som/with"
@@ -34,6 +35,9 @@ type AllTypesRepo interface {
 	// Read returns the record for the given ID, if it exists.
 
 	Read(ctx context.Context, id string) (*model.AllTypes, bool, error)
+	// Expand returns the full record a fragment of AllTypes was projected from, if it still exists.
+
+	Expand(ctx context.Context, fragment som.FragmentOf[model.AllTypes]) (*model.AllTypes, bool, error)
 	// Update updates the record for the given AllTypes model.
 
 	Update(ctx context.Context, allTypes *model.AllTypes) error
@@ -306,6 +310,20 @@ func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, 
 		refreshFuncs = &eagerRefreshFuncs[model.AllTypes]{cacheID: internal.GetCacheKey[model.AllTypes](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+}
+
+// Expand returns the full record the given fragment was projected from, if it
+// still exists. The returned bool indicates whether the record was found or not.
+func (r *allTypes) Expand(ctx context.Context, fragment som.FragmentOf[model.AllTypes]) (*model.AllTypes, bool, error) {
+	rid, ok := internal.FragmentRecordID(fragment)
+	if !ok {
+		return nil, false, som.ErrEmptyID
+	}
+	id, err := cbor.RecordIDToString(rid.ID)
+	if err != nil {
+		return nil, false, err
+	}
+	return r.Read(ctx, id)
 }
 
 // Update updates the record for the given model.
