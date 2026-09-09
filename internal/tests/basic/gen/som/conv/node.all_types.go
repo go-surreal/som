@@ -894,7 +894,7 @@ func toAllTypesLinkPtr(node *model.AllTypes) *allTypesLink {
 
 // The relations of AllTypes, as bits of its load state.
 const (
-	allTypesFetchedFieldNode uint64 = 1 << iota
+	allTypesFetchedFieldNode internal.Relations = 1 << iota
 	allTypesFetchedFieldNodePtr
 	allTypesFetchedFieldNodeSlice
 	allTypesFetchedFieldNodePtrSlice
@@ -903,15 +903,15 @@ const (
 
 // allTypesFetchedBits reports which relations of the decoded record hold no
 // unresolved links. A relation without any link counts as resolved.
-func allTypesFetchedBits(c *AllTypes) uint64 {
-	var bits uint64
+func allTypesFetchedBits(c *AllTypes) internal.Relations {
+	var relations internal.Relations
 
 	if !c.FieldNode.IsPartial() {
-		bits |= allTypesFetchedFieldNode
+		relations |= allTypesFetchedFieldNode
 	}
 
 	if c.FieldNodePtr == nil || !c.FieldNodePtr.IsPartial() {
-		bits |= allTypesFetchedFieldNodePtr
+		relations |= allTypesFetchedFieldNodePtr
 	}
 
 	{
@@ -923,7 +923,7 @@ func allTypesFetchedBits(c *AllTypes) uint64 {
 			}
 		}
 		if resolved {
-			bits |= allTypesFetchedFieldNodeSlice
+			relations |= allTypesFetchedFieldNodeSlice
 		}
 	}
 
@@ -936,13 +936,13 @@ func allTypesFetchedBits(c *AllTypes) uint64 {
 			}
 		}
 		if resolved {
-			bits |= allTypesFetchedFieldNodePtrSlice
+			relations |= allTypesFetchedFieldNodePtrSlice
 		}
 	}
 
 	{
 		if c.FieldNodePtrSlicePtr == nil {
-			bits |= allTypesFetchedFieldNodePtrSlicePtr
+			relations |= allTypesFetchedFieldNodePtrSlicePtr
 		} else {
 			resolved := true
 			for _, v := range *c.FieldNodePtrSlicePtr {
@@ -952,12 +952,12 @@ func allTypesFetchedBits(c *AllTypes) uint64 {
 				}
 			}
 			if resolved {
-				bits |= allTypesFetchedFieldNodePtrSlicePtr
+				relations |= allTypesFetchedFieldNodePtrSlicePtr
 			}
 		}
 	}
 
-	return bits
+	return relations
 }
 
 // AllTypesResolved reports whether the given relation path of the model was
@@ -970,7 +970,7 @@ func AllTypesResolved(m *model.AllTypes, path string) bool {
 	head, rest, _ := strings.Cut(path, ".")
 	switch head {
 	case "field_node":
-		if internal.Fetched(m)&allTypesFetchedFieldNode == 0 {
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNode) {
 			return false
 		}
 		if rest == "" {
@@ -978,7 +978,7 @@ func AllTypesResolved(m *model.AllTypes, path string) bool {
 		}
 		return SpecialTypesResolved(&m.FieldNode, rest)
 	case "field_node_ptr":
-		if internal.Fetched(m)&allTypesFetchedFieldNodePtr == 0 {
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNodePtr) {
 			return false
 		}
 		if rest == "" {
@@ -989,7 +989,7 @@ func AllTypesResolved(m *model.AllTypes, path string) bool {
 		}
 		return SpecialTypesResolved(m.FieldNodePtr, rest)
 	case "field_node_slice":
-		if internal.Fetched(m)&allTypesFetchedFieldNodeSlice == 0 {
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNodeSlice) {
 			return false
 		}
 		if rest == "" {
@@ -1002,7 +1002,7 @@ func AllTypesResolved(m *model.AllTypes, path string) bool {
 		}
 		return true
 	case "field_node_ptr_slice":
-		if internal.Fetched(m)&allTypesFetchedFieldNodePtrSlice == 0 {
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNodePtrSlice) {
 			return false
 		}
 		if rest == "" {
@@ -1018,7 +1018,7 @@ func AllTypesResolved(m *model.AllTypes, path string) bool {
 		}
 		return true
 	case "field_node_ptr_slice_ptr":
-		if internal.Fetched(m)&allTypesFetchedFieldNodePtrSlicePtr == 0 {
+		if !internal.Fetched(m).Has(allTypesFetchedFieldNodePtrSlicePtr) {
 			return false
 		}
 		if rest == "" {

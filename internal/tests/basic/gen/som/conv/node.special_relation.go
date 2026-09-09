@@ -205,17 +205,17 @@ func toSpecialRelationLinkPtr(node *model.SpecialRelation) *specialRelationLink 
 
 // The relations of SpecialRelation, as bits of its load state.
 const (
-	specialRelationFetchedAuthor uint64 = 1 << iota
+	specialRelationFetchedAuthor internal.Relations = 1 << iota
 	specialRelationFetchedAuthors
 )
 
 // specialRelationFetchedBits reports which relations of the decoded record hold no
 // unresolved links. A relation without any link counts as resolved.
-func specialRelationFetchedBits(c *SpecialRelation) uint64 {
-	var bits uint64
+func specialRelationFetchedBits(c *SpecialRelation) internal.Relations {
+	var relations internal.Relations
 
 	if c.Author == nil || !c.Author.IsPartial() {
-		bits |= specialRelationFetchedAuthor
+		relations |= specialRelationFetchedAuthor
 	}
 
 	{
@@ -227,11 +227,11 @@ func specialRelationFetchedBits(c *SpecialRelation) uint64 {
 			}
 		}
 		if resolved {
-			bits |= specialRelationFetchedAuthors
+			relations |= specialRelationFetchedAuthors
 		}
 	}
 
-	return bits
+	return relations
 }
 
 // SpecialRelationResolved reports whether the given relation path of the model was
@@ -241,7 +241,7 @@ func SpecialRelationResolved(m *model.SpecialRelation, path string) bool {
 	head, rest, _ := strings.Cut(path, ".")
 	switch head {
 	case "author":
-		if internal.Fetched(m)&specialRelationFetchedAuthor == 0 {
+		if !internal.Fetched(m).Has(specialRelationFetchedAuthor) {
 			return false
 		}
 		if rest == "" {
@@ -252,7 +252,7 @@ func SpecialRelationResolved(m *model.SpecialRelation, path string) bool {
 		}
 		return SpecialTypesResolved(m.Author, rest)
 	case "authors":
-		if internal.Fetched(m)&specialRelationFetchedAuthors == 0 {
+		if !internal.Fetched(m).Has(specialRelationFetchedAuthors) {
 			return false
 		}
 		if rest == "" {

@@ -1002,28 +1002,28 @@ func (b *convBuilder) buildFetchedBits(f *jen.File, node *field.NodeTable) error
 		return nil
 	}
 
+	pkgInternal := b.relativePkgPath("internal")
+
 	f.Line()
 	f.Commentf("The relations of %s, as bits of its load state.", node.NameGo())
 	f.Const().DefsFunc(func(g *jen.Group) {
 		for i, rel := range rels {
 			if i == 0 {
-				g.Id(bitName(node, rel)).Uint64().Op("=").Lit(1).Op("<<").Iota()
+				g.Id(bitName(node, rel)).Qual(pkgInternal, "Relations").Op("=").Lit(1).Op("<<").Iota()
 				continue
 			}
 			g.Id(bitName(node, rel))
 		}
 	})
 
-	pkgInternal := b.relativePkgPath("internal")
-
 	f.Line()
 	f.Commentf("%sFetchedBits reports which relations of the decoded record hold no", node.NameGoLower())
 	f.Comment("unresolved links. A relation without any link counts as resolved.")
 	f.Func().Id(node.NameGoLower()+"FetchedBits").
 		Params(jen.Id("c").Op("*").Id(node.NameGo())).
-		Uint64().
+		Qual(pkgInternal, "Relations").
 		BlockFunc(func(g *jen.Group) {
-			g.Var().Id("bits").Uint64()
+			g.Var().Id("relations").Qual(pkgInternal, "Relations")
 
 			for _, rel := range rels {
 				g.Line()
@@ -1031,7 +1031,7 @@ func (b *convBuilder) buildFetchedBits(f *jen.File, node *field.NodeTable) error
 			}
 
 			g.Line()
-			g.Return(jen.Id("bits"))
+			g.Return(jen.Id("relations"))
 		})
 
 	f.Line()
@@ -1053,8 +1053,8 @@ func (b *convBuilder) buildFetchedBits(f *jen.File, node *field.NodeTable) error
 				for _, rel := range rels {
 					sg.Case(jen.Lit(rel.field.NameDatabase())).BlockFunc(func(cg *jen.Group) {
 						cg.If(
-							jen.Qual(pkgInternal, "Fetched").Call(jen.Id("m")).
-								Op("&").Id(bitName(node, rel)).Op("==").Lit(0),
+							jen.Op("!").Qual(pkgInternal, "Fetched").Call(jen.Id("m")).
+								Dot("Has").Call(jen.Id(bitName(node, rel))),
 						).Block(
 							jen.Return(jen.False()),
 						)
@@ -1077,7 +1077,7 @@ func (b *convBuilder) buildFetchedBits(f *jen.File, node *field.NodeTable) error
 // addFetchedBit generates the check that sets the bit of a single relation.
 func (b *convBuilder) addFetchedBit(g *jen.Group, node *field.NodeTable, rel relation) {
 	accessor := jen.Id("c").Dot(rel.field.NameGo())
-	setBit := jen.Id("bits").Op("|=").Id(bitName(node, rel))
+	setBit := jen.Id("relations").Op("|=").Id(bitName(node, rel))
 
 	if !rel.slice {
 		if rel.elemPtr {

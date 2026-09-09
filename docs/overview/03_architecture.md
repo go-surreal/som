@@ -211,6 +211,33 @@ func ToUser(model *model.User) *convUser { ... }
 func FromUser(conv *convUser) *model.User { ... }
 ```
 
+### Load State
+
+Every node, edge and view carries its load state in an embedded `internal.LoadMarker`, which the
+model exposes read-only through [`Marker()`](../api_reference/02_repository.md#model-markers) and
+`IsPartial()`. It holds two bit sets:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `flags` | `Marker` (`uint32`) | how the instance was loaded: from the database, partially, deleted, from a cache |
+| `fetched` | `Relations` (`uint64`) | which relation fields hold no unresolved links |
+
+The `fetched` bits are what lets [`Resolve`](../api_reference/02_repository.md#resolve) skip
+relations that are already loaded. They are assigned per model by the generated code, one bit per
+relation field, and set while decoding a record — not by the caller and not by the query builder.
+That way every read path produces the same state, and a nested path is answered by walking from one
+instance to the next rather than by storing paths on the model.
+
+Two consequences worth knowing:
+
+- **A model may have at most 64 relations.** Codegen fails with an error beyond that instead of
+  wrapping around, which would make `Resolve` skip a relation that was never loaded. Raising the
+  limit means widening `Relations` and `maxRelations` in `core/codegen/build.conv.go`.
+- **`LoadMarker` is 16 bytes, not 12.** A `uint32` next to a `uint64` is padded to the wider
+  alignment. Narrowing `Relations` to `uint32` would make it 8 bytes, but cap models at 32
+  relations. The padding is preferred: 8 bytes per instance is negligible next to the model itself,
+  while a cap that models can realistically hit is not.
+
 ## Database Communication
 
 ### CBOR Protocol

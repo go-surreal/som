@@ -33,6 +33,16 @@ func (m Marker) Has(flags Marker) bool {
 	return m&flags == flags
 }
 
+// Relations is a bit set of the relation fields of a model, i.e. the fields
+// holding one or more links to another model. The bit order is defined by the
+// generated code that owns the model.
+type Relations uint64
+
+// Has reports whether all of the given relations are set.
+func (r Relations) Has(relations Relations) bool {
+	return r&relations == relations
+}
+
 // LoadMarker holds the load state of a model instance. It is embedded into
 // som.Node, som.Edge and som.View under an unexported name, so that model
 // instances expose the state read-only, while only the generated code can
@@ -40,10 +50,9 @@ func (m Marker) Has(flags Marker) bool {
 type LoadMarker struct {
 	flags Marker
 
-	// fetched holds one bit per relation field of the model, set when that
-	// field is known to hold no unresolved links. The bit order is defined by
-	// the generated code that owns the model.
-	fetched uint64
+	// fetched holds the relation fields that are known to hold no unresolved
+	// links.
+	fetched Relations
 }
 
 // Marker returns the load state of the model instance.
@@ -53,7 +62,7 @@ func (m LoadMarker) Marker() Marker {
 
 // Fetched returns the relation fields of the model instance that hold no
 // unresolved links, as a bit set.
-func (m LoadMarker) Fetched() uint64 {
+func (m LoadMarker) Fetched() Relations {
 	return m.fetched
 }
 
@@ -72,16 +81,16 @@ func (m *LoadMarker) addMarker(flags Marker) {
 	m.flags |= flags
 }
 
-func (m *LoadMarker) addFetched(bits uint64) {
-	m.fetched |= bits
+func (m *LoadMarker) addFetched(relations Relations) {
+	m.fetched |= relations
 }
 
 type markable interface {
 	setMarker(Marker)
 	addMarker(Marker)
-	addFetched(uint64)
+	addFetched(Relations)
 	Marker() Marker
-	Fetched() uint64
+	Fetched() Relations
 }
 
 // SetMarker replaces the load state of a node, edge or view.
@@ -104,13 +113,13 @@ func AddMarkerAny(v any, flags Marker) {
 
 // AddFetched flags the given relation fields of a node, edge or view as
 // holding no unresolved links.
-func AddFetched(target markable, bits uint64) {
-	target.addFetched(bits)
+func AddFetched(target markable, relations Relations) {
+	target.addFetched(relations)
 }
 
 // Fetched returns the resolved relation fields of v, if v is a node, edge or
 // view. It exists for generic code that cannot name the model type.
-func Fetched(v any) uint64 {
+func Fetched(v any) Relations {
 	if target, ok := v.(markable); ok {
 		return target.Fetched()
 	}
@@ -119,9 +128,9 @@ func Fetched(v any) uint64 {
 
 // AddFetchedAny flags the given relation fields of v as holding no unresolved
 // links, if v is a node, edge or view.
-func AddFetchedAny(v any, bits uint64) {
+func AddFetchedAny(v any, relations Relations) {
 	if target, ok := v.(markable); ok {
-		target.addFetched(bits)
+		target.addFetched(relations)
 	}
 }
 
