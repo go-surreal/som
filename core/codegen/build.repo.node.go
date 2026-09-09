@@ -15,6 +15,9 @@ import (
 // Update, Delete, Erase and Restore reject model instances that must not be
 // written back: writing a partial model would wipe all fields it does not
 // hold, writing a deleted one would recreate the record.
+//
+// Expand reads a record by its raw id for complex keys, as such a key cannot be
+// rebuilt from the record id without decoding it again.
 func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 	tmpl := `
 		type {{.NameGo}}Repo interface {
@@ -37,6 +40,10 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			// Read returns the record for the given key, if it exists.
 			Read(ctx context.Context, key {{.KeyType}}) (*model.{{.NameGo}}, bool, error)
 			{{- end}}
+			{{- if .HasFragments}}
+			// Expand returns the full record a fragment of {{.NameGo}} was projected from, if it still exists.
+			Expand(ctx context.Context, fragment som.FragmentOf[model.{{.NameGo}}]) (*model.{{.NameGo}}, bool, error)
+			{{- end}}
 			// Update updates the record for the given {{.NameGo}} model.
 			Update(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Delete deletes the record for the given {{.NameGo}} model.
@@ -53,6 +60,8 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			// Relate returns a new relate builder for the {{.NameGo}} model.
 			Relate() *relate.{{.NameGo}}
 			{{- end}}
+			// Resolve loads the given relations of the model from the database.
+			Resolve(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}, fetch ...with.Fetch_[model.{{.NameGo}}]) error
 			// Index returns a new index instance for the {{.NameGo}} model.
 			Index() *index.{{.NameGo}}
 			{{- if .HasChangefeed}}
@@ -95,6 +104,14 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			},
 			MarshalOne: func(node *model.{{.NameGo}}) any {
 				return conv.From{{.NameGo}}Ptr(node)
+			},
+			MergeOne: func(node *model.{{.NameGo}}, data []byte) error {
+				into := conv.From{{.NameGo}}Ptr(node)
+				if err := into.UnmarshalCBOR(data); err != nil {
+					return err
+				}
+				*node = *conv.To{{.NameGo}}Ptr(into)
+				return nil
 			},
 			QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.{{.NameGo}}, error) {
 				raw, err := dbQueryOne[conv.{{.NameGo}}](ctx, db, stmt, vars)
@@ -274,6 +291,26 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			return r.read(ctx, r.recordID(key))
 		}
 		{{end}}
+		{{- if .HasFragments}}
+		// Expand returns the full record the given fragment was projected from, if it
+		// still exists. The returned bool indicates whether the record was found or not.
+		func (r *{{.NameGoLower}}) Expand(ctx context.Context, fragment som.FragmentOf[model.{{.NameGo}}]) (*model.{{.NameGo}}, bool, error) {
+			rid, ok := internal.FragmentRecordID(fragment)
+			if !ok {
+				return nil, false, som.ErrEmptyID
+			}
+			{{- if .HasComplexID}}
+			return r.read(ctx, rid)
+			{{- else}}
+			id, err := cbor.RecordIDToString(rid.ID)
+			if err != nil {
+				return nil, false, err
+			}
+			return r.Read(ctx, id)
+			{{- end}}
+		}
+
+		{{end -}}
 		// Update updates the record for the given model.
 		// Before- and after-update hooks are invoked.
 		func (r *{{.NameGoLower}}) Update(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error {
@@ -402,6 +439,30 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			{{call .IDCheck (printf "cannot refresh %s without existing record ID" .NameGo)}}
 			return r.refresh(ctx, {{.RecordIDFromNode}}, {{.NameGoLower}})
 		}
+
+		// Resolve loads the given relations of the model from the database. The model is
+		// updated in-place, so a resolved relation is no longer marked as partial and
+		// IsPartial reports whether it was loaded.
+		//
+		// Note that a loaded relation is not necessarily up to date. Resolve only makes
+		// sure the relation holds field values at all, it does not re-read a relation
+		// that was already loaded. Use Refresh to get current data.
+		func (r *{{.NameGoLower}}) Resolve(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}, fetch ...with.Fetch_[model.{{.NameGo}}]) error {
+			if {{.NameGoLower}} == nil {
+				return errors.New("the passed node must not be nil")
+			}
+			{{call .IDCheck (printf "cannot resolve %s without existing record ID" .NameGo)}}
+			// Relations that are already loaded are not requested again.
+			var paths []string
+			for _, f := range fetch {
+				path := fmt.Sprintf("%v", f)
+				if path == "" || conv.{{.NameGo}}Resolved({{.NameGoLower}}, path) || slices.Contains(paths, path) {
+					continue
+				}
+				paths = append(paths, path)
+			}
+			return r.resolve(ctx, {{.RecordIDFromNode}}, {{.NameGoLower}}, paths)
+		}
 		{{if not .HasComplexID}}
 		// Relate returns a new relate instance for the {{.NameGo}} model.
 		func (r *{{.NameGoLower}}) Relate() *relate.{{.NameGo}} {
@@ -425,10 +486,13 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		goImport{Path: "context"},
 		goImport{Path: "errors"},
 		goImport{Path: "fmt"},
+		goImport{Path: "slices"},
 		goImport{Alias: "som", Path: b.relativePkgPath()},
 		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
 		goImport{Alias: "index", Path: b.relativePkgPath(def.PkgIndex)},
 		goImport{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
+		goImport{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
+		goImport{Alias: "with", Path: b.relativePkgPath(def.PkgFetch)},
 		goImport{Alias: "query", Path: b.relativePkgPath(def.PkgQuery)},
 		goImport{Alias: "relate", Path: b.relativePkgPath(def.PkgRelate)},
 		goImport{Alias: "model", Path: b.input.sourcePkgPath},
@@ -442,6 +506,7 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		"HasComplexID":     node.HasComplexID(),
 		"HasAutoID":        node.HasAutoID(),
 		"IDEmbed":          node.Source.IDEmbed,
+		"HasFragments":     b.input.hasFragments(node),
 		"IDType":           string(node.Source.IDType),
 		"InsertComment":    insertComment(node),
 		"HasChangefeed":    node.HasChangefeed(),

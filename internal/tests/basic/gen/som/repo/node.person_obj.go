@@ -4,12 +4,15 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
 	query "som.test/gen/som/query"
+	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -26,6 +29,8 @@ type PersonObjRepo interface {
 	Delete(ctx context.Context, personObj *model.PersonObj) error
 	// Refresh refreshes the given model with the current database state.
 	Refresh(ctx context.Context, personObj *model.PersonObj) error
+	// Resolve loads the given relations of the model from the database.
+	Resolve(ctx context.Context, personObj *model.PersonObj, fetch ...with.Fetch_[model.PersonObj]) error
 	// Index returns a new index instance for the PersonObj model.
 	Index() *index.PersonObj
 
@@ -102,6 +107,14 @@ var personObjRepoInfo = RepoInfo[model.PersonObj]{
 	},
 	MarshalOne: func(node *model.PersonObj) any {
 		return conv.FromPersonObjPtr(node)
+	},
+	MergeOne: func(node *model.PersonObj, data []byte) error {
+		into := conv.FromPersonObjPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToPersonObjPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.PersonObj, error) {
 		raw, err := dbQueryOne[conv.PersonObj](ctx, db, stmt, vars)
@@ -262,6 +275,33 @@ func (r *personObj) Refresh(ctx context.Context, personObj *model.PersonObj) err
 		return errors.New("cannot refresh PersonObj without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(personObj.ID()), personObj)
+}
+
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *personObj) Resolve(ctx context.Context, personObj *model.PersonObj, fetch ...with.Fetch_[model.PersonObj]) error {
+	if personObj == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	var zeroKey model.PersonKey
+	if personObj.ID() == zeroKey {
+		return errors.New("cannot resolve PersonObj without existing record ID")
+	}
+	// Relations that are already loaded are not requested again.
+	var paths []string
+	for _, f := range fetch {
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.PersonObjResolved(personObj, path) || slices.Contains(paths, path) {
+			continue
+		}
+		paths = append(paths, path)
+	}
+	return r.resolve(ctx, r.recordID(personObj.ID()), personObj, paths)
 }
 
 // Index returns a new index instance for the PersonObj model.

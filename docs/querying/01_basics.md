@@ -38,6 +38,15 @@ exists, err := client.UserRepo().Query().Exists(ctx)
 count, err := client.UserRepo().Query().Count(ctx)
 ```
 
+### Get Results as a Fragment
+
+Narrow the select list to a [fragment](../models/10_fragments.md) of the model:
+
+```go
+cards, err := client.UserRepo().Query().AllAs[model.UserCard](ctx)
+card, err := client.UserRepo().Query().FirstAs[model.UserCard](ctx)
+```
+
 ## Chaining Methods
 
 Query methods return the query builder for chaining:

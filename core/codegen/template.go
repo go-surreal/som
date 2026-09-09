@@ -389,7 +389,9 @@ func usedImports(body string, candidates []goImport) []goImport {
 	var used []goImport
 
 	for _, imp := range candidates {
-		pattern := regexp.MustCompile(`(^|[^\w.])` + regexp.QuoteMeta(imp.name()) + `\.`)
+		// The package name must not be preceded by a selector, but may well
+		// follow the "..." of a variadic parameter.
+		pattern := regexp.MustCompile(`(^|[^\w.]|\.{3})` + regexp.QuoteMeta(imp.name()) + `\.`)
 
 		if pattern.MatchString(code) {
 			used = append(used, imp)

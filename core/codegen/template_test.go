@@ -230,7 +230,7 @@ func TestUsedImports(t *testing.T) {
 
 	body := `
 		// NewThing creates a new query builder for Thing models.
-		func NewThing() error {
+		func NewThing(fetch ...query.Fetch) error {
 			_ = conv.Thing{}
 			_ = r.query.Table
 			return errors.New("no models. here")
@@ -242,7 +242,9 @@ func TestUsedImports(t *testing.T) {
 		names = append(names, imp.name())
 	}
 
-	want := []string{"conv", "errors"}
+	// query is only referenced through a variadic parameter, models only in
+	// prose, and r.query is a selector rather than a package.
+	want := []string{"conv", "query", "errors"}
 	if strings.Join(names, ",") != strings.Join(want, ",") {
 		t.Errorf("got %v, want %v", names, want)
 	}

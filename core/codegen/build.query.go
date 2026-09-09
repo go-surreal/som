@@ -33,7 +33,50 @@ func (b *queryBuilder) build() error {
 		}
 	}
 
+	for _, fragment := range b.fragments {
+		if err := b.buildFragmentFile(fragment); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// buildFragmentFile registers the projection and the conversion functions of a
+// fragment. The ...As query terminals are generic over the fragment type only,
+// so they look the registered info up instead of receiving it.
+func (b *queryBuilder) buildFragmentFile(fragment *field.FragmentTable) error {
+	tmpl := `
+		// init registers {{.NameGo}} as a fragment of {{.Parent}}.
+		func init() {
+			registerFragment[model.{{.NameGo}}](fragmentInfo[model.{{.NameGo}}]{
+				Fields:   []string{ {{- range $i, $field := .Fields}}{{if $i}}, {{end}}"{{$field}}"{{end -}} },
+				FieldsOf: conv.{{.NameGo}}Fields,
+				UnmarshalAll: func(data []byte) ([]*model.{{.NameGo}}, error) {
+					return unmarshalAll(data, conv.To{{.NameGo}}Ptr)
+				},
+				UnmarshalOne: func(data []byte) (*model.{{.NameGo}}, error) {
+					return unmarshalOne(data, conv.To{{.NameGo}}Ptr)
+				},
+			})
+		}
+	`
+
+	data := map[string]any{
+		"NameGo": fragment.NameGo(),
+		"Parent": fragment.Parent.NameGo(),
+		"Fields": fragment.Projection(),
+	}
+
+	file := newGoFile(b.pkgName,
+		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
+
+	return file.render(
+		b.fs.Writer(path.Join(b.path(), fragment.FileName())),
+		"queryFragment", tmpl, data,
+	)
 }
 
 func (b *queryBuilder) buildFile(node *field.NodeTable) error {

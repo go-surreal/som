@@ -8,6 +8,7 @@ import (
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"
 	model "som.test/model"
+	"strings"
 )
 
 type SpecialRelation struct {
@@ -94,6 +95,9 @@ func (c *SpecialRelation) UnmarshalCBOR(data []byte) error {
 			}
 		}
 	}
+
+	// Flag the relations that hold no unresolved links
+	internal.AddFetched(&c.Node, specialRelationFetchedBits(c))
 
 	// Mark the instance as fully loaded from the database
 	internal.SetMarker(&c.Node, internal.MarkerLoaded)
@@ -202,4 +206,74 @@ func toSpecialRelationLinkPtr(node *model.SpecialRelation) *specialRelationLink 
 	rid := models.NewRecordID("special_relation", node.ID())
 	link := specialRelationLink{SpecialRelation: FromSpecialRelation(*node), ID: &rid}
 	return &link
+}
+
+// The relations of SpecialRelation, as bits of its load state.
+const (
+	specialRelationFetchedAuthor internal.Relations = 1 << iota
+	specialRelationFetchedAuthors
+)
+
+// specialRelationFetchedBits reports which relations of the decoded record hold no
+// unresolved links. A relation without any link counts as resolved.
+func specialRelationFetchedBits(c *SpecialRelation) internal.Relations {
+	var relations internal.Relations
+
+	if c.Author == nil || !c.Author.IsPartial() {
+		relations |= specialRelationFetchedAuthor
+	}
+
+	{
+		resolved := true
+		for _, v := range c.Authors {
+			if v != nil && v.IsPartial() {
+				resolved = false
+				break
+			}
+		}
+		if resolved {
+			relations |= specialRelationFetchedAuthors
+		}
+	}
+
+	return relations
+}
+
+// SpecialRelationResolved reports whether the given relation path of the model was
+// loaded from the database. The path is followed segment by segment, so a
+// nested path is only resolved if every relation along it was fetched.
+func SpecialRelationResolved(m *model.SpecialRelation, path string) bool {
+	head, rest, _ := strings.Cut(path, ".")
+	switch head {
+	case "author":
+		if !internal.Fetched(m).Has(specialRelationFetchedAuthor) {
+			return false
+		}
+		if rest == "" {
+			return true
+		}
+		if m.Author == nil {
+			return true
+		}
+		return SpecialTypesResolved(m.Author, rest)
+	case "authors":
+		if !internal.Fetched(m).Has(specialRelationFetchedAuthors) {
+			return false
+		}
+		if rest == "" {
+			return true
+		}
+		for _, v := range m.Authors {
+			if v == nil {
+				continue
+			}
+			if !SpecialTypesResolved(v, rest) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// An unknown relation is never resolved, so it is always fetched again.
+	return false
 }

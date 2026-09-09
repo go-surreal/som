@@ -4,13 +4,16 @@ package repo
 import (
 	"context"
 	"errors"
+	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
 	types "som.test/gen/som/internal/types"
 	query "som.test/gen/som/query"
+	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -27,6 +30,8 @@ type TeamMemberRepo interface {
 	Delete(ctx context.Context, teamMember *model.TeamMember) error
 	// Refresh refreshes the given model with the current database state.
 	Refresh(ctx context.Context, teamMember *model.TeamMember) error
+	// Resolve loads the given relations of the model from the database.
+	Resolve(ctx context.Context, teamMember *model.TeamMember, fetch ...with.Fetch_[model.TeamMember]) error
 	// Index returns a new index instance for the TeamMember model.
 	Index() *index.TeamMember
 
@@ -103,6 +108,14 @@ var teamMemberRepoInfo = RepoInfo[model.TeamMember]{
 	},
 	MarshalOne: func(node *model.TeamMember) any {
 		return conv.FromTeamMemberPtr(node)
+	},
+	MergeOne: func(node *model.TeamMember, data []byte) error {
+		into := conv.FromTeamMemberPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToTeamMemberPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.TeamMember, error) {
 		raw, err := dbQueryOne[conv.TeamMember](ctx, db, stmt, vars)
@@ -275,6 +288,36 @@ func (r *teamMember) Refresh(ctx context.Context, teamMember *model.TeamMember) 
 		return errors.New("Forecast.ID must not be empty")
 	}
 	return r.refresh(ctx, r.recordID(teamMember.ID()), teamMember)
+}
+
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *teamMember) Resolve(ctx context.Context, teamMember *model.TeamMember, fetch ...with.Fetch_[model.TeamMember]) error {
+	if teamMember == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if teamMember.ID().Member.ID() == "" {
+		return errors.New("Member.ID must not be empty")
+	}
+	var zeroForecastKey model.WeatherKey
+	if teamMember.ID().Forecast.ID() == zeroForecastKey {
+		return errors.New("Forecast.ID must not be empty")
+	}
+	// Relations that are already loaded are not requested again.
+	var paths []string
+	for _, f := range fetch {
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.TeamMemberResolved(teamMember, path) || slices.Contains(paths, path) {
+			continue
+		}
+		paths = append(paths, path)
+	}
+	return r.resolve(ctx, r.recordID(teamMember.ID()), teamMember, paths)
 }
 
 // Index returns a new index instance for the TeamMember model.

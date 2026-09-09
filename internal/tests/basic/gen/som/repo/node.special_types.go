@@ -6,12 +6,15 @@ import (
 	"errors"
 	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
 	internal "som.test/gen/som/internal"
+	cbor "som.test/gen/som/internal/cbor"
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
+	with "som.test/gen/som/with"
 	model "som.test/model"
 )
 
@@ -27,6 +30,8 @@ type SpecialTypesRepo interface {
 	CreateWithID(ctx context.Context, id string, specialTypes *model.SpecialTypes) error
 	// Read returns the record for the given ID, if it exists.
 	Read(ctx context.Context, id string) (*model.SpecialTypes, bool, error)
+	// Expand returns the full record a fragment of SpecialTypes was projected from, if it still exists.
+	Expand(ctx context.Context, fragment som.FragmentOf[model.SpecialTypes]) (*model.SpecialTypes, bool, error)
 	// Update updates the record for the given SpecialTypes model.
 	Update(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Delete deletes the record for the given SpecialTypes model.
@@ -39,6 +44,8 @@ type SpecialTypesRepo interface {
 	Refresh(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Relate returns a new relate builder for the SpecialTypes model.
 	Relate() *relate.SpecialTypes
+	// Resolve loads the given relations of the model from the database.
+	Resolve(ctx context.Context, specialTypes *model.SpecialTypes, fetch ...with.Fetch_[model.SpecialTypes]) error
 	// Index returns a new index instance for the SpecialTypes model.
 	Index() *index.SpecialTypes
 
@@ -115,6 +122,14 @@ var specialTypesRepoInfo = RepoInfo[model.SpecialTypes]{
 	},
 	MarshalOne: func(node *model.SpecialTypes) any {
 		return conv.FromSpecialTypesPtr(node)
+	},
+	MergeOne: func(node *model.SpecialTypes, data []byte) error {
+		into := conv.FromSpecialTypesPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToSpecialTypesPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.SpecialTypes, error) {
 		raw, err := dbQueryOne[conv.SpecialTypes](ctx, db, stmt, vars)
@@ -280,6 +295,20 @@ func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes
 	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
 }
 
+// Expand returns the full record the given fragment was projected from, if it
+// still exists. The returned bool indicates whether the record was found or not.
+func (r *specialTypes) Expand(ctx context.Context, fragment som.FragmentOf[model.SpecialTypes]) (*model.SpecialTypes, bool, error) {
+	rid, ok := internal.FragmentRecordID(fragment)
+	if !ok {
+		return nil, false, som.ErrEmptyID
+	}
+	id, err := cbor.RecordIDToString(rid.ID)
+	if err != nil {
+		return nil, false, err
+	}
+	return r.Read(ctx, id)
+}
+
 // Update updates the record for the given model.
 // Before- and after-update hooks are invoked.
 func (r *specialTypes) Update(ctx context.Context, specialTypes *model.SpecialTypes) error {
@@ -407,6 +436,32 @@ func (r *specialTypes) Refresh(ctx context.Context, specialTypes *model.SpecialT
 		return errors.New("cannot refresh SpecialTypes without existing record ID")
 	}
 	return r.refresh(ctx, r.recordID(string(specialTypes.ID())), specialTypes)
+}
+
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *specialTypes) Resolve(ctx context.Context, specialTypes *model.SpecialTypes, fetch ...with.Fetch_[model.SpecialTypes]) error {
+	if specialTypes == nil {
+		return errors.New("the passed node must not be nil")
+	}
+	if specialTypes.ID() == "" {
+		return errors.New("cannot resolve SpecialTypes without existing record ID")
+	}
+	// Relations that are already loaded are not requested again.
+	var paths []string
+	for _, f := range fetch {
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.SpecialTypesResolved(specialTypes, path) || slices.Contains(paths, path) {
+			continue
+		}
+		paths = append(paths, path)
+	}
+	return r.resolve(ctx, r.recordID(string(specialTypes.ID())), specialTypes, paths)
 }
 
 // Relate returns a new relate instance for the SpecialTypes model.

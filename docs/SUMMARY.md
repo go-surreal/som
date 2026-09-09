@@ -28,6 +28,7 @@
   * [Views](models/07_views.md)
   * [Sinks](models/08_sinks.md)
   * [Expiry (TTL)](models/09_expiry.md)
+  * [Fragments](models/10_fragments.md)
 
 ## Data Types
 

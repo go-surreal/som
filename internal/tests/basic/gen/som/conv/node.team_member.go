@@ -283,3 +283,9 @@ func toTeamMemberLinkPtr(node *model.TeamMember) *teamMemberLink {
 	link := teamMemberLink{TeamMember: FromTeamMember(*node), ID: &rid}
 	return &link
 }
+
+// TeamMemberResolved reports whether the given relation path of the model was
+// loaded from the database. The model has no relations, so no path is.
+func TeamMemberResolved(_ *model.TeamMember, _ string) bool {
+	return false
+}

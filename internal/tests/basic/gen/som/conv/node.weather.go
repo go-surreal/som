@@ -201,3 +201,9 @@ func toWeatherLinkPtr(node *model.Weather) *weatherLink {
 	link := weatherLink{Weather: FromWeather(*node), ID: &rid}
 	return &link
 }
+
+// WeatherResolved reports whether the given relation path of the model was
+// loaded from the database. The model has no relations, so no path is.
+func WeatherResolved(_ *model.Weather, _ string) bool {
+	return false
+}

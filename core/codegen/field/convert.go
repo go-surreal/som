@@ -7,11 +7,12 @@ import (
 )
 
 type Def struct {
-	Nodes   []*NodeTable
-	Edges   []*EdgeTable
-	Views   []*ViewTable
-	Sinks   []*SinkTable
-	Objects []*DatabaseObject
+	Nodes     []*NodeTable
+	Edges     []*EdgeTable
+	Views     []*ViewTable
+	Sinks     []*SinkTable
+	Fragments []*FragmentTable
+	Objects   []*DatabaseObject
 }
 
 func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
@@ -97,6 +98,28 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		def.Sinks = append(def.Sinks, dbSink)
 	}
 
+	for _, fragment := range source.Fragments {
+		parent := findNodeTable(def.Nodes, fragment.Parent)
+		if parent == nil {
+			return nil, fmt.Errorf("fragment %s references unknown node %s", fragment.Name, fragment.Parent)
+		}
+
+		dbFragment := &FragmentTable{
+			Name:   fragment.Name,
+			Parent: parent,
+		}
+
+		for _, f := range fragment.Fields {
+			dbField, ok := Convert(source, buildConf, f)
+			if !ok {
+				return nil, fmt.Errorf("could not convert fragment field: %v", f)
+			}
+			dbFragment.Fields = append(dbFragment.Fields, dbField)
+		}
+
+		def.Fragments = append(def.Fragments, dbFragment)
+	}
+
 	for _, dbNode := range def.Nodes {
 		for _, f := range dbNode.Fields {
 			if cid, ok := f.(*ComplexID); ok && cid.element != nil {
@@ -126,6 +149,15 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 	}
 
 	return &def, nil
+}
+
+func findNodeTable(nodes []*NodeTable, name string) *NodeTable {
+	for _, node := range nodes {
+		if node.NameGo() == name {
+			return node
+		}
+	}
+	return nil
 }
 
 func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Field, bool) {

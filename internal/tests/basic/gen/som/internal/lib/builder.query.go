@@ -3,6 +3,7 @@
 package lib
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -102,6 +103,47 @@ func (q Query[T]) BuildAsAllIDs() *Result {
 		Statement: q.render(),
 		Variables: q.context.vars,
 	}
+}
+
+// BuildAsFragment builds the query with the projection narrowed to the given
+// database fields, as used for fragment queries.
+func (q Query[T]) BuildAsFragment(fields []string) *Result {
+	q.fields = q.projection(fields)
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+// BuildAsLiveFragment is the live version of BuildAsFragment.
+func (q Query[T]) BuildAsLiveFragment(fields []string) *Result {
+	q.live = true
+	q.fields = q.projection(fields)
+
+	return &Result{
+		Statement: q.render(),
+		Variables: q.context.vars,
+	}
+}
+
+// projection returns the select list for a narrowed query: the requested
+// fields plus every sort field that is missing from them. ORDER BY resolves
+// against the projected record, so a sort on an unselected field would have
+// nothing to order by.
+func (q Query[T]) projection(fields []string) []string {
+	out := slices.Clone(fields)
+
+	for _, s := range q.Sort {
+		if s == nil || s.Field == "" || s.IsScore {
+			continue
+		}
+		if !slices.Contains(out, s.Field) {
+			out = append(out, s.Field)
+		}
+	}
+
+	return out
 }
 
 func (q Query[T]) BuildAsCount() *Result {

@@ -168,3 +168,9 @@ func toSlugLinkPtr(node *model.Slug) *slugLink {
 	link := slugLink{Slug: FromSlug(*node), ID: &rid}
 	return &link
 }
+
+// SlugResolved reports whether the given relation path of the model was
+// loaded from the database. The model has no relations, so no path is.
+func SlugResolved(_ *model.Slug, _ string) bool {
+	return false
+}

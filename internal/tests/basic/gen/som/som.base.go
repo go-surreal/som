@@ -298,6 +298,32 @@ type node interface {
 	isNode()
 }
 
+// fragmentState is embedded into Fragment. As an unexported alias it keeps the
+// embedded field itself inaccessible to application code, which only sees the
+// promoted RecordID, Marker and IsPartial methods.
+type fragmentState = internal.FragmentState
+
+// Fragment describes a projection of the node model T: a struct holding a
+// subset of T's fields, fetched via the ...As query terminals such as AllAs.
+// Every field of a fragment must exist on T with the same name and type.
+//
+// A fragment instance is always partial (IsPartial reports true), so it cannot
+// be written back to the database. Use the Expand method of T's repository to
+// load the full record a fragment was projected from.
+type Fragment[T node] struct {
+	fragmentState
+}
+
+func (Fragment[T]) fragmentOf(T) {}
+
+// FragmentOf is the constraint satisfied by every fragment of the model T,
+// i.e. every model embedding Fragment[T]. Its parameter is unconstrained, so
+// that it can be used from generic code whose model type is not constrained to
+// nodes; only Fragment itself restricts T to node models.
+type FragmentOf[T any] interface {
+	fragmentOf(T)
+}
+
 func WithCache[T node](ctx context.Context, opts ...CacheOption) (context.Context, func()) {
 	return internal.WithCache[T](ctx, opts...)
 }

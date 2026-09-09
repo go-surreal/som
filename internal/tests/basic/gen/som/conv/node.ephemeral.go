@@ -190,3 +190,9 @@ func toEphemeralLinkPtr(node *model.Ephemeral) *ephemeralLink {
 	link := ephemeralLink{Ephemeral: FromEphemeral(*node), ID: &rid}
 	return &link
 }
+
+// EphemeralResolved reports whether the given relation path of the model was
+// loaded from the database. The model has no relations, so no path is.
+func EphemeralResolved(_ *model.Ephemeral, _ string) bool {
+	return false
+}

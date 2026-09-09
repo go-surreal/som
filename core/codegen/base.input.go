@@ -17,6 +17,7 @@ type input struct {
 	edges         []*field.EdgeTable
 	views         []*field.ViewTable
 	sinks         []*field.SinkTable
+	fragments     []*field.FragmentTable
 	objects       []*field.DatabaseObject
 	define        *parser.DefineOutput
 }
@@ -41,6 +42,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 	in.edges = def.Edges
 	in.views = def.Views
 	in.sinks = def.Sinks
+	in.fragments = def.Fragments
 	in.objects = def.Objects
 	in.define = source.Define
 
@@ -67,6 +69,16 @@ func (in *input) findNodeByName(name string) *field.NodeTable {
 		}
 	}
 	return nil
+}
+
+// hasFragments reports whether any fragment projects the given node.
+func (in *input) hasFragments(node *field.NodeTable) bool {
+	for _, fragment := range in.fragments {
+		if fragment.Parent == node {
+			return true
+		}
+	}
+	return false
 }
 
 func (in *input) findSinkByName(name string) *field.SinkTable {
