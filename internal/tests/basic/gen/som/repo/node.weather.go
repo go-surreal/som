@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
@@ -35,9 +36,9 @@ type WeatherRepo interface {
 	// Refresh refreshes the given model with the current database state.
 
 	Refresh(ctx context.Context, weather *model.Weather) error
-	// Fetch fetches related records for the given model.
+	// Resolve loads the given relations of the model from the database.
 
-	Fetch(ctx context.Context, weather *model.Weather, fetch ...with.Fetch_[model.Weather]) error
+	Resolve(ctx context.Context, weather *model.Weather, fetch ...with.Fetch_[model.Weather]) error
 	// Index returns a new index instance for the Weather model.
 
 	Index() *index.Weather
@@ -121,6 +122,14 @@ var weatherRepoInfo = RepoInfo[model.Weather]{
 	},
 	MarshalOne: func(node *model.Weather) any {
 		return conv.FromWeatherPtr(node)
+	},
+	MergeOne: func(node *model.Weather, data []byte) error {
+		into := conv.FromWeatherPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToWeatherPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.Weather, error) {
 		raw, err := dbQueryOne[conv.Weather](ctx, db, stmt, vars)
@@ -279,24 +288,31 @@ func (r *weather) Refresh(ctx context.Context, weather *model.Weather) error {
 	return r.refresh(ctx, r.recordID(weather.ID()), weather)
 }
 
-// Fetch fetches related records for the given model based on the specified fetch fields.
-// The model is updated in-place with the fetched relations. Resolved relations are no
-// longer marked as partial, so IsPartial reports whether a relation was fetched.
-func (r *weather) Fetch(ctx context.Context, weather *model.Weather, fetch ...with.Fetch_[model.Weather]) error {
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *weather) Resolve(ctx context.Context, weather *model.Weather, fetch ...with.Fetch_[model.Weather]) error {
 	if weather == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	var zeroKey model.WeatherKey
 	if weather.ID() == zeroKey {
-		return errors.New("cannot fetch Weather without existing record ID")
+		return errors.New("cannot resolve Weather without existing record ID")
 	}
-	var fields []string
+	// Relations that are already loaded are not requested again.
+	var paths []string
 	for _, f := range fetch {
-		if field := fmt.Sprintf("%v", f); field != "" {
-			fields = append(fields, field)
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.WeatherResolved(weather, path) || slices.Contains(paths, path) {
+			continue
 		}
+		paths = append(paths, path)
 	}
-	return r.fetch(ctx, r.recordID(weather.ID()), weather, fields)
+	return r.resolve(ctx, r.recordID(weather.ID()), weather, paths)
 }
 
 // Index returns a new index instance for the Weather model.

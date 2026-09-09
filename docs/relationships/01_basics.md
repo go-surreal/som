@@ -174,6 +174,16 @@ if err := client.UserRepo().Refresh(ctx, post.Author); err != nil {
 }
 ```
 
+To load the links of a record without knowing which of them are still unfetched, use
+[`Resolve`](../api_reference/02_repository.md#resolve). It takes the same relation accessors as
+`Fetch` and skips the ones that are already loaded:
+
+```go
+if err := client.PostRepo().Resolve(ctx, post, with.Post.Author()); err != nil {
+    return err
+}
+```
+
 The marker itself is a bit set available on every node, edge and view — see
 [Model Markers](../api_reference/02_repository.md#model-markers) for all flags.
 

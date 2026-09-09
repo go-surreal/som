@@ -386,8 +386,8 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			g.Id("Relate").Call().Op("*").Qual(b.relativePkgPath(def.PkgRelate), node.NameGo())
 		}
 
-		g.Add(comment("Fetch fetches related records for the given model."))
-		g.Id("Fetch").Call(
+		g.Add(comment("Resolve loads the given relations of the model from the database."))
+		g.Id("Resolve").Call(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
 			jen.Id("fetch").Op("...").Qual(b.relativePkgPath(def.PkgFetch), "Fetch_").Types(b.input.SourceQual(node.NameGo())),
@@ -503,6 +503,17 @@ func (b *build) buildBaseFile(node *field.NodeTable) error {
 			jen.Id("node").Op("*").Add(sourceType),
 		).Any().Block(
 			jen.Return(jen.Qual(pkgConv, "From"+node.NameGo()+"Ptr").Call(jen.Id("node"))),
+		),
+		jen.Id("MergeOne"): jen.Func().Params(
+			jen.Id("node").Op("*").Add(sourceType),
+			jen.Id("data").Index().Byte(),
+		).Error().Block(
+			jen.Id("into").Op(":=").Qual(pkgConv, "From"+node.NameGo()+"Ptr").Call(jen.Id("node")),
+			jen.If(jen.Err().Op(":=").Id("into").Dot("UnmarshalCBOR").Call(jen.Id("data")), jen.Err().Op("!=").Nil()).Block(
+				jen.Return(jen.Err()),
+			),
+			jen.Op("*").Id("node").Op("=").Op("*").Add(convFn.Clone()).Call(jen.Id("into")),
+			jen.Return(jen.Nil()),
 		),
 	})
 
@@ -1035,12 +1046,16 @@ Refresh refreshes the given model with the remote data.
 
 	f.Line().
 		Add(comment(`
-Fetch fetches related records for the given model based on the specified fetch fields.
-The model is updated in-place with the fetched relations. Resolved relations are no
-longer marked as partial, so IsPartial reports whether a relation was fetched.
+Resolve loads the given relations of the model from the database. The model is
+updated in-place, so a resolved relation is no longer marked as partial and
+IsPartial reports whether it was loaded.
+
+Note that a loaded relation is not necessarily up to date. Resolve only makes
+sure the relation holds field values at all, it does not re-read a relation
+that was already loaded. Use Refresh to get current data.
 		`)).
 		Func().Params(jen.Id("r").Op("*").Id(node.NameGoLower())).
-		Id("Fetch").
+		Id("Resolve").
 		Params(
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id(node.NameGoLower()).Op("*").Add(b.input.SourceQual(node.NameGo())),
@@ -1053,21 +1068,29 @@ longer marked as partial, so IsPartial reports whether a relation was fetched.
 					jen.Return(jen.Qual("errors", "New").Call(jen.Lit("the passed node must not be nil"))),
 				)
 
-			b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot fetch "+node.NameGo()+" without existing record ID")
+			b.addIDEmptyCheck(g, node, node.NameGoLower(), "cannot resolve "+node.NameGo()+" without existing record ID")
 
-			g.Var().Id("fields").Index().String()
+			g.Comment("Relations that are already loaded are not requested again.")
+			g.Var().Id("paths").Index().String()
 			g.For(jen.List(jen.Id("_"), jen.Id("f")).Op(":=").Range().Id("fetch")).Block(
-				jen.If(jen.Id("field").Op(":=").Qual("fmt", "Sprintf").Call(jen.Lit("%v"), jen.Id("f")).Op(";").Id("field").Op("!=").Lit("")).Block(
-					jen.Id("fields").Op("=").Append(jen.Id("fields"), jen.Id("field")),
+				jen.Id("path").Op(":=").Qual("fmt", "Sprintf").Call(jen.Lit("%v"), jen.Id("f")),
+				jen.If(
+					jen.Id("path").Op("==").Lit("").
+						Op("||").Qual(b.relativePkgPath(def.PkgConv), node.NameGo()+"Resolved").
+						Call(jen.Id(node.NameGoLower()), jen.Id("path")).
+						Op("||").Qual("slices", "Contains").Call(jen.Id("paths"), jen.Id("path")),
+				).Block(
+					jen.Continue(),
 				),
+				jen.Id("paths").Op("=").Append(jen.Id("paths"), jen.Id("path")),
 			)
 
 			g.Return(
-				jen.Id("r").Dot("fetch").Call(
+				jen.Id("r").Dot("resolve").Call(
 					jen.Id("ctx"),
 					b.recordIDFromNode(node),
 					jen.Id(node.NameGoLower()),
-					jen.Id("fields"),
+					jen.Id("paths"),
 				),
 			)
 		})

@@ -177,3 +177,9 @@ func toSpecialTypesLinkPtr(node *model.SpecialTypes) *specialTypesLink {
 	link := specialTypesLink{SpecialTypes: FromSpecialTypes(*node), ID: &rid}
 	return &link
 }
+
+// SpecialTypesResolved reports whether the given relation path of the model was
+// loaded from the database. The model has no relations, so no path is.
+func SpecialTypesResolved(_ *model.SpecialTypes, _ string) bool {
+	return false
+}

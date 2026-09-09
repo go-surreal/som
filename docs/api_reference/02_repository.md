@@ -27,6 +27,7 @@ type UserRepo interface {
     Update(ctx context.Context, user *model.User) error
     Delete(ctx context.Context, user *model.User) error
     Refresh(ctx context.Context, user *model.User) error
+    Resolve(ctx context.Context, user *model.User, fetch ...with.Fetch_[model.User]) error
     Query() query.Builder[model.User]
 
     // Edge creation for edges starting at this node
@@ -182,7 +183,8 @@ can set them, application code just reads them via `Marker()` and `IsPartial()`.
 | Partially loaded, e.g. an unfetched record link | `som.ErrPartialModel` |
 | Permanently deleted via `Delete` or `Erase` | `som.ErrDeletedModel` |
 
-`Refresh` is always allowed — it is the way to turn a partial instance into a full one.
+`Refresh` is always allowed — it is the way to turn a partial instance into a full one. For the
+partial links held by a record, [`Resolve`](#resolve) does the same in one call.
 
 ## Refresh
 
@@ -201,6 +203,53 @@ Useful when:
 - Other processes may have modified the record
 - You need to verify current state
 - After timestamp fields update
+
+## Resolve
+
+Load relations of a record that is already in hand. Record links of a read record hold only their
+id ([`IsPartial`](#model-markers) reports `true`), unless the query resolved them via
+[`Fetch`](03_query_builder.md). `Resolve` does the same for an existing model:
+
+```go
+post, exists, err := client.PostRepo().Read(ctx, id)
+
+post.Author.IsPartial() // true, the link holds just its id
+
+err = client.PostRepo().Resolve(ctx, post, with.Post.Author())
+
+post.Author.IsPartial() // false
+post.Author.Name        // "Alice"
+```
+
+The model is updated in place. Only the requested relations are read, so everything else on the
+model, including relations resolved by an earlier call, keeps its value:
+
+```go
+err = client.PostRepo().Resolve(ctx, post, with.Post.Author())
+err = client.PostRepo().Resolve(ctx, post, with.Post.Comments())
+
+post.Author.IsPartial() // still false
+```
+
+Nested relations work as well, and are addressed the same way as in a query:
+
+```go
+err = client.PostRepo().Resolve(ctx, post, with.Post.Author().Company())
+```
+
+A relation that is already loaded is not read again, and a call whose relations are all loaded does
+not query the database at all. So `Resolve` makes sure a relation holds field values — it does not
+make sure they are current. Use `Refresh` on the relation for that:
+
+```go
+err = client.UserRepo().Refresh(ctx, post.Author)
+```
+
+> **Note:** relations are tracked per field, for a link and for a flat slice of links, each of them
+> optionally behind a pointer. A field that nests links deeper than that, e.g. `[][]*User`, is not
+> tracked: such a relation is always read again instead of being skipped. The result is the same,
+> only the call is not free. The generated `Resolved` function in the `conv` package names the
+> fields this applies to.
 
 ## Index
 

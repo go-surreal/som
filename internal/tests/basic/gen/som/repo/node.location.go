@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	"slices"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	index "som.test/gen/som/index"
@@ -45,9 +46,9 @@ type LocationRepo interface {
 	// Relate returns a new relate builder for the Location model.
 
 	Relate() *relate.Location
-	// Fetch fetches related records for the given model.
+	// Resolve loads the given relations of the model from the database.
 
-	Fetch(ctx context.Context, location *model.Location, fetch ...with.Fetch_[model.Location]) error
+	Resolve(ctx context.Context, location *model.Location, fetch ...with.Fetch_[model.Location]) error
 	// Index returns a new index instance for the Location model.
 
 	Index() *index.Location
@@ -131,6 +132,14 @@ var locationRepoInfo = RepoInfo[model.Location]{
 	},
 	MarshalOne: func(node *model.Location) any {
 		return conv.FromLocationPtr(node)
+	},
+	MergeOne: func(node *model.Location, data []byte) error {
+		into := conv.FromLocationPtr(node)
+		if err := into.UnmarshalCBOR(data); err != nil {
+			return err
+		}
+		*node = *conv.ToLocationPtr(into)
+		return nil
 	},
 	QueryOne: func(ctx context.Context, db *dbConn, stmt string, vars map[string]any) (*model.Location, error) {
 		raw, err := dbQueryOne[conv.Location](ctx, db, stmt, vars)
@@ -361,23 +370,30 @@ func (r *location) Refresh(ctx context.Context, location *model.Location) error 
 	return r.refresh(ctx, r.recordID(string(location.ID())), location)
 }
 
-// Fetch fetches related records for the given model based on the specified fetch fields.
-// The model is updated in-place with the fetched relations. Resolved relations are no
-// longer marked as partial, so IsPartial reports whether a relation was fetched.
-func (r *location) Fetch(ctx context.Context, location *model.Location, fetch ...with.Fetch_[model.Location]) error {
+// Resolve loads the given relations of the model from the database. The model is
+// updated in-place, so a resolved relation is no longer marked as partial and
+// IsPartial reports whether it was loaded.
+//
+// Note that a loaded relation is not necessarily up to date. Resolve only makes
+// sure the relation holds field values at all, it does not re-read a relation
+// that was already loaded. Use Refresh to get current data.
+func (r *location) Resolve(ctx context.Context, location *model.Location, fetch ...with.Fetch_[model.Location]) error {
 	if location == nil {
 		return errors.New("the passed node must not be nil")
 	}
 	if location.ID() == "" {
-		return errors.New("cannot fetch Location without existing record ID")
+		return errors.New("cannot resolve Location without existing record ID")
 	}
-	var fields []string
+	// Relations that are already loaded are not requested again.
+	var paths []string
 	for _, f := range fetch {
-		if field := fmt.Sprintf("%v", f); field != "" {
-			fields = append(fields, field)
+		path := fmt.Sprintf("%v", f)
+		if path == "" || conv.LocationResolved(location, path) || slices.Contains(paths, path) {
+			continue
 		}
+		paths = append(paths, path)
 	}
-	return r.fetch(ctx, r.recordID(string(location.ID())), location, fields)
+	return r.resolve(ctx, r.recordID(string(location.ID())), location, paths)
 }
 
 // Relate returns a new relate instance for the Location model.

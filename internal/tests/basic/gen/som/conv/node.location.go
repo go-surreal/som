@@ -395,3 +395,9 @@ func toLocationLinkPtr(node *model.Location) *locationLink {
 	link := locationLink{Location: FromLocation(*node), ID: &rid}
 	return &link
 }
+
+// LocationResolved reports whether the given relation path of the model was
+// loaded from the database. The model has no relations, so no path is.
+func LocationResolved(_ *model.Location, _ string) bool {
+	return false
+}
