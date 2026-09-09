@@ -22,6 +22,7 @@ type slug[M any] struct {
 	Title *lib.String[M]
 }
 
+// slugEdges is the Slug as reached through a graph traversal.
 type slugEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

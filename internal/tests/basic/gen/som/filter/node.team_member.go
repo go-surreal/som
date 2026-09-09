@@ -20,6 +20,7 @@ type teamMember[M any] struct {
 	Role *lib.String[M]
 }
 
+// teamMemberEdges is the TeamMember as reached through a graph traversal.
 type teamMemberEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

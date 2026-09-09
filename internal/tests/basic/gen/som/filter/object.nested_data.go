@@ -26,6 +26,7 @@ type nestedData[M any] struct {
 	UuidPtr   *lib.UUIDGooglePtr[M]
 }
 
+// nestedDataEdges is the NestedData as reached through a graph traversal.
 type nestedDataEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

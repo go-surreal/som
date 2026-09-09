@@ -24,6 +24,7 @@ type credentials[M any] struct {
 	PasswordPtr *lib.PasswordPtr[M]
 }
 
+// credentialsEdges is the Credentials as reached through a graph traversal.
 type credentialsEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

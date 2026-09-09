@@ -28,6 +28,7 @@ type ephemeral[M any] struct {
 	Label     *lib.String[M]
 }
 
+// ephemeralEdges is the Ephemeral as reached through a graph traversal.
 type ephemeralEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

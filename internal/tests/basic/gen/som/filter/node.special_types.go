@@ -26,6 +26,7 @@ type specialTypes[M any] struct {
 	Version   *lib.Int[M, int]
 }
 
+// specialTypesEdges is the SpecialTypes as reached through a graph traversal.
 type specialTypesEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

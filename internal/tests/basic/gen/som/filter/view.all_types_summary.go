@@ -24,6 +24,7 @@ type allTypesSummary[M any] struct {
 	AvgValue *lib.Float[M, float64]
 }
 
+// allTypesSummaryEdges is the AllTypesSummary as reached through a graph traversal.
 type allTypesSummaryEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

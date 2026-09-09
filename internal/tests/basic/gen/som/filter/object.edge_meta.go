@@ -22,6 +22,7 @@ type edgeMeta[M any] struct {
 	IsActive *lib.Bool[M]
 }
 
+// edgeMetaEdges is the EdgeMeta as reached through a graph traversal.
 type edgeMetaEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

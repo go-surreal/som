@@ -33,6 +33,7 @@ func (n specialRelation[M]) Authors(filters ...lib.Filter[model.SpecialTypes]) *
 	return lib.NewSlice[M, model.SpecialTypes, specialTypes[M]](key, newSpecialTypes[M])
 }
 
+// specialRelationEdges is the SpecialRelation as reached through a graph traversal.
 type specialRelationEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

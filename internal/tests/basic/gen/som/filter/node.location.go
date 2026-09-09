@@ -88,6 +88,7 @@ type location[M any] struct {
 	SFMultiPolygon    *lib.GeoMultiPolygonSF[M]
 }
 
+// locationEdges is the Location as reached through a graph traversal.
 type locationEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

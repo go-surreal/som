@@ -19,28 +19,20 @@ import (
 
 type TeamMemberRepo interface {
 	// Query returns a new query builder for the TeamMember model.
-
 	Query() query.Builder[model.TeamMember]
 	// CreateWithID creates a new record with the given key for the TeamMember model.
-
 	CreateWithID(ctx context.Context, teamMember *model.TeamMember) error
 	// Read returns the record for the given key, if it exists.
-
 	Read(ctx context.Context, key model.TeamMemberKey) (*model.TeamMember, bool, error)
 	// Update updates the record for the given TeamMember model.
-
 	Update(ctx context.Context, teamMember *model.TeamMember) error
 	// Delete deletes the record for the given TeamMember model.
-
 	Delete(ctx context.Context, teamMember *model.TeamMember) error
 	// Refresh refreshes the given model with the current database state.
-
 	Refresh(ctx context.Context, teamMember *model.TeamMember) error
 	// Resolve loads the given relations of the model from the database.
-
 	Resolve(ctx context.Context, teamMember *model.TeamMember, fetch ...with.Fetch_[model.TeamMember]) error
 	// Index returns a new index instance for the TeamMember model.
-
 	Index() *index.TeamMember
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
@@ -49,7 +41,6 @@ type TeamMemberRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeCreate(fn func(ctx context.Context, node *model.TeamMember) error) func()
 	// OnAfterCreate registers a hook that runs after a record has been created.
 	// If the hook returns an error, the error is returned to the caller.
@@ -57,7 +48,6 @@ type TeamMemberRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterCreate(fn func(ctx context.Context, node *model.TeamMember) error) func()
 	// OnBeforeUpdate registers a hook that runs before a record is updated.
 	// If the hook returns an error, the update operation is aborted.
@@ -65,7 +55,6 @@ type TeamMemberRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.TeamMember) error) func()
 	// OnAfterUpdate registers a hook that runs after a record has been updated.
 	// If the hook returns an error, the error is returned to the caller.
@@ -73,7 +62,6 @@ type TeamMemberRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterUpdate(fn func(ctx context.Context, node *model.TeamMember) error) func()
 	// OnBeforeDelete registers a hook that runs before a record is deleted.
 	// If the hook returns an error, the delete operation is aborted.
@@ -81,7 +69,6 @@ type TeamMemberRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeDelete(fn func(ctx context.Context, node *model.TeamMember) error) func()
 	// OnAfterDelete registers a hook that runs after a record has been deleted.
 	// If the hook returns an error, the error is returned to the caller.
@@ -89,7 +76,6 @@ type TeamMemberRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterDelete(fn func(ctx context.Context, node *model.TeamMember) error) func()
 }
 
@@ -176,7 +162,8 @@ func (c *ClientImpl) TeamMemberRepo() TeamMemberRepo {
 					"member":   models.NewRecordID("all_types", string(key.Member.ID())),
 				})
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.teamMemberRepo
 }

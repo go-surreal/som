@@ -19,36 +19,26 @@ import (
 
 type SlugRepo interface {
 	// Query returns a new query builder for the Slug model.
-
 	Query() query.Builder[model.Slug]
 	// Insert creates multiple records in a single operation.
 	// Every node must have a non-empty ID set.
 	// Before- and after-create hooks are invoked for each node.
-
 	Insert(ctx context.Context, nodes []*model.Slug) error
 	// CreateWithID creates a new record with the given ID for the Slug model.
-
 	CreateWithID(ctx context.Context, id string, slug *model.Slug) error
 	// Read returns the record for the given ID, if it exists.
-
 	Read(ctx context.Context, id string) (*model.Slug, bool, error)
 	// Update updates the record for the given Slug model.
-
 	Update(ctx context.Context, slug *model.Slug) error
 	// Delete deletes the record for the given Slug model.
-
 	Delete(ctx context.Context, slug *model.Slug) error
 	// Refresh refreshes the given model with the current database state.
-
 	Refresh(ctx context.Context, slug *model.Slug) error
 	// Relate returns a new relate builder for the Slug model.
-
 	Relate() *relate.Slug
 	// Resolve loads the given relations of the model from the database.
-
 	Resolve(ctx context.Context, slug *model.Slug, fetch ...with.Fetch_[model.Slug]) error
 	// Index returns a new index instance for the Slug model.
-
 	Index() *index.Slug
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
@@ -57,7 +47,6 @@ type SlugRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeCreate(fn func(ctx context.Context, node *model.Slug) error) func()
 	// OnAfterCreate registers a hook that runs after a record has been created.
 	// If the hook returns an error, the error is returned to the caller.
@@ -65,7 +54,6 @@ type SlugRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterCreate(fn func(ctx context.Context, node *model.Slug) error) func()
 	// OnBeforeUpdate registers a hook that runs before a record is updated.
 	// If the hook returns an error, the update operation is aborted.
@@ -73,7 +61,6 @@ type SlugRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.Slug) error) func()
 	// OnAfterUpdate registers a hook that runs after a record has been updated.
 	// If the hook returns an error, the error is returned to the caller.
@@ -81,7 +68,6 @@ type SlugRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterUpdate(fn func(ctx context.Context, node *model.Slug) error) func()
 	// OnBeforeDelete registers a hook that runs before a record is deleted.
 	// If the hook returns an error, the delete operation is aborted.
@@ -89,7 +75,6 @@ type SlugRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeDelete(fn func(ctx context.Context, node *model.Slug) error) func()
 	// OnAfterDelete registers a hook that runs after a record has been deleted.
 	// If the hook returns an error, the error is returned to the caller.
@@ -97,7 +82,6 @@ type SlugRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterDelete(fn func(ctx context.Context, node *model.Slug) error) func()
 }
 
@@ -181,7 +165,8 @@ func (c *ClientImpl) SlugRepo() SlugRepo {
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("slug", parseStringID(id))
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.slugRepo
 }

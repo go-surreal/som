@@ -87,11 +87,16 @@ func ToSlugPtr(data *Slug) *model.Slug {
 	return &result
 }
 
+// SlugFields returns the database keyed value map of a model. It is used by
+// the query builder to derive pagination cursor values with correct database field
+// names and types.
 func SlugFields(m *model.Slug) map[string]any {
 	c := Slug{*m}
 	return c.fields()
 }
 
+// slugLink is a Slug as referenced by another record. It marshals
+// to its record ID only, but unmarshals from either a record ID or a fetched record.
 type slugLink struct {
 	Slug
 	ID *models.RecordID

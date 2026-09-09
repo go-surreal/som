@@ -11,11 +11,9 @@ import (
 type EventLogRepo interface {
 	// Create writes a new EventLog record. The record is discarded
 	// immediately after write (DROP table); nothing is returned.
-
 	Create(ctx context.Context, eventLog *model.EventLog) error
 	// Insert writes multiple EventLog records in a single operation.
 	// The records are discarded immediately after write (DROP table).
-
 	Insert(ctx context.Context, eventLogs []*model.EventLog) error
 }
 

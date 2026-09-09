@@ -24,6 +24,7 @@ type eventSummary[M any] struct {
 	AvgValue *lib.Float[M, float64]
 }
 
+// eventSummaryEdges is the EventSummary as reached through a graph traversal.
 type eventSummaryEdges[M any] struct {
 	lib.Filter[M]
 	lib.Key[M]

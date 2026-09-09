@@ -19,38 +19,27 @@ import (
 
 type EphemeralRepo interface {
 	// Query returns a new query builder for the Ephemeral model.
-
 	Query() query.Builder[model.Ephemeral]
 	// Create creates a new record for the Ephemeral model.
-
 	Create(ctx context.Context, ephemeral *model.Ephemeral) error
 	// Insert creates multiple records in a single operation.
 	// Before- and after-create hooks are invoked for each node.
-
 	Insert(ctx context.Context, nodes []*model.Ephemeral) error
 	// CreateWithID creates a new record with the given ID for the Ephemeral model.
-
 	CreateWithID(ctx context.Context, id string, ephemeral *model.Ephemeral) error
 	// Read returns the record for the given ID, if it exists.
-
 	Read(ctx context.Context, id string) (*model.Ephemeral, bool, error)
 	// Update updates the record for the given Ephemeral model.
-
 	Update(ctx context.Context, ephemeral *model.Ephemeral) error
 	// Delete deletes the record for the given Ephemeral model.
-
 	Delete(ctx context.Context, ephemeral *model.Ephemeral) error
 	// Refresh refreshes the given model with the current database state.
-
 	Refresh(ctx context.Context, ephemeral *model.Ephemeral) error
 	// Relate returns a new relate builder for the Ephemeral model.
-
 	Relate() *relate.Ephemeral
 	// Resolve loads the given relations of the model from the database.
-
 	Resolve(ctx context.Context, ephemeral *model.Ephemeral, fetch ...with.Fetch_[model.Ephemeral]) error
 	// Index returns a new index instance for the Ephemeral model.
-
 	Index() *index.Ephemeral
 
 	// OnBeforeCreate registers a hook that runs before a record is created.
@@ -59,7 +48,6 @@ type EphemeralRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeCreate(fn func(ctx context.Context, node *model.Ephemeral) error) func()
 	// OnAfterCreate registers a hook that runs after a record has been created.
 	// If the hook returns an error, the error is returned to the caller.
@@ -67,7 +55,6 @@ type EphemeralRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterCreate(fn func(ctx context.Context, node *model.Ephemeral) error) func()
 	// OnBeforeUpdate registers a hook that runs before a record is updated.
 	// If the hook returns an error, the update operation is aborted.
@@ -75,7 +62,6 @@ type EphemeralRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeUpdate(fn func(ctx context.Context, node *model.Ephemeral) error) func()
 	// OnAfterUpdate registers a hook that runs after a record has been updated.
 	// If the hook returns an error, the error is returned to the caller.
@@ -83,7 +69,6 @@ type EphemeralRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterUpdate(fn func(ctx context.Context, node *model.Ephemeral) error) func()
 	// OnBeforeDelete registers a hook that runs before a record is deleted.
 	// If the hook returns an error, the delete operation is aborted.
@@ -91,7 +76,6 @@ type EphemeralRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnBeforeDelete(fn func(ctx context.Context, node *model.Ephemeral) error) func()
 	// OnAfterDelete registers a hook that runs after a record has been deleted.
 	// If the hook returns an error, the error is returned to the caller.
@@ -99,7 +83,6 @@ type EphemeralRepo interface {
 	//
 	// Note: Hooks are local to this application instance and are not
 	// distributed across multiple instances of the application.
-
 	OnAfterDelete(fn func(ctx context.Context, node *model.Ephemeral) error) func()
 }
 
@@ -184,7 +167,8 @@ func (c *ClientImpl) EphemeralRepo() EphemeralRepo {
 			recordID: func(id string) *models.RecordID {
 				rid := models.NewRecordID("ephemeral", parseUUID(id))
 				return &rid
-			}}}
+			},
+		}}
 	}
 	return c.ephemeralRepo
 }
