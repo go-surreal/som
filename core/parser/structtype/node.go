@@ -18,7 +18,7 @@ func (h *NodeHandler) Match(t gotype.Type, ctx *parser.TypeContext) bool {
 }
 
 func (h *NodeHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
-	node, err := ParseNode(t, ctx.OutPkg, ctx.PkgScope)
+	node, err := ParseNode(t, ctx)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,9 @@ func ParseIDType(t gotype.Type) parser.IDType {
 	return parser.IDTypeULID
 }
 
-func ParseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.FieldComplexID, error) {
+func ParseComplexIDFields(t gotype.Type, ctx *parser.TypeContext) (*parser.FieldComplexID, error) {
+	outPkg := ctx.OutPkg
+
 	origin := t.Origin()
 	if origin == nil {
 		return nil, fmt.Errorf("complex ID type has no AST origin")
@@ -147,7 +149,7 @@ func ParseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 		return nil, fmt.Errorf("complex ID type argument: unsupported AST node %T", indexExpr.Index)
 	}
 
-	keyType, ok := pkgScope.ChildByName(typeArgName)
+	keyType, ok := ctx.PkgScope.ChildByName(typeArgName)
 	if !ok {
 		return nil, fmt.Errorf("complex ID type argument %s not found in package scope", typeArgName)
 	}
@@ -189,7 +191,7 @@ func ParseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 			continue
 		}
 
-		parsed, err := parser.ParseFieldInternal(sf, outPkg, false)
+		parsed, err := ctx.ParseUntaggedField(sf)
 		if err != nil {
 			return nil, fmt.Errorf("complex ID field %s: %w", sf.Name(), err)
 		}
@@ -218,7 +220,8 @@ func ParseComplexIDFields(t gotype.Type, outPkg string, pkgScope gotype.Type) (*
 	return parser.NewFieldComplexID("ID", kind, structName, fields), nil
 }
 
-func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node, error) {
+func ParseNode(v gotype.Type, ctx *parser.TypeContext) (*parser.Node, error) {
+	outPkg := ctx.OutPkg
 	internalPkg := path.Join(outPkg, "internal")
 
 	node := &parser.Node{Name: v.Name()}
@@ -248,7 +251,7 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 				} else {
 					node.IDEmbed = f.Name()
 
-					complexID, err := ParseComplexIDFields(f.Elem(), outPkg, pkgScope)
+					complexID, err := ParseComplexIDFields(f.Elem(), ctx)
 					if err != nil {
 						return nil, fmt.Errorf("model %s: %w", v.Name(), err)
 					}
@@ -274,7 +277,7 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.%s", v.Name(), node.IDEmbed)
 		}
 
-		field, err := parser.ParseField(f, outPkg)
+		field, err := ctx.ParseField(f)
 		if err != nil {
 			return nil, err
 		}

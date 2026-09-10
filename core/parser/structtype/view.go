@@ -16,7 +16,7 @@ func (h *ViewHandler) Match(t gotype.Type, ctx *parser.TypeContext) bool {
 }
 
 func (h *ViewHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
-	view, err := ParseView(t, ctx.OutPkg)
+	view, err := ParseView(t, ctx)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,9 @@ func IsView(t gotype.Type, outPkg string) bool {
 	return false
 }
 
-func ParseView(v gotype.Type, outPkg string) (*parser.View, error) {
+func ParseView(v gotype.Type, ctx *parser.TypeContext) (*parser.View, error) {
+	outPkg := ctx.OutPkg
+
 	view := &parser.View{Name: v.Name()}
 
 	nf := v.NumField()
@@ -90,7 +92,7 @@ func ParseView(v gotype.Type, outPkg string) (*parser.View, error) {
 			return nil, fmt.Errorf("view %s: field ID not allowed, already provided by som.View", v.Name())
 		}
 
-		field, err := parser.ParseField(f, outPkg)
+		field, err := ctx.ParseField(f)
 		if err != nil {
 			return nil, err
 		}

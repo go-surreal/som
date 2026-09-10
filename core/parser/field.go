@@ -18,6 +18,8 @@ type Field interface {
 	setIndexes([]IndexInfo)
 	setSearch(*SearchInfo)
 	Validate() error
+	Verify(out *Output) error
+	IsInternal() bool
 }
 
 type fieldAtomic struct {

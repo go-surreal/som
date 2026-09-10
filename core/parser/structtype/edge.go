@@ -17,7 +17,7 @@ func (h *EdgeHandler) Match(t gotype.Type, ctx *parser.TypeContext) bool {
 }
 
 func (h *EdgeHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
-	edge, err := ParseEdge(t, ctx.OutPkg)
+	edge, err := ParseEdge(t, ctx)
 	if err != nil {
 		return err
 	}
@@ -35,11 +35,11 @@ func (h *EdgeHandler) Validate(ctx *parser.TypeContext) error {
 		if e.Out == nil {
 			return fmt.Errorf("edge %s: missing 'out' field (tag som:\"out\")", e.Name)
 		}
-		if err := validateField("edge "+e.Name, e.In, ctx.Output); err != nil {
-			return err
+		if err := e.In.Verify(ctx.Output); err != nil {
+			return fmt.Errorf("edge %s: %w", e.Name, err)
 		}
-		if err := validateField("edge "+e.Name, e.Out, ctx.Output); err != nil {
-			return err
+		if err := e.Out.Verify(ctx.Output); err != nil {
+			return fmt.Errorf("edge %s: %w", e.Name, err)
 		}
 		if err := validateFields("edge "+e.Name, e.Fields, ctx.Output); err != nil {
 			return err
@@ -74,7 +74,8 @@ func IsEdge(t gotype.Type, outPkg string) bool {
 	return false
 }
 
-func ParseEdge(v gotype.Type, outPkg string) (*parser.Edge, error) {
+func ParseEdge(v gotype.Type, ctx *parser.TypeContext) (*parser.Edge, error) {
+	outPkg := ctx.OutPkg
 	internalPkg := path.Join(outPkg, "internal")
 
 	edge := &parser.Edge{Name: v.Name()}
@@ -117,7 +118,7 @@ func ParseEdge(v gotype.Type, outPkg string) (*parser.Edge, error) {
 			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Edge", v.Name())
 		}
 
-		field, err := parser.ParseField(f, outPkg)
+		field, err := ctx.ParseField(f)
 		if err != nil {
 			return nil, err
 		}

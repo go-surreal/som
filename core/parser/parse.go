@@ -46,17 +46,11 @@ func parseExpiryTag(tag string) (string, error) {
 	return tag, nil
 }
 
-// activeFieldRegistry is set at the start of Parse() so that
-// ParseField / ParseFieldInternal can delegate to it.
-var activeFieldRegistry *fieldRegistry
-
 func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers []FieldHandler) (*Output, error) {
 	res := &Output{}
 
 	tReg := newTypeRegistry(typeHandlers)
 	fReg := newFieldRegistry(fieldHandlers)
-
-	activeFieldRegistry = fReg
 
 	imp := gotype.NewImporter()
 
@@ -87,7 +81,7 @@ func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers 
 	diff := strings.TrimPrefix(absDir, mod.Dir())
 	res.PkgPath = path.Join(mod.Module(), diff)
 
-	ctx := &TypeContext{OutPkg: outPkg, PkgScope: n, Output: res}
+	ctx := &TypeContext{OutPkg: outPkg, PkgScope: n, Output: res, fields: fReg}
 
 	nc := n.NumChild()
 	for i := 0; i < nc; i++ {
@@ -119,57 +113,6 @@ func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers 
 	res.UsedFeatures = collectUsedFeatures(res)
 
 	return res, nil
-}
-
-func ParseField(t gotype.Type, outPkg string) (Field, error) {
-	field, err := ParseFieldInternal(t, outPkg, true)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := field.Validate(); err != nil {
-		return nil, err
-	}
-
-	return field, nil
-}
-
-func ParseFieldInternal(t gotype.Type, outPkg string, isStructField bool) (Field, error) {
-	var tagInfo *TagInfo
-	if isStructField {
-		somTag := t.Tag().Get("som")
-		var err error
-		tagInfo, err = parseSomTag(somTag)
-		if err != nil {
-			return nil, fmt.Errorf("field %s: %w", t.Name(), err)
-		}
-	}
-
-	ctx := &FieldContext{
-		OutPkg: outPkg,
-	}
-	ctx.ParseElem = func(t gotype.Type, elem gotype.Type) (Field, error) {
-		return activeFieldRegistry.parse(t, elem, ctx)
-	}
-
-	field, err := activeFieldRegistry.parse(t, t.Elem(), ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if tagInfo != nil {
-		if tagInfo.DBName != "" {
-			field.setDBName(tagInfo.DBName)
-		}
-		if len(tagInfo.Indexes) > 0 {
-			field.setIndexes(tagInfo.Indexes)
-		}
-		if tagInfo.Search != nil {
-			field.setSearch(tagInfo.Search)
-		}
-	}
-
-	return field, nil
 }
 
 // TagInfo holds all parsed som struct tag data.

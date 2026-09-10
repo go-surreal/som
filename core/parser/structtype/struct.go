@@ -15,7 +15,7 @@ func (h *StructHandler) Match(t gotype.Type, _ *parser.TypeContext) bool {
 }
 
 func (h *StructHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
-	str, err := parseStruct(t, ctx.OutPkg)
+	str, err := parseStruct(t, ctx)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (h *StructHandler) Validate(ctx *parser.TypeContext) error {
 	return nil
 }
 
-func parseStruct(v gotype.Type, outPkg string) (*parser.Struct, error) {
+func parseStruct(v gotype.Type, ctx *parser.TypeContext) (*parser.Struct, error) {
 	str := &parser.Struct{Name: v.Name()}
 
 	nf := v.NumField()
@@ -49,7 +49,7 @@ func parseStruct(v gotype.Type, outPkg string) (*parser.Struct, error) {
 			continue
 		}
 
-		field, err := parser.ParseField(f, outPkg)
+		field, err := ctx.ParseField(f)
 		if err != nil {
 			return nil, err
 		}

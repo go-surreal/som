@@ -16,7 +16,7 @@ func (h *SinkHandler) Match(t gotype.Type, ctx *parser.TypeContext) bool {
 }
 
 func (h *SinkHandler) Handle(t gotype.Type, ctx *parser.TypeContext) error {
-	sink, err := ParseSink(t, ctx.OutPkg)
+	sink, err := ParseSink(t, ctx)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,9 @@ func IsSink(t gotype.Type, outPkg string) bool {
 	return false
 }
 
-func ParseSink(v gotype.Type, outPkg string) (*parser.Sink, error) {
+func ParseSink(v gotype.Type, ctx *parser.TypeContext) (*parser.Sink, error) {
+	outPkg := ctx.OutPkg
+
 	sink := &parser.Sink{Name: v.Name()}
 
 	nf := v.NumField()
@@ -86,7 +88,7 @@ func ParseSink(v gotype.Type, outPkg string) (*parser.Sink, error) {
 			return nil, fmt.Errorf("sink %s: field ID not allowed, a sink record is discarded and has no addressable id", v.Name())
 		}
 
-		field, err := parser.ParseField(f, outPkg)
+		field, err := ctx.ParseField(f)
 		if err != nil {
 			return nil, err
 		}
