@@ -1,0 +1,7 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/go-surreal/som/discussions
+    about: Ask questions and discuss ideas here.
+  - name: Security issues
+    about: Report security vulnerabilities via Discord or PM to the project owner!

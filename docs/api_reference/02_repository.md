@@ -1,0 +1,426 @@
+# Repository API
+
+Repositories provide CRUD operations and query access for each model type.
+
+## Accessing a Repository
+
+Each model gets a typed repository accessor on the client:
+
+```go
+userRepo := client.UserRepo()
+postRepo := client.PostRepo()
+```
+
+Edges do not get their own repository — they are created via the `Relate()` builder of the
+node they start from.
+
+## Repository Interface
+
+Generated interface for each node model:
+
+```go
+type UserRepo interface {
+    Create(ctx context.Context, user *model.User) error
+    CreateWithID(ctx context.Context, id string, user *model.User) error
+    Insert(ctx context.Context, users []*model.User) error
+    Read(ctx context.Context, id string) (*model.User, bool, error)
+    Update(ctx context.Context, user *model.User) error
+    Delete(ctx context.Context, user *model.User) error
+    Refresh(ctx context.Context, user *model.User) error
+    Resolve(ctx context.Context, user *model.User, fetch ...with.Fetch_[model.User]) error
+    Query() query.Builder[model.User]
+
+    // Edge creation for edges starting at this node
+    Relate() *relate.User
+
+    // Index access (e.g. per-index Rebuild)
+    Index() *index.User
+
+    // Lifecycle hooks
+    OnBeforeCreate(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterCreate(fn func(ctx context.Context, node *model.User) error) func()
+    OnBeforeUpdate(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterUpdate(fn func(ctx context.Context, node *model.User) error) func()
+    OnBeforeDelete(fn func(ctx context.Context, node *model.User) error) func()
+    OnAfterDelete(fn func(ctx context.Context, node *model.User) error) func()
+}
+```
+
+Additional methods appear depending on the features a model uses:
+
+| Method | Present when |
+|--------|--------------|
+| `Erase(ctx, m)` / `Restore(ctx, m)` | Model embeds `som.SoftDelete` |
+| `Changes()` | Model has a changefeed (`som:"changefeed=<duration>"`) |
+
+Models with a [complex ID](../models/01_nodes.md#complex-id-types) differ slightly: there is no
+`Create` or `Insert` (the ID is part of the record), `CreateWithID(ctx, m)` takes only the model,
+and `Read(ctx, key)` takes the typed key struct instead of a string.
+
+## Create
+
+Insert a new record with auto-generated ID:
+
+```go
+user := &model.User{
+    Name:  "John",
+    Email: "john@example.com",
+}
+
+err := client.UserRepo().Create(ctx, user)
+if err != nil {
+    return err
+}
+
+// user.ID() is populated after successful creation
+fmt.Println("Created:", user.ID())  // 01HQMV8K2P...
+```
+
+## CreateWithID
+
+Insert with a specific ID:
+
+```go
+user := &model.User{
+    Name:  "John",
+    Email: "john@example.com",
+}
+
+err := client.UserRepo().CreateWithID(ctx, "john", user)
+// Creates record with ID: user:john
+```
+
+## Insert
+
+Bulk insert multiple records in a single operation:
+
+```go
+users := []*model.User{
+    {Name: "Alice", Email: "alice@example.com"},
+    {Name: "Bob", Email: "bob@example.com"},
+    {Name: "Charlie", Email: "charlie@example.com"},
+}
+
+err := client.UserRepo().Insert(ctx, users)
+```
+
+## Read
+
+Fetch a record by ID:
+
+```go
+func (r *UserRepo) Read(ctx context.Context, id string) (*model.User, bool, error)
+```
+
+Returns:
+- `*model.User` - The record (nil if not found)
+- `bool` - Whether the record exists
+- `error` - Any error that occurred
+
+```go
+user, exists, err := client.UserRepo().Read(ctx, id)
+if err != nil {
+    return err  // Database error
+}
+if !exists {
+    return errors.New("user not found")
+}
+fmt.Println("Found:", user.Name)
+```
+
+## Update
+
+Modify an existing record:
+
+```go
+// The record must have a valid ID
+user.Name = "Jane"
+user.Email = "jane@example.com"
+
+err := client.UserRepo().Update(ctx, user)
+if err != nil {
+    return err
+}
+```
+
+The record must have a valid ID from a previous `Create`, `CreateWithID`, or `Read` operation.
+
+## Delete
+
+Remove a record:
+
+```go
+err := client.UserRepo().Delete(ctx, user)
+if err != nil {
+    return err
+}
+```
+
+After a permanent delete the in-memory model is flagged as deleted and rejected by all further
+write operations (see [Model Markers](#model-markers)). For soft-delete models `Delete` only sets
+`deleted_at`, so the model stays writable and can be restored; `Erase` flags it as deleted.
+
+## Model Markers
+
+Every node, edge, view and fragment carries a bit set describing how the instance was loaded:
+
+```go
+m := user.Marker()
+
+m.Has(som.MarkerLoaded)     // instance originates from a database record
+m.Has(som.MarkerPartial)    // not all fields are loaded (also: user.IsPartial())
+m.Has(som.MarkerDeleted)    // record was permanently deleted
+m.Has(som.MarkerFromCache)  // held by an in-process cache, shared and possibly stale
+```
+
+A model built by the application has a zero marker. Markers are read-only: only the generated code
+can set them, application code just reads them via `Marker()` and `IsPartial()`.
+
+`Update`, `Delete`, `Erase` and `Restore` reject instances that must not be written back:
+
+| State | Error |
+| --- | --- |
+| Partially loaded, e.g. an unfetched record link | `som.ErrPartialModel` |
+| Permanently deleted via `Delete` or `Erase` | `som.ErrDeletedModel` |
+
+`Refresh` is always allowed — it is the way to turn a partial instance into a full one. For the
+partial links held by a record, [`Resolve`](#resolve) does the same in one call.
+
+A [fragment](../models/10_fragments.md) is always partial. It is not accepted by the write
+methods at all, since they take the node model; use `Expand` to load the full record:
+
+```go
+person, exists, err := client.PersonRepo().Expand(ctx, card)
+```
+
+## Refresh
+
+Reload a record from the database:
+
+```go
+// Refresh to get latest data
+err := client.UserRepo().Refresh(ctx, user)
+if err != nil {
+    return err
+}
+// user now contains current database values
+```
+
+Useful when:
+- Other processes may have modified the record
+- You need to verify current state
+- After timestamp fields update
+
+## Resolve
+
+Load relations of a record that is already in hand. Record links of a read record hold only their
+id ([`IsPartial`](#model-markers) reports `true`), unless the query resolved them via
+[`Fetch`](03_query_builder.md). `Resolve` does the same for an existing model:
+
+```go
+post, exists, err := client.PostRepo().Read(ctx, id)
+
+post.Author.IsPartial() // true, the link holds just its id
+
+err = client.PostRepo().Resolve(ctx, post, with.Post.Author())
+
+post.Author.IsPartial() // false
+post.Author.Name        // "Alice"
+```
+
+The model is updated in place. Only the requested relations are read, so everything else on the
+model, including relations resolved by an earlier call, keeps its value:
+
+```go
+err = client.PostRepo().Resolve(ctx, post, with.Post.Author())
+err = client.PostRepo().Resolve(ctx, post, with.Post.Comments())
+
+post.Author.IsPartial() // still false
+```
+
+Nested relations work as well, and are addressed the same way as in a query:
+
+```go
+err = client.PostRepo().Resolve(ctx, post, with.Post.Author().Company())
+```
+
+A relation that is already loaded is not read again, and a call whose relations are all loaded does
+not query the database at all. So `Resolve` makes sure a relation holds field values — it does not
+make sure they are current. Use `Refresh` on the relation for that:
+
+```go
+err = client.UserRepo().Refresh(ctx, post.Author)
+```
+
+> **Note:** relations are tracked per field, for a link and for a flat slice of links, each of them
+> optionally behind a pointer. A field that nests links deeper than that, e.g. `[][]*User`, is not
+> tracked: such a relation is always read again instead of being skipped. The result is the same,
+> only the call is not free. The generated `Resolved` function in the `conv` package names the
+> fields this applies to.
+
+## Index
+
+Access the index manager for this table. Each index exposes a `Rebuild(ctx)` method:
+
+```go
+err := client.UserRepo().Index().Count().Rebuild(ctx)
+```
+
+## Query
+
+Access the query builder for complex queries:
+
+```go
+query := client.UserRepo().Query()
+
+// Chain methods
+users, err := query.
+    Where(filter.User.IsActive.True()).
+    Order(by.User.Name.Asc()).
+    Limit(10).
+    All(ctx)
+```
+
+See [Query Builder API](03_query_builder.md) for full documentation.
+
+## Lifecycle Hooks
+
+Register callbacks that execute before or after CRUD operations:
+
+```go
+// Register a hook
+unregister := client.UserRepo().OnBeforeCreate(func(ctx context.Context, user *model.User) error {
+    // Validate or transform before creation
+    if user.Email == "" {
+        return errors.New("email is required")
+    }
+    return nil
+})
+
+// Unregister the hook when no longer needed
+defer unregister()
+```
+
+Available hooks:
+
+| Hook | When |
+|------|------|
+| `OnBeforeCreate` | Before a record is created |
+| `OnAfterCreate` | After a record is created |
+| `OnBeforeUpdate` | Before a record is updated |
+| `OnAfterUpdate` | After a record is updated |
+| `OnBeforeDelete` | Before a record is deleted |
+| `OnAfterDelete` | After a record is deleted |
+
+Each hook returns an unregister function. Call it to remove the hook.
+
+## Relate (Edges)
+
+Edges are created through the repository of the node the edge starts from. `Relate()` returns a
+builder with one accessor per edge field declared on that node:
+
+```go
+type User struct {
+    som.Node[som.ULID]
+
+    Follows []Follows  // edge field
+}
+
+type Follows struct {
+    som.Edge
+
+    From  User `som:"in"`
+    To    User `som:"out"`
+    Since time.Time
+}
+```
+
+```go
+follows := &model.Follows{
+    From:  *alice,   // must already exist (ID set)
+    To:    *bob,     // must already exist (ID set)
+    Since: time.Now(),
+}
+
+err := client.UserRepo().Relate().Follows().Create(ctx, follows)
+```
+
+The `in`/`out` node values must carry a non-empty ID, and the edge's own ID must be empty.
+After a successful `Create`, the edge is populated with its generated ID and any database
+defaults. `Update` and `Delete` on edges are not implemented yet.
+
+## Complete Example
+
+```go
+func UserService(ctx context.Context, client repo.Client) error {
+    userRepo := client.UserRepo()
+
+    // Create
+    user := &model.User{
+        Name:     "Alice",
+        Email:    "alice@example.com",
+        IsActive: true,
+    }
+    if err := userRepo.Create(ctx, user); err != nil {
+        return fmt.Errorf("create: %w", err)
+    }
+    log.Printf("Created user: %s", user.ID())
+
+    // Read
+    found, exists, err := userRepo.Read(ctx, string(user.ID()))
+    if err != nil {
+        return fmt.Errorf("read: %w", err)
+    }
+    if !exists {
+        return errors.New("user not found after create")
+    }
+    log.Printf("Read user: %s", found.Name)
+
+    // Update
+    user.Name = "Alice Smith"
+    if err := userRepo.Update(ctx, user); err != nil {
+        return fmt.Errorf("update: %w", err)
+    }
+    log.Printf("Updated user")
+
+    // Query
+    activeUsers, err := userRepo.Query().
+        Where(filter.User.IsActive.True()).
+        All(ctx)
+    if err != nil {
+        return fmt.Errorf("query: %w", err)
+    }
+    log.Printf("Found %d active users", len(activeUsers))
+
+    // Delete
+    if err := userRepo.Delete(ctx, user); err != nil {
+        return fmt.Errorf("delete: %w", err)
+    }
+    log.Printf("Deleted user")
+
+    return nil
+}
+```
+
+## Error Handling
+
+Always check errors from repository operations:
+
+```go
+user, exists, err := client.UserRepo().Read(ctx, id)
+
+// Check error first
+if err != nil {
+    // Database connection error, query error, etc.
+    return fmt.Errorf("failed to read user: %w", err)
+}
+
+// Then check existence
+if !exists {
+    // Record simply doesn't exist (not an error)
+    return ErrUserNotFound
+}
+
+// Use the record
+fmt.Println(user.Name)
+```

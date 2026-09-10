@@ -1,9 +1,11 @@
 package field
 
 import (
+	"fmt"
+
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type ID struct {
@@ -16,12 +18,48 @@ func (f *ID) typeGo() jen.Code {
 	return jen.String()
 }
 
-func (f *ID) typeConv() jen.Code {
-	return f.typeGo()
+func (f *ID) typeConv(ctx Context) jen.Code {
+	return jen.Op("*").Qual(def.PkgModels, "RecordID")
 }
 
 func (f *ID) TypeDatabase() string {
-	return ""
+	if f.source.Type == parser.IDTypeUUID {
+		return "uuid"
+	}
+	return "string"
+}
+
+func (f *ID) SchemaStatements(table, prefix string) []string {
+	// TODO: assert := "string::is::ulid(record::id($value))"
+
+	if f.source.Type == parser.IDTypeString {
+		return []string{
+			fmt.Sprintf(
+				"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
+				prefix+f.NameDatabase(), table, f.TypeDatabase(),
+			),
+		}
+	}
+
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s DEFAULT %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), f.idDefault(),
+		),
+	}
+}
+
+// idDefault returns the SurrealQL expression used to generate the record ID
+// server-side when none is provided on create.
+func (f *ID) idDefault() string {
+	switch f.source.Type {
+	case parser.IDTypeUUID:
+		return "rand::uuid()"
+	case parser.IDTypeRand:
+		return "rand::string(20)"
+	default:
+		return "rand::ulid()"
+	}
 }
 
 func (f *ID) CodeGen() *CodeGen {
@@ -33,32 +71,23 @@ func (f *ID) CodeGen() *CodeGen {
 		sortDefine: f.sortDefine,
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
-
-		convFrom: nil, // the ID field must not be passed as field
-		convTo:   nil, // handled directly, because it is so special ;)
-		fieldDef: f.fieldDef,
 	}
 }
 
 func (f *ID) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, "ID").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "ID").Types(def.TypeModel)
 }
 
-func (f *ID) filterInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLib, "NewID").Types(jen.Id("T")).
-		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())), jen.Lit(ctx.Table.NameDatabase()))
+func (f *ID) filterInit(ctx Context) (jen.Code, jen.Code) {
+	return jen.Qual(ctx.pkgLib(), "NewID").Types(def.TypeModel),
+		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())), jen.Lit(ctx.Table.NameDatabase()))
 }
 
 func (f *ID) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, "BaseSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
 func (f *ID) sortInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLib, "NewBaseSort").Types(jen.Id("T")).
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
 		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
-}
-
-func (f *ID) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase() + ",omitempty"})
 }

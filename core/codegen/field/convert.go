@@ -1,15 +1,18 @@
 package field
 
 import (
-	"errors"
 	"fmt"
-	"github.com/marcbinz/som/core/parser"
+
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Def struct {
-	Nodes   []*NodeTable
-	Edges   []*EdgeTable
-	Objects []*DatabaseObject
+	Nodes     []*NodeTable
+	Edges     []*EdgeTable
+	Views     []*ViewTable
+	Sinks     []*SinkTable
+	Fragments []*FragmentTable
+	Objects   []*DatabaseObject
 }
 
 func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
@@ -18,13 +21,14 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 	for _, node := range source.Nodes {
 		dbNode := &NodeTable{
 			Name:       node.Name,
-			Timestamps: node.Timestamps,
+			Changefeed: node.Changefeed,
+			Source:     node,
 		}
 
 		for _, f := range node.Fields {
 			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
-				return nil, fmt.Errorf("could not convert field: %v", f)
+				return nil, fmt.Errorf("could not convert field a: %v", f)
 			}
 			dbNode.Fields = append(dbNode.Fields, dbField)
 		}
@@ -35,7 +39,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 	for _, edge := range source.Edges {
 		dbEdge := &EdgeTable{
 			Name:       edge.Name,
-			Timestamps: edge.Timestamps,
+			Changefeed: edge.Changefeed,
+			Source:     edge,
 		}
 
 		inField, ok := Convert(source, buildConf, edge.In)
@@ -53,12 +58,78 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		for _, f := range edge.Fields {
 			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
-				return nil, fmt.Errorf("could not convert field: %v", f)
+				return nil, fmt.Errorf("could not convert field b: %v", f)
 			}
 			dbEdge.Fields = append(dbEdge.Fields, dbField)
 		}
 
 		def.Edges = append(def.Edges, dbEdge)
+	}
+
+	for _, view := range source.Views {
+		dbView := &ViewTable{
+			Name: view.Name,
+		}
+
+		for _, f := range view.Fields {
+			dbField, ok := Convert(source, buildConf, f)
+			if !ok {
+				return nil, fmt.Errorf("could not convert view field: %v", f)
+			}
+			dbView.Fields = append(dbView.Fields, dbField)
+		}
+
+		def.Views = append(def.Views, dbView)
+	}
+
+	for _, sink := range source.Sinks {
+		dbSink := &SinkTable{
+			Name: sink.Name,
+		}
+
+		for _, f := range sink.Fields {
+			dbField, ok := Convert(source, buildConf, f)
+			if !ok {
+				return nil, fmt.Errorf("could not convert sink field: %v", f)
+			}
+			dbSink.Fields = append(dbSink.Fields, dbField)
+		}
+
+		def.Sinks = append(def.Sinks, dbSink)
+	}
+
+	for _, fragment := range source.Fragments {
+		parent := findNodeTable(def.Nodes, fragment.Parent)
+		if parent == nil {
+			return nil, fmt.Errorf("fragment %s references unknown node %s", fragment.Name, fragment.Parent)
+		}
+
+		dbFragment := &FragmentTable{
+			Name:   fragment.Name,
+			Parent: parent,
+		}
+
+		for _, f := range fragment.Fields {
+			dbField, ok := Convert(source, buildConf, f)
+			if !ok {
+				return nil, fmt.Errorf("could not convert fragment field: %v", f)
+			}
+			dbFragment.Fields = append(dbFragment.Fields, dbField)
+		}
+
+		def.Fragments = append(def.Fragments, dbFragment)
+	}
+
+	for _, dbNode := range def.Nodes {
+		for _, f := range dbNode.Fields {
+			if cid, ok := f.(*ComplexID); ok && cid.element != nil {
+				def.Objects = append(def.Objects, &DatabaseObject{
+					Name:           cid.element.NameGo(),
+					Fields:         cid.element.GetFields(),
+					IsArrayIndexed: cid.source.Kind == parser.IDTypeArray,
+				})
+			}
+		}
 	}
 
 	for _, str := range source.Structs {
@@ -69,7 +140,7 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		for _, f := range str.Fields {
 			dbField, ok := Convert(source, buildConf, f)
 			if !ok {
-				return nil, errors.New("could not convert field")
+				return nil, fmt.Errorf("could not convert field c: %v", f)
 			}
 			dbObject.Fields = append(dbObject.Fields, dbField)
 		}
@@ -78,6 +149,15 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 	}
 
 	return &def, nil
+}
+
+func findNodeTable(nodes []*NodeTable, name string) *NodeTable {
+	for _, node := range nodes {
+		if node.NameGo() == name {
+			return node
+		}
+	}
+	return nil
 }
 
 func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Field, bool) {
@@ -117,6 +197,14 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldByte:
+		{
+			return &Byte{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldTime:
 		{
 			return &Time{
@@ -125,9 +213,73 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldDuration:
+		{
+			return &Duration{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldMonth:
+		{
+			return &Month{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldWeekday:
+		{
+			return &Weekday{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
 	case *parser.FieldUUID:
 		{
 			return &UUID{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldGeometry:
+		{
+			return &Geometry{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldURL:
+		{
+			return &URL{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldPassword:
+		{
+			return &Password{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldEmail:
+		{
+			return &Email{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldSemVer:
+		{
+			return &SemVer{
 				baseField: base,
 				source:    f,
 			}, true
@@ -160,6 +312,10 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				}
 			}
 
+			if object == nil {
+				return nil, false // TODO: anonymous struct type not supported // return error msg!
+			}
+
 			var fields []Field
 			for _, field := range object.Fields {
 				fld, ok := Convert(source, conf, field)
@@ -172,7 +328,7 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			return &Struct{
 				baseField: base,
 				source:    f,
-				table: &NodeTable{
+				element: &NodeTable{
 					Name:   f.Struct,
 					Fields: fields,
 				}, // TODO: struct not a NodeTable?!
@@ -181,10 +337,11 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 
 	case *parser.FieldNode:
 		{
-			var node *parser.Node
-			for _, elem := range source.Nodes {
-				if elem.Name == f.Node {
-					node = elem
+			// Find the source node to get its properties (like SoftDelete)
+			var sourceNode *parser.Node
+			for _, node := range source.Nodes {
+				if node.Name == f.Node {
+					sourceNode = node
 					break
 				}
 			}
@@ -193,9 +350,9 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				baseField: base,
 				source:    f,
 				table: &NodeTable{
-					Name:       f.Node,
-					Fields:     nil, // TODO: needed? -> node.Fields
-					Timestamps: node.Timestamps,
+					Name:   f.Node,
+					Fields: nil, // TODO: needed? -> node.Fields
+					Source: sourceNode,
 				},
 			}, true
 		}
@@ -233,11 +390,11 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				baseField: base,
 				source:    f,
 				table: &EdgeTable{
-					Name:       f.Edge,
-					In:         in.(*Node),
-					Out:        out.(*Node),
-					Fields:     fields,
-					Timestamps: edge.Timestamps,
+					Name:   f.Edge,
+					In:     in.(*Node),
+					Out:    out.(*Node),
+					Fields: fields,
+					Source: edge,
 				},
 			}, true
 		}
@@ -254,6 +411,37 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				source:    f,
 				element:   element,
 			}, true
+		}
+
+	case *parser.FieldVersion:
+		{
+			return &Version{
+				baseField: base,
+				source:    f,
+			}, true
+		}
+
+	case *parser.FieldComplexID:
+		{
+			var fields []Field
+			var parts []idPart
+			for _, sf := range f.Fields {
+				fld, ok := Convert(source, conf, sf.Field)
+				if !ok {
+					continue
+				}
+				parts = append(parts, idPart{dbName: sf.DBName, dbType: idPartType(fld)})
+				if _, ok := sf.Field.(*parser.FieldNode); ok {
+					continue
+				}
+				fields = append(fields, fld)
+			}
+
+			cid := &ComplexID{baseField: base, source: f, parts: parts}
+			if len(fields) > 0 {
+				cid.element = &NodeTable{Name: f.StructName, Fields: fields}
+			}
+			return cid, true
 		}
 	}
 

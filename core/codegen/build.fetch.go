@@ -1,33 +1,23 @@
 package codegen
 
 import (
-	"fmt"
-	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/field"
-	"os"
 	"path"
+
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/util/fs"
 )
 
 type fetchBuilder struct {
 	*baseBuilder
 }
 
-func newFetchBuilder(input *input, basePath, basePkg, pkgName string) *fetchBuilder {
+func newFetchBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *fetchBuilder {
 	return &fetchBuilder{
-		baseBuilder: newBaseBuilder(input, basePath, basePkg, pkgName),
+		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
 	}
 }
 
 func (b *fetchBuilder) build() error {
-	if err := b.createDir(); err != nil {
-		return err
-	}
-
-	// Generate the base file.
-	if err := b.buildBaseFile(); err != nil {
-		return err
-	}
-
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
 			return err
@@ -37,68 +27,89 @@ func (b *fetchBuilder) build() error {
 	return nil
 }
 
-func (b *fetchBuilder) buildBaseFile() error {
-	content := `
+// fetchRelation describes a relation of a node that can be fetched.
+type fetchRelation struct {
+	NameGo      string
+	NameDB      string
+	TargetLower string
 
-package with
+	// Kind names the relation within the doc comment.
+	Kind string
 
-// Fetch_ has a suffix of "_" to prevent clashes with node names.
-type Fetch_[T any] interface {
-	fetch(T)
-}
-
-func keyed[S ~string](base S, key string) string {
-	if base == "" {
-		return key
-	}
-	return string(base) + "." + key
-}
-`
-
-	data := []byte(codegenComment + content)
-
-	err := os.WriteFile(path.Join(b.path(), "fetch.go"), data, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to write base file: %v", err)
-	}
-
-	return nil
+	// SoftDelete marks relations pointing to a soft-deleted table, for which
+	// the fetch behaviour is documented explicitly.
+	SoftDelete bool
 }
 
 func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
-	f := jen.NewFile(b.pkgName)
+	tmpl := `
+		var {{.NameGo}} = {{.NameGoLower}}[model.{{.NameGo}}]("")
 
-	f.PackageComment(codegenComment)
+		type {{.NameGoLower}}[M any] string
 
-	f.Line()
-	f.Var().Id(node.Name).Op("=").Id(node.NameGoLower()).Types(b.SourceQual(node.NameGo())).Call(jen.Lit(""))
+		func (n {{.NameGoLower}}[M]) fetch(M) {}
+		{{range $rel := .Relations}}
+		{{- if $rel.SoftDelete}}
+		// {{$rel.NameGo}} returns a fetch accessor for the {{$rel.NameDB}} {{$rel.Kind}}.
+		// Note: Soft-delete filtering does not apply to fetched relations.
+		// All related records are returned regardless of their soft-delete status.
+		{{- end}}
+		func (n {{$.NameGoLower}}[M]) {{$rel.NameGo}}() {{$rel.TargetLower}}[M] {
+			return {{$rel.TargetLower}}[M](keyed(n, "{{$rel.NameDB}}"))
+		}
+		{{end -}}
+	`
 
-	f.Line()
-	f.Type().Id(node.NameGoLower()).
-		Types(jen.Id("T").Any()).
-		String()
+	data := map[string]any{
+		"NameGo":      node.NameGo(),
+		"NameGoLower": node.NameGoLower(),
+		"Relations":   fetchRelations(node),
+	}
 
-	f.Line()
-	f.Func().
-		Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
-		Id("fetch").Params(jen.Id("T")).Block()
+	file := newGoFile(b.pkgName,
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
+
+	return file.render(
+		b.fs.Writer(path.Join(b.path(), node.FileName())),
+		"fetch", tmpl, data,
+	)
+}
+
+// fetchRelations returns the node and node slice fields of the given node,
+// which are the fields a fetch can be applied to.
+func fetchRelations(node *field.NodeTable) []fetchRelation {
+	var relations []fetchRelation
 
 	for _, fld := range node.GetFields() {
-		if nodeField, ok := fld.(*field.Node); ok {
-			f.Line()
-			f.Func().
-				Params(jen.Id("n").Id(node.NameGoLower()).Types(jen.Id("T"))).
-				Id(nodeField.NameGo()).Params().
-				Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
-				Block(
-					jen.Return(jen.Id(nodeField.Table().NameGoLower()).Types(jen.Id("T")).
-						Params(jen.Id("keyed").Call(jen.Id("n"), jen.Lit(nodeField.NameDatabase())))))
+		var (
+			target *field.NodeTable
+			kind   string
+		)
+
+		switch fld := fld.(type) {
+		case *field.Node:
+			target, kind = fld.Table(), "relation"
+
+		case *field.Slice:
+			element, ok := fld.Element().(*field.Node)
+			if !ok {
+				continue
+			}
+			target, kind = element.Table(), "slice relation"
+
+		default:
+			continue
 		}
+
+		relations = append(relations, fetchRelation{
+			NameGo:      fld.NameGo(),
+			NameDB:      fld.NameDatabase(),
+			TargetLower: target.NameGoLower(),
+			Kind:        kind,
+			SoftDelete:  target.Source != nil && target.Source.SoftDelete,
+		})
 	}
 
-	if err := f.Save(path.Join(b.path(), node.FileName())); err != nil {
-		return err
-	}
-
-	return nil
+	return relations
 }

@@ -1,6 +1,7 @@
 package field
 
 import (
+	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
 )
 
@@ -9,7 +10,8 @@ type EdgeTable struct {
 	In         *Node
 	Out        *Node
 	Fields     []Field
-	Timestamps bool
+	Changefeed string
+	Source     *parser.Edge
 }
 
 func (t *EdgeTable) NameGo() string {
@@ -32,6 +34,6 @@ func (t *EdgeTable) GetFields() []Field {
 	return t.Fields
 }
 
-func (t *EdgeTable) HasTimestamps() bool {
-	return t.Timestamps
+func (t *EdgeTable) HasChangefeed() bool {
+	return t.Changefeed != ""
 }

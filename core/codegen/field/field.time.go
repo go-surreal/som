@@ -1,9 +1,12 @@
 package field
 
 import (
+	"fmt"
+	"path"
+
 	"github.com/dave/jennifer/jen"
-	"github.com/marcbinz/som/core/codegen/def"
-	"github.com/marcbinz/som/core/parser"
+	"github.com/go-surreal/som/core/codegen/def"
+	"github.com/go-surreal/som/core/parser"
 )
 
 type Time struct {
@@ -16,15 +19,37 @@ func (f *Time) typeGo() jen.Code {
 	return jen.Add(f.ptr()).Qual("time", "Time")
 }
 
-func (f *Time) typeConv() jen.Code {
-	return f.typeGo()
+func (f *Time) typeConv(ctx Context) jen.Code {
+	return jen.Add(f.ptr()).Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime")
 }
 
 func (f *Time) TypeDatabase() string {
-	if f.source.Pointer() {
-		return "datetime"
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt || f.source.IsDeletedAt || f.source.IsExpiresAt {
+		return "option<datetime>"
 	}
-	return "datetime ASSERT $value != NULL"
+
+	return f.optionWrap("datetime")
+}
+
+func (f *Time) SchemaStatements(table, prefix string) []string {
+	var extend string
+
+	if f.source.IsCreatedAt {
+		extend = "VALUE $before OR time::now() READONLY"
+	} else if f.source.IsUpdatedAt {
+		extend = "VALUE time::now()"
+	} else if f.source.IsDeletedAt {
+		extend = "DEFAULT NONE"
+	} else if f.source.IsExpiresAt {
+		extend = fmt.Sprintf("VALUE $before OR (time::now() + %s) READONLY", f.source.ExpiresIn)
+	}
+
+	return []string{
+		fmt.Sprintf(
+			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s %s;",
+			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
+		),
+	}
 }
 
 func (f *Time) CodeGen() *CodeGen {
@@ -37,49 +62,145 @@ func (f *Time) CodeGen() *CodeGen {
 		sortInit:   f.sortInit,
 		sortFunc:   nil,
 
-		convFrom: f.convFrom,
-		convTo:   f.convTo,
-		fieldDef: f.fieldDef,
+		fieldDefine: f.fieldDefine,
+		fieldInit:   f.fieldInit,
+
+		cborMarshal:   f.cborMarshal,
+		cborUnmarshal: f.cborUnmarshal,
 	}
 }
 
 func (f *Time) filterDefine(ctx Context) jen.Code {
 	filter := "Time"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, filter).Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
 }
 
-func (f *Time) filterInit(ctx Context) jen.Code {
+func (f *Time) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewTime"
 	if f.source.Pointer() {
-		filter += "Ptr"
+		filter += fnSuffixPtr
 	}
 
-	return jen.Qual(def.PkgLib, filter).Types(jen.Id("T")).
-		Params(jen.Qual(def.PkgLib, "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+		jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 }
 
 func (f *Time) sortDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(def.PkgLib, "BaseSort").Types(jen.Id("T"))
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "BaseSort").Types(def.TypeModel)
 }
 
 func (f *Time) sortInit(ctx Context) jen.Code {
-	return jen.Qual(def.PkgLib, "NewBaseSort").Types(jen.Id("T")).
-		Params(jen.Id("keyed").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
+	return jen.Qual(ctx.pkgLib(), "NewBaseSort").Types(def.TypeModel).
+		Params(ctx.sortKeyCode(f.NameDatabase()))
 }
 
-func (f *Time) convFrom(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Time) fieldDefine(ctx Context) jen.Code {
+	return jen.Id(f.NameGo()).Qual(ctx.pkgDistinct(), "Field").Types(def.TypeModel, jen.Qual("time", "Time"))
 }
 
-func (f *Time) convTo(ctx Context) jen.Code {
-	return jen.Id("data").Dot(f.NameGo())
+func (f *Time) fieldInit(ctx Context) jen.Code {
+	factory := "NewTimeField"
+	if f.source.Pointer() {
+		factory = "NewTimePtrField"
+	}
+	return jen.Qual(ctx.pkgDistinct(), factory).Types(def.TypeModel).
+		Call(ctx.sortKeyCode(f.NameDatabase()))
 }
 
-func (f *Time) fieldDef(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Add(f.typeConv()).
-		Tag(map[string]string{"json": f.NameDatabase()})
+func (f *Time) cborMarshal(ctx Context) jen.Code {
+	// Timestamp fields use getter methods from embedded Timestamps.
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		return jen.If(jen.Op("!").Id("c").Dot(f.NameGo()).Call().Dot("IsZero").Call()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()).Call(),
+			),
+		)
+	}
+
+	// SoftDelete field handling - use getter method
+	if f.source.IsDeletedAt {
+		return jen.If(jen.Id("c").Dot("SoftDelete").Dot("IsDeleted").Call()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Id("c").Dot("SoftDelete").Dot("DeletedAt").Call(),
+			),
+		)
+	}
+
+	// Expiry field: expires_at is managed by the database (VALUE clause). Only send
+	// it back when already set, mirroring created_at behaviour.
+	if f.source.IsExpiresAt {
+		return jen.If(jen.Op("!").Id("c").Dot("Expiry").Dot("ExpiresAt").Call().Dot("IsZero").Call()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Id("c").Dot("Expiry").Dot("ExpiresAt").Call(),
+			),
+		)
+	}
+
+	// Using custom types.DateTime with MarshalCBOR method.
+	if f.source.Pointer() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
+			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+				jen.Id("Time").Op(":").Op("*").Id("c").Dot(f.NameGo()),
+			),
+		)
+	}
+
+	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Op("&").Qual(path.Join(ctx.TargetPkg, def.PkgTypes), "DateTime").Values(
+		jen.Id("Time").Op(":").Id("c").Dot(f.NameGo()),
+	)
+}
+
+func (f *Time) cborUnmarshal(ctx Context) jen.Code {
+	// Timestamp fields use package-level setter functions to keep methods private.
+	if f.source.IsCreatedAt || f.source.IsUpdatedAt {
+		setter := "SetCreatedAt"
+		if f.source.IsUpdatedAt {
+			setter = "SetUpdatedAt"
+		}
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Qual(ctx.pkgInternal(), setter).Call(jen.Op("&").Id("c").Dot("Timestamps"), jen.Id("tm")),
+		)
+	}
+
+	// SoftDelete field handling - use package-level setter
+	if f.source.IsDeletedAt {
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Qual(ctx.pkgInternal(), "SetDeletedAt").Call(jen.Op("&").Id("c").Dot("SoftDelete"), jen.Id("tm")),
+		)
+	}
+
+	// Expiry field: populate expires_at via package-level setter.
+	if f.source.IsExpiresAt {
+		return jen.If(
+			jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+			jen.Id("ok"),
+		).Block(
+			jen.Id("tm").Op(",").Id("_").Op(":=").Qual(ctx.pkgCBOR(), "UnmarshalDateTime").Call(jen.Id("raw")),
+			jen.Qual(ctx.pkgInternal(), "SetExpiresAt").Call(jen.Op("&").Id("c").Dot("Expiry"), jen.Id("tm")),
+		)
+	}
+
+	helper := "UnmarshalDateTime"
+	if f.source.Pointer() {
+		helper = "UnmarshalDateTimePtr"
+	}
+
+	return jen.If(
+		jen.Id("raw").Op(",").Id("ok").Op(":=").Id("rawMap").Index(jen.Lit(f.NameDatabase())),
+		jen.Id("ok"),
+	).Block(
+		jen.Id("c").Dot(f.NameGo()).Op(",").Id("_").Op("=").Qual(ctx.pkgCBOR(), helper).Call(jen.Id("raw")),
+	)
 }

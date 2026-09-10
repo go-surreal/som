@@ -1,8 +1,10 @@
 package codegen
 
 import (
-	"os"
 	"path"
+
+	"github.com/go-surreal/som/core/codegen/field"
+	"github.com/go-surreal/som/core/util/fs"
 )
 
 type builder interface {
@@ -12,8 +14,8 @@ type builder interface {
 type baseBuilder struct {
 	*input
 
-	// basePath holds the base path for all the generated code.
-	basePath string
+	// fs is the in-memory file system all generated file should be written to.
+	fs *fs.FS
 
 	// basePkg holds the base package path for all the generated code.
 	basePkg string
@@ -22,24 +24,50 @@ type baseBuilder struct {
 	pkgName string
 }
 
-func newBaseBuilder(input *input, basePath, basePkg, pkgName string) *baseBuilder {
+func newBaseBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *baseBuilder {
 	return &baseBuilder{
-		input:    input,
-		basePath: basePath,
-		basePkg:  basePkg,
-		pkgName:  pkgName,
+		input:   input,
+		fs:      fs,
+		basePkg: basePkg,
+		pkgName: pkgName,
 	}
 }
 
+// TODO: rename to pkg()
 func (b *baseBuilder) path() string {
-	return path.Join(b.basePath, b.pkgName)
+	return b.pkgName
 }
 
-func (b *baseBuilder) subPkg(pkg string) string {
-	return path.Join(b.basePkg, pkg)
+func (b *baseBuilder) relativePkgPath(pkg ...string) string {
+	return path.Join(append([]string{b.basePkg}, pkg...)...)
 }
 
-// createDir creates the directory for the generated files.
-func (b *baseBuilder) createDir() error {
-	return os.MkdirAll(b.path(), os.ModePerm)
+// definedFields returns the fields an accessor struct is built from. In
+// contrast to GetFields, these include the fields of the embedded som types.
+func definedFields(elem field.Element) []field.Field {
+	switch elem := elem.(type) {
+	case *field.NodeTable:
+		return elem.Fields
+
+	case *field.DatabaseObject:
+		return elem.Fields
+
+	default:
+		return elem.GetFields()
+	}
+}
+
+func fieldContextFor(sourcePkg, targetPkg string, elem field.Element, index int) field.Context {
+	ctx := field.Context{
+		SourcePkg: sourcePkg,
+		TargetPkg: targetPkg,
+		Table:     elem,
+	}
+
+	// The fields of an array based complex ID are addressed by their position.
+	if object, ok := elem.(*field.DatabaseObject); ok && object.IsArrayIndexed {
+		ctx.ArrayIndex = &index
+	}
+
+	return ctx
 }

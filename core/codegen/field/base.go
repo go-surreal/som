@@ -1,9 +1,16 @@
 package field
 
 import (
+	"strings"
+
 	"github.com/dave/jennifer/jen"
+	"github.com/go-surreal/som/core/parser"
 	"github.com/iancoleman/strcase"
-	"github.com/marcbinz/som/core/parser"
+)
+
+const (
+	convTag     = "cbor"
+	fnSuffixPtr = "Ptr"
 )
 
 // type Edge struct {
@@ -21,10 +28,16 @@ type Field interface {
 	NameDatabase() string
 
 	typeGo() jen.Code
-	typeConv() jen.Code
+	typeConv(ctx Context) jen.Code
 	TypeDatabase() string
 
+	SchemaStatements(table string, prefix string) []string
+
 	CodeGen() *CodeGen
+
+	Indexes() []parser.IndexInfo
+	SearchInfo() *parser.SearchInfo
+	NestedFields() []Field
 }
 
 type Named interface {
@@ -38,7 +51,6 @@ type Element interface {
 
 	FileName() string
 	GetFields() []Field
-	HasTimestamps() bool
 }
 
 type Table interface {
@@ -68,6 +80,7 @@ func tableEqual(t1, t2 Table) bool {
 
 type BuildConfig struct {
 	SourcePkg      string
+	TargetPkg      string
 	ToDatabaseName func(base string) string
 }
 
@@ -81,7 +94,17 @@ func (f *baseField) ptr() jen.Code {
 	if f.source.Pointer() {
 		return jen.Op("*")
 	}
+
 	return jen.Empty()
+}
+
+// optionWrap wraps the given value in an option type if the field is a pointer.
+func (f *baseField) optionWrap(val string) string {
+	if f.source.Pointer() {
+		return "option<" + val + ">"
+	}
+
+	return val
 }
 
 func (f *baseField) NameGo() string {
@@ -89,9 +112,24 @@ func (f *baseField) NameGo() string {
 }
 
 func (f *baseField) NameGoLower() string {
-	return strcase.ToLowerCamel(f.NameGo())
+	return strings.ToLower(f.source.Name())
 }
 
 func (f *baseField) NameDatabase() string {
+	if dbName := f.source.DBName(); dbName != "" {
+		return dbName
+	}
 	return f.ToDatabaseName(f.source.Name())
+}
+
+func (f *baseField) Indexes() []parser.IndexInfo {
+	return f.source.Indexes()
+}
+
+func (f *baseField) SearchInfo() *parser.SearchInfo {
+	return f.source.Search()
+}
+
+func (f *baseField) NestedFields() []Field {
+	return nil
 }

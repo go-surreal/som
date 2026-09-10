@@ -1,10 +1,27 @@
-# GolangCI-Lint Configuration
-
-issues:
-  exclude-rules:
-    - path: examples/basic/gen
-      linters:
-        - unused
-    - path: examples/movie/gen
-      linters:
-        - unused
+version: "2"
+linters:
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - unused
+        path: tests/basic/gen
+      - linters:
+          - unused
+        path: tests/movie/gen
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

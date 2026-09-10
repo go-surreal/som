@@ -14,31 +14,64 @@ func (fn CodeGenFunc) Exec(ctx Context) jen.Code {
 	return fn(ctx)
 }
 
+type CodeGenTuple func(ctx Context) (jen.Code, jen.Code)
+
+func (fn CodeGenTuple) Exec(ctx Context) jen.Code {
+	if fn == nil {
+		return nil
+	}
+
+	a, b := fn(ctx)
+
+	if a == nil || b == nil {
+		return nil
+	}
+
+	return jen.Add(a).Add(b)
+}
+
 type CodeGen struct {
 	filterDefine CodeGenFunc
-	filterInit   CodeGenFunc
+	filterInit   CodeGenTuple
 	filterFunc   CodeGenFunc
+	// filterExtra generates additional code (types, methods) without disabling filterDefine/filterInit.
+	// This is used for wrapper types that need both struct fields AND extra type definitions.
+	filterExtra CodeGenFunc
 
 	sortDefine CodeGenFunc
 	sortInit   CodeGenFunc
 	sortFunc   CodeGenFunc
 
-	convFrom CodeGenFunc
-	convTo   CodeGenFunc
+	fieldDefine CodeGenFunc
+	fieldInit   CodeGenFunc
+	fieldFunc   CodeGenFunc
 
-	fieldDef CodeGenFunc
+	cborMarshal   CodeGenFunc
+	cborUnmarshal CodeGenFunc
 }
 
 func (g *CodeGen) FilterDefine(ctx Context) jen.Code {
+	if g.filterFunc.Exec(ctx) != nil {
+		return nil
+	}
+
 	return g.filterDefine.Exec(ctx)
 }
 
 func (g *CodeGen) FilterInit(ctx Context) jen.Code {
+	if g.filterFunc.Exec(ctx) != nil {
+		return nil
+	}
+
 	return g.filterInit.Exec(ctx)
 }
 
 func (g *CodeGen) FilterFunc(ctx Context) jen.Code {
 	return g.filterFunc.Exec(ctx)
+}
+
+func (g *CodeGen) FilterExtra(ctx Context) jen.Code {
+	return g.filterExtra.Exec(ctx)
 }
 
 func (g *CodeGen) SortDefine(ctx Context) jen.Code {
@@ -53,14 +86,22 @@ func (g *CodeGen) SortFunc(ctx Context) jen.Code {
 	return g.sortFunc.Exec(ctx)
 }
 
-func (g *CodeGen) ConvFrom(ctx Context) jen.Code {
-	return g.convFrom.Exec(ctx)
+func (g *CodeGen) FieldDefine(ctx Context) jen.Code {
+	return g.fieldDefine.Exec(ctx)
 }
 
-func (g *CodeGen) ConvTo(ctx Context) jen.Code {
-	return g.convTo.Exec(ctx)
+func (g *CodeGen) FieldInit(ctx Context) jen.Code {
+	return g.fieldInit.Exec(ctx)
 }
 
-func (g *CodeGen) FieldDef(ctx Context) jen.Code {
-	return g.fieldDef.Exec(ctx)
+func (g *CodeGen) FieldFunc(ctx Context) jen.Code {
+	return g.fieldFunc.Exec(ctx)
+}
+
+func (g *CodeGen) CBORMarshal(ctx Context) jen.Code {
+	return g.cborMarshal.Exec(ctx)
+}
+
+func (g *CodeGen) CBORUnmarshal(ctx Context) jen.Code {
+	return g.cborUnmarshal.Exec(ctx)
 }

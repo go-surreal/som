@@ -1,0 +1,251 @@
+# Architecture
+
+This page describes how SOM works internally.
+
+## Generation Pipeline
+
+SOM uses a code generation approach to provide type-safe database access. The generation workflow:
+
+```
+Input Models (Go structs)
+        │
+        ▼
+┌───────────────────┐
+│      Parser       │  Analyzes Go source using gotype
+│   (core/parser)   │  Identifies: Nodes, Edges, Structs, Enums
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│  Code Generator   │  Uses jennifer for Go code generation
+│  (core/codegen)   │  Produces type-safe builders
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│   Output Files    │  Complete database access layer
+│    (gen/som/)     │  Ready to use in your application
+└───────────────────┘
+```
+
+### 1. Parsing Phase
+
+The parser analyzes your Go source files to identify:
+
+- **Nodes**: Structs embedding `som.Node[T]` (where T is an ID type)
+- **Edges**: Structs embedding `som.Edge`
+- **Structs**: Regular structs used as fields (for nested types)
+- **Enums**: Types declared as `som.Enum` (e.g. `type Role som.Enum`)
+- **Views / Sinks**: Structs embedding `som.View` or `som.Sink`
+- **Definitions**: A `//go:build som` file in the module root providing analyzers, search
+  configurations and view projections
+- **Fields**: All fields with their types, tags, and constraints
+
+### 2. Code Generation Phase
+
+Using the [jennifer](https://github.com/dave/jennifer) library, SOM generates idiomatic Go code:
+
+- Static library code (filters, builders, utilities)
+- Per-model repositories and query builders
+- Type converters for database serialization
+- Filter and sort definitions for each field type
+
+### 3. Output Phase
+
+Generated files are written to the output directory with their own `go.mod`, creating a self-contained package.
+
+## Generated Code Structure
+
+```
+gen/som/
+├── som.base.go           # ID types, Node[T], Edge, View, Sink, Timestamps, errors
+├── cache.go              # Context cache options
+├── transaction.go        # Transaction helpers
+│
+├── repo/                 # Client and repository implementations
+│   ├── som.client.go     # NewClient, Config, connection handling
+│   ├── som.interfaces.go # Client and repository interfaces
+│   ├── som.schema.go     # ApplySchema
+│   ├── schema/           # Generated schema.surql
+│   ├── node.{model}.go   # Per-model: Create, Read, Update, Delete, Insert, Query
+│   ├── view.{model}.go   # Read-only view repositories
+│   └── sink.{model}.go   # Write-only sink repositories
+│
+├── query/                # Query builders
+│   ├── builder.go        # Generic builder with all methods
+│   ├── query.go          # Query execution, async, live
+│   └── node.{model}.go   # Per-model query factory
+│
+├── filter/               # Filter definitions
+│   ├── filter.go          # Initialization
+│   ├── node.{model}.go   # Per-model field filters
+│   └── object.{struct}.go # Nested struct filters
+│
+├── by/                   # Sort definitions
+│   └── node.{model}.go   # Per-model sortable fields
+│
+├── with/                 # Fetch/eager loading
+│   └── node.{model}.go   # Per-model fetchable relations
+│
+├── field/                # Field references for query.Distinct
+│   └── node.{model}.go   # Per-model distinct-capable fields
+│
+├── index/                # Index handles (Rebuild)
+│   └── node.{model}.go   # Per-model indexes
+│
+├── define/               # Analyzer, search and view definition builders
+│   └── aggregate/        # Aggregate functions for view projections
+│
+├── conv/                 # Type converters
+│   ├── node.{model}.go   # Model to/from database format
+│   └── edge.{edge}.go    # Edge conversions
+│
+├── relate/               # Edge creation
+│   └── edge.{edge}.go    # Per-edge RELATE builders
+│
+├── internal/
+│   ├── lib/              # Filter and sort implementation
+│   ├── cbor/             # CBOR marshaling utilities
+│   └── types/            # DateTime, Duration, UUID wrappers
+│
+└── constant/             # Math constants (PI, E, etc.)
+```
+
+## Key Components
+
+### Nodes
+
+Nodes represent database records. Any struct embedding `som.Node[T]` becomes a SurrealDB table:
+
+```go
+type User struct {
+    som.Node[som.ULID]  // Provides ID field (ULID type)
+    som.Timestamps      // Optional: CreatedAt, UpdatedAt
+    Name string
+}
+// Creates table: user
+```
+
+The type parameter `T` determines the ID format (`som.ULID`, `som.UUID`, `som.Rand`, `som.String`, or a custom struct with `som.ArrayID`/`som.ObjectID`).
+
+### Edges
+
+Edges represent graph relationships between nodes:
+
+```go
+type Follows struct {
+    som.Edge                 // Provides the edge ID
+
+    From  User `som:"in"`    // Source node
+    To    User `som:"out"`   // Target node
+
+    Since time.Time          // Edge metadata
+}
+// Creates edge table: follows
+// RELATE user:a->follows->user:b
+```
+
+### Repositories
+
+Generated for each model with full CRUD operations:
+
+```go
+type UserRepo interface {
+    Create(ctx, *User) error
+    CreateWithID(ctx, id string, *User) error
+    Insert(ctx, []*User) error
+    Read(ctx, string) (*User, bool, error)
+    Update(ctx, *User) error
+    Delete(ctx, *User) error
+    Refresh(ctx, *User) error
+    Relate() *relate.User
+    Index() *index.User
+    Query() Builder[User]
+}
+```
+
+### Query Builder
+
+Fluent API with method chaining:
+
+```go
+Builder[M]
+├── Where(filters...)     // WHERE conditions (keeps Live available)
+├── Fetch(relations...)   // FETCH (keeps Live available)
+├── WithDeleted()         // Include soft-deleted (keeps Live available)
+│
+├── WithExpired()         // Include expired records (keeps Live available)
+│
+├── Order(sorts...)       // ORDER BY (returns BuilderNoLive)
+├── OrderRandom()         // ORDER RAND() (returns BuilderNoLive)
+├── Start(n)              // START (returns BuilderNoLive)
+├── Limit(n)              // LIMIT (returns BuilderNoLive)
+├── Timeout(duration)     // Execution timeout (returns BuilderNoLive)
+├── Parallel(bool)        // Parallel execution (returns BuilderNoLive)
+├── TempFiles(bool)       // Disk-based processing (returns BuilderNoLive)
+├── Range(from, to)       // Range query (returns BuilderNoLive)
+│
+├── All(ctx)              // Get all results
+├── First(ctx)            // Get first result (or ErrNotFound)
+├── Count(ctx)            // Count results
+├── Exists(ctx)           // Check existence
+├── Live(ctx)             // Stream changes (only on Builder, not BuilderNoLive)
+├── LiveCount(ctx)        // Live count of matches
+├── Paginate()            // Cursor pagination builder
+│
+├── Iterate(ctx, batch)   // Stream records in batches
+├── IterateID(ctx, batch) // Stream record IDs
+│
+└── *Async variants       // AllAsync, FirstAsync, etc.
+```
+
+> **Note**: Methods like `Order`, `Limit`, `Start`, etc. return `BuilderNoLive`, which does not expose `Live()`. This prevents constructing invalid live queries with ordering or pagination.
+
+### Type Converters
+
+Handle transformation between Go types and SurrealDB format:
+
+```go
+// Generated in conv/
+func ToUser(model *model.User) *convUser { ... }
+func FromUser(conv *convUser) *model.User { ... }
+```
+
+### Load State
+
+Every node, edge and view carries its load state in an embedded `internal.LoadMarker`, which the
+model exposes read-only through [`Marker()`](../api_reference/02_repository.md#model-markers) and
+`IsPartial()`. It holds two bit sets:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `flags` | `Marker` (`uint32`) | how the instance was loaded: from the database, partially, deleted, from a cache |
+| `fetched` | `Relations` (`uint64`) | which relation fields hold no unresolved links |
+
+The `fetched` bits are what lets [`Resolve`](../api_reference/02_repository.md#resolve) skip
+relations that are already loaded. They are assigned per model by the generated code, one bit per
+relation field, and set while decoding a record — not by the caller and not by the query builder.
+That way every read path produces the same state, and a nested path is answered by walking from one
+instance to the next rather than by storing paths on the model.
+
+Two consequences worth knowing:
+
+- **A model may have at most 64 relations.** Codegen fails with an error beyond that instead of
+  wrapping around, which would make `Resolve` skip a relation that was never loaded. Raising the
+  limit means widening `Relations` and `maxRelations` in `core/codegen/build.conv.go`.
+- **`LoadMarker` is 16 bytes, not 12.** A `uint32` next to a `uint64` is padded to the wider
+  alignment. Narrowing `Relations` to `uint32` would make it 8 bytes, but cap models at 32
+  relations. The padding is preferred: 8 bytes per instance is negligible next to the model itself,
+  while a cap that models can realistically hit is not.
+
+## Database Communication
+
+### CBOR Protocol
+
+SOM uses CBOR (Concise Binary Object Representation) for SurrealDB communication. Custom types use CBOR tags:
+
+| Type | CBOR Tag | Format |
+|------|----------|--------|
+| DateTime | 12 | `[unix_seconds, nanoseconds]` |
+| Duration | 14 | Nanoseconds as int64 |
+| UUID | 37 | 16-byte binary |

@@ -1,3 +1,5 @@
 docs linguist-documentation
 
-examples/basic/gen linguist-generated
+tests/basic/gen linguist-generated
+tests/movie/gen linguist-generated
+tests/testing/gen linguist-generated

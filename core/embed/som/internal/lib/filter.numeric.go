@@ -1,0 +1,236 @@
+//go:build embed
+
+package lib
+
+type AnyNumeric[M any] interface {
+	field[M]
+	anyNumeric()
+}
+
+type Numeric[M, T any] struct {
+	*Base[M, T, AnyNumeric[M], *Slice[M, T, *Numeric[M, T]]]
+	*Comparable[M, T, AnyNumeric[M]]
+}
+
+func NewNumeric[M, T any](key Key[M]) *Numeric[M, T] {
+	return &Numeric[M, T]{
+		Base:       NewBase[M, T, AnyNumeric[M], *Slice[M, T, *Numeric[M, T]]](key),
+		Comparable: NewComparable[M, T, AnyNumeric[M]](key),
+	}
+}
+
+type NumericPtr[M, T any] struct {
+	*Numeric[M, T]
+	*Nillable[M]
+}
+
+func NewNumericPtr[M, T any](key Key[M]) *NumericPtr[M, T] {
+	return &NumericPtr[M, T]{
+		Numeric:  NewNumeric[M, T](key),
+		Nillable: NewNillable[M](key),
+	}
+}
+
+func (n *Numeric[M, T]) key() Key[M] {
+	return n.Base.key()
+}
+
+func (n *Numeric[M, T]) anyNumeric() {}
+
+//
+// -- ARITHMETIC
+//
+
+func (n *Numeric[M, T]) Add(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpAdd, val))
+}
+
+func (n *Numeric[M, T]) Sub(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpSub, val))
+}
+
+func (n *Numeric[M, T]) Mul(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpMul, val))
+}
+
+func (n *Numeric[M, T]) Div(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpDiv, val))
+}
+
+func (n *Numeric[M, T]) Raise(val float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.calc(OpRaise, val))
+}
+
+//
+// -- MATH
+//
+
+//func (n *Numeric[M, M]) METHODS(min, max M) Filter[M] {
+//	// https://surrealdb.com/docs/surrealdb/surrealql/functions/database/math
+//}
+
+func (n *Numeric[M, T]) Abs() *Numeric[M, T] {
+	return NewNumeric[M, T](n.Base.fn("math::abs"))
+}
+
+func (n *Numeric[M, T]) Acos() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::acos"))
+}
+
+func (n *Numeric[M, T]) Acot() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::acot"))
+}
+
+func (n *Numeric[M, T]) Asin() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::asin"))
+}
+
+func (n *Numeric[M, T]) Atan() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::atan"))
+}
+
+func (n *Numeric[M, T]) Ceil() *Numeric[M, T] {
+	return NewNumeric[M, T](n.Base.fn("math::ceil"))
+}
+
+func (n *Numeric[M, T]) Clamp(min, max float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::clamp", min, max))
+}
+
+func (n *Numeric[M, T]) Cos() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::cos"))
+}
+
+func (n *Numeric[M, T]) Cot() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::cot"))
+}
+
+func (n *Numeric[M, T]) Deg2Rad() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::deg2rad"))
+}
+
+func (n *Numeric[M, T]) Fixed(places int) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::fixed", places))
+}
+
+func (n *Numeric[M, T]) Floor() *Numeric[M, T] {
+	return NewNumeric[M, T](n.Base.fn("math::floor"))
+}
+
+func (n *Numeric[M, T]) Lerp(a, b, t float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::lerp", a, b, t))
+}
+
+func (n *Numeric[M, T]) LerpAngle(a, b, t float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::lerpangle", a, b, t))
+}
+
+func (n *Numeric[M, T]) Ln() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::ln"))
+}
+
+func (n *Numeric[M, T]) Log(base float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::log", base))
+}
+
+func (n *Numeric[M, T]) Log10() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::log10"))
+}
+
+func (n *Numeric[M, T]) Log2() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::log2"))
+}
+
+func (n *Numeric[M, T]) Pow(exp float64) *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::pow", exp))
+}
+
+func (n *Numeric[M, T]) Rad2Deg() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::rad2deg"))
+}
+
+func (n *Numeric[M, T]) Round() *Numeric[M, T] {
+	return NewNumeric[M, T](n.Base.fn("math::round"))
+}
+
+func (n *Numeric[M, T]) Sign() *Numeric[M, int] {
+	return NewNumeric[M, int](n.Base.fn("math::sign"))
+}
+
+func (n *Numeric[M, T]) Sin() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::sin"))
+}
+
+// Sqrt returns the square root of the number.
+// Note: If a negative number is used, the query will fail.
+// Consider adding a precondition check with "field >= 0 AND".
+func (n *Numeric[M, T]) Sqrt() *Float[M, float64] {
+	// TODO:
+	// Consider implementing a precondition check system that automatically prepends "field >= 0 AND"
+	// before operations requiring non-negative values, using short-circuit evaluation.
+	return NewFloat[M, float64](n.Base.fn("math::sqrt"))
+}
+
+func (n *Numeric[M, T]) Tan() *Float[M, float64] {
+	return NewFloat[M, float64](n.Base.fn("math::tan"))
+}
+
+//
+// -- CONVERT DURATION
+//
+
+func (n *Numeric[M, T]) AsDurationDays() *Duration[M] {
+	return NewDuration[M](n.Base.fn("duration::from_days"))
+}
+
+func (n *Numeric[M, T]) AsDurationHours() *Duration[M] {
+	return NewDuration[M](n.Base.fn("duration::from_hours"))
+}
+
+func (n *Numeric[M, T]) AsDurationMicros() *Duration[M] {
+	return NewDuration[M](n.Base.fn("duration::from_micros"))
+}
+
+func (n *Numeric[M, T]) AsDurationMillis() *Duration[M] {
+	return NewDuration[M](n.Base.fn("duration::from_millis"))
+}
+
+func (n *Numeric[M, T]) AsDurationMins() *Duration[M] {
+	return NewDuration[M](n.Base.fn("duration::from_mins"))
+}
+
+func (n *Numeric[M, T]) AsDurationNanos() *Duration[M] {
+	return NewDuration[M](n.Base.fn("duration::from_nanos"))
+}
+
+func (n *Numeric[M, T]) AsDurationSecs() *Duration[M] {
+	return NewDuration[M](n.Base.fn("duration::from_secs"))
+}
+
+func (n *Numeric[M, T]) AsDurationWeeks() *Duration[M] {
+	return NewDuration[M](n.Base.fn("duration::from_weeks"))
+}
+
+//
+// -- CONVERT TIME
+//
+
+func (n *Numeric[M, T]) AsTimeMicros() *Time[M] {
+	return NewTime[M](n.Base.fn("time::from_micros"))
+}
+
+func (n *Numeric[M, T]) AsTimeMillis() *Time[M] {
+	return NewTime[M](n.Base.fn("time::from_millis"))
+}
+
+func (n *Numeric[M, T]) AsTimeNanos() *Time[M] {
+	return NewTime[M](n.Base.fn("time::from_nanos"))
+}
+
+func (n *Numeric[M, T]) AsTimeSecs() *Time[M] {
+	return NewTime[M](n.Base.fn("time::from_secs"))
+}
+
+func (n *Numeric[M, T]) AsTimeUnix() *Time[M] {
+	return NewTime[M](n.Base.fn("time::from_unix"))
+}
