@@ -10,7 +10,7 @@ import (
 )
 
 // weatherModelInfo holds the model-specific unmarshal functions for Weather.
-var weatherModelInfo = modelInfo[model.Weather]{
+var weatherModelInfo = modelInfo[model.Weather, *model.Weather]{
 	Fields: conv.WeatherFields,
 	UnmarshalAll: func(data []byte) ([]*model.Weather, error) {
 		return unmarshalAll(data, conv.ToWeatherPtr)
@@ -46,7 +46,7 @@ var weatherRangeFn = rangeFn[model.Weather](func(q *lib.Query[model.Weather], fr
 // NewWeather creates a new query builder for Weather models.
 func NewWeather(db Database) Builder[model.Weather] {
 	q := lib.NewQuery[model.Weather]("weather")
-	return Builder[model.Weather]{builder[model.Weather]{
+	return Builder[model.Weather]{builder[model.Weather, *model.Weather]{
 		db:      db,
 		info:    weatherModelInfo,
 		query:   q,

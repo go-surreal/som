@@ -18,6 +18,7 @@ This section provides comprehensive documentation for all field types supported 
 | [Enum](enum.md) | Custom type | String union | Direct | Yes | 8 |
 | [Slice](slice.md) | `[]T` | `array<T>` | Direct | No | 30+ |
 | [Node](node.md) | `*OtherNode` | `record<table>` | Direct | No | Via fields |
+| [Union](union.md) | Union interface | `record<a\|b>` | Direct | No | Via members |
 | [Struct](struct.md) | Embedded struct | `object` | Direct | No | Via fields |
 
 ## Type Categories

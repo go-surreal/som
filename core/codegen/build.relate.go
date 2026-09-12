@@ -106,14 +106,8 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			if edge.ID() != "" {
 				return errors.New("ID must not be set for an edge to be created")
 			}
-			if edge.{{.InNameGo}}.ID() == "" {
-				return errors.New("ID of the incoming node '{{.InNameGo}}' must not be empty")
-			}
-			if edge.{{.OutNameGo}}.ID() == "" {
-				return errors.New("ID of the outgoing node '{{.OutNameGo}}' must not be empty")
-			}
-			inID := models.NewRecordID("{{.InNameDB}}", {{.InIDValue}})
-			outID := models.NewRecordID("{{.OutNameDB}}", {{.OutIDValue}})
+			{{.InIDStmts}}
+			{{.OutIDStmts}}
 			query := "RELATE $inID->{{.EdgeNameDB}}->$outID CONTENT $data"
 			data := conv.From{{.EdgeNameGo}}(*edge)
 			res, err := e.db.Query(ctx, query, map[string]any{"inID": inID, "outID": outID, "data": data})
@@ -160,12 +154,8 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		"TypeName":   edge.NameGoLower(),
 		"EdgeNameGo": edge.NameGo(),
 		"EdgeNameDB": edge.NameDatabase(),
-		"InNameGo":   edge.In.NameGo(),
-		"InNameDB":   edge.In.Table().NameDatabase(),
-		"InIDValue":  file.code(b.edgeNodeIDValue(edge.In)),
-		"OutNameGo":  edge.Out.NameGo(),
-		"OutNameDB":  edge.Out.Table().NameDatabase(),
-		"OutIDValue": file.code(b.edgeNodeIDValue(edge.Out)),
+		"InIDStmts":  file.code(b.edgeEndID(edge.In, "inID", "incoming")),
+		"OutIDStmts": file.code(b.edgeEndID(edge.Out, "outID", "outgoing")),
 	}
 
 	return file.render(
@@ -174,14 +164,36 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 	)
 }
 
-// edgeNodeIDValue returns the expression for the record ID of the given node
-// of an edge.
-func (b *relateBuilder) edgeNodeIDValue(node *field.Node) jen.Code {
-	id := jen.Id("edge").Dot(node.Table().NameGo()).Dot("ID").Call()
+// edgeEndID emits the statements building the record ID of one end of an edge
+// into the given variable. A union end may point to any of its members, so its
+// record ID is resolved from the concrete model it holds.
+func (b *relateBuilder) edgeEndID(end field.EdgeEnd, varName, direction string) jen.Code {
+	accessor := jen.Id("edge").Dot(end.NameGo())
 
-	if node.Table().Source.IDType == parser.IDTypeUUID {
-		return jen.Qual(b.relativePkgPath(), "UUID").Call(id)
+	union, isUnion := end.(*field.Union)
+	if isUnion {
+		return jen.List(jen.Id(varName), jen.Err()).Op(":=").
+			Qual(b.relativePkgPath(def.PkgConv), union.Union().NameGo()+"RecordID").Call(accessor).
+			Line().
+			If(jen.Err().Op("!=").Nil()).Block(
+			jen.Return(jen.Qual("fmt", "Errorf").Call(
+				jen.Lit(direction+" node '"+end.NameGo()+"': %w"), jen.Err(),
+			)),
+		)
 	}
 
-	return id
+	node := end.(*field.Node)
+
+	id := jen.Add(accessor.Clone()).Dot("ID").Call()
+	if node.Table().Source.IDType == parser.IDTypeUUID {
+		id = jen.Qual(b.relativePkgPath(), "UUID").Call(id)
+	}
+
+	return jen.If(jen.Add(accessor.Clone()).Dot("ID").Call().Op("==").Lit("")).Block(
+		jen.Return(jen.Qual("errors", "New").Call(
+			jen.Lit("ID of the "+direction+" node '"+end.NameGo()+"' must not be empty"),
+		)),
+	).Line().
+		Id(varName).Op(":=").Qual(def.PkgModels, "NewRecordID").
+		Call(jen.Lit(node.Table().NameDatabase()), id)
 }

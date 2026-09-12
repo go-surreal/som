@@ -17,6 +17,7 @@ type Node struct {
 	IDType         IDType
 	IDEmbed        string
 	ComplexID      *FieldComplexID
+	Unions         []Membership
 	Timestamps     bool
 	OptimisticLock bool
 	Changefeed     string
@@ -151,6 +152,13 @@ func ParseNode(v gotype.Type, ctx *TypeContext) (*Node, error) {
 	for i := range nf {
 		f := v.Field(i)
 
+		if f.Name() == "_" {
+			if union, ok := BlankPartUnionName(f.Elem(), outPkg); ok {
+				node.Unions = append(node.Unions, Membership{Union: union})
+			}
+			continue
+		}
+
 		if !ast.IsExported(f.Name()) {
 			continue
 		}
@@ -177,6 +185,16 @@ func ParseNode(v gotype.Type, ctx *TypeContext) (*Node, error) {
 					node.ComplexID = complexID
 					node.Fields = append(node.Fields, complexID)
 				}
+				continue
+			}
+
+			if f.Name() == "Part" {
+				union, err := PartUnionName(f.Elem(), outPkg)
+				if err != nil {
+					return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+				}
+
+				node.Unions = append(node.Unions, Membership{Union: union, Sealed: true})
 				continue
 			}
 

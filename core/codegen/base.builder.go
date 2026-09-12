@@ -76,6 +76,12 @@ func (b *build) build() error {
 		}
 	}
 
+	for _, union := range b.input.unions {
+		if err := b.buildUnionRepoFile(union); err != nil {
+			return err
+		}
+	}
+
 	for _, view := range b.input.views {
 		if err := b.buildViewRepoFile(view); err != nil {
 			return err

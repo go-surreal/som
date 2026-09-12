@@ -61,7 +61,7 @@ func fragmentInfoFor[F any]() (fragmentInfo[F], error) {
 // AllAs returns all records matching the conditions of the query, narrowed to
 // the fields of the fragment F. The returned instances are partial, so they
 // cannot be written back to the database.
-func (b builder[M]) AllAs[F som.FragmentOf[M]](ctx context.Context) ([]*F, error) {
+func (b builder[M, R]) AllAs[F som.FragmentOf[M]](ctx context.Context) ([]*F, error) {
 	info, err := fragmentInfoFor[F]()
 	if err != nil {
 		return nil, err
@@ -78,13 +78,13 @@ func (b builder[M]) AllAs[F som.FragmentOf[M]](ctx context.Context) ([]*F, error
 }
 
 // AllAsAsync is the asynchronous version of AllAs.
-func (b builder[M]) AllAsAsync[F som.FragmentOf[M]](ctx context.Context) *asyncResult[[]*F] {
+func (b builder[M, R]) AllAsAsync[F som.FragmentOf[M]](ctx context.Context) *asyncResult[[]*F] {
 	return async(ctx, b.AllAs[F])
 }
 
 // FirstAs returns the first record matching the conditions of the query,
 // narrowed to the fields of the fragment F.
-func (b builder[M]) FirstAs[F som.FragmentOf[M]](ctx context.Context) (*F, error) {
+func (b builder[M, R]) FirstAs[F som.FragmentOf[M]](ctx context.Context) (*F, error) {
 	b.query.Limit = 1
 
 	res, err := b.AllAs[F](ctx)
@@ -99,7 +99,7 @@ func (b builder[M]) FirstAs[F som.FragmentOf[M]](ctx context.Context) (*F, error
 }
 
 // FirstAsAsync is the asynchronous version of FirstAs.
-func (b builder[M]) FirstAsAsync[F som.FragmentOf[M]](ctx context.Context) *asyncResult[*F] {
+func (b builder[M, R]) FirstAsAsync[F som.FragmentOf[M]](ctx context.Context) *asyncResult[*F] {
 	return async(ctx, b.FirstAs[F])
 }
 
@@ -108,7 +108,7 @@ func (b builder[M]) FirstAsAsync[F som.FragmentOf[M]](ctx context.Context) *asyn
 //
 // The keyset cursor is derived from the projected fields, so a sort field that
 // the fragment does not hold is added to the projection to keep paging stable.
-func (b builder[M]) IterateAs[F som.FragmentOf[M]](ctx context.Context, batchSize int) iter.Seq2[*F, error] {
+func (b builder[M, R]) IterateAs[F som.FragmentOf[M]](ctx context.Context, batchSize int) iter.Seq2[*F, error] {
 	return func(yield func(*F, error) bool) {
 		if batchSize < 1 {
 			yield(nil, errors.New("batch size must be positive"))
@@ -176,7 +176,7 @@ func (b builder[M]) IterateAs[F som.FragmentOf[M]](ctx context.Context, batchSiz
 // DescribeAs returns a string representation of the query as it is run by the
 // ...As terminals for the fragment F. While this might be a valid SurrealDB
 // query, it should only be used for debugging purposes.
-func (b builder[M]) DescribeAs[F som.FragmentOf[M]]() string {
+func (b builder[M, R]) DescribeAs[F som.FragmentOf[M]]() string {
 	info, err := fragmentInfoFor[F]()
 	if err != nil {
 		return ""
@@ -190,7 +190,7 @@ func (b builder[M]) DescribeAs[F som.FragmentOf[M]]() string {
 //
 // Note: for delete notifications the database only sends the record id, so the
 // received fragment holds no field values.
-func (b Builder[M]) LiveAs[F som.FragmentOf[M]](ctx context.Context) (<-chan LiveResult[*F], error) {
+func (b BuilderOf[M, R]) LiveAs[F som.FragmentOf[M]](ctx context.Context) (<-chan LiveResult[*F], error) {
 	info, err := fragmentInfoFor[F]()
 	if err != nil {
 		return nil, err
@@ -203,5 +203,5 @@ func (b Builder[M]) LiveAs[F som.FragmentOf[M]](ctx context.Context) (<-chan Liv
 		return nil, fmt.Errorf("failed to query live records: %w", err)
 	}
 
-	return live(ctx, resChan, modelInfo[F]{UnmarshalOne: info.UnmarshalOne}), nil
+	return live(ctx, resChan, modelInfo[F, *F]{UnmarshalOne: info.UnmarshalOne}), nil
 }

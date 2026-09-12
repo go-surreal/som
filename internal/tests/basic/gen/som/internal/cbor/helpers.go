@@ -112,6 +112,35 @@ func IsNoneOrNull(data []byte) bool {
 	return bytes.Equal(data, none[:]) || bytes.Equal(data, cborNull[:])
 }
 
+// LinkTable returns the table a record link points to. The link is either the
+// bare record id of an unfetched link, or the record itself if it was fetched,
+// in which case the table is taken from its id field.
+//
+// It is used to resolve the member a multi-table record link (record<a|b>)
+// points to, before decoding the link into that member's type.
+func LinkTable(data []byte) (string, error) {
+	var recordID models.RecordID
+	if err := Unmarshal(data, &recordID); err == nil {
+		return recordID.Table, nil
+	}
+
+	var rawMap map[string]RawMessage
+	if err := Unmarshal(data, &rawMap); err != nil {
+		return "", fmt.Errorf("record link is neither a record id nor a record: %w", err)
+	}
+
+	raw, ok := rawMap["id"]
+	if !ok {
+		return "", fmt.Errorf("fetched record link has no id field")
+	}
+
+	if err := Unmarshal(raw, &recordID); err != nil {
+		return "", fmt.Errorf("could not decode the id of a fetched record link: %w", err)
+	}
+
+	return recordID.Table, nil
+}
+
 func RecordIDToString(id any) (string, error) {
 	switch v := id.(type) {
 	case string:

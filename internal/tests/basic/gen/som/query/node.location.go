@@ -9,7 +9,7 @@ import (
 )
 
 // locationModelInfo holds the model-specific unmarshal functions for Location.
-var locationModelInfo = modelInfo[model.Location]{
+var locationModelInfo = modelInfo[model.Location, *model.Location]{
 	Fields: conv.LocationFields,
 	UnmarshalAll: func(data []byte) ([]*model.Location, error) {
 		return unmarshalAll(data, conv.ToLocationPtr)
@@ -43,7 +43,7 @@ var locationRangeFn = rangeFn[model.Location](func(q *lib.Query[model.Location],
 // NewLocation creates a new query builder for Location models.
 func NewLocation(db Database) Builder[model.Location] {
 	q := lib.NewQuery[model.Location]("location")
-	return Builder[model.Location]{builder[model.Location]{
+	return Builder[model.Location]{builder[model.Location, *model.Location]{
 		db:      db,
 		info:    locationModelInfo,
 		query:   q,

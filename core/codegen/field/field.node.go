@@ -41,6 +41,14 @@ func (f *Node) Table() *NodeTable {
 	return f.table
 }
 
+func (f *Node) Target() Named {
+	return f.table
+}
+
+func (f *Node) TargetTables() []*NodeTable {
+	return []*NodeTable{f.table}
+}
+
 // IsPointer reports whether the model field is a pointer to the related node.
 func (f *Node) IsPointer() bool {
 	return f.source.Pointer()

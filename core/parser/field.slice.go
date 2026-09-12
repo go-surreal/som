@@ -35,6 +35,11 @@ func (f *FieldSlice) Validate() error {
 			return fmt.Errorf("field %s: fulltext index only supports string slice types, got slice of %T", f.name, f.Field)
 		}
 	}
+
+	if union, ok := f.Field.(*FieldUnion); ok {
+		return fmt.Errorf("field %s: a slice of the union %s is not supported yet", f.name, union.Union)
+	}
+
 	return nil
 }
 
