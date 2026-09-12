@@ -57,7 +57,7 @@ func ParseStruct(v gotype.Type, ctx *TypeContext) (*Struct, error) {
 
 		field, err := ctx.ParseField(f)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("struct %s: %w", v.Name(), err)
 		}
 
 		str.Fields = append(str.Fields, field)
