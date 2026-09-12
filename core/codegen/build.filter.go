@@ -26,6 +26,12 @@ func (b *filterBuilder) build() error {
 		}
 	}
 
+	for _, union := range b.unions {
+		if err := b.buildUnionFile(union); err != nil {
+			return err
+		}
+	}
+
 	for _, edge := range b.edges {
 		if err := b.buildFile(edge); err != nil {
 			return err
@@ -54,6 +60,66 @@ func (b *filterBuilder) build() error {
 	}
 
 	return nil
+}
+
+// buildUnionFile generates the filter accessors of a union. A union has no
+// fields of its own: the link can be matched by the member table it points to,
+// or narrowed to a single member to filter on that member's fields.
+func (b *filterBuilder) buildUnionFile(union *field.UnionTable) error {
+	tmpl := `
+		var {{.NameGo}} = new{{.NameGo}}Root[model.{{.NameGo}}]()
+
+		func new{{.NameGo}}[M any](key lib.Key[M]) {{.NameGoLower}}[M] {
+			return {{.NameGoLower}}[M]{Key: key, Union: lib.NewUnion[M](key)}
+		}
+
+		// new{{.NameGo}}Root builds the filter of a query over all member tables of
+		// the union. The record itself is the link there, so the member a row
+		// belongs to is taken from its id.
+		func new{{.NameGo}}Root[M any]() {{.NameGoLower}}[M] {
+			key := lib.NewKey[M]()
+			return {{.NameGoLower}}[M]{Key: key, Union: lib.NewUnion[M](lib.Field(key, "id"))}
+		}
+
+		type {{.NameGoLower}}[M any] struct {
+			lib.Key[M]
+			*lib.Union[M]
+		}
+		{{range $member := .Members}}
+		// Is{{$member.NameGo}} matches links pointing to a {{$member.NameGo}} record.
+		func (n {{$.NameGoLower}}[M]) Is{{$member.NameGo}}() lib.Filter[M] {
+			return n.Union.IsTable("{{$member.NameDB}}")
+		}
+
+		// {{$member.NameGo}} narrows the link to {{$member.NameGo}}, so that the
+		// fields of that member can be filtered on. A link to any other member holds
+		// no value for them, so such a record never matches.
+		func (n {{$.NameGoLower}}[M]) {{$member.NameGo}}() {{$member.NameGoLower}}[M] {
+			return new{{$member.NameGo}}[M](n.Key)
+		}
+		{{end}}
+		// {{.NameGoLower}}Edges is the {{.NameGo}} as reached through a graph traversal.
+		type {{.NameGoLower}}Edges[M any] struct {
+			lib.Filter[M]
+			lib.Key[M]
+		}
+	`
+
+	file := newGoFile(b.pkgName,
+		goImport{Alias: "lib", Path: b.relativePkgPath(def.PkgLib)},
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
+
+	data := map[string]any{
+		"NameGo":      union.NameGo(),
+		"NameGoLower": union.NameGoLower(),
+		"Members":     unionMembers(union),
+	}
+
+	return file.render(
+		b.fs.Writer(path.Join(b.path(), union.FileName())),
+		"filterUnion", tmpl, data,
+	)
 }
 
 // buildFile generates the filter accessors for a single table or object. Edges
@@ -135,12 +201,12 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 		data["Edge"] = map[string]string{
 			"InNameGo":      edge.In.NameGo(),
 			"InNameDB":      edge.In.NameDatabase(),
-			"InTableGo":     edge.In.Table().NameGo(),
-			"InTableLower":  edge.In.Table().NameGoLower(),
+			"InTableGo":     edge.In.TargetNameGo(),
+			"InTableLower":  edge.In.TargetNameGoLower(),
 			"OutNameGo":     edge.Out.NameGo(),
 			"OutNameDB":     edge.Out.NameDatabase(),
-			"OutTableGo":    edge.Out.Table().NameGo(),
-			"OutTableLower": edge.Out.Table().NameGoLower(),
+			"OutTableGo":    edge.Out.TargetNameGo(),
+			"OutTableLower": edge.Out.TargetNameGoLower(),
 		}
 	} else {
 		data["EdgeFuncs"] = b.edgeFuncs(file, elem)

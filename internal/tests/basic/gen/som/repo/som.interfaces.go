@@ -10,13 +10,18 @@ import (
 type Client interface {
 	WeatherRepo() WeatherRepo
 	TeamMemberRepo() TeamMemberRepo
+	SquareRepo() SquareRepo
 	SpecialTypesRepo() SpecialTypesRepo
 	SpecialRelationRepo() SpecialRelationRepo
 	SlugRepo() SlugRepo
 	PersonObjRepo() PersonObjRepo
 	LocationRepo() LocationRepo
 	EphemeralRepo() EphemeralRepo
+	DrawingRepo() DrawingRepo
+	CircleRepo() CircleRepo
 	AllTypesRepo() AllTypesRepo
+	ShapeRepo() ShapeRepo
+	ColoredRepo() ColoredRepo
 	EventSummaryRepo() EventSummaryRepo
 	AllTypesSummaryRepo() AllTypesSummaryRepo
 	EventLogRepo() EventLogRepo
@@ -30,13 +35,18 @@ type ClientImpl struct {
 	mu                  sync.Mutex
 	weatherRepo         *weather
 	teamMemberRepo      *teamMember
+	squareRepo          *square
 	specialTypesRepo    *specialTypes
 	specialRelationRepo *specialRelation
 	slugRepo            *slug
 	personObjRepo       *personObj
 	locationRepo        *location
 	ephemeralRepo       *ephemeral
+	drawingRepo         *drawing
+	circleRepo          *circle
 	allTypesRepo        *allTypes
+	shapeRepo           *shape
+	coloredRepo         *colored
 	eventSummaryRepo    *eventSummary
 	allTypesSummaryRepo *allTypesSummary
 	eventLogRepo        *eventLog

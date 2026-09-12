@@ -7,8 +7,8 @@ import (
 
 type EdgeTable struct {
 	Name       string
-	In         *Node
-	Out        *Node
+	In         EdgeEnd
+	Out        EdgeEnd
 	Fields     []Field
 	Changefeed string
 	Source     *parser.Edge

@@ -51,6 +51,10 @@ func (b *build) buildInterfaceFile() error {
 		}
 	}
 
+	for _, union := range b.input.unions {
+		repos = append(repos, repoRef{union.NameGo(), union.NameGoLower()})
+	}
+
 	for _, view := range b.input.views {
 		repos = append(repos, repoRef{view.NameGo(), view.NameGoLower()})
 	}

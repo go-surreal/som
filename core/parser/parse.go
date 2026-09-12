@@ -279,6 +279,7 @@ func parseSomTag(tag string) (*TagInfo, error) {
 type Output struct {
 	PkgPath    string
 	Nodes      []*Node
+	Unions     []*Union
 	Edges      []*Edge
 	Views      []*View
 	Sinks      []*Sink

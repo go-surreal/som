@@ -458,7 +458,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 				receiver = ctx.Receiver
 			}
 
-			if tableEqual(ctx.Table, element.table.In.table) {
+			if edgeEndHasTable(element.table.In, ctx.Table) {
 				return jen.Func().
 					Params(jen.Id("n").Add(receiver)).Id(f.NameGo()).
 					Params(
@@ -480,7 +480,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 					)
 			}
 
-			if tableEqual(ctx.Table, element.table.Out.table) {
+			if edgeEndHasTable(element.table.Out, ctx.Table) {
 				return jen.Func().
 					Params(jen.Id("n").Add(receiver)).Id(f.NameGo()).
 					Params(

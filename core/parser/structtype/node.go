@@ -230,6 +230,13 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 	for i := 0; i < nf; i++ {
 		f := v.Field(i)
 
+		if f.Name() == "_" {
+			if union, ok := BlankPartUnionName(f.Elem(), outPkg); ok {
+				node.Unions = append(node.Unions, parser.Membership{Union: union})
+			}
+			continue
+		}
+
 		if !ast.IsExported(f.Name()) {
 			continue
 		}
@@ -256,6 +263,16 @@ func ParseNode(v gotype.Type, outPkg string, pkgScope gotype.Type) (*parser.Node
 					node.ComplexID = complexID
 					node.Fields = append(node.Fields, complexID)
 				}
+				continue
+			}
+
+			if f.Name() == "Part" {
+				union, err := PartUnionName(f.Elem(), outPkg)
+				if err != nil {
+					return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+				}
+
+				node.Unions = append(node.Unions, parser.Membership{Union: union, Sealed: true})
 				continue
 			}
 

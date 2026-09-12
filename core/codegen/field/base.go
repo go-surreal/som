@@ -60,6 +60,36 @@ type Table interface {
 	GetFields() []Field
 }
 
+// EdgeEnd is one end of an edge: either a single node table or a union of the
+// node tables the end may point to.
+type EdgeEnd interface {
+	Field
+
+	// TargetNameGo is the Go name of the element the end points to, which is
+	// the node table or, for a multi-table end, the union of them.
+	TargetNameGo() string
+	TargetNameGoLower() string
+
+	// TargetTables returns every node table the end may point to.
+	TargetTables() []*NodeTable
+
+	// RelationDatabase returns the endpoint type of the relation definition,
+	// e.g. "square|triangle" for a multi-table end.
+	RelationDatabase() string
+}
+
+// edgeEndHasTable reports whether the given end of an edge may point to the
+// given table.
+func edgeEndHasTable(end EdgeEnd, table Table) bool {
+	for _, target := range end.TargetTables() {
+		if tableEqual(table, target) {
+			return true
+		}
+	}
+
+	return false
+}
+
 type EnumModel string
 
 func (m EnumModel) NameGo() string {

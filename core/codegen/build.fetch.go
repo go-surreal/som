@@ -24,7 +24,40 @@ func (b *fetchBuilder) build() error {
 		}
 	}
 
+	for _, union := range b.unions {
+		if err := b.buildUnionFile(union); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// buildUnionFile generates the fetch accessor of a union. Fetching a
+// multi-table link resolves the record whatever member table it lives in, but
+// the union itself has no fields, so nothing can be fetched beyond it.
+func (b *fetchBuilder) buildUnionFile(union *field.UnionTable) error {
+	tmpl := `
+		var {{.NameGo}} = {{.NameGoLower}}[model.{{.NameGo}}]("")
+
+		type {{.NameGoLower}}[M any] string
+
+		func (n {{.NameGoLower}}[M]) fetch(M) {}
+	`
+
+	data := map[string]any{
+		"NameGo":      union.NameGo(),
+		"NameGoLower": union.NameGoLower(),
+	}
+
+	file := newGoFile(b.pkgName,
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
+
+	return file.render(
+		b.fs.Writer(path.Join(b.path(), union.FileName())),
+		"fetchUnion", tmpl, data,
+	)
 }
 
 // fetchRelation describes a relation of a node that can be fetched.
@@ -90,6 +123,15 @@ func fetchRelations(node *field.NodeTable) []fetchRelation {
 		switch fld := fld.(type) {
 		case *field.Node:
 			target, kind = fld.Table(), "relation"
+
+		case *field.Union:
+			relations = append(relations, fetchRelation{
+				NameGo:      fld.NameGo(),
+				NameDB:      fld.NameDatabase(),
+				TargetLower: fld.Union().NameGoLower(),
+				Kind:        "union relation",
+			})
+			continue
 
 		case *field.Slice:
 			element, ok := fld.Element().(*field.Node)

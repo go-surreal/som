@@ -70,6 +70,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		source, err = parser.Parse(inPath, outPkg,
 			[]parser.TypeHandler{
 				&structtype.NodeHandler{},
+				&structtype.UnionHandler{},
 				&structtype.EdgeHandler{},
 				&structtype.ViewHandler{},
 				&structtype.SinkHandler{},
@@ -91,6 +92,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 				&fieldtype.GeometryHandler{},
 				&fieldtype.URLHandler{},
 				&fieldtype.NodeRefHandler{},
+				&fieldtype.UnionRefHandler{},
 				&fieldtype.EdgeRefHandler{},
 				&fieldtype.ViewRefHandler{},
 				&fieldtype.SinkRefHandler{},

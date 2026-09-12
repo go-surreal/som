@@ -41,6 +41,10 @@ func validateField(typeName string, f parser.Field, output *parser.Output) error
 		if !nodeExists(field.Node, output) {
 			return fmt.Errorf("%s: field %q references unknown node %q", typeName, f.Name(), field.Node)
 		}
+	case *parser.FieldUnion:
+		if !unionExists(field.Union, output) {
+			return fmt.Errorf("%s: field %q references unknown union %q", typeName, f.Name(), field.Union)
+		}
 	case *parser.FieldEdge:
 		if !edgeExists(field.Edge, output) {
 			return fmt.Errorf("%s: field %q references unknown edge %q", typeName, f.Name(), field.Edge)
@@ -75,6 +79,15 @@ func nodeExists(name string, output *parser.Output) bool {
 	return false
 }
 
+func unionExists(name string, output *parser.Output) bool {
+	for _, u := range output.Unions {
+		if u.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func edgeExists(name string, output *parser.Output) bool {
 	for _, e := range output.Edges {
 		if e.Name == name {
@@ -96,6 +109,33 @@ func enumExists(name string, output *parser.Output) bool {
 func structExists(name string, output *parser.Output) bool {
 	for _, s := range output.Structs {
 		if s.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func viewExists(name string, output *parser.Output) bool {
+	for _, v := range output.Views {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func sinkExists(name string, output *parser.Output) bool {
+	for _, s := range output.Sinks {
+		if s.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func fragmentExists(name string, output *parser.Output) bool {
+	for _, f := range output.Fragments {
+		if f.Name == name {
 			return true
 		}
 	}

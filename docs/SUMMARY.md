@@ -29,6 +29,7 @@
   * [Sinks](models/08_sinks.md)
   * [Expiry (TTL)](models/09_expiry.md)
   * [Fragments](models/10_fragments.md)
+  * [Unions](models/11_unions.md)
 
 ## Data Types
 
@@ -94,6 +95,7 @@
   * [Enum](types/enum.md)
   * [Slice](types/slice.md)
   * [Node](types/node.md)
+  * [Union](types/union.md)
   * [Struct](types/struct.md)
 
 ## Appendix

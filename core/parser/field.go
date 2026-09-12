@@ -323,6 +323,22 @@ func NewFieldNode(name string, node string) *FieldNode {
 	return &FieldNode{fieldAtomic: &fieldAtomic{name: name}, Node: node}
 }
 
+type FieldUnion struct {
+	*fieldAtomic
+	Union string
+}
+
+func NewFieldUnion(name string, union string) *FieldUnion {
+	return &FieldUnion{fieldAtomic: &fieldAtomic{name: name}, Union: union}
+}
+
+func (f *FieldUnion) Validate() error {
+	if f.Pointer() {
+		return fmt.Errorf("field %s: a union field must not be a pointer, an unset link is the nil interface", f.name)
+	}
+	return nil
+}
+
 type FieldEdge struct {
 	*fieldAtomic
 	Edge string
@@ -362,6 +378,10 @@ func NewFieldSlice(name string, inner Field) *FieldSlice {
 func (f *FieldSlice) Validate() error {
 	if err := f.Field.Validate(); err != nil {
 		return err
+	}
+
+	if union, ok := f.Field.(*FieldUnion); ok {
+		return fmt.Errorf("field %s: a slice of the union %s is not supported yet", f.name, union.Union)
 	}
 
 	if f.search != nil {
