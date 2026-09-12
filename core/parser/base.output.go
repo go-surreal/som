@@ -4,6 +4,7 @@ package parser
 type Output struct {
 	PkgPath    string
 	Nodes      []*Node
+	Unions     []*Union
 	Edges      []*Edge
 	Views      []*View
 	Sinks      []*Sink

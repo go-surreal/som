@@ -29,6 +29,12 @@ func (b *convBuilder) build() error {
 		}
 	}
 
+	for _, union := range b.unions {
+		if err := b.buildUnionFile(union); err != nil {
+			return err
+		}
+	}
+
 	for _, edge := range b.edges {
 		if err := b.buildFile(edge); err != nil {
 			return err
@@ -153,6 +159,199 @@ func (b *convBuilder) buildFragmentFile(fragment *field.FragmentTable) error {
 	return file.render(
 		b.fs.Writer(path.Join(b.path(), fragment.FileName())),
 		"convFragment", tmpl, data,
+	)
+}
+
+// unionMember holds the names of a single member of a union, as needed by the
+// generated table dispatch.
+type unionMember struct {
+	NameGo      string
+	NameGoLower string
+	NameDB      string
+}
+
+func unionMembers(union *field.UnionTable) []unionMember {
+	members := make([]unionMember, len(union.Members))
+
+	for i, member := range union.Members {
+		members[i] = unionMember{
+			NameGo:      member.NameGo(),
+			NameGoLower: member.NameGoLower(),
+			NameDB:      member.NameDatabase(),
+		}
+	}
+
+	return members
+}
+
+// buildUnionFile generates the CBOR conversion of a union. A union has no
+// table and no fields of its own, so all of its conversion is a dispatch on
+// the table of the record at hand, delegating to the member it belongs to.
+func (b *convBuilder) buildUnionFile(union *field.UnionTable) error {
+	tmpl := `
+		// {{.NameGo}} is a record of any member table of the {{.NameGo}} union,
+		// decoded into the member it belongs to.
+		type {{.NameGo}} struct {
+			Value model.{{.NameGo}}
+		}
+
+		func (c *{{.NameGo}}) UnmarshalCBOR(data []byte) error {
+			table, err := cbor.LinkTable(data)
+			if err != nil {
+				return err
+			}
+			switch table {
+			{{- range $member := .Members}}
+			case "{{$member.NameDB}}":
+				var val {{$member.NameGo}}
+				if err := val.UnmarshalCBOR(data); err != nil {
+					return err
+				}
+				c.Value = To{{$member.NameGo}}Ptr(&val)
+				return nil
+			{{- end}}
+			}
+			return fmt.Errorf("record of table %q is not a member of the union {{.NameGo}}", table)
+		}
+
+		func To{{.NameGo}}(data {{.NameGo}}) model.{{.NameGo}} {
+			return data.Value
+		}
+
+		func To{{.NameGo}}Ptr(data *{{.NameGo}}) *model.{{.NameGo}} {
+			if data == nil {
+				return nil
+			}
+			value := data.Value
+			return &value
+		}
+
+		// To{{.NameGo}}Value is what a query over the union decodes a row with: the
+		// member is handed back as the union interface itself, not as a pointer to it.
+		func To{{.NameGo}}Value(data *{{.NameGo}}) model.{{.NameGo}} {
+			if data == nil {
+				return nil
+			}
+			return data.Value
+		}
+
+		// {{.NameGo}}Fields returns the database keyed value map of the member the
+		// given model holds. It is used by the query builder to derive pagination
+		// cursor values with correct database field names and types.
+		func {{.NameGo}}Fields(m model.{{.NameGo}}) map[string]any {
+			if m == nil {
+				return nil
+			}
+			// The switch is on any rather than on the union itself, so that a
+			// member whose methods have a pointer receiver still has a case for
+			// its value type, which does not implement the union.
+			switch v := any(m).(type) {
+			{{- range $member := .Members}}
+			case *model.{{$member.NameGo}}:
+				return {{$member.NameGo}}Fields(v)
+			case model.{{$member.NameGo}}:
+				return {{$member.NameGo}}Fields(&v)
+			{{- end}}
+			}
+			return nil
+		}
+
+		// {{.NameGo}}RecordID returns the record id of the member the given model
+		// holds. It fails if the model is nil or has no id yet.
+		func {{.NameGo}}RecordID(val model.{{.NameGo}}) (models.RecordID, error) {
+			link := to{{.NameGo}}Link(val)
+			if link == nil || link.ID == nil {
+				return models.RecordID{}, fmt.Errorf("the given {{.NameGo}} has no record id")
+			}
+			return *link.ID, nil
+		}
+
+		// {{.NameGoLower}}Link is a record link pointing to any member of the
+		// {{.NameGo}} union. It marshals to its record ID only, but unmarshals from
+		// either a record ID or a fetched record.
+		type {{.NameGoLower}}Link struct {
+			Value model.{{.NameGo}}
+			ID    *models.RecordID
+		}
+
+		func (l *{{.NameGoLower}}Link) MarshalCBOR() ([]byte, error) {
+			if l == nil {
+				return nil, nil
+			}
+			return cbor.Marshal(l.ID)
+		}
+
+		func (l *{{.NameGoLower}}Link) UnmarshalCBOR(data []byte) error {
+			if cbor.IsNoneOrNull(data) {
+				return nil
+			}
+			table, err := cbor.LinkTable(data)
+			if err != nil {
+				return err
+			}
+			switch table {
+			{{- range $member := .Members}}
+			case "{{$member.NameDB}}":
+				var link {{$member.NameGoLower}}Link
+				if err := link.UnmarshalCBOR(data); err != nil {
+					return err
+				}
+				l.Value, l.ID = from{{$member.NameGo}}LinkPtr(&link), link.ID
+				return nil
+			{{- end}}
+			}
+			return fmt.Errorf("record link to table %q is not a member of the union {{.NameGo}}", table)
+		}
+
+		func from{{.NameGo}}Link(link *{{.NameGoLower}}Link) model.{{.NameGo}} {
+			if link == nil {
+				return nil
+			}
+			return link.Value
+		}
+
+		// to{{.NameGo}}Link turns the member the given model holds into a record
+		// link. A member without an id yet has no link, so nil is returned.
+		func to{{.NameGo}}Link(val model.{{.NameGo}}) *{{.NameGoLower}}Link {
+			// The switch is on any rather than on the union itself, so that a
+			// member whose methods have a pointer receiver still has a case for
+			// its value type, which does not implement the union.
+			switch v := any(val).(type) {
+			{{- range $member := .Members}}
+			case *model.{{$member.NameGo}}:
+				link := to{{$member.NameGo}}LinkPtr(v)
+				if link == nil {
+					return nil
+				}
+				return &{{$.NameGoLower}}Link{Value: val, ID: link.ID}
+			case model.{{$member.NameGo}}:
+				link := to{{$member.NameGo}}Link(v)
+				if link == nil {
+					return nil
+				}
+				return &{{$.NameGoLower}}Link{Value: val, ID: link.ID}
+			{{- end}}
+			}
+			return nil
+		}
+	`
+
+	file := newGoFile(b.pkgName,
+		goImport{Path: "fmt"},
+		goImport{Alias: "models", Path: def.PkgModels},
+		goImport{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
+		goImport{Alias: "model", Path: b.sourcePkgPath},
+	)
+
+	data := map[string]any{
+		"NameGo":      union.NameGo(),
+		"NameGoLower": union.NameGoLower(),
+		"Members":     unionMembers(union),
+	}
+
+	return file.render(
+		b.fs.Writer(path.Join(b.path(), union.FileName())),
+		"convUnion", tmpl, data,
 	)
 }
 
@@ -984,7 +1183,7 @@ func skippedRelations(node *field.NodeTable) []string {
 // level of nesting.
 func holdsNode(fld field.Field) bool {
 	switch typed := fld.(type) {
-	case *field.Node:
+	case *field.Node, *field.Union:
 		return true
 	case *field.Slice:
 		return holdsNode(typed.Element())

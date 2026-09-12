@@ -29,10 +29,10 @@ func (e edgeRelation) Create(ctx context.Context, edge *model.EdgeRelation) erro
 	if edge.AllTypes.ID() == "" {
 		return errors.New("ID of the incoming node 'AllTypes' must not be empty")
 	}
+	inID := models.NewRecordID("all_types", edge.AllTypes.ID())
 	if edge.SpecialTypes.ID() == "" {
 		return errors.New("ID of the outgoing node 'SpecialTypes' must not be empty")
 	}
-	inID := models.NewRecordID("all_types", edge.AllTypes.ID())
 	outID := models.NewRecordID("special_types", som.UUID(edge.SpecialTypes.ID()))
 	query := "RELATE $inID->edge_relation->$outID CONTENT $data"
 	data := conv.FromEdgeRelation(*edge)

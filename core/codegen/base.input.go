@@ -14,6 +14,7 @@ import (
 type input struct {
 	sourcePkgPath string
 	nodes         []*field.NodeTable
+	unions        []*field.UnionTable
 	edges         []*field.EdgeTable
 	views         []*field.ViewTable
 	sinks         []*field.SinkTable
@@ -39,6 +40,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 	}
 
 	in.nodes = def.Nodes
+	in.unions = def.Unions
 	in.edges = def.Edges
 	in.views = def.Views
 	in.sinks = def.Sinks

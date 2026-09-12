@@ -168,7 +168,7 @@ func async[T any](ctx context.Context, fn func(ctx context.Context) (T, error)) 
 // -- UNMARSHAL
 //
 
-func unmarshalAll[M, C any](data []byte, convert func(*C) *M) ([]*M, error) {
+func unmarshalAll[R, C any](data []byte, convert func(*C) R) ([]R, error) {
 	var rawNodes []internal.QueryResult[*C]
 	if err := cbor.Unmarshal(data, &rawNodes); err != nil {
 		return nil, fmt.Errorf("could not unmarshal records: %w", err)
@@ -176,17 +176,18 @@ func unmarshalAll[M, C any](data []byte, convert func(*C) *M) ([]*M, error) {
 	if len(rawNodes) < 1 {
 		return nil, nil
 	}
-	results := make([]*M, len(rawNodes[0].Result))
+	results := make([]R, len(rawNodes[0].Result))
 	for i, raw := range rawNodes[0].Result {
 		results[i] = convert(raw)
 	}
 	return results, nil
 }
 
-func unmarshalOne[M, C any](data []byte, convert func(*C) *M) (*M, error) {
+func unmarshalOne[R, C any](data []byte, convert func(*C) R) (R, error) {
 	var raw *C
 	if err := cbor.Unmarshal(data, &raw); err != nil {
-		return nil, err
+		var zero R
+		return zero, err
 	}
 	return convert(raw), nil
 }
@@ -195,12 +196,12 @@ func unmarshalOne[M, C any](data []byte, convert func(*C) *M) (*M, error) {
 // -- LIVE
 //
 
-func live[M any](
+func live[M any, R any](
 	ctx context.Context,
 	in <-chan []byte,
-	info modelInfo[M],
-) <-chan LiveResult[*M] {
-	out := make(chan LiveResult[*M], 1)
+	info modelInfo[M, R],
+) <-chan LiveResult[R] {
+	out := make(chan LiveResult[R], 1)
 
 	go func() {
 		defer close(out)
@@ -228,14 +229,14 @@ func live[M any](
 	return out
 }
 
-func toLiveResult[M any](
+func toLiveResult[M any, R any](
 	in []byte,
-	info modelInfo[M],
-) LiveResult[*M] {
+	info modelInfo[M, R],
+) LiveResult[R] {
 	var response liveResponse
 
 	if err := cbor.Unmarshal(in, &response); err != nil {
-		return &liveResult[*M]{
+		return &liveResult[R]{
 			err: fmt.Errorf("could not unmarshal live response: %w", err),
 		}
 	}
@@ -243,7 +244,7 @@ func toLiveResult[M any](
 	switch strings.ToLower(response.Action) {
 
 	case "create":
-		var out liveResult[*M]
+		var out liveResult[R]
 
 		result, err := info.UnmarshalOne(response.Result)
 		if err != nil {
@@ -254,12 +255,12 @@ func toLiveResult[M any](
 			out.res = result
 		}
 
-		return &liveCreate[*M]{
+		return &liveCreate[R]{
 			liveResult: out,
 		}
 
 	case "update":
-		var out liveResult[*M]
+		var out liveResult[R]
 
 		result, err := info.UnmarshalOne(response.Result)
 		if err != nil {
@@ -270,12 +271,12 @@ func toLiveResult[M any](
 			out.res = result
 		}
 
-		return &liveUpdate[*M]{
+		return &liveUpdate[R]{
 			liveResult: out,
 		}
 
 	case "delete":
-		var out liveResult[*M]
+		var out liveResult[R]
 
 		result, err := info.UnmarshalOne(response.Result)
 		if err != nil {
@@ -286,15 +287,15 @@ func toLiveResult[M any](
 			out.res = result
 		}
 
-		return &liveDelete[*M]{
+		return &liveDelete[R]{
 			liveResult: out,
 		}
 
 	case "killed":
-		return &liveKilled[*M]{}
+		return &liveKilled[R]{}
 
 	default:
-		return &liveResult[*M]{
+		return &liveResult[R]{
 			err: fmt.Errorf("unknown action type %s", response.Action),
 		}
 	}

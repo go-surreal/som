@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"path"
+	"strings"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
@@ -23,6 +24,12 @@ func newQueryBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *queryBui
 func (b *queryBuilder) build() error {
 	for _, node := range b.nodes {
 		if err := b.buildFile(node); err != nil {
+			return err
+		}
+	}
+
+	for _, union := range b.unions {
+		if err := b.buildUnionFile(union); err != nil {
 			return err
 		}
 	}
@@ -101,6 +108,78 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 	return b.renderQueryFile(file, node.FileName(), data)
 }
 
+// buildUnionFile generates the query builder constructor of a union, selecting
+// from every member table at once. Each row is decoded into the member it
+// belongs to, based on the table of its record id.
+//
+// A soft-delete or expiry filter is applied as soon as a single member uses
+// that feature: a member without the field yields no value for it, so the
+// filter never excludes its records.
+func (b *queryBuilder) buildUnionFile(union *field.UnionTable) error {
+	tmpl := `
+		// {{.NameGoLower}}ModelInfo holds the model-specific unmarshal functions for {{.NameGo}}.
+		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}, model.{{.NameGo}}]{
+			Fields: conv.{{.NameGo}}Fields,
+			UnmarshalAll: func(data []byte) ([]model.{{.NameGo}}, error) {
+				return unmarshalAll(data, conv.To{{.NameGo}}Value)
+			},
+			UnmarshalOne: func(data []byte) (model.{{.NameGo}}, error) {
+				return unmarshalOne(data, conv.To{{.NameGo}}Value)
+			},
+			UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[model.{{.NameGo}}], error) {
+				return unmarshalSearchAll(data, clauses, conv.To{{.NameGo}}Value)
+			},
+		}
+
+		// New{{.NameGo}} creates a new query builder over all member tables of the
+		// {{.NameGo}} union: {{.Members}}.
+		func New{{.NameGo}}(db Database) BuilderOf[model.{{.NameGo}}, model.{{.NameGo}}] {
+			q := lib.NewQuery[model.{{.NameGo}}]("{{.Tables}}")
+			{{- if .SoftDelete}}
+			// Automatically exclude soft-deleted records
+			q.SoftDeleteFilter = lib.NewNillable[model.{{.NameGo}}](lib.Field(lib.NewKey[model.{{.NameGo}}](), "deleted_at")).Nil(true)
+			{{- end}}
+			{{- if .Expiry}}
+			// Automatically exclude expired records
+			q.ExpiryField = "expires_at"
+			{{- end}}
+			return BuilderOf[model.{{.NameGo}}, model.{{.NameGo}}]{builder[model.{{.NameGo}}, model.{{.NameGo}}]{
+				db:    db,
+				info:  {{.NameGoLower}}ModelInfo,
+				query: q,
+			}}
+		}
+	`
+
+	var softDelete, expiry bool
+
+	names := make([]string, len(union.Members))
+
+	for i, member := range union.Members {
+		names[i] = member.NameGo()
+
+		if member.Source == nil {
+			continue
+		}
+		softDelete = softDelete || member.Source.SoftDelete
+		expiry = expiry || member.Source.Expiry
+	}
+
+	data := map[string]any{
+		"NameGo":      union.NameGo(),
+		"NameGoLower": union.NameGoLower(),
+		"Tables":      union.QueryDatabase(),
+		"Members":     strings.Join(names, ", "),
+		"SoftDelete":  softDelete,
+		"Expiry":      expiry,
+	}
+
+	return b.newQueryFile().render(
+		b.fs.Writer(path.Join(b.path(), union.FileName())),
+		"queryUnion", tmpl, data,
+	)
+}
+
 // buildViewFile generates the query builder constructor for a read-only view.
 func (b *queryBuilder) buildViewFile(view *field.ViewTable) error {
 	data := map[string]any{
@@ -137,7 +216,7 @@ func (b *queryBuilder) newQueryFile() *goFile {
 func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[string]any) error {
 	tmpl := `
 		// {{.NameGoLower}}ModelInfo holds the model-specific unmarshal functions for {{.NameGo}}.
-		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}]{
+		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}, *model.{{.NameGo}}]{
 			{{- if .HasFields}}
 			Fields: conv.{{.NameGo}}Fields,
 			{{- end}}
@@ -181,7 +260,7 @@ func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[s
 			// Automatically exclude expired records
 			q.ExpiryField = "expires_at"
 			{{- end}}
-			return Builder[model.{{.NameGo}}]{builder[model.{{.NameGo}}]{
+			return Builder[model.{{.NameGo}}]{builder[model.{{.NameGo}}, *model.{{.NameGo}}]{
 				db:      db,
 				info:    {{.NameGoLower}}ModelInfo,
 				query:   q,

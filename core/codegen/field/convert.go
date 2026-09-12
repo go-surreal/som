@@ -8,6 +8,7 @@ import (
 
 type Def struct {
 	Nodes     []*NodeTable
+	Unions    []*UnionTable
 	Edges     []*EdgeTable
 	Views     []*ViewTable
 	Sinks     []*SinkTable
@@ -36,6 +37,23 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 		def.Nodes = append(def.Nodes, dbNode)
 	}
 
+	for _, union := range source.Unions {
+		dbUnion := &UnionTable{
+			Name:   union.Name,
+			Source: union,
+		}
+
+		for _, member := range union.Members {
+			node := findNodeTable(def.Nodes, member)
+			if node == nil {
+				return nil, fmt.Errorf("union %s references unknown node %s", union.Name, member)
+			}
+			dbUnion.Members = append(dbUnion.Members, node)
+		}
+
+		def.Unions = append(def.Unions, dbUnion)
+	}
+
 	for _, edge := range source.Edges {
 		dbEdge := &EdgeTable{
 			Name:       edge.Name,
@@ -43,17 +61,17 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 			Source:     edge,
 		}
 
-		inField, ok := Convert(source, buildConf, edge.In)
+		inField, ok := edgeEnd(source, buildConf, edge.In)
 		if !ok {
 			return nil, fmt.Errorf("could not convert in field: %v", edge.In)
 		}
-		dbEdge.In = inField.(*Node)
+		dbEdge.In = inField
 
-		outField, ok := Convert(source, buildConf, edge.Out)
+		outField, ok := edgeEnd(source, buildConf, edge.Out)
 		if !ok {
 			return nil, fmt.Errorf("could not convert out field: %v", edge.Out)
 		}
-		dbEdge.Out = outField.(*Node)
+		dbEdge.Out = outField
 
 		for _, f := range edge.Fields {
 			dbField, ok := Convert(source, buildConf, f)
@@ -149,6 +167,54 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 	}
 
 	return &def, nil
+}
+
+// edgeEnd converts the in or out field of an edge, which points to either a
+// single node or a union of nodes.
+func edgeEnd(source *parser.Output, conf *BuildConfig, f parser.Field) (EdgeEnd, bool) {
+	converted, ok := Convert(source, conf, f)
+	if !ok {
+		return nil, false
+	}
+
+	end, ok := converted.(EdgeEnd)
+
+	return end, ok
+}
+
+// buildUnionTable resolves a union by name, with a table for each of its
+// members. The member tables hold no fields, as a union is only ever used to
+// reference records, never to describe them.
+func buildUnionTable(source *parser.Output, name string) *UnionTable {
+	var union *parser.Union
+
+	for _, elem := range source.Unions {
+		if elem.Name == name {
+			union = elem
+			break
+		}
+	}
+
+	if union == nil {
+		return nil
+	}
+
+	table := &UnionTable{Name: union.Name, Source: union}
+
+	for _, member := range union.Members {
+		node := &NodeTable{Name: member}
+
+		for _, elem := range source.Nodes {
+			if elem.Name == member {
+				node.Source = elem
+				break
+			}
+		}
+
+		table.Members = append(table.Members, node)
+	}
+
+	return table
 }
 
 func findNodeTable(nodes []*NodeTable, name string) *NodeTable {
@@ -357,6 +423,20 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 			}, true
 		}
 
+	case *parser.FieldUnion:
+		{
+			union := buildUnionTable(source, f.Union)
+			if union == nil {
+				return nil, false
+			}
+
+			return &Union{
+				baseField: base,
+				source:    f,
+				union:     union,
+			}, true
+		}
+
 	case *parser.FieldEdge:
 		{
 			var edge *parser.Edge
@@ -367,12 +447,12 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				}
 			}
 
-			in, ok := Convert(source, conf, edge.In)
+			in, ok := edgeEnd(source, conf, edge.In)
 			if !ok {
 				return nil, false
 			}
 
-			out, ok := Convert(source, conf, edge.Out)
+			out, ok := edgeEnd(source, conf, edge.Out)
 			if !ok {
 				return nil, false
 			}
@@ -391,8 +471,8 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 				source:    f,
 				table: &EdgeTable{
 					Name:   f.Edge,
-					In:     in.(*Node),
-					Out:    out.(*Node),
+					In:     in,
+					Out:    out,
 					Fields: fields,
 					Source: edge,
 				},

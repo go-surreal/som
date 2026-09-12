@@ -10,7 +10,7 @@ import (
 )
 
 // specialRelationModelInfo holds the model-specific unmarshal functions for SpecialRelation.
-var specialRelationModelInfo = modelInfo[model.SpecialRelation]{
+var specialRelationModelInfo = modelInfo[model.SpecialRelation, *model.SpecialRelation]{
 	Fields: conv.SpecialRelationFields,
 	UnmarshalAll: func(data []byte) ([]*model.SpecialRelation, error) {
 		return unmarshalAll(data, conv.ToSpecialRelationPtr)
@@ -46,7 +46,7 @@ func NewSpecialRelation(db Database) Builder[model.SpecialRelation] {
 	q := lib.NewQuery[model.SpecialRelation]("special_relation")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialRelation.DeletedAt.Nil(true)
-	return Builder[model.SpecialRelation]{builder[model.SpecialRelation]{
+	return Builder[model.SpecialRelation]{builder[model.SpecialRelation, *model.SpecialRelation]{
 		db:      db,
 		info:    specialRelationModelInfo,
 		query:   q,

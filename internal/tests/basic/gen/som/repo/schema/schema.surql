@@ -13,6 +13,11 @@ DEFINE TABLE OVERWRITE team_member SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE team_member TYPE { member: record<all_types>, forecast: record<weather> };
 DEFINE FIELD OVERWRITE role ON TABLE team_member TYPE string;
 
+DEFINE TABLE OVERWRITE square SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE id ON TABLE square TYPE string DEFAULT rand::ulid();
+DEFINE FIELD OVERWRITE label ON TABLE square TYPE string;
+DEFINE FIELD OVERWRITE size ON TABLE square TYPE float ;
+
 DEFINE TABLE OVERWRITE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE special_types TYPE uuid DEFAULT rand::uuid();
 DEFINE FIELD OVERWRITE deleted_at ON TABLE special_types TYPE option<datetime> DEFAULT NONE;
@@ -77,6 +82,19 @@ DEFINE FIELD OVERWRITE created_at ON TABLE ephemeral TYPE option<datetime> VALUE
 DEFINE FIELD OVERWRITE updated_at ON TABLE ephemeral TYPE option<datetime> VALUE time::now();
 DEFINE FIELD OVERWRITE expires_at ON TABLE ephemeral TYPE option<datetime> VALUE $before OR (time::now() + 1s) READONLY;
 DEFINE FIELD OVERWRITE label ON TABLE ephemeral TYPE string;
+
+DEFINE TABLE OVERWRITE drawing SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE id ON TABLE drawing TYPE string DEFAULT rand::ulid();
+DEFINE FIELD OVERWRITE created_at ON TABLE drawing TYPE option<datetime> VALUE $before OR time::now() READONLY;
+DEFINE FIELD OVERWRITE updated_at ON TABLE drawing TYPE option<datetime> VALUE time::now();
+DEFINE FIELD OVERWRITE name ON TABLE drawing TYPE string;
+DEFINE FIELD OVERWRITE subject ON TABLE drawing TYPE option<record<square|circle>>;
+DEFINE FIELD OVERWRITE accent ON TABLE drawing TYPE option<record<square|circle>>;
+
+DEFINE TABLE OVERWRITE circle SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE id ON TABLE circle TYPE uuid DEFAULT rand::uuid();
+DEFINE FIELD OVERWRITE label ON TABLE circle TYPE string;
+DEFINE FIELD OVERWRITE radius ON TABLE circle TYPE float ;
 
 DEFINE TABLE OVERWRITE all_types SCHEMAFULL TYPE NORMAL CHANGEFEED 1d PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE all_types TYPE string DEFAULT rand::ulid();
@@ -210,6 +228,10 @@ DEFINE FIELD OVERWRITE meta ON TABLE edge_relation TYPE object;
 DEFINE FIELD OVERWRITE meta.is_admin ON TABLE edge_relation TYPE bool;
 DEFINE FIELD OVERWRITE meta.is_active ON TABLE edge_relation TYPE bool;
 
+DEFINE TABLE OVERWRITE annotates SCHEMAFULL TYPE RELATION IN drawing OUT square|circle ENFORCED PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE id ON TABLE annotates TYPE string DEFAULT rand::ulid();
+DEFINE FIELD OVERWRITE note ON TABLE annotates TYPE string;
+
 DEFINE TABLE OVERWRITE event_log DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE category ON TABLE event_log TYPE string;
 DEFINE FIELD OVERWRITE value ON TABLE event_log TYPE float ;
@@ -233,6 +255,10 @@ IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__weat
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__team_member_count")) != "48c90dcaf91c76404d1fee94b25b04398360dfaa53d0dffc5c18245289558f33" {
 	DEFINE INDEX OVERWRITE __som__team_member_count ON team_member COUNT;
 	UPSERT type::record("__som__schema", "index:__som__team_member_count") SET hash = "48c90dcaf91c76404d1fee94b25b04398360dfaa53d0dffc5c18245289558f33";
+};
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__square_count")) != "345d33c63eae7508768ac13b61ac73c4164fd1466c991d541777999bb1a83840" {
+	DEFINE INDEX OVERWRITE __som__square_count ON square COUNT;
+	UPSERT type::record("__som__schema", "index:__som__square_count") SET hash = "345d33c63eae7508768ac13b61ac73c4164fd1466c991d541777999bb1a83840";
 };
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__special_types_count")) != "b3f2dd1a78d5374f339c6850d25a14ab38cf1aef47920aa8e48d095be598cdc4" {
 	DEFINE INDEX OVERWRITE __som__special_types_count ON special_types COUNT;
@@ -270,6 +296,14 @@ IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__ephe
 	DEFINE INDEX OVERWRITE __som__ephemeral_expires_at ON ephemeral FIELDS expires_at CONCURRENTLY;
 	UPSERT type::record("__som__schema", "index:__som__ephemeral_expires_at") SET hash = "cdaf2f079f41c273319ddc097a2ac251aa6a1ebb9d35e49823d692c14eeffc51";
 };
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__drawing_count")) != "d0ec985e8b3d02c31df3aa4d7ae02cd0a763081fd612b6bf178b8f4a54bc86c2" {
+	DEFINE INDEX OVERWRITE __som__drawing_count ON drawing COUNT;
+	UPSERT type::record("__som__schema", "index:__som__drawing_count") SET hash = "d0ec985e8b3d02c31df3aa4d7ae02cd0a763081fd612b6bf178b8f4a54bc86c2";
+};
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__circle_count")) != "33fa55e08772862af27c73e8c61db996ff73843b6c293017a706c5049cbbcd10" {
+	DEFINE INDEX OVERWRITE __som__circle_count ON circle COUNT;
+	UPSERT type::record("__som__schema", "index:__som__circle_count") SET hash = "33fa55e08772862af27c73e8c61db996ff73843b6c293017a706c5049cbbcd10";
+};
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__all_types_count")) != "bfc3c43ba8d53a6934ef91706d4e904638a65845f538ed9039036ace83077509" {
 	DEFINE INDEX OVERWRITE __som__all_types_count ON all_types COUNT;
 	UPSERT type::record("__som__schema", "index:__som__all_types_count") SET hash = "bfc3c43ba8d53a6934ef91706d4e904638a65845f538ed9039036ace83077509";
@@ -305,4 +339,8 @@ IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__all_
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__edge_relation_count")) != "6516eaf1ad0812f340a4255a499c974a4dd145d077b99e2aae5b0d25c7a6e55d" {
 	DEFINE INDEX OVERWRITE __som__edge_relation_count ON edge_relation COUNT;
 	UPSERT type::record("__som__schema", "index:__som__edge_relation_count") SET hash = "6516eaf1ad0812f340a4255a499c974a4dd145d077b99e2aae5b0d25c7a6e55d";
+};
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__annotates_count")) != "b5aba78c2ebc07c97a2f2cd43bd10f265ecdd1dfea8c69572903a1b5d87b04de" {
+	DEFINE INDEX OVERWRITE __som__annotates_count ON annotates COUNT;
+	UPSERT type::record("__som__schema", "index:__som__annotates_count") SET hash = "b5aba78c2ebc07c97a2f2cd43bd10f265ecdd1dfea8c69572903a1b5d87b04de";
 };

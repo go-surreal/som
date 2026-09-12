@@ -9,7 +9,7 @@ import (
 )
 
 // ephemeralModelInfo holds the model-specific unmarshal functions for Ephemeral.
-var ephemeralModelInfo = modelInfo[model.Ephemeral]{
+var ephemeralModelInfo = modelInfo[model.Ephemeral, *model.Ephemeral]{
 	Fields: conv.EphemeralFields,
 	UnmarshalAll: func(data []byte) ([]*model.Ephemeral, error) {
 		return unmarshalAll(data, conv.ToEphemeralPtr)
@@ -45,7 +45,7 @@ func NewEphemeral(db Database) Builder[model.Ephemeral] {
 	q := lib.NewQuery[model.Ephemeral]("ephemeral")
 	// Automatically exclude expired records
 	q.ExpiryField = "expires_at"
-	return Builder[model.Ephemeral]{builder[model.Ephemeral]{
+	return Builder[model.Ephemeral]{builder[model.Ephemeral, *model.Ephemeral]{
 		db:      db,
 		info:    ephemeralModelInfo,
 		query:   q,

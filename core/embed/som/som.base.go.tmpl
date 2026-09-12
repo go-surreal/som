@@ -299,6 +299,61 @@ type node interface {
 	isNode()
 }
 
+// Union is embedded into an interface in the model package to declare it a
+// union of node models, which maps to a multi-table record link in the
+// database (record<a|b|c>). Its type parameter must be the declaring
+// interface itself:
+//
+//	type Shape interface {
+//	    som.Union[Shape]
+//	}
+//
+// A node becomes a member of that union by embedding Part of it. Since the
+// method Union requires is unexported and carries the union as its parameter
+// type, a model can only join a union through the matching Part embed.
+type Union[T any] interface {
+	unionOf(T)
+}
+
+// OpenUnion is embedded into an interface in the model package to declare it a
+// union that is not sealed. It requires no marker method, so a node can be a
+// member of any number of open unions:
+//
+//	type Colored interface {
+//	    som.OpenUnion
+//
+//	    Color() string
+//	}
+//
+// What a member is checked against is what the interface itself declares, so an
+// open union must declare at least one method. A node joins it with a blank
+// Part field, which declares the membership without adding a method:
+//
+//	type Square struct {
+//	    som.Node[som.ULID]
+//	    som.Part[Shape]
+//
+//	    _ som.Part[Colored]
+//	}
+type OpenUnion interface{}
+
+// Part is embedded into a node model to declare it a member of the union T:
+//
+//	type Square struct {
+//	    som.Node[som.ULID]
+//	    som.Part[Shape]
+//
+//	    Size float64
+//	}
+//
+// A model can be part of one sealed union only: two embeds would both be named
+// Part, and even under distinct names the two unionOf methods would sit at the
+// same depth, so neither of them gets promoted. Further memberships are
+// declared with a blank Part field and an OpenUnion.
+type Part[T any] struct{}
+
+func (Part[T]) unionOf(T) {}
+
 // fragmentState is embedded into Fragment. As an unexported alias it keeps the
 // embedded field itself inaccessible to application code, which only sees the
 // promoted RecordID, Marker and IsPartial methods.

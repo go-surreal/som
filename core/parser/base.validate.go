@@ -51,6 +51,15 @@ func nodeExists(name string, out *Output) bool {
 	return false
 }
 
+func unionExists(name string, out *Output) bool {
+	for _, u := range out.Unions {
+		if u.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func edgeExists(name string, out *Output) bool {
 	for _, e := range out.Edges {
 		if e.Name == name {
@@ -72,6 +81,33 @@ func enumExists(name string, out *Output) bool {
 func structExists(name string, out *Output) bool {
 	for _, s := range out.Structs {
 		if s.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func viewExists(name string, out *Output) bool {
+	for _, v := range out.Views {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func sinkExists(name string, out *Output) bool {
+	for _, s := range out.Sinks {
+		if s.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func fragmentExists(name string, out *Output) bool {
+	for _, f := range out.Fragments {
+		if f.Name == name {
 			return true
 		}
 	}

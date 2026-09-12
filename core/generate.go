@@ -68,6 +68,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		source, err = parser.Parse(inPath, outPkg,
 			[]parser.TypeHandler{
 				&parser.Node{},
+				&parser.Union{},
 				&parser.Edge{},
 				&parser.View{},
 				&parser.Sink{},
@@ -89,6 +90,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 				&parser.FieldGeometry{},
 				&parser.FieldURL{},
 				&parser.FieldNode{},
+				&parser.FieldUnion{},
 				&parser.FieldEdge{},
 				parser.InvalidView(),
 				parser.InvalidSink(),
