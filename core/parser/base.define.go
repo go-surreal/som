@@ -2,6 +2,7 @@ package parser
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -161,8 +162,9 @@ func main() {
 	cmd.Dir = mod.Dir()
 	output, err := cmd.Output()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("failed to run Definitions(): %s", string(exitErr.Stderr))
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return nil, fmt.Errorf("failed to run Definitions(): %s: %w", exitErr.Stderr, err)
 		}
 		return nil, fmt.Errorf("failed to run Definitions(): %w", err)
 	}

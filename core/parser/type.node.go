@@ -179,7 +179,7 @@ func ParseNode(v gotype.Type, ctx *TypeContext) (*Node, error) {
 
 					complexID, err := ParseComplexIDFields(f.Elem(), ctx)
 					if err != nil {
-						return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+						return nil, fmt.Errorf("node %s: %w", v.Name(), err)
 					}
 					node.IDType = complexID.Kind
 					node.ComplexID = complexID
@@ -200,22 +200,22 @@ func ParseNode(v gotype.Type, ctx *TypeContext) (*Node, error) {
 
 			matched, err := ParseFeature(f, internalPkg, &features, &node.Fields)
 			if err != nil {
-				return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+				return nil, fmt.Errorf("node %s: %w", v.Name(), err)
 			}
 			if matched {
 				continue
 			}
 
-			return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
+			return nil, fmt.Errorf("node %s: anonymous field %s not allowed", v.Name(), f.Name())
 		}
 
 		if strings.ToLower(f.Name()) == "id" {
-			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.%s", v.Name(), node.IDEmbed)
+			return nil, fmt.Errorf("node %s: field ID not allowed, already provided by som.%s", v.Name(), node.IDEmbed)
 		}
 
 		field, err := ctx.ParseField(f)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("node %s: %w", v.Name(), err)
 		}
 
 		node.Fields = append(node.Fields, field)
