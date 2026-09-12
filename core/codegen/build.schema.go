@@ -120,8 +120,8 @@ func (b *build) buildSchemaFile() error {
 		statement, err := renderStatement(tableStmt, tableDef{
 			Name:       edge.NameDatabase(),
 			Type:       "RELATION",
-			In:         edge.In.RelationDatabase(),
-			Out:        edge.Out.RelationDatabase(),
+			In:         field.RelationDatabase(edge.In),
+			Out:        field.RelationDatabase(edge.Out),
 			Changefeed: edge.Changefeed,
 		})
 		if err != nil {

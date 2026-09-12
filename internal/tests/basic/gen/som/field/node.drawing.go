@@ -24,11 +24,3 @@ type drawing[M any] struct {
 	UpdatedAt distinct.Field[M, time.Time]
 	Name      distinct.Field[M, string]
 }
-
-func (n drawing[M]) Subject() shape[M] {
-	return newShape[M](keyed(n.key, "subject"))
-}
-
-func (n drawing[M]) Accent() colored[M] {
-	return newColored[M](keyed(n.key, "accent"))
-}

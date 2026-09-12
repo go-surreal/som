@@ -43,20 +43,12 @@ func (f *Union) Union() *UnionTable {
 	return f.union
 }
 
-func (f *Union) TargetNameGo() string {
-	return f.union.NameGo()
-}
-
-func (f *Union) TargetNameGoLower() string {
-	return f.union.NameGoLower()
+func (f *Union) Target() Named {
+	return f.union
 }
 
 func (f *Union) TargetTables() []*NodeTable {
 	return f.union.Members
-}
-
-func (f *Union) RelationDatabase() string {
-	return f.union.RelationDatabase()
 }
 
 func (f *Union) CodeGen() *CodeGen {
@@ -64,8 +56,6 @@ func (f *Union) CodeGen() *CodeGen {
 		filterDefine: f.filterDefine,
 		filterInit:   f.filterInit,
 		filterFunc:   f.filterFunc,
-
-		fieldFunc: f.fieldFieldFunc,
 
 		cborMarshal:   f.cborMarshal,
 		cborUnmarshal: f.cborUnmarshal,
@@ -93,16 +83,6 @@ func (f *Union) filterFunc(ctx Context) jen.Code {
 		Block(
 			jen.Return(jen.Add(f.filterInit(ctx)).
 				Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("n").Dot("Key"), jen.Lit(f.NameDatabase())))))
-}
-
-func (f *Union) fieldFieldFunc(ctx Context) jen.Code {
-	return jen.Func().
-		Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).
-		Id(f.NameGo()).Params().
-		Id(f.union.NameGoLower()).Types(def.TypeModel).
-		Block(
-			jen.Return(jen.Id("new" + f.union.NameGo()).Types(def.TypeModel).
-				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 
 func (f *Union) cborMarshal(_ Context) jen.Code {

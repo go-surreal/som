@@ -43,12 +43,6 @@ func (t *UnionTable) TypeDatabase() string {
 	return "record<" + strings.Join(t.memberNames(), "|") + ">"
 }
 
-// RelationDatabase returns the relation endpoint type covering all members of
-// the union, e.g. "square|triangle".
-func (t *UnionTable) RelationDatabase() string {
-	return strings.Join(t.memberNames(), "|")
-}
-
 // QueryDatabase returns the query target selecting from all member tables,
 // e.g. "square, triangle".
 func (t *UnionTable) QueryDatabase() string {

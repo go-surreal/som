@@ -201,12 +201,12 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 		data["Edge"] = map[string]string{
 			"InNameGo":      edge.In.NameGo(),
 			"InNameDB":      edge.In.NameDatabase(),
-			"InTableGo":     edge.In.TargetNameGo(),
-			"InTableLower":  edge.In.TargetNameGoLower(),
+			"InTableGo":     edge.In.Target().NameGo(),
+			"InTableLower":  edge.In.Target().NameGoLower(),
 			"OutNameGo":     edge.Out.NameGo(),
 			"OutNameDB":     edge.Out.NameDatabase(),
-			"OutTableGo":    edge.Out.TargetNameGo(),
-			"OutTableLower": edge.Out.TargetNameGoLower(),
+			"OutTableGo":    edge.Out.Target().NameGo(),
+			"OutTableLower": edge.Out.Target().NameGoLower(),
 		}
 	} else {
 		data["EdgeFuncs"] = b.edgeFuncs(file, elem)

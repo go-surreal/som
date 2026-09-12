@@ -65,17 +65,24 @@ type Table interface {
 type EdgeEnd interface {
 	Field
 
-	// TargetNameGo is the Go name of the element the end points to, which is
-	// the node table or, for a multi-table end, the union of them.
-	TargetNameGo() string
-	TargetNameGoLower() string
+	// Target is the element the end points to: the node table or, for a
+	// multi-table end, the union of them.
+	Target() Named
 
 	// TargetTables returns every node table the end may point to.
 	TargetTables() []*NodeTable
+}
 
-	// RelationDatabase returns the endpoint type of the relation definition,
-	// e.g. "square|triangle" for a multi-table end.
-	RelationDatabase() string
+// RelationDatabase returns the endpoint type of the relation definition, which
+// for a multi-table end lists every table it may point to, e.g. "square|circle".
+func RelationDatabase(end EdgeEnd) string {
+	names := make([]string, len(end.TargetTables()))
+
+	for i, target := range end.TargetTables() {
+		names[i] = target.NameDatabase()
+	}
+
+	return strings.Join(names, "|")
 }
 
 // edgeEndHasTable reports whether the given end of an edge may point to the

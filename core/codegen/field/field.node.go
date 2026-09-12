@@ -41,20 +41,12 @@ func (f *Node) Table() *NodeTable {
 	return f.table
 }
 
-func (f *Node) TargetNameGo() string {
-	return f.table.NameGo()
-}
-
-func (f *Node) TargetNameGoLower() string {
-	return f.table.NameGoLower()
+func (f *Node) Target() Named {
+	return f.table
 }
 
 func (f *Node) TargetTables() []*NodeTable {
 	return []*NodeTable{f.table}
-}
-
-func (f *Node) RelationDatabase() string {
-	return f.table.NameDatabase()
 }
 
 // IsPointer reports whether the model field is a pointer to the related node.

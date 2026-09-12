@@ -54,12 +54,6 @@ func (b *accessorBuilder) build() error {
 		}
 	}
 
-	for _, union := range b.unions {
-		if err := b.buildUnionFile(union); err != nil {
-			return err
-		}
-	}
-
 	for _, object := range b.objects {
 		if err := b.buildFile(object); err != nil {
 			return err
@@ -67,31 +61,6 @@ func (b *accessorBuilder) build() error {
 	}
 
 	return nil
-}
-
-// buildUnionFile generates the accessor of a union. A union has no fields of
-// its own, so the accessor only carries the key of the link, which is what a
-// field of a union member is addressed through.
-func (b *accessorBuilder) buildUnionFile(union *field.UnionTable) error {
-	tmpl := `
-		func new{{.NameGo}}[M any](key string) {{.NameGoLower}}[M] {
-			return {{.NameGoLower}}[M]{key: key}
-		}
-
-		type {{.NameGoLower}}[M any] struct {
-			key string
-		}
-	`
-
-	data := map[string]any{
-		"NameGo":      union.NameGo(),
-		"NameGoLower": union.NameGoLower(),
-	}
-
-	return newGoFile(b.pkgName).render(
-		b.fs.Writer(path.Join(b.path(), union.FileName())),
-		b.name+"Union", tmpl, data,
-	)
 }
 
 // buildFile generates the accessors for a single table or object. Only tables
