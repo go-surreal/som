@@ -8,24 +8,24 @@ import (
 )
 
 // shapeModelInfo holds the model-specific unmarshal functions for Shape.
-var shapeModelInfo = modelInfo[model.Shape]{
+var shapeModelInfo = modelInfo[model.Shape, model.Shape]{
 	Fields: conv.ShapeFields,
-	UnmarshalAll: func(data []byte) ([]*model.Shape, error) {
-		return unmarshalAll(data, conv.ToShapePtr)
+	UnmarshalAll: func(data []byte) ([]model.Shape, error) {
+		return unmarshalAll(data, conv.ToShapeValue)
 	},
-	UnmarshalOne: func(data []byte) (*model.Shape, error) {
-		return unmarshalOne(data, conv.ToShapePtr)
+	UnmarshalOne: func(data []byte) (model.Shape, error) {
+		return unmarshalOne(data, conv.ToShapeValue)
 	},
-	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Shape], error) {
-		return unmarshalSearchAll(data, clauses, conv.ToShapePtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[model.Shape], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToShapeValue)
 	},
 }
 
 // NewShape creates a new query builder over all member tables of the
 // Shape union: Square, Circle.
-func NewShape(db Database) Builder[model.Shape] {
+func NewShape(db Database) BuilderOf[model.Shape, model.Shape] {
 	q := lib.NewQuery[model.Shape]("square, circle")
-	return Builder[model.Shape]{builder[model.Shape]{
+	return BuilderOf[model.Shape, model.Shape]{builder[model.Shape, model.Shape]{
 		db:    db,
 		info:  shapeModelInfo,
 		query: q,

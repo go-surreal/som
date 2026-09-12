@@ -9,7 +9,7 @@ import (
 )
 
 // drawingModelInfo holds the model-specific unmarshal functions for Drawing.
-var drawingModelInfo = modelInfo[model.Drawing]{
+var drawingModelInfo = modelInfo[model.Drawing, *model.Drawing]{
 	Fields: conv.DrawingFields,
 	UnmarshalAll: func(data []byte) ([]*model.Drawing, error) {
 		return unmarshalAll(data, conv.ToDrawingPtr)
@@ -43,7 +43,7 @@ var drawingRangeFn = rangeFn[model.Drawing](func(q *lib.Query[model.Drawing], fr
 // NewDrawing creates a new query builder for Drawing models.
 func NewDrawing(db Database) Builder[model.Drawing] {
 	q := lib.NewQuery[model.Drawing]("drawing")
-	return Builder[model.Drawing]{builder[model.Drawing]{
+	return Builder[model.Drawing]{builder[model.Drawing, *model.Drawing]{
 		db:      db,
 		info:    drawingModelInfo,
 		query:   q,

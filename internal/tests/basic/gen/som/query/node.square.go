@@ -9,7 +9,7 @@ import (
 )
 
 // squareModelInfo holds the model-specific unmarshal functions for Square.
-var squareModelInfo = modelInfo[model.Square]{
+var squareModelInfo = modelInfo[model.Square, *model.Square]{
 	Fields: conv.SquareFields,
 	UnmarshalAll: func(data []byte) ([]*model.Square, error) {
 		return unmarshalAll(data, conv.ToSquarePtr)
@@ -43,7 +43,7 @@ var squareRangeFn = rangeFn[model.Square](func(q *lib.Query[model.Square], from 
 // NewSquare creates a new query builder for Square models.
 func NewSquare(db Database) Builder[model.Square] {
 	q := lib.NewQuery[model.Square]("square")
-	return Builder[model.Square]{builder[model.Square]{
+	return Builder[model.Square]{builder[model.Square, *model.Square]{
 		db:      db,
 		info:    squareModelInfo,
 		query:   q,

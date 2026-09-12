@@ -11,7 +11,7 @@ import (
 )
 
 // teamMemberModelInfo holds the model-specific unmarshal functions for TeamMember.
-var teamMemberModelInfo = modelInfo[model.TeamMember]{
+var teamMemberModelInfo = modelInfo[model.TeamMember, *model.TeamMember]{
 	Fields: conv.TeamMemberFields,
 	UnmarshalAll: func(data []byte) ([]*model.TeamMember, error) {
 		return unmarshalAll(data, conv.ToTeamMemberPtr)
@@ -47,7 +47,7 @@ var teamMemberRangeFn = rangeFn[model.TeamMember](func(q *lib.Query[model.TeamMe
 // NewTeamMember creates a new query builder for TeamMember models.
 func NewTeamMember(db Database) Builder[model.TeamMember] {
 	q := lib.NewQuery[model.TeamMember]("team_member")
-	return Builder[model.TeamMember]{builder[model.TeamMember]{
+	return Builder[model.TeamMember]{builder[model.TeamMember, *model.TeamMember]{
 		db:      db,
 		info:    teamMemberModelInfo,
 		query:   q,

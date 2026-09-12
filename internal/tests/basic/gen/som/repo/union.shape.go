@@ -8,7 +8,7 @@ import (
 
 type ShapeRepo interface {
 	// Query returns a new query builder over all member tables of the Shape union.
-	Query() query.Builder[model.Shape]
+	Query() query.BuilderOf[model.Shape, model.Shape]
 }
 
 // ShapeRepo returns the repository instance for the Shape union.
@@ -29,6 +29,6 @@ type shape struct {
 // Query returns a new query builder over all member tables of the Shape
 // union: Square, Circle. To create, update or delete a record, use the
 // repository of the member it belongs to.
-func (r *shape) Query() query.Builder[model.Shape] {
+func (r *shape) Query() query.BuilderOf[model.Shape, model.Shape] {
 	return query.NewShape(r.db)
 }

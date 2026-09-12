@@ -21,38 +21,55 @@ import (
 
 // modelInfo holds type-specific conversion functions.
 // Passed directly to builder - no registry lookup needed.
-type modelInfo[M any] struct {
-	// UnmarshalAll unmarshals query results into []*M
-	UnmarshalAll func(data []byte) ([]*M, error)
+type modelInfo[M any, R any] struct {
+	// UnmarshalAll unmarshals query results into []R
+	UnmarshalAll func(data []byte) ([]R, error)
 
-	// UnmarshalOne unmarshals a single result into *M
-	UnmarshalOne func(data []byte) (*M, error)
+	// UnmarshalOne unmarshals a single result into R
+	UnmarshalOne func(data []byte) (R, error)
 
-	// UnmarshalSearchAll unmarshals search query results into []SearchResult[*M]
-	UnmarshalSearchAll func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*M], error)
+	// UnmarshalSearchAll unmarshals search query results into []SearchResult[R]
+	UnmarshalSearchAll func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[R], error)
 
 	// Fields returns the DB-keyed value map for a model, using DB field names
 	// and DB-typed values. Used to derive pagination cursor values.
-	Fields func(*M) map[string]any
+	Fields func(R) map[string]any
 }
 
 type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) string
 
 // M is a placeholder for the model type.
-type builder[M any] struct {
+type builder[M any, R any] struct {
 	db      Database
 	query   lib.Query[M]
-	info    modelInfo[M]
+	info    modelInfo[M, R]
 	rangeFn rangeFn[M]
 }
 
-type Builder[M any] struct {
-	builder[M]
+type BuilderOf[M any, R any] struct {
+	builder[M, R]
 }
 
-type BuilderNoLive[M any] struct {
-	builder[M]
+type BuilderNoLiveOf[M any, R any] struct {
+	builder[M, R]
 }
+
+// The exported query types carry a second type parameter for the element a
+// query yields, which is a pointer to the model for a table and the interface
+// itself for a union. Every table-backed query uses the single-parameter
+// aliases below, so only a union has to name both.
+
+type Builder[M any] = BuilderOf[M, *M]
+
+type BuilderNoLive[M any] = BuilderNoLiveOf[M, *M]
+
+type PageBuilder[M any] = PageBuilderOf[M, *M]
+
+type SearchBuilder[M any] = SearchBuilderOf[M, *M]
+
+type Entry[M any] = EntryOf[M, *M]
+
+type Page[M any] = PageOf[M, *M]
 
 // Where adds a where statement to the query to
 // select records based on the given conditions.
@@ -61,108 +78,108 @@ type BuilderNoLive[M any] struct {
 // together that all need to match.
 // Use filter.Any to chain multiple conditions
 // together where at least one needs to match.
-func (b builder[M]) Where(filters ...lib.Filter[M]) Builder[M] {
+func (b builder[M, R]) Where(filters ...lib.Filter[M]) BuilderOf[M, R] {
 	b.query.Where = append(b.query.Where, filters...)
-	return Builder[M]{b}
+	return BuilderOf[M, R]{b}
 }
 
 // WithDeleted allows querying soft-deleted records.
 // By default, soft-deleted records are automatically filtered out.
 // This method only has an effect on models with SoftDelete enabled.
-func (b builder[M]) WithDeleted() Builder[M] {
+func (b builder[M, R]) WithDeleted() BuilderOf[M, R] {
 	b.query.IncludeDeleted = true
-	return Builder[M]{b}
+	return BuilderOf[M, R]{b}
 }
 
 // WithExpired allows querying records that have passed their expiry.
 // By default, expired records are automatically filtered out.
 // This method only has an effect on models with a som.Expiry embed.
-func (b builder[M]) WithExpired() Builder[M] {
+func (b builder[M, R]) WithExpired() BuilderOf[M, R] {
 	b.query.IncludeExpired = true
-	return Builder[M]{b}
+	return BuilderOf[M, R]{b}
 }
 
 // Range restricts the query to a range of record IDs.
 // This uses SurrealDB's native range syntax (e.g. table:start..end)
 // which avoids table scans and is much more performant than WHERE filters.
 // Only available for models with complex IDs (ArrayID/ObjectID).
-func (b builder[M]) Range(from som.RangeFrom, to som.RangeTo) BuilderNoLive[M] {
+func (b builder[M, R]) Range(from som.RangeFrom, to som.RangeTo) BuilderNoLiveOf[M, R] {
 	if b.rangeFn != nil {
 		b.query.RangeExpr = b.rangeFn(&b.query, from, to)
 	}
-	return BuilderNoLive[M]{b}
+	return BuilderNoLiveOf[M, R]{b}
 }
 
 // Order sorts the returned records based on the given conditions.
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
 // it would override the sort conditions.
-func (b builder[M]) Order(by ...*lib.Sort[M]) BuilderNoLive[M] {
+func (b builder[M, R]) Order(by ...*lib.Sort[M]) BuilderNoLiveOf[M, R] {
 	for _, s := range by {
 		b.query.Sort = append(b.query.Sort, (*lib.SortBuilder)(s))
 	}
-	return BuilderNoLive[M]{b}
+	return BuilderNoLiveOf[M, R]{b}
 }
 
 // OrderRandom sorts the returned records in a random order.
 // Note: OrderRandom takes precedence over Order.
-func (b builder[M]) OrderRandom() BuilderNoLive[M] {
+func (b builder[M, R]) OrderRandom() BuilderNoLiveOf[M, R] {
 	b.query.SortRandom = true
-	return BuilderNoLive[M]{b}
+	return BuilderNoLiveOf[M, R]{b}
 }
 
 // Start skips the first x records for the result set.
-func (b builder[M]) Start(start int) BuilderNoLive[M] {
+func (b builder[M, R]) Start(start int) BuilderNoLiveOf[M, R] {
 	b.query.Start = start
-	return BuilderNoLive[M]{b}
+	return BuilderNoLiveOf[M, R]{b}
 }
 
 // Limit restricts the query to return at most x records.
-func (b builder[M]) Limit(limit int) BuilderNoLive[M] {
+func (b builder[M, R]) Limit(limit int) BuilderNoLiveOf[M, R] {
 	b.query.Limit = limit
-	return BuilderNoLive[M]{b}
+	return BuilderNoLiveOf[M, R]{b}
 }
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
 // Note: Soft-delete filtering does not apply to fetched relations.
 // All related records are returned regardless of their soft-delete status.
-func (b builder[M]) Fetch(fetch ...with.Fetch_[M]) Builder[M] {
+func (b builder[M, R]) Fetch(fetch ...with.Fetch_[M]) BuilderOf[M, R] {
 	for _, f := range fetch {
 		field := fmt.Sprintf("%v", f)
 		if field != "" {
 			b.query.Fetch = append(b.query.Fetch, field)
 		}
 	}
-	return Builder[M]{b}
+	return BuilderOf[M, R]{b}
 }
 
 // Timeout adds an execution time limit to the query.
 // When exceeded, the query call will return with an error.
-func (b builder[M]) Timeout(timeout time.Duration) BuilderNoLive[M] {
+func (b builder[M, R]) Timeout(timeout time.Duration) BuilderNoLiveOf[M, R] {
 	b.query.Timeout = timeout
-	return BuilderNoLive[M]{b}
+	return BuilderNoLiveOf[M, R]{b}
 }
 
 // Parallel tells SurrealDB that individual parts
 // of the query can be calculated in parallel.
 // This could lead to a faster execution.
-func (b builder[M]) Parallel(parallel bool) BuilderNoLive[M] {
+func (b builder[M, R]) Parallel(parallel bool) BuilderNoLiveOf[M, R] {
 	b.query.Parallel = parallel
-	return BuilderNoLive[M]{b}
+	return BuilderNoLiveOf[M, R]{b}
 }
 
 // TempFiles tells SurrealDB to process the query using temporary files
 // rather than memory. This reduces memory usage for large result sets
 // at the cost of slower performance.
-func (b builder[M]) TempFiles(tempFiles bool) BuilderNoLive[M] {
+func (b builder[M, R]) TempFiles(tempFiles bool) BuilderNoLiveOf[M, R] {
 	b.query.TempFiles = tempFiles
-	return BuilderNoLive[M]{b}
+	return BuilderNoLiveOf[M, R]{b}
 }
 
 // Count returns the size of the result set, in other words, the
 // number of records matching the conditions of the query.
-func (b builder[M]) Count(ctx context.Context) (int, error) {
+func (b builder[M, R]) Count(ctx context.Context) (int, error) {
 	req := b.query.BuildAsCount()
 	raw, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -180,14 +197,14 @@ func (b builder[M]) Count(ctx context.Context) (int, error) {
 }
 
 // CountAsync is the asynchronous version of Count.
-func (b builder[M]) CountAsync(ctx context.Context) *asyncResult[int] {
+func (b builder[M, R]) CountAsync(ctx context.Context) *asyncResult[int] {
 	return async(ctx, b.Count)
 }
 
 // Exists returns whether at least one record for the conditions
 // of the query exists or not. In other words, it returns whether
 // the size of the result set is greater than 0.
-func (b builder[M]) Exists(ctx context.Context) (bool, error) {
+func (b builder[M, R]) Exists(ctx context.Context) (bool, error) {
 	count, err := b.Count(ctx)
 	if err != nil {
 		return false, err
@@ -196,12 +213,12 @@ func (b builder[M]) Exists(ctx context.Context) (bool, error) {
 }
 
 // ExistsAsync is the asynchronous version of Exists.
-func (b builder[M]) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+func (b builder[M, R]) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 	return async(ctx, b.Exists)
 }
 
 // All returns all records matching the conditions of the query.
-func (b builder[M]) All(ctx context.Context) ([]*M, error) {
+func (b builder[M, R]) All(ctx context.Context) ([]R, error) {
 	req := b.query.BuildAsAll()
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -211,7 +228,7 @@ func (b builder[M]) All(ctx context.Context) ([]*M, error) {
 }
 
 // AllAsync is the asynchronous version of All.
-func (b builder[M]) AllAsync(ctx context.Context) *asyncResult[[]*M] {
+func (b builder[M, R]) AllAsync(ctx context.Context) *asyncResult[[]R] {
 	return async(ctx, b.All)
 }
 
@@ -224,7 +241,7 @@ type recordRef struct {
 
 // allIDRefs returns the IDs of all matching records, both as strings and in
 // their raw DB encoding.
-func (b builder[M]) allIDRefs(ctx context.Context) ([]recordRef, error) {
+func (b builder[M, R]) allIDRefs(ctx context.Context) ([]recordRef, error) {
 	req := b.query.BuildAsAllIDs()
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -250,7 +267,7 @@ func (b builder[M]) allIDRefs(ctx context.Context) ([]recordRef, error) {
 }
 
 // AllIDs returns the IDs of all records matching the conditions of the query.
-func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
+func (b builder[M, R]) AllIDs(ctx context.Context) ([]string, error) {
 	refs, err := b.allIDRefs(ctx)
 	if err != nil {
 		return nil, err
@@ -263,34 +280,35 @@ func (b builder[M]) AllIDs(ctx context.Context) ([]string, error) {
 }
 
 // AllIDsAsync is the asynchronous version of AllIDs.
-func (b builder[M]) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
+func (b builder[M, R]) AllIDsAsync(ctx context.Context) *asyncResult[[]string] {
 	return async(ctx, b.AllIDs)
 }
 
 // First returns the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (b builder[M]) First(ctx context.Context) (*M, error) {
+func (b builder[M, R]) First(ctx context.Context) (R, error) {
+	var zero R
 	b.query.Limit = 1
 	res, err := b.All(ctx)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 	if len(res) < 1 {
-		return nil, som.ErrNotFound
+		return zero, som.ErrNotFound
 	}
 	return res[0], nil
 }
 
 // FirstAsync is the asynchronous version of First.
-func (b builder[M]) FirstAsync(ctx context.Context) *asyncResult[*M] {
+func (b builder[M, R]) FirstAsync(ctx context.Context) *asyncResult[R] {
 	return async(ctx, b.First)
 }
 
 // FirstID returns the ID of the first record matching the conditions of the query.
 // This comes in handy when using a filter for a field with unique values or when
 // sorting the result set in a specific order where only the first result is relevant.
-func (b builder[M]) FirstID(ctx context.Context) (string, error) {
+func (b builder[M, R]) FirstID(ctx context.Context) (string, error) {
 	b.query.Limit = 1
 	res, err := b.AllIDs(ctx)
 	if err != nil {
@@ -303,14 +321,14 @@ func (b builder[M]) FirstID(ctx context.Context) (string, error) {
 }
 
 // FirstIDAsync is the asynchronous version of FirstID.
-func (b builder[M]) FirstIDAsync(ctx context.Context) *asyncResult[string] {
+func (b builder[M, R]) FirstIDAsync(ctx context.Context) *asyncResult[string] {
 	return async(ctx, b.FirstID)
 }
 
 // totalOrderSorts returns the query's own sort with an id tiebreaker appended,
 // making the order total so batch boundaries are unambiguous and keyset
 // cursors are stable.
-func (b builder[M]) totalOrderSorts() []*lib.SortBuilder {
+func (b builder[M, R]) totalOrderSorts() []*lib.SortBuilder {
 	sorts := slices.Clone(b.query.Sort)
 	if !slices.ContainsFunc(sorts, func(s *lib.SortBuilder) bool { return s.Field == "id" }) {
 		sorts = append(sorts, lib.NewSortBuilder("id", lib.SortAsc))
@@ -327,10 +345,12 @@ func (b builder[M]) totalOrderSorts() []*lib.SortBuilder {
 // every batch. Queries that cannot produce a cursor (random ordering, models
 // with a complex ID, or a sort on a field that is not stored top-level) fall
 // back to offset paging.
-func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, error] {
-	return func(yield func(*M, error) bool) {
+func (b builder[M, R]) Iterate(ctx context.Context, batchSize int) iter.Seq2[R, error] {
+	return func(yield func(R, error) bool) {
+		var zero R
+
 		if batchSize < 1 {
-			yield(nil, errors.New("batch size must be positive"))
+			yield(zero, errors.New("batch size must be positive"))
 			return
 		}
 
@@ -355,7 +375,7 @@ func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, er
 
 			results, err := batchBuilder.All(ctx)
 			if err != nil {
-				yield(nil, err)
+				yield(zero, err)
 				return
 			}
 
@@ -393,7 +413,7 @@ func (b builder[M]) Iterate(ctx context.Context, batchSize int) iter.Seq2[*M, er
 // Batches are seeked via a keyset cursor on the record ID rather than an
 // offset. Since the query only selects ids, a sort on any other field leaves
 // no cursor value to seek on and falls back to offset paging.
-func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[string, error] {
+func (b builder[M, R]) IterateID(ctx context.Context, batchSize int) iter.Seq2[string, error] {
 	return func(yield func(string, error) bool) {
 		if batchSize < 1 {
 			yield("", errors.New("batch size must be positive"))
@@ -458,7 +478,7 @@ func (b builder[M]) IterateID(ctx context.Context, batchSize int) iter.Seq2[stri
 // it is advised to execute the live query first. This is to ensure
 // data consistency. The other way around, there could be missing
 // updates happening between the initial query and the live query.
-func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
+func (b BuilderOf[M, R]) Live(ctx context.Context) (<-chan LiveResult[R], error) {
 	req := b.query.BuildAsLive()
 	resChan, err := b.db.Live(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -470,7 +490,7 @@ func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error) {
 // LiveCount is the live version of Count.
 // Whenever a record is created or deleted that matches the
 // conditions of the query, the count will be updated.
-func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
+func (b BuilderOf[M, R]) LiveCount(ctx context.Context) (<-chan int, error) {
 	count, err := b.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute initial count: %w", err)
@@ -500,13 +520,13 @@ func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
 
 				switch res.(type) {
 
-				case LiveCreate[*M]:
+				case LiveCreate[R]:
 					count++
 
-				case LiveDelete[*M]:
+				case LiveDelete[R]:
 					count--
 
-				case LiveKilled[*M]:
+				case LiveKilled[R]:
 					return
 
 				default:
@@ -527,14 +547,14 @@ func (b Builder[M]) LiveCount(ctx context.Context) (<-chan int, error) {
 
 // LiveDiff behaves like Live, but instead of receiving the full result
 // set on every change, it only receives the actual changes.
-//func (b builder[M]) LiveDiff(ctx context.Context) (<-chan LiveResult[*M], error) {
+//func (b builder[M, R]) LiveDiff(ctx context.Context) (<-chan LiveResult[R], error) {
 //	panic("not yet implemented") // TODO: implement!
 //}
 
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
-func (b builder[M]) Describe() string {
+func (b builder[M, R]) Describe() string {
 	req := b.query.BuildAsAll()
 	return strings.TrimSpace(req.Statement)
 }
@@ -543,7 +563,7 @@ func (b builder[M]) Describe() string {
 // It inlines the variables into the query string.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
-func (b builder[M]) DescribeWithVars() string {
+func (b builder[M, R]) DescribeWithVars() string {
 	describe := b.Describe()
 
 	for key, value := range b.query.Vars() {
@@ -554,12 +574,12 @@ func (b builder[M]) DescribeWithVars() string {
 }
 
 // Debug logs the query to the default debug logger.
-func (b builder[M]) Debug(prefix ...string) Builder[M] {
+func (b builder[M, R]) Debug(prefix ...string) BuilderOf[M, R] {
 	slog.Debug(strings.Join(prefix, " ")+b.Describe(),
 		"vars", b.query.Vars(),
 	)
 
-	return Builder[M]{b}
+	return BuilderOf[M, R]{b}
 }
 
 // Paginate starts a cursor-based (keyset) pagination request. Chain First or
@@ -568,13 +588,13 @@ func (b builder[M]) Debug(prefix ...string) Builder[M] {
 //
 //	page, err := query.Order(by.User.CreatedAt.Desc()).
 //		Paginate().First(20).After(cursor).Get(ctx)
-func (b builder[M]) Paginate() PageBuilder[M] {
-	return PageBuilder[M]{builder: b}
+func (b builder[M, R]) Paginate() PageBuilderOf[M, R] {
+	return PageBuilderOf[M, R]{builder: b}
 }
 
 // PageBuilder configures and executes a cursor-based pagination query.
-type PageBuilder[M any] struct {
-	builder builder[M]
+type PageBuilderOf[M any, R any] struct {
+	builder builder[M, R]
 
 	first, last      int
 	after, before    string
@@ -583,60 +603,60 @@ type PageBuilder[M any] struct {
 }
 
 // First requests the first n items (forward pagination).
-func (p PageBuilder[M]) First(n int) PageBuilder[M] {
+func (p PageBuilderOf[M, R]) First(n int) PageBuilderOf[M, R] {
 	p.first = n
 	return p
 }
 
 // Last requests the last n items (backward pagination).
-func (p PageBuilder[M]) Last(n int) PageBuilder[M] {
+func (p PageBuilderOf[M, R]) Last(n int) PageBuilderOf[M, R] {
 	p.last = n
 	return p
 }
 
 // After continues forward pagination after the given cursor.
-func (p PageBuilder[M]) After(cursor string) PageBuilder[M] {
+func (p PageBuilderOf[M, R]) After(cursor string) PageBuilderOf[M, R] {
 	p.after = cursor
 	return p
 }
 
 // Before continues backward pagination before the given cursor.
-func (p PageBuilder[M]) Before(cursor string) PageBuilder[M] {
+func (p PageBuilderOf[M, R]) Before(cursor string) PageBuilderOf[M, R] {
 	p.before = cursor
 	return p
 }
 
 // WithTotalCount also fetches the total number of matching records, exposed as
 // Page.TotalCount. This runs an additional COUNT query.
-func (p PageBuilder[M]) WithTotalCount() PageBuilder[M] {
+func (p PageBuilderOf[M, R]) WithTotalCount() PageBuilderOf[M, R] {
 	p.totalCount = true
 	return p
 }
 
 // WithAccuratePageInfo enables an extra query for exact HasPreviousPage/
 // HasNextPage on the first and last page.
-func (p PageBuilder[M]) WithAccuratePageInfo() PageBuilder[M] {
+func (p PageBuilderOf[M, R]) WithAccuratePageInfo() PageBuilderOf[M, R] {
 	p.accuratePageInfo = true
 	return p
 }
 
-func (p PageBuilder[M]) backward() bool { return p.last > 0 || p.before != "" }
+func (p PageBuilderOf[M, R]) backward() bool { return p.last > 0 || p.before != "" }
 
-func (p PageBuilder[M]) pageSize() int {
+func (p PageBuilderOf[M, R]) pageSize() int {
 	if p.first > 0 {
 		return p.first
 	}
 	return p.last
 }
 
-func (p PageBuilder[M]) cursor() string {
+func (p PageBuilderOf[M, R]) cursor() string {
 	if p.after != "" {
 		return p.after
 	}
 	return p.before
 }
 
-func (p PageBuilder[M]) validate() error {
+func (p PageBuilderOf[M, R]) validate() error {
 	switch {
 	case p.first > 0 && p.last > 0:
 		return errors.New("cannot use both First and Last")
@@ -655,7 +675,7 @@ func (p PageBuilder[M]) validate() error {
 }
 
 // Get executes the pagination query and returns the page.
-func (p PageBuilder[M]) Get(ctx context.Context) (*Page[M], error) {
+func (p PageBuilderOf[M, R]) Get(ctx context.Context) (*PageOf[M, R], error) {
 	if err := p.validate(); err != nil {
 		return nil, fmt.Errorf("invalid pagination options: %w", err)
 	}
@@ -706,13 +726,13 @@ func (p PageBuilder[M]) Get(ctx context.Context) (*Page[M], error) {
 		slices.Reverse(items)
 	}
 
-	entries := make([]Entry[M], len(items))
+	entries := make([]EntryOf[M, R], len(items))
 	for i, item := range items {
 		itemCursor, err := b.generateCursor(item, originalSorts)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate cursor for item %d: %w", i, err)
 		}
-		entries[i] = Entry[M]{Node: item, Cursor: itemCursor}
+		entries[i] = EntryOf[M, R]{Node: item, Cursor: itemCursor}
 	}
 
 	pageInfo := PageInfo{}
@@ -746,7 +766,7 @@ func (p PageBuilder[M]) Get(ctx context.Context) (*Page[M], error) {
 		totalCount = count
 	}
 
-	return &Page[M]{
+	return &PageOf[M, R]{
 		Items:      items,
 		Entries:    entries,
 		PageInfo:   pageInfo,
@@ -755,14 +775,14 @@ func (p PageBuilder[M]) Get(ctx context.Context) (*Page[M], error) {
 }
 
 // GetAsync is the asynchronous version of Get.
-func (p PageBuilder[M]) GetAsync(ctx context.Context) *asyncResult[*Page[M]] {
+func (p PageBuilderOf[M, R]) GetAsync(ctx context.Context) *asyncResult[*PageOf[M, R]] {
 	return async(ctx, p.Get)
 }
 
 // probeBeyond reports whether any record exists on the far side of cursor,
 // used to compute accurate boundary page info. The backward flag selects the
 // probe direction; whereLen strips any previously appended cursor filter.
-func (b builder[M]) probeBeyond(ctx context.Context, cursor string, sorts []*lib.SortBuilder, whereLen int, backward bool) bool {
+func (b builder[M, R]) probeBeyond(ctx context.Context, cursor string, sorts []*lib.SortBuilder, whereLen int, backward bool) bool {
 	data, err := lib.DecodeCursor(cursor)
 	if err != nil {
 		return false
@@ -780,7 +800,7 @@ func (b builder[M]) probeBeyond(ctx context.Context, cursor string, sorts []*lib
 
 // countMatching returns the total number of matching records, ignoring the
 // cursor filter, ordering and pagination (COUNT with GROUP ALL rejects ORDER BY).
-func (b builder[M]) countMatching(ctx context.Context, whereLen int) (int, error) {
+func (b builder[M, R]) countMatching(ctx context.Context, whereLen int) (int, error) {
 	b.query.Where = b.query.Where[:whereLen]
 	b.query.Sort = nil
 	b.query.SortRandom = false
@@ -808,8 +828,8 @@ func reverseSorts(sorts []*lib.SortBuilder) []*lib.SortBuilder {
 // Values are sourced from the conversion layer (DB field names, DB-typed
 // values) and stored as pre-encoded CBOR so they re-inject as query variables
 // byte-identically to how the same fields are encoded for regular queries.
-func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, error) {
-	if item == nil {
+func (b builder[M, R]) generateCursor(item R, sorts []*lib.SortBuilder) (string, error) {
+	if any(item) == nil {
 		return "", nil
 	}
 
@@ -822,7 +842,7 @@ func (b builder[M]) generateCursor(item *M, sorts []*lib.SortBuilder) (string, e
 }
 
 // cursorData extracts the keyset position of an item for the given sort fields.
-func (b builder[M]) cursorData(item *M, sorts []*lib.SortBuilder) (lib.CursorData, error) {
+func (b builder[M, R]) cursorData(item R, sorts []*lib.SortBuilder) (lib.CursorData, error) {
 	return cursorDataOf(b.info.Fields(item), sorts)
 }
 
@@ -884,41 +904,41 @@ func cursorDataOf(dbFields map[string]any, sorts []*lib.SortBuilder) (lib.Cursor
 // This is the default behavior, similar to how search engines work.
 // Use SearchAll() if you need AND behavior (all must match).
 // Returns a SearchBuilder which provides search-specific methods.
-func (b builder[M]) Search(searches ...lib.Search[M]) SearchBuilder[M] {
+func (b builder[M, R]) Search(searches ...lib.Search[M]) SearchBuilderOf[M, R] {
 	where, clauses := lib.BuildSearchOr(searches, &b.query)
 	b.query.SearchWhere = where
 	b.query.SearchClauses = clauses
-	return SearchBuilder[M]{builder: b}
+	return SearchBuilderOf[M, R]{builder: b}
 }
 
 // SearchAll adds full-text search conditions to the query.
 // Multiple search conditions are combined with AND (all must match).
 // Use this when you need documents to match ALL search terms.
 // Returns a SearchBuilder which provides search-specific methods.
-func (b builder[M]) SearchAll(searches ...lib.Search[M]) SearchBuilder[M] {
+func (b builder[M, R]) SearchAll(searches ...lib.Search[M]) SearchBuilderOf[M, R] {
 	searchAll := lib.SearchAll[M](searches)
 	where, clauses := searchAll.BuildClauses(&b.query)
 	b.query.SearchWhere = where
 	b.query.SearchClauses = clauses
-	return SearchBuilder[M]{builder: b}
+	return SearchBuilderOf[M, R]{builder: b}
 }
 
 // SearchBuilder provides search-specific query methods.
 // It does NOT expose Search() or SearchAll() to prevent chaining multiple search calls.
-type SearchBuilder[M any] struct {
-	builder[M]
+type SearchBuilderOf[M any, R any] struct {
+	builder[M, R]
 }
 
 // Where adds additional conditions to the search query.
 // These are AND'd with the search conditions.
-func (b SearchBuilder[M]) Where(filters ...lib.Filter[M]) SearchBuilder[M] {
+func (b SearchBuilderOf[M, R]) Where(filters ...lib.Filter[M]) SearchBuilderOf[M, R] {
 	b.query.Where = append(b.query.Where, filters...)
 	return b
 }
 
 // Order sorts the returned records based on the given conditions.
 // Accepts both field sorts (by.Field.Asc()) and score sorts (lib.Score(0).Desc()).
-func (b SearchBuilder[M]) Order(by ...lib.SearchSort) SearchBuilder[M] {
+func (b SearchBuilderOf[M, R]) Order(by ...lib.SearchSort) SearchBuilderOf[M, R] {
 	for _, s := range by {
 		b.query.Sort = append(b.query.Sort, s.SearchSort())
 	}
@@ -926,25 +946,25 @@ func (b SearchBuilder[M]) Order(by ...lib.SearchSort) SearchBuilder[M] {
 }
 
 // Start skips the first x records for the result set.
-func (b SearchBuilder[M]) Start(start int) SearchBuilder[M] {
+func (b SearchBuilderOf[M, R]) Start(start int) SearchBuilderOf[M, R] {
 	b.query.Start = start
 	return b
 }
 
 // Limit restricts the query to return at most x records.
-func (b SearchBuilder[M]) Limit(limit int) SearchBuilder[M] {
+func (b SearchBuilderOf[M, R]) Limit(limit int) SearchBuilderOf[M, R] {
 	b.query.Limit = limit
 	return b
 }
 
 // Timeout adds an execution time limit to the query.
-func (b SearchBuilder[M]) Timeout(timeout time.Duration) SearchBuilder[M] {
+func (b SearchBuilderOf[M, R]) Timeout(timeout time.Duration) SearchBuilderOf[M, R] {
 	b.query.Timeout = timeout
 	return b
 }
 
 // Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (b SearchBuilder[M]) Parallel(parallel bool) SearchBuilder[M] {
+func (b SearchBuilderOf[M, R]) Parallel(parallel bool) SearchBuilderOf[M, R] {
 	b.query.Parallel = parallel
 	return b
 }
@@ -952,33 +972,33 @@ func (b SearchBuilder[M]) Parallel(parallel bool) SearchBuilder[M] {
 // TempFiles tells SurrealDB to process the query using temporary files
 // rather than memory. This reduces memory usage for large result sets
 // at the cost of slower performance.
-func (b SearchBuilder[M]) TempFiles(tempFiles bool) SearchBuilder[M] {
+func (b SearchBuilderOf[M, R]) TempFiles(tempFiles bool) SearchBuilderOf[M, R] {
 	b.query.TempFiles = tempFiles
 	return b
 }
 
 // All returns all records matching the search conditions (without search metadata).
-func (b SearchBuilder[M]) All(ctx context.Context) ([]*M, error) {
+func (b SearchBuilderOf[M, R]) All(ctx context.Context) ([]R, error) {
 	return b.builder.All(ctx)
 }
 
 // AllAsync is the asynchronous version of All.
-func (b SearchBuilder[M]) AllAsync(ctx context.Context) *asyncResult[[]*M] {
+func (b SearchBuilderOf[M, R]) AllAsync(ctx context.Context) *asyncResult[[]R] {
 	return async(ctx, b.All)
 }
 
 // First returns the first record matching the search conditions (without search metadata).
-func (b SearchBuilder[M]) First(ctx context.Context) (*M, error) {
+func (b SearchBuilderOf[M, R]) First(ctx context.Context) (R, error) {
 	return b.builder.First(ctx)
 }
 
 // FirstAsync is the asynchronous version of First.
-func (b SearchBuilder[M]) FirstAsync(ctx context.Context) *asyncResult[*M] {
+func (b SearchBuilderOf[M, R]) FirstAsync(ctx context.Context) *asyncResult[R] {
 	return async(ctx, b.First)
 }
 
 // AllMatches returns all records matching the search conditions with search metadata.
-func (b SearchBuilder[M]) AllMatches(ctx context.Context) ([]lib.SearchResult[*M], error) {
+func (b SearchBuilderOf[M, R]) AllMatches(ctx context.Context) ([]lib.SearchResult[R], error) {
 	req := b.query.BuildAsAll()
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -988,55 +1008,55 @@ func (b SearchBuilder[M]) AllMatches(ctx context.Context) ([]lib.SearchResult[*M
 }
 
 // AllMatchesAsync is the asynchronous version of AllMatches.
-func (b SearchBuilder[M]) AllMatchesAsync(ctx context.Context) *asyncResult[[]lib.SearchResult[*M]] {
+func (b SearchBuilderOf[M, R]) AllMatchesAsync(ctx context.Context) *asyncResult[[]lib.SearchResult[R]] {
 	return async(ctx, b.AllMatches)
 }
 
 // FirstMatch returns the first record matching the search conditions with search metadata.
-func (b SearchBuilder[M]) FirstMatch(ctx context.Context) (lib.SearchResult[*M], bool, error) {
+func (b SearchBuilderOf[M, R]) FirstMatch(ctx context.Context) (lib.SearchResult[R], bool, error) {
 	b.query.Limit = 1
 	results, err := b.AllMatches(ctx)
 	if err != nil {
-		return lib.SearchResult[*M]{}, false, err
+		return lib.SearchResult[R]{}, false, err
 	}
 	if len(results) < 1 {
-		return lib.SearchResult[*M]{}, false, nil
+		return lib.SearchResult[R]{}, false, nil
 	}
 	return results[0], true, nil
 }
 
 // Count returns the number of records matching the search conditions.
-func (b SearchBuilder[M]) Count(ctx context.Context) (int, error) {
+func (b SearchBuilderOf[M, R]) Count(ctx context.Context) (int, error) {
 	return b.builder.Count(ctx)
 }
 
 // CountAsync is the asynchronous version of Count.
-func (b SearchBuilder[M]) CountAsync(ctx context.Context) *asyncResult[int] {
+func (b SearchBuilderOf[M, R]) CountAsync(ctx context.Context) *asyncResult[int] {
 	return async(ctx, b.Count)
 }
 
 // Exists returns whether at least one record matches the search conditions.
-func (b SearchBuilder[M]) Exists(ctx context.Context) (bool, error) {
+func (b SearchBuilderOf[M, R]) Exists(ctx context.Context) (bool, error) {
 	return b.builder.Exists(ctx)
 }
 
 // ExistsAsync is the asynchronous version of Exists.
-func (b SearchBuilder[M]) ExistsAsync(ctx context.Context) *asyncResult[bool] {
+func (b SearchBuilderOf[M, R]) ExistsAsync(ctx context.Context) *asyncResult[bool] {
 	return async(ctx, b.Exists)
 }
 
 // Describe returns a string representation of the search query.
-func (b SearchBuilder[M]) Describe() string {
+func (b SearchBuilderOf[M, R]) Describe() string {
 	return b.builder.Describe()
 }
 
 // DescribeWithVars returns a string representation of the search query with inlined variables.
-func (b SearchBuilder[M]) DescribeWithVars() string {
+func (b SearchBuilderOf[M, R]) DescribeWithVars() string {
 	return b.builder.DescribeWithVars()
 }
 
 // Debug logs the search query to the default debug logger.
-func (b SearchBuilder[M]) Debug(prefix ...string) SearchBuilder[M] {
+func (b SearchBuilderOf[M, R]) Debug(prefix ...string) SearchBuilderOf[M, R] {
 	slog.Debug(strings.Join(prefix, " ")+b.Describe(),
 		"vars", b.query.Vars(),
 	)
@@ -1064,19 +1084,19 @@ type PageInfo struct {
 }
 
 // Entry pairs a record with its opaque per-item cursor (Relay edge).
-type Entry[M any] struct {
-	Node   *M
+type EntryOf[M any, R any] struct {
+	Node   R
 	Cursor string
 }
 
 // Page is a cursor-paginated result set. It is pure data: safe to cache,
 // serialize or return without holding a database handle.
-type Page[M any] struct {
+type PageOf[M any, R any] struct {
 	// Items holds the records for this page.
-	Items []*M
+	Items []R
 
 	// Entries holds the records with their individual cursors (Relay-style).
-	Entries []Entry[M]
+	Entries []EntryOf[M, R]
 
 	// PageInfo holds navigation metadata.
 	PageInfo PageInfo
@@ -1088,17 +1108,17 @@ type Page[M any] struct {
 
 // NextCursor returns the cursor to pass to a builder's After() to fetch the
 // page following this one. Only meaningful when PageInfo.HasNextPage is true.
-func (p *Page[M]) NextCursor() string {
+func (p *PageOf[M, R]) NextCursor() string {
 	return p.PageInfo.EndCursor
 }
 
 // PrevCursor returns the cursor to pass to a builder's Before() to fetch the
 // page preceding this one. Only meaningful when PageInfo.HasPreviousPage is true.
-func (p *Page[M]) PrevCursor() string {
+func (p *PageOf[M, R]) PrevCursor() string {
 	return p.PageInfo.StartCursor
 }
 
-func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, convert func(*C) *M) ([]lib.SearchResult[*M], error) {
+func unmarshalSearchAll[R, C any](data []byte, clauses []lib.SearchClause, convert func(*C) R) ([]lib.SearchResult[R], error) {
 	var rawNodes []internal.QueryResult[searchRawResult[*C]]
 	if err := cbor.Unmarshal(data, &rawNodes); err != nil {
 		return nil, fmt.Errorf("could not unmarshal search records: %w", err)
@@ -1106,10 +1126,10 @@ func unmarshalSearchAll[M, C any](data []byte, clauses []lib.SearchClause, conve
 	if len(rawNodes) < 1 {
 		return nil, nil
 	}
-	var results []lib.SearchResult[*M]
+	var results []lib.SearchResult[R]
 	for _, raw := range rawNodes[0].Result {
 		rec := convert(raw.Model)
-		result := lib.SearchResult[*M]{
+		result := lib.SearchResult[R]{
 			Highlights: make(map[int]string),
 			Model:      rec,
 			Offsets:    make(map[int][]lib.Offset),

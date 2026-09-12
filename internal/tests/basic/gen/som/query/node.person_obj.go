@@ -9,7 +9,7 @@ import (
 )
 
 // personObjModelInfo holds the model-specific unmarshal functions for PersonObj.
-var personObjModelInfo = modelInfo[model.PersonObj]{
+var personObjModelInfo = modelInfo[model.PersonObj, *model.PersonObj]{
 	Fields: conv.PersonObjFields,
 	UnmarshalAll: func(data []byte) ([]*model.PersonObj, error) {
 		return unmarshalAll(data, conv.ToPersonObjPtr)
@@ -45,7 +45,7 @@ var personObjRangeFn = rangeFn[model.PersonObj](func(q *lib.Query[model.PersonOb
 // NewPersonObj creates a new query builder for PersonObj models.
 func NewPersonObj(db Database) Builder[model.PersonObj] {
 	q := lib.NewQuery[model.PersonObj]("person_obj")
-	return Builder[model.PersonObj]{builder[model.PersonObj]{
+	return Builder[model.PersonObj]{builder[model.PersonObj, *model.PersonObj]{
 		db:      db,
 		info:    personObjModelInfo,
 		query:   q,

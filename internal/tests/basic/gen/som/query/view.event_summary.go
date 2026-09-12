@@ -8,7 +8,7 @@ import (
 )
 
 // eventSummaryModelInfo holds the model-specific unmarshal functions for EventSummary.
-var eventSummaryModelInfo = modelInfo[model.EventSummary]{
+var eventSummaryModelInfo = modelInfo[model.EventSummary, *model.EventSummary]{
 	UnmarshalAll: func(data []byte) ([]*model.EventSummary, error) {
 		return unmarshalAll(data, conv.ToEventSummaryPtr)
 	},
@@ -23,7 +23,7 @@ var eventSummaryModelInfo = modelInfo[model.EventSummary]{
 // NewEventSummary creates a new query builder for EventSummary views.
 func NewEventSummary(db Database) Builder[model.EventSummary] {
 	q := lib.NewQuery[model.EventSummary]("event_summary")
-	return Builder[model.EventSummary]{builder[model.EventSummary]{
+	return Builder[model.EventSummary]{builder[model.EventSummary, *model.EventSummary]{
 		db:    db,
 		info:  eventSummaryModelInfo,
 		query: q,

@@ -9,7 +9,7 @@ import (
 )
 
 // circleModelInfo holds the model-specific unmarshal functions for Circle.
-var circleModelInfo = modelInfo[model.Circle]{
+var circleModelInfo = modelInfo[model.Circle, *model.Circle]{
 	Fields: conv.CircleFields,
 	UnmarshalAll: func(data []byte) ([]*model.Circle, error) {
 		return unmarshalAll(data, conv.ToCirclePtr)
@@ -43,7 +43,7 @@ var circleRangeFn = rangeFn[model.Circle](func(q *lib.Query[model.Circle], from 
 // NewCircle creates a new query builder for Circle models.
 func NewCircle(db Database) Builder[model.Circle] {
 	q := lib.NewQuery[model.Circle]("circle")
-	return Builder[model.Circle]{builder[model.Circle]{
+	return Builder[model.Circle]{builder[model.Circle, *model.Circle]{
 		db:      db,
 		info:    circleModelInfo,
 		query:   q,

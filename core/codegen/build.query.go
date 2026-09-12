@@ -118,22 +118,22 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 func (b *queryBuilder) buildUnionFile(union *field.UnionTable) error {
 	tmpl := `
 		// {{.NameGoLower}}ModelInfo holds the model-specific unmarshal functions for {{.NameGo}}.
-		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}]{
+		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}, model.{{.NameGo}}]{
 			Fields: conv.{{.NameGo}}Fields,
-			UnmarshalAll: func(data []byte) ([]*model.{{.NameGo}}, error) {
-				return unmarshalAll(data, conv.To{{.NameGo}}Ptr)
+			UnmarshalAll: func(data []byte) ([]model.{{.NameGo}}, error) {
+				return unmarshalAll(data, conv.To{{.NameGo}}Value)
 			},
-			UnmarshalOne: func(data []byte) (*model.{{.NameGo}}, error) {
-				return unmarshalOne(data, conv.To{{.NameGo}}Ptr)
+			UnmarshalOne: func(data []byte) (model.{{.NameGo}}, error) {
+				return unmarshalOne(data, conv.To{{.NameGo}}Value)
 			},
-			UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.{{.NameGo}}], error) {
-				return unmarshalSearchAll(data, clauses, conv.To{{.NameGo}}Ptr)
+			UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[model.{{.NameGo}}], error) {
+				return unmarshalSearchAll(data, clauses, conv.To{{.NameGo}}Value)
 			},
 		}
 
 		// New{{.NameGo}} creates a new query builder over all member tables of the
 		// {{.NameGo}} union: {{.Members}}.
-		func New{{.NameGo}}(db Database) Builder[model.{{.NameGo}}] {
+		func New{{.NameGo}}(db Database) BuilderOf[model.{{.NameGo}}, model.{{.NameGo}}] {
 			q := lib.NewQuery[model.{{.NameGo}}]("{{.Tables}}")
 			{{- if .SoftDelete}}
 			// Automatically exclude soft-deleted records
@@ -143,7 +143,7 @@ func (b *queryBuilder) buildUnionFile(union *field.UnionTable) error {
 			// Automatically exclude expired records
 			q.ExpiryField = "expires_at"
 			{{- end}}
-			return Builder[model.{{.NameGo}}]{builder[model.{{.NameGo}}]{
+			return BuilderOf[model.{{.NameGo}}, model.{{.NameGo}}]{builder[model.{{.NameGo}}, model.{{.NameGo}}]{
 				db:    db,
 				info:  {{.NameGoLower}}ModelInfo,
 				query: q,
@@ -216,7 +216,7 @@ func (b *queryBuilder) newQueryFile() *goFile {
 func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[string]any) error {
 	tmpl := `
 		// {{.NameGoLower}}ModelInfo holds the model-specific unmarshal functions for {{.NameGo}}.
-		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}]{
+		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}, *model.{{.NameGo}}]{
 			{{- if .HasFields}}
 			Fields: conv.{{.NameGo}}Fields,
 			{{- end}}
@@ -260,7 +260,7 @@ func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[s
 			// Automatically exclude expired records
 			q.ExpiryField = "expires_at"
 			{{- end}}
-			return Builder[model.{{.NameGo}}]{builder[model.{{.NameGo}}]{
+			return Builder[model.{{.NameGo}}]{builder[model.{{.NameGo}}, *model.{{.NameGo}}]{
 				db:      db,
 				info:    {{.NameGoLower}}ModelInfo,
 				query:   q,

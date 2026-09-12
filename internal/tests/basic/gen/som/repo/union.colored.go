@@ -8,7 +8,7 @@ import (
 
 type ColoredRepo interface {
 	// Query returns a new query builder over all member tables of the Colored union.
-	Query() query.Builder[model.Colored]
+	Query() query.BuilderOf[model.Colored, model.Colored]
 }
 
 // ColoredRepo returns the repository instance for the Colored union.
@@ -29,6 +29,6 @@ type colored struct {
 // Query returns a new query builder over all member tables of the Colored
 // union: Square, Circle. To create, update or delete a record, use the
 // repository of the member it belongs to.
-func (r *colored) Query() query.Builder[model.Colored] {
+func (r *colored) Query() query.BuilderOf[model.Colored, model.Colored] {
 	return query.NewColored(r.db)
 }

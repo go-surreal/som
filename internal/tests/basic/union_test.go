@@ -179,15 +179,15 @@ func TestUnionRepoQuery(t *testing.T) {
 	for _, shape := range shapes {
 		// A method declared by the union interface is implemented by every
 		// member, so it can be called without knowing the concrete one.
-		area += (*shape).Area()
+		area += shape.Area()
 
-		switch (*shape).(type) {
+		switch shape.(type) {
 		case *model.Square:
 			squares++
 		case *model.Circle:
 			circles++
 		default:
-			t.Fatalf("unexpected member %T", *shape)
+			t.Fatalf("unexpected member %T", shape)
 		}
 	}
 

@@ -50,17 +50,26 @@ func ToShapePtr(data *Shape) *model.Shape {
 	return &value
 }
 
+// ToShapeValue is what a query over the union decodes a row with: the
+// member is handed back as the union interface itself, not as a pointer to it.
+func ToShapeValue(data *Shape) model.Shape {
+	if data == nil {
+		return nil
+	}
+	return data.Value
+}
+
 // ShapeFields returns the database keyed value map of the member the
 // given model holds. It is used by the query builder to derive pagination
 // cursor values with correct database field names and types.
-func ShapeFields(m *model.Shape) map[string]any {
+func ShapeFields(m model.Shape) map[string]any {
 	if m == nil {
 		return nil
 	}
 	// The switch is on any rather than on the union itself, so that a
 	// member whose methods have a pointer receiver still has a case for
 	// its value type, which does not implement the union.
-	switch v := any(*m).(type) {
+	switch v := any(m).(type) {
 	case *model.Square:
 		return SquareFields(v)
 	case model.Square:

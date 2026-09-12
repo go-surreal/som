@@ -8,24 +8,24 @@ import (
 )
 
 // coloredModelInfo holds the model-specific unmarshal functions for Colored.
-var coloredModelInfo = modelInfo[model.Colored]{
+var coloredModelInfo = modelInfo[model.Colored, model.Colored]{
 	Fields: conv.ColoredFields,
-	UnmarshalAll: func(data []byte) ([]*model.Colored, error) {
-		return unmarshalAll(data, conv.ToColoredPtr)
+	UnmarshalAll: func(data []byte) ([]model.Colored, error) {
+		return unmarshalAll(data, conv.ToColoredValue)
 	},
-	UnmarshalOne: func(data []byte) (*model.Colored, error) {
-		return unmarshalOne(data, conv.ToColoredPtr)
+	UnmarshalOne: func(data []byte) (model.Colored, error) {
+		return unmarshalOne(data, conv.ToColoredValue)
 	},
-	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[*model.Colored], error) {
-		return unmarshalSearchAll(data, clauses, conv.ToColoredPtr)
+	UnmarshalSearchAll: func(data []byte, clauses []lib.SearchClause) ([]lib.SearchResult[model.Colored], error) {
+		return unmarshalSearchAll(data, clauses, conv.ToColoredValue)
 	},
 }
 
 // NewColored creates a new query builder over all member tables of the
 // Colored union: Square, Circle.
-func NewColored(db Database) Builder[model.Colored] {
+func NewColored(db Database) BuilderOf[model.Colored, model.Colored] {
 	q := lib.NewQuery[model.Colored]("square, circle")
-	return Builder[model.Colored]{builder[model.Colored]{
+	return BuilderOf[model.Colored, model.Colored]{builder[model.Colored, model.Colored]{
 		db:    db,
 		info:  coloredModelInfo,
 		query: q,
