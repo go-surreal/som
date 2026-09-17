@@ -7,32 +7,32 @@ type field[M any] interface {
 }
 
 // sliceField is a slice filter over elements of type T that are themselves
-// filtered by EF.
+// filtered by S.
 //
-// It is an interface rather than a *Slice[M, T, EF] type parameter on Base on
+// It is an interface rather than a *Slice[M, T, S] type parameter on Base on
 // purpose: as a type argument, Slice has to be instantiated for every field
 // type of every model, which pulls its whole method set into the generated
 // filter package each time. That made the package take minutes and gigabytes
 // of memory to compile. Matching on the two witness methods accepts exactly
 // the same set of types without instantiating Slice.
-type sliceField[M, T, EF any] interface {
+type sliceField[M, T, S any] interface {
 	field[M]
 	valueType() []T
-	elemFilter() EF
+	elemFilter() S
 }
 
-func (b *Base[M, T, F, EF]) Equal_(f field[M]) Filter[M] {
+func (b *Base[M, T, F, S]) Equal_(f field[M]) Filter[M] {
 	return b.op_(OpEqual, f.key())
 }
 
-func (b *Base[M, T, F, EF]) NotEqual_(f field[M]) Filter[M] {
+func (b *Base[M, T, F, S]) NotEqual_(f field[M]) Filter[M] {
 	return b.op_(OpNotEqual, f.key())
 }
 
-func (b *Base[M, T, F, EF]) In_(field sliceField[M, T, EF]) Filter[M] {
+func (b *Base[M, T, F, S]) In_(field sliceField[M, T, S]) Filter[M] {
 	return b.op_(OpIn, field.key())
 }
 
-func (b *Base[M, T, F, EF]) NotIn_(field sliceField[M, T, EF]) Filter[M] {
+func (b *Base[M, T, F, S]) NotIn_(field sliceField[M, T, S]) Filter[M] {
 	return b.op_(OpNotIn, field.key())
 }

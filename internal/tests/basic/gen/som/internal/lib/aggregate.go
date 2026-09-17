@@ -18,7 +18,7 @@ type KeyProvider[M any] interface {
 // valueType witnesses a field's Go value type. It lets TypedKey carry the
 // value type C so a view projection can require the target column and the
 // source expression to share the same value type.
-func (b *Base[M, T, F, EF]) valueType() T {
+func (b *Base[M, T, F, S]) valueType() T {
 	var zero T
 	return zero
 }
