@@ -46,7 +46,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1
+          key: "go-mod-core-${{ hashFiles('go.sum') }}"
+          restore-keys: "go-mod-core-"
 
       - name: Sync
         working-directory: .
@@ -84,7 +85,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1
+          key: "go-mod-core-${{ hashFiles('go.sum') }}"
+          restore-keys: "go-mod-core-"
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
@@ -121,13 +123,15 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1
+          key: "go-mod-core-${{ hashFiles('go.sum') }}"
+          restore-keys: "go-mod-core-"
 
       - name: Cache Go Build
         uses: actions/cache@v6
         with:
           path: ~/.cache/go-build
-          key: go-build-v1
+          key: "go-build-core-${{ github.sha }}"
+          restore-keys: "go-build-core-"
 
       - name: Build
         working-directory: .
@@ -154,13 +158,15 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
-          key: go-modules-tests-v1
+          key: "go-mod-tests-${{ hashFiles('internal/tests/basic/go.sum') }}"
+          restore-keys: "go-mod-tests-"
 
       - name: Cache Go Build
         uses: actions/cache@v6
         with:
           path: ~/.cache/go-build
-          key: go-build-tests-v1
+          key: "go-build-tests-${{ github.sha }}"
+          restore-keys: "go-build-tests-"
 
       - name: Generate
         working-directory: internal/tests/basic
@@ -198,13 +204,15 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
-          key: go-modules-v1
+          key: "go-mod-core-${{ hashFiles('go.sum') }}"
+          restore-keys: "go-mod-core-"
 
       - name: Cache Go Build
         uses: actions/cache@v6
         with:
           path: ~/.cache/go-build
-          key: go-build-v1
+          key: "go-build-core-${{ github.sha }}"
+          restore-keys: "go-build-core-"
 
       - name: Test
         working-directory: .
@@ -235,13 +243,15 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
-          key: go-modules-tests-v1
+          key: "go-mod-tests-${{ hashFiles('internal/tests/basic/go.sum') }}"
+          restore-keys: "go-mod-tests-"
 
       - name: Cache Go Build
         uses: actions/cache@v6
         with:
           path: ~/.cache/go-build
-          key: go-build-tests-v1
+          key: "go-build-tests-${{ github.sha }}"
+          restore-keys: "go-build-tests-"
 
       - name: Test
         working-directory: internal/tests/basic

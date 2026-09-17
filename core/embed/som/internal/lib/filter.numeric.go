@@ -8,13 +8,13 @@ type AnyNumeric[M any] interface {
 }
 
 type Numeric[M, T any] struct {
-	*Base[M, T, AnyNumeric[M], *Slice[M, T, *Numeric[M, T]]]
+	*Base[M, T, AnyNumeric[M], *Numeric[M, T]]
 	*Comparable[M, T, AnyNumeric[M]]
 }
 
 func NewNumeric[M, T any](key Key[M]) *Numeric[M, T] {
 	return &Numeric[M, T]{
-		Base:       NewBase[M, T, AnyNumeric[M], *Slice[M, T, *Numeric[M, T]]](key),
+		Base:       NewBase[M, T, AnyNumeric[M], *Numeric[M, T]](key),
 		Comparable: NewComparable[M, T, AnyNumeric[M]](key),
 	}
 }

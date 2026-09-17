@@ -20,6 +20,12 @@ func (s *Slice[M, E, F]) valueType() []E {
 	return nil
 }
 
+// elemFilter witnesses the element filter type (see sliceField).
+func (s *Slice[M, E, F]) elemFilter() F {
+	var zero F
+	return zero
+}
+
 // NewSlice creates a new slice filter.
 func NewSlice[M, E any, F field[M]](key Key[M], makeElemFilter makeFilter[M, F]) *Slice[M, E, F] {
 	return &Slice[M, E, F]{

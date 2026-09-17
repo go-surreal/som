@@ -124,8 +124,14 @@ func parseDefine(dir string) (*DefineOutput, error) {
 		return &DefineOutput{}, nil
 	}
 
+	// A run that was interrupted before the deferred cleanup leaves its temp
+	// directory behind, so remove any leftovers before adding a new one.
+	if err := removeStaleTempDirs(rootDir); err != nil {
+		return nil, err
+	}
+
 	// Create temp directory for main.go
-	tempDir, err := os.MkdirTemp(rootDir, ".som_temp_")
+	tempDir, err := os.MkdirTemp(rootDir, tempDirPrefix)
 	if err != nil {
 		return nil, fmt.Errorf("could not create temp directory: %w", err)
 	}
@@ -196,6 +202,30 @@ func main() {
 	}
 
 	return result, nil
+}
+
+const tempDirPrefix = ".som_temp_"
+
+// removeStaleTempDirs deletes temp directories left behind by earlier runs.
+func removeStaleTempDirs(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("could not read directory %s: %w", dir, err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() || !strings.HasPrefix(entry.Name(), tempDirPrefix) {
+			continue
+		}
+
+		path := filepath.Join(dir, entry.Name())
+
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("could not remove stale temp directory %s: %w", path, err)
+		}
+	}
+
+	return nil
 }
 
 // hasDefineFiles checks if the directory contains any //go:build som files.

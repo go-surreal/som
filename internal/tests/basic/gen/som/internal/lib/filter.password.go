@@ -27,13 +27,13 @@ func (Scrypt) cryptoFunc() string { return "crypto::scrypt::compare" }
 // Password is a filter builder for password values.
 // M is the model this filter is for.
 type Password[M any] struct {
-	*Base[M, som.Password[som.Bcrypt], *Password[M], *Slice[M, som.Password[som.Bcrypt], *Password[M]]]
+	*Base[M, som.Password[som.Bcrypt], *Password[M], *Password[M]]
 	algo PasswordAlgorithm
 }
 
 func NewPassword[M any](key Key[M], algo PasswordAlgorithm) *Password[M] {
 	return &Password[M]{
-		Base: NewBase[M, som.Password[som.Bcrypt], *Password[M], *Slice[M, som.Password[som.Bcrypt], *Password[M]]](key),
+		Base: NewBase[M, som.Password[som.Bcrypt], *Password[M], *Password[M]](key),
 		algo: algo,
 	}
 }
