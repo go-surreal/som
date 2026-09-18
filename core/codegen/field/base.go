@@ -40,6 +40,22 @@ type Field interface {
 	NestedFields() []Field
 }
 
+// elementTyped is implemented by fields whose database type differs when they
+// occur as a slice element instead of as a field of their own.
+type elementTyped interface {
+	ElementTypeDatabase() string
+}
+
+// elementTypeDatabase returns the database type of the given field as it occurs
+// within a slice.
+func elementTypeDatabase(f Field) string {
+	if elem, ok := f.(elementTyped); ok {
+		return elem.ElementTypeDatabase()
+	}
+
+	return f.TypeDatabase()
+}
+
 type Named interface {
 	NameGo() string
 	NameGoLower() string

@@ -2,6 +2,7 @@ package field
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/go-surreal/som/core/parser"
 )
@@ -359,6 +360,8 @@ func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Fiel
 					values = append(values, val.Value)
 				}
 			}
+
+			sort.Strings(values)
 
 			return &Enum{
 				baseField: base,

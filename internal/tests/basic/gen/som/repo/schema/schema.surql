@@ -174,11 +174,11 @@ DEFINE FIELD OVERWRITE field_sem_ver ON TABLE all_types TYPE string ASSERT $valu
 DEFINE FIELD OVERWRITE field_sem_ver_ptr ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_semver($value);
 DEFINE FIELD OVERWRITE field_sem_ver_nil ON TABLE all_types TYPE option<string> ASSERT $value == NONE OR $value == NULL OR string::is_semver($value);
 DEFINE FIELD OVERWRITE field_sem_ver_slice ON TABLE all_types TYPE option<array<string>>;
-DEFINE FIELD OVERWRITE field_enum ON TABLE all_types TYPE "" | "admin" | "user";
-DEFINE FIELD OVERWRITE field_enum_ptr ON TABLE all_types TYPE option<"" | "admin" | "user">;
-DEFINE FIELD OVERWRITE field_enum_slice ON TABLE all_types TYPE option<array<"" | "admin" | "user">>;
-DEFINE FIELD OVERWRITE field_enum_ptr_slice ON TABLE all_types TYPE option<array<"" | "admin" | "user" | null>>;
-DEFINE FIELD OVERWRITE field_enum_ptr_slice_ptr ON TABLE all_types TYPE option<array<"" | "admin" | "user" | null>>;
+DEFINE FIELD OVERWRITE field_enum ON TABLE all_types TYPE option<"admin" | "user">;
+DEFINE FIELD OVERWRITE field_enum_ptr ON TABLE all_types TYPE option<"admin" | "user">;
+DEFINE FIELD OVERWRITE field_enum_slice ON TABLE all_types TYPE option<array<"admin" | "user">>;
+DEFINE FIELD OVERWRITE field_enum_ptr_slice ON TABLE all_types TYPE option<array<"admin" | "user" | null>>;
+DEFINE FIELD OVERWRITE field_enum_ptr_slice_ptr ON TABLE all_types TYPE option<array<"admin" | "user" | null>>;
 DEFINE FIELD OVERWRITE field_credentials ON TABLE all_types TYPE object;
 DEFINE FIELD OVERWRITE field_credentials.username ON TABLE all_types TYPE string;
 DEFINE FIELD OVERWRITE field_credentials.password ON TABLE all_types TYPE string VALUE IF $value != NONE AND $value != NULL AND $value != "" AND $value != $before THEN crypto::bcrypt::generate($value) ELSE $value END PERMISSIONS FOR SELECT NONE;

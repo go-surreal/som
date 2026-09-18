@@ -236,7 +236,9 @@ func (c *AllTypes) fields() map[string]any {
 	if c.FieldSemVerSlice != nil {
 		data["field_sem_ver_slice"] = c.FieldSemVerSlice
 	}
-	data["field_enum"] = c.FieldEnum
+	if c.FieldEnum != "" {
+		data["field_enum"] = c.FieldEnum
+	}
 	if c.FieldEnumPtr != nil {
 		data["field_enum_ptr"] = c.FieldEnumPtr
 	}

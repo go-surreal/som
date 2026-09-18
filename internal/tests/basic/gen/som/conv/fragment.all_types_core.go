@@ -25,7 +25,9 @@ func (c *AllTypesCore) fields() map[string]any {
 	data["field_int"] = c.FieldInt
 	data["field_bool"] = c.FieldBool
 	data["field_time"] = &types.DateTime{Time: c.FieldTime}
-	data["field_enum"] = c.FieldEnum
+	if c.FieldEnum != "" {
+		data["field_enum"] = c.FieldEnum
+	}
 
 	return data
 }
