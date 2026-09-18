@@ -2,9 +2,12 @@
 
 package lib
 
-// int_ also admits the pointer widths, so that an optional field can still be
-// compared against a pointer as it always could.
-type int_ interface {
+// Int_ is the set of widths a value may have to be compared against an integer
+// field. It has a suffix of "_" to prevent a clash with the Int filter itself.
+//
+// The pointer widths are admitted as well, so that an optional field can still
+// be compared against a pointer as it always could.
+type Int_ interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
 		~*int | ~*int8 | ~*int16 | ~*int32 | ~*int64 |
@@ -59,35 +62,35 @@ func (i *Int[M]) key() Key[M] {
 	return i.Numeric.key()
 }
 
-func (i *Int[M]) Equal[V int_](val V) Filter[M] {
+func (i *Int[M]) Equal[V Int_](val V) Filter[M] {
 	return i.key().op(OpEqual, val)
 }
 
-func (i *Int[M]) NotEqual[V int_](val V) Filter[M] {
+func (i *Int[M]) NotEqual[V Int_](val V) Filter[M] {
 	return i.Numeric.Base.notSet(OpNotEqual, val)
 }
 
-func (i *Int[M]) In[V int_](vals []V) Filter[M] {
+func (i *Int[M]) In[V Int_](vals []V) Filter[M] {
 	return i.key().op(OpIn, vals)
 }
 
-func (i *Int[M]) NotIn[V int_](vals []V) Filter[M] {
+func (i *Int[M]) NotIn[V Int_](vals []V) Filter[M] {
 	return i.Numeric.Base.notSet(OpNotIn, vals)
 }
 
-func (i *Int[M]) LessThan[V int_](val V) Filter[M] {
+func (i *Int[M]) LessThan[V Int_](val V) Filter[M] {
 	return i.key().op(OpLessThan, val)
 }
 
-func (i *Int[M]) LessThanEqual[V int_](val V) Filter[M] {
+func (i *Int[M]) LessThanEqual[V Int_](val V) Filter[M] {
 	return i.key().op(OpLessThanEqual, val)
 }
 
-func (i *Int[M]) GreaterThan[V int_](val V) Filter[M] {
+func (i *Int[M]) GreaterThan[V Int_](val V) Filter[M] {
 	return i.key().op(OpGreaterThan, val)
 }
 
-func (i *Int[M]) GreaterThanEqual[V int_](val V) Filter[M] {
+func (i *Int[M]) GreaterThanEqual[V Int_](val V) Filter[M] {
 	return i.key().op(OpGreaterThanEqual, val)
 }
 
