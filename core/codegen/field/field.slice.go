@@ -423,7 +423,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 				Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).Id(f.NameGo()).
 				Params(
 					jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
-						Types(jen.Qual(f.SourcePkg, element.table.NameGo())),
+						Types(jen.Op("*").Qual(f.SourcePkg, element.table.NameGo())),
 				).
 				Op("*").Qual(ctx.pkgLib(), "Slice").
 				Types(
@@ -463,7 +463,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 					Params(jen.Id("n").Add(receiver)).Id(f.NameGo()).
 					Params(
 						jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
-							Types(jen.Qual(f.SourcePkg, element.table.NameGo())),
+							Types(jen.Op("*").Qual(f.SourcePkg, element.table.NameGo())),
 					).
 					Params(jen.Id(element.table.NameGoLower() + "In").Index(def.TypeModel)).
 					Block(
@@ -485,7 +485,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 					Params(jen.Id("n").Add(receiver)).Id(f.NameGo()).
 					Params(
 						jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
-							Types(jen.Qual(f.SourcePkg, element.table.NameGo())),
+							Types(jen.Op("*").Qual(f.SourcePkg, element.table.NameGo())),
 					).
 					Params(jen.Id(element.table.NameGoLower() + "Out").Index(def.TypeModel)).
 					Block(
@@ -517,7 +517,7 @@ func (f *Slice) filterFunc(ctx Context) jen.Code {
 			Params(jen.Id("n").Id(ctx.Table.NameGoLower()).Types(def.TypeModel)).Id(f.NameGo()).
 			Params(
 				jen.Id("filters").Op("...").Qual(ctx.pkgLib(), "Filter").
-					Types(jen.Qual(f.SourcePkg, element.element.NameGo())),
+					Types(jen.Op("*").Qual(f.SourcePkg, element.element.NameGo())),
 			).
 			Op("*").Qual(ctx.pkgLib(), sliceType).
 			Types(def.TypeModel, f.element.typeGo(), elemFilter).

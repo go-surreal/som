@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Colored = newColoredRoot[model.Colored]()
+var Colored = newColoredRoot[*model.Colored]()
 
 func newColored[M any](key lib.Key[M]) colored[M] {
 	return colored[M]{Key: key, Union: lib.NewUnion[M](key)}

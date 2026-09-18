@@ -9,7 +9,7 @@ import (
 )
 
 // allTypesModelInfo holds the model-specific unmarshal functions for AllTypes.
-var allTypesModelInfo = modelInfo[model.AllTypes, *model.AllTypes]{
+var allTypesModelInfo = modelInfo[*model.AllTypes, *model.AllTypes]{
 	Fields: conv.AllTypesFields,
 	UnmarshalAll: func(data []byte) ([]*model.AllTypes, error) {
 		return unmarshalAll(data, conv.ToAllTypesPtr)
@@ -22,7 +22,7 @@ var allTypesModelInfo = modelInfo[model.AllTypes, *model.AllTypes]{
 	},
 }
 
-var allTypesRangeFn = rangeFn[model.AllTypes](func(q *lib.Query[model.AllTypes], from som.RangeFrom, to som.RangeTo) string {
+var allTypesRangeFn = rangeFn[*model.AllTypes](func(q *lib.Query[*model.AllTypes], from som.RangeFrom, to som.RangeTo) string {
 	expr := ":"
 	if !from.IsOpen() {
 		expr += q.AsVar(from.Value().(som.ULID))
@@ -42,8 +42,8 @@ var allTypesRangeFn = rangeFn[model.AllTypes](func(q *lib.Query[model.AllTypes],
 
 // NewAllTypes creates a new query builder for AllTypes models.
 func NewAllTypes(db Database) Builder[model.AllTypes] {
-	q := lib.NewQuery[model.AllTypes]("all_types")
-	return Builder[model.AllTypes]{builder[model.AllTypes, *model.AllTypes]{
+	q := lib.NewQuery[*model.AllTypes]("all_types")
+	return Builder[model.AllTypes]{builder[*model.AllTypes, *model.AllTypes]{
 		db:      db,
 		info:    allTypesModelInfo,
 		query:   q,

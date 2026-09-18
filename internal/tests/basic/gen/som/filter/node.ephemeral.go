@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Ephemeral = newEphemeral[model.Ephemeral](lib.NewKey[model.Ephemeral]())
+var Ephemeral = newEphemeral[*model.Ephemeral](lib.NewKey[*model.Ephemeral]())
 
 func newEphemeral[M any](key lib.Key[M]) ephemeral[M] {
 	return ephemeral[M]{

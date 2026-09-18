@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Slug = newSlug[model.Slug]("")
+var Slug = newSlug[*model.Slug]("")
 
 func newSlug[M any](key string) slug[M] {
 	return slug[M]{

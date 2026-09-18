@@ -31,7 +31,7 @@ type SpecialTypesRepo interface {
 	// Read returns the record for the given ID, if it exists.
 	Read(ctx context.Context, id string) (*model.SpecialTypes, bool, error)
 	// Expand returns the full record a fragment of SpecialTypes was projected from, if it still exists.
-	Expand(ctx context.Context, fragment som.FragmentOf[model.SpecialTypes]) (*model.SpecialTypes, bool, error)
+	Expand(ctx context.Context, fragment som.FragmentOf[*model.SpecialTypes]) (*model.SpecialTypes, bool, error)
 	// Update updates the record for the given SpecialTypes model.
 	Update(ctx context.Context, specialTypes *model.SpecialTypes) error
 	// Delete deletes the record for the given SpecialTypes model.
@@ -297,7 +297,7 @@ func (r *specialTypes) Read(ctx context.Context, id string) (*model.SpecialTypes
 
 // Expand returns the full record the given fragment was projected from, if it
 // still exists. The returned bool indicates whether the record was found or not.
-func (r *specialTypes) Expand(ctx context.Context, fragment som.FragmentOf[model.SpecialTypes]) (*model.SpecialTypes, bool, error) {
+func (r *specialTypes) Expand(ctx context.Context, fragment som.FragmentOf[*model.SpecialTypes]) (*model.SpecialTypes, bool, error) {
 	rid, ok := internal.FragmentRecordID(fragment)
 	if !ok {
 		return nil, false, som.ErrEmptyID

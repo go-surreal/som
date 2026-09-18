@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Weather = weather[model.Weather]("")
+var Weather = weather[*model.Weather]("")
 
 type weather[M any] string
 

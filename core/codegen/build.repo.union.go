@@ -16,7 +16,7 @@ func (b *build) buildUnionRepoFile(union *field.UnionTable) error {
 	tmpl := `
 		type {{.NameGo}}Repo interface {
 			// Query returns a new query builder over all member tables of the {{.NameGo}} union.
-			Query() query.BuilderOf[model.{{.NameGo}}, model.{{.NameGo}}]
+			Query() query.UnionBuilder[model.{{.NameGo}}]
 		}
 
 		// {{.NameGo}}Repo returns the repository instance for the {{.NameGo}} union.
@@ -37,7 +37,7 @@ func (b *build) buildUnionRepoFile(union *field.UnionTable) error {
 		// Query returns a new query builder over all member tables of the {{.NameGo}}
 		// union: {{.Members}}. To create, update or delete a record, use the
 		// repository of the member it belongs to.
-		func (r *{{.NameGoLower}}) Query() query.BuilderOf[model.{{.NameGo}}, model.{{.NameGo}}] {
+		func (r *{{.NameGoLower}}) Query() query.UnionBuilder[model.{{.NameGo}}] {
 			return query.New{{.NameGo}}(r.db)
 		}
 	`

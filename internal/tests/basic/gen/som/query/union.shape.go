@@ -8,7 +8,7 @@ import (
 )
 
 // shapeModelInfo holds the model-specific unmarshal functions for Shape.
-var shapeModelInfo = modelInfo[model.Shape, model.Shape]{
+var shapeModelInfo = modelInfo[*model.Shape, model.Shape]{
 	Fields: conv.ShapeFields,
 	UnmarshalAll: func(data []byte) ([]model.Shape, error) {
 		return unmarshalAll(data, conv.ToShapeValue)
@@ -23,9 +23,9 @@ var shapeModelInfo = modelInfo[model.Shape, model.Shape]{
 
 // NewShape creates a new query builder over all member tables of the
 // Shape union: Square, Circle.
-func NewShape(db Database) BuilderOf[model.Shape, model.Shape] {
-	q := lib.NewQuery[model.Shape]("square, circle")
-	return BuilderOf[model.Shape, model.Shape]{builder[model.Shape, model.Shape]{
+func NewShape(db Database) UnionBuilder[model.Shape] {
+	q := lib.NewQuery[*model.Shape]("square, circle")
+	return UnionBuilder[model.Shape]{builder[*model.Shape, model.Shape]{
 		db:    db,
 		info:  shapeModelInfo,
 		query: q,

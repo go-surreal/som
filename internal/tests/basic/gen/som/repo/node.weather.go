@@ -25,7 +25,7 @@ type WeatherRepo interface {
 	// Read returns the record for the given key, if it exists.
 	Read(ctx context.Context, key model.WeatherKey) (*model.Weather, bool, error)
 	// Expand returns the full record a fragment of Weather was projected from, if it still exists.
-	Expand(ctx context.Context, fragment som.FragmentOf[model.Weather]) (*model.Weather, bool, error)
+	Expand(ctx context.Context, fragment som.FragmentOf[*model.Weather]) (*model.Weather, bool, error)
 	// Update updates the record for the given Weather model.
 	Update(ctx context.Context, weather *model.Weather) error
 	// Delete deletes the record for the given Weather model.
@@ -210,7 +210,7 @@ func (r *weather) Read(ctx context.Context, key model.WeatherKey) (*model.Weathe
 
 // Expand returns the full record the given fragment was projected from, if it
 // still exists. The returned bool indicates whether the record was found or not.
-func (r *weather) Expand(ctx context.Context, fragment som.FragmentOf[model.Weather]) (*model.Weather, bool, error) {
+func (r *weather) Expand(ctx context.Context, fragment som.FragmentOf[*model.Weather]) (*model.Weather, bool, error) {
 	rid, ok := internal.FragmentRecordID(fragment)
 	if !ok {
 		return nil, false, som.ErrEmptyID

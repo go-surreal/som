@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var Location = newLocation[model.Location]("")
+var Location = newLocation[*model.Location]("")
 
 func newLocation[M any](key string) location[M] {
 	return location[M]{

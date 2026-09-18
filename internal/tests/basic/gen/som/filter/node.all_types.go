@@ -12,7 +12,7 @@ import (
 	uuid2 "uuid"
 )
 
-var AllTypes = newAllTypes[model.AllTypes](lib.NewKey[model.AllTypes]())
+var AllTypes = newAllTypes[*model.AllTypes](lib.NewKey[*model.AllTypes]())
 
 func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 	return allTypes[M]{
@@ -218,17 +218,17 @@ func (n allTypes[M]) FieldNestedDataPtr() nestedData[M] {
 	return newNestedData[M](lib.Field(n.Key, "field_nested_data_ptr"))
 }
 
-func (n allTypes[M]) FieldNestedDataSlice(filters ...lib.Filter[model.NestedData]) *lib.Slice[M, model.NestedData, nestedData[M]] {
+func (n allTypes[M]) FieldNestedDataSlice(filters ...lib.Filter[*model.NestedData]) *lib.Slice[M, model.NestedData, nestedData[M]] {
 	key := lib.StructField(n.Key, "field_nested_data_slice", filters)
 	return lib.NewSlice[M, model.NestedData, nestedData[M]](key, newNestedData[M])
 }
 
-func (n allTypes[M]) FieldNestedDataPtrSlice(filters ...lib.Filter[model.NestedData]) *lib.Slice[M, *model.NestedData, nestedData[M]] {
+func (n allTypes[M]) FieldNestedDataPtrSlice(filters ...lib.Filter[*model.NestedData]) *lib.Slice[M, *model.NestedData, nestedData[M]] {
 	key := lib.StructField(n.Key, "field_nested_data_ptr_slice", filters)
 	return lib.NewSlice[M, *model.NestedData, nestedData[M]](key, newNestedData[M])
 }
 
-func (n allTypes[M]) FieldNestedDataPtrSlicePtr(filters ...lib.Filter[model.NestedData]) *lib.SlicePtr[M, *model.NestedData, nestedData[M]] {
+func (n allTypes[M]) FieldNestedDataPtrSlicePtr(filters ...lib.Filter[*model.NestedData]) *lib.SlicePtr[M, *model.NestedData, nestedData[M]] {
 	key := lib.StructField(n.Key, "field_nested_data_ptr_slice_ptr", filters)
 	return lib.NewSlicePtr[M, *model.NestedData, nestedData[M]](key, newNestedData[M])
 }
@@ -241,22 +241,22 @@ func (n allTypes[M]) FieldNodePtr() specialTypes[M] {
 	return newSpecialTypes[M](lib.Field(n.Key, "field_node_ptr"))
 }
 
-func (n allTypes[M]) FieldNodeSlice(filters ...lib.Filter[model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
+func (n allTypes[M]) FieldNodeSlice(filters ...lib.Filter[*model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
 	key := lib.Node(n.Key, "field_node_slice", filters)
 	return lib.NewSlice[M, model.SpecialTypes, specialTypes[M]](key, newSpecialTypes[M])
 }
 
-func (n allTypes[M]) FieldNodePtrSlice(filters ...lib.Filter[model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
+func (n allTypes[M]) FieldNodePtrSlice(filters ...lib.Filter[*model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
 	key := lib.Node(n.Key, "field_node_ptr_slice", filters)
 	return lib.NewSlice[M, model.SpecialTypes, specialTypes[M]](key, newSpecialTypes[M])
 }
 
-func (n allTypes[M]) FieldNodePtrSlicePtr(filters ...lib.Filter[model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
+func (n allTypes[M]) FieldNodePtrSlicePtr(filters ...lib.Filter[*model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
 	key := lib.Node(n.Key, "field_node_ptr_slice_ptr", filters)
 	return lib.NewSlice[M, model.SpecialTypes, specialTypes[M]](key, newSpecialTypes[M])
 }
 
-func (n allTypes[M]) FieldEdgeRelations(filters ...lib.Filter[model.EdgeRelation]) edgeRelationIn[M] {
+func (n allTypes[M]) FieldEdgeRelations(filters ...lib.Filter[*model.EdgeRelation]) edgeRelationIn[M] {
 	return newEdgeRelationIn[M](lib.EdgeIn(n.Key, "edge_relation", filters))
 }
 
@@ -350,6 +350,6 @@ type allTypesEdges[M any] struct {
 	lib.Key[M]
 }
 
-func (n allTypesEdges[M]) FieldEdgeRelations(filters ...lib.Filter[model.EdgeRelation]) edgeRelationIn[M] {
+func (n allTypesEdges[M]) FieldEdgeRelations(filters ...lib.Filter[*model.EdgeRelation]) edgeRelationIn[M] {
 	return newEdgeRelationIn[M](lib.EdgeIn(n.Key, "edge_relation", filters))
 }

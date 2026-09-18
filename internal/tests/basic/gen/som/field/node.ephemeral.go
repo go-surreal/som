@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var Ephemeral = newEphemeral[model.Ephemeral]("")
+var Ephemeral = newEphemeral[*model.Ephemeral]("")
 
 func newEphemeral[M any](key string) ephemeral[M] {
 	return ephemeral[M]{

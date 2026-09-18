@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Circle = newCircle[model.Circle](lib.NewKey[model.Circle]())
+var Circle = newCircle[*model.Circle](lib.NewKey[*model.Circle]())
 
 func newCircle[M any](key lib.Key[M]) circle[M] {
 	return circle[M]{

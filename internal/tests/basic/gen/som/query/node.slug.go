@@ -9,7 +9,7 @@ import (
 )
 
 // slugModelInfo holds the model-specific unmarshal functions for Slug.
-var slugModelInfo = modelInfo[model.Slug, *model.Slug]{
+var slugModelInfo = modelInfo[*model.Slug, *model.Slug]{
 	Fields: conv.SlugFields,
 	UnmarshalAll: func(data []byte) ([]*model.Slug, error) {
 		return unmarshalAll(data, conv.ToSlugPtr)
@@ -22,7 +22,7 @@ var slugModelInfo = modelInfo[model.Slug, *model.Slug]{
 	},
 }
 
-var slugRangeFn = rangeFn[model.Slug](func(q *lib.Query[model.Slug], from som.RangeFrom, to som.RangeTo) string {
+var slugRangeFn = rangeFn[*model.Slug](func(q *lib.Query[*model.Slug], from som.RangeFrom, to som.RangeTo) string {
 	expr := ":"
 	if !from.IsOpen() {
 		expr += q.AsVar(from.Value().(som.String))
@@ -42,8 +42,8 @@ var slugRangeFn = rangeFn[model.Slug](func(q *lib.Query[model.Slug], from som.Ra
 
 // NewSlug creates a new query builder for Slug models.
 func NewSlug(db Database) Builder[model.Slug] {
-	q := lib.NewQuery[model.Slug]("slug")
-	return Builder[model.Slug]{builder[model.Slug, *model.Slug]{
+	q := lib.NewQuery[*model.Slug]("slug")
+	return Builder[model.Slug]{builder[*model.Slug, *model.Slug]{
 		db:      db,
 		info:    slugModelInfo,
 		query:   q,

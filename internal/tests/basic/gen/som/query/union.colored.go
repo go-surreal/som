@@ -8,7 +8,7 @@ import (
 )
 
 // coloredModelInfo holds the model-specific unmarshal functions for Colored.
-var coloredModelInfo = modelInfo[model.Colored, model.Colored]{
+var coloredModelInfo = modelInfo[*model.Colored, model.Colored]{
 	Fields: conv.ColoredFields,
 	UnmarshalAll: func(data []byte) ([]model.Colored, error) {
 		return unmarshalAll(data, conv.ToColoredValue)
@@ -23,9 +23,9 @@ var coloredModelInfo = modelInfo[model.Colored, model.Colored]{
 
 // NewColored creates a new query builder over all member tables of the
 // Colored union: Square, Circle.
-func NewColored(db Database) BuilderOf[model.Colored, model.Colored] {
-	q := lib.NewQuery[model.Colored]("square, circle")
-	return BuilderOf[model.Colored, model.Colored]{builder[model.Colored, model.Colored]{
+func NewColored(db Database) UnionBuilder[model.Colored] {
+	q := lib.NewQuery[*model.Colored]("square, circle")
+	return UnionBuilder[model.Colored]{builder[*model.Colored, model.Colored]{
 		db:    db,
 		info:  coloredModelInfo,
 		query: q,

@@ -31,7 +31,7 @@ type AllTypesRepo interface {
 	// Read returns the record for the given ID, if it exists.
 	Read(ctx context.Context, id string) (*model.AllTypes, bool, error)
 	// Expand returns the full record a fragment of AllTypes was projected from, if it still exists.
-	Expand(ctx context.Context, fragment som.FragmentOf[model.AllTypes]) (*model.AllTypes, bool, error)
+	Expand(ctx context.Context, fragment som.FragmentOf[*model.AllTypes]) (*model.AllTypes, bool, error)
 	// Update updates the record for the given AllTypes model.
 	Update(ctx context.Context, allTypes *model.AllTypes) error
 	// Delete deletes the record for the given AllTypes model.
@@ -296,7 +296,7 @@ func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, 
 
 // Expand returns the full record the given fragment was projected from, if it
 // still exists. The returned bool indicates whether the record was found or not.
-func (r *allTypes) Expand(ctx context.Context, fragment som.FragmentOf[model.AllTypes]) (*model.AllTypes, bool, error) {
+func (r *allTypes) Expand(ctx context.Context, fragment som.FragmentOf[*model.AllTypes]) (*model.AllTypes, bool, error) {
 	rid, ok := internal.FragmentRecordID(fragment)
 	if !ok {
 		return nil, false, som.ErrEmptyID

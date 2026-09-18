@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var EdgeMeta = newEdgeMeta[model.EdgeMeta](lib.NewKey[model.EdgeMeta]())
+var EdgeMeta = newEdgeMeta[*model.EdgeMeta](lib.NewKey[*model.EdgeMeta]())
 
 func newEdgeMeta[M any](key lib.Key[M]) edgeMeta[M] {
 	return edgeMeta[M]{

@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Shape = shape[model.Shape]("")
+var Shape = shape[*model.Shape]("")
 
 type shape[M any] string
 

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var Drawing = newDrawing[model.Drawing]("")
+var Drawing = newDrawing[*model.Drawing]("")
 
 func newDrawing[M any](key string) drawing[M] {
 	return drawing[M]{

@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var PersonKey = newPersonKey[model.PersonKey](lib.NewKey[model.PersonKey]())
+var PersonKey = newPersonKey[*model.PersonKey](lib.NewKey[*model.PersonKey]())
 
 func newPersonKey[M any](key lib.Key[M]) personKey[M] {
 	return personKey[M]{

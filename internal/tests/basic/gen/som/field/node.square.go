@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Square = newSquare[model.Square]("")
+var Square = newSquare[*model.Square]("")
 
 func newSquare[M any](key string) square[M] {
 	return square[M]{

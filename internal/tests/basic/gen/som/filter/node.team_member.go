@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var TeamMember = newTeamMember[model.TeamMember](lib.NewKey[model.TeamMember]())
+var TeamMember = newTeamMember[*model.TeamMember](lib.NewKey[*model.TeamMember]())
 
 func newTeamMember[M any](key lib.Key[M]) teamMember[M] {
 	return teamMember[M]{

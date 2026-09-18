@@ -12,7 +12,7 @@ import (
 	uuid2 "uuid"
 )
 
-var AllTypes = newAllTypes[model.AllTypes]("")
+var AllTypes = newAllTypes[*model.AllTypes]("")
 
 func newAllTypes[M any](key string) allTypes[M] {
 	return allTypes[M]{

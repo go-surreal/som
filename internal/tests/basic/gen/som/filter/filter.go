@@ -6,14 +6,18 @@ import (
 	"som.test/gen/som/internal/lib"
 )
 
-func All[M any](filters ...lib.Filter[M]) lib.Filter[M] {
-	return lib.All[M](filters)
+// Filters carry the model as *M so that every model shares one GC shape (see
+// the note on the query builder aliases). Callers keep naming the bare model
+// type, e.g. filter.All[model.Person](...); the pointer is added here.
+
+func All[M any](filters ...lib.Filter[*M]) lib.Filter[*M] {
+	return lib.All[*M](filters)
 }
 
-func Any[M any](filters ...lib.Filter[M]) lib.Filter[M] {
-	return lib.Any[M](filters)
+func Any[M any](filters ...lib.Filter[*M]) lib.Filter[*M] {
+	return lib.Any[*M](filters)
 }
 
-func Not[M any](f lib.Filter[M]) lib.Filter[M] {
-	return lib.Not[M]{Filter: f}
+func Not[M any](f lib.Filter[*M]) lib.Filter[*M] {
+	return lib.Not[*M]{Filter: f}
 }

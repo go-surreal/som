@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Drawing = newDrawing[model.Drawing](lib.NewKey[model.Drawing]())
+var Drawing = newDrawing[*model.Drawing](lib.NewKey[*model.Drawing]())
 
 func newDrawing[M any](key lib.Key[M]) drawing[M] {
 	return drawing[M]{
@@ -34,7 +34,7 @@ func (n drawing[M]) Accent() colored[M] {
 	return newColored[M](lib.Field(n.Key, "accent"))
 }
 
-func (n drawing[M]) Annotations(filters ...lib.Filter[model.Annotates]) annotatesIn[M] {
+func (n drawing[M]) Annotations(filters ...lib.Filter[*model.Annotates]) annotatesIn[M] {
 	return newAnnotatesIn[M](lib.EdgeIn(n.Key, "annotates", filters))
 }
 
@@ -44,6 +44,6 @@ type drawingEdges[M any] struct {
 	lib.Key[M]
 }
 
-func (n drawingEdges[M]) Annotations(filters ...lib.Filter[model.Annotates]) annotatesIn[M] {
+func (n drawingEdges[M]) Annotations(filters ...lib.Filter[*model.Annotates]) annotatesIn[M] {
 	return newAnnotatesIn[M](lib.EdgeIn(n.Key, "annotates", filters))
 }

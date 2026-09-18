@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var EventLog = newEventLog[model.EventLog](lib.NewKey[model.EventLog]())
+var EventLog = newEventLog[*model.EventLog](lib.NewKey[*model.EventLog]())
 
 func newEventLog[M any](key lib.Key[M]) eventLog[M] {
 	return eventLog[M]{

@@ -69,7 +69,7 @@ func (b *accessorBuilder) build() error {
 func (b *accessorBuilder) buildFile(elem field.Element) error {
 	tmpl := `
 		{{- if .IsTable}}
-		var {{.NameGo}} = new{{.NameGo}}[model.{{.NameGo}}]("")
+		var {{.NameGo}} = new{{.NameGo}}[*model.{{.NameGo}}]("")
 		{{end}}
 		func new{{.NameGo}}[M any](key string) {{.NameGoLower}}[M] {
 			return {{.InitLiteral}}

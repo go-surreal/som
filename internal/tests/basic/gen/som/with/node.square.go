@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Square = square[model.Square]("")
+var Square = square[*model.Square]("")
 
 type square[M any] string
 
