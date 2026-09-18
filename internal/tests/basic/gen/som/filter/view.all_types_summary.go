@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var AllTypesSummary = newAllTypesSummary[model.AllTypesSummary](lib.NewKey[model.AllTypesSummary]())
+var AllTypesSummary = newAllTypesSummary[*model.AllTypesSummary](lib.NewKey[*model.AllTypesSummary]())
 
 func newAllTypesSummary[M any](key lib.Key[M]) allTypesSummary[M] {
 	return allTypesSummary[M]{

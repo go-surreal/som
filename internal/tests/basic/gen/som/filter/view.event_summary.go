@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var EventSummary = newEventSummary[model.EventSummary](lib.NewKey[model.EventSummary]())
+var EventSummary = newEventSummary[*model.EventSummary](lib.NewKey[*model.EventSummary]())
 
 func newEventSummary[M any](key lib.Key[M]) eventSummary[M] {
 	return eventSummary[M]{

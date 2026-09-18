@@ -8,7 +8,7 @@ import (
 )
 
 // allTypesSummaryModelInfo holds the model-specific unmarshal functions for AllTypesSummary.
-var allTypesSummaryModelInfo = modelInfo[model.AllTypesSummary, *model.AllTypesSummary]{
+var allTypesSummaryModelInfo = modelInfo[*model.AllTypesSummary, *model.AllTypesSummary]{
 	UnmarshalAll: func(data []byte) ([]*model.AllTypesSummary, error) {
 		return unmarshalAll(data, conv.ToAllTypesSummaryPtr)
 	},
@@ -22,8 +22,8 @@ var allTypesSummaryModelInfo = modelInfo[model.AllTypesSummary, *model.AllTypesS
 
 // NewAllTypesSummary creates a new query builder for AllTypesSummary views.
 func NewAllTypesSummary(db Database) Builder[model.AllTypesSummary] {
-	q := lib.NewQuery[model.AllTypesSummary]("all_types_summary")
-	return Builder[model.AllTypesSummary]{builder[model.AllTypesSummary, *model.AllTypesSummary]{
+	q := lib.NewQuery[*model.AllTypesSummary]("all_types_summary")
+	return Builder[model.AllTypesSummary]{builder[*model.AllTypesSummary, *model.AllTypesSummary]{
 		db:    db,
 		info:  allTypesSummaryModelInfo,
 		query: q,

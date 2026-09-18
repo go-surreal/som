@@ -4,6 +4,6 @@ package constant
 
 import "som.test/gen/som/internal/lib"
 
-func String[M any](val string) *lib.String[M] {
-	return lib.NewString[M](lib.NewVarKey[M](val))
+func String[M any](val string) *lib.String[*M] {
+	return lib.NewString[*M](lib.NewVarKey[*M](val))
 }

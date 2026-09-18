@@ -2,10 +2,18 @@
 
 package with
 
-// Fetch_ has a suffix of "_" to prevent clashes with node names.
-type Fetch_[T any] interface {
+// FetchOf matches the model exactly as given. The query builder already holds
+// a pointer-shaped model parameter and so names this form directly.
+type FetchOf[T any] interface {
 	fetch(T)
 }
+
+// Fetch_ has a suffix of "_" to prevent clashes with node names.
+//
+// The model is matched as *M, so that the fetch accessors line up with the
+// pointer-shaped model parameter the query builder and filters use. Callers
+// keep naming the bare model type.
+type Fetch_[M any] = FetchOf[*M]
 
 func keyed[S ~string](base S, key string) string {
 	if base == "" {

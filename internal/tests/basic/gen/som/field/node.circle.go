@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Circle = newCircle[model.Circle]("")
+var Circle = newCircle[*model.Circle]("")
 
 func newCircle[M any](key string) circle[M] {
 	return circle[M]{

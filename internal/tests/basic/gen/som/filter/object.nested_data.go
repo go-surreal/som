@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var NestedData = newNestedData[model.NestedData](lib.NewKey[model.NestedData]())
+var NestedData = newNestedData[*model.NestedData](lib.NewKey[*model.NestedData]())
 
 func newNestedData[M any](key lib.Key[M]) nestedData[M] {
 	return nestedData[M]{

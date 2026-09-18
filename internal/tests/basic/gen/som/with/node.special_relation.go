@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var SpecialRelation = specialRelation[model.SpecialRelation]("")
+var SpecialRelation = specialRelation[*model.SpecialRelation]("")
 
 type specialRelation[M any] string
 

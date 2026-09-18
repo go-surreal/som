@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Drawing = drawing[model.Drawing]("")
+var Drawing = drawing[*model.Drawing]("")
 
 type drawing[M any] string
 

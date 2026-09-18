@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Shape = newShapeRoot[model.Shape]()
+var Shape = newShapeRoot[*model.Shape]()
 
 func newShape[M any](key lib.Key[M]) shape[M] {
 	return shape[M]{Key: key, Union: lib.NewUnion[M](key)}

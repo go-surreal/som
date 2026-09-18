@@ -58,18 +58,30 @@ type BuilderNoLiveOf[M any, R any] struct {
 // query yields, which is a pointer to the model for a table and the interface
 // itself for a union. Every table-backed query uses the single-parameter
 // aliases below, so only a union has to name both.
+//
+// M is passed on as *M. It is a phantom parameter -- it only ties a query to
+// the model it may be filtered by, and its zero value is never dereferenced --
+// so making it pointer-shaped costs nothing and lets every model share a
+// single GC shape instead of stencilling the filter machinery per model.
+// Callers keep naming the bare model type; the pointer is added here.
 
-type Builder[M any] = BuilderOf[M, *M]
+type Builder[M any] = BuilderOf[*M, *M]
 
-type BuilderNoLive[M any] = BuilderNoLiveOf[M, *M]
+type BuilderNoLive[M any] = BuilderNoLiveOf[*M, *M]
 
-type PageBuilder[M any] = PageBuilderOf[M, *M]
+type PageBuilder[M any] = PageBuilderOf[*M, *M]
 
-type SearchBuilder[M any] = SearchBuilderOf[M, *M]
+type SearchBuilder[M any] = SearchBuilderOf[*M, *M]
 
-type Entry[M any] = EntryOf[M, *M]
+type Entry[M any] = EntryOf[*M, *M]
 
-type Page[M any] = PageOf[M, *M]
+type Page[M any] = PageOf[*M, *M]
+
+// A union query yields the interface itself rather than a pointer to it, so it
+// needs its own alias: the model is still pointerized in the M position, but R
+// stays the bare interface type.
+
+type UnionBuilder[M any] = BuilderOf[*M, M]
 
 // Where adds a where statement to the query to
 // select records based on the given conditions.
@@ -144,7 +156,7 @@ func (b builder[M, R]) Limit(limit int) BuilderNoLiveOf[M, R] {
 // This works for both record links and edges.
 // Note: Soft-delete filtering does not apply to fetched relations.
 // All related records are returned regardless of their soft-delete status.
-func (b builder[M, R]) Fetch(fetch ...with.Fetch_[M]) BuilderOf[M, R] {
+func (b builder[M, R]) Fetch(fetch ...with.FetchOf[M]) BuilderOf[M, R] {
 	for _, f := range fetch {
 		field := fmt.Sprintf("%v", f)
 		if field != "" {

@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var TeamMember = teamMember[model.TeamMember]("")
+var TeamMember = teamMember[*model.TeamMember]("")
 
 type teamMember[M any] string
 

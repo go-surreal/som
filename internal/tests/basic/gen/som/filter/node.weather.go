@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Weather = newWeather[model.Weather](lib.NewKey[model.Weather]())
+var Weather = newWeather[*model.Weather](lib.NewKey[*model.Weather]())
 
 func newWeather[M any](key lib.Key[M]) weather[M] {
 	return weather[M]{

@@ -25,8 +25,12 @@ type ViewBuilder[V any, T any] struct {
 // View starts a new read-only view definition selecting from source model T
 // into view model V. The database table names are derived from the model
 // types during code generation.
-func View[V any, T any]() *ViewBuilder[V, T] {
-	return &ViewBuilder[V, T]{}
+//
+// The builder carries the models as *V and *T to line up with the
+// pointer-shaped model parameter the filter fields use. Callers keep naming
+// the bare model types.
+func View[V any, T any]() *ViewBuilder[*V, *T] {
+	return &ViewBuilder[*V, *T]{}
 }
 
 // Projection is a single "<expr> AS <column>" entry of a view. It carries
@@ -91,6 +95,15 @@ type viewDefJSON struct {
 	GroupBy     []string `json:"group_by,omitempty"`
 }
 
+// typeName reports the model's declared name. The model parameters are
+// pointer-shaped, so unwrap before asking for the name -- a pointer type has
+// none of its own.
 func typeName[T any]() string {
-	return reflect.TypeOf((*T)(nil)).Elem().Name()
+	typ := reflect.TypeOf((*T)(nil)).Elem()
+
+	for typ.Kind() == reflect.Pointer {
+		typ = typ.Elem()
+	}
+
+	return typ.Name()
 }

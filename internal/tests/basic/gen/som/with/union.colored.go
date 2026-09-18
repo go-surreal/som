@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Colored = colored[model.Colored]("")
+var Colored = colored[*model.Colored]("")
 
 type colored[M any] string
 

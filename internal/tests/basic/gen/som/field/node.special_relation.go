@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var SpecialRelation = newSpecialRelation[model.SpecialRelation]("")
+var SpecialRelation = newSpecialRelation[*model.SpecialRelation]("")
 
 func newSpecialRelation[M any](key string) specialRelation[M] {
 	return specialRelation[M]{

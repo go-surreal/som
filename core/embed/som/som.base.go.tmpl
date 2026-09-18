@@ -370,7 +370,7 @@ type Fragment[T node] struct {
 	fragmentState
 }
 
-func (Fragment[T]) fragmentOf(T) {}
+func (Fragment[T]) fragmentOf(*T) {}
 
 // FragmentOf is the constraint satisfied by every fragment of the model T,
 // i.e. every model embedding Fragment[T]. Its parameter is unconstrained, so

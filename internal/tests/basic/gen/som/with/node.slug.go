@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Slug = slug[model.Slug]("")
+var Slug = slug[*model.Slug]("")
 
 type slug[M any] string
 

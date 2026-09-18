@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Ephemeral = ephemeral[model.Ephemeral]("")
+var Ephemeral = ephemeral[*model.Ephemeral]("")
 
 type ephemeral[M any] string
 

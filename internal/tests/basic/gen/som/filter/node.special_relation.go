@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var SpecialRelation = newSpecialRelation[model.SpecialRelation](lib.NewKey[model.SpecialRelation]())
+var SpecialRelation = newSpecialRelation[*model.SpecialRelation](lib.NewKey[*model.SpecialRelation]())
 
 func newSpecialRelation[M any](key lib.Key[M]) specialRelation[M] {
 	return specialRelation[M]{
@@ -28,7 +28,7 @@ func (n specialRelation[M]) Author() specialTypes[M] {
 	return newSpecialTypes[M](lib.Field(n.Key, "author"))
 }
 
-func (n specialRelation[M]) Authors(filters ...lib.Filter[model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
+func (n specialRelation[M]) Authors(filters ...lib.Filter[*model.SpecialTypes]) *lib.Slice[M, model.SpecialTypes, specialTypes[M]] {
 	key := lib.Node(n.Key, "authors", filters)
 	return lib.NewSlice[M, model.SpecialTypes, specialTypes[M]](key, newSpecialTypes[M])
 }

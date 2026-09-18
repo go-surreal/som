@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Circle = circle[model.Circle]("")
+var Circle = circle[*model.Circle]("")
 
 type circle[M any] string
 

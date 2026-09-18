@@ -67,7 +67,7 @@ func (b *filterBuilder) build() error {
 // or narrowed to a single member to filter on that member's fields.
 func (b *filterBuilder) buildUnionFile(union *field.UnionTable) error {
 	tmpl := `
-		var {{.NameGo}} = new{{.NameGo}}Root[model.{{.NameGo}}]()
+		var {{.NameGo}} = new{{.NameGo}}Root[*model.{{.NameGo}}]()
 
 		func new{{.NameGo}}[M any](key lib.Key[M]) {{.NameGoLower}}[M] {
 			return {{.NameGoLower}}[M]{Key: key, Union: lib.NewUnion[M](key)}
@@ -130,7 +130,7 @@ func (b *filterBuilder) buildUnionFile(union *field.UnionTable) error {
 // https://github.com/surrealdb/surrealdb/pull/4602
 func (b *filterBuilder) buildFile(elem field.Element) error {
 	tmpl := `
-		var {{.NameGo}} = new{{.NameGo}}[model.{{.NameGo}}](lib.NewKey[model.{{.NameGo}}]())
+		var {{.NameGo}} = new{{.NameGo}}[*model.{{.NameGo}}](lib.NewKey[*model.{{.NameGo}}]())
 
 		{{.NewFunc}}
 
@@ -151,7 +151,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 			return {{.NameGoLower}}In[M]{lib.KeyFilter(key), key}
 		}
 
-		func (i {{.NameGoLower}}In[M]) {{.Edge.OutNameGo}}(filters ...lib.Filter[model.{{.Edge.OutTableGo}}]) {{.Edge.OutTableLower}}Edges[M] {
+		func (i {{.NameGoLower}}In[M]) {{.Edge.OutNameGo}}(filters ...lib.Filter[*model.{{.Edge.OutTableGo}}]) {{.Edge.OutTableLower}}Edges[M] {
 			key := lib.EdgeIn(i.key, "{{.Edge.OutNameDB}}", filters)
 			return {{.Edge.OutTableLower}}Edges[M]{lib.KeyFilter(key), key}
 		}
@@ -165,7 +165,7 @@ func (b *filterBuilder) buildFile(elem field.Element) error {
 			return {{.NameGoLower}}Out[M]{lib.KeyFilter(key), key}
 		}
 
-		func (o {{.NameGoLower}}Out[M]) {{.Edge.InNameGo}}(filters ...lib.Filter[model.{{.Edge.InTableGo}}]) {{.Edge.InTableLower}}Edges[M] {
+		func (o {{.NameGoLower}}Out[M]) {{.Edge.InNameGo}}(filters ...lib.Filter[*model.{{.Edge.InTableGo}}]) {{.Edge.InTableLower}}Edges[M] {
 			key := lib.EdgeOut(o.key, "{{.Edge.InNameDB}}", filters)
 			return {{.Edge.InTableLower}}Edges[M]{lib.KeyFilter(key), key}
 		}

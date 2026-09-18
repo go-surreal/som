@@ -42,7 +42,7 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			{{- end}}
 			{{- if .HasFragments}}
 			// Expand returns the full record a fragment of {{.NameGo}} was projected from, if it still exists.
-			Expand(ctx context.Context, fragment som.FragmentOf[model.{{.NameGo}}]) (*model.{{.NameGo}}, bool, error)
+			Expand(ctx context.Context, fragment som.FragmentOf[*model.{{.NameGo}}]) (*model.{{.NameGo}}, bool, error)
 			{{- end}}
 			// Update updates the record for the given {{.NameGo}} model.
 			Update(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
@@ -294,7 +294,7 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		{{- if .HasFragments}}
 		// Expand returns the full record the given fragment was projected from, if it
 		// still exists. The returned bool indicates whether the record was found or not.
-		func (r *{{.NameGoLower}}) Expand(ctx context.Context, fragment som.FragmentOf[model.{{.NameGo}}]) (*model.{{.NameGo}}, bool, error) {
+		func (r *{{.NameGoLower}}) Expand(ctx context.Context, fragment som.FragmentOf[*model.{{.NameGo}}]) (*model.{{.NameGo}}, bool, error) {
 			rid, ok := internal.FragmentRecordID(fragment)
 			if !ok {
 				return nil, false, som.ErrEmptyID

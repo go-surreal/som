@@ -38,7 +38,7 @@ func (b *fetchBuilder) build() error {
 // the union itself has no fields, so nothing can be fetched beyond it.
 func (b *fetchBuilder) buildUnionFile(union *field.UnionTable) error {
 	tmpl := `
-		var {{.NameGo}} = {{.NameGoLower}}[model.{{.NameGo}}]("")
+		var {{.NameGo}} = {{.NameGoLower}}[*model.{{.NameGo}}]("")
 
 		type {{.NameGoLower}}[M any] string
 
@@ -76,7 +76,7 @@ type fetchRelation struct {
 
 func (b *fetchBuilder) buildFile(node *field.NodeTable) error {
 	tmpl := `
-		var {{.NameGo}} = {{.NameGoLower}}[model.{{.NameGo}}]("")
+		var {{.NameGo}} = {{.NameGoLower}}[*model.{{.NameGo}}]("")
 
 		type {{.NameGoLower}}[M any] string
 

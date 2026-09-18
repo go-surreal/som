@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var PersonObj = personObj[model.PersonObj]("")
+var PersonObj = personObj[*model.PersonObj]("")
 
 type personObj[M any] string
 

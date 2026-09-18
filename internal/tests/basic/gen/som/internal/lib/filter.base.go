@@ -29,7 +29,9 @@ func KeyFilter[M any](key Key[M]) Filter[M] {
 
 // Base is a filter with basic comparison operations.
 // M is the type of the model this filter is for.
-// E is the type of the field this filter is for.
+// T is the type of the field this filter is for.
+// F is the filter another field must have to be compared against this one.
+// S is the element filter a slice field must have to be used with In_.
 type Base[M, T any, F, S field[M]] struct {
 	Key[M]
 	conv func(T) any

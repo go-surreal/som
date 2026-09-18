@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Credentials = newCredentials[model.Credentials](lib.NewKey[model.Credentials]())
+var Credentials = newCredentials[*model.Credentials](lib.NewKey[*model.Credentials]())
 
 func newCredentials[M any](key lib.Key[M]) credentials[M] {
 	return credentials[M]{

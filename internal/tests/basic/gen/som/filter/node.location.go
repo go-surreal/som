@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Location = newLocation[model.Location](lib.NewKey[model.Location]())
+var Location = newLocation[*model.Location](lib.NewKey[*model.Location]())
 
 func newLocation[M any](key lib.Key[M]) location[M] {
 	return location[M]{

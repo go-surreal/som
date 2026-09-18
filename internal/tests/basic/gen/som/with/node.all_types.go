@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var AllTypes = allTypes[model.AllTypes]("")
+var AllTypes = allTypes[*model.AllTypes]("")
 
 type allTypes[M any] string
 

@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var SpecialTypes = newSpecialTypes[model.SpecialTypes](lib.NewKey[model.SpecialTypes]())
+var SpecialTypes = newSpecialTypes[*model.SpecialTypes](lib.NewKey[*model.SpecialTypes]())
 
 func newSpecialTypes[M any](key lib.Key[M]) specialTypes[M] {
 	return specialTypes[M]{

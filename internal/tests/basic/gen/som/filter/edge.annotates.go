@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Annotates = newAnnotates[model.Annotates](lib.NewKey[model.Annotates]())
+var Annotates = newAnnotates[*model.Annotates](lib.NewKey[*model.Annotates]())
 
 func newAnnotates[M any](key lib.Key[M]) annotates[M] {
 	return annotates[M]{
@@ -31,7 +31,7 @@ func newAnnotatesIn[M any](key lib.Key[M]) annotatesIn[M] {
 	return annotatesIn[M]{lib.KeyFilter(key), key}
 }
 
-func (i annotatesIn[M]) Shape(filters ...lib.Filter[model.Shape]) shapeEdges[M] {
+func (i annotatesIn[M]) Shape(filters ...lib.Filter[*model.Shape]) shapeEdges[M] {
 	key := lib.EdgeIn(i.key, "shape", filters)
 	return shapeEdges[M]{lib.KeyFilter(key), key}
 }
@@ -45,7 +45,7 @@ func newAnnotatesOut[M any](key lib.Key[M]) annotatesOut[M] {
 	return annotatesOut[M]{lib.KeyFilter(key), key}
 }
 
-func (o annotatesOut[M]) Drawing(filters ...lib.Filter[model.Drawing]) drawingEdges[M] {
+func (o annotatesOut[M]) Drawing(filters ...lib.Filter[*model.Drawing]) drawingEdges[M] {
 	key := lib.EdgeOut(o.key, "drawing", filters)
 	return drawingEdges[M]{lib.KeyFilter(key), key}
 }

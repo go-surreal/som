@@ -7,7 +7,7 @@ import (
 )
 
 type URL[M any] struct {
-	*Base[M, url.URL, *URL[M], *Slice[M, url.URL, *URL[M]]]
+	*Base[M, url.URL, *URL[M], *URL[M]]
 }
 
 func NewURL[M any](key Key[M]) *URL[M] {
@@ -16,7 +16,7 @@ func NewURL[M any](key Key[M]) *URL[M] {
 	}
 
 	return &URL[M]{
-		Base: NewBaseConv[M, url.URL, *URL[M], *Slice[M, url.URL, *URL[M]]](key, conv),
+		Base: NewBaseConv[M, url.URL, *URL[M], *URL[M]](key, conv),
 	}
 }
 

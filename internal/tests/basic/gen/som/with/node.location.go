@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var Location = location[model.Location]("")
+var Location = location[*model.Location]("")
 
 type location[M any] string
 

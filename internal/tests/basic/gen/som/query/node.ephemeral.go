@@ -9,7 +9,7 @@ import (
 )
 
 // ephemeralModelInfo holds the model-specific unmarshal functions for Ephemeral.
-var ephemeralModelInfo = modelInfo[model.Ephemeral, *model.Ephemeral]{
+var ephemeralModelInfo = modelInfo[*model.Ephemeral, *model.Ephemeral]{
 	Fields: conv.EphemeralFields,
 	UnmarshalAll: func(data []byte) ([]*model.Ephemeral, error) {
 		return unmarshalAll(data, conv.ToEphemeralPtr)
@@ -22,7 +22,7 @@ var ephemeralModelInfo = modelInfo[model.Ephemeral, *model.Ephemeral]{
 	},
 }
 
-var ephemeralRangeFn = rangeFn[model.Ephemeral](func(q *lib.Query[model.Ephemeral], from som.RangeFrom, to som.RangeTo) string {
+var ephemeralRangeFn = rangeFn[*model.Ephemeral](func(q *lib.Query[*model.Ephemeral], from som.RangeFrom, to som.RangeTo) string {
 	expr := ":"
 	if !from.IsOpen() {
 		expr += q.AsVar(from.Value().(som.UUID))
@@ -42,10 +42,10 @@ var ephemeralRangeFn = rangeFn[model.Ephemeral](func(q *lib.Query[model.Ephemera
 
 // NewEphemeral creates a new query builder for Ephemeral models.
 func NewEphemeral(db Database) Builder[model.Ephemeral] {
-	q := lib.NewQuery[model.Ephemeral]("ephemeral")
+	q := lib.NewQuery[*model.Ephemeral]("ephemeral")
 	// Automatically exclude expired records
 	q.ExpiryField = "expires_at"
-	return Builder[model.Ephemeral]{builder[model.Ephemeral, *model.Ephemeral]{
+	return Builder[model.Ephemeral]{builder[*model.Ephemeral, *model.Ephemeral]{
 		db:      db,
 		info:    ephemeralModelInfo,
 		query:   q,

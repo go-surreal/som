@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var Square = newSquare[model.Square](lib.NewKey[model.Square]())
+var Square = newSquare[*model.Square](lib.NewKey[*model.Square]())
 
 func newSquare[M any](key lib.Key[M]) square[M] {
 	return square[M]{

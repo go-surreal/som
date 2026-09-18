@@ -3,7 +3,7 @@ package with
 
 import model "som.test/model"
 
-var SpecialTypes = specialTypes[model.SpecialTypes]("")
+var SpecialTypes = specialTypes[*model.SpecialTypes]("")
 
 type specialTypes[M any] string
 

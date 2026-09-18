@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var EdgeRelation = newEdgeRelation[model.EdgeRelation](lib.NewKey[model.EdgeRelation]())
+var EdgeRelation = newEdgeRelation[*model.EdgeRelation](lib.NewKey[*model.EdgeRelation]())
 
 func newEdgeRelation[M any](key lib.Key[M]) edgeRelation[M] {
 	return edgeRelation[M]{
@@ -37,7 +37,7 @@ func newEdgeRelationIn[M any](key lib.Key[M]) edgeRelationIn[M] {
 	return edgeRelationIn[M]{lib.KeyFilter(key), key}
 }
 
-func (i edgeRelationIn[M]) SpecialTypes(filters ...lib.Filter[model.SpecialTypes]) specialTypesEdges[M] {
+func (i edgeRelationIn[M]) SpecialTypes(filters ...lib.Filter[*model.SpecialTypes]) specialTypesEdges[M] {
 	key := lib.EdgeIn(i.key, "special_types", filters)
 	return specialTypesEdges[M]{lib.KeyFilter(key), key}
 }
@@ -51,7 +51,7 @@ func newEdgeRelationOut[M any](key lib.Key[M]) edgeRelationOut[M] {
 	return edgeRelationOut[M]{lib.KeyFilter(key), key}
 }
 
-func (o edgeRelationOut[M]) AllTypes(filters ...lib.Filter[model.AllTypes]) allTypesEdges[M] {
+func (o edgeRelationOut[M]) AllTypes(filters ...lib.Filter[*model.AllTypes]) allTypesEdges[M] {
 	key := lib.EdgeOut(o.key, "all_types", filters)
 	return allTypesEdges[M]{lib.KeyFilter(key), key}
 }

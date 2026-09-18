@@ -6,7 +6,7 @@ import (
 	model "som.test/model"
 )
 
-var PersonObj = newPersonObj[model.PersonObj]("")
+var PersonObj = newPersonObj[*model.PersonObj]("")
 
 func newPersonObj[M any](key string) personObj[M] {
 	return personObj[M]{

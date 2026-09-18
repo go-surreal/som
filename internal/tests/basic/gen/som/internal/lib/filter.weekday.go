@@ -5,13 +5,13 @@ package lib
 import "time"
 
 type Weekday[M any] struct {
-	*Base[M, time.Weekday, *Weekday[M], *Slice[M, time.Weekday, *Weekday[M]]]
+	*Base[M, time.Weekday, *Weekday[M], *Weekday[M]]
 	*Comparable[M, time.Weekday, *Weekday[M]]
 }
 
 func NewWeekday[M any](key Key[M]) *Weekday[M] {
 	return &Weekday[M]{
-		Base:       NewBase[M, time.Weekday, *Weekday[M], *Slice[M, time.Weekday, *Weekday[M]]](key),
+		Base:       NewBase[M, time.Weekday, *Weekday[M], *Weekday[M]](key),
 		Comparable: NewComparable[M, time.Weekday, *Weekday[M]](key),
 	}
 }

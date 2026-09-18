@@ -10,7 +10,7 @@ import (
 )
 
 // specialTypesModelInfo holds the model-specific unmarshal functions for SpecialTypes.
-var specialTypesModelInfo = modelInfo[model.SpecialTypes, *model.SpecialTypes]{
+var specialTypesModelInfo = modelInfo[*model.SpecialTypes, *model.SpecialTypes]{
 	Fields: conv.SpecialTypesFields,
 	UnmarshalAll: func(data []byte) ([]*model.SpecialTypes, error) {
 		return unmarshalAll(data, conv.ToSpecialTypesPtr)
@@ -23,7 +23,7 @@ var specialTypesModelInfo = modelInfo[model.SpecialTypes, *model.SpecialTypes]{
 	},
 }
 
-var specialTypesRangeFn = rangeFn[model.SpecialTypes](func(q *lib.Query[model.SpecialTypes], from som.RangeFrom, to som.RangeTo) string {
+var specialTypesRangeFn = rangeFn[*model.SpecialTypes](func(q *lib.Query[*model.SpecialTypes], from som.RangeFrom, to som.RangeTo) string {
 	expr := ":"
 	if !from.IsOpen() {
 		expr += q.AsVar(from.Value().(som.UUID))
@@ -43,10 +43,10 @@ var specialTypesRangeFn = rangeFn[model.SpecialTypes](func(q *lib.Query[model.Sp
 
 // NewSpecialTypes creates a new query builder for SpecialTypes models.
 func NewSpecialTypes(db Database) Builder[model.SpecialTypes] {
-	q := lib.NewQuery[model.SpecialTypes]("special_types")
+	q := lib.NewQuery[*model.SpecialTypes]("special_types")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialTypes.DeletedAt.Nil(true)
-	return Builder[model.SpecialTypes]{builder[model.SpecialTypes, *model.SpecialTypes]{
+	return Builder[model.SpecialTypes]{builder[*model.SpecialTypes, *model.SpecialTypes]{
 		db:      db,
 		info:    specialTypesModelInfo,
 		query:   q,

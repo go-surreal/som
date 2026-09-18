@@ -118,7 +118,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 func (b *queryBuilder) buildUnionFile(union *field.UnionTable) error {
 	tmpl := `
 		// {{.NameGoLower}}ModelInfo holds the model-specific unmarshal functions for {{.NameGo}}.
-		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}, model.{{.NameGo}}]{
+		var {{.NameGoLower}}ModelInfo = modelInfo[*model.{{.NameGo}}, model.{{.NameGo}}]{
 			Fields: conv.{{.NameGo}}Fields,
 			UnmarshalAll: func(data []byte) ([]model.{{.NameGo}}, error) {
 				return unmarshalAll(data, conv.To{{.NameGo}}Value)
@@ -133,17 +133,17 @@ func (b *queryBuilder) buildUnionFile(union *field.UnionTable) error {
 
 		// New{{.NameGo}} creates a new query builder over all member tables of the
 		// {{.NameGo}} union: {{.Members}}.
-		func New{{.NameGo}}(db Database) BuilderOf[model.{{.NameGo}}, model.{{.NameGo}}] {
-			q := lib.NewQuery[model.{{.NameGo}}]("{{.Tables}}")
+		func New{{.NameGo}}(db Database) UnionBuilder[model.{{.NameGo}}] {
+			q := lib.NewQuery[*model.{{.NameGo}}]("{{.Tables}}")
 			{{- if .SoftDelete}}
 			// Automatically exclude soft-deleted records
-			q.SoftDeleteFilter = lib.NewNillable[model.{{.NameGo}}](lib.Field(lib.NewKey[model.{{.NameGo}}](), "deleted_at")).Nil(true)
+			q.SoftDeleteFilter = lib.NewNillable[*model.{{.NameGo}}](lib.Field(lib.NewKey[*model.{{.NameGo}}](), "deleted_at")).Nil(true)
 			{{- end}}
 			{{- if .Expiry}}
 			// Automatically exclude expired records
 			q.ExpiryField = "expires_at"
 			{{- end}}
-			return BuilderOf[model.{{.NameGo}}, model.{{.NameGo}}]{builder[model.{{.NameGo}}, model.{{.NameGo}}]{
+			return UnionBuilder[model.{{.NameGo}}]{builder[*model.{{.NameGo}}, model.{{.NameGo}}]{
 				db:    db,
 				info:  {{.NameGoLower}}ModelInfo,
 				query: q,
@@ -216,7 +216,7 @@ func (b *queryBuilder) newQueryFile() *goFile {
 func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[string]any) error {
 	tmpl := `
 		// {{.NameGoLower}}ModelInfo holds the model-specific unmarshal functions for {{.NameGo}}.
-		var {{.NameGoLower}}ModelInfo = modelInfo[model.{{.NameGo}}, *model.{{.NameGo}}]{
+		var {{.NameGoLower}}ModelInfo = modelInfo[*model.{{.NameGo}}, *model.{{.NameGo}}]{
 			{{- if .HasFields}}
 			Fields: conv.{{.NameGo}}Fields,
 			{{- end}}
@@ -231,7 +231,7 @@ func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[s
 			},
 		}
 		{{if .HasRangeFn}}
-		var {{.NameGoLower}}RangeFn = rangeFn[model.{{.NameGo}}](func(q *lib.Query[model.{{.NameGo}}], from som.RangeFrom, to som.RangeTo) string {
+		var {{.NameGoLower}}RangeFn = rangeFn[*model.{{.NameGo}}](func(q *lib.Query[*model.{{.NameGo}}], from som.RangeFrom, to som.RangeTo) string {
 			expr := ":"
 			if !from.IsOpen() {
 				{{call .RangeBound "from"}}
@@ -251,7 +251,7 @@ func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[s
 		{{end}}
 		// New{{.NameGo}} creates a new query builder for {{.NameGo}} {{.Kind}}.
 		func New{{.NameGo}}(db Database) Builder[model.{{.NameGo}}] {
-			q := lib.NewQuery[model.{{.NameGo}}]("{{.NameDB}}")
+			q := lib.NewQuery[*model.{{.NameGo}}]("{{.NameDB}}")
 			{{- if .SoftDelete}}
 			// Automatically exclude soft-deleted records
 			q.SoftDeleteFilter = filter.{{.NameGo}}.DeletedAt.Nil(true)
@@ -260,7 +260,7 @@ func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[s
 			// Automatically exclude expired records
 			q.ExpiryField = "expires_at"
 			{{- end}}
-			return Builder[model.{{.NameGo}}]{builder[model.{{.NameGo}}, *model.{{.NameGo}}]{
+			return Builder[model.{{.NameGo}}]{builder[*model.{{.NameGo}}, *model.{{.NameGo}}]{
 				db:      db,
 				info:    {{.NameGoLower}}ModelInfo,
 				query:   q,
