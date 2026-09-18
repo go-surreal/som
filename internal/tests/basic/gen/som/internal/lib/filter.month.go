@@ -5,13 +5,13 @@ package lib
 import "time"
 
 type Month[M any] struct {
-	*Base[M, time.Month, *Month[M], *Month[M]]
+	*Base[M, time.Month, *Month[M]]
 	*Comparable[M, time.Month, *Month[M]]
 }
 
 func NewMonth[M any](key Key[M]) *Month[M] {
 	return &Month[M]{
-		Base:       NewBase[M, time.Month, *Month[M], *Month[M]](key),
+		Base:       NewBase[M, time.Month, *Month[M]](key),
 		Comparable: NewComparable[M, time.Month, *Month[M]](key),
 	}
 }

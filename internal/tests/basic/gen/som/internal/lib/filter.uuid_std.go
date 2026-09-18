@@ -9,7 +9,7 @@ import (
 )
 
 type UUIDStd[M any] struct {
-	*Base[M, uuid.UUID, *UUIDStd[M], *UUIDStd[M]]
+	*Base[M, uuid.UUID, *UUIDStd[M]]
 }
 
 func NewUUIDStd[M any](key Key[M]) *UUIDStd[M] {
@@ -18,7 +18,7 @@ func NewUUIDStd[M any](key Key[M]) *UUIDStd[M] {
 	}
 
 	return &UUIDStd[M]{
-		Base: NewBaseConv[M, uuid.UUID, *UUIDStd[M], *UUIDStd[M]](key, conv),
+		Base: NewBaseConv[M, uuid.UUID, *UUIDStd[M]](key, conv),
 	}
 }
 

@@ -3,12 +3,12 @@
 package lib
 
 type Enum[M, E any] struct {
-	*Base[M, E, *Enum[M, E], *Enum[M, E]]
+	*Base[M, E, *Enum[M, E]]
 }
 
 func NewEnum[M, E any](key Key[M]) *Enum[M, E] {
 	return &Enum[M, E]{
-		Base: NewBase[M, E, *Enum[M, E], *Enum[M, E]](key),
+		Base: NewBase[M, E, *Enum[M, E]](key),
 	}
 }
 

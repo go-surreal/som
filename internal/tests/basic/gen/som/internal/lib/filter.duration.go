@@ -9,7 +9,7 @@ import (
 )
 
 type Duration[M any] struct {
-	*Base[M, time.Duration, *Duration[M], *Duration[M]]
+	*Base[M, time.Duration, *Duration[M]]
 	*Comparable[M, time.Duration, *Duration[M]]
 }
 
@@ -19,7 +19,7 @@ func NewDuration[M any](key Key[M]) *Duration[M] {
 	}
 
 	return &Duration[M]{
-		Base:       NewBaseConv[M, time.Duration, *Duration[M], *Duration[M]](key, conv),
+		Base:       NewBaseConv[M, time.Duration, *Duration[M]](key, conv),
 		Comparable: NewComparableConv[M, time.Duration, *Duration[M]](key, conv),
 	}
 }

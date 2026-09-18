@@ -9,12 +9,12 @@ import (
 // Email is a filter builder for email values.
 // M is the model this filter is for.
 type Email[M any] struct {
-	*Base[M, som.Email, *Email[M], *Email[M]]
+	*Base[M, som.Email, *Email[M]]
 }
 
 func NewEmail[M any](key Key[M]) *Email[M] {
 	return &Email[M]{
-		Base: NewBase[M, som.Email, *Email[M], *Email[M]](key),
+		Base: NewBase[M, som.Email, *Email[M]](key),
 	}
 }
 

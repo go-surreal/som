@@ -20,6 +20,8 @@ func NewNillable[M any](key Key[M]) *Nillable[M] {
 //
 // This checks for both NONE (field absent) and NULL (field explicitly null),
 // because in golang both cases are represented as nil.
+//
+//go:noinline
 func (n *Nillable[M]) Nil(is bool) Filter[M] {
 	if is {
 		return filter[M](func(ctx *context, _ M) string {

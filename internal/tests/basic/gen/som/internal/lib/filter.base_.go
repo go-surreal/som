@@ -21,18 +21,18 @@ type sliceField[M, T, S any] interface {
 	elemFilter() S
 }
 
-func (b *Base[M, T, F, S]) Equal_(f field[M]) Filter[M] {
+func (b *Base[M, T, S]) Equal_(f field[M]) Filter[M] {
 	return b.op_(OpEqual, f.key())
 }
 
-func (b *Base[M, T, F, S]) NotEqual_(f field[M]) Filter[M] {
+func (b *Base[M, T, S]) NotEqual_(f field[M]) Filter[M] {
 	return b.op_(OpNotEqual, f.key())
 }
 
-func (b *Base[M, T, F, S]) In_(field sliceField[M, T, S]) Filter[M] {
+func (b *Base[M, T, S]) In_(field sliceField[M, T, S]) Filter[M] {
 	return b.op_(OpIn, field.key())
 }
 
-func (b *Base[M, T, F, S]) NotIn_(field sliceField[M, T, S]) Filter[M] {
+func (b *Base[M, T, S]) NotIn_(field sliceField[M, T, S]) Filter[M] {
 	return b.op_(OpNotIn, field.key())
 }
