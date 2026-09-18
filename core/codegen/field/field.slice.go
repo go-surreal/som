@@ -26,7 +26,7 @@ func (f *Slice) typeConv(ctx Context) jen.Code {
 }
 
 func (f *Slice) TypeDatabase() string {
-	if f.element.TypeDatabase() == "" {
+	if elementTypeDatabase(f.element) == "" {
 		return "" // TODO: this is invalid, no?
 	}
 
@@ -34,7 +34,7 @@ func (f *Slice) TypeDatabase() string {
 		return "option<bytes>"
 	}
 
-	elemType := f.element.TypeDatabase()
+	elemType := elementTypeDatabase(f.element)
 
 	// Inside arrays, pointer elements produce NULL (not NONE) via CBOR.
 	// SurrealDB's option<T> only allows NONE, so use "T | null" instead.

@@ -3,7 +3,6 @@ package field
 import (
 	"fmt"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/dave/jennifer/jen"
@@ -27,25 +26,36 @@ func (f *Enum) typeConv(_ Context) jen.Code {
 	return jen.Add(f.ptr()).Qual(f.SourcePkg, f.model.NameGo()) // TODO: support other enum base types (atomic)
 }
 
-func (f *Enum) TypeDatabase() string {
-	if !slices.Contains(f.values, "") {
-		f.values = append(f.values, "") // TODO: add warning to output?!
-	}
-
-	sort.Strings(f.values)
-
-	var formattedValues []string
+// literals renders the declared enum values as a SurrealDB literal union.
+func (f *Enum) literals() string {
+	formattedValues := make([]string, 0, len(f.values))
 	for _, value := range f.values {
 		formattedValues = append(formattedValues, fmt.Sprintf(`"%s"`, value))
 	}
 
-	literals := strings.Join(formattedValues, " | ")
+	return strings.Join(formattedValues, " | ")
+}
 
-	if f.source.Pointer() {
-		return "option<" + literals + ">"
+// hasEmptyValue reports whether the empty string is a declared enum value. Only
+// then is it a variant in its own right, instead of merely the Go zero value.
+func (f *Enum) hasEmptyValue() bool {
+	return slices.Contains(f.values, "")
+}
+
+func (f *Enum) TypeDatabase() string {
+	// A non-pointer enum has no way to express "unset" in Go other than the zero
+	// value, which is stored as NONE unless the empty string is a declared value.
+	if f.source.Pointer() || !f.hasEmptyValue() {
+		return "option<" + f.literals() + ">"
 	}
 
-	return literals
+	return f.literals()
+}
+
+// ElementTypeDatabase returns the type for the enum as a slice element. Elements
+// are never implicitly zero, so the Go zero value needs no representation here.
+func (f *Enum) ElementTypeDatabase() string {
+	return f.optionWrap(f.literals())
 }
 
 func (f *Enum) SchemaStatements(table, prefix string) []string {
@@ -113,12 +123,17 @@ func (f *Enum) fieldInit(ctx Context) jen.Code {
 }
 
 func (f *Enum) cborMarshal(_ Context) jen.Code {
+	assign := jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+
 	if f.source.Pointer() {
-		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(
-			jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo()),
-		)
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Nil()).Block(assign)
 	}
-	return jen.Id("data").Index(jen.Lit(f.NameDatabase())).Op("=").Id("c").Dot(f.NameGo())
+
+	if !f.hasEmptyValue() {
+		return jen.If(jen.Id("c").Dot(f.NameGo()).Op("!=").Lit("")).Block(assign)
+	}
+
+	return assign
 }
 
 func (f *Enum) cborUnmarshal(ctx Context) jen.Code {
