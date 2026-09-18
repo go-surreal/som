@@ -3,12 +3,12 @@
 package lib
 
 type Byte[M any] struct {
-	*Base[M, byte, *Byte[M], *Byte[M]]
+	*Base[M, byte, *Byte[M]]
 }
 
 func NewByte[M any](key Key[M]) *Byte[M] {
 	return &Byte[M]{
-		Base: NewBase[M, byte, *Byte[M], *Byte[M]](key),
+		Base: NewBase[M, byte, *Byte[M]](key),
 	}
 }
 

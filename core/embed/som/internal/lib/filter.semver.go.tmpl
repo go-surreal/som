@@ -10,12 +10,12 @@ import (
 // SemVer is a filter builder for semantic version values.
 // M is the model this filter is for.
 type SemVer[M any] struct {
-	*Base[M, som.SemVer, *SemVer[M], *SemVer[M]]
+	*Base[M, som.SemVer, *SemVer[M]]
 }
 
 func NewSemVer[M any](key Key[M]) *SemVer[M] {
 	return &SemVer[M]{
-		Base: NewBase[M, som.SemVer, *SemVer[M], *SemVer[M]](key),
+		Base: NewBase[M, som.SemVer, *SemVer[M]](key),
 	}
 }
 

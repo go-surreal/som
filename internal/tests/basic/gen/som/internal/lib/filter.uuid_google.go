@@ -9,7 +9,7 @@ import (
 )
 
 type UUIDGoogle[M any] struct {
-	*Base[M, uuid.UUID, *UUIDGoogle[M], *UUIDGoogle[M]]
+	*Base[M, uuid.UUID, *UUIDGoogle[M]]
 }
 
 func NewUUIDGoogle[M any](key Key[M]) *UUIDGoogle[M] {
@@ -18,7 +18,7 @@ func NewUUIDGoogle[M any](key Key[M]) *UUIDGoogle[M] {
 	}
 
 	return &UUIDGoogle[M]{
-		Base: NewBaseConv[M, uuid.UUID, *UUIDGoogle[M], *UUIDGoogle[M]](key, conv),
+		Base: NewBaseConv[M, uuid.UUID, *UUIDGoogle[M]](key, conv),
 	}
 }
 

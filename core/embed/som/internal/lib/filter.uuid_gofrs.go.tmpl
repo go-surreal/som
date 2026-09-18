@@ -10,7 +10,7 @@ import (
 )
 
 type UUIDGofrs[M any] struct {
-	*Base[M, uuid.UUID, *UUIDGofrs[M], *UUIDGofrs[M]]
+	*Base[M, uuid.UUID, *UUIDGofrs[M]]
 }
 
 func NewUUIDGofrs[M any](key Key[M]) *UUIDGofrs[M] {
@@ -19,7 +19,7 @@ func NewUUIDGofrs[M any](key Key[M]) *UUIDGofrs[M] {
 	}
 
 	return &UUIDGofrs[M]{
-		Base: NewBaseConv[M, uuid.UUID, *UUIDGofrs[M], *UUIDGofrs[M]](key, conv),
+		Base: NewBaseConv[M, uuid.UUID, *UUIDGofrs[M]](key, conv),
 	}
 }
 

@@ -49,6 +49,8 @@ func (u *Union[M]) InTables(tables []string) Filter[M] {
 
 // tableFilter compares the table of the linked record. record::tb rejects a
 // NONE argument, so an unset link is ruled out before it is applied.
+//
+//go:noinline
 func (u *Union[M]) tableFilter(op Operator, val any) Filter[M] {
 	return filter[M](func(ctx *context, _ M) string {
 		field := strings.TrimPrefix(u.render(ctx), ".")

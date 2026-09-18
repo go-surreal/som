@@ -17,6 +17,7 @@ func (f filter[T]) build(ctx *context, t T) string {
 	return f(ctx, t)
 }
 
+//go:noinline
 func KeyFilter[M any](key Key[M]) Filter[M] {
 	return filter[M](func(ctx *context, _ M) string {
 		return key.render(ctx)
@@ -30,22 +31,21 @@ func KeyFilter[M any](key Key[M]) Filter[M] {
 // Base is a filter with basic comparison operations.
 // M is the type of the model this filter is for.
 // T is the type of the field this filter is for.
-// F is the filter another field must have to be compared against this one.
 // S is the element filter a slice field must have to be used with In_.
-type Base[M, T any, F, S field[M]] struct {
+type Base[M, T any, S field[M]] struct {
 	Key[M]
 	conv func(T) any
 }
 
-func NewBase[M, T any, F, S field[M]](key Key[M]) *Base[M, T, F, S] {
-	return &Base[M, T, F, S]{Key: key}
+func NewBase[M, T any, S field[M]](key Key[M]) *Base[M, T, S] {
+	return &Base[M, T, S]{Key: key}
 }
 
-func NewBaseConv[M, T any, F, S field[M]](key Key[M], conv func(T) any) *Base[M, T, F, S] {
-	return &Base[M, T, F, S]{Key: key, conv: conv}
+func NewBaseConv[M, T any, S field[M]](key Key[M], conv func(T) any) *Base[M, T, S] {
+	return &Base[M, T, S]{Key: key, conv: conv}
 }
 
-func (b *Base[M, T, F, S]) Equal(val T) Filter[M] {
+func (b *Base[M, T, S]) Equal(val T) Filter[M] {
 	if b.conv != nil {
 		return b.Key.op(OpEqual, b.conv(val))
 	}
@@ -53,7 +53,7 @@ func (b *Base[M, T, F, S]) Equal(val T) Filter[M] {
 	return b.Key.op(OpEqual, val)
 }
 
-func (b *Base[M, T, F, S]) NotEqual(val T) Filter[M] {
+func (b *Base[M, T, S]) NotEqual(val T) Filter[M] {
 	mapped := any(val)
 
 	if b.conv != nil {
@@ -63,7 +63,7 @@ func (b *Base[M, T, F, S]) NotEqual(val T) Filter[M] {
 	return b.notSet(OpNotEqual, mapped)
 }
 
-func (b *Base[M, T, F, S]) In(vals []T) Filter[M] {
+func (b *Base[M, T, S]) In(vals []T) Filter[M] {
 	if b.conv != nil {
 		mapped := make([]any, len(vals))
 
@@ -77,7 +77,7 @@ func (b *Base[M, T, F, S]) In(vals []T) Filter[M] {
 	return b.Key.op(OpIn, vals)
 }
 
-func (b *Base[M, T, F, S]) NotIn(vals []T) Filter[M] {
+func (b *Base[M, T, S]) NotIn(vals []T) Filter[M] {
 	mapped := any(vals)
 
 	if b.conv != nil {
@@ -98,7 +98,9 @@ func (b *Base[M, T, F, S]) NotIn(vals []T) Filter[M] {
 // true, so a bare negation would wrongly match records where the field is
 // not set. For required fields the extra guard is always true and thus a
 // no-op, so this stays correct for both optional and required fields.
-func (b *Base[M, T, F, S]) notSet(op Operator, val any) Filter[M] {
+//
+//go:noinline
+func (b *Base[M, T, S]) notSet(op Operator, val any) Filter[M] {
 	return filter[M](func(ctx *context, _ M) string {
 		field := strings.TrimPrefix(b.Key.render(ctx), ".")
 		return "(" + field + " " + string(op) + " " + ctx.asVar(val) +
@@ -106,7 +108,7 @@ func (b *Base[M, T, F, S]) notSet(op Operator, val any) Filter[M] {
 	})
 }
 
-func (b *Base[M, T, F, S]) Truth() *Bool[M] {
+func (b *Base[M, T, S]) Truth() *Bool[M] {
 	return NewBool(b.Key.prefix(OpTruth))
 }
 
@@ -116,7 +118,7 @@ func (b *Base[M, T, F, S]) Truth() *Bool[M] {
 // Zero compares against the Go zero value of the field type. For a pointer
 // field this is the element zero value (e.g. 0 or ""), NOT NONE, so Zero does
 // not detect an unset field. Use Nil to check for NONE/NULL instead.
-func (b *Base[M, T, F, S]) Zero(is bool) Filter[M] {
+func (b *Base[M, T, S]) Zero(is bool) Filter[M] {
 	op := OpExactlyEqual
 
 	if !is {
@@ -132,21 +134,21 @@ func (b *Base[M, T, F, S]) Zero(is bool) Filter[M] {
 	return b.Key.op(op, zero)
 }
 
-type BasePtr[M, T any, F, S field[M]] struct {
-	*Base[M, T, F, S]
+type BasePtr[M, T any, S field[M]] struct {
+	*Base[M, T, S]
 	*Nillable[M]
 }
 
-func NewBasePtr[M, T any, F, S field[M]](key Key[M]) *BasePtr[M, T, F, S] {
-	return &BasePtr[M, T, F, S]{
-		Base:     NewBase[M, T, F, S](key),
+func NewBasePtr[M, T any, S field[M]](key Key[M]) *BasePtr[M, T, S] {
+	return &BasePtr[M, T, S]{
+		Base:     NewBase[M, T, S](key),
 		Nillable: NewNillable[M](key),
 	}
 }
 
-func NewBasePtrConv[M, T any, F, S field[M]](key Key[M], conv func(T) any) *BasePtr[M, T, F, S] {
-	return &BasePtr[M, T, F, S]{
-		Base:     NewBaseConv[M, T, F, S](key, conv),
+func NewBasePtrConv[M, T any, S field[M]](key Key[M], conv func(T) any) *BasePtr[M, T, S] {
+	return &BasePtr[M, T, S]{
+		Base:     NewBaseConv[M, T, S](key, conv),
 		Nillable: NewNillable[M](key),
 	}
 }

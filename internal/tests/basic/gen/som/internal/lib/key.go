@@ -115,6 +115,7 @@ func (k Key[M]) key() Key[M] {
 	return k
 }
 
+//go:noinline
 func (k Key[M]) fn(fn string, params ...any) Key[M] {
 	return Key[M]{
 		FuncKeyPart[M]{
@@ -125,6 +126,7 @@ func (k Key[M]) fn(fn string, params ...any) Key[M] {
 	}
 }
 
+//go:noinline
 func (k Key[M]) fn_(fn string, params ...Key[M]) Key[M] {
 	return Key[M]{
 		FuncKeyPart_[M]{
@@ -135,6 +137,14 @@ func (k Key[M]) fn_(fn string, params ...Key[M]) Key[M] {
 	}
 }
 
+// The key builders below are deliberately kept out of line. Inlined, each of
+// them is re-emitted at every call site -- including the closures they return
+// -- and the generated filter package has thousands of call sites. Measured on
+// internal/tests/basic: the object file drops from 400 MB to 233 MB and the
+// compile from 60s to 24s of CPU. Query building itself is unaffected (one
+// extra call per part, benchmarked at no measurable difference).
+//
+//go:noinline
 func (k Key[M]) calc(op Operator, val any) Key[M] {
 	return Key[M]{
 		RawKeyPart(func(ctx *context) string {
@@ -149,6 +159,7 @@ func (k Key[M]) calc(op Operator, val any) Key[M] {
 	}
 }
 
+//go:noinline
 func (k Key[M]) calc_(op Operator, key Key[M]) Key[M] {
 	return Key[M]{
 		RawKeyPart(func(ctx *context) string {
@@ -163,6 +174,7 @@ func (k Key[M]) calc_(op Operator, key Key[M]) Key[M] {
 	}
 }
 
+//go:noinline
 func (k Key[M]) prefix(op Operator) Key[M] {
 	return Key[M]{
 		RawKeyPart(func(ctx *context) string {
@@ -171,6 +183,7 @@ func (k Key[M]) prefix(op Operator) Key[M] {
 	}
 }
 
+//go:noinline
 func (k Key[M]) op(op Operator, val any) Filter[M] {
 	return filter[M](
 		func(ctx *context, _ M) string {
@@ -183,6 +196,7 @@ func (k Key[M]) op(op Operator, val any) Filter[M] {
 	)
 }
 
+//go:noinline
 func (k Key[M]) op_(op Operator, key Key[M]) Filter[M] {
 	return filter[M](
 		func(ctx *context, _ M) string {

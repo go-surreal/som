@@ -148,14 +148,14 @@ filter.Account.Balance.Abs().GreaterThan(100.0)
 // Square root
 filter.Metrics.Variance.Sqrt().LessThan(10.0)
 
-// Ceiling (round up)
-filter.Product.Price.Ceil().Equal(100.0)
+// Ceiling (round up) - yields an integer filter
+filter.Product.Price.Ceil().Equal(100)
 
-// Floor (round down)
-filter.Product.Price.Floor().Equal(99.0)
+// Floor (round down) - yields an integer filter
+filter.Product.Price.Floor().Equal(99)
 
-// Round to nearest
-filter.Product.Price.Round().Equal(100.0)
+// Round to nearest - yields an integer filter
+filter.Product.Price.Round().Equal(100)
 
 // Fixed decimal places
 filter.Product.Price.Fixed(2).Equal(99.99)
@@ -163,24 +163,20 @@ filter.Product.Price.Fixed(2).Equal(99.99)
 
 ### Type Conversion
 
-Convert between numeric types:
+An integer filter is not tied to the width of its Go field. SurrealDB stores
+every integer as one numeric type, so any Go integer width may be compared
+against any integer field directly — no conversion step in between:
 
 ```go
-// To integer types
-filter.Product.Price.Int().Equal(99)
-filter.Product.Price.Int8().GreaterThan(50)
-filter.Product.Price.Int16().LessThan(1000)
-filter.Product.Price.Int32().Equal(99)
-filter.Product.Price.Int64().GreaterThan(0)
+// StockLevel is an int16, but the comparison value may be any integer width
+filter.Product.StockLevel.Equal(int16(10))
+filter.Product.StockLevel.GreaterThan(10)
+filter.Product.StockLevel.In([]int64{10, 20, 30})
+```
 
-// To unsigned types
-filter.Product.Quantity.Uint().GreaterThan(0)
-filter.Product.Quantity.Uint8().LessThan(255)
-filter.Product.Quantity.Uint16().GreaterThan(0)
-filter.Product.Quantity.Uint32().LessThan(1000000)
-filter.Product.Quantity.Uint64().GreaterThan(0)
+Casting an integer field to a float is a real conversion and stays explicit:
 
-// To float types
+```go
 filter.Product.Quantity.Float32().GreaterThan(0.0)
 filter.Product.Quantity.Float64().LessThan(100.0)
 ```
@@ -349,20 +345,10 @@ func main() {
 | `Raise(val)` | Exponentiation | Float filter |
 | `Abs()` | Absolute value | Float filter |
 | `Sqrt()` | Square root | Float filter |
-| `Ceil()` | Round up | Float filter |
-| `Floor()` | Round down | Float filter |
-| `Round()` | Round nearest | Float filter |
+| `Ceil()` | Round up | Int filter (on a float field) |
+| `Floor()` | Round down | Int filter (on a float field) |
+| `Round()` | Round nearest | Int filter (on a float field) |
 | `Fixed(places)` | Fixed decimals | Float filter |
-| `Int()` | To int | Int filter |
-| `Int8()` | To int8 | Int filter |
-| `Int16()` | To int16 | Int filter |
-| `Int32()` | To int32 | Int filter |
-| `Int64()` | To int64 | Int filter |
-| `Uint()` | To uint | Int filter |
-| `Uint8()` | To uint8 | Int filter |
-| `Uint16()` | To uint16 | Int filter |
-| `Uint32()` | To uint32 | Int filter |
-| `Uint64()` | To uint64 | Int filter |
 | `Float32()` | To float32 | Float filter |
 | `Float64()` | To float64 | Float filter |
 | `AsDurationSecs()` | To duration | Duration filter |

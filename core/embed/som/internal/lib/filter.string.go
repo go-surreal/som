@@ -5,13 +5,13 @@ package lib
 // String is a filter builder for string values.
 // M is the model this filter is for.
 type String[M any] struct {
-	*Base[M, string, *String[M], *String[M]]
+	*Base[M, string, *String[M]]
 	*Comparable[M, string, *String[M]]
 }
 
 func NewString[M any](key Key[M]) *String[M] {
 	return &String[M]{
-		Base:       NewBase[M, string, *String[M], *String[M]](key),
+		Base:       NewBase[M, string, *String[M]](key),
 		Comparable: NewComparable[M, string, *String[M]](key),
 	}
 }

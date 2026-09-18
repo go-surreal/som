@@ -66,6 +66,8 @@ func NewSliceMakerPtr[M, E any, F field[M]](makeElemFilter makeFilter[M, F]) mak
 //
 // This checks for NONE (field absent), NULL (field explicitly null),
 // or zero-length (array with no elements).
+//
+//go:noinline
 func (s *Slice[M, E, F]) Empty(is bool) Filter[M] {
 	if is {
 		return filter[M](func(ctx *context, _ M) string {
