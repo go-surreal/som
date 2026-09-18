@@ -151,6 +151,7 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 	case *Numeric:
 		{
 			filter := "Numeric"
+			isInt := false
 
 			switch element.source.Type {
 
@@ -158,6 +159,7 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 				parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
 				{
 					filter = "Int"
+					isInt = true
 				}
 
 			case parser.NumberFloat32, parser.NumberFloat64:
@@ -174,6 +176,13 @@ func (f *Slice) filterDefine(ctx Context) jen.Code {
 
 			if f.source.Pointer() {
 				filter += fnSuffixPtr
+			}
+
+			// The integer slice filters are not generic over the element
+			// width, so they only take the model.
+			if isInt {
+				return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).
+					Types(def.TypeModel)
 			}
 
 			return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).
@@ -260,6 +269,7 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 	case *Numeric:
 		{
 			filter := "NewNumericSlice"
+			isInt := false
 
 			switch element.source.Type {
 
@@ -267,6 +277,7 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 				parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
 				{
 					filter = "NewInt"
+					isInt = true
 				}
 
 			case parser.NumberFloat32, parser.NumberFloat64:
@@ -283,6 +294,13 @@ func (f *Slice) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 			if f.source.Pointer() {
 				filter += fnSuffixPtr
+			}
+
+			if isInt {
+				return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+					jen.Call(
+						jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())),
+					)
 			}
 
 			return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, element.typeGo()),

@@ -14,7 +14,7 @@ func newSpecialTypes[M any](key lib.Key[M]) specialTypes[M] {
 		ID:        lib.NewID[M](lib.Field(key, "id"), "special_types"),
 		Key:       key,
 		Name:      lib.NewString[M](lib.Field(key, "name")),
-		Version:   lib.NewInt[M, int](lib.Field(key, "__som_lock_version")),
+		Version:   lib.NewInt[M](lib.Field(key, "__som_lock_version")),
 	}
 }
 
@@ -23,7 +23,7 @@ type specialTypes[M any] struct {
 	ID        *lib.ID[M]
 	DeletedAt *lib.TimePtr[M]
 	Name      *lib.String[M]
-	Version   *lib.Int[M, int]
+	Version   *lib.Int[M]
 }
 
 // specialTypesEdges is the SpecialTypes as reached through a graph traversal.

@@ -10,7 +10,7 @@ var NestedData = newNestedData[*model.NestedData](lib.NewKey[*model.NestedData](
 
 func newNestedData[M any](key lib.Key[M]) nestedData[M] {
 	return nestedData[M]{
-		IntPtr:    lib.NewIntPtr[M, *int](lib.Field(key, "int_ptr")),
+		IntPtr:    lib.NewIntPtr[M](lib.Field(key, "int_ptr")),
 		Key:       key,
 		StringPtr: lib.NewStringPtr[M](lib.Field(key, "string_ptr")),
 		TimePtr:   lib.NewTimePtr[M](lib.Field(key, "time_ptr")),
@@ -21,7 +21,7 @@ func newNestedData[M any](key lib.Key[M]) nestedData[M] {
 type nestedData[M any] struct {
 	lib.Key[M]
 	StringPtr *lib.StringPtr[M]
-	IntPtr    *lib.IntPtr[M, *int]
+	IntPtr    *lib.IntPtr[M]
 	TimePtr   *lib.TimePtr[M]
 	UuidPtr   *lib.UUIDGooglePtr[M]
 }

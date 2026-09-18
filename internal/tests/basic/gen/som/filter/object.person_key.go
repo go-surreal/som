@@ -10,7 +10,7 @@ var PersonKey = newPersonKey[*model.PersonKey](lib.NewKey[*model.PersonKey]())
 
 func newPersonKey[M any](key lib.Key[M]) personKey[M] {
 	return personKey[M]{
-		Age:  lib.NewInt[M, int](lib.Field(key, "age")),
+		Age:  lib.NewInt[M](lib.Field(key, "age")),
 		Key:  key,
 		Name: lib.NewString[M](lib.Field(key, "name")),
 	}
@@ -19,7 +19,7 @@ func newPersonKey[M any](key lib.Key[M]) personKey[M] {
 type personKey[M any] struct {
 	lib.Key[M]
 	Name *lib.String[M]
-	Age  *lib.Int[M, int]
+	Age  *lib.Int[M]
 }
 
 // personKeyEdges is the PersonKey as reached through a graph traversal.

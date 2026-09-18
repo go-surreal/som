@@ -16,7 +16,7 @@ import (
 )
 
 // Count counts the non-null values of the field within each group.
-func Count[M any](f lib.KeyProvider[M]) *lib.Int[M, int] {
+func Count[M any](f lib.KeyProvider[M]) *lib.Int[M] {
 	return lib.Count(f)
 }
 
