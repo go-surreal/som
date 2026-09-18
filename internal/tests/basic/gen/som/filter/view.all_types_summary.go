@@ -13,14 +13,14 @@ func newAllTypesSummary[M any](key lib.Key[M]) allTypesSummary[M] {
 		AvgValue: lib.NewFloat[M, float64](lib.Field(key, "avg_value")),
 		Category: lib.NewString[M](lib.Field(key, "category")),
 		Key:      key,
-		Total:    lib.NewInt[M, int](lib.Field(key, "total")),
+		Total:    lib.NewInt[M](lib.Field(key, "total")),
 	}
 }
 
 type allTypesSummary[M any] struct {
 	lib.Key[M]
 	Category *lib.String[M]
-	Total    *lib.Int[M, int]
+	Total    *lib.Int[M]
 	AvgValue *lib.Float[M, float64]
 }
 

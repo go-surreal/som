@@ -148,6 +148,7 @@ func (f *Numeric) CodeGen() *CodeGen {
 
 func (f *Numeric) filterDefine(ctx Context) jen.Code {
 	filter := "Numeric"
+	isInt := false
 
 	switch f.source.Type {
 
@@ -155,6 +156,7 @@ func (f *Numeric) filterDefine(ctx Context) jen.Code {
 		parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
 		{
 			filter = "Int"
+			isInt = true
 		}
 
 	case parser.NumberFloat32, parser.NumberFloat64:
@@ -167,11 +169,18 @@ func (f *Numeric) filterDefine(ctx Context) jen.Code {
 		filter += fnSuffixPtr
 	}
 
+	// The integer filter is not generic over the field's width, so it only
+	// takes the model.
+	if isInt {
+		return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel)
+	}
+
 	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo())
 }
 
 func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 	filter := "NewNumeric"
+	isInt := false
 
 	switch f.source.Type {
 
@@ -179,6 +188,7 @@ func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 		parser.NumberUint8, parser.NumberUint16, parser.NumberUint32, parser.NumberRune:
 		{
 			filter = "NewInt"
+			isInt = true
 		}
 
 	case parser.NumberFloat32, parser.NumberFloat64:
@@ -189,6 +199,11 @@ func (f *Numeric) filterInit(ctx Context) (jen.Code, jen.Code) {
 
 	if f.source.Pointer() {
 		filter += fnSuffixPtr
+	}
+
+	if isInt {
+		return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel),
+			jen.Params(ctx.filterKeyCode(f.NameDatabase()))
 	}
 
 	return jen.Qual(ctx.pkgLib(), filter).Types(def.TypeModel, f.typeGo()),

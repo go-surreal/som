@@ -57,11 +57,11 @@ func (f *Version) CodeGen() *CodeGen {
 }
 
 func (f *Version) filterDefine(ctx Context) jen.Code {
-	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Int").Types(def.TypeModel, jen.Int())
+	return jen.Id(f.NameGo()).Op("*").Qual(ctx.pkgLib(), "Int").Types(def.TypeModel)
 }
 
 func (f *Version) filterInit(ctx Context) (jen.Code, jen.Code) {
-	return jen.Qual(ctx.pkgLib(), "NewInt").Types(def.TypeModel, jen.Int()),
+	return jen.Qual(ctx.pkgLib(), "NewInt").Types(def.TypeModel),
 		jen.Params(jen.Qual(ctx.pkgLib(), "Field").Call(jen.Id("key"), jen.Lit(f.NameDatabase())))
 }
 

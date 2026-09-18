@@ -32,8 +32,8 @@ type TypedKey[M any, C any] interface {
 }
 
 // Count renders count(<field>): the number of non-null values in the group.
-func Count[M any](f KeyProvider[M]) *Int[M, int] {
-	return NewInt[M, int](Fn(f.key(), "count"))
+func Count[M any](f KeyProvider[M]) *Int[M] {
+	return NewInt[M](Fn(f.key(), "count"))
 }
 
 // Sum renders math::sum(<field>).

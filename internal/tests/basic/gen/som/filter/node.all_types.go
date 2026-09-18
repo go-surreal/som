@@ -45,27 +45,27 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldFloat64:            lib.NewFloat[M, float64](lib.Field(key, "field_float_64")),
 		FieldHookDetail:         lib.NewString[M](lib.Field(key, "field_hook_detail")),
 		FieldHookStatus:         lib.NewString[M](lib.Field(key, "field_hook_status")),
-		FieldInt:                lib.NewInt[M, int](lib.Field(key, "field_int")),
-		FieldInt16:              lib.NewInt[M, int16](lib.Field(key, "field_int_16")),
-		FieldInt16Ptr:           lib.NewIntPtr[M, *int16](lib.Field(key, "field_int_16_ptr")),
-		FieldInt32:              lib.NewInt[M, int32](lib.Field(key, "field_int_32")),
-		FieldInt32Ptr:           lib.NewIntPtr[M, *int32](lib.Field(key, "field_int_32_ptr")),
-		FieldInt64:              lib.NewInt[M, int64](lib.Field(key, "field_int_64")),
-		FieldInt64Ptr:           lib.NewIntPtr[M, *int64](lib.Field(key, "field_int_64_ptr")),
-		FieldInt8:               lib.NewInt[M, int8](lib.Field(key, "field_int_8")),
-		FieldInt8Ptr:            lib.NewIntPtr[M, *int8](lib.Field(key, "field_int_8_ptr")),
-		FieldIntPtr:             lib.NewIntPtr[M, *int](lib.Field(key, "field_int_ptr")),
-		FieldIntPtrSlice:        lib.NewIntPtrSlice[M, *int](lib.Field(key, "field_int_ptr_slice")),
-		FieldIntPtrSlicePtr:     lib.NewIntPtrSlicePtr[M, *int](lib.Field(key, "field_int_ptr_slice_ptr")),
-		FieldIntSlice:           lib.NewIntSlice[M, int](lib.Field(key, "field_int_slice")),
-		FieldIntSlicePtr:        lib.NewIntSlicePtr[M, int](lib.Field(key, "field_int_slice_ptr")),
+		FieldInt:                lib.NewInt[M](lib.Field(key, "field_int")),
+		FieldInt16:              lib.NewInt[M](lib.Field(key, "field_int_16")),
+		FieldInt16Ptr:           lib.NewIntPtr[M](lib.Field(key, "field_int_16_ptr")),
+		FieldInt32:              lib.NewInt[M](lib.Field(key, "field_int_32")),
+		FieldInt32Ptr:           lib.NewIntPtr[M](lib.Field(key, "field_int_32_ptr")),
+		FieldInt64:              lib.NewInt[M](lib.Field(key, "field_int_64")),
+		FieldInt64Ptr:           lib.NewIntPtr[M](lib.Field(key, "field_int_64_ptr")),
+		FieldInt8:               lib.NewInt[M](lib.Field(key, "field_int_8")),
+		FieldInt8Ptr:            lib.NewIntPtr[M](lib.Field(key, "field_int_8_ptr")),
+		FieldIntPtr:             lib.NewIntPtr[M](lib.Field(key, "field_int_ptr")),
+		FieldIntPtrSlice:        lib.NewIntPtrSlice[M](lib.Field(key, "field_int_ptr_slice")),
+		FieldIntPtrSlicePtr:     lib.NewIntPtrSlicePtr[M](lib.Field(key, "field_int_ptr_slice_ptr")),
+		FieldIntSlice:           lib.NewIntSlice[M](lib.Field(key, "field_int_slice")),
+		FieldIntSlicePtr:        lib.NewIntSlicePtr[M](lib.Field(key, "field_int_slice_ptr")),
 		FieldMonth:              lib.NewMonth[M](lib.Field(key, "field_month")),
 		FieldMonthPtr:           lib.NewMonthPtr[M](lib.Field(key, "field_month_ptr")),
 		FieldNodeSliceSlice:     lib.NewSliceMaker[M, []model.SpecialTypes, *lib.Slice[M, model.SpecialTypes, specialTypes[M]]](lib.NewSliceMaker[M, model.SpecialTypes, specialTypes[M]](newSpecialTypes[M]))(lib.Field(key, "field_node_slice_slice")),
 		FieldOther:              allTypesFieldOther[M]{lib.NewStringSlice[M](lib.Field(key, "field_other"))},
 		FieldRenamed:            lib.NewString[M](lib.Field(key, "custom_name")),
-		FieldRune:               lib.NewInt[M, rune](lib.Field(key, "field_rune")),
-		FieldRuneSlice:          lib.NewIntSlice[M, rune](lib.Field(key, "field_rune_slice")),
+		FieldRune:               lib.NewInt[M](lib.Field(key, "field_rune")),
+		FieldRuneSlice:          lib.NewIntSlice[M](lib.Field(key, "field_rune_slice")),
 		FieldSemVer:             lib.NewSemVer[M](lib.Field(key, "field_sem_ver")),
 		FieldSemVerNil:          lib.NewSemVerPtr[M](lib.Field(key, "field_sem_ver_nil")),
 		FieldSemVerPtr:          lib.NewSemVerPtr[M](lib.Field(key, "field_sem_ver_ptr")),
@@ -99,12 +99,12 @@ func newAllTypes[M any](key lib.Key[M]) allTypes[M] {
 		FieldUUIDStdNil:         lib.NewUUIDStdPtr[M](lib.Field(key, "field_uuid_std_nil")),
 		FieldUUIDStdPtr:         lib.NewUUIDStdPtr[M](lib.Field(key, "field_uuid_std_ptr")),
 		FieldUUIDStdSlice:       lib.NewSliceMaker[M, uuid2.UUID, *lib.UUIDStd[M]](lib.NewUUIDStd[M])(lib.Field(key, "field_uuid_std_slice")),
-		FieldUint16:             lib.NewInt[M, uint16](lib.Field(key, "field_uint_16")),
-		FieldUint16Ptr:          lib.NewIntPtr[M, *uint16](lib.Field(key, "field_uint_16_ptr")),
-		FieldUint32:             lib.NewInt[M, uint32](lib.Field(key, "field_uint_32")),
-		FieldUint32Ptr:          lib.NewIntPtr[M, *uint32](lib.Field(key, "field_uint_32_ptr")),
-		FieldUint8:              lib.NewInt[M, uint8](lib.Field(key, "field_uint_8")),
-		FieldUint8Ptr:           lib.NewIntPtr[M, *uint8](lib.Field(key, "field_uint_8_ptr")),
+		FieldUint16:             lib.NewInt[M](lib.Field(key, "field_uint_16")),
+		FieldUint16Ptr:          lib.NewIntPtr[M](lib.Field(key, "field_uint_16_ptr")),
+		FieldUint32:             lib.NewInt[M](lib.Field(key, "field_uint_32")),
+		FieldUint32Ptr:          lib.NewIntPtr[M](lib.Field(key, "field_uint_32_ptr")),
+		FieldUint8:              lib.NewInt[M](lib.Field(key, "field_uint_8")),
+		FieldUint8Ptr:           lib.NewIntPtr[M](lib.Field(key, "field_uint_8_ptr")),
 		FieldWeekday:            lib.NewWeekday[M](lib.Field(key, "field_weekday")),
 		FieldWeekdayPtr:         lib.NewWeekdayPtr[M](lib.Field(key, "field_weekday_ptr")),
 		ID:                      lib.NewID[M](lib.Field(key, "id"), "all_types"),
@@ -124,34 +124,34 @@ type allTypes[M any] struct {
 	FieldStringPtrSlice     allTypesFieldStringPtrSlice[M]
 	FieldStringSlicePtr     allTypesFieldStringSlicePtr[M]
 	FieldStringPtrSlicePtr  allTypesFieldStringPtrSlicePtr[M]
-	FieldInt                *lib.Int[M, int]
-	FieldIntPtr             *lib.IntPtr[M, *int]
-	FieldIntSlice           *lib.IntSlice[M, int]
-	FieldIntPtrSlice        *lib.IntPtrSlice[M, *int]
-	FieldIntSlicePtr        *lib.IntSlicePtr[M, int]
-	FieldIntPtrSlicePtr     *lib.IntPtrSlicePtr[M, *int]
-	FieldInt8               *lib.Int[M, int8]
-	FieldInt8Ptr            *lib.IntPtr[M, *int8]
-	FieldInt16              *lib.Int[M, int16]
-	FieldInt16Ptr           *lib.IntPtr[M, *int16]
-	FieldInt32              *lib.Int[M, int32]
-	FieldInt32Ptr           *lib.IntPtr[M, *int32]
-	FieldInt64              *lib.Int[M, int64]
-	FieldInt64Ptr           *lib.IntPtr[M, *int64]
-	FieldUint8              *lib.Int[M, uint8]
-	FieldUint8Ptr           *lib.IntPtr[M, *uint8]
-	FieldUint16             *lib.Int[M, uint16]
-	FieldUint16Ptr          *lib.IntPtr[M, *uint16]
-	FieldUint32             *lib.Int[M, uint32]
-	FieldUint32Ptr          *lib.IntPtr[M, *uint32]
+	FieldInt                *lib.Int[M]
+	FieldIntPtr             *lib.IntPtr[M]
+	FieldIntSlice           *lib.IntSlice[M]
+	FieldIntPtrSlice        *lib.IntPtrSlice[M]
+	FieldIntSlicePtr        *lib.IntSlicePtr[M]
+	FieldIntPtrSlicePtr     *lib.IntPtrSlicePtr[M]
+	FieldInt8               *lib.Int[M]
+	FieldInt8Ptr            *lib.IntPtr[M]
+	FieldInt16              *lib.Int[M]
+	FieldInt16Ptr           *lib.IntPtr[M]
+	FieldInt32              *lib.Int[M]
+	FieldInt32Ptr           *lib.IntPtr[M]
+	FieldInt64              *lib.Int[M]
+	FieldInt64Ptr           *lib.IntPtr[M]
+	FieldUint8              *lib.Int[M]
+	FieldUint8Ptr           *lib.IntPtr[M]
+	FieldUint16             *lib.Int[M]
+	FieldUint16Ptr          *lib.IntPtr[M]
+	FieldUint32             *lib.Int[M]
+	FieldUint32Ptr          *lib.IntPtr[M]
 	FieldFloat32            *lib.Float[M, float32]
 	FieldFloat32Slice       *lib.FloatSlice[M, float32]
 	FieldFloat32SlicePtr    *lib.FloatSlicePtr[M, float32]
 	FieldFloat32PtrSlice    *lib.FloatPtrSlice[M, *float32]
 	FieldFloat32PtrSlicePtr *lib.FloatPtrSlicePtr[M, *float32]
 	FieldFloat64            *lib.Float[M, float64]
-	FieldRune               *lib.Int[M, rune]
-	FieldRuneSlice          *lib.IntSlice[M, rune]
+	FieldRune               *lib.Int[M]
+	FieldRuneSlice          *lib.IntSlice[M]
 	FieldBool               *lib.Bool[M]
 	FieldBoolPtr            *lib.BoolPtr[M]
 	FieldBoolSlice          *lib.Slice[M, bool, *lib.Bool[M]]
