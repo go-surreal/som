@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"som.test/gen/som"
 	"som.test/model"
@@ -209,7 +210,7 @@ func TestValidateOnRelate(t *testing.T) {
 	from := validValidated("from")
 	assert.NilError(t, client.ValidatedRepo().Create(ctx, from))
 
-	to := &model.AllTypes{FieldString: "to"}
+	to := &model.AllTypes{FieldString: "to", FieldMonth: time.January}
 	assert.NilError(t, client.AllTypesRepo().Create(ctx, to))
 
 	edge := &model.ValidatedEdge{Validated: *from, AllTypes: *to}
@@ -236,7 +237,7 @@ func TestValidateNotOnRead(t *testing.T) {
 
 	// The rule is bypassed by writing an invalid value directly.
 	_, err := client.Raw(ctx,
-		"UPDATE type::thing('validated', $id) SET code = 'AB'",
+		"UPDATE type::record('validated', $id) SET code = 'AB'",
 		som.Params{"id": string(node.ID())},
 	)
 	assert.NilError(t, err)
