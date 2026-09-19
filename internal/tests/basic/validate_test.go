@@ -40,6 +40,12 @@ func TestValidateOnCreate(t *testing.T) {
 	assert.Equal(t, "", validationErr.Path)
 	assert.Equal(t, "name must not be empty", validationErr.Err.Error())
 	assert.Equal(t, "", string(node.ID()), "the record must not have been written")
+
+	// The sentinels are what a caller matches that only needs to tell a
+	// rejected write from a failed one.
+	assert.Assert(t, errors.Is(err, som.ErrValidation))
+	assert.Assert(t, errors.Is(err, som.ErrInvalid))
+	assert.Assert(t, !errors.Is(err, som.ErrAssert))
 }
 
 func TestValidateNestedPath(t *testing.T) {

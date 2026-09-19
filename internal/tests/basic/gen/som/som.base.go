@@ -60,7 +60,7 @@ var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
 //	}
 //
 // Use errors.As with the concrete error to find out what exactly was rejected.
-var ErrInvalid = errors.New("write rejected as invalid")
+var ErrInvalid = internal.ErrInvalid
 
 // ErrAssert is returned when a write violates a constraint declared on a field
 // via its som tag. Use errors.As to find out which field and rule were
@@ -73,6 +73,18 @@ var ErrInvalid = errors.New("write rejected as invalid")
 //
 // It is a narrower form of ErrInvalid, which also matches this error.
 var ErrAssert = errors.New("field constraint violated")
+
+// ErrValidation is returned when a Validate method of the model, or of one of
+// the types within it, rejected a value. Use errors.As to find out which value
+// was rejected and why:
+//
+//	var validationErr *som.ValidationError
+//	if errors.As(err, &validationErr) {
+//	    fmt.Println(validationErr.Path, validationErr.Err)
+//	}
+//
+// It is a narrower form of ErrInvalid, which also matches this error.
+var ErrValidation = internal.ErrValidation
 
 // AssertError identifies the field whose constraint a write violated.
 type AssertError struct {
@@ -512,6 +524,9 @@ type Expiry = internal.Expiry
 //	if errors.As(err, &validationErr) {
 //	    fmt.Println(validationErr.Path, validationErr.Err)
 //	}
+//
+// It matches ErrValidation as well as the broader ErrInvalid, so a caller that
+// only needs to tell a rejected write from a failed one can use errors.Is.
 //
 // Validation runs on write only, never on read, so a record stored before a
 // rule existed can still be loaded and fixed.

@@ -89,6 +89,17 @@ if errors.As(err, &validationErr) {
 the model type itself rejected the write. The error returned by `Validate` stays reachable through
 `errors.Is` and `errors.As`, since `ValidationError` unwraps to it.
 
+A caller that only needs to tell a rejected write from a failed one can match a sentinel instead:
+`som.ErrValidation` for a failed `Validate` method, or the broader `som.ErrInvalid`, which covers
+every write rejected because of a value it carried — including a
+[field constraint](12_constraints.md) the database enforced:
+
+```go
+if errors.Is(err, som.ErrInvalid) {
+    http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+}
+```
+
 ## Checking Ahead of a Write
 
 The walkers live in the generated `validate` package, with one exported entry point per model.
@@ -106,6 +117,20 @@ if err := validate.User(user); err != nil {
 A field pointing to another node or edge is never validated as part of the model holding it. Such a
 record is written through its own repository, and a link that was not fetched holds nothing but its
 id — validating it would fail on data that is simply not loaded.
+
+## Together With Field Constraints
+
+A [field constraint](12_constraints.md) declared via a som tag is enforced by the database, this
+feature is enforced by the generated Go code before the statement is sent. When a rule is expressed
+in both places, the `Validate` method rejects the write first and the database constraint never
+fires.
+
+Which to reach for:
+
+- **Tag constraints** for invariants the database has to guarantee no matter who writes — other
+  applications, a migration, a manual query.
+- **`Validate` methods** for business rules that need Go logic, several fields at once, or context
+  the schema cannot express.
 
 ## Opting Out
 

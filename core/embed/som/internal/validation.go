@@ -3,8 +3,13 @@
 package internal
 
 import (
+	"errors"
 	"strconv"
 )
+
+// ErrValidation is returned when a Validate method rejected a value. It is a
+// narrower form of ErrInvalid, which matches such a rejection as well.
+var ErrValidation = errors.New("validation failed")
 
 // ValidationError reports that a Validate method rejected a value on its way
 // into the database. Path locates the offending value within the model, e.g.
@@ -28,6 +33,10 @@ func (e *ValidationError) Error() string {
 	}
 
 	return "validation failed for " + e.Path + ": " + e.Err.Error()
+}
+
+func (e *ValidationError) Is(target error) bool {
+	return target == ErrValidation || target == ErrInvalid
 }
 
 func (e *ValidationError) Unwrap() error {
