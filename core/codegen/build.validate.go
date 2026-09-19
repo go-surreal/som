@@ -153,7 +153,7 @@ func (v *validation) build() error {
 		}
 	}
 
-	for _, object := range v.baseBuilder.input.objects {
+	for _, object := range v.objects {
 		if v.object(object.Name) {
 			decls = append(decls, v.walkerFunc(file, object.Name, object.Fields, object.HasValidate))
 		}
