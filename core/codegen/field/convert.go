@@ -228,7 +228,11 @@ func findNodeTable(nodes []*NodeTable, name string) *NodeTable {
 }
 
 func Convert(source *parser.Output, conf *BuildConfig, field parser.Field) (Field, bool) {
-	base := &baseField{BuildConfig: conf, source: field}
+	base := &baseField{BuildConfig: conf, source: field, lenFunc: "string::len"}
+
+	if _, isSlice := field.(*parser.FieldSlice); isSlice {
+		base.lenFunc = "array::len"
+	}
 
 	switch f := field.(type) {
 

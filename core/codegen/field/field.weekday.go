@@ -1,8 +1,6 @@
 package field
 
 import (
-	"fmt"
-
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -33,10 +31,12 @@ func (f *Weekday) SchemaStatements(table, prefix string) []string {
 	}
 
 	return []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s ASSERT %s$value >= 0 AND $value <= 6;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(), nilCheck,
-		),
+		f.defineField(fieldDef{
+			Name:   prefix + f.NameDatabase(),
+			Table:  table,
+			Type:   f.TypeDatabase(),
+			Assert: nilCheck + "$value >= 0 AND $value <= 6",
+		}),
 	}
 }
 
@@ -131,4 +131,3 @@ func (f *Weekday) cborUnmarshal(ctx Context) jen.Code {
 		jen.Id("c").Dot(f.NameGo()).Op("=").Qual("time", "Weekday").Call(jen.Id("val")),
 	)
 }
-

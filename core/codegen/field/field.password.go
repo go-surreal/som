@@ -49,10 +49,13 @@ func (f *Password) SchemaStatements(table, prefix string) []string {
 	)
 
 	return []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s VALUE %s PERMISSIONS FOR SELECT NONE;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(), valueClause,
-		),
+		f.defineField(fieldDef{
+			Name:        prefix + f.NameDatabase(),
+			Table:       table,
+			Type:        f.TypeDatabase(),
+			Value:       valueClause,
+			Permissions: "FOR SELECT NONE",
+		}),
 	}
 }
 

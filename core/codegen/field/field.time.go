@@ -32,23 +32,25 @@ func (f *Time) TypeDatabase() string {
 }
 
 func (f *Time) SchemaStatements(table, prefix string) []string {
-	var extend string
+	stmt := fieldDef{
+		Name:  prefix + f.NameDatabase(),
+		Table: table,
+		Type:  f.TypeDatabase(),
+	}
 
-	if f.source.IsCreatedAt {
-		extend = "VALUE $before OR time::now() READONLY"
-	} else if f.source.IsUpdatedAt {
-		extend = "VALUE time::now()"
-	} else if f.source.IsDeletedAt {
-		extend = "DEFAULT NONE"
-	} else if f.source.IsExpiresAt {
-		extend = fmt.Sprintf("VALUE $before OR (time::now() + %s) READONLY", f.source.ExpiresIn)
+	switch {
+	case f.source.IsCreatedAt:
+		stmt.Value = "$before OR time::now() READONLY"
+	case f.source.IsUpdatedAt:
+		stmt.Value = "time::now()"
+	case f.source.IsDeletedAt:
+		stmt.Default = "NONE"
+	case f.source.IsExpiresAt:
+		stmt.Value = fmt.Sprintf("$before OR (time::now() + %s) READONLY", f.source.ExpiresIn)
 	}
 
 	return []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
-		),
+		f.defineField(stmt),
 	}
 }
 

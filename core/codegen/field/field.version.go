@@ -1,8 +1,6 @@
 package field
 
 import (
-	"fmt"
-
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -34,10 +32,12 @@ func (f *Version) TypeDatabase() string {
 
 func (f *Version) SchemaStatements(table, prefix string) []string {
 	return []string{
-		fmt.Sprintf(
-			`DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s VALUE { IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; };`,
-			prefix+f.NameDatabase(), table, f.TypeDatabase(),
-		),
+		f.defineField(fieldDef{
+			Name:  prefix + f.NameDatabase(),
+			Table: table,
+			Type:  f.TypeDatabase(),
+			Value: `{ IF $value != NONE AND $before != NONE AND $value != $before { THROW "optimistic_lock_failed" }; RETURN IF $before THEN $before + 1 ELSE 1 END; }`,
+		}),
 	}
 }
 

@@ -23,5 +23,6 @@ func (f *FieldString) Parse(t gotype.Type, _ gotype.Type, _ *FieldContext) (Fiel
 }
 
 func (f *FieldString) Validate() error {
-	return nil // string and *string support fulltext
+	// string and *string support fulltext, hence no search check here.
+	return f.checkAsserts(assertSupport{length: true, config: true})
 }

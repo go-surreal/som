@@ -22,12 +22,14 @@ type Field interface {
 	Pointer() bool
 	Indexes() []IndexInfo
 	Search() *SearchInfo
+	Asserts() []AssertInfo
 
 	setName(string)
 	setDBName(string)
 	setPointer(bool)
 	setIndexes([]IndexInfo)
 	setSearch(*SearchInfo)
+	setAsserts([]AssertInfo)
 
 	// Validate checks the field on its own, directly after it was parsed.
 	Validate() error
@@ -50,6 +52,7 @@ type fieldBase struct {
 	pointer bool
 	indexes []IndexInfo
 	search  *SearchInfo
+	asserts []AssertInfo
 }
 
 func newBase(name string) fieldBase {
@@ -102,17 +105,84 @@ func (f *fieldBase) setSearch(info *SearchInfo) {
 	f.search = info
 }
 
-func (f *fieldBase) Validate() error {
+func (f *fieldBase) Asserts() []AssertInfo {
+	return f.asserts
+}
+
+func (f *fieldBase) setAsserts(asserts []AssertInfo) {
+	f.asserts = asserts
+}
+
+// assertSupport describes which tag constraints a field type accepts. Named
+// configs are rendered as raw SurrealQL and therefore apply to almost any
+// field, while len and min/max depend on the database type of the value.
+type assertSupport struct {
+	length bool
+	number bool
+	config bool
+}
+
+// checkAsserts reports an error for every tag constraint the field type does
+// not support, so that a meaningless constraint fails at generation time
+// instead of silently never firing.
+func (f *fieldBase) checkAsserts(support assertSupport) error {
+	for _, assert := range f.asserts {
+		switch assert.Kind {
+		case AssertLen:
+			if !support.length {
+				return fmt.Errorf("field %s: len is only supported for string and slice fields", f.name)
+			}
+
+		case AssertNum:
+			if !support.number {
+				return fmt.Errorf("field %s: min and max are only supported for numeric fields", f.name)
+			}
+
+		case AssertConfig:
+			if !support.config {
+				return fmt.Errorf("field %s: assert is not supported for this field type", f.name)
+			}
+		}
+	}
+
+	return nil
+}
+
+// rejectAsserts refuses any constraint on a field type that cannot carry one,
+// explaining why so the user is not left guessing.
+func (f *fieldBase) rejectAsserts(reason string) error {
+	if len(f.asserts) > 0 {
+		return fmt.Errorf("field %s: %s", f.name, reason)
+	}
+
+	return nil
+}
+
+// validate runs the checks every field type shares, parameterised with the tag
+// constraints the concrete type accepts.
+func (f *fieldBase) validate(support assertSupport) error {
 	if f.search != nil {
 		return fmt.Errorf("field %s: fulltext index only supports string types (string, *string, []string, []*string, *[]string, *[]*string)", f.name)
 	}
-	return nil
+
+	return f.checkAsserts(support)
+}
+
+func (f *fieldBase) Validate() error {
+	return f.validate(assertSupport{config: true})
 }
 
 func (f *fieldBase) Verify(out *Output) error {
 	if f.search != nil && !searchExists(f.search.ConfigName, out) {
 		return fmt.Errorf("field %q references unknown search config %q", f.name, f.search.ConfigName)
 	}
+
+	for _, assert := range f.asserts {
+		if assert.Kind == AssertConfig && !assertExists(assert.ConfigName, out) {
+			return fmt.Errorf("field %q references unknown assert config %q", f.name, assert.ConfigName)
+		}
+	}
+
 	return nil
 }
 

@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -43,11 +44,63 @@ type SearchInfo struct {
 	ConfigName string
 }
 
+// AssertKind selects how a field constraint is rendered into the schema.
+type AssertKind int
+
+const (
+	// AssertLen constrains the length of a string or the item count of a slice.
+	AssertLen AssertKind = iota
+	// AssertNum constrains the range of a numeric value.
+	AssertNum
+	// AssertConfig references a constraint declared via define.Assert.
+	AssertConfig
+)
+
+// AssertInfo holds a single field-level constraint parsed from a som struct tag.
+type AssertInfo struct {
+	Kind AssertKind
+
+	// Min and Max hold the bounds verbatim as written in the tag, so that the
+	// schema reproduces the literal the user gave. Either may be empty for a
+	// half-open range. Only set for AssertLen and AssertNum.
+	Min, Max string
+
+	// ConfigName references a constraint defined in a //go:build som file.
+	// Only set for AssertConfig.
+	ConfigName string
+}
+
 // TagInfo holds all parsed som struct tag data.
 type TagInfo struct {
 	DBName  string
 	Indexes []IndexInfo
 	Search  *SearchInfo
+	Asserts []AssertInfo
+}
+
+// validLen matches the bound syntax of the len tag: an exact count ("3") or a
+// range with an optionally open end ("3..64", "3..", "..64").
+var validLen = regexp.MustCompile(`^(?:([0-9]+)|([0-9]*)\.\.([0-9]*))$`)
+
+// validNumber matches the numeric literals accepted by the min and max tags.
+var validNumber = regexp.MustCompile(`^-?[0-9]+(?:\.[0-9]+)?$`)
+
+// parseLenTag turns the value of a len tag into its lower and upper bound.
+func parseLenTag(part, value string) (min, max string, err error) {
+	match := validLen.FindStringSubmatch(value)
+	if match == nil {
+		return "", "", fmt.Errorf("invalid tag %q: len expects a count or a range (len=3, len=3..64, len=3.., len=..64)", part)
+	}
+
+	if exact := match[1]; exact != "" {
+		return exact, exact, nil
+	}
+
+	min, max = match[2], match[3]
+	if min == "" && max == "" {
+		return "", "", fmt.Errorf("invalid tag %q: len range needs at least one bound", part)
+	}
+	return min, max, nil
 }
 
 // parseExpiryTag validates the duration declared on a som.Expiry embed. The whole
@@ -81,6 +134,39 @@ func ParseChangefeedTag(tag string) string {
 	return ""
 }
 
+// setNumBound records a min or max bound on the tag's numeric constraint,
+// merging both ends of a range into a single entry.
+func setNumBound(info *TagInfo, key, value string) error {
+	for i := range info.Asserts {
+		assert := &info.Asserts[i]
+		if assert.Kind != AssertNum {
+			continue
+		}
+		if key == "min" {
+			if assert.Min != "" {
+				return fmt.Errorf("min specified multiple times")
+			}
+			assert.Min = value
+		} else {
+			if assert.Max != "" {
+				return fmt.Errorf("max specified multiple times")
+			}
+			assert.Max = value
+		}
+		return nil
+	}
+
+	assert := AssertInfo{Kind: AssertNum}
+	if key == "min" {
+		assert.Min = value
+	} else {
+		assert.Max = value
+	}
+	info.Asserts = append(info.Asserts, assert)
+
+	return nil
+}
+
 // parseSomTag parses the "som" struct tag and extracts field metadata.
 // All parameterized options use key=value syntax:
 //
@@ -91,6 +177,10 @@ func ParseChangefeedTag(tag string) string {
 //	som:"name=db_field_name"
 //	som:"fulltext=english_search"
 //	som:"index,unique=login"
+//	som:"len=3"
+//	som:"len=3..64"
+//	som:"min=0,max=130"
+//	som:"assert=phone_format"
 func parseSomTag(tag string) (*TagInfo, error) {
 	if tag == "" || tag == "in" || tag == "out" {
 		return nil, nil
@@ -148,6 +238,27 @@ func parseSomTag(tag string) (*TagInfo, error) {
 			}
 			info.Search = &SearchInfo{ConfigName: value}
 
+		case "len":
+			min, max, err := parseLenTag(part, value)
+			if err != nil {
+				return nil, err
+			}
+			info.Asserts = append(info.Asserts, AssertInfo{Kind: AssertLen, Min: min, Max: max})
+
+		case "min", "max":
+			if !validNumber.MatchString(value) {
+				return nil, fmt.Errorf("invalid tag %q: %s requires a number (%s=10)", part, key, key)
+			}
+			if err := setNumBound(info, key, value); err != nil {
+				return nil, fmt.Errorf("invalid tag %q: %w", part, err)
+			}
+
+		case "assert":
+			if !hasValue || value == "" {
+				return nil, fmt.Errorf("invalid tag %q: assert requires a config name (assert=phone_format)", part)
+			}
+			info.Asserts = append(info.Asserts, AssertInfo{Kind: AssertConfig, ConfigName: value})
+
 		case "changefeed":
 			// Handled separately at the node/edge level via ParseChangefeedTag.
 
@@ -156,5 +267,42 @@ func parseSomTag(tag string) (*TagInfo, error) {
 		}
 	}
 
+	if err := validateAsserts(info.Asserts); err != nil {
+		return nil, err
+	}
+
 	return info, nil
+}
+
+// validateAsserts rejects constraints that can never hold, so that the mistake
+// surfaces at generation time instead of on every write.
+func validateAsserts(asserts []AssertInfo) error {
+	seenLen := false
+
+	for _, assert := range asserts {
+		if assert.Kind == AssertLen {
+			if seenLen {
+				return fmt.Errorf("invalid tag: len specified multiple times")
+			}
+			seenLen = true
+		}
+
+		if assert.Kind == AssertConfig || assert.Min == "" || assert.Max == "" {
+			continue
+		}
+
+		min, err := strconv.ParseFloat(assert.Min, 64)
+		if err != nil {
+			return fmt.Errorf("invalid lower bound %q: %w", assert.Min, err)
+		}
+		max, err := strconv.ParseFloat(assert.Max, 64)
+		if err != nil {
+			return fmt.Errorf("invalid upper bound %q: %w", assert.Max, err)
+		}
+		if min > max {
+			return fmt.Errorf("invalid tag: lower bound %s is greater than upper bound %s", assert.Min, assert.Max)
+		}
+	}
+
+	return nil
 }

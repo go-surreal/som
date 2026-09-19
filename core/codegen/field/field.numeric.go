@@ -89,14 +89,18 @@ func (f *Numeric) TypeDatabase() string {
 
 func (f *Numeric) SchemaStatements(table, prefix string) []string {
 	return []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(), f.typeDatabaseExtend(),
-		),
+		f.defineField(fieldDef{
+			Name:   prefix + f.NameDatabase(),
+			Table:  table,
+			Type:   f.TypeDatabase(),
+			Assert: f.rangeAssert(),
+		}),
 	}
 }
 
-func (f *Numeric) typeDatabaseExtend() string {
+// rangeAssert keeps the value within the range of the Go type it maps to,
+// which is narrower than the int and float types SurrealDB stores it as.
+func (f *Numeric) rangeAssert() string {
 	nilCheck := ""
 	if f.source.Pointer() {
 		nilCheck = "$value == NONE OR $value == NULL OR "
@@ -104,25 +108,25 @@ func (f *Numeric) typeDatabaseExtend() string {
 
 	switch f.source.Type {
 	case parser.NumberInt8:
-		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, math.MinInt8, math.MaxInt8)
+		return fmt.Sprintf("%s$value >= %d AND $value <= %d", nilCheck, math.MinInt8, math.MaxInt8)
 	case parser.NumberInt16:
-		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, math.MinInt16, math.MaxInt16)
+		return fmt.Sprintf("%s$value >= %d AND $value <= %d", nilCheck, math.MinInt16, math.MaxInt16)
 	case parser.NumberInt32, parser.NumberRune:
-		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, math.MinInt32, math.MaxInt32)
+		return fmt.Sprintf("%s$value >= %d AND $value <= %d", nilCheck, math.MinInt32, math.MaxInt32)
 	case parser.NumberInt64, parser.NumberInt:
-		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, math.MinInt64, math.MaxInt64)
+		return fmt.Sprintf("%s$value >= %d AND $value <= %d", nilCheck, math.MinInt64, math.MaxInt64)
 	case parser.NumberUint8:
-		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint8)
+		return fmt.Sprintf("%s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint8)
 	case parser.NumberUint16:
-		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint16)
+		return fmt.Sprintf("%s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint16)
 	case parser.NumberUint32:
-		return fmt.Sprintf("ASSERT %s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint32)
+		return fmt.Sprintf("%s$value >= %d AND $value <= %d", nilCheck, 0, math.MaxUint32)
 	//case parser.NumberUint64, parser.NumberUint, parser.NumberUintptr:
-	//	return fmt.Sprintf("%s ASSERT %s$value >= %ddec AND $value <= %ddec", f.optionWrap("number"), nilCheck, 0, uint64(math.MaxUint64))
+	//	return fmt.Sprintf("%s %s$value >= %ddec AND $value <= %ddec", f.optionWrap("number"), nilCheck, 0, uint64(math.MaxUint64))
 	case parser.NumberFloat32:
-		return "" // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "1.2E-38", "3.4E+38")
+		return "" // fmt.Sprintf("%s %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "1.2E-38", "3.4E+38")
 	case parser.NumberFloat64:
-		return "" // fmt.Sprintf("%s ASSERT %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "2.2E-308", "1.7E+308")
+		return "" // fmt.Sprintf("%s %s$value >= %s AND $value <= %s", f.optionWrap("float"), nilCheck, "2.2E-308", "1.7E+308")
 	default:
 		panic(fmt.Sprintf("unmapped numeric type: %d", f.source.Type))
 	}

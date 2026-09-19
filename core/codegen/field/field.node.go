@@ -29,12 +29,7 @@ func (f *Node) TypeDatabase() string {
 }
 
 func (f *Node) SchemaStatements(table, prefix string) []string {
-	return []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(),
-		),
-	}
+	return f.define(table, prefix, f.TypeDatabase())
 }
 
 func (f *Node) Table() *NodeTable {
@@ -110,7 +105,7 @@ func (f *Node) fieldFieldFunc(ctx Context) jen.Code {
 		Id(f.NameGo()).Params().
 		Id(f.table.NameGoLower()).Types(def.TypeModel).
 		Block(
-			jen.Return(jen.Id("new"+f.table.NameGo()).Types(def.TypeModel).
+			jen.Return(jen.Id("new" + f.table.NameGo()).Types(def.TypeModel).
 				Params(jen.Id("keyed").Call(jen.Id("n").Dot("key"), jen.Lit(f.NameDatabase())))))
 }
 

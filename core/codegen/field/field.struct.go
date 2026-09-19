@@ -1,8 +1,6 @@
 package field
 
 import (
-	"fmt"
-
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -29,12 +27,7 @@ func (f *Struct) TypeDatabase() string {
 
 func (f *Struct) SchemaStatements(table, prefix string) []string {
 	// Generate own DEFINE FIELD statement.
-	statements := []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(),
-		),
-	}
+	statements := f.define(table, prefix, f.TypeDatabase())
 
 	// Recursively get nested field statements.
 	nestedPrefix := prefix + f.NameDatabase() + "."

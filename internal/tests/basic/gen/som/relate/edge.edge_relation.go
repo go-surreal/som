@@ -38,6 +38,9 @@ func (e edgeRelation) Create(ctx context.Context, edge *model.EdgeRelation) erro
 	data := conv.FromEdgeRelation(*edge)
 	res, err := e.db.Query(ctx, query, map[string]any{"inID": inID, "outID": outID, "data": data})
 	if err != nil {
+		if assertErr := som.AsAssertError(err); assertErr != nil {
+			return assertErr
+		}
 		return fmt.Errorf("could not create relation: %w", err)
 	}
 	var rawResult []internal.QueryResult[conv.EdgeRelation]

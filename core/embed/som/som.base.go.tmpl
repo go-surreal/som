@@ -51,6 +51,107 @@ var ErrCacheNotSupported = errors.New("caching is not supported for nodes with c
 // the version string returned by the server cannot be parsed.
 var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
 
+// ErrInvalid is returned when a write is rejected because a value it carries
+// is not allowed. It matches every such rejection regardless of what caught
+// it, so that a caller who only needs to turn the failure into a response can
+// ask once:
+//
+//	if errors.Is(err, som.ErrInvalid) {
+//	    http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+//	}
+//
+// Use errors.As with the concrete error to find out what exactly was rejected.
+var ErrInvalid = errors.New("write rejected as invalid")
+
+// ErrAssert is returned when a write violates a constraint declared on a field
+// via its som tag. Use errors.As to find out which field and rule were
+// violated:
+//
+//	var assertErr *som.AssertError
+//	if errors.As(err, &assertErr) {
+//	    fmt.Println(assertErr.Field, assertErr.Message)
+//	}
+//
+// It is a narrower form of ErrInvalid, which also matches this error.
+var ErrAssert = errors.New("field constraint violated")
+
+// AssertError identifies the field whose constraint a write violated.
+type AssertError struct {
+	// Field is the database path of the field, including the prefix of any
+	// struct it is nested in. Note that this is the database name, not the Go
+	// field name: the constraint is enforced by the database, which only knows
+	// the field under that name.
+	Field string
+
+	// Message explains the violated constraint, either as declared via
+	// define.Assert or as derived from the tag.
+	Message string
+
+	// Cause is the underlying database error.
+	Cause error
+}
+
+func (e *AssertError) Error() string {
+	return fmt.Sprintf("field %s: %s", e.Field, e.Message)
+}
+
+func (e *AssertError) Is(target error) bool {
+	return target == ErrAssert || target == ErrInvalid
+}
+
+func (e *AssertError) Unwrap() error {
+	return e.Cause
+}
+
+// assertMarker prefixes the message thrown by a violated field constraint. It
+// is what tells a constraint violation apart from any other database error.
+const assertMarker = "som_assert:"
+
+// FindErrorMessage returns the first message in the error chain containing msg.
+// SurrealDB nests the cause of a failed statement, so the marker of a thrown
+// message is not necessarily part of the outermost error.
+func FindErrorMessage(err error, msg string) (string, bool) {
+	if err == nil {
+		return "", false
+	}
+
+	var serverErr connection.ServerError
+	if errors.As(err, &serverErr) {
+		for cur := &serverErr; cur != nil; cur = cur.Cause {
+			if strings.Contains(cur.Message, msg) {
+				return cur.Message, true
+			}
+		}
+
+		return "", false
+	}
+
+	if text := err.Error(); strings.Contains(text, msg) {
+		return text, true
+	}
+
+	return "", false
+}
+
+// AsAssertError turns a violated field constraint into an AssertError naming
+// the field and the rule it broke. It returns nil for any other error, so that
+// unrelated failures keep their own handling.
+func AsAssertError(err error) error {
+	message, ok := FindErrorMessage(err, assertMarker)
+	if !ok {
+		return nil
+	}
+
+	_, violation, _ := strings.Cut(message, assertMarker)
+
+	field, detail, found := strings.Cut(violation, ":")
+	if !found {
+		return nil
+	}
+
+	return &AssertError{Field: field, Message: detail, Cause: err}
+}
+
 // ServerError is a structured error from SurrealDB v3.
 // Use errors.As to extract structured details from errors returned by SOM:
 //

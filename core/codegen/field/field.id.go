@@ -1,8 +1,6 @@
 package field
 
 import (
-	"fmt"
-
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -32,20 +30,18 @@ func (f *ID) TypeDatabase() string {
 func (f *ID) SchemaStatements(table, prefix string) []string {
 	// TODO: assert := "string::is::ulid(record::id($value))"
 
-	if f.source.Type == parser.IDTypeString {
-		return []string{
-			fmt.Sprintf(
-				"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
-				prefix+f.NameDatabase(), table, f.TypeDatabase(),
-			),
-		}
+	stmt := fieldDef{
+		Name:  prefix + f.NameDatabase(),
+		Table: table,
+		Type:  f.TypeDatabase(),
+	}
+
+	if f.source.Type != parser.IDTypeString {
+		stmt.Default = f.idDefault()
 	}
 
 	return []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s DEFAULT %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(), f.idDefault(),
-		),
+		f.defineField(stmt),
 	}
 }
 

@@ -18,6 +18,7 @@ type Client interface {
 	LocationRepo() LocationRepo
 	EphemeralRepo() EphemeralRepo
 	DrawingRepo() DrawingRepo
+	ConstrainedRepo() ConstrainedRepo
 	CircleRepo() CircleRepo
 	AllTypesRepo() AllTypesRepo
 	ShapeRepo() ShapeRepo
@@ -43,6 +44,7 @@ type ClientImpl struct {
 	locationRepo        *location
 	ephemeralRepo       *ephemeral
 	drawingRepo         *drawing
+	constrainedRepo     *constrained
 	circleRepo          *circle
 	allTypesRepo        *allTypes
 	shapeRepo           *shape

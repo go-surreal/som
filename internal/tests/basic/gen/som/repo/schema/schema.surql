@@ -7,7 +7,7 @@ DEFINE ANALYZER OVERWRITE autocomplete TOKENIZERS class FILTERS lowercase, edgen
 
 DEFINE TABLE OVERWRITE weather SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE weather TYPE [string, datetime];
-DEFINE FIELD OVERWRITE temperature ON TABLE weather TYPE float ;
+DEFINE FIELD OVERWRITE temperature ON TABLE weather TYPE float;
 
 DEFINE TABLE OVERWRITE team_member SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE team_member TYPE { member: record<all_types>, forecast: record<weather> };
@@ -16,7 +16,7 @@ DEFINE FIELD OVERWRITE role ON TABLE team_member TYPE string;
 DEFINE TABLE OVERWRITE square SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE square TYPE string DEFAULT rand::ulid();
 DEFINE FIELD OVERWRITE label ON TABLE square TYPE string;
-DEFINE FIELD OVERWRITE size ON TABLE square TYPE float ;
+DEFINE FIELD OVERWRITE size ON TABLE square TYPE float;
 
 DEFINE TABLE OVERWRITE special_types SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE special_types TYPE uuid DEFAULT rand::uuid();
@@ -91,10 +91,21 @@ DEFINE FIELD OVERWRITE name ON TABLE drawing TYPE string;
 DEFINE FIELD OVERWRITE subject ON TABLE drawing TYPE option<record<square|circle>>;
 DEFINE FIELD OVERWRITE accent ON TABLE drawing TYPE option<record<square|circle>>;
 
+DEFINE TABLE OVERWRITE constrained SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE id ON TABLE constrained TYPE string DEFAULT rand::ulid();
+DEFINE FIELD OVERWRITE name ON TABLE constrained TYPE string ASSERT { IF !(string::len($value) >= 3 AND string::len($value) <= 64) { THROW "som_assert:name:length must be between 3 and 64" }; RETURN true; };
+DEFINE FIELD OVERWRITE code ON TABLE constrained TYPE string ASSERT { IF !(string::len($value) == 4) { THROW "som_assert:code:length must be exactly 4" }; RETURN true; };
+DEFINE FIELD OVERWRITE nickname ON TABLE constrained TYPE option<string> ASSERT { IF !($value == NONE OR $value == NULL OR (string::len($value) >= 2)) { THROW "som_assert:nickname:length must be at least 2" }; RETURN true; };
+DEFINE FIELD OVERWRITE age ON TABLE constrained TYPE int ASSERT { IF !($value >= 0 AND $value <= 130) { THROW "som_assert:age:must be between 0 and 130" }; RETURN $value >= -9223372036854775808 AND $value <= 9223372036854775807; };
+DEFINE FIELD OVERWRITE ratio ON TABLE constrained TYPE float ASSERT { IF !($value >= 0) { THROW "som_assert:ratio:must be at least 0" }; RETURN true; };
+DEFINE FIELD OVERWRITE tags ON TABLE constrained TYPE option<array<string>> ASSERT { IF !($value == NONE OR $value == NULL OR (array::len($value) <= 5)) { THROW "som_assert:tags:length must be at most 5" }; RETURN true; };
+DEFINE FIELD OVERWRITE phone ON TABLE constrained TYPE string ASSERT { IF !(string::matches($value, "^[0-9+\\-]+$")) { THROW "som_assert:phone:must only contain digits, plus and minus" }; RETURN true; };
+DEFINE FIELD OVERWRITE title ON TABLE constrained TYPE string ASSERT { IF !(string::len($value) >= 1 AND string::len($value) <= 80) { THROW "som_assert:title:length must be between 1 and 80" }; IF !((string::lowercase($value) != "tbd")) { THROW "som_assert:title:must conform to no_placeholder" }; RETURN true; };
+
 DEFINE TABLE OVERWRITE circle SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE circle TYPE uuid DEFAULT rand::uuid();
 DEFINE FIELD OVERWRITE label ON TABLE circle TYPE string;
-DEFINE FIELD OVERWRITE radius ON TABLE circle TYPE float ;
+DEFINE FIELD OVERWRITE radius ON TABLE circle TYPE float;
 
 DEFINE TABLE OVERWRITE all_types SCHEMAFULL TYPE NORMAL CHANGEFEED 1d PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE all_types TYPE string DEFAULT rand::ulid();
@@ -126,20 +137,20 @@ DEFINE FIELD OVERWRITE field_uint_16 ON TABLE all_types TYPE int ASSERT $value >
 DEFINE FIELD OVERWRITE field_uint_16_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 65535;
 DEFINE FIELD OVERWRITE field_uint_32 ON TABLE all_types TYPE int ASSERT $value >= 0 AND $value <= 4294967295;
 DEFINE FIELD OVERWRITE field_uint_32_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= 0 AND $value <= 4294967295;
-DEFINE FIELD OVERWRITE field_float_32 ON TABLE all_types TYPE float ;
+DEFINE FIELD OVERWRITE field_float_32 ON TABLE all_types TYPE float;
 DEFINE FIELD OVERWRITE field_float_32_slice ON TABLE all_types TYPE option<array<float>>;
 DEFINE FIELD OVERWRITE field_float_32_slice_ptr ON TABLE all_types TYPE option<array<float>>;
 DEFINE FIELD OVERWRITE field_float_32_ptr_slice ON TABLE all_types TYPE option<array<float | null>>;
 DEFINE FIELD OVERWRITE field_float_32_ptr_slice_ptr ON TABLE all_types TYPE option<array<float | null>>;
-DEFINE FIELD OVERWRITE field_float_64 ON TABLE all_types TYPE float ;
+DEFINE FIELD OVERWRITE field_float_64 ON TABLE all_types TYPE float;
 DEFINE FIELD OVERWRITE field_rune ON TABLE all_types TYPE int ASSERT $value >= -2147483648 AND $value <= 2147483647;
 DEFINE FIELD OVERWRITE field_rune_slice ON TABLE all_types TYPE option<array<int>>;
 DEFINE FIELD OVERWRITE field_bool ON TABLE all_types TYPE bool;
 DEFINE FIELD OVERWRITE field_bool_ptr ON TABLE all_types TYPE option<bool>;
 DEFINE FIELD OVERWRITE field_bool_slice ON TABLE all_types TYPE option<array<bool>>;
-DEFINE FIELD OVERWRITE field_time ON TABLE all_types TYPE datetime ;
-DEFINE FIELD OVERWRITE field_time_ptr ON TABLE all_types TYPE option<datetime> ;
-DEFINE FIELD OVERWRITE field_time_nil ON TABLE all_types TYPE option<datetime> ;
+DEFINE FIELD OVERWRITE field_time ON TABLE all_types TYPE datetime;
+DEFINE FIELD OVERWRITE field_time_ptr ON TABLE all_types TYPE option<datetime>;
+DEFINE FIELD OVERWRITE field_time_nil ON TABLE all_types TYPE option<datetime>;
 DEFINE FIELD OVERWRITE field_time_slice ON TABLE all_types TYPE option<array<datetime>>;
 DEFINE FIELD OVERWRITE field_time_slice_slice ON TABLE all_types TYPE option<array<array<datetime> | null>>;
 DEFINE FIELD OVERWRITE field_duration ON TABLE all_types TYPE duration;
@@ -186,22 +197,22 @@ DEFINE FIELD OVERWRITE field_credentials.password_ptr ON TABLE all_types TYPE op
 DEFINE FIELD OVERWRITE field_nested_data_ptr ON TABLE all_types TYPE option<object>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr.string_ptr ON TABLE all_types TYPE option<string>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr.int_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD OVERWRITE field_nested_data_ptr.time_ptr ON TABLE all_types TYPE option<datetime> ;
+DEFINE FIELD OVERWRITE field_nested_data_ptr.time_ptr ON TABLE all_types TYPE option<datetime>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr.uuid_ptr ON TABLE all_types TYPE option<uuid>;
 DEFINE FIELD OVERWRITE field_nested_data_slice ON TABLE all_types TYPE option<array<object>>;
 DEFINE FIELD OVERWRITE field_nested_data_slice.*.string_ptr ON TABLE all_types TYPE option<string>;
 DEFINE FIELD OVERWRITE field_nested_data_slice.*.int_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD OVERWRITE field_nested_data_slice.*.time_ptr ON TABLE all_types TYPE option<datetime> ;
+DEFINE FIELD OVERWRITE field_nested_data_slice.*.time_ptr ON TABLE all_types TYPE option<datetime>;
 DEFINE FIELD OVERWRITE field_nested_data_slice.*.uuid_ptr ON TABLE all_types TYPE option<uuid>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice ON TABLE all_types TYPE option<array<option<object>>>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.string_ptr ON TABLE all_types TYPE option<string>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.int_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.time_ptr ON TABLE all_types TYPE option<datetime> ;
+DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.time_ptr ON TABLE all_types TYPE option<datetime>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.uuid_ptr ON TABLE all_types TYPE option<uuid>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr ON TABLE all_types TYPE option<array<option<object>>>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr.*.string_ptr ON TABLE all_types TYPE option<string>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr.*.int_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
-DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr.*.time_ptr ON TABLE all_types TYPE option<datetime> ;
+DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr.*.time_ptr ON TABLE all_types TYPE option<datetime>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr.*.uuid_ptr ON TABLE all_types TYPE option<uuid>;
 DEFINE FIELD OVERWRITE field_node ON TABLE all_types TYPE option<record<special_types>>;
 DEFINE FIELD OVERWRITE field_node_ptr ON TABLE all_types TYPE option<record<special_types>>;
@@ -234,7 +245,7 @@ DEFINE FIELD OVERWRITE note ON TABLE annotates TYPE string;
 
 DEFINE TABLE OVERWRITE event_log DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE category ON TABLE event_log TYPE string;
-DEFINE FIELD OVERWRITE value ON TABLE event_log TYPE float ;
+DEFINE FIELD OVERWRITE value ON TABLE event_log TYPE float;
 
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "view:event_summary")) != "0fc84830438612686f6291d82a754100facb12bece604c6abedfd05c67935dd5" {
 	REMOVE TABLE IF EXISTS event_summary;
@@ -299,6 +310,10 @@ IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__ephe
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__drawing_count")) != "d0ec985e8b3d02c31df3aa4d7ae02cd0a763081fd612b6bf178b8f4a54bc86c2" {
 	DEFINE INDEX OVERWRITE __som__drawing_count ON drawing COUNT;
 	UPSERT type::record("__som__schema", "index:__som__drawing_count") SET hash = "d0ec985e8b3d02c31df3aa4d7ae02cd0a763081fd612b6bf178b8f4a54bc86c2";
+};
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__constrained_count")) != "af8c1795a962a83b91494a3aeb845c62694bc0a1087d95fd24a441a5ae163667" {
+	DEFINE INDEX OVERWRITE __som__constrained_count ON constrained COUNT;
+	UPSERT type::record("__som__schema", "index:__som__constrained_count") SET hash = "af8c1795a962a83b91494a3aeb845c62694bc0a1087d95fd24a441a5ae163667";
 };
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__circle_count")) != "33fa55e08772862af27c73e8c61db996ff73843b6c293017a706c5049cbbcd10" {
 	DEFINE INDEX OVERWRITE __som__circle_count ON circle COUNT;
