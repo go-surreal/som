@@ -173,6 +173,11 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 				return errors.New("given node already has an id")
 			}
 			{{call .RunHooks "beforeCreate"}}
+			{{- if .Validate}}
+			if err := validate.{{.NameGo}}({{.NameGoLower}}); err != nil {
+				return err
+			}
+			{{- end}}
 			if err := r.create(ctx, {{.NameGoLower}}); err != nil {
 				return err
 			}
@@ -194,6 +199,11 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 				return errors.New("given node already has an id")
 			}
 			{{call .RunHooks "beforeCreate"}}
+			{{- if .Validate}}
+			if err := validate.{{.NameGo}}({{.NameGoLower}}); err != nil {
+				return err
+			}
+			{{- end}}
 			if err := r.createWithID(ctx, id, {{.NameGoLower}}); err != nil {
 				return err
 			}
@@ -223,6 +233,13 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			if err := r.runHooksAll(ctx, beforeCreate, nodes); err != nil {
 				return err
 			}
+			{{- if .Validate}}
+			for _, n := range nodes {
+				if err := validate.{{.NameGo}}(n); err != nil {
+					return err
+				}
+			}
+			{{- end}}
 			if err := r.insert(ctx, nodes); err != nil {
 				return err
 			}
@@ -275,6 +292,11 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			}
 			{{call .IDCheck "node must have a non-zero ID"}}
 			{{call .RunHooks "beforeCreate"}}
+			{{- if .Validate}}
+			if err := validate.{{.NameGo}}({{.NameGoLower}}); err != nil {
+				return err
+			}
+			{{- end}}
 			if err := r.createWithID(ctx, {{.NameGoLower}}.ID(), {{.NameGoLower}}); err != nil {
 				return err
 			}
@@ -325,6 +347,11 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			}
 			{{call .IDCheck (printf "cannot update %s without existing record ID" .NameGo)}}
 			{{call .RunHooks "beforeUpdate"}}
+			{{- if .Validate}}
+			if err := validate.{{.NameGo}}({{.NameGoLower}}); err != nil {
+				return err
+			}
+			{{- end}}
 			if err := r.update(ctx, {{.RecordIDFromNode}}, {{.NameGoLower}}); err != nil {
 				return err
 			}
@@ -495,6 +522,7 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		goImport{Alias: "with", Path: b.relativePkgPath(def.PkgFetch)},
 		goImport{Alias: "query", Path: b.relativePkgPath(def.PkgQuery)},
 		goImport{Alias: "relate", Path: b.relativePkgPath(def.PkgRelate)},
+		goImport{Alias: "validate", Path: b.relativePkgPath(def.PkgValidate)},
 		goImport{Alias: "model", Path: b.input.sourcePkgPath},
 	)
 
@@ -515,6 +543,8 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 		"RepoLiteral":      file.code(b.repoLiteral(node)),
 		"RecordIDFromNode": file.code(b.recordIDFromNode(node)),
 		"Hooks":            repoHooks(),
+
+		"Validate": b.validate.Node(node),
 
 		"IDCheck":  func(errMsg string) string { return file.code(b.idEmptyCheck(node, errMsg)) },
 		"RunHooks": func(kind string) string { return file.code(runHooksCall(node, kind)) },

@@ -505,6 +505,18 @@ type SoftDelete = internal.SoftDelete
 
 type Expiry = internal.Expiry
 
+// ValidationError is returned by a write operation when a Validate method of
+// the model, or of one of the types below it, rejected a value:
+//
+//	var validationErr *som.ValidationError
+//	if errors.As(err, &validationErr) {
+//	    fmt.Println(validationErr.Path, validationErr.Err)
+//	}
+//
+// Validation runs on write only, never on read, so a record stored before a
+// rule existed can still be loaded and fixed.
+type ValidationError = internal.ValidationError
+
 // Enum describes a database type with a fixed set of allowed values.
 type Enum string
 

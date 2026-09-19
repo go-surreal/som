@@ -17,6 +17,10 @@ import (
 type Sink struct {
 	Name   string
 	Fields []Field
+
+	// HasValidate reports whether the model type itself provides a
+	// "Validate() error" method.
+	HasValidate bool
 }
 
 func (s *Sink) Match(t gotype.Type, ctx *TypeContext) bool {
@@ -72,7 +76,7 @@ func IsSink(t gotype.Type, outPkg string) bool {
 func ParseSink(v gotype.Type, ctx *TypeContext) (*Sink, error) {
 	outPkg := ctx.OutPkg
 
-	sink := &Sink{Name: v.Name()}
+	sink := &Sink{Name: v.Name(), HasValidate: hasValidateMethod(v)}
 
 	nf := v.NumField()
 

@@ -11,6 +11,10 @@ type NodeTable struct {
 	Changefeed string
 	Source     *parser.Node // Reference to source parser.Node
 
+	// HasValidate reports whether the model type provides a
+	// "Validate() error" method of its own.
+	HasValidate bool
+
 	// TODO: include source package path + method(s)
 }
 
