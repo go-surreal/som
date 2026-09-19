@@ -98,7 +98,7 @@ func ParseSink(v gotype.Type, ctx *TypeContext) (*Sink, error) {
 
 		field, err := ctx.ParseField(f)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("sink %s: %w", v.Name(), err)
 		}
 
 		sink.Fields = append(sink.Fields, field)
