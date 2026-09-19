@@ -102,6 +102,9 @@ if errors.Is(err, som.ErrInvalid) {
 }
 ```
 
+`ErrInvalid` also matches a rejection by a `Validate` method, see
+[Validation](13_validation.md).
+
 ## Unsupported Fields
 
 Constraints are rejected at generation time on fields where they could not work:

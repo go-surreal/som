@@ -72,10 +72,11 @@ type AssertInfo struct {
 
 // TagInfo holds all parsed som struct tag data.
 type TagInfo struct {
-	DBName  string
-	Indexes []IndexInfo
-	Search  *SearchInfo
-	Asserts []AssertInfo
+	DBName     string
+	Indexes    []IndexInfo
+	Search     *SearchInfo
+	Asserts    []AssertInfo
+	NoValidate bool
 }
 
 // validLen matches the bound syntax of the len tag: an exact count ("3") or a
@@ -181,6 +182,10 @@ func setNumBound(info *TagInfo, key, value string) error {
 //	som:"len=3..64"
 //	som:"min=0,max=130"
 //	som:"assert=phone_format"
+//
+// The only flag without a value is:
+//
+//	som:"novalidate"
 func parseSomTag(tag string) (*TagInfo, error) {
 	if tag == "" || tag == "in" || tag == "out" {
 		return nil, nil
@@ -258,6 +263,12 @@ func parseSomTag(tag string) (*TagInfo, error) {
 				return nil, fmt.Errorf("invalid tag %q: assert requires a config name (assert=phone_format)", part)
 			}
 			info.Asserts = append(info.Asserts, AssertInfo{Kind: AssertConfig, ConfigName: value})
+
+		case "novalidate":
+			if hasValue {
+				return nil, fmt.Errorf("invalid tag %q: novalidate takes no value", part)
+			}
+			info.NoValidate = true
 
 		case "changefeed":
 			// Handled separately at the node/edge level via ParseChangefeedTag.

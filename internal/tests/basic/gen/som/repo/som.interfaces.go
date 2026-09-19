@@ -9,6 +9,7 @@ import (
 
 type Client interface {
 	WeatherRepo() WeatherRepo
+	ValidatedRepo() ValidatedRepo
 	TeamMemberRepo() TeamMemberRepo
 	SquareRepo() SquareRepo
 	SpecialTypesRepo() SpecialTypesRepo
@@ -25,6 +26,7 @@ type Client interface {
 	ColoredRepo() ColoredRepo
 	EventSummaryRepo() EventSummaryRepo
 	AllTypesSummaryRepo() AllTypesSummaryRepo
+	ValidatedLogRepo() ValidatedLogRepo
 	EventLogRepo() EventLogRepo
 	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
@@ -35,6 +37,7 @@ type ClientImpl struct {
 	db                  *dbConn
 	mu                  sync.Mutex
 	weatherRepo         *weather
+	validatedRepo       *validated
 	teamMemberRepo      *teamMember
 	squareRepo          *square
 	specialTypesRepo    *specialTypes
@@ -51,6 +54,7 @@ type ClientImpl struct {
 	coloredRepo         *colored
 	eventSummaryRepo    *eventSummary
 	allTypesSummaryRepo *allTypesSummary
+	validatedLogRepo    *validatedLog
 	eventLogRepo        *eventLog
 }
 

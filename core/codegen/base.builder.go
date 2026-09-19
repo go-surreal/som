@@ -12,6 +12,7 @@ import (
 
 type build struct {
 	input        *input
+	validate     *validation
 	fs           *fs.FS
 	outPkg       string
 	wirePackage  string
@@ -58,6 +59,8 @@ func Build(source *parser.Output, fs *fs.FS, outPkg string, wirePackage string, 
 		noCountIndex: noCountIndex,
 	}
 
+	builder.validate = builder.newValidation()
+
 	return builder.build()
 }
 
@@ -103,6 +106,7 @@ func (b *build) build() error {
 		b.newRelateBuilder(),
 		b.newIndexBuilder(),
 		b.newFieldBuilder(),
+		b.validate,
 	}
 
 	for _, builder := range builders {
@@ -141,7 +145,7 @@ func (b *build) newConvBuilder() builder {
 }
 
 func (b *build) newRelateBuilder() builder {
-	return newRelateBuilder(b.input, b.fs, b.basePkg(), def.PkgRelate)
+	return newRelateBuilder(b.input, b.fs, b.basePkg(), def.PkgRelate, b.validate)
 }
 
 func (b *build) newIndexBuilder() builder {

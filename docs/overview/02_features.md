@@ -219,6 +219,22 @@ cards, _ := client.PersonRepo().Query().AllAs[model.PersonCard](ctx)
 
 See [Fragments](../models/10_fragments.md).
 
+### Validation
+
+Write-time checks generated from the `Validate() error` methods of a model and the types within it:
+
+```go
+func (u *User) Validate() error {
+    if u.Name == "" {
+        return errors.New("name must not be empty")
+    }
+
+    return nil
+}
+```
+
+See [Validation](../models/13_validation.md).
+
 ### Expiry (TTL)
 
 Time-limited records with automatic read filtering and background purge:

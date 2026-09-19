@@ -12,6 +12,10 @@ type EdgeTable struct {
 	Fields     []Field
 	Changefeed string
 	Source     *parser.Edge
+
+	// HasValidate reports whether the model type provides a
+	// "Validate() error" method of its own.
+	HasValidate bool
 }
 
 func (t *EdgeTable) NameGo() string {

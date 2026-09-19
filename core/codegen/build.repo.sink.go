@@ -41,6 +41,11 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 			if {{.NameGoLower}} == nil {
 				return errors.New("the passed record must not be nil")
 			}
+			{{- if .Validate}}
+			if err := validate.{{.NameGo}}({{.NameGoLower}}); err != nil {
+				return err
+			}
+			{{- end}}
 			return dbInsertVoid(ctx, r.db, "{{.NameDB}}", []any{conv.From{{.NameGo}}Ptr({{.NameGoLower}})})
 		}
 
@@ -54,6 +59,11 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 				if s == nil {
 					return errors.New("slice contains nil record")
 				}
+				{{- if .Validate}}
+				if err := validate.{{.NameGo}}(s); err != nil {
+					return err
+				}
+				{{- end}}
 				data[i] = conv.From{{.NameGo}}Ptr(s)
 			}
 			return dbInsertVoid(ctx, r.db, "{{.NameDB}}", data)
@@ -64,12 +74,14 @@ func (b *build) buildSinkRepoFile(sink *field.SinkTable) error {
 		"NameGo":      sink.NameGo(),
 		"NameGoLower": sink.NameGoLower(),
 		"NameDB":      sink.NameDatabase(),
+		"Validate":    b.validate.Sink(sink),
 	}
 
 	file := newGoFile(def.PkgRepo,
 		goImport{Path: "context"},
 		goImport{Path: "errors"},
 		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
+		goImport{Alias: "validate", Path: b.relativePkgPath(def.PkgValidate)},
 		goImport{Alias: "model", Path: b.input.sourcePkgPath},
 	)
 

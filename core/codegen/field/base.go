@@ -40,6 +40,16 @@ type Field interface {
 	Indexes() []parser.IndexInfo
 	SearchInfo() *parser.SearchInfo
 	NestedFields() []Field
+
+	// HasValidate reports whether the type of the field provides a
+	// "Validate() error" method to be called before a write.
+	HasValidate() bool
+
+	// SkipValidate reports whether the field opted out of validation.
+	SkipValidate() bool
+
+	// IsPointer reports whether the model field is a pointer.
+	IsPointer() bool
 }
 
 // elementTyped is implemented by fields whose database type differs when they
@@ -246,4 +256,17 @@ func (f *baseField) SearchInfo() *parser.SearchInfo {
 
 func (f *baseField) NestedFields() []Field {
 	return nil
+}
+
+// IsPointer reports whether the model field is a pointer.
+func (f *baseField) IsPointer() bool {
+	return f.source.Pointer()
+}
+
+func (f *baseField) HasValidate() bool {
+	return f.source.HasValidate()
+}
+
+func (f *baseField) SkipValidate() bool {
+	return f.source.SkipValidate()
 }

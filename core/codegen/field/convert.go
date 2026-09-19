@@ -22,9 +22,10 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, node := range source.Nodes {
 		dbNode := &NodeTable{
-			Name:       node.Name,
-			Changefeed: node.Changefeed,
-			Source:     node,
+			Name:        node.Name,
+			Changefeed:  node.Changefeed,
+			Source:      node,
+			HasValidate: node.HasValidate,
 		}
 
 		for _, f := range node.Fields {
@@ -57,9 +58,10 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, edge := range source.Edges {
 		dbEdge := &EdgeTable{
-			Name:       edge.Name,
-			Changefeed: edge.Changefeed,
-			Source:     edge,
+			Name:        edge.Name,
+			Changefeed:  edge.Changefeed,
+			Source:      edge,
+			HasValidate: edge.HasValidate,
 		}
 
 		inField, ok := edgeEnd(source, buildConf, edge.In)
@@ -103,7 +105,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, sink := range source.Sinks {
 		dbSink := &SinkTable{
-			Name: sink.Name,
+			Name:        sink.Name,
+			HasValidate: sink.HasValidate,
 		}
 
 		for _, f := range sink.Fields {
@@ -153,7 +156,8 @@ func NewDef(source *parser.Output, buildConf *BuildConfig) (*Def, error) {
 
 	for _, str := range source.Structs {
 		dbObject := &DatabaseObject{
-			Name: str.Name,
+			Name:        str.Name,
+			HasValidate: str.HasValidate,
 		}
 
 		for _, f := range str.Fields {

@@ -13,6 +13,7 @@ import (
 	internal "som.test/gen/som/internal"
 	query "som.test/gen/som/query"
 	relate "som.test/gen/som/relate"
+	validate "som.test/gen/som/validate"
 	with "som.test/gen/som/with"
 	model "som.test/model"
 )
@@ -195,6 +196,9 @@ func (r *location) Create(ctx context.Context, location *model.Location) error {
 	if err := r.runHooks(ctx, beforeCreate, location); err != nil {
 		return err
 	}
+	if err := validate.Location(location); err != nil {
+		return err
+	}
 	if err := r.create(ctx, location); err != nil {
 		return err
 	}
@@ -217,6 +221,9 @@ func (r *location) CreateWithID(ctx context.Context, id string, location *model.
 		return errors.New("given node already has an id")
 	}
 	if err := r.runHooks(ctx, beforeCreate, location); err != nil {
+		return err
+	}
+	if err := validate.Location(location); err != nil {
 		return err
 	}
 	if err := r.createWithID(ctx, id, location); err != nil {
@@ -244,6 +251,11 @@ func (r *location) Insert(ctx context.Context, nodes []*model.Location) error {
 	}
 	if err := r.runHooksAll(ctx, beforeCreate, nodes); err != nil {
 		return err
+	}
+	for _, n := range nodes {
+		if err := validate.Location(n); err != nil {
+			return err
+		}
 	}
 	if err := r.insert(ctx, nodes); err != nil {
 		return err
@@ -304,6 +316,9 @@ func (r *location) Update(ctx context.Context, location *model.Location) error {
 		return errors.New("cannot update Location without existing record ID")
 	}
 	if err := r.runHooks(ctx, beforeUpdate, location); err != nil {
+		return err
+	}
+	if err := validate.Location(location); err != nil {
 		return err
 	}
 	if err := r.update(ctx, r.recordID(string(location.ID())), location); err != nil {
