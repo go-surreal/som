@@ -42,6 +42,9 @@ func (c *TypeContext) ParseField(t gotype.Type) (Field, error) {
 		if tagInfo.Search != nil {
 			field.setSearch(tagInfo.Search)
 		}
+		if len(tagInfo.Asserts) > 0 {
+			field.setAsserts(tagInfo.Asserts)
+		}
 	}
 
 	if err := field.Validate(); err != nil {

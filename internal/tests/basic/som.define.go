@@ -19,8 +19,25 @@ func Definitions() define.Definitions {
 			allTypesSummary,
 			eventSummary,
 		},
+		Asserts: []*define.AssertBuilder{
+			assertPhone,
+			assertNoPlaceholder,
+		},
 	}
 }
+
+//
+// -- ASSERTS
+//
+
+var (
+	assertPhone = define.Assert("phone_format").
+			Regex(`^[0-9+\-]+$`).
+			Message("must only contain digits, plus and minus")
+
+	assertNoPlaceholder = define.Assert("no_placeholder").
+				Raw(`string::lowercase($value) != "tbd"`)
+)
 
 //
 // -- ANALYZERS

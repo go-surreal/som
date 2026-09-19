@@ -125,3 +125,15 @@ func searchExists(name string, out *Output) bool {
 	}
 	return false
 }
+
+func assertExists(name string, out *Output) bool {
+	if out.Define == nil {
+		return false
+	}
+	for _, a := range out.Define.Asserts {
+		if a.Name == name {
+			return true
+		}
+	}
+	return false
+}

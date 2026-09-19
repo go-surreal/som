@@ -28,6 +28,7 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 		SourcePkg:      source.PkgPath,
 		TargetPkg:      outPkg,
 		ToDatabaseName: strcase.ToSnake, // TODO
+		AssertConfig:   assertConfigLookup(source.Define),
 	}
 
 	var in input
@@ -49,6 +50,24 @@ func newInput(source *parser.Output, outPkg string) (*input, error) {
 	in.define = source.Define
 
 	return &in, nil
+}
+
+// assertConfigLookup resolves the constraints declared via define.Assert by
+// name, for the fields referencing them through their som tag.
+func assertConfigLookup(define *parser.DefineOutput) func(name string) *parser.AssertDef {
+	return func(name string) *parser.AssertDef {
+		if define == nil {
+			return nil
+		}
+
+		for i := range define.Asserts {
+			if define.Asserts[i].Name == name {
+				return &define.Asserts[i]
+			}
+		}
+
+		return nil
+	}
 }
 
 func (in *input) SourceQual(name string) jen.Code {

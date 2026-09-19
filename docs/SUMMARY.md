@@ -30,6 +30,7 @@
   * [Expiry (TTL)](models/09_expiry.md)
   * [Fragments](models/10_fragments.md)
   * [Unions](models/11_unions.md)
+  * [Field Constraints](models/12_constraints.md)
 
 ## Data Types
 

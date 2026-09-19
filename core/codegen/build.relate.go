@@ -112,6 +112,9 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			data := conv.From{{.EdgeNameGo}}(*edge)
 			res, err := e.db.Query(ctx, query, map[string]any{"inID": inID, "outID": outID, "data": data})
 			if err != nil {
+				if assertErr := som.AsAssertError(err); assertErr != nil {
+					return assertErr
+				}
 				return fmt.Errorf("could not create relation: %w", err)
 			}
 			var rawResult []internal.QueryResult[conv.{{.EdgeNameGo}}]
@@ -143,6 +146,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		goImport{Path: "context"},
 		goImport{Path: "errors"},
 		goImport{Path: "fmt"},
+		goImport{Alias: "som", Path: b.relativePkgPath()},
 		goImport{Alias: "models", Path: def.PkgModels},
 		goImport{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
 		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},

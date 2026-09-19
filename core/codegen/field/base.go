@@ -1,7 +1,9 @@
 package field
 
 import (
+	"fmt"
 	"strings"
+	"text/template"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/parser"
@@ -135,12 +137,71 @@ type BuildConfig struct {
 	SourcePkg      string
 	TargetPkg      string
 	ToDatabaseName func(base string) string
+
+	// AssertConfig resolves a constraint referenced via `som:"assert=<name>"`
+	// against the //go:build som definitions.
+	AssertConfig func(name string) *parser.AssertDef
 }
 
 type baseField struct {
 	*BuildConfig
 
 	source parser.Field
+
+	// lenFunc is the SurrealQL function measuring the length of the field's
+	// database value, used by the len constraint.
+	lenFunc string
+}
+
+// fieldDef holds the clauses of a DEFINE FIELD statement. Only Name, Table and
+// Type are required, every other clause is omitted when empty.
+type fieldDef struct {
+	Name        string
+	Table       string
+	Type        string
+	Default     string
+	Value       string
+	Assert      string
+	Permissions string
+}
+
+// defineFieldStmt renders the clauses in the order SurrealDB expects them.
+var defineFieldStmt = template.Must(template.New("defineField").Parse(
+	`DEFINE FIELD OVERWRITE {{.Name}} ON TABLE {{.Table}} TYPE {{.Type}}` +
+		`{{if .Default}} DEFAULT {{.Default}}{{end}}` +
+		`{{if .Value}} VALUE {{.Value}}{{end}}` +
+		`{{if .Assert}} ASSERT {{.Assert}}{{end}}` +
+		`{{if .Permissions}} PERMISSIONS {{.Permissions}}{{end}};`,
+))
+
+// defineField renders the DEFINE FIELD statement for this field, merging the
+// constraints declared via struct tags into the given built-in assert.
+//
+// The definition's Name is the full database path of the field, including the
+// prefix of any struct it is nested in.
+func (f *baseField) defineField(def fieldDef) string {
+	def.Assert = f.assertExpression(def.Name, def.Type, def.Assert)
+
+	var out strings.Builder
+	if err := defineFieldStmt.Execute(&out, def); err != nil {
+		// The template is a constant and every value is a plain string, so it
+		// can only fail if the template itself is broken.
+		panic(fmt.Sprintf("could not render field %s: %v", def.Name, err))
+	}
+
+	return out.String()
+}
+
+// define is the shorthand for the majority of fields, which define nothing
+// beyond their name and database type.
+func (f *baseField) define(table, prefix, dbType string) []string {
+	return []string{
+		f.defineField(fieldDef{
+			Name:  prefix + f.NameDatabase(),
+			Table: table,
+			Type:  dbType,
+		}),
+	}
 }
 
 func (f *baseField) ptr() jen.Code {

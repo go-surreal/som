@@ -29,6 +29,16 @@ func (f *FieldPassword) Parse(t gotype.Type, elem gotype.Type, _ *FieldContext) 
 	return &FieldPassword{fieldBase: newBase(t.Name()), Algorithm: parsePasswordAlgorithm(elem)}, nil
 }
 
+func (f *FieldPassword) Validate() error {
+	// SurrealDB evaluates ASSERT after VALUE, so a constraint would be checked
+	// against the stored hash instead of the password it was written for.
+	if err := f.rejectAsserts("som.Password does not support constraints, as they would be checked against the hash"); err != nil {
+		return err
+	}
+
+	return f.fieldBase.Validate()
+}
+
 func parsePasswordAlgorithm(t gotype.Type) PasswordAlgorithm {
 	origin := t.Origin()
 	if origin == nil {

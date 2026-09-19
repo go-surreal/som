@@ -96,6 +96,6 @@ func (f *ComplexID) filterFunc(ctx Context) jen.Code {
 		Id(f.NameGo()).Params().
 		Id(f.element.NameGoLower()).Types(def.TypeModel).
 		Block(
-			jen.Return(jen.Id("new"+f.source.StructName).Types(def.TypeModel).
+			jen.Return(jen.Id("new" + f.source.StructName).Types(def.TypeModel).
 				Params(idKey)))
 }

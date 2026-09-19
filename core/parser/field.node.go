@@ -20,6 +20,14 @@ func (f *FieldNode) Parse(t gotype.Type, elem gotype.Type, _ *FieldContext) (Fie
 	return &FieldNode{fieldBase: newBase(t.Name()), Node: elem.Name()}, nil
 }
 
+func (f *FieldNode) Validate() error {
+	if err := f.rejectAsserts("a record link does not support constraints"); err != nil {
+		return err
+	}
+
+	return f.fieldBase.Validate()
+}
+
 func (f *FieldNode) Verify(out *Output) error {
 	if err := f.fieldBase.Verify(out); err != nil {
 		return err

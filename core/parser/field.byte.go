@@ -16,3 +16,7 @@ func (f *FieldByte) Match(elem gotype.Type, _ *FieldContext) bool {
 func (f *FieldByte) Parse(t gotype.Type, _ gotype.Type, _ *FieldContext) (Field, error) {
 	return &FieldByte{fieldBase: newBase(t.Name())}, nil
 }
+
+func (f *FieldByte) Validate() error {
+	return f.validate(assertSupport{number: true, config: true})
+}

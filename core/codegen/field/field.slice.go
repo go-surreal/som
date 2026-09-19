@@ -62,12 +62,7 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 		dbType = "option<array<option<object>>>"
 	}
 
-	statements := []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s;",
-			prefix+f.NameDatabase(), table, dbType,
-		),
-	}
+	statements := f.define(table, prefix, dbType)
 
 	if isStruct {
 		nestedPrefix := prefix + f.NameDatabase() + ".*."

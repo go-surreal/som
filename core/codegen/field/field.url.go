@@ -1,7 +1,6 @@
 package field
 
 import (
-	"fmt"
 	"path"
 
 	"github.com/dave/jennifer/jen"
@@ -32,18 +31,18 @@ func (f *URL) TypeDatabase() string {
 }
 
 func (f *URL) SchemaStatements(table, prefix string) []string {
-	var extend string
+	assert := `$value == "" OR string::is_url($value)`
 	if f.source.Pointer() {
-		extend = "ASSERT $value == NONE OR $value == NULL OR string::is_url($value)"
-	} else {
-		extend = `ASSERT $value == "" OR string::is_url($value)`
+		assert = "$value == NONE OR $value == NULL OR string::is_url($value)"
 	}
 
 	return []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
-		),
+		f.defineField(fieldDef{
+			Name:   prefix + f.NameDatabase(),
+			Table:  table,
+			Type:   f.TypeDatabase(),
+			Assert: assert,
+		}),
 	}
 }
 

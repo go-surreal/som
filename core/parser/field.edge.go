@@ -20,6 +20,16 @@ func (f *FieldEdge) Parse(t gotype.Type, elem gotype.Type, _ *FieldContext) (Fie
 	return &FieldEdge{fieldBase: newBase(t.Name()), Edge: elem.Name()}, nil
 }
 
+func (f *FieldEdge) Validate() error {
+	// Edges are not real fields in the database schema, so there is no
+	// DEFINE FIELD statement a constraint could attach to.
+	if err := f.rejectAsserts("an edge does not support constraints"); err != nil {
+		return err
+	}
+
+	return f.fieldBase.Validate()
+}
+
 func (f *FieldEdge) Verify(out *Output) error {
 	if err := f.fieldBase.Verify(out); err != nil {
 		return err

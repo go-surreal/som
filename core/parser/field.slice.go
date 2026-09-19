@@ -40,7 +40,9 @@ func (f *FieldSlice) Validate() error {
 		return fmt.Errorf("field %s: a slice of the union %s is not supported yet", f.name, union.Union)
 	}
 
-	return nil
+	// On a slice, len constrains the number of items, not the size of any
+	// individual element.
+	return f.checkAsserts(assertSupport{length: true, config: true})
 }
 
 func (f *FieldSlice) Verify(out *Output) error {

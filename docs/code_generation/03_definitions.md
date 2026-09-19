@@ -1,8 +1,9 @@
 # Schema Definitions
 
 Some parts of the schema cannot be expressed with struct tags: full-text analyzers, search index
-configurations and [view](../models/07_views.md) projections. Those live in a definition file
-that the generator compiles and executes during generation.
+configurations, [view](../models/07_views.md) projections and the patterns and expressions behind
+a named [field constraint](../models/12_constraints.md). Those live in a definition file that the
+generator compiles and executes during generation.
 
 ## The Definition File
 
@@ -25,6 +26,7 @@ func Definitions() define.Definitions {
     return define.Definitions{
         Searches: []*define.SearchBuilder{searchEnglish, searchAutocomplete},
         Views:    []define.ViewDefinition{eventSummary},
+        Asserts:  []*define.AssertBuilder{phoneFormat},
     }
 }
 ```

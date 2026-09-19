@@ -1,8 +1,6 @@
 package field
 
 import (
-	"fmt"
-
 	"github.com/dave/jennifer/jen"
 	"github.com/go-surreal/som/core/codegen/def"
 	"github.com/go-surreal/som/core/parser"
@@ -31,18 +29,18 @@ func (f *Email) TypeDatabase() string {
 }
 
 func (f *Email) SchemaStatements(table, prefix string) []string {
-	var extend string
+	assert := `$value == "" OR string::is_email($value)`
 	if f.source.Pointer() {
-		extend = "ASSERT $value == NONE OR $value == NULL OR string::is_email($value)"
-	} else {
-		extend = `ASSERT $value == "" OR string::is_email($value)`
+		assert = "$value == NONE OR $value == NULL OR string::is_email($value)"
 	}
 
 	return []string{
-		fmt.Sprintf(
-			"DEFINE FIELD OVERWRITE %s ON TABLE %s TYPE %s %s;",
-			prefix+f.NameDatabase(), table, f.TypeDatabase(), extend,
-		),
+		f.defineField(fieldDef{
+			Name:   prefix + f.NameDatabase(),
+			Table:  table,
+			Type:   f.TypeDatabase(),
+			Assert: assert,
+		}),
 	}
 }
 

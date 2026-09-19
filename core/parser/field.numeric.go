@@ -51,3 +51,7 @@ func (f *FieldNumeric) Match(elem gotype.Type, _ *FieldContext) bool {
 func (f *FieldNumeric) Parse(t gotype.Type, elem gotype.Type, _ *FieldContext) (Field, error) {
 	return &FieldNumeric{fieldBase: newBase(t.Name()), Type: numericKinds[elem.Kind()]}, nil
 }
+
+func (f *FieldNumeric) Validate() error {
+	return f.validate(assertSupport{number: true, config: true})
+}

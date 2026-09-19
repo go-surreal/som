@@ -266,6 +266,23 @@ type Article struct {
 }
 ```
 
+## Field Constraints
+
+Constrain what a field may hold. The rules become an `ASSERT` clause on the field definition and
+are enforced by the database on every write:
+
+```go
+type User struct {
+    som.Node[som.ULID]
+
+    Name  string `som:"len=3..64"`
+    Age   int    `som:"min=0,max=130"`
+    Phone string `som:"assert=phone_format"`
+}
+```
+
+See [Field Constraints](12_constraints.md).
+
 ## Changefeed
 
 Attach a changefeed to a table by tagging the embedded `som.Node`:

@@ -4,7 +4,6 @@ package repo
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -14,25 +13,13 @@ import (
 	som "som.test/gen/som"
 	"som.test/gen/som/internal"
 	"som.test/gen/som/internal/cbor"
-	"github.com/surrealdb/surrealdb.go/pkg/connection"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
 	"golang.org/x/sync/singleflight"
 )
 
 func containsError(err error, msg string) bool {
-	if err == nil {
-		return false
-	}
-	var se connection.ServerError
-	if errors.As(err, &se) {
-		for cur := &se; cur != nil; cur = cur.Cause {
-			if strings.Contains(cur.Message, msg) {
-				return true
-			}
-		}
-		return false
-	}
-	return strings.Contains(err.Error(), msg)
+	_, ok := som.FindErrorMessage(err, msg)
+	return ok
 }
 
 // cacheInitGroup deduplicates concurrent cache initialization requests.
@@ -213,6 +200,9 @@ func (r *repo[N, K]) create(ctx context.Context, node *N) error {
 	data := r.info.MarshalOne(node)
 	result, err := r.info.CreateNew(ctx, r.db, r.name, data)
 	if err != nil {
+		if assertErr := som.AsAssertError(err); assertErr != nil {
+			return assertErr
+		}
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	*node = *result
@@ -223,6 +213,9 @@ func (r *repo[N, K]) createWithID(ctx context.Context, id K, node *N) error {
 	data := r.info.MarshalOne(node)
 	result, err := r.info.CreateOne(ctx, r.db, *r.recordID(id), data)
 	if err != nil {
+		if assertErr := som.AsAssertError(err); assertErr != nil {
+			return assertErr
+		}
 		return fmt.Errorf("could not create entity: %w", err)
 	}
 	*node = *result
@@ -237,6 +230,9 @@ func (r *repo[N, K]) insert(ctx context.Context, nodes []*N) error {
 	statement := "INSERT INTO " + r.name + " $data"
 	results, err := r.info.InsertAll(ctx, r.db, statement, map[string]any{"data": data})
 	if err != nil {
+		if assertErr := som.AsAssertError(err); assertErr != nil {
+			return assertErr
+		}
 		return fmt.Errorf("could not insert entities: %w", err)
 	}
 	if len(results) != len(nodes) {
@@ -268,6 +264,9 @@ func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) e
 	if err != nil {
 		if containsError(err, "optimistic_lock_failed") {
 			return fmt.Errorf("%w: %w", som.ErrOptimisticLock, err)
+		}
+		if assertErr := som.AsAssertError(err); assertErr != nil {
+			return assertErr
 		}
 		return fmt.Errorf("could not update entity: %w", err)
 	}

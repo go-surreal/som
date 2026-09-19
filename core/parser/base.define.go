@@ -49,11 +49,20 @@ type ViewDef struct {
 	GroupBy []string
 }
 
+// AssertDef represents a named field constraint.
+type AssertDef struct {
+	Name    string
+	Regex   string
+	Raw     string
+	Message string
+}
+
 // DefineOutput holds all parsed configuration from //go:build som files.
 type DefineOutput struct {
 	Analyzers []AnalyzerDef
 	Searches  []SearchDef
 	Views     []ViewDef
+	Asserts   []AssertDef
 }
 
 // defineOutputJSON matches the JSON structure from Definitions.ToJSON().
@@ -61,6 +70,14 @@ type defineOutputJSON struct {
 	Analyzers []analyzerJSON `json:"analyzers"`
 	Searches  []searchJSON   `json:"searches"`
 	Views     []viewJSON     `json:"views"`
+	Asserts   []assertJSON   `json:"asserts"`
+}
+
+type assertJSON struct {
+	Name    string `json:"name"`
+	Regex   string `json:"regex,omitempty"`
+	Raw     string `json:"raw,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 type viewJSON struct {
@@ -199,6 +216,13 @@ func main() {
 
 	for _, v := range jsonOutput.Views {
 		result.Views = append(result.Views, ViewDef(v))
+	}
+
+	for _, a := range jsonOutput.Asserts {
+		if a.Regex == "" && a.Raw == "" {
+			return nil, fmt.Errorf("assert %q: needs at least one of Regex() or Raw()", a.Name)
+		}
+		result.Asserts = append(result.Asserts, AssertDef(a))
 	}
 
 	return result, nil

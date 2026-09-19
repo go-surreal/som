@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
@@ -37,6 +38,9 @@ func (e annotates) Create(ctx context.Context, edge *model.Annotates) error {
 	data := conv.FromAnnotates(*edge)
 	res, err := e.db.Query(ctx, query, map[string]any{"inID": inID, "outID": outID, "data": data})
 	if err != nil {
+		if assertErr := som.AsAssertError(err); assertErr != nil {
+			return assertErr
+		}
 		return fmt.Errorf("could not create relation: %w", err)
 	}
 	var rawResult []internal.QueryResult[conv.Annotates]
