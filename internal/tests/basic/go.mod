@@ -7,18 +7,18 @@ replace github.com/go-surreal/som => ../../../
 tool github.com/go-surreal/som
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.16.0
-	github.com/fxamacker/cbor/v2 v2.9.3
+	github.com/brianvoe/gofakeit/v7 v7.18.0
+	github.com/fxamacker/cbor/v2 v2.9.6
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/moby/moby/api v1.55.0
+	github.com/moby/moby/api v1.56.1
 	github.com/paulmach/orb v0.13.0
 	github.com/peterstace/simplefeatures v0.59.0
 	github.com/surrealdb/surrealdb.go v1.7.0
 	github.com/testcontainers/testcontainers-go v0.44.0
-	github.com/twpayne/go-geom v1.6.1
-	golang.org/x/sync v0.22.0
+	github.com/twpayne/go-geom v1.7.0
+	golang.org/x/sync v0.24.0
 	gotest.tools/v3 v3.5.2
 )
 
@@ -43,7 +43,7 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-surreal/som v0.20.0 // indirect
+	github.com/go-surreal/som v0.21.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/klauspost/compress v1.18.7 // indirect
@@ -63,10 +63,10 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/shirou/gopsutil/v4 v4.26.6 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	github.com/stretchr/testify v1.11.1 // indirect
+	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
-	github.com/urfave/cli/v3 v3.11.0 // indirect
+	github.com/urfave/cli/v3 v3.14.0 // indirect
 	github.com/wzshiming/gotype v0.8.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
@@ -75,9 +75,10 @@ require (
 	go.opentelemetry.io/otel v1.44.0 // indirect
 	go.opentelemetry.io/otel/metric v1.44.0 // indirect
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
-	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
-	golang.org/x/mod v0.40.0 // indirect
+	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
+	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
