@@ -50,6 +50,16 @@ var ErrCacheNotSupported = errors.New("caching is not supported for nodes with c
 // the version string returned by the server cannot be parsed.
 var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
 
+// ErrIndexBuilding is returned when an index is rebuilt while the database is
+// still building it, e.g. shortly after a schema defining an index
+// concurrently was applied. The build already covers all records, so a
+// rebuild is only needed once it has finished:
+//
+//	if errors.Is(err, som.ErrIndexBuilding) {
+//	    // retry later
+//	}
+var ErrIndexBuilding = errors.New("index is still building")
+
 // ErrInvalid is returned when a write is rejected because a value it carries
 // is not allowed. It matches every such rejection regardless of what caught
 // it, so that a caller who only needs to turn the failure into a response can
