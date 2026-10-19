@@ -5,7 +5,14 @@ package index
 import (
 	"context"
 	"fmt"
+
+	som "som.test/gen/som"
 )
+
+// buildingMarker is part of the message SurrealDB returns when an index is
+// rebuilt while its build is still running. The error carries no structured
+// details, so the message is all there is to tell it apart.
+const buildingMarker = "is currently building"
 
 type Database interface {
 	Query(ctx context.Context, statement string, vars map[string]any) ([]byte, error)
@@ -21,9 +28,13 @@ func (r *rebuildable) Rebuild(ctx context.Context) error {
 	query := fmt.Sprintf("REBUILD INDEX %s ON TABLE %s", r.name, r.table)
 
 	_, err := r.db.Query(ctx, query, nil)
-	if err != nil {
-		return fmt.Errorf("could not rebuild index %s: %w", r.name, err)
+	if err == nil {
+		return nil
 	}
 
-	return nil
+	if _, isBuilding := som.FindErrorMessage(err, buildingMarker); isBuilding {
+		return fmt.Errorf("could not rebuild index %s: %w: %w", r.name, som.ErrIndexBuilding, err)
+	}
+
+	return fmt.Errorf("could not rebuild index %s: %w", r.name, err)
 }

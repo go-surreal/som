@@ -78,13 +78,13 @@ that intent cannot be derived from the model structs.
 
 ## Version Verification
 
-When creating a client, SOM automatically verifies that the connected SurrealDB server meets the minimum required version (currently **3.2.0**). If the version check fails, `NewClient` returns a `som.ErrUnsupportedVersion` error:
+When creating a client, SOM automatically verifies that the connected SurrealDB server meets the minimum required version (currently **3.3.4**). If the version check fails, `NewClient` returns a `som.ErrUnsupportedVersion` error:
 
 ```go
 client, err := repo.NewClient(ctx, config)
 if err != nil {
     if errors.Is(err, som.ErrUnsupportedVersion) {
-        log.Fatal("SurrealDB server version too old, please upgrade to 3.2.0+")
+        log.Fatal("SurrealDB server version too old, please upgrade to 3.3.4+")
     }
     log.Fatal(err)
 }
@@ -182,6 +182,7 @@ SOM automatically recognizes common domain errors:
 | `som.ErrNilID` / `som.ErrEmptyID` | Operation requires a valid record ID |
 | `som.ErrEmptyResponse` | Database returned an unexpected empty response |
 | `som.ErrCacheNotSupported` | Caching enabled for a node with a complex ID |
+| `som.ErrIndexBuilding` | Index rebuilt while its build is still running |
 | `som.ErrUnsupportedVersion` | Server version below minimum required |
 
 ### Error Kinds and Helpers
