@@ -2,10 +2,14 @@ package basic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/surrealdb/surrealdb.go"
+	"som.test/gen/som"
+	"som.test/gen/som/index"
 	"som.test/gen/som/repo"
 	"som.test/model"
 )
@@ -133,6 +137,33 @@ func TestIndexRebuildSoftDeleteIndex(t *testing.T) {
 	err := client.SpecialTypesRepo().Index().DeletedAt().Rebuild(ctx)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+// buildingDatabase answers every query the way SurrealDB answers a rebuild
+// of an index whose build is still running.
+type buildingDatabase struct{}
+
+func (buildingDatabase) Query(context.Context, string, map[string]any) ([]byte, error) {
+	queryErr := &surrealdb.QueryError{
+		Message: "Database index `__som__special_types_deleted_at` is currently building",
+	}
+
+	return nil, fmt.Errorf("query statement 0 failed: %w", queryErr)
+}
+
+func TestIndexRebuildWhileBuilding(t *testing.T) {
+	t.Parallel()
+
+	err := index.NewSpecialTypes(buildingDatabase{}).DeletedAt().Rebuild(context.Background())
+
+	if !errors.Is(err, som.ErrIndexBuilding) {
+		t.Fatalf("expected som.ErrIndexBuilding, got: %v", err)
+	}
+
+	var queryErr *surrealdb.QueryError
+	if !errors.As(err, &queryErr) {
+		t.Fatalf("expected the query error to stay reachable, got: %v", err)
 	}
 }
 

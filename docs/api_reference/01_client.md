@@ -182,6 +182,7 @@ SOM automatically recognizes common domain errors:
 | `som.ErrNilID` / `som.ErrEmptyID` | Operation requires a valid record ID |
 | `som.ErrEmptyResponse` | Database returned an unexpected empty response |
 | `som.ErrCacheNotSupported` | Caching enabled for a node with a complex ID |
+| `som.ErrIndexBuilding` | Index rebuilt while its build is still running |
 | `som.ErrUnsupportedVersion` | Server version below minimum required |
 
 ### Error Kinds and Helpers
