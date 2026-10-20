@@ -28,6 +28,9 @@ type SlugRepo interface {
 	CreateWithID(ctx context.Context, id string, slug *model.Slug) error
 	// Read returns the record for the given ID, if it exists.
 	Read(ctx context.Context, id string) (*model.Slug, bool, error)
+	// ReadForUpdate returns the record for the given ID, if it exists, and makes the
+	// active transaction fail to commit if the record is changed concurrently.
+	ReadForUpdate(ctx context.Context, id string) (*model.Slug, bool, error)
 	// Update updates the record for the given Slug model.
 	Update(ctx context.Context, slug *model.Slug) error
 	// Delete deletes the record for the given Slug model.
@@ -263,6 +266,22 @@ func (r *slug) Read(ctx context.Context, id string) (*model.Slug, bool, error) {
 		refreshFuncs = &eagerRefreshFuncs[model.Slug]{cacheID: internal.GetCacheKey[model.Slug](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+}
+
+// ReadForUpdate returns the record for the given id, if it exists.
+// The returned bool indicates whether the record was found or not.
+//
+// The record is registered for conflict detection in the active transaction:
+// if another transaction modifies or creates it before this one commits,
+// som.TxCommit fails and som.IsTransactionConflict reports true for the error.
+// Nothing is locked, so the transaction should be retried on conflict.
+// The cache is never used. Returns som.ErrTransactionRequired outside of a
+// transaction.
+func (r *slug) ReadForUpdate(ctx context.Context, id string) (*model.Slug, bool, error) {
+	if id == "" {
+		return nil, false, som.ErrEmptyID
+	}
+	return r.readForUpdate(ctx, r.recordID(id))
 }
 
 // Update updates the record for the given model.

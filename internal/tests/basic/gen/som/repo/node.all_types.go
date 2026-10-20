@@ -30,6 +30,9 @@ type AllTypesRepo interface {
 	CreateWithID(ctx context.Context, id string, allTypes *model.AllTypes) error
 	// Read returns the record for the given ID, if it exists.
 	Read(ctx context.Context, id string) (*model.AllTypes, bool, error)
+	// ReadForUpdate returns the record for the given ID, if it exists, and makes the
+	// active transaction fail to commit if the record is changed concurrently.
+	ReadForUpdate(ctx context.Context, id string) (*model.AllTypes, bool, error)
 	// Expand returns the full record a fragment of AllTypes was projected from, if it still exists.
 	Expand(ctx context.Context, fragment som.FragmentOf[*model.AllTypes]) (*model.AllTypes, bool, error)
 	// Update updates the record for the given AllTypes model.
@@ -292,6 +295,22 @@ func (r *allTypes) Read(ctx context.Context, id string) (*model.AllTypes, bool, 
 		refreshFuncs = &eagerRefreshFuncs[model.AllTypes]{cacheID: internal.GetCacheKey[model.AllTypes](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+}
+
+// ReadForUpdate returns the record for the given id, if it exists.
+// The returned bool indicates whether the record was found or not.
+//
+// The record is registered for conflict detection in the active transaction:
+// if another transaction modifies or creates it before this one commits,
+// som.TxCommit fails and som.IsTransactionConflict reports true for the error.
+// Nothing is locked, so the transaction should be retried on conflict.
+// The cache is never used. Returns som.ErrTransactionRequired outside of a
+// transaction.
+func (r *allTypes) ReadForUpdate(ctx context.Context, id string) (*model.AllTypes, bool, error) {
+	if id == "" {
+		return nil, false, som.ErrEmptyID
+	}
+	return r.readForUpdate(ctx, r.recordID(id))
 }
 
 // Expand returns the full record the given fragment was projected from, if it

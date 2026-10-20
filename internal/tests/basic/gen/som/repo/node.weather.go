@@ -24,6 +24,9 @@ type WeatherRepo interface {
 	CreateWithID(ctx context.Context, weather *model.Weather) error
 	// Read returns the record for the given key, if it exists.
 	Read(ctx context.Context, key model.WeatherKey) (*model.Weather, bool, error)
+	// ReadForUpdate returns the record for the given key, if it exists, and makes the
+	// active transaction fail to commit if the record is changed concurrently.
+	ReadForUpdate(ctx context.Context, key model.WeatherKey) (*model.Weather, bool, error)
 	// Expand returns the full record a fragment of Weather was projected from, if it still exists.
 	Expand(ctx context.Context, fragment som.FragmentOf[*model.Weather]) (*model.Weather, bool, error)
 	// Update updates the record for the given Weather model.
@@ -206,6 +209,18 @@ func (r *weather) Read(ctx context.Context, key model.WeatherKey) (*model.Weathe
 		return nil, false, som.ErrCacheNotSupported
 	}
 	return r.read(ctx, r.recordID(key))
+}
+
+// ReadForUpdate returns the record for the given key, if it exists.
+// The returned bool indicates whether the record was found or not.
+//
+// The record is registered for conflict detection in the active transaction:
+// if another transaction modifies or creates it before this one commits,
+// som.TxCommit fails and som.IsTransactionConflict reports true for the error.
+// Nothing is locked, so the transaction should be retried on conflict.
+// Returns som.ErrTransactionRequired outside of a transaction.
+func (r *weather) ReadForUpdate(ctx context.Context, key model.WeatherKey) (*model.Weather, bool, error) {
+	return r.readForUpdate(ctx, r.recordID(key))
 }
 
 // Expand returns the full record the given fragment was projected from, if it

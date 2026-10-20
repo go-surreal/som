@@ -24,6 +24,7 @@ type UserRepo interface {
     CreateWithID(ctx context.Context, id string, user *model.User) error
     Insert(ctx context.Context, users []*model.User) error
     Read(ctx context.Context, id string) (*model.User, bool, error)
+    ReadForUpdate(ctx context.Context, id string) (*model.User, bool, error)
     Update(ctx context.Context, user *model.User) error
     Delete(ctx context.Context, user *model.User) error
     Refresh(ctx context.Context, user *model.User) error
@@ -55,7 +56,7 @@ Additional methods appear depending on the features a model uses:
 
 Models with a [complex ID](../models/01_nodes.md#complex-id-types) differ slightly: there is no
 `Create` or `Insert` (the ID is part of the record), `CreateWithID(ctx, m)` takes only the model,
-and `Read(ctx, key)` takes the typed key struct instead of a string.
+and `Read(ctx, key)` / `ReadForUpdate(ctx, key)` take the typed key struct instead of a string.
 
 ## Create
 
@@ -127,6 +128,17 @@ if !exists {
 }
 fmt.Println("Found:", user.Name)
 ```
+
+## ReadForUpdate
+
+Fetch a record by ID within a transaction and make the transaction fail to commit if the record is changed concurrently:
+
+```go
+func (r *UserRepo) ReadForUpdate(ctx context.Context, id string) (*model.User, bool, error)
+```
+
+The return values match `Read`. A missing record is registered as well, so its concurrent creation also fails the commit.
+Outside of a transaction it returns `som.ErrTransactionRequired`. See [Locked Reads](../querying/07_transactions.md#locked-reads).
 
 ## Update
 

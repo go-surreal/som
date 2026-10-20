@@ -259,6 +259,28 @@ func (r *repo[N, K]) read(ctx context.Context, id *models.RecordID) (*N, bool, e
 	return result, true, nil
 }
 
+// readForUpdate reads the record and registers it for conflict detection in
+// the active transaction: if another transaction modifies the record before
+// the active one commits, the commit fails with a transaction conflict. A
+// missing record is registered as well, so a concurrent creation of it is a
+// conflict too. Nothing is locked, the check happens at commit time only.
+func (r *repo[N, K]) readForUpdate(ctx context.Context, id *models.RecordID) (*N, bool, error) {
+	if !internal.TxActive(ctx) {
+		return nil, false, som.ErrTransactionRequired
+	}
+
+	result, err := r.info.QueryOne(ctx, r.db, "SELECT * FROM $id FOR UPDATE", map[string]any{"id": id})
+	if err != nil {
+		return nil, false, fmt.Errorf("could not read entity for update: %w", err)
+	}
+
+	if result == nil {
+		return nil, false, nil
+	}
+
+	return result, true, nil
+}
+
 func (r *repo[N, K]) update(ctx context.Context, id *models.RecordID, node *N) error {
 	data := r.info.MarshalOne(node)
 	result, err := r.info.UpdateOne(ctx, r.db, id, data)
