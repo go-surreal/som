@@ -27,7 +27,7 @@ func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers 
 
 	workDir, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not determine working directory: %w", err)
 	}
 
 	if !strings.HasPrefix(dir, "./") {
@@ -36,7 +36,7 @@ func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers 
 
 	n, err := imp.Import(dir, workDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not import model package %s: %w", dir, err)
 	}
 
 	absDir, err := filepath.Abs(dir)
@@ -46,7 +46,7 @@ func Parse(dir string, outPkg string, typeHandlers []TypeHandler, fieldHandlers 
 
 	mod, err := gomod.FindGoMod(absDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not find go.mod for %s: %w", absDir, err)
 	}
 
 	diff := strings.TrimPrefix(absDir, mod.Dir())
