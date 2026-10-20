@@ -9,6 +9,24 @@ DEFINE TABLE OVERWRITE weather SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE weather TYPE [string, datetime];
 DEFINE FIELD OVERWRITE temperature ON TABLE weather TYPE float;
 
+DEFINE TABLE OVERWRITE validated SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE id ON TABLE validated TYPE string DEFAULT rand::ulid();
+DEFINE FIELD OVERWRITE name ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE contact ON TABLE validated TYPE object;
+DEFINE FIELD OVERWRITE contact.city ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE contact.email ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE contact_ptr ON TABLE validated TYPE option<object>;
+DEFINE FIELD OVERWRITE contact_ptr.city ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE contact_ptr.email ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE contacts ON TABLE validated TYPE option<array<object>>;
+DEFINE FIELD OVERWRITE contacts.*.city ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE contacts.*.email ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE code ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE code_ptr ON TABLE validated TYPE option<string>;
+DEFINE FIELD OVERWRITE codes ON TABLE validated TYPE option<array<string>>;
+DEFINE FIELD OVERWRITE ignored ON TABLE validated TYPE string;
+DEFINE FIELD OVERWRITE link ON TABLE validated TYPE option<record<validated>>;
+
 DEFINE TABLE OVERWRITE team_member SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE team_member TYPE { member: record<all_types>, forecast: record<weather> };
 DEFINE FIELD OVERWRITE role ON TABLE team_member TYPE string;
@@ -231,6 +249,10 @@ DEFINE FIELD OVERWRITE custom_name ON TABLE all_types TYPE string;
 DEFINE FIELD OVERWRITE field_hook_status ON TABLE all_types TYPE string;
 DEFINE FIELD OVERWRITE field_hook_detail ON TABLE all_types TYPE string;
 
+DEFINE TABLE OVERWRITE validated_edge SCHEMAFULL TYPE RELATION IN validated OUT all_types ENFORCED PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE id ON TABLE validated_edge TYPE string DEFAULT rand::ulid();
+DEFINE FIELD OVERWRITE note ON TABLE validated_edge TYPE string;
+
 DEFINE TABLE OVERWRITE edge_relation SCHEMAFULL TYPE RELATION IN all_types OUT special_types ENFORCED PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE edge_relation TYPE string DEFAULT rand::ulid();
 DEFINE FIELD OVERWRITE created_at ON TABLE edge_relation TYPE option<datetime> VALUE $before OR time::now() READONLY;
@@ -242,6 +264,9 @@ DEFINE FIELD OVERWRITE meta.is_active ON TABLE edge_relation TYPE bool;
 DEFINE TABLE OVERWRITE annotates SCHEMAFULL TYPE RELATION IN drawing OUT square|circle ENFORCED PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE id ON TABLE annotates TYPE string DEFAULT rand::ulid();
 DEFINE FIELD OVERWRITE note ON TABLE annotates TYPE string;
+
+DEFINE TABLE OVERWRITE validated_log DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE code ON TABLE validated_log TYPE string;
 
 DEFINE TABLE OVERWRITE event_log DROP SCHEMAFULL TYPE NORMAL PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE category ON TABLE event_log TYPE string;
@@ -262,6 +287,10 @@ IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "view:all_types_su
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__weather_count")) != "6ba5cc6444c000d52e5a810994ae258813dc54a96b164884b0ca004aa2e04509" {
 	DEFINE INDEX OVERWRITE __som__weather_count ON weather COUNT;
 	UPSERT type::record("__som__schema", "index:__som__weather_count") SET hash = "6ba5cc6444c000d52e5a810994ae258813dc54a96b164884b0ca004aa2e04509";
+};
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__validated_count")) != "9756d02a339bf6599722839e10cd77ecb7f4c430557cb0f11bbb2c2dc6d13730" {
+	DEFINE INDEX OVERWRITE __som__validated_count ON validated COUNT;
+	UPSERT type::record("__som__schema", "index:__som__validated_count") SET hash = "9756d02a339bf6599722839e10cd77ecb7f4c430557cb0f11bbb2c2dc6d13730";
 };
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__team_member_count")) != "48c90dcaf91c76404d1fee94b25b04398360dfaa53d0dffc5c18245289558f33" {
 	DEFINE INDEX OVERWRITE __som__team_member_count ON team_member COUNT;
@@ -350,6 +379,10 @@ IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__all_
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__all_types_index_field_credentials_username")) != "06e4d2064ba81bb20f3cb1d4758bfac6616162796311c3badf9df2201346aa7f" {
 	DEFINE INDEX OVERWRITE __som__all_types_index_field_credentials_username ON all_types FIELDS field_credentials.username CONCURRENTLY;
 	UPSERT type::record("__som__schema", "index:__som__all_types_index_field_credentials_username") SET hash = "06e4d2064ba81bb20f3cb1d4758bfac6616162796311c3badf9df2201346aa7f";
+};
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__validated_edge_count")) != "7cb8ee723b6f8320ce71e5e91fe44b20322c46f275ebaf2c6da994e406e7b583" {
+	DEFINE INDEX OVERWRITE __som__validated_edge_count ON validated_edge COUNT;
+	UPSERT type::record("__som__schema", "index:__som__validated_edge_count") SET hash = "7cb8ee723b6f8320ce71e5e91fe44b20322c46f275ebaf2c6da994e406e7b583";
 };
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__edge_relation_count")) != "6516eaf1ad0812f340a4255a499c974a4dd145d077b99e2aae5b0d25c7a6e55d" {
 	DEFINE INDEX OVERWRITE __som__edge_relation_count ON edge_relation COUNT;

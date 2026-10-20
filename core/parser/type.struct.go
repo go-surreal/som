@@ -14,6 +14,10 @@ import (
 type Struct struct {
 	Name   string
 	Fields []Field
+
+	// HasValidate reports whether the struct type itself provides a
+	// "Validate() error" method.
+	HasValidate bool
 }
 
 func (s *Struct) Match(t gotype.Type, _ *TypeContext) bool {
@@ -44,7 +48,7 @@ func (s *Struct) Validate(ctx *TypeContext) error {
 }
 
 func ParseStruct(v gotype.Type, ctx *TypeContext) (*Struct, error) {
-	str := &Struct{Name: v.Name()}
+	str := &Struct{Name: v.Name(), HasValidate: hasValidateMethod(v)}
 
 	nf := v.NumField()
 

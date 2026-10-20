@@ -8,6 +8,10 @@ type DatabaseObject struct {
 	Name           string
 	Fields         []Field
 	IsArrayIndexed bool
+
+	// HasValidate reports whether the struct type provides a
+	// "Validate() error" method of its own.
+	HasValidate bool
 }
 
 func (o *DatabaseObject) NameGo() string {
