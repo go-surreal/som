@@ -23,7 +23,8 @@ defer client.Close()
 ```
 
 `NewClient` creates the namespace and database if they do not exist yet (`DEFINE NAMESPACE /
-DATABASE IF NOT EXISTS`), so no manual bootstrapping is required.
+DATABASE IF NOT EXISTS`), so no manual bootstrapping is required. For a database som owns,
+set `Strict: true` — see [Strict Mode](#strict-mode).
 
 ## Configuration Options
 
@@ -49,10 +50,49 @@ type Config struct {
     // tables with an expiry (TTL) configured. Defaults to one minute when unset.
     // It has no effect if no model embeds som.Expiry.
     ExpiryPurgeInterval time.Duration
+
+    // Strict marks the database as strict on creation.
+    Strict bool
 }
 ```
 
 See [Expiry (TTL)](../models/09_expiry.md) for details on the purge behaviour.
+
+## Strict Mode
+
+`Strict: true` appends `STRICT` to the `DEFINE DATABASE` statement, which makes SurrealDB
+refuse any resource that has not been defined first — a `CREATE` against an unknown table
+fails with `The table '...' does not exist` instead of creating it on the fly.
+
+This is the preferred way to set up a database for som. som generates a complete schema for
+every model, so nothing it queries is ever undefined, and strict mode turns the schema into
+an enforced contract: a stray table name can no longer appear in the database by accident.
+
+```go
+client, err := repo.NewClient(ctx, repo.Config{
+    Address:   "ws://localhost:8000",
+    Username:  "root",
+    Password:  "root",
+    Namespace: "myapp",
+    Database:  "production",
+    Strict:    true,
+})
+```
+
+Two limits are worth knowing:
+
+- **It only applies to a database som creates.** The statement is
+  `DEFINE DATABASE IF NOT EXISTS <db> STRICT`, so pointing a strict config at a database that
+  already exists does nothing — it keeps the mode it was created with. To convert an existing
+  database, run `DEFINE DATABASE OVERWRITE <db> STRICT` yourself, after checking what that
+  does to your data.
+- **It affects the whole database, not just som.** If other services or hand-written SurrealQL
+  share the same database and rely on implicit table creation, they will break too. Only
+  enable it where som owns the database.
+
+Strict mode is a per-database setting as of SurrealDB 3.0. The older server-level
+`--strict` / `SURREAL_STRICT` flag is ignored by current versions, which log
+`Strict mode is no longer defined on the server level` on startup.
 
 ## Applying the Schema
 

@@ -47,10 +47,9 @@ func TestMain(m *testing.M) {
 	req := testcontainers.ContainerRequest{
 		Image: "surrealdb/surrealdb:v" + surrealDBVersion,
 		Env: map[string]string{
-			"SURREAL_PATH":   "memory",
-			"SURREAL_STRICT": "true",
-			"SURREAL_USER":   sharedUsername,
-			"SURREAL_PASS":   sharedPassword,
+			"SURREAL_PATH": "memory",
+			"SURREAL_USER": sharedUsername,
+			"SURREAL_PASS": sharedPassword,
 		},
 		Cmd: []string{
 			"start", "--allow-funcs", "--log", "trace",
@@ -115,6 +114,7 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		Password:  sharedPassword,
 		Namespace: namespace,
 		Database:  database,
+		Strict:    true,
 	}
 
 	var client *repo.ClientImpl
