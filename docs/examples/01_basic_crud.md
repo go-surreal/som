@@ -124,7 +124,7 @@ func main() {
 
 1. Start SurrealDB:
    ```bash
-   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.2.0 \
+   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.3.4 \
        start --user root --pass root
    ```
 

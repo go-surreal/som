@@ -47,9 +47,19 @@ var ErrDeletedModel = errors.New("model has been deleted")
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
 // ErrUnsupportedVersion is returned when the connected SurrealDB instance
-// is running a version older than the minimum required (3.2.0), or when
+// is running a version older than the minimum required (3.3.4), or when
 // the version string returned by the server cannot be parsed.
 var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
+
+// ErrIndexBuilding is returned when an index is rebuilt while the database is
+// still building it, e.g. shortly after a schema defining an index
+// concurrently was applied. The build already covers all records, so a
+// rebuild is only needed once it has finished:
+//
+//	if errors.Is(err, som.ErrIndexBuilding) {
+//	    // retry later
+//	}
+var ErrIndexBuilding = errors.New("index is still building")
 
 // ErrInvalid is returned when a write is rejected because a value it carries
 // is not allowed. It matches every such rejection regardless of what caught

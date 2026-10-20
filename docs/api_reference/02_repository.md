@@ -266,6 +266,17 @@ Access the index manager for this table. Each index exposes a `Rebuild(ctx)` met
 err := client.UserRepo().Index().Count().Rebuild(ctx)
 ```
 
+Indexes defined concurrently are built in the background after `ApplySchema`. Rebuilding one
+before that build has finished returns `som.ErrIndexBuilding`. The running build already covers
+all records, so retry only once it is done:
+
+```go
+err := client.UserRepo().Index().DeletedAt().Rebuild(ctx)
+if errors.Is(err, som.ErrIndexBuilding) {
+    // retry later
+}
+```
+
 ## Query
 
 Access the query builder for complex queries:
