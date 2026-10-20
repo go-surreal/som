@@ -29,6 +29,15 @@ type Config struct {
 	// tables with an expiry (TTL) configured. Defaults to one minute when unset.
 	// It has no effect if no model embeds som.Expiry.
 	ExpiryPurgeInterval time.Duration
+
+	// Strict marks the database as strict on creation, so that no resource can
+	// be used before it has been defined. Since som generates a complete schema,
+	// this turns any access to an undefined table into an error instead of
+	// silently creating it.
+	//
+	// It only takes effect for a database that does not exist yet: an existing
+	// database keeps whatever mode it was created with.
+	Strict bool
 }
 
 type dbConn struct {
@@ -406,8 +415,13 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 			return nil, fmt.Errorf("failed to set namespace: %w", err)
 		}
 
+		strict := ""
+		if conf.Strict {
+			strict = " STRICT"
+		}
+
 		_, err = surrealdb.Query[any](ctx, db,
-			fmt.Sprintf("DEFINE DATABASE IF NOT EXISTS %s;", conf.Database),
+			fmt.Sprintf("DEFINE DATABASE IF NOT EXISTS %s%s;", conf.Database, strict),
 			nil)
 		if err != nil {
 			_ = db.Close(ctx)
