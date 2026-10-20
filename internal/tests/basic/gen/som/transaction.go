@@ -17,3 +17,7 @@ var ErrTransactionAlreadyActive = internal.ErrTxAlreadyActive
 // ErrLiveNotSupportedInTx is returned when a live query is attempted
 // within a transaction context.
 var ErrLiveNotSupportedInTx = internal.ErrTxLiveNotSupported
+
+// ErrTransactionRequired is returned when an operation that only has an effect
+// within a transaction, such as a locked read, is called without one.
+var ErrTransactionRequired = internal.ErrTxRequired

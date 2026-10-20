@@ -29,6 +29,9 @@ type LocationRepo interface {
 	CreateWithID(ctx context.Context, id string, location *model.Location) error
 	// Read returns the record for the given ID, if it exists.
 	Read(ctx context.Context, id string) (*model.Location, bool, error)
+	// ReadForUpdate returns the record for the given ID, if it exists, and makes the
+	// active transaction fail to commit if the record is changed concurrently.
+	ReadForUpdate(ctx context.Context, id string) (*model.Location, bool, error)
 	// Update updates the record for the given Location model.
 	Update(ctx context.Context, location *model.Location) error
 	// Delete deletes the record for the given Location model.
@@ -286,6 +289,22 @@ func (r *location) Read(ctx context.Context, id string) (*model.Location, bool, 
 		refreshFuncs = &eagerRefreshFuncs[model.Location]{cacheID: internal.GetCacheKey[model.Location](ctx), queryAll: queryAll, countAll: countAll, idFunc: idFunc}
 	}
 	return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
+}
+
+// ReadForUpdate returns the record for the given id, if it exists.
+// The returned bool indicates whether the record was found or not.
+//
+// The record is registered for conflict detection in the active transaction:
+// if another transaction modifies or creates it before this one commits,
+// som.TxCommit fails and som.IsTransactionConflict reports true for the error.
+// Nothing is locked, so the transaction should be retried on conflict.
+// The cache is never used. Returns som.ErrTransactionRequired outside of a
+// transaction.
+func (r *location) ReadForUpdate(ctx context.Context, id string) (*model.Location, bool, error) {
+	if id == "" {
+		return nil, false, som.ErrEmptyID
+	}
+	return r.readForUpdate(ctx, r.recordID(id))
 }
 
 // Update updates the record for the given model.

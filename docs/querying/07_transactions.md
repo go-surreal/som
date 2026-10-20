@@ -65,6 +65,48 @@ err = client.UserRepo().Relate().Follows().Create(txCtx, follows)
 return som.TxCommit(txCtx)
 ```
 
+## Locked Reads
+
+A plain `Read` inside a transaction sees a consistent snapshot, but the transaction still commits if the record was changed by someone else in the meantime. When a record is only read to make a decision, that silently builds on stale data. `ReadForUpdate` closes this gap using SurrealDB's `SELECT ... FOR UPDATE` (requires SurrealDB 3.3+):
+
+```go
+func placeOrder(ctx context.Context, client som.Client, accountID string) error {
+    txCtx, cancel := som.TxStart(ctx)
+    defer cancel()
+
+    account, exists, err := client.AccountRepo().ReadForUpdate(txCtx, accountID)
+    if err != nil {
+        return err
+    }
+    if !exists || account.Status != "active" {
+        return errors.New("account is not active")
+    }
+
+    if err := client.OrderRepo().Create(txCtx, &model.Order{Account: account}); err != nil {
+        return err
+    }
+
+    return som.TxCommit(txCtx)
+}
+```
+
+If another transaction modifies the account before `TxCommit`, the commit fails and `som.IsTransactionConflict(err)` reports `true`. The whole transaction can then be retried:
+
+```go
+for {
+    err := placeOrder(ctx, client, accountID)
+    if !som.IsTransactionConflict(err) {
+        return err
+    }
+}
+```
+
+- **No lock is taken**: Nobody waits. The conflict check runs at commit time, so plan for retries.
+- **Missing records count too**: Reading a non-existent ID registers it as well. If a concurrent transaction creates the record, the commit fails. This makes get-or-create logic safe.
+- **Only needed for records you don't write**: A record the transaction also writes is already checked for conflicts on commit.
+- **Single records only**: The read is bound to a record ID. Queries over a table are not protected, so concurrently created records matching a filter are not detected.
+- **Transaction required**: Outside of a transaction, `ReadForUpdate` returns `ErrTransactionRequired`. It never uses the cache.
+
 ## Behavior Notes
 
 - **No nesting**: Calling `TxStart` on a context that already has an active transaction will panic with `ErrTransactionAlreadyActive`.
@@ -79,3 +121,4 @@ return som.TxCommit(txCtx)
 | `ErrTransactionClosed` | Operation attempted after commit or cancel |
 | `ErrTransactionAlreadyActive` | Nested `TxStart` attempted (panics) |
 | `ErrLiveNotSupportedInTx` | Live query attempted within a transaction |
+| `ErrTransactionRequired` | `ReadForUpdate` called without an active transaction |

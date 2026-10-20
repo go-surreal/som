@@ -34,11 +34,17 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			CreateWithID(ctx context.Context, id string, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Read returns the record for the given ID, if it exists.
 			Read(ctx context.Context, id string) (*model.{{.NameGo}}, bool, error)
+			// ReadForUpdate returns the record for the given ID, if it exists, and makes the
+			// active transaction fail to commit if the record is changed concurrently.
+			ReadForUpdate(ctx context.Context, id string) (*model.{{.NameGo}}, bool, error)
 			{{- else}}
 			// CreateWithID creates a new record with the given key for the {{.NameGo}} model.
 			CreateWithID(ctx context.Context, {{.NameGoLower}} *model.{{.NameGo}}) error
 			// Read returns the record for the given key, if it exists.
 			Read(ctx context.Context, key {{.KeyType}}) (*model.{{.NameGo}}, bool, error)
+			// ReadForUpdate returns the record for the given key, if it exists, and makes the
+			// active transaction fail to commit if the record is changed concurrently.
+			ReadForUpdate(ctx context.Context, key {{.KeyType}}) (*model.{{.NameGo}}, bool, error)
 			{{- end}}
 			{{- if .HasFragments}}
 			// Expand returns the full record a fragment of {{.NameGo}} was projected from, if it still exists.
@@ -265,6 +271,22 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 			}
 			return r.readWithCache(ctx, id, rid, cache, refreshFuncs)
 		}
+
+		// ReadForUpdate returns the record for the given id, if it exists.
+		// The returned bool indicates whether the record was found or not.
+		//
+		// The record is registered for conflict detection in the active transaction:
+		// if another transaction modifies or creates it before this one commits,
+		// som.TxCommit fails and som.IsTransactionConflict reports true for the error.
+		// Nothing is locked, so the transaction should be retried on conflict.
+		// The cache is never used. Returns som.ErrTransactionRequired outside of a
+		// transaction.
+		func (r *{{.NameGoLower}}) ReadForUpdate(ctx context.Context, id string) (*model.{{.NameGo}}, bool, error) {
+			if id == "" {
+				return nil, false, som.ErrEmptyID
+			}
+			return r.readForUpdate(ctx, r.recordID(id))
+		}
 		{{else}}
 		// CreateWithID creates a new record for the {{.NameGo}} model using its embedded key.
 		// The node must have a non-zero ID set.
@@ -289,6 +311,18 @@ func (b *build) buildNodeRepoFile(node *field.NodeTable) error {
 				return nil, false, som.ErrCacheNotSupported
 			}
 			return r.read(ctx, r.recordID(key))
+		}
+
+		// ReadForUpdate returns the record for the given key, if it exists.
+		// The returned bool indicates whether the record was found or not.
+		//
+		// The record is registered for conflict detection in the active transaction:
+		// if another transaction modifies or creates it before this one commits,
+		// som.TxCommit fails and som.IsTransactionConflict reports true for the error.
+		// Nothing is locked, so the transaction should be retried on conflict.
+		// Returns som.ErrTransactionRequired outside of a transaction.
+		func (r *{{.NameGoLower}}) ReadForUpdate(ctx context.Context, key {{.KeyType}}) (*model.{{.NameGo}}, bool, error) {
+			return r.readForUpdate(ctx, r.recordID(key))
 		}
 		{{end}}
 		{{- if .HasFragments}}

@@ -12,6 +12,7 @@ var (
 	ErrTxClosed           = errors.New("transaction is closed")
 	ErrTxAlreadyActive    = errors.New("transaction is already active in this context")
 	ErrTxLiveNotSupported = errors.New("live queries are not supported within transactions")
+	ErrTxRequired         = errors.New("operation requires an active transaction")
 )
 
 type transactable interface {

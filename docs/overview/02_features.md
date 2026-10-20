@@ -458,6 +458,9 @@ err = client.PostRepo().Create(txCtx, post)
 err = som.TxCommit(txCtx) // Atomic commit
 ```
 
+Use `ReadForUpdate` for records that a transaction only reads as decision input. The commit then fails
+with a conflict if the record was changed concurrently, instead of silently building on stale data.
+
 ### Between Filter
 
 Range filter with configurable bound inclusivity:
