@@ -19,6 +19,10 @@ type Edge struct {
 	OptimisticLock bool
 	Changefeed     string
 	SoftDelete     bool
+
+	// HasValidate reports whether the model type itself provides a
+	// "Validate() error" method.
+	HasValidate bool
 }
 
 func (e *Edge) Match(t gotype.Type, ctx *TypeContext) bool {
@@ -87,7 +91,7 @@ func ParseEdge(v gotype.Type, ctx *TypeContext) (*Edge, error) {
 	outPkg := ctx.OutPkg
 	internalPkg := path.Join(outPkg, "internal")
 
-	edge := &Edge{Name: v.Name()}
+	edge := &Edge{Name: v.Name(), HasValidate: hasValidateMethod(v)}
 
 	var features FeatureSet
 
