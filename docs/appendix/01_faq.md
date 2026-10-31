@@ -160,14 +160,18 @@ fmt.Println(user.ID())  // Use ID() method, not a field
 
 ### Live query channel closes unexpectedly
 
-The channel closes when the context is cancelled or the server terminates the subscription. The
-latter arrives as a `LiveKilled` event:
+The channel closes when the context is cancelled, the server terminates the subscription, or the
+connection to the database is lost. The latter two arrive as a `LiveKilled` or `LiveDisconnected`
+event:
 
 ```go
 for update := range updates {
     switch res := update.(type) {
     case query.LiveKilled[*model.User]:
         // server terminated the live query; re-subscribe if needed
+        return
+    case query.LiveDisconnected[*model.User]:
+        // connection was lost; re-subscribe on a new connection if needed
         return
     case query.LiveUpdate[*model.User]:
         user, err := res.Get()

@@ -376,6 +376,52 @@ func TestLiveQueryKilled(t *testing.T) {
 	}
 }
 
+func TestLiveQueryDisconnected(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	liveChan, err := client.LocationRepo().Query().Live(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client.Close()
+
+	select {
+
+	case res, more := <-liveChan:
+		if !more {
+			t.Fatal("live channel closed without a disconnected event")
+		}
+
+		_, ok := res.(query.LiveDisconnected[*model.Location])
+		if !ok {
+			t.Fatalf("expected LiveDisconnected event, got %T", res)
+		}
+
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for disconnected event after closing the client")
+	}
+
+	select {
+
+	case _, more := <-liveChan:
+		if more {
+			t.Fatal("expected live channel to close after the disconnected event")
+		}
+
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout waiting for live channel to close after the disconnected event")
+	}
+}
+
 func TestLiveQueryWithFetch(t *testing.T) {
 	t.Parallel()
 

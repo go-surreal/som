@@ -47,6 +47,10 @@ for update := range liveChan {
     case query.LiveKilled[*model.User]:
         fmt.Println("Live query was terminated by the server")
         return
+
+    case query.LiveDisconnected[*model.User]:
+        fmt.Println("Connection to the database was lost")
+        return
     }
 }
 ```
@@ -61,10 +65,15 @@ Each update received on the channel implements `LiveResult[M]`. Use type asserti
 | `LiveUpdate[M]` | An existing record matching the query was updated |
 | `LiveDelete[M]` | A record matching the query was deleted |
 | `LiveKilled[M]` | The live query was terminated by the server |
+| `LiveDisconnected[M]` | The connection to the database was lost or closed |
 
 `LiveCreate`, `LiveUpdate`, and `LiveDelete` each provide a `Get() (M, error)` method to access the affected record.
 
 `LiveKilled` is emitted when the server terminates the live query (e.g., table removed, permissions changed). It does not carry data.
+
+`LiveDisconnected` is emitted when the connection to the database is lost or the client is closed. The live query may still exist on the server, but no more updates will arrive for it; re-subscribe on a new connection if needed. It does not carry data.
+
+Both `LiveKilled` and `LiveDisconnected` are always the last event before the channel closes.
 
 ## Live Count
 

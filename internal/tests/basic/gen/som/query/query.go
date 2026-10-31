@@ -206,6 +206,8 @@ func live[M any, R any](
 	go func() {
 		defer close(out)
 
+		wasKilled := false
+
 		for {
 			select {
 
@@ -214,19 +216,35 @@ func live[M any, R any](
 
 			case data, ok := <-in:
 				if !ok {
+					// Unless the context is done, the notifications only end
+					// after a KILLED notification or when the connection is lost.
+					if !wasKilled && ctx.Err() == nil {
+						sendLiveResult(ctx, out, &liveDisconnected[R]{})
+					}
+
 					return
 				}
 
-				select {
-				case <-ctx.Done():
+				result := toLiveResult(data, info)
+				_, wasKilled = result.(LiveKilled[R])
+
+				if !sendLiveResult(ctx, out, result) {
 					return
-				case out <- toLiveResult(data, info):
 				}
 			}
 		}
 	}()
 
 	return out
+}
+
+func sendLiveResult[R any](ctx context.Context, out chan<- LiveResult[R], result LiveResult[R]) bool {
+	select {
+	case <-ctx.Done():
+		return false
+	case out <- result:
+		return true
+	}
 }
 
 func toLiveResult[M any, R any](
@@ -324,6 +342,13 @@ type LiveKilled[M any] interface {
 	killed()
 }
 
+// LiveDisconnected is the last result of a live query whose connection to the
+// database was lost or closed. Unlike LiveKilled, the live query may still
+// exist on the server, but no more notifications will be received for it.
+type LiveDisconnected[M any] interface {
+	disconnected()
+}
+
 type liveCreate[M any] struct {
 	liveResult[M]
 }
@@ -347,6 +372,12 @@ type liveKilled[M any] struct{}
 func (*liveKilled[M]) live() {}
 
 func (*liveKilled[M]) killed() {}
+
+type liveDisconnected[M any] struct{}
+
+func (*liveDisconnected[M]) live() {}
+
+func (*liveDisconnected[M]) disconnected() {}
 
 type liveResult[M any] struct {
 	res M
