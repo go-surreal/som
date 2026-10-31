@@ -87,7 +87,7 @@ type User struct {
 
 1. Verify SurrealDB is running:
    ```bash
-   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.3.4 \
+   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.3.5 \
        start --user root --pass root
    ```
 
