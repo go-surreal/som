@@ -4,7 +4,7 @@
 
 - **Go 1.27.1** - SOM uses generics, iterators and generic methods extensively. During this phase of the project,
   only ever the latest version of Go is supported.
-- **SurrealDB 3.x** - Tested against version 3.3.4
+- **SurrealDB 3.x** - Tested against version 3.3.5
 
 ## Install SOM Generator
 
@@ -112,7 +112,7 @@ import (
 ### Using Docker (Recommended)
 
 ```bash
-docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.3.4 \
+docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.3.5 \
     start --user root --pass root
 ```
 
@@ -130,7 +130,7 @@ surreal start --user root --pass root --bind 0.0.0.0:8000
 version: '3'
 services:
   surrealdb:
-    image: surrealdb/surrealdb:v3.3.4
+    image: surrealdb/surrealdb:v3.3.5
     ports:
       - "8000:8000"
     command: start --user root --pass root
