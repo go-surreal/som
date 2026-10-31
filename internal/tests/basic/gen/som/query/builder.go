@@ -538,7 +538,7 @@ func (b BuilderOf[M, R]) LiveCount(ctx context.Context) (<-chan int, error) {
 				case LiveDelete[R]:
 					count--
 
-				case LiveKilled[R]:
+				case LiveKilled[R], LiveDisconnected[R]:
 					return
 
 				default:

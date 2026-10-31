@@ -285,8 +285,8 @@ Subscribe to real-time updates:
 func (b Builder[M]) Live(ctx context.Context) (<-chan LiveResult[*M], error)
 ```
 
-`LiveResult` is an interface; each event is one of `LiveCreate`, `LiveUpdate`, `LiveDelete` or
-`LiveKilled`:
+`LiveResult` is an interface; each event is one of `LiveCreate`, `LiveUpdate`, `LiveDelete`,
+`LiveKilled` or `LiveDisconnected`:
 
 ```go
 updates, err := client.UserRepo().Query().
@@ -298,7 +298,7 @@ for update := range updates {
     case query.LiveCreate[*model.User]:
         user, err := res.Get()
         ...
-    case query.LiveKilled[*model.User]:
+    case query.LiveKilled[*model.User], query.LiveDisconnected[*model.User]:
         return
     }
 }
@@ -529,6 +529,7 @@ type LiveCreate[M any] interface{ Get() (M, error) }
 type LiveUpdate[M any] interface{ Get() (M, error) }
 type LiveDelete[M any] interface{ Get() (M, error) }
 type LiveKilled[M any] interface{ ... }  // server terminated the subscription
+type LiveDisconnected[M any] interface{ ... }  // connection to the database was lost or closed
 ```
 
 ## SearchResult Type
