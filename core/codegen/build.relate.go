@@ -12,11 +12,14 @@ import (
 
 type relateBuilder struct {
 	*baseBuilder
+
+	validate *validation
 }
 
-func newRelateBuilder(input *input, fs *fs.FS, basePkg, pkgName string) *relateBuilder {
+func newRelateBuilder(input *input, fs *fs.FS, basePkg, pkgName string, validate *validation) *relateBuilder {
 	return &relateBuilder{
 		baseBuilder: newBaseBuilder(input, fs, basePkg, pkgName),
+		validate:    validate,
 	}
 }
 
@@ -106,6 +109,11 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 			if edge.ID() != "" {
 				return errors.New("ID must not be set for an edge to be created")
 			}
+			{{- if .Validate}}
+			if err := validate.{{.EdgeNameGo}}(edge); err != nil {
+				return err
+			}
+			{{- end}}
 			{{.InIDStmts}}
 			{{.OutIDStmts}}
 			query := "RELATE $inID->{{.EdgeNameDB}}->$outID CONTENT $data"
@@ -151,6 +159,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		goImport{Alias: "cbor", Path: b.relativePkgPath(def.PkgCBORHelpers)},
 		goImport{Alias: "conv", Path: b.relativePkgPath(def.PkgConv)},
 		goImport{Alias: "internal", Path: b.relativePkgPath(def.PkgInternal)},
+		goImport{Alias: "validate", Path: b.relativePkgPath(def.PkgValidate)},
 		goImport{Alias: "model", Path: b.sourcePkgPath},
 	)
 
@@ -158,6 +167,7 @@ func (b *relateBuilder) buildEdgeFile(edge *field.EdgeTable) error {
 		"TypeName":   edge.NameGoLower(),
 		"EdgeNameGo": edge.NameGo(),
 		"EdgeNameDB": edge.NameDatabase(),
+		"Validate":   b.validate.Edge(edge),
 		"InIDStmts":  file.code(b.edgeEndID(edge.In, "inID", "incoming")),
 		"OutIDStmts": file.code(b.edgeEndID(edge.Out, "outID", "outgoing")),
 	}

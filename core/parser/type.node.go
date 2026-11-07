@@ -24,6 +24,10 @@ type Node struct {
 	SoftDelete     bool
 	Expiry         bool
 	ExpiryDuration string
+
+	// HasValidate reports whether the model type itself provides a
+	// "Validate() error" method.
+	HasValidate bool
 }
 
 func (n *Node) Match(t gotype.Type, ctx *TypeContext) bool {
@@ -143,7 +147,7 @@ func ParseNode(v gotype.Type, ctx *TypeContext) (*Node, error) {
 	outPkg := ctx.OutPkg
 	internalPkg := path.Join(outPkg, "internal")
 
-	node := &Node{Name: v.Name()}
+	node := &Node{Name: v.Name(), HasValidate: hasValidateMethod(v)}
 
 	var features FeatureSet
 

@@ -44,11 +44,6 @@ func (f *Node) TargetTables() []*NodeTable {
 	return []*NodeTable{f.table}
 }
 
-// IsPointer reports whether the model field is a pointer to the related node.
-func (f *Node) IsPointer() bool {
-	return f.source.Pointer()
-}
-
 func (f *Node) CodeGen() *CodeGen {
 	return &CodeGen{
 		filterDefine: f.filterDefine,
