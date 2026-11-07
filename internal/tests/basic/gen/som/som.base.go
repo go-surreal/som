@@ -46,8 +46,9 @@ var ErrDeletedModel = errors.New("model has been deleted")
 var ErrCacheNotSupported = errors.New("caching is not supported for nodes with complex IDs")
 
 // ErrUnsupportedVersion is returned when the connected SurrealDB instance
-// is running a version older than the minimum required (3.3.5), or when
-// the version string returned by the server cannot be parsed.
+// is running a version outside the supported range (3.3.5 up to, but not
+// including, the first version the driver does not support), or when the
+// version string returned by the server cannot be parsed.
 var ErrUnsupportedVersion = errors.New("unsupported SurrealDB version")
 
 // ErrIndexBuilding is returned when an index is rebuilt while the database is
