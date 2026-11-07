@@ -111,25 +111,25 @@ func ParseEdge(v gotype.Type, ctx *TypeContext) (*Edge, error) {
 
 			matched, err := ParseFeature(f, internalPkg, &features, &edge.Fields)
 			if err != nil {
-				return nil, fmt.Errorf("model %s: %w", v.Name(), err)
+				return nil, fmt.Errorf("edge %s: %w", v.Name(), err)
 			}
 			if matched {
 				if features.Expiry {
-					return nil, fmt.Errorf("model %s: som.Expiry is not supported on edges", v.Name())
+					return nil, fmt.Errorf("edge %s: som.Expiry is not supported on edges", v.Name())
 				}
 				continue
 			}
 
-			return nil, fmt.Errorf("model %s: anonymous field %s not allowed", v.Name(), f.Name())
+			return nil, fmt.Errorf("edge %s: anonymous field %s not allowed", v.Name(), f.Name())
 		}
 
 		if strings.ToLower(f.Name()) == "id" {
-			return nil, fmt.Errorf("model %s: field ID not allowed, already provided by som.Edge", v.Name())
+			return nil, fmt.Errorf("edge %s: field ID not allowed, already provided by som.Edge", v.Name())
 		}
 
 		field, err := ctx.ParseField(f)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("edge %s: %w", v.Name(), err)
 		}
 
 		if f.Tag().Get("som") == "in" {

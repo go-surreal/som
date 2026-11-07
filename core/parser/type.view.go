@@ -102,7 +102,7 @@ func ParseView(v gotype.Type, ctx *TypeContext) (*View, error) {
 
 		field, err := ctx.ParseField(f)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("view %s: %w", v.Name(), err)
 		}
 
 		view.Fields = append(view.Fields, field)
