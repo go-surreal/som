@@ -23,22 +23,17 @@ var specialRelationModelInfo = modelInfo[*model.SpecialRelation, *model.SpecialR
 	},
 }
 
-var specialRelationRangeFn = rangeFn[*model.SpecialRelation](func(q *lib.Query[*model.SpecialRelation], from som.RangeFrom, to som.RangeTo) string {
-	expr := ":"
+var specialRelationRangeFn = rangeFn[*model.SpecialRelation](func(q *lib.Query[*model.SpecialRelation], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+	var bounds lib.RecordRange
 	if !from.IsOpen() {
-		expr += q.AsVar(from.Value().(som.Rand))
-	}
-	if !from.IsOpen() && !from.IsInclusive() {
-		expr += ">"
-	}
-	expr += ".."
-	if !to.IsOpen() && to.IsInclusive() {
-		expr += "="
+		bounds.From = q.AsVar(from.Value().(som.Rand))
+		bounds.FromInclusive = from.IsInclusive()
 	}
 	if !to.IsOpen() {
-		expr += q.AsVar(to.Value().(som.Rand))
+		bounds.To = q.AsVar(to.Value().(som.Rand))
+		bounds.ToInclusive = to.IsInclusive()
 	}
-	return expr
+	return bounds
 })
 
 // NewSpecialRelation creates a new query builder for SpecialRelation models.

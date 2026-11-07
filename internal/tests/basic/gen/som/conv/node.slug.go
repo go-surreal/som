@@ -92,7 +92,8 @@ func ToSlugPtr(data *Slug) *model.Slug {
 // names and types.
 func SlugFields(m *model.Slug) map[string]any {
 	c := Slug{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // slugLink is a Slug as referenced by another record. It marshals

@@ -22,24 +22,19 @@ var personObjModelInfo = modelInfo[*model.PersonObj, *model.PersonObj]{
 	},
 }
 
-var personObjRangeFn = rangeFn[*model.PersonObj](func(q *lib.Query[*model.PersonObj], from som.RangeFrom, to som.RangeTo) string {
-	expr := ":"
+var personObjRangeFn = rangeFn[*model.PersonObj](func(q *lib.Query[*model.PersonObj], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+	var bounds lib.RecordRange
 	if !from.IsOpen() {
 		key := from.Value().(model.PersonKey)
-		expr += "{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
-	}
-	if !from.IsOpen() && !from.IsInclusive() {
-		expr += ">"
-	}
-	expr += ".."
-	if !to.IsOpen() && to.IsInclusive() {
-		expr += "="
+		bounds.From = "{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
+		bounds.FromInclusive = from.IsInclusive()
 	}
 	if !to.IsOpen() {
 		key := to.Value().(model.PersonKey)
-		expr += "{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
+		bounds.To = "{" + "name: " + q.AsVar(key.Name) + ", " + "age: " + q.AsVar(key.Age) + "}"
+		bounds.ToInclusive = to.IsInclusive()
 	}
-	return expr
+	return bounds
 })
 
 // NewPersonObj creates a new query builder for PersonObj models.

@@ -131,7 +131,8 @@ func ToSpecialRelationPtr(data *SpecialRelation) *model.SpecialRelation {
 // names and types.
 func SpecialRelationFields(m *model.SpecialRelation) map[string]any {
 	c := SpecialRelation{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // specialRelationLink is a SpecialRelation as referenced by another record. It marshals

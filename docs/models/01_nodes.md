@@ -99,7 +99,7 @@ With a complex ID the key is part of the record, so the repository differs:
 - `Read(ctx, key)` takes the typed key struct instead of a string
 - `ID()` returns the key struct
 - the [context cache](../api_reference/04_caching.md) is not supported
-  (`som.ErrCacheNotSupported`), and `Paginate()` is unavailable — use `Range()`
+  (`som.ErrCacheNotSupported`)
 
 Complex IDs enable efficient range queries:
 
