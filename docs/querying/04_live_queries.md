@@ -71,7 +71,7 @@ Each update received on the channel implements `LiveResult[M]`. Use type asserti
 
 `LiveKilled` is emitted when the server terminates the live query (e.g., table removed, permissions changed). It does not carry data.
 
-`LiveDisconnected` is emitted when the connection to the database is lost or the client is closed. The live query may still exist on the server, but no more updates will arrive for it; re-subscribe on a new connection if needed. It does not carry data.
+`LiveDisconnected` is emitted when the connection to the database is lost or the client is closed. The live query may still exist on the server, but no more updates will arrive for it. It does not carry data. Live queries are not restored when the client [reconnects](../api_reference/01_client.md#reconnecting), so subscribe again on the same client to keep receiving updates — changes made while disconnected are not replayed.
 
 Both `LiveKilled` and `LiveDisconnected` are always the last event before the channel closes.
 
