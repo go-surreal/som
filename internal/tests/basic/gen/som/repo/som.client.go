@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strconv"
-	"strings"
 	"time"
 
 	som "som.test/gen/som"
@@ -38,7 +36,72 @@ type Config struct {
 	// It only takes effect for a database that does not exist yet: an existing
 	// database keeps whatever mode it was created with.
 	Strict bool
+
+	// Reconnect controls how a lost WebSocket connection is recovered. The
+	// zero value keeps the driver defaults, which reconnect automatically.
+	Reconnect ReconnectConfig
+
+	// OnStatus, if set, is called with each change of the connection status:
+	// when the connection is lost, at each attempt to reconnect and its
+	// outcome, and when the client closes. Events arrive one at a time and in
+	// order, on a goroutine of their own. Only clients which reconnect report
+	// changes.
+	OnStatus func(ConnectionEvent)
 }
+
+// ReconnectConfig controls how a lost WebSocket connection is recovered.
+//
+// On reconnect, the namespace, database and authentication are restored. Open
+// transactions are lost, and live queries end with a query.LiveDisconnected
+// result, as they cannot be restored. Requests in flight when the connection
+// was lost fail and may or may not have run on the server.
+type ReconnectConfig struct {
+	// Disabled turns reconnecting off, so that a lost connection closes the
+	// client for good.
+	Disabled bool
+
+	// MinDelay is the base of the backoff between attempts, which doubles with
+	// each attempt. Defaults to one second when unset.
+	MinDelay time.Duration
+
+	// MaxDelay caps the backoff between attempts. Defaults to one minute when
+	// unset.
+	MaxDelay time.Duration
+
+	// MaxAttempts is how many attempts in a row are made before the client
+	// gives up and closes. Defaults to 5 when unset. A negative value means no
+	// limit.
+	MaxAttempts int
+}
+
+func (c ReconnectConfig) options() []surrealdb.Option {
+	if c.Disabled {
+		return []surrealdb.Option{surrealdb.WithReconnect(false)}
+	}
+
+	options := []surrealdb.Option{
+		surrealdb.WithReconnectDelay(c.MinDelay, c.MaxDelay),
+	}
+
+	if c.MaxAttempts != 0 {
+		options = append(options, surrealdb.WithReconnectAttempts(c.MaxAttempts))
+	}
+
+	return options
+}
+
+// ConnectionEvent reports a change of the client's connection status.
+type ConnectionEvent = surrealdb.StatusEvent
+
+// ConnectionStatus is the state of the client's connection.
+type ConnectionStatus = surrealdb.ConnectionStatus
+
+const (
+	StatusConnected    = surrealdb.StatusConnected
+	StatusDisconnected = surrealdb.StatusDisconnected
+	StatusReconnecting = surrealdb.StatusReconnecting
+	StatusClosed       = surrealdb.StatusClosed
+)
 
 type dbConn struct {
 	conn        *surrealdb.DB
@@ -329,31 +392,9 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	return out, nil
 }
 
-var minVersion = [3]int{3, 3, 5}
-
-func parseVersion(raw string) ([3]int, error) {
-	s := strings.TrimPrefix(raw, "v")
-
-	if idx := strings.IndexAny(s, "-+"); idx != -1 {
-		s = s[:idx]
-	}
-
-	parts := strings.SplitN(s, ".", 3)
-	if len(parts) != 3 {
-		return [3]int{}, fmt.Errorf("expected major.minor.patch, got %q", raw)
-	}
-
-	var v [3]int
-	for i, p := range parts {
-		n, err := strconv.Atoi(p)
-		if err != nil {
-			return [3]int{}, fmt.Errorf("non-numeric component in %q", raw)
-		}
-		v[i] = n
-	}
-
-	return v, nil
-}
+// minServerVersion is the oldest SurrealDB version som supports. The upper
+// bound is the driver's, as som cannot work with a server the driver does not.
+const minServerVersion = "3.3.5"
 
 func checkVersion(ctx context.Context, db *surrealdb.DB) error {
 	ver, err := db.Version(ctx)
@@ -361,18 +402,11 @@ func checkVersion(ctx context.Context, db *surrealdb.DB) error {
 		return fmt.Errorf("failed to retrieve SurrealDB version: %w", err)
 	}
 
-	parsed, err := parseVersion(ver.Version)
-	if err != nil {
-		return fmt.Errorf("%w: %s", som.ErrUnsupportedVersion, err)
-	}
-
-	if parsed[0] < minVersion[0] ||
-		(parsed[0] == minVersion[0] && parsed[1] < minVersion[1]) ||
-		(parsed[0] == minVersion[0] && parsed[1] == minVersion[1] && parsed[2] < minVersion[2]) {
+	if !surrealdb.IsVersionInRange(ver.Version, minServerVersion, surrealdb.MaximumServerVersion) {
 		return fmt.Errorf(
-			"%w: got %s, need %d.%d.%d or higher",
+			"%w: got %s, need %s or higher and below %s",
 			som.ErrUnsupportedVersion, ver.Version,
-			minVersion[0], minVersion[1], minVersion[2],
+			minServerVersion, surrealdb.MaximumServerVersion,
 		)
 	}
 
@@ -380,9 +414,13 @@ func checkVersion(ctx context.Context, db *surrealdb.DB) error {
 }
 
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
-	db, err := surrealdb.FromEndpointURLString(ctx, conf.Address)
+	db, err := surrealdb.FromEndpointURLStringWithOptions(ctx, conf.Address, conf.Reconnect.options()...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SurrealDB: %w", err)
+	}
+
+	if conf.OnStatus != nil {
+		db.OnStatus(conf.OnStatus)
 	}
 
 	if err := checkVersion(ctx, db); err != nil {
@@ -481,6 +519,15 @@ func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (
 		return nil, err
 	}
 	return som.NewRawResult(data), nil
+}
+
+// Health reports whether the SurrealDB server is up. It needs no
+// authentication, which makes it suitable as a readiness check.
+func (c *ClientImpl) Health(ctx context.Context) error {
+	if err := c.db.conn.Health(ctx); err != nil {
+		return fmt.Errorf("health check failed: %w", err)
+	}
+	return nil
 }
 
 func (c *ClientImpl) Close() {
