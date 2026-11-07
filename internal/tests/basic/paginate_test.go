@@ -2,11 +2,9 @@ package basic
 
 import (
 	"context"
-	"strings"
 	"testing"
 	"time"
 
-	"som.test/gen/som"
 	"som.test/gen/som/by"
 	"som.test/model"
 	"gotest.tools/v3/assert"
@@ -199,27 +197,4 @@ func TestPaginateAccuratePageInfo(t *testing.T) {
 	assert.Equal(t, "e", last.Items[1].FieldString)
 	assert.Equal(t, false, last.PageInfo.HasNextPage)
 	assert.Equal(t, true, last.PageInfo.HasPreviousPage)
-}
-
-// TestPaginateComplexIDGuard verifies that pagination fails with a clear error
-// for models with a complex ID, which have no single "id" tiebreaker and
-// should use Range() instead.
-func TestPaginateComplexIDGuard(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	client, cleanup := prepareDatabase(ctx, t)
-	defer cleanup()
-
-	person := &model.PersonObj{
-		Node:  som.NewNode[model.PersonKey](model.PersonKey{Name: "Alice", Age: 30}),
-		Email: "alice@example.com",
-	}
-	assert.NilError(t, client.PersonObjRepo().CreateWithID(ctx, person))
-
-	_, err := client.PersonObjRepo().Query().Paginate().First(10).Get(ctx)
-	assert.Assert(t, err != nil, "expected an error for complex-ID pagination")
-	assert.Assert(t, strings.Contains(err.Error(), "Range()"),
-		"error should point to Range(), got: %v", err)
 }

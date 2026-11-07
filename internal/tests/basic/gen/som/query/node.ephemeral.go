@@ -22,22 +22,17 @@ var ephemeralModelInfo = modelInfo[*model.Ephemeral, *model.Ephemeral]{
 	},
 }
 
-var ephemeralRangeFn = rangeFn[*model.Ephemeral](func(q *lib.Query[*model.Ephemeral], from som.RangeFrom, to som.RangeTo) string {
-	expr := ":"
+var ephemeralRangeFn = rangeFn[*model.Ephemeral](func(q *lib.Query[*model.Ephemeral], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+	var bounds lib.RecordRange
 	if !from.IsOpen() {
-		expr += q.AsVar(from.Value().(som.UUID))
-	}
-	if !from.IsOpen() && !from.IsInclusive() {
-		expr += ">"
-	}
-	expr += ".."
-	if !to.IsOpen() && to.IsInclusive() {
-		expr += "="
+		bounds.From = q.AsVar(from.Value().(som.UUID))
+		bounds.FromInclusive = from.IsInclusive()
 	}
 	if !to.IsOpen() {
-		expr += q.AsVar(to.Value().(som.UUID))
+		bounds.To = q.AsVar(to.Value().(som.UUID))
+		bounds.ToInclusive = to.IsInclusive()
 	}
-	return expr
+	return bounds
 })
 
 // NewEphemeral creates a new query builder for Ephemeral models.

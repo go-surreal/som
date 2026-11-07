@@ -114,7 +114,8 @@ func ToEphemeralPtr(data *Ephemeral) *model.Ephemeral {
 // names and types.
 func EphemeralFields(m *model.Ephemeral) map[string]any {
 	c := Ephemeral{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // ephemeralLink is a Ephemeral as referenced by another record. It marshals

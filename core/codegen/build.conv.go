@@ -430,7 +430,14 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		// names and types.
 		func {{.NameGo}}Fields(m *model.{{.NameGo}}) map[string]any {
 			c := {{.TypeName}}{*m}
-			return c.fields()
+			data := c.fields()
+			{{- if .ComplexID}}
+			// fields() leaves out a complex ID, but cursors need it as their tiebreaker.
+			if link := to{{.NameGo}}LinkPtr(m); link != nil {
+				data["id"] = *link.ID
+			}
+			{{- end}}
+			return data
 		}
 
 		// {{.NameGoLower}}Link is a {{.NameGo}} as referenced by another record. It marshals
@@ -642,6 +649,7 @@ func (b *convBuilder) buildFile(elem field.Element) error {
 		data["HasRelations"] = len(relations(node)) > 0
 		data["FetchedBitsCall"] = file.code(b.fetchedBitsCall(node))
 		data["IDEmbed"] = node.Source.IDEmbed
+		data["ComplexID"] = node.HasComplexID()
 		data["LinkIDChecks"] = file.code(b.linkIDChecks(node))
 		data["LinkIDDecode"] = file.code(b.unmarshalLinkID(node))
 		data["LinkID"] = file.code(b.nodeIDValue(node, "node"))

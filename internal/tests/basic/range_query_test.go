@@ -26,7 +26,7 @@ func TestRangeQueryDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM weather:[$A, $B]..[$C, $D]",
+			"SELECT * FROM type::record('weather', [$A, $B]..[$C, $D])",
 			desc,
 		)
 	})
@@ -38,7 +38,7 @@ func TestRangeQueryDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM weather:[$A, $B]..",
+			"SELECT * FROM type::record('weather', [$A, $B]..)",
 			desc,
 		)
 	})
@@ -50,7 +50,7 @@ func TestRangeQueryDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM weather:..[$A, $B]",
+			"SELECT * FROM type::record('weather', ..[$A, $B])",
 			desc,
 		)
 	})
@@ -62,7 +62,7 @@ func TestRangeQueryDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM weather:[$A, $B]>..=[$C, $D]",
+			"SELECT * FROM type::record('weather', [$A, $B]>..=[$C, $D])",
 			desc,
 		)
 	})
@@ -74,7 +74,7 @@ func TestRangeQueryDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM person_obj:{name: $A, age: $B}..{name: $C, age: $D}",
+			"SELECT * FROM type::record('person_obj', {name: $A, age: $B}..{name: $C, age: $D})",
 			desc,
 		)
 	})
@@ -88,7 +88,7 @@ func TestRangeQueryDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM weather:[$A, $B]..[$C, $D] WHERE (temperature > $E)",
+			"SELECT * FROM type::record('weather', [$A, $B]..[$C, $D]) WHERE (temperature > $E)",
 			desc,
 		)
 	})
@@ -104,7 +104,7 @@ func TestRangeQueryStringIDDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM all_types:$A..$B",
+			"SELECT * FROM type::record('all_types', $A..$B)",
 			desc,
 		)
 	})
@@ -116,7 +116,7 @@ func TestRangeQueryStringIDDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM all_types:$A..",
+			"SELECT * FROM type::record('all_types', $A..)",
 			desc,
 		)
 	})
@@ -128,7 +128,7 @@ func TestRangeQueryStringIDDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM all_types:..$A",
+			"SELECT * FROM type::record('all_types', ..$A)",
 			desc,
 		)
 	})
@@ -140,9 +140,108 @@ func TestRangeQueryStringIDDescribe(t *testing.T) {
 		).Describe()
 
 		assert.Equal(t,
-			"SELECT * FROM all_types:$A>..=$B",
+			"SELECT * FROM type::record('all_types', $A>..=$B)",
 			desc,
 		)
+	})
+
+	t.Run("ULID sole id DESC sort repeats the key", func(t *testing.T) {
+		desc := query.NewAllTypes(nil).Range(
+			som.FromStart(),
+			som.ToEnd(),
+		).Order(
+			by.AllTypes.ID.Desc(),
+		).Limit(2).Describe()
+
+		assert.Equal(t,
+			"SELECT * FROM type::record('all_types', ..) ORDER BY id DESC, id DESC LIMIT 2",
+			desc,
+		)
+	})
+
+	t.Run("ULID id DESC with further sorts is kept as is", func(t *testing.T) {
+		desc := query.NewAllTypes(nil).Range(
+			som.FromStart(),
+			som.ToEnd(),
+		).Order(
+			by.AllTypes.ID.Desc(),
+			by.AllTypes.FieldString.Asc(),
+		).Limit(2).Describe()
+
+		assert.Equal(t,
+			"SELECT * FROM type::record('all_types', ..) ORDER BY id DESC, field_string ASC LIMIT 2",
+			desc,
+		)
+	})
+}
+
+func TestRangeQueryStringID(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	ids := []som.String{"a", "b", "c", "d", "e", "f"}
+
+	for _, id := range ids {
+		err := client.SlugRepo().CreateWithID(ctx, string(id), &model.Slug{Title: "slug " + string(id)})
+		assert.NilError(t, err)
+	}
+
+	resultIDs := func(records []*model.Slug) []som.String {
+		var out []som.String
+
+		for _, record := range records {
+			out = append(out, record.ID())
+		}
+
+		return out
+	}
+
+	t.Run("bounded range", func(t *testing.T) {
+		results, err := client.SlugRepo().Query().Range(
+			som.From(ids[1]),
+			som.ToInclusive(ids[4]),
+		).Order(
+			by.Slug.ID.Asc(),
+		).All(ctx)
+		assert.NilError(t, err)
+		assert.DeepEqual(t, ids[1:5], resultIDs(results))
+	})
+
+	t.Run("exclusive from", func(t *testing.T) {
+		results, err := client.SlugRepo().Query().Range(
+			som.FromExclusive(ids[3]),
+			som.ToEnd(),
+		).Order(
+			by.Slug.ID.Asc(),
+		).All(ctx)
+		assert.NilError(t, err)
+		assert.DeepEqual(t, ids[4:], resultIDs(results))
+	})
+
+	t.Run("id ASC with limit", func(t *testing.T) {
+		results, err := client.SlugRepo().Query().Range(
+			som.FromStart(),
+			som.ToEnd(),
+		).Order(
+			by.Slug.ID.Asc(),
+		).Limit(2).All(ctx)
+		assert.NilError(t, err)
+		assert.DeepEqual(t, ids[:2], resultIDs(results))
+	})
+
+	t.Run("id DESC with limit returns the highest ids", func(t *testing.T) {
+		results, err := client.SlugRepo().Query().Range(
+			som.FromStart(),
+			som.To(ids[5]),
+		).Order(
+			by.Slug.ID.Desc(),
+		).Limit(2).All(ctx)
+		assert.NilError(t, err)
+		assert.DeepEqual(t, []som.String{ids[4], ids[3]}, resultIDs(results))
 	})
 }
 

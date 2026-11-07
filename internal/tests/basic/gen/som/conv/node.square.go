@@ -96,7 +96,8 @@ func ToSquarePtr(data *Square) *model.Square {
 // names and types.
 func SquareFields(m *model.Square) map[string]any {
 	c := Square{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // squareLink is a Square as referenced by another record. It marshals

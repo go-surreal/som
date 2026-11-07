@@ -324,7 +324,8 @@ func ToLocationPtr(data *Location) *model.Location {
 // names and types.
 func LocationFields(m *model.Location) map[string]any {
 	c := Location{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // locationLink is a Location as referenced by another record. It marshals

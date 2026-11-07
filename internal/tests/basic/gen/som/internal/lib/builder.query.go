@@ -59,7 +59,14 @@ type Query[T any] struct {
 	Timeout    time.Duration
 	Parallel   bool
 	TempFiles  bool
-	RangeExpr  string
+
+	// Range restricts the query to a range of record IDs.
+	Range *RecordRange
+
+	// SeekAfter holds the query variable of a cursor record ID. When set, the
+	// query scans the record ID range exclusively after it instead of filtering
+	// the whole table, which is only valid for an "id ASC" order.
+	SeekAfter string
 
 	SearchClauses []SearchClause
 	SearchWhere   string
@@ -239,7 +246,7 @@ func (q Query[T]) render() string {
 	//	out.WriteString(strings.Join(omitFields, ", "))
 	//}
 
-	out.WriteString(" FROM " + q.node + q.RangeExpr)
+	out.WriteString(" FROM " + q.source())
 
 	// Build WHERE clause combining soft delete, search and regular filters
 	var whereParts []string
@@ -255,6 +262,13 @@ func (q Query[T]) render() string {
 	// 1b. Inject expiry filter to exclude expired records (if enabled and not disabled)
 	if !q.IncludeExpired && q.ExpiryField != "" {
 		whereParts = append(whereParts, "("+q.ExpiryField+" IS NONE OR "+q.ExpiryField+" > time::now())")
+	}
+
+	// 1c. Keep the lower bound of a range that a cursor seek replaced
+	if q.SeekAfter != "" && q.Range != nil {
+		if guard := q.Range.renderFromGuard(q.node); guard != "" {
+			whereParts = append(whereParts, guard)
+		}
 	}
 
 	// 2. Add search conditions
@@ -286,12 +300,8 @@ func (q Query[T]) render() string {
 	if !q.live && q.SortRandom {
 		out.WriteString(" ORDER BY RAND()")
 	} else if !q.live && len(q.Sort) > 0 {
-		var sorts []string
-		for _, s := range q.Sort {
-			sorts = append(sorts, s.render())
-		}
 		out.WriteString(" ORDER BY ")
-		out.WriteString(strings.Join(sorts, ", "))
+		out.WriteString(q.renderSorts())
 	}
 
 	// LIMIT must come before START.
@@ -328,6 +338,59 @@ func (q Query[T]) render() string {
 	}
 
 	return out.String()
+}
+
+// source returns the FROM target of the query. Record ID ranges are wrapped in
+// type::record() because SurrealDB rejects params inside a literal range key
+// (table:$a..$b), and because only this dynamic form pushes LIMIT into the
+// range scan instead of reading the whole range first.
+func (q Query[T]) source() string {
+	switch {
+	case q.SeekAfter != "":
+		return recordFromKey(q.node, q.recordRange().seekAfter(q.SeekAfter).render())
+
+	case q.Range != nil:
+		return recordFromKey(q.node, q.Range.render())
+
+	default:
+		return q.node
+	}
+}
+
+func (q Query[T]) recordRange() RecordRange {
+	if q.Range == nil {
+		return RecordRange{}
+	}
+
+	return *q.Range
+}
+
+func (q Query[T]) renderSorts() string {
+	sorts := make([]string, 0, len(q.Sort)+1)
+
+	for _, sort := range q.Sort {
+		sorts = append(sorts, sort.render())
+	}
+
+	if q.isSoleRangeIDDescSort() {
+		sorts = append(sorts, sorts[0])
+	}
+
+	return strings.Join(sorts, ", ")
+}
+
+// isSoleRangeIDDescSort reports whether the query orders a record ID range by
+// "id DESC" alone. SurrealDB (3.3.5) pushes LIMIT into such a type::record()
+// range scan before sorting, returning the lowest IDs instead of the highest.
+// Repeating the sort key disables that pushdown.
+func (q Query[T]) isSoleRangeIDDescSort() bool {
+	if q.Range == nil || len(q.Sort) != 1 {
+		return false
+	}
+
+	sort := q.Sort[0]
+
+	return sort.Field == "id" && sort.Order == SortDesc
 }
 
 type Result struct {
