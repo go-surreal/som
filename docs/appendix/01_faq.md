@@ -171,8 +171,7 @@ for update := range updates {
         // server terminated the live query; re-subscribe if needed
         return
     case query.LiveDisconnected[*model.User]:
-        // connection was lost; re-subscribe on a new connection if needed,
-        // or set ReconnectInterval to have live queries restored automatically
+        // connection was lost; re-subscribe on a new connection if needed
         return
     case query.LiveUpdate[*model.User]:
         user, err := res.Get()

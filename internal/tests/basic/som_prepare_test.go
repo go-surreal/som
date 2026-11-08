@@ -104,11 +104,11 @@ func TestMain(m *testing.M) {
 func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 	tb.Helper()
 
-	return prepareDatabaseWith(ctx, tb, func(*repo.Config) {})
+	return prepareDatabaseWith(ctx, tb, nil)
 }
 
-// prepareDatabaseWith is prepareDatabase with a hook to adjust the client
-// config before the client is created.
+// prepareDatabaseWith behaves like prepareDatabase, but lets the caller adjust
+// the client config before connecting.
 func prepareDatabaseWith(ctx context.Context, tb testing.TB, configure func(*repo.Config)) (repo.Client, func()) {
 	tb.Helper()
 
@@ -125,7 +125,9 @@ func prepareDatabaseWith(ctx context.Context, tb testing.TB, configure func(*rep
 		Strict:    true,
 	}
 
-	configure(&config)
+	if configure != nil {
+		configure(&config)
+	}
 
 	var client *repo.ClientImpl
 	var err error

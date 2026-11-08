@@ -124,7 +124,8 @@ func ToConstrainedPtr(data *Constrained) *model.Constrained {
 // names and types.
 func ConstrainedFields(m *model.Constrained) map[string]any {
 	c := Constrained{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // constrainedLink is a Constrained as referenced by another record. It marshals

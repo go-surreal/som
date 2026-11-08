@@ -37,7 +37,7 @@ type modelInfo[M any, R any] struct {
 	Fields func(R) map[string]any
 }
 
-type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) string
+type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) lib.RecordRange
 
 // M is a placeholder for the model type.
 type builder[M any, R any] struct {
@@ -113,12 +113,14 @@ func (b builder[M, R]) WithExpired() BuilderOf[M, R] {
 }
 
 // Range restricts the query to a range of record IDs.
-// This uses SurrealDB's native range syntax (e.g. table:start..end)
+// This uses SurrealDB's native record ID range scan (via type::record)
 // which avoids table scans and is much more performant than WHERE filters.
-// Only available for models with complex IDs (ArrayID/ObjectID).
+// Available for models with string IDs (ULID/UUID/Rand) and complex IDs
+// (ArrayID/ObjectID).
 func (b builder[M, R]) Range(from som.RangeFrom, to som.RangeTo) BuilderNoLiveOf[M, R] {
 	if b.rangeFn != nil {
-		b.query.RangeExpr = b.rangeFn(&b.query, from, to)
+		bounds := b.rangeFn(&b.query, from, to)
+		b.query.Range = &bounds
 	}
 	return BuilderNoLiveOf[M, R]{b}
 }
@@ -355,9 +357,8 @@ func (b builder[M, R]) totalOrderSorts() []*lib.SortBuilder {
 //
 // Batches are seeked via a keyset cursor rather than an offset, so walking a
 // large result set stays linear instead of re-scanning the skipped prefix on
-// every batch. Queries that cannot produce a cursor (random ordering, models
-// with a complex ID, or a sort on a field that is not stored top-level) fall
-// back to offset paging.
+// every batch. Queries that cannot produce a cursor (random ordering or a sort
+// on a field that is not stored top-level) fall back to offset paging.
 func (b builder[M, R]) Iterate(ctx context.Context, batchSize int) iter.Seq2[R, error] {
 	return func(yield func(R, error) bool) {
 		var zero R
@@ -368,7 +369,6 @@ func (b builder[M, R]) Iterate(ctx context.Context, batchSize int) iter.Seq2[R, 
 		}
 
 		sorts := b.totalOrderSorts()
-		whereLen := len(b.query.Where)
 		start := b.query.Start
 		yielded := 0
 
@@ -382,7 +382,7 @@ func (b builder[M, R]) Iterate(ctx context.Context, batchSize int) iter.Seq2[R, 
 			batchBuilder.query.Start = start + yielded
 
 			if cursor != nil {
-				batchBuilder.query.Where = append(b.query.Where[:whereLen:whereLen], lib.CursorFilter[M](*cursor, sorts, false))
+				batchBuilder = batchBuilder.seek(*cursor, sorts, false)
 				batchBuilder.query.Start = 0
 			}
 
@@ -434,7 +434,6 @@ func (b builder[M, R]) IterateID(ctx context.Context, batchSize int) iter.Seq2[s
 		}
 
 		sorts := b.totalOrderSorts()
-		whereLen := len(b.query.Where)
 		start := b.query.Start
 		yielded := 0
 
@@ -449,7 +448,7 @@ func (b builder[M, R]) IterateID(ctx context.Context, batchSize int) iter.Seq2[s
 			batchBuilder.query.Start = start + yielded
 
 			if cursor != nil {
-				batchBuilder.query.Where = append(b.query.Where[:whereLen:whereLen], lib.CursorFilter[M](*cursor, sorts, false))
+				batchBuilder = batchBuilder.seek(*cursor, sorts, false)
 				batchBuilder.query.Start = 0
 			}
 
@@ -693,14 +692,14 @@ func (p PageBuilderOf[M, R]) Get(ctx context.Context) (*PageOf[M, R], error) {
 		return nil, fmt.Errorf("invalid pagination options: %w", err)
 	}
 
-	b := p.builder
-	if b.query.SortRandom {
+	base := p.builder
+	if base.query.SortRandom {
 		return nil, errors.New("cursor pagination is not compatible with random ordering")
 	}
 
 	// Sort keys default to id, and an id tiebreaker is always appended so the
 	// order is total and cursors are stable.
-	sorts := b.totalOrderSorts()
+	sorts := base.totalOrderSorts()
 
 	// Backward paging reverses the sort so LIMIT yields the last N; results are
 	// flipped back below. originalSorts drives cursor generation and, together
@@ -711,14 +710,14 @@ func (p PageBuilderOf[M, R]) Get(ctx context.Context) (*PageOf[M, R], error) {
 		sorts = reverseSorts(sorts)
 	}
 
-	whereLen := len(b.query.Where)
+	b := base
 	cursor := p.cursor()
 	if cursor != "" {
 		cursorData, err := lib.DecodeCursor(cursor)
 		if err != nil {
 			return nil, fmt.Errorf("invalid cursor: %w", err)
 		}
-		b.query.Where = append(b.query.Where, lib.CursorFilter[M](cursorData, originalSorts, backward))
+		b = b.seek(cursorData, originalSorts, backward)
 	}
 
 	// Fetch one extra row to detect whether a further page exists.
@@ -764,15 +763,15 @@ func (p PageBuilderOf[M, R]) Get(ctx context.Context) (*PageOf[M, R], error) {
 	// Without a cursor the far side is assumed empty; opt in to probe it.
 	if p.accuratePageInfo && len(entries) > 0 && cursor == "" {
 		if backward {
-			pageInfo.HasNextPage = b.probeBeyond(ctx, entries[len(entries)-1].Cursor, originalSorts, whereLen, false)
+			pageInfo.HasNextPage = base.probeBeyond(ctx, entries[len(entries)-1].Cursor, originalSorts, false)
 		} else {
-			pageInfo.HasPreviousPage = b.probeBeyond(ctx, entries[0].Cursor, originalSorts, whereLen, true)
+			pageInfo.HasPreviousPage = base.probeBeyond(ctx, entries[0].Cursor, originalSorts, true)
 		}
 	}
 
 	totalCount := -1
 	if p.totalCount {
-		count, err := b.countMatching(ctx, whereLen)
+		count, err := base.countMatching(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get total count: %w", err)
 		}
@@ -794,13 +793,13 @@ func (p PageBuilderOf[M, R]) GetAsync(ctx context.Context) *asyncResult[*PageOf[
 
 // probeBeyond reports whether any record exists on the far side of cursor,
 // used to compute accurate boundary page info. The backward flag selects the
-// probe direction; whereLen strips any previously appended cursor filter.
-func (b builder[M, R]) probeBeyond(ctx context.Context, cursor string, sorts []*lib.SortBuilder, whereLen int, backward bool) bool {
+// probe direction.
+func (b builder[M, R]) probeBeyond(ctx context.Context, cursor string, sorts []*lib.SortBuilder, backward bool) bool {
 	data, err := lib.DecodeCursor(cursor)
 	if err != nil {
 		return false
 	}
-	b.query.Where = append(b.query.Where[:whereLen:whereLen], lib.CursorFilter[M](data, sorts, backward))
+	b = b.seek(data, sorts, backward)
 	if backward {
 		b.query.Sort = reverseSorts(sorts)
 	} else {
@@ -812,14 +811,44 @@ func (b builder[M, R]) probeBeyond(ctx context.Context, cursor string, sorts []*
 }
 
 // countMatching returns the total number of matching records, ignoring the
-// cursor filter, ordering and pagination (COUNT with GROUP ALL rejects ORDER BY).
-func (b builder[M, R]) countMatching(ctx context.Context, whereLen int) (int, error) {
-	b.query.Where = b.query.Where[:whereLen]
+// ordering and pagination (COUNT with GROUP ALL rejects ORDER BY). It must be
+// called on the builder before a cursor seek was applied.
+func (b builder[M, R]) countMatching(ctx context.Context) (int, error) {
 	b.query.Sort = nil
 	b.query.SortRandom = false
 	b.query.Limit = 0
 	b.query.Start = 0
 	return b.Count(ctx)
+}
+
+// seek restricts the query to the records following cursor in the keyset
+// order given by sorts and backward. If that order is a plain "id ASC", the
+// scan starts right at the cursor via a record ID range instead of filtering
+// the table with a keyset condition.
+func (b builder[M, R]) seek(cursor lib.CursorData, sorts []*lib.SortBuilder, backward bool) builder[M, R] {
+	if b.seeksByRecordRange(sorts, backward) {
+		b.query.SeekAfter = b.query.AsVar(cursor.ID)
+		return b
+	}
+
+	where := b.query.Where
+	b.query.Where = append(where[:len(where):len(where)], lib.CursorFilter[M](cursor, sorts, backward))
+
+	return b
+}
+
+// seeksByRecordRange reports whether the keyset condition of sorts in the given
+// direction is a plain "id > cursor" that a record ID range scan can serve.
+// Descending range scans are not used, as SurrealDB sorts the whole range for
+// them (and mis-applies LIMIT, see lib.Query.isSoleRangeIDDescSort).
+func (b builder[M, R]) seeksByRecordRange(sorts []*lib.SortBuilder, backward bool) bool {
+	if b.rangeFn == nil || len(sorts) != 1 || sorts[0].Field != "id" {
+		return false
+	}
+
+	isAscending := sorts[0].Order == lib.SortAsc
+
+	return isAscending != backward
 }
 
 // reverseSorts creates a copy of sorts with reversed directions.
@@ -900,10 +929,8 @@ func cursorDataOf(dbFields map[string]any, sorts []*lib.SortBuilder) (lib.Cursor
 		}
 	}
 
-	// Complex-ID models expose no single "id" field, so cursor pagination
-	// cannot form a stable tiebreaker. These models should use Range() instead.
 	if id == nil {
-		return lib.CursorData{}, errors.New("cursor pagination requires a string ID; use Range() for models with a complex ID")
+		return lib.CursorData{}, errors.New("cursor pagination requires the record ID of every item")
 	}
 
 	return lib.CursorData{

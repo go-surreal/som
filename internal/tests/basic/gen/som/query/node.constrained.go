@@ -22,22 +22,17 @@ var constrainedModelInfo = modelInfo[*model.Constrained, *model.Constrained]{
 	},
 }
 
-var constrainedRangeFn = rangeFn[*model.Constrained](func(q *lib.Query[*model.Constrained], from som.RangeFrom, to som.RangeTo) string {
-	expr := ":"
+var constrainedRangeFn = rangeFn[*model.Constrained](func(q *lib.Query[*model.Constrained], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+	var bounds lib.RecordRange
 	if !from.IsOpen() {
-		expr += q.AsVar(from.Value().(som.ULID))
-	}
-	if !from.IsOpen() && !from.IsInclusive() {
-		expr += ">"
-	}
-	expr += ".."
-	if !to.IsOpen() && to.IsInclusive() {
-		expr += "="
+		bounds.From = q.AsVar(from.Value().(som.ULID))
+		bounds.FromInclusive = from.IsInclusive()
 	}
 	if !to.IsOpen() {
-		expr += q.AsVar(to.Value().(som.ULID))
+		bounds.To = q.AsVar(to.Value().(som.ULID))
+		bounds.ToInclusive = to.IsInclusive()
 	}
-	return expr
+	return bounds
 })
 
 // NewConstrained creates a new query builder for Constrained models.

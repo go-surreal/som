@@ -25,7 +25,7 @@ func (b *build) buildInterfaceFile() error {
 			{{- end}}
 			Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 			ApplySchema(ctx context.Context) error
-			Ping(ctx context.Context) error
+			Health(ctx context.Context) error
 			Close()
 		}
 
