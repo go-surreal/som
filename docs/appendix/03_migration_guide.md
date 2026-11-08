@@ -27,6 +27,28 @@ go mod tidy
 
 ## Version-Specific Guides
 
+### Unreleased (after v0.21.0)
+
+**SurrealDB 4.0 required**: The client returns `som.ErrUnsupportedVersion` for any server below
+4.0.0. Upgrade the server before upgrading SOM.
+
+**surrealdb.go v2**: The driver moved to the module path `github.com/surrealdb/surrealdb.go/v2`
+(v2.0.1). Regenerating sets the new requirement in your `go.mod` and drops the old
+`github.com/surrealdb/surrealdb.go` one. Update any imports of the driver in your own code
+(`github.com/surrealdb/surrealdb.go/pkg/models` becomes
+`github.com/surrealdb/surrealdb.go/v2/pkg/models`) and run `go mod tidy`.
+
+Values you pass to raw queries are encoded by the driver, which changed some encodings in v2:
+a zero `time.Time` is sent as `NONE` (was `NULL`) and a `time.Duration` as a SurrealDB
+`duration` (was an integer of nanoseconds). Fields of generated models are not affected.
+
+**Known issue**: SurrealDB 4.0.0 refuses to redefine the type of a slice of struct pointers
+(`[]*Struct`) once fields are nested in its elements
+([surrealdb/surrealdb#7670](https://github.com/surrealdb/surrealdb/issues/7670)). SOM works around
+this so `ApplySchema` can be repeated, but changing an existing `[]Struct` field to `[]*Struct`
+still fails with `Cannot give field ... the type none | object ... only an object holds a field`
+until SurrealDB fixes it.
+
 ### Unreleased (after v0.19.0)
 
 **SurrealDB 3.2 required**: The client verifies the server version on connect and returns

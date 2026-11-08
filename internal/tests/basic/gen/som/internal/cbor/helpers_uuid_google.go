@@ -3,7 +3,7 @@ package cbor
 
 import (
 	"github.com/google/uuid"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 func MarshalUUIDGoogle(u uuid.UUID) (RawMessage, error) {

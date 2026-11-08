@@ -2,7 +2,7 @@
 package conv
 
 import (
-	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	models "github.com/surrealdb/surrealdb.go/v2/pkg/models"
 	internal "som.test/gen/som/internal"
 	cbor "som.test/gen/som/internal/cbor"
 	types "som.test/gen/som/internal/types"

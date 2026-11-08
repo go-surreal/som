@@ -29,8 +29,8 @@ const (
 
 const (
 	//PkgSom  = "github.com/go-surreal/som"
-	PkgSurrealDB = "github.com/surrealdb/surrealdb.go"
-	PkgModels    = "github.com/surrealdb/surrealdb.go/pkg/models"
+	PkgSurrealDB = "github.com/surrealdb/surrealdb.go/v2"
+	PkgModels    = "github.com/surrealdb/surrealdb.go/v2/pkg/models"
 
 	PkgURL        = "net/url"
 	PkgUUIDGoogle = "github.com/google/uuid"

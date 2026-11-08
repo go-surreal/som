@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 // DateTime marshaling helpers

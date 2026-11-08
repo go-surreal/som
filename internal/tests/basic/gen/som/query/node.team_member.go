@@ -2,7 +2,7 @@
 package query
 
 import (
-	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	models "github.com/surrealdb/surrealdb.go/v2/pkg/models"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	lib "som.test/gen/som/internal/lib"

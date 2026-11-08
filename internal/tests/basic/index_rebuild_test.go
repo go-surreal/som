@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/surrealdb/surrealdb.go"
+	"github.com/surrealdb/surrealdb.go/v2"
 	"som.test/gen/som"
 	"som.test/gen/som/index"
 	"som.test/gen/som/repo"

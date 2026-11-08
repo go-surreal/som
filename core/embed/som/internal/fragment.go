@@ -3,7 +3,7 @@
 package internal
 
 import (
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 // marker keeps the LoadMarker embedded into FragmentState unexported, so that

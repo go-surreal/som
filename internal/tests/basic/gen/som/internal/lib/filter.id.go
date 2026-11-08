@@ -3,7 +3,7 @@
 package lib
 
 import (
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 type ID[M any] struct {

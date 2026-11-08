@@ -18,7 +18,11 @@ const (
 	// minStdUUIDGoVersion is the go release that introduced the stdlib uuid package.
 	minStdUUIDGoVersion = "1.27"
 
-	pkgDriver = "github.com/surrealdb/surrealdb.go"
+	pkgDriver = "github.com/surrealdb/surrealdb.go/v2"
+
+	// pkgLegacyDriver is the pre-v2 module path of the driver. It is dropped
+	// from go.mod so projects do not keep requiring both major versions.
+	pkgLegacyDriver = "github.com/surrealdb/surrealdb.go"
 
 	pkgGoogleWire = "github.com/google/wire"
 	pkgGoforjWire = "github.com/goforj/wire"
@@ -31,7 +35,7 @@ const (
 	PkgUUIDGofrs  = "github.com/gofrs/uuid"
 	PkgUUIDStd    = "uuid"
 
-	requiredDriverVersion = "v1.7.1"
+	requiredDriverVersion = "v2.0.1"
 
 	MinGeoOrbVersion            = "v0.12.0"
 	MinGeoSimplefeaturesVersion = "v0.58.0"
@@ -119,6 +123,10 @@ func (m *GoMod) CheckGoVersion() (string, error) {
 }
 
 func (m *GoMod) CheckDriverVersion() (string, error) {
+	if err := m.dropLegacyDriver(); err != nil {
+		return "", err
+	}
+
 	for _, require := range m.file.Require {
 		if require.Mod.Path != pkgDriver {
 			continue
@@ -154,6 +162,26 @@ func (m *GoMod) CheckDriverVersion() (string, error) {
 	}
 
 	return "", nil
+}
+
+func (m *GoMod) dropLegacyDriver() error {
+	for _, require := range m.file.Require {
+		if require.Mod.Path != pkgLegacyDriver {
+			continue
+		}
+
+		fmt.Printf("go.mod: dropping legacy surrealdb.go version %s\n", require.Mod.Version)
+
+		if err := m.file.DropRequire(pkgLegacyDriver); err != nil {
+			return fmt.Errorf("could not drop legacy surrealdb.go requirement: %w", err)
+		}
+
+		m.file.Cleanup()
+
+		return nil
+	}
+
+	return nil
 }
 
 // CheckStdUUIDSupport verifies that the go version declared in go.mod is new

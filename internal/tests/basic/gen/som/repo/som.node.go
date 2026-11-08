@@ -13,7 +13,7 @@ import (
 	som "som.test/gen/som"
 	"som.test/gen/som/internal"
 	"som.test/gen/som/internal/cbor"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 	"golang.org/x/sync/singleflight"
 )
 

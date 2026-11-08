@@ -13,8 +13,8 @@ import (
 	som "som.test/gen/som"
 	"som.test/gen/som/internal"
 	"som.test/gen/som/internal/cbor"
-	"github.com/surrealdb/surrealdb.go"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 // Config holds the configuration for connecting to the SurrealDB instance.
@@ -329,7 +329,7 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 	return out, nil
 }
 
-var minVersion = [3]int{3, 3, 5}
+var minVersion = [3]int{4, 0, 0}
 
 func parseVersion(raw string) ([3]int, error) {
 	s := strings.TrimPrefix(raw, "v")

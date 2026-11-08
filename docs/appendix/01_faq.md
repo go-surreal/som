@@ -20,7 +20,7 @@ notice.
 
 ### What SurrealDB version is supported?
 
-SOM is tested against SurrealDB [3.3.5](https://surrealdb.com/releases#v3-3-5). Compatibility with older versions is not guaranteed.
+SOM is tested against SurrealDB [4.0.0](https://surrealdb.com/releases#v4-0-0). Compatibility with older versions is not guaranteed.
 
 ## Technical
 

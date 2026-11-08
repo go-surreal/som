@@ -174,3 +174,38 @@ func TestGoModWrongSurrealDBVersion(t *testing.T) {
 
 	assert.Assert(t, exists)
 }
+
+func TestGoModLegacySurrealDBPackage(t *testing.T) {
+	t.Parallel()
+
+	data, err := os.ReadFile("testdata/go.legacy_driver.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mod, err := NewGoMod("go.mod", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	msg, err := mod.CheckDriverVersion()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "", msg)
+
+	hasDriver := false
+
+	for _, req := range mod.file.Require {
+		if req.Mod.Path == pkgLegacyDriver {
+			t.Fatal("legacy surrealdb.go requirement not dropped")
+		}
+
+		if req.Mod.Path == pkgDriver && req.Mod.Version == requiredDriverVersion {
+			hasDriver = true
+		}
+	}
+
+	assert.Assert(t, hasDriver)
+}

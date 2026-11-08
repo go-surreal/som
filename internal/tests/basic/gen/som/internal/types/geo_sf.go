@@ -5,7 +5,7 @@ package types
 import (
 	"som.test/gen/som/internal/cbor"
 	"github.com/peterstace/simplefeatures/geom"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 // PointSF wraps geom.Point for CBOR marshaling.

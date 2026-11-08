@@ -52,7 +52,7 @@ This facilitates multi-table, multi-depth document retrieval without complex JOI
 ## Getting started
 
 *Please note: This package is currently tested against version 
-[3.3.5](https://surrealdb.com/releases#v3-3-5)
+[4.0.0](https://surrealdb.com/releases#v4-0-0)
 of SurrealDB.*
 
 ### Disclaimer

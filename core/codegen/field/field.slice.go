@@ -54,15 +54,15 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 
 	structElem, isStruct := f.element.(*Struct)
 
-	dbType := f.TypeDatabase()
-
 	isPtrStruct := isStruct && structElem.source.Pointer()
 
-	if isPtrStruct {
-		dbType = "option<array<option<object>>>"
-	}
+	var statements []string
 
-	statements := f.define(table, prefix, dbType)
+	if isPtrStruct {
+		statements = []string{f.definePtrStructSlice(table, prefix)}
+	} else {
+		statements = f.define(table, prefix, fieldType)
+	}
 
 	if isStruct {
 		nestedPrefix := prefix + f.NameDatabase() + ".*."
@@ -72,6 +72,39 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 	}
 
 	return statements
+}
+
+const (
+	ptrStructSliceType = "option<array<option<object>>>"
+
+	// ptrStructSliceKind is ptrStructSliceType as SurrealDB reports it back.
+	ptrStructSliceKind = "none | array<none | object>"
+)
+
+// definePtrStructSlice defines a slice of struct pointers in a way that can be
+// applied repeatedly. SurrealDB 4.0.0 refuses to redefine the type of such a
+// field once fields are nested in its elements, even an unchanged one
+// (https://github.com/surrealdb/surrealdb/issues/7670). While the stored kind
+// already matches, only the assertion is altered, which leaves the type alone.
+func (f *Slice) definePtrStructSlice(table, prefix string) string {
+	name := prefix + f.NameDatabase()
+
+	define := f.defineField(fieldDef{
+		Name:  name,
+		Table: table,
+		Type:  ptrStructSliceType,
+	})
+
+	alter := fmt.Sprintf("ALTER FIELD %s ON TABLE %s DROP ASSERT;", name, table)
+
+	if assert := f.assertExpression(name, ptrStructSliceType, ""); assert != "" {
+		alter = fmt.Sprintf("ALTER FIELD %s ON TABLE %s ASSERT %s;", name, table, assert)
+	}
+
+	return fmt.Sprintf(
+		"IF (INFO FOR TABLE %s STRUCTURE).fields[WHERE name = %s][0].kind = %s { %s } ELSE { %s };",
+		table, quoteSurreal(name), quoteSurreal(ptrStructSliceKind), alter, define,
+	)
 }
 
 // IsPointer reports whether the model field is a pointer to the slice.
