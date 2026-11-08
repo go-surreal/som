@@ -38,10 +38,10 @@ var squareRangeFn = rangeFn[*model.Square](func(q *lib.Query[*model.Square], fro
 // NewSquare creates a new query builder for Square models.
 func NewSquare(db Database) Builder[model.Square] {
 	q := lib.NewQuery[*model.Square]("square")
-	return Builder[model.Square]{builder[*model.Square, *model.Square]{
+	return Builder[model.Square]{chain[*model.Square, *model.Square]{builder[*model.Square, *model.Square]{
 		db:      db,
 		info:    squareModelInfo,
 		query:   q,
 		rangeFn: squareRangeFn,
-	}}
+	}}}
 }

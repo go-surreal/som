@@ -41,10 +41,10 @@ func NewSpecialRelation(db Database) Builder[model.SpecialRelation] {
 	q := lib.NewQuery[*model.SpecialRelation]("special_relation")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialRelation.DeletedAt.Nil(true)
-	return Builder[model.SpecialRelation]{builder[*model.SpecialRelation, *model.SpecialRelation]{
+	return Builder[model.SpecialRelation]{chain[*model.SpecialRelation, *model.SpecialRelation]{builder[*model.SpecialRelation, *model.SpecialRelation]{
 		db:      db,
 		info:    specialRelationModelInfo,
 		query:   q,
 		rangeFn: specialRelationRangeFn,
-	}}
+	}}}
 }

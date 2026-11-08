@@ -38,12 +38,12 @@ var allTypesRangeFn = rangeFn[*model.AllTypes](func(q *lib.Query[*model.AllTypes
 // NewAllTypes creates a new query builder for AllTypes models.
 func NewAllTypes(db Database) Builder[model.AllTypes] {
 	q := lib.NewQuery[*model.AllTypes]("all_types")
-	return Builder[model.AllTypes]{builder[*model.AllTypes, *model.AllTypes]{
+	return Builder[model.AllTypes]{chain[*model.AllTypes, *model.AllTypes]{builder[*model.AllTypes, *model.AllTypes]{
 		db:      db,
 		info:    allTypesModelInfo,
 		query:   q,
 		rangeFn: allTypesRangeFn,
-	}}
+	}}}
 }
 
 func NewAllTypesChanges(db Database) ChangesBuilder[model.AllTypes, conv.AllTypes] {

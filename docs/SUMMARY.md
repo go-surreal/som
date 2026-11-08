@@ -59,6 +59,7 @@
   * [Transactions](querying/07_transactions.md)
   * [Changefeed](querying/08_changefeed.md)
   * [Distinct Values](querying/09_distinct.md)
+  * [Time Travel](querying/10_time_travel.md)
 
 ## Relationships
 

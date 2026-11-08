@@ -173,7 +173,7 @@ jobs:
         env:
           GOTOOLCHAIN: local
           GOWORK: "off"
-        run: go tool som --in model --no-check
+        run: go tool som --in model --no-check --versioned
 
       - name: Verify Generated Code Is Up To Date
         working-directory: .

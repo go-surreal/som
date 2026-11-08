@@ -143,11 +143,11 @@ func (b *queryBuilder) buildUnionFile(union *field.UnionTable) error {
 			// Automatically exclude expired records
 			q.ExpiryField = "expires_at"
 			{{- end}}
-			return UnionBuilder[model.{{.NameGo}}]{builder[*model.{{.NameGo}}, model.{{.NameGo}}]{
+			return UnionBuilder[model.{{.NameGo}}]{chain[*model.{{.NameGo}}, model.{{.NameGo}}]{builder[*model.{{.NameGo}}, model.{{.NameGo}}]{
 				db:    db,
 				info:  {{.NameGoLower}}ModelInfo,
 				query: q,
-			}}
+			}}}
 		}
 	`
 
@@ -255,14 +255,14 @@ func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[s
 			// Automatically exclude expired records
 			q.ExpiryField = "expires_at"
 			{{- end}}
-			return Builder[model.{{.NameGo}}]{builder[*model.{{.NameGo}}, *model.{{.NameGo}}]{
+			return Builder[model.{{.NameGo}}]{chain[*model.{{.NameGo}}, *model.{{.NameGo}}]{builder[*model.{{.NameGo}}, *model.{{.NameGo}}]{
 				db:      db,
 				info:    {{.NameGoLower}}ModelInfo,
 				query:   q,
 				{{- if .HasRangeFn}}
 				rangeFn: {{.NameGoLower}}RangeFn,
 				{{- end}}
-			}}
+			}}}
 		}
 		{{if .HasChangefeed}}
 		func New{{.NameGo}}Changes(db Database) ChangesBuilder[model.{{.NameGo}}, conv.{{.NameGo}}] {

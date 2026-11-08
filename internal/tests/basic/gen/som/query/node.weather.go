@@ -41,10 +41,10 @@ var weatherRangeFn = rangeFn[*model.Weather](func(q *lib.Query[*model.Weather], 
 // NewWeather creates a new query builder for Weather models.
 func NewWeather(db Database) Builder[model.Weather] {
 	q := lib.NewQuery[*model.Weather]("weather")
-	return Builder[model.Weather]{builder[*model.Weather, *model.Weather]{
+	return Builder[model.Weather]{chain[*model.Weather, *model.Weather]{builder[*model.Weather, *model.Weather]{
 		db:      db,
 		info:    weatherModelInfo,
 		query:   q,
 		rangeFn: weatherRangeFn,
-	}}
+	}}}
 }

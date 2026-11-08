@@ -25,9 +25,9 @@ var coloredModelInfo = modelInfo[*model.Colored, model.Colored]{
 // Colored union: Square, Circle.
 func NewColored(db Database) UnionBuilder[model.Colored] {
 	q := lib.NewQuery[*model.Colored]("square, circle")
-	return UnionBuilder[model.Colored]{builder[*model.Colored, model.Colored]{
+	return UnionBuilder[model.Colored]{chain[*model.Colored, model.Colored]{builder[*model.Colored, model.Colored]{
 		db:    db,
 		info:  coloredModelInfo,
 		query: q,
-	}}
+	}}}
 }

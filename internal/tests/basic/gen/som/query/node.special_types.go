@@ -41,10 +41,10 @@ func NewSpecialTypes(db Database) Builder[model.SpecialTypes] {
 	q := lib.NewQuery[*model.SpecialTypes]("special_types")
 	// Automatically exclude soft-deleted records
 	q.SoftDeleteFilter = filter.SpecialTypes.DeletedAt.Nil(true)
-	return Builder[model.SpecialTypes]{builder[*model.SpecialTypes, *model.SpecialTypes]{
+	return Builder[model.SpecialTypes]{chain[*model.SpecialTypes, *model.SpecialTypes]{builder[*model.SpecialTypes, *model.SpecialTypes]{
 		db:      db,
 		info:    specialTypesModelInfo,
 		query:   q,
 		rangeFn: specialTypesRangeFn,
-	}}
+	}}}
 }

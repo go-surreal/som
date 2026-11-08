@@ -23,9 +23,9 @@ var eventSummaryModelInfo = modelInfo[*model.EventSummary, *model.EventSummary]{
 // NewEventSummary creates a new query builder for EventSummary views.
 func NewEventSummary(db Database) Builder[model.EventSummary] {
 	q := lib.NewQuery[*model.EventSummary]("event_summary")
-	return Builder[model.EventSummary]{builder[*model.EventSummary, *model.EventSummary]{
+	return Builder[model.EventSummary]{chain[*model.EventSummary, *model.EventSummary]{builder[*model.EventSummary, *model.EventSummary]{
 		db:    db,
 		info:  eventSummaryModelInfo,
 		query: q,
-	}}
+	}}}
 }

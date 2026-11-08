@@ -19,6 +19,7 @@ go run github.com/go-surreal/som@latest -i <input_dir>
 | `--no-check` | Skip version compatibility checks | `false` |
 | `--no-count-index` | Disable automatic COUNT index generation | `false` |
 | `--wire` | Override wire generation: `"no"`, `"google"`, or `"goforj"` | auto-detect |
+| `--versioned` | Generate [time-travel queries](../querying/10_time_travel.md) (`Version`); requires SurrealKV with versioning enabled | `false` |
 
 ### Example
 

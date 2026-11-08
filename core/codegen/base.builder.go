@@ -18,9 +18,10 @@ type build struct {
 	noCountIndex bool
 }
 
-func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures) error {
+func BuildStatic(fs *fs.FS, outPkg string, features *parser.UsedFeatures, versioned bool) error {
 	tmpl := &embed.Template{
 		GenerateOutPath: outPkg,
+		Versioned:       versioned,
 	}
 
 	if features != nil {

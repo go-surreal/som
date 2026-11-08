@@ -42,10 +42,10 @@ var teamMemberRangeFn = rangeFn[*model.TeamMember](func(q *lib.Query[*model.Team
 // NewTeamMember creates a new query builder for TeamMember models.
 func NewTeamMember(db Database) Builder[model.TeamMember] {
 	q := lib.NewQuery[*model.TeamMember]("team_member")
-	return Builder[model.TeamMember]{builder[*model.TeamMember, *model.TeamMember]{
+	return Builder[model.TeamMember]{chain[*model.TeamMember, *model.TeamMember]{builder[*model.TeamMember, *model.TeamMember]{
 		db:      db,
 		info:    teamMemberModelInfo,
 		query:   q,
 		rangeFn: teamMemberRangeFn,
-	}}
+	}}}
 }

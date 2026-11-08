@@ -39,3 +39,36 @@ func TestEmbedNoLocalImports(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestReadVersionedQueryMethod(t *testing.T) {
+	t.Parallel()
+
+	const versionMethod = "func (b chain[M, R]) Version(at time.Time)"
+
+	for _, versioned := range []bool{false, true} {
+		files, err := Read(&Template{GenerateOutPath: "som.test/gen/som", Versioned: versioned})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		builder := findFile(t, files, "query/builder.go")
+
+		if hasMethod := strings.Contains(string(builder.Content), versionMethod); hasMethod != versioned {
+			t.Errorf("versioned=%v: Version method present=%v", versioned, hasMethod)
+		}
+	}
+}
+
+func findFile(t *testing.T, files []*File, path string) *File {
+	t.Helper()
+
+	for _, file := range files {
+		if file.Path == path {
+			return file
+		}
+	}
+
+	t.Fatalf("file %s not found", path)
+
+	return nil
+}
