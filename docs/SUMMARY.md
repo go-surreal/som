@@ -31,6 +31,7 @@
   * [Fragments](models/10_fragments.md)
   * [Unions](models/11_unions.md)
   * [Field Constraints](models/12_constraints.md)
+  * [Validation](models/13_validation.md)
 
 ## Data Types
 

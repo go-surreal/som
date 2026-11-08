@@ -74,11 +74,6 @@ func (f *Slice) SchemaStatements(table, prefix string) []string {
 	return statements
 }
 
-// IsPointer reports whether the model field is a pointer to the slice.
-func (f *Slice) IsPointer() bool {
-	return f.source.Pointer()
-}
-
 func (f *Slice) Element() Field {
 	return f.element
 }

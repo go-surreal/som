@@ -45,6 +45,9 @@ func (c *TypeContext) ParseField(t gotype.Type) (Field, error) {
 		if len(tagInfo.Asserts) > 0 {
 			field.setAsserts(tagInfo.Asserts)
 		}
+		if tagInfo.NoValidate {
+			field.setSkipValidate(true)
+		}
 	}
 
 	if err := field.Validate(); err != nil {
@@ -136,6 +139,7 @@ func (r *fieldRegistry) parse(t gotype.Type, elem gotype.Type, ctx *FieldContext
 			if isPtr {
 				field.setPointer(true)
 			}
+			field.setHasValidate(hasValidateMethod(elem))
 			return field, nil
 		}
 	}

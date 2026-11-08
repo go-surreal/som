@@ -11,6 +11,10 @@ import (
 type SinkTable struct {
 	Name   string
 	Fields []Field
+
+	// HasValidate reports whether the model type provides a
+	// "Validate() error" method of its own.
+	HasValidate bool
 }
 
 func (t *SinkTable) FileName() string {

@@ -24,12 +24,22 @@ type Field interface {
 	Search() *SearchInfo
 	Asserts() []AssertInfo
 
+	// HasValidate reports whether the type of the field provides a
+	// "Validate() error" method that is to be called before a write.
+	HasValidate() bool
+
+	// SkipValidate reports whether the field opted out of validation via
+	// `som:"novalidate"`, which excludes the field and everything below it.
+	SkipValidate() bool
+
 	setName(string)
 	setDBName(string)
 	setPointer(bool)
 	setIndexes([]IndexInfo)
 	setSearch(*SearchInfo)
 	setAsserts([]AssertInfo)
+	setHasValidate(bool)
+	setSkipValidate(bool)
 
 	// Validate checks the field on its own, directly after it was parsed.
 	Validate() error
@@ -47,12 +57,14 @@ type Field interface {
 // fieldBase carries the state every field shares and provides the default
 // behaviour for the parts of Field that most types do not override.
 type fieldBase struct {
-	name    string
-	dbName  string
-	pointer bool
-	indexes []IndexInfo
-	search  *SearchInfo
-	asserts []AssertInfo
+	name         string
+	dbName       string
+	pointer      bool
+	indexes      []IndexInfo
+	search       *SearchInfo
+	asserts      []AssertInfo
+	hasValidate  bool
+	skipValidate bool
 }
 
 func newBase(name string) fieldBase {
@@ -103,6 +115,22 @@ func (f *fieldBase) Search() *SearchInfo {
 
 func (f *fieldBase) setSearch(info *SearchInfo) {
 	f.search = info
+}
+
+func (f *fieldBase) HasValidate() bool {
+	return f.hasValidate
+}
+
+func (f *fieldBase) setHasValidate(val bool) {
+	f.hasValidate = val
+}
+
+func (f *fieldBase) SkipValidate() bool {
+	return f.skipValidate
+}
+
+func (f *fieldBase) setSkipValidate(val bool) {
+	f.skipValidate = val
 }
 
 func (f *fieldBase) Asserts() []AssertInfo {
