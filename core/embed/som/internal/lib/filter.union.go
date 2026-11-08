@@ -5,7 +5,7 @@ package lib
 import (
 	"strings"
 
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 // Union is the filter of a multi-table record link (record<a|b>). The linked

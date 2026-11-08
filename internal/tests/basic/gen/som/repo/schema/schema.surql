@@ -204,12 +204,12 @@ DEFINE FIELD OVERWRITE field_nested_data_slice.*.string_ptr ON TABLE all_types T
 DEFINE FIELD OVERWRITE field_nested_data_slice.*.int_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 DEFINE FIELD OVERWRITE field_nested_data_slice.*.time_ptr ON TABLE all_types TYPE option<datetime>;
 DEFINE FIELD OVERWRITE field_nested_data_slice.*.uuid_ptr ON TABLE all_types TYPE option<uuid>;
-DEFINE FIELD OVERWRITE field_nested_data_ptr_slice ON TABLE all_types TYPE option<array<option<object>>>;
+IF (INFO FOR TABLE all_types STRUCTURE).fields[WHERE name = "field_nested_data_ptr_slice"][0].kind = "none | array<none | object>" { ALTER FIELD field_nested_data_ptr_slice ON TABLE all_types DROP ASSERT; } ELSE { DEFINE FIELD OVERWRITE field_nested_data_ptr_slice ON TABLE all_types TYPE option<array<option<object>>>; };
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.string_ptr ON TABLE all_types TYPE option<string>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.int_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.time_ptr ON TABLE all_types TYPE option<datetime>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice.*.uuid_ptr ON TABLE all_types TYPE option<uuid>;
-DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr ON TABLE all_types TYPE option<array<option<object>>>;
+IF (INFO FOR TABLE all_types STRUCTURE).fields[WHERE name = "field_nested_data_ptr_slice_ptr"][0].kind = "none | array<none | object>" { ALTER FIELD field_nested_data_ptr_slice_ptr ON TABLE all_types DROP ASSERT; } ELSE { DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr ON TABLE all_types TYPE option<array<option<object>>>; };
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr.*.string_ptr ON TABLE all_types TYPE option<string>;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr.*.int_ptr ON TABLE all_types TYPE option<int> ASSERT $value == NONE OR $value == NULL OR $value >= -9223372036854775808 AND $value <= 9223372036854775807;
 DEFINE FIELD OVERWRITE field_nested_data_ptr_slice_ptr.*.time_ptr ON TABLE all_types TYPE option<datetime>;

@@ -13,8 +13,8 @@ import (
 	som "{{.GenerateOutPath}}"
 	"{{.GenerateOutPath}}/internal"
 	"{{.GenerateOutPath}}/internal/cbor"
-	"github.com/surrealdb/surrealdb.go"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 // Config holds the configuration for connecting to the SurrealDB instance.
@@ -399,7 +399,7 @@ func (c *dbConn) Live(ctx context.Context, statement string, vars map[string]any
 
 // minServerVersion is the oldest SurrealDB version som supports. The upper
 // bound is the driver's, as som cannot work with a server the driver does not.
-const minServerVersion = "3.3.5"
+const minServerVersion = "4.0.0"
 
 func checkVersion(ctx context.Context, db *surrealdb.DB) error {
 	ver, err := db.Version(ctx)

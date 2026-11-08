@@ -15,7 +15,7 @@ require (
 	github.com/moby/moby/api v1.56.1
 	github.com/paulmach/orb v0.14.0
 	github.com/peterstace/simplefeatures v0.59.0
-	github.com/surrealdb/surrealdb.go v1.8.0
+	github.com/surrealdb/surrealdb.go/v2 v2.0.1
 	github.com/testcontainers/testcontainers-go v0.45.0
 	github.com/twpayne/go-geom v1.7.0
 	golang.org/x/sync v0.24.0

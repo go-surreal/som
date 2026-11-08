@@ -87,7 +87,7 @@ type User struct {
 
 1. Verify SurrealDB is running:
    ```bash
-   docker run --rm -p 8000:8000 surrealdb/surrealdb:v3.3.5 \
+   docker run --rm -p 8000:8000 surrealdb/surrealdb:v4.0.0 \
        start --user root --pass root
    ```
 
@@ -139,6 +139,20 @@ type User struct {
    - Channels, functions - Not supported
 
 3. Ensure pointer/non-pointer consistency between model and database
+
+### "only an object holds a field" when applying the schema
+
+**Problem**: `ApplySchema` fails with
+`Cannot give field ... the type none | object: field ... is defined in it, and only an object holds a field`.
+
+**Cause**: A bug in SurrealDB 4.0.0
+([surrealdb/surrealdb#7670](https://github.com/surrealdb/surrealdb/issues/7670)) refuses to set the
+type of a slice of struct pointers (`[]*Struct`) once fields are nested in its elements. SOM avoids
+setting the type again when it is unchanged, so this only happens when an existing field changes
+its type, e.g. from `[]Struct` to `[]*Struct`.
+
+**Solution**: Wait for a SurrealDB release that fixes the issue, or keep the previous field type
+for now.
 
 ### Timestamps not updating
 

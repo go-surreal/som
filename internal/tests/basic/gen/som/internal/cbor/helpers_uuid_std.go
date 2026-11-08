@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"uuid"
 
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 func MarshalUUIDStd(u uuid.UUID) (RawMessage, error) {

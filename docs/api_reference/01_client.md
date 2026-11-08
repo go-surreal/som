@@ -127,7 +127,7 @@ that intent cannot be derived from the model structs.
 ## Version Verification
 
 When creating a client, SOM automatically verifies that the connected SurrealDB server is
-supported: at least **3.3.5**, and below the first version the underlying driver does not
+supported: at least **4.0.0**, and below the first version the underlying driver does not
 support (currently **5.0.0**). If the version check fails, `NewClient` returns a
 `som.ErrUnsupportedVersion` error:
 
@@ -135,7 +135,7 @@ support (currently **5.0.0**). If the version check fails, `NewClient` returns a
 client, err := repo.NewClient(ctx, config)
 if err != nil {
     if errors.Is(err, som.ErrUnsupportedVersion) {
-        log.Fatal("SurrealDB server version too old, please upgrade to 3.3.5+")
+        log.Fatal("SurrealDB server version too old, please upgrade to 4.0.0+")
     }
     log.Fatal(err)
 }

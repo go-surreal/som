@@ -7,7 +7,7 @@ import (
 
 	"som.test/gen/som/internal/cbor"
 	"github.com/gofrs/uuid"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 )
 
 type UUIDGofrs uuid.UUID

@@ -50,6 +50,12 @@ DEFINE FIELD authors ON post TYPE option<array<record<user>>>;
 DEFINE FIELD data ON document TYPE option<bytes>;
 ```
 
+A slice of struct pointers (`[]*CustomStruct`) is stored as `option<array<option<object>>>`. While
+the field already has that type, re-applying the schema only updates its assertion instead of
+redefining it. This works around a SurrealDB 4.0.0 bug
+([surrealdb/surrealdb#7670](https://github.com/surrealdb/surrealdb/issues/7670)) that refuses to
+redefine such a field once fields are nested in its elements.
+
 ## Filter Operations
 
 ### Empty/Nil Checks

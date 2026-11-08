@@ -4,7 +4,7 @@ package types
 
 import (
 	"som.test/gen/som/internal/cbor"
-	"github.com/surrealdb/surrealdb.go/pkg/models"
+	"github.com/surrealdb/surrealdb.go/v2/pkg/models"
 	"github.com/twpayne/go-geom"
 )
 

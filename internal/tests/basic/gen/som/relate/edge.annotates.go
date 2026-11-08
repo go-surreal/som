@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	models "github.com/surrealdb/surrealdb.go/v2/pkg/models"
 	som "som.test/gen/som"
 	conv "som.test/gen/som/conv"
 	internal "som.test/gen/som/internal"

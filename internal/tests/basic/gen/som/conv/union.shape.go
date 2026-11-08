@@ -3,7 +3,7 @@ package conv
 
 import (
 	"fmt"
-	models "github.com/surrealdb/surrealdb.go/pkg/models"
+	models "github.com/surrealdb/surrealdb.go/v2/pkg/models"
 	cbor "som.test/gen/som/internal/cbor"
 	model "som.test/model"
 )
