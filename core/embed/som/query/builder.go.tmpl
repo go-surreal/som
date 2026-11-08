@@ -176,14 +176,6 @@ func (b builder[M, R]) Timeout(timeout time.Duration) BuilderNoLiveOf[M, R] {
 	return BuilderNoLiveOf[M, R]{b}
 }
 
-// Parallel tells SurrealDB that individual parts
-// of the query can be calculated in parallel.
-// This could lead to a faster execution.
-func (b builder[M, R]) Parallel(parallel bool) BuilderNoLiveOf[M, R] {
-	b.query.Parallel = parallel
-	return BuilderNoLiveOf[M, R]{b}
-}
-
 // TempFiles tells SurrealDB to process the query using temporary files
 // rather than memory. This reduces memory usage for large result sets
 // at the cost of slower performance.
@@ -1000,12 +992,6 @@ func (b SearchBuilderOf[M, R]) Limit(limit int) SearchBuilderOf[M, R] {
 // Timeout adds an execution time limit to the query.
 func (b SearchBuilderOf[M, R]) Timeout(timeout time.Duration) SearchBuilderOf[M, R] {
 	b.query.Timeout = timeout
-	return b
-}
-
-// Parallel tells SurrealDB that individual parts of the query can be calculated in parallel.
-func (b SearchBuilderOf[M, R]) Parallel(parallel bool) SearchBuilderOf[M, R] {
-	b.query.Parallel = parallel
 	return b
 }
 

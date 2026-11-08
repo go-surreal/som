@@ -390,7 +390,6 @@ filter.User.Address().City.Equal("Berlin")
 | `Start(n)` | Skip results |
 | `Fetch(...)` | Eager load relations |
 | `Timeout(d)` | Query timeout |
-| `Parallel(bool)` | Parallel execution |
 | `TempFiles(bool)` | Disk-based processing for large result sets |
 | `WithDeleted()` | Include soft-deleted records |
 | `WithExpired()` | Include records past their expiry |

@@ -113,7 +113,6 @@ func (r *allTypesRepo) List(ctx context.Context) ([]*model.AllTypes, error) {
 		// Start(10).
 		// Limit(10).
 		Timeout(10 * time.Second).
-		Parallel(true).
 		// Select( /* choose what data (apart from basic node) should be loaded into the model */ ).
 		All(ctx)
 }

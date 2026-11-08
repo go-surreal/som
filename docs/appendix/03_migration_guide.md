@@ -50,6 +50,10 @@ this so `ApplySchema` can be repeated, but changing an existing `[]Struct` field
 still fails with `Cannot give field ... the type none | object ... only an object holds a field`
 until SurrealDB fixes it.
 
+**`Parallel()` removed**: SurrealDB no longer supports the `PARALLEL` clause, so any query built
+with `Parallel(true)` already failed with a parse error. The method is gone from the query and
+search builders; delete the call.
+
 ### Unreleased (after v0.19.0)
 
 **SurrealDB 3.2 required**: The client verifies the server version on connect and returns

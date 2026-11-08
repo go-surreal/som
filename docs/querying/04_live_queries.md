@@ -161,7 +161,7 @@ Not all query builder methods are compatible with live queries. The following me
 
 - `Order()` / `OrderRandom()`
 - `Start()` / `Limit()` / `Range()`
-- `Timeout()` / `Parallel()` / `TempFiles()`
+- `Timeout()` / `TempFiles()`
 
 This is enforced at compile time — you cannot accidentally build an invalid live query.
 

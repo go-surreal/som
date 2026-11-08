@@ -181,7 +181,6 @@ Builder[M]
 ├── Start(n)              // START (returns BuilderNoLive)
 ├── Limit(n)              // LIMIT (returns BuilderNoLive)
 ├── Timeout(duration)     // Execution timeout (returns BuilderNoLive)
-├── Parallel(bool)        // Parallel execution (returns BuilderNoLive)
 ├── TempFiles(bool)       // Disk-based processing (returns BuilderNoLive)
 ├── Range(from, to)       // Range query (returns BuilderNoLive)
 │
