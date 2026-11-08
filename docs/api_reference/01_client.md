@@ -53,6 +53,10 @@ type Config struct {
 
     // Strict marks the database as strict on creation.
     Strict bool
+
+    // ReconnectInterval enables automatic reconnection when set.
+    // Requires a ws:// or wss:// address.
+    ReconnectInterval time.Duration
 }
 ```
 
@@ -156,6 +160,55 @@ workers (such as the expiry purge goroutine):
 ```go
 client.Close()
 ```
+
+### Health Checks
+
+`Ping` sends a request to the database and waits for its response. It returns an error if the
+database cannot be reached, which makes it a fit for readiness probes:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+defer cancel()
+
+if err := client.Ping(ctx); err != nil {
+    // database unreachable
+}
+```
+
+### Reconnecting
+
+By default, a lost connection stays lost: every request fails until a new client is created. Set
+`ReconnectInterval` to have the client reconnect on its own:
+
+```go
+client, err := repo.NewClient(ctx, repo.Config{
+    Address:           "ws://localhost:8000",
+    Username:          "root",
+    Password:          "root",
+    Namespace:         "myapp",
+    Database:          "production",
+    ReconnectInterval: 5 * time.Second,
+})
+```
+
+The connection is checked for loss at that interval. Once lost, it is re-established, and the
+session is restored: namespace, database, authentication and running live queries. If the token of
+the original sign-in has expired by then, the client signs in again with the configured
+credentials.
+
+While the connection is down:
+
+- Requests fail, including `Ping`. Requests that were already in flight when the connection was
+  lost fail as well, at the latest one interval later, instead of waiting for a response that will
+  never come.
+- Open [transactions](../querying/07_transactions.md) cannot survive the reconnect; operations
+  within them keep failing afterwards.
+- Live queries receive no events. They resume after the reconnect, but changes made in the meantime
+  are not replayed.
+
+Reconnecting requires a WebSocket address (`ws://` or `wss://`); `NewClient` returns an error for
+`http://` or `https://`. The initial connection is not retried: if the database cannot be reached
+on startup, `NewClient` fails as before.
 
 ### Context Usage
 

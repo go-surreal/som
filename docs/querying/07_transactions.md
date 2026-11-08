@@ -113,6 +113,7 @@ for {
 - **Idempotent close**: Calling commit or cancel multiple times is safe; subsequent calls return `ErrTransactionClosed`.
 - **Cache bypass**: Operations within a transaction bypass the context cache and always return fresh data from the database.
 - **Live queries**: Live queries are not supported within transactions (`ErrLiveNotSupportedInTx`).
+- **Connection loss**: A transaction is bound to its connection. If the connection is lost, the transaction is gone with it — even when the client [reconnects](../api_reference/01_client.md#reconnecting) — and further operations within it fail.
 
 ## Error Types
 

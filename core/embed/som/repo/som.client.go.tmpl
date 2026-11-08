@@ -39,6 +39,16 @@ type Config struct {
 	// It only takes effect for a database that does not exist yet: an existing
 	// database keeps whatever mode it was created with.
 	Strict bool
+
+	// ReconnectInterval enables automatic reconnection when set: the
+	// connection is checked for loss at this interval and, once lost,
+	// re-established along with its session (namespace, database,
+	// authentication) and running live queries. Requires a ws:// or wss://
+	// address. Reconnection is disabled when unset.
+	//
+	// Requests sent while the connection is down fail, as does any open
+	// transaction, since a transaction cannot outlive its connection.
+	ReconnectInterval time.Duration
 }
 
 type dbConn struct {
@@ -381,7 +391,7 @@ func checkVersion(ctx context.Context, db *surrealdb.DB) error {
 }
 
 func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
-	db, err := surrealdb.FromEndpointURLString(ctx, conf.Address)
+	db, err := connect(ctx, conf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SurrealDB: %w", err)
 	}
@@ -391,12 +401,8 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		return nil, err
 	}
 
-	if conf.Username != "" && conf.Password != "" {
-		_, err := db.SignIn(ctx, surrealdb.Auth{
-			Username: conf.Username,
-			Password: conf.Password,
-		})
-		if err != nil {
+	if credentials := credentialsOf(conf); credentials != nil {
+		if _, err := db.SignIn(ctx, *credentials); err != nil {
 			_ = db.Close(ctx)
 			return nil, fmt.Errorf("failed to authenticate: %w", err)
 		}
@@ -482,6 +488,18 @@ func (c *ClientImpl) Raw(ctx context.Context, query string, params som.Params) (
 		return nil, err
 	}
 	return som.NewRawResult(data), nil
+}
+
+// Ping checks that the database can be reached by sending a request and
+// waiting for its response. Use it for health checks: an error means the
+// connection is lost, either for good or until it is re-established when
+// Config.ReconnectInterval is set.
+func (c *ClientImpl) Ping(ctx context.Context) error {
+	if _, err := c.db.conn.Version(ctx); err != nil {
+		return fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	return nil
 }
 
 func (c *ClientImpl) Close() {
