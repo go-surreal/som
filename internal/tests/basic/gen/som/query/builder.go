@@ -16,6 +16,7 @@ import (
 	"som.test/gen/som/internal"
 	"som.test/gen/som/internal/cbor"
 	"som.test/gen/som/internal/lib"
+	"som.test/gen/som/internal/types"
 	"som.test/gen/som/with"
 )
 
@@ -35,6 +36,10 @@ type modelInfo[M any, R any] struct {
 	// and DB-typed values. Used to derive pagination cursor values.
 	Fields func(R) map[string]any
 }
+
+// errVersionUnsupported is returned by the query terminals that can only read
+// the current state of the database, if Version was set.
+var errVersionUnsupported = errors.New("query does not support Version: it only reads the current state")
 
 type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) lib.RecordRange
 
@@ -151,6 +156,18 @@ func (b builder[M, R]) Start(start int) BuilderNoLiveOf[M, R] {
 // Limit restricts the query to return at most x records.
 func (b builder[M, R]) Limit(limit int) BuilderNoLiveOf[M, R] {
 	b.query.Limit = limit
+	return BuilderNoLiveOf[M, R]{b}
+}
+
+// Version reads the records as they were at the given point in time
+// (time travel). Fetched relations are resolved at that time as well.
+// Requires a SurrealKV datastore with versioning enabled, otherwise the
+// query fails; times before the table existed fail as well.
+// Expired records are filtered relative to the given time.
+// Live queries and full-text search only read the current state and fail
+// if Version was set.
+func (b builder[M, R]) Version(at time.Time) BuilderNoLiveOf[M, R] {
+	b.query.Version = b.query.AsVar(types.DateTime{Time: at})
 	return BuilderNoLiveOf[M, R]{b}
 }
 
@@ -482,6 +499,10 @@ func (b builder[M, R]) IterateID(ctx context.Context, batchSize int) iter.Seq2[s
 // data consistency. The other way around, there could be missing
 // updates happening between the initial query and the live query.
 func (b BuilderOf[M, R]) Live(ctx context.Context) (<-chan LiveResult[R], error) {
+	if err := b.requireCurrentState(); err != nil {
+		return nil, err
+	}
+
 	req := b.query.BuildAsLive()
 	resChan, err := b.db.Live(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -553,6 +574,16 @@ func (b BuilderOf[M, R]) LiveCount(ctx context.Context) (<-chan int, error) {
 //func (b builder[M, R]) LiveDiff(ctx context.Context) (<-chan LiveResult[R], error) {
 //	panic("not yet implemented") // TODO: implement!
 //}
+
+// requireCurrentState fails if Version was set, for the terminals that cannot
+// read a past state.
+func (b builder[M, R]) requireCurrentState() error {
+	if b.query.Version != "" {
+		return errVersionUnsupported
+	}
+
+	return nil
+}
 
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
@@ -956,6 +987,8 @@ func (b builder[M, R]) SearchAll(searches ...lib.Search[M]) SearchBuilderOf[M, R
 
 // SearchBuilder provides search-specific query methods.
 // It does NOT expose Search() or SearchAll() to prevent chaining multiple search calls.
+// Its terminals fail if Version was set, as the full-text index only holds
+// the current state.
 type SearchBuilderOf[M any, R any] struct {
 	builder[M, R]
 }
@@ -1004,6 +1037,10 @@ func (b SearchBuilderOf[M, R]) TempFiles(tempFiles bool) SearchBuilderOf[M, R] {
 
 // All returns all records matching the search conditions (without search metadata).
 func (b SearchBuilderOf[M, R]) All(ctx context.Context) ([]R, error) {
+	if err := b.requireCurrentState(); err != nil {
+		return nil, err
+	}
+
 	return b.builder.All(ctx)
 }
 
@@ -1014,6 +1051,12 @@ func (b SearchBuilderOf[M, R]) AllAsync(ctx context.Context) *asyncResult[[]R] {
 
 // First returns the first record matching the search conditions (without search metadata).
 func (b SearchBuilderOf[M, R]) First(ctx context.Context) (R, error) {
+	var zero R
+
+	if err := b.requireCurrentState(); err != nil {
+		return zero, err
+	}
+
 	return b.builder.First(ctx)
 }
 
@@ -1024,6 +1067,10 @@ func (b SearchBuilderOf[M, R]) FirstAsync(ctx context.Context) *asyncResult[R] {
 
 // AllMatches returns all records matching the search conditions with search metadata.
 func (b SearchBuilderOf[M, R]) AllMatches(ctx context.Context) ([]lib.SearchResult[R], error) {
+	if err := b.requireCurrentState(); err != nil {
+		return nil, err
+	}
+
 	req := b.query.BuildAsAll()
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -1052,6 +1099,10 @@ func (b SearchBuilderOf[M, R]) FirstMatch(ctx context.Context) (lib.SearchResult
 
 // Count returns the number of records matching the search conditions.
 func (b SearchBuilderOf[M, R]) Count(ctx context.Context) (int, error) {
+	if err := b.requireCurrentState(); err != nil {
+		return 0, err
+	}
+
 	return b.builder.Count(ctx)
 }
 
@@ -1062,6 +1113,10 @@ func (b SearchBuilderOf[M, R]) CountAsync(ctx context.Context) *asyncResult[int]
 
 // Exists returns whether at least one record matches the search conditions.
 func (b SearchBuilderOf[M, R]) Exists(ctx context.Context) (bool, error) {
+	if err := b.requireCurrentState(); err != nil {
+		return false, err
+	}
+
 	return b.builder.Exists(ctx)
 }
 

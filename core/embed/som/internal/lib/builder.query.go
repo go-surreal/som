@@ -67,6 +67,10 @@ type Query[T any] struct {
 	// the whole table, which is only valid for an "id ASC" order.
 	SeekAfter string
 
+	// Version holds the query variable of the datetime a time-travel query
+	// reads the records at. Live queries do not support it.
+	Version string
+
 	SearchClauses []SearchClause
 	SearchWhere   string
 
@@ -260,7 +264,7 @@ func (q Query[T]) render() string {
 
 	// 1b. Inject expiry filter to exclude expired records (if enabled and not disabled)
 	if !q.IncludeExpired && q.ExpiryField != "" {
-		whereParts = append(whereParts, "("+q.ExpiryField+" IS NONE OR "+q.ExpiryField+" > time::now())")
+		whereParts = append(whereParts, "("+q.ExpiryField+" IS NONE OR "+q.ExpiryField+" > "+q.now()+")")
 	}
 
 	// 1c. Keep the lower bound of a range that a cursor seek replaced
@@ -323,6 +327,12 @@ func (q Query[T]) render() string {
 		out.WriteString(strings.Join(q.Fetch, ", "))
 	}
 
+	// VERSION must come after FETCH and before TIMEOUT.
+	if !q.live && q.Version != "" {
+		out.WriteString(" VERSION ")
+		out.WriteString(q.Version)
+	}
+
 	if !q.live && q.Timeout > 0 {
 		out.WriteString(" TIMEOUT ")
 		out.WriteString(q.Timeout.Round(time.Second).String())
@@ -350,6 +360,15 @@ func (q Query[T]) source() string {
 	default:
 		return q.node
 	}
+}
+
+// now returns the point in time the query reads the records at.
+func (q Query[T]) now() string {
+	if q.Version != "" {
+		return q.Version
+	}
+
+	return "time::now()"
 }
 
 func (q Query[T]) recordRange() RecordRange {

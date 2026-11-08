@@ -20,6 +20,10 @@ import (
 const (
 	surrealDBVersion    = "4.0.0"
 	containerStartedMsg = "Started web server on "
+
+	// surrealDBPath matches the v4 default engine (SurrealKV) instead of the
+	// in-memory store, with versioning on so VERSION queries can be tested.
+	surrealDBPath = "surrealkv:///data/db?versioned=true"
 )
 
 // errAlreadyInProgress is a regular expression that matches the
@@ -47,7 +51,7 @@ func TestMain(m *testing.M) {
 	req := testcontainers.ContainerRequest{
 		Image: "surrealdb/surrealdb:v" + surrealDBVersion,
 		Env: map[string]string{
-			"SURREAL_PATH": "memory",
+			"SURREAL_PATH": surrealDBPath,
 			"SURREAL_USER": sharedUsername,
 			"SURREAL_PASS": sharedPassword,
 		},
@@ -58,6 +62,7 @@ func TestMain(m *testing.M) {
 		WaitingFor:   wait.ForLog(containerStartedMsg),
 		HostConfigModifier: func(conf *container.HostConfig) {
 			conf.AutoRemove = true
+			conf.Tmpfs = map[string]string{"/data": "rw,mode=1777"}
 		},
 	}
 

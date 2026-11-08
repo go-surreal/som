@@ -12,8 +12,32 @@ import (
 	"github.com/go-surreal/som/core/util/gomod"
 )
 
-func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bool, wireOverride string) error {
-	absDir, err := filepath.Abs(outPath)
+// Options configures a code generation run.
+type Options struct {
+	InPath  string
+	OutPath string
+
+	// Init generates the static base files only, without parsing a model.
+	Init bool
+
+	Verbose bool
+	Dry     bool
+
+	// Check enables the go and som version checks.
+	Check bool
+
+	NoCountIndex bool
+
+	// Wire overrides the detected wire package: "no", "google" or "goforj".
+	Wire string
+
+	// Versioned enables time-travel queries (SELECT ... VERSION). It requires
+	// a SurrealKV datastore started with versioning enabled.
+	Versioned bool
+}
+
+func Generate(opts Options) error {
+	absDir, err := filepath.Abs(opts.OutPath)
 	if err != nil {
 		return fmt.Errorf("could not find absolute path: %v", err)
 	}
@@ -23,13 +47,13 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		return fmt.Errorf("could not find go.mod: %v", err)
 	}
 
-	if check {
+	if opts.Check {
 		info, err := mod.CheckGoVersion()
 		if err != nil {
 			return err
 		}
 
-		if verbose && info != "" {
+		if opts.Verbose && info != "" {
 			fmt.Println("ⓘ ", info)
 		}
 	}
@@ -39,13 +63,13 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		return err
 	}
 
-	if verbose && info != "" {
+	if opts.Verbose && info != "" {
 		fmt.Println("ⓘ ", info)
 	}
 
 	var wirePackage string
 
-	switch wireOverride {
+	switch opts.Wire {
 	case "no":
 		wirePackage = ""
 	case "google":
@@ -63,9 +87,9 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 	var source *parser.Output
 	usedFeatures := &parser.UsedFeatures{}
 
-	if !init {
+	if !opts.Init {
 		// Parse first to determine which features are used.
-		source, err = parser.Parse(inPath, outPkg,
+		source, err = parser.Parse(opts.InPath, outPkg,
 			[]parser.TypeHandler{
 				&parser.Node{},
 				&parser.Union{},
@@ -120,7 +144,7 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 	}
 
 	// Generate static files with feature flags from parsing.
-	err = codegen.BuildStatic(out, outPkg, usedFeatures)
+	err = codegen.BuildStatic(out, outPkg, usedFeatures, opts.Versioned)
 	if err != nil {
 		return fmt.Errorf("could not generate code: %w", err)
 	}
@@ -129,22 +153,22 @@ func Generate(inPath, outPath string, init, verbose, dry, check, noCountIndex bo
 		return fmt.Errorf("could not write static files: %w", err)
 	}
 
-	if init {
+	if opts.Init {
 		return nil
 	}
 
-	err = codegen.Build(source, out, outPkg, wirePackage, noCountIndex)
+	err = codegen.Build(source, out, outPkg, wirePackage, opts.NoCountIndex)
 	if err != nil {
 		return fmt.Errorf("could not generate code: %w", err)
 	}
 
-	if verbose {
+	if opts.Verbose {
 		if err := out.Dry(absDir); err != nil {
 			return err
 		}
 	}
 
-	if dry {
+	if opts.Dry {
 		return nil
 	}
 

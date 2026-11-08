@@ -101,4 +101,5 @@ Table definition changes contained in the feed are skipped.
 |------|-----|
 | Push updates to a connected client | [Live Queries](04_live_queries.md) |
 | Replay what happened while you were offline | Changefeed |
+| Read records as they were at an earlier time | [Time Travel](10_time_travel.md) |
 | Know when a record was last modified | `som.Timestamps` |

@@ -29,6 +29,9 @@ type Template struct {
 	UsesOrbGeo           bool
 	UsesSimplefeaturesGeo bool
 	UsesGoGeomGeo        bool
+
+	// Versioned enables time-travel queries (SELECT ... VERSION).
+	Versioned bool
 }
 
 // FileCondition specifies when a file should be included in the output.

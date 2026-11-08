@@ -19,6 +19,7 @@ const (
 	flagNoCheck      = "no-check"
 	flagNoCountIndex = "no-count-index"
 	flagWire         = "wire"
+	flagVersioned    = "versioned"
 
 	defaultOutputDir = "gen/som"
 )
@@ -59,6 +60,10 @@ func Command() *cli.Command {
 			&cli.StringFlag{
 				Name:  flagWire,
 				Usage: `Override wire generation: "no" to disable, "google" for github.com/google/wire, "goforj" for github.com/goforj/wire (default: auto-detect from go.mod)`,
+			},
+			&cli.BoolFlag{
+				Name:  flagVersioned,
+				Usage: "Enable time-travel queries (VERSION); the server must run SurrealKV with versioning enabled",
 			},
 		},
 		Action: generate,
@@ -107,7 +112,19 @@ func generate(_ context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	if err := Generate(inPath, outPath, init, cmd.Bool(flagVerbose), cmd.Bool(flagDry), !cmd.Bool(flagNoCheck), cmd.Bool(flagNoCountIndex), cmd.String(flagWire)); err != nil {
+	opts := Options{
+		InPath:       inPath,
+		OutPath:      outPath,
+		Init:         init,
+		Verbose:      cmd.Bool(flagVerbose),
+		Dry:          cmd.Bool(flagDry),
+		Check:        !cmd.Bool(flagNoCheck),
+		NoCountIndex: cmd.Bool(flagNoCountIndex),
+		Wire:         cmd.String(flagWire),
+		Versioned:    cmd.Bool(flagVersioned),
+	}
+
+	if err := Generate(opts); err != nil {
 		return cli.Exit(err.Error(), 1)
 	}
 
