@@ -116,14 +116,6 @@ Set query execution timeout:
 Query().Timeout(d time.Duration)
 ```
 
-### Parallel
-
-Enable parallel query execution:
-
-```go
-Query().Parallel(enabled bool)
-```
-
 ### TempFiles
 
 Enable temporary file-based query processing for large result sets:
@@ -631,7 +623,6 @@ users, err := client.UserRepo().Query().
     Fetch(with.User.Posts()).
     // Execution options
     Timeout(5 * time.Second).
-    Parallel(true).
     // Execute
     All(ctx)
 ```

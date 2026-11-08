@@ -57,7 +57,6 @@ type Query[T any] struct {
 	Start      int
 	Limit      int
 	Timeout    time.Duration
-	Parallel   bool
 	TempFiles  bool
 
 	// Range restricts the query to a range of record IDs.
@@ -331,10 +330,6 @@ func (q Query[T]) render() string {
 
 	if !q.live && q.TempFiles {
 		out.WriteString(" TEMPFILES")
-	}
-
-	if !q.live && q.Parallel {
-		out.WriteString(" PARALLEL") // TODO: not mentioned in official docs anymore?
 	}
 
 	return out.String()
