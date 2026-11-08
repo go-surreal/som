@@ -4,6 +4,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -102,6 +103,9 @@ const (
 	StatusReconnecting = surrealdb.StatusReconnecting
 	StatusClosed       = surrealdb.StatusClosed
 )
+
+// sessionRestoreTimeout bounds signing in again after a reconnect.
+const sessionRestoreTimeout = 30 * time.Second
 
 type dbConn struct {
 	conn        *surrealdb.DB
@@ -419,21 +423,25 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 		return nil, fmt.Errorf("failed to connect to SurrealDB: %w", err)
 	}
 
-	if conf.OnStatus != nil {
-		db.OnStatus(conf.OnStatus)
-	}
+	credentials := credentialsOf(conf)
+
+	db.OnStatus(func(event ConnectionEvent) {
+		if event.Status == StatusConnected && event.Err != nil && credentials != nil {
+			event.Err = restoreSession(db, conf, *credentials, event.Err)
+		}
+
+		if conf.OnStatus != nil {
+			conf.OnStatus(event)
+		}
+	})
 
 	if err := checkVersion(ctx, db); err != nil {
 		_ = db.Close(ctx)
 		return nil, err
 	}
 
-	if conf.Username != "" && conf.Password != "" {
-		_, err := db.SignIn(ctx, surrealdb.Auth{
-			Username: conf.Username,
-			Password: conf.Password,
-		})
-		if err != nil {
+	if credentials != nil {
+		if _, err := db.SignIn(ctx, *credentials); err != nil {
 			_ = db.Close(ctx)
 			return nil, fmt.Errorf("failed to authenticate: %w", err)
 		}
@@ -490,6 +498,41 @@ func NewClient(ctx context.Context, conf Config) (*ClientImpl, error) {
 	return &ClientImpl{
 		db: conn,
 	}, nil
+}
+
+func credentialsOf(conf Config) *surrealdb.Auth {
+	if conf.Username == "" || conf.Password == "" {
+		return nil
+	}
+
+	return &surrealdb.Auth{
+		Username: conf.Username,
+		Password: conf.Password,
+	}
+}
+
+// restoreSession signs in again after a reconnect that could not restore the
+// session. The driver restores it with the token of the original sign-in only,
+// so once that token has expired (after one hour for system users by default),
+// the new connection would stay anonymous. It returns nil if the session is
+// restored, or else the restore error together with the reconnect's.
+func restoreSession(db *surrealdb.DB, conf Config, credentials surrealdb.Auth, reconnectErr error) error {
+	ctx, cancel := context.WithTimeout(context.Background(), sessionRestoreTimeout)
+	defer cancel()
+
+	if _, err := db.SignIn(ctx, credentials); err != nil {
+		return errors.Join(reconnectErr, fmt.Errorf("failed to sign in again after reconnect: %w", err))
+	}
+
+	if conf.Namespace == "" || conf.Database == "" {
+		return nil
+	}
+
+	if err := db.Use(ctx, conf.Namespace, conf.Database); err != nil {
+		return errors.Join(reconnectErr, fmt.Errorf("failed to set namespace/database after reconnect: %w", err))
+	}
+
+	return nil
 }
 
 // runExpiryPurge periodically deletes expired records from all expiry-enabled tables.

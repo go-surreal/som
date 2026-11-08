@@ -174,6 +174,11 @@ A WebSocket client reconnects on its own when the connection is lost. Before any
 is sent, the namespace, database and authentication are restored on the new connection;
 requests made in the meantime wait for it until their context ends.
 
+Authentication is restored with the token of the original sign-in. If that token has expired by
+then (after one hour for system users by default), the client signs in again with the configured
+`Username` and `Password`. Requests sent in the brief moment before that sign-in completes fail
+with a permission error.
+
 What cannot be restored is lost:
 
 - **Open transactions** are gone. Retry them.
@@ -211,7 +216,9 @@ client, err := repo.NewClient(ctx, repo.Config{
 ```
 
 `event.Status` is one of `repo.StatusConnected`, `repo.StatusDisconnected`,
-`repo.StatusReconnecting` or `repo.StatusClosed`. A `StatusClosed` event after failed
+`repo.StatusReconnecting` or `repo.StatusClosed`. On `StatusConnected` after a reconnect,
+`event.Err` holds what could not be restored, or `nil` once the session is fully back — including
+when the client had to sign in again. A `StatusClosed` event after failed
 attempts means the client gave up and has to be recreated.
 
 ### Health Check

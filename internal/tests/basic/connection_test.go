@@ -3,12 +3,14 @@ package basic
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"som.test/gen/som/query"
 	"som.test/gen/som/repo"
 	"som.test/model"
@@ -65,6 +67,62 @@ func TestReconnect(t *testing.T) {
 	// restored on the new connection.
 	if _, err := client.Raw(ctx, "INFO FOR DB", nil); err != nil {
 		t.Fatalf("expected client to be usable after reconnect, got: %v", err)
+	}
+}
+
+// TestReconnectWithExpiredToken checks that a reconnect signs in again with the
+// configured credentials when the token of the original sign-in has expired,
+// as the driver can only restore the session with that token.
+func TestReconnectWithExpiredToken(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	admin, cleanupAdmin := prepareDatabase(ctx, t)
+	defer cleanupAdmin()
+
+	username := "short_" + gofakeit.LetterN(12)
+	password := gofakeit.Password(true, true, true, false, false, 32)
+
+	defineUser := fmt.Sprintf(
+		"DEFINE USER %s ON ROOT PASSWORD '%s' ROLES OWNER DURATION FOR TOKEN 1s, FOR SESSION NONE",
+		username, password,
+	)
+
+	if _, err := admin.Raw(ctx, defineUser, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		_, _ = admin.Raw(context.Background(), "REMOVE USER "+username+" ON ROOT", nil)
+	}()
+
+	proxy := newDropProxy(t, sharedEndpoint)
+	statusEvents := make(chan repo.ConnectionEvent, 64)
+
+	client, cleanup := prepareDatabaseWith(ctx, t, func(config *repo.Config) {
+		config.Address = "ws://" + proxy.Address()
+		config.Username = username
+		config.Password = password
+		config.Reconnect = repo.ReconnectConfig{
+			MinDelay: 10 * time.Millisecond,
+			MaxDelay: 100 * time.Millisecond,
+		}
+		config.OnStatus = func(event repo.ConnectionEvent) {
+			statusEvents <- event
+		}
+	})
+	defer cleanup()
+
+	time.Sleep(2 * time.Second)
+
+	proxy.DropConnections()
+
+	expectStatus(t, statusEvents, repo.StatusDisconnected)
+	expectStatus(t, statusEvents, repo.StatusConnected)
+
+	if _, err := client.Raw(ctx, "INFO FOR DB", nil); err != nil {
+		t.Fatalf("expected client to be usable after reconnecting with an expired token, got: %v", err)
 	}
 }
 
