@@ -47,7 +47,7 @@ func (s *String[M]) Replace_(old, new *String[M]) *String[M] {
 	return NewString(s.Base.fn_("string::replace", old.key(), new.key()))
 }
 
-func (s *String[M]) Slice_(start, end *Numeric[M, int]) *String[M] {
+func (s *String[M]) Slice_(start, end *Int[M]) *String[M] {
 	return NewString(s.Base.fn_("string::slice", start.Base.Key, end.Base.Key))
 }
 

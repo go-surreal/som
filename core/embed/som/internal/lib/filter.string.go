@@ -61,8 +61,8 @@ func (s *String[M]) Join(vals ...string) *String[M] {
 	return NewString(s.Base.fn("string::join", anys...))
 }
 
-func (s *String[M]) Len() *Numeric[M, int] {
-	return NewNumeric[M, int](s.Base.fn("string::len"))
+func (s *String[M]) Len() *Int[M] {
+	return NewInt[M](s.Base.fn("string::len"))
 }
 
 func (s *String[M]) Lowercase() *String[M] {
@@ -199,16 +199,16 @@ func (s *String[M]) Base64Decode() *ByteSlice[M] {
 // -- DISTANCE
 //
 
-func (s *String[M]) DistanceDamerauLevenshtein(other string) *Numeric[M, int] {
-	return NewNumeric[M, int](s.Base.fn("string::distance::damerau_levenshtein", other))
+func (s *String[M]) DistanceDamerauLevenshtein(other string) *Int[M] {
+	return NewInt[M](s.Base.fn("string::distance::damerau_levenshtein", other))
 }
 
-func (s *String[M]) DistanceHamming(other string) *Numeric[M, int] {
-	return NewNumeric[M, int](s.Base.fn("string::distance::hamming", other))
+func (s *String[M]) DistanceHamming(other string) *Int[M] {
+	return NewInt[M](s.Base.fn("string::distance::hamming", other))
 }
 
-func (s *String[M]) DistanceLevenshtein(other string) *Numeric[M, int] {
-	return NewNumeric[M, int](s.Base.fn("string::distance::levenshtein", other))
+func (s *String[M]) DistanceLevenshtein(other string) *Int[M] {
+	return NewInt[M](s.Base.fn("string::distance::levenshtein", other))
 }
 
 func (s *String[M]) DistanceNormalizedDamerauLevenshtein(other string) *Float[M, float64] {
@@ -219,16 +219,16 @@ func (s *String[M]) DistanceNormalizedLevenshtein(other string) *Float[M, float6
 	return NewFloat[M, float64](s.Base.fn("string::distance::normalized_levenshtein", other))
 }
 
-func (s *String[M]) DistanceOsa(other string) *Numeric[M, int] {
-	return NewNumeric[M, int](s.Base.fn("string::distance::osa", other))
+func (s *String[M]) DistanceOsa(other string) *Int[M] {
+	return NewInt[M](s.Base.fn("string::distance::osa", other))
 }
 
 //
 // -- SIMILARITY
 //
 
-func (s *String[M]) SimilarityFuzzy(other string) *Numeric[M, int] {
-	return NewNumeric[M, int](s.Base.fn("string::similarity::fuzzy", other))
+func (s *String[M]) SimilarityFuzzy(other string) *Int[M] {
+	return NewInt[M](s.Base.fn("string::similarity::fuzzy", other))
 }
 
 func (s *String[M]) SimilarityJaro(other string) *Float[M, float64] {

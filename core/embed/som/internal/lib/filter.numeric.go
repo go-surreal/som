@@ -153,8 +153,8 @@ func (n *Numeric[M, T]) Round() *Numeric[M, T] {
 	return NewNumeric[M, T](n.Base.fn("math::round"))
 }
 
-func (n *Numeric[M, T]) Sign() *Numeric[M, int] {
-	return NewNumeric[M, int](n.Base.fn("math::sign"))
+func (n *Numeric[M, T]) Sign() *Int[M] {
+	return NewInt[M](n.Base.fn("math::sign"))
 }
 
 func (n *Numeric[M, T]) Sin() *Float[M, float64] {

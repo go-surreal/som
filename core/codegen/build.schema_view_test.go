@@ -25,7 +25,7 @@ func TestBuildViewStatement(t *testing.T) {
 						"math::mean(field_float_64) AS avg_value",
 					},
 					Where:   "field_int > 0",
-					GroupBy: []string{"field_string"},
+					GroupBy: []string{"category"},
 				}},
 			},
 		},
@@ -38,7 +38,7 @@ func TestBuildViewStatement(t *testing.T) {
 
 	want := "DEFINE TABLE all_types_summary TYPE NORMAL AS SELECT " +
 		"field_string AS category, count(field_string) AS total, math::mean(field_float_64) AS avg_value " +
-		"FROM all_types WHERE field_int > 0 GROUP BY field_string;"
+		"FROM all_types WHERE field_int > 0 GROUP BY category;"
 
 	if got != want {
 		t.Errorf("view DDL mismatch:\n got: %s\nwant: %s", got, want)

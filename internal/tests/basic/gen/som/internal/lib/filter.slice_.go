@@ -54,7 +54,7 @@ func (s *Slice[M, E, F]) Add_(val F) *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn_("array::add", val.key()), s.makeElemFilter)
 }
 
-func (s *Slice[M, E, F]) At_(pos *Numeric[M, int]) F { // TODO: type is NONE if out of bounds
+func (s *Slice[M, E, F]) At_(pos *Int[M]) F { // TODO: type is NONE if out of bounds
 	return s.makeElemFilter(s.fn_("array::at", pos.key()))
 }
 
@@ -90,14 +90,14 @@ func (s *Slice[M, E, F]) Diff_(val *Slice[M, E, F]) *Slice[M, E, F] {
 	return NewSlice[M, E, F](s.fn_("array::difference", val.key()), s.makeElemFilter)
 }
 
-func (s *Slice[M, E, F]) FindIndex_(field F) *Numeric[M, int] {
-	return NewNumeric[M, int](s.fn_("array::find_index", field.key()))
+func (s *Slice[M, E, F]) FindIndex_(field F) *Int[M] {
+	return NewInt[M](s.fn_("array::find_index", field.key()))
 }
 
-func (s *Slice[M, E, F]) FilterIndex_(field F) *Slice[M, int, *Numeric[M, int]] {
-	return NewSlice[M, int, *Numeric[M, int]](
+func (s *Slice[M, E, F]) FilterIndex_(field F) *Slice[M, int64, *Int[M]] {
+	return NewSlice[M, int64, *Int[M]](
 		s.fn_("array::filter_index", field.key()),
-		NewNumeric[M, int],
+		NewInt[M],
 	)
 }
 

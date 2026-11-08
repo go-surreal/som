@@ -253,10 +253,16 @@ IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "view:event_summar
 	UPSERT type::record("__som__schema", "view:event_summary") SET hash = "0fc84830438612686f6291d82a754100facb12bece604c6abedfd05c67935dd5";
 };
 
-IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "view:all_types_summary")) != "8d5e893455b2a979d52a31ab539ea9e5eb01b7f42feb0db377b132cf606914fc" {
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "view:all_types_summary")) != "6da4166c47e3d3e199970a8d584df6d02717bcb19a15d406cc2fd6a99605c2b0" {
 	REMOVE TABLE IF EXISTS all_types_summary;
-	DEFINE TABLE all_types_summary TYPE NORMAL AS SELECT field_string AS category, count(field_string) AS total, math::mean(field_float_64) AS avg_value FROM all_types GROUP BY field_string;
-	UPSERT type::record("__som__schema", "view:all_types_summary") SET hash = "8d5e893455b2a979d52a31ab539ea9e5eb01b7f42feb0db377b132cf606914fc";
+	DEFINE TABLE all_types_summary TYPE NORMAL AS SELECT field_string AS category, count(field_string) AS total, math::mean(field_float_64) AS avg_value FROM all_types GROUP BY category;
+	UPSERT type::record("__som__schema", "view:all_types_summary") SET hash = "6da4166c47e3d3e199970a8d584df6d02717bcb19a15d406cc2fd6a99605c2b0";
+};
+
+IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "view:all_types_by_month")) != "e2a6f47d85b3b93c8ce86161c6f5ce08c28a3e0393f9eb5d0102b17708c40bc3" {
+	REMOVE TABLE IF EXISTS all_types_by_month;
+	DEFINE TABLE all_types_by_month TYPE NORMAL AS SELECT field_string AS category, time::month(field_time) AS month, count() AS total FROM all_types GROUP BY category, month;
+	UPSERT type::record("__som__schema", "view:all_types_by_month") SET hash = "e2a6f47d85b3b93c8ce86161c6f5ce08c28a3e0393f9eb5d0102b17708c40bc3";
 };
 
 IF (SELECT VALUE hash FROM ONLY type::record("__som__schema", "index:__som__weather_count")) != "6ba5cc6444c000d52e5a810994ae258813dc54a96b164884b0ca004aa2e04509" {

@@ -36,6 +36,12 @@ func Count[M any](f KeyProvider[M]) *Int[M] {
 	return NewInt[M](Fn(f.key(), "count"))
 }
 
+// CountAll renders count(): the number of rows in the group. The source only
+// pins the model type and is not rendered.
+func CountAll[M any](_ KeyProvider[M]) *Int[M] {
+	return NewInt[M](NewFixedKey[M]("count()"))
+}
+
 // Sum renders math::sum(<field>).
 func Sum[M any](f KeyProvider[M]) *Float[M, float64] {
 	return NewFloat[M, float64](Fn(f.key(), "math::sum"))
