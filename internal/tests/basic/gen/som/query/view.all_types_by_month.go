@@ -23,9 +23,9 @@ var allTypesByMonthModelInfo = modelInfo[*model.AllTypesByMonth, *model.AllTypes
 // NewAllTypesByMonth creates a new query builder for AllTypesByMonth views.
 func NewAllTypesByMonth(db Database) Builder[model.AllTypesByMonth] {
 	q := lib.NewQuery[*model.AllTypesByMonth]("all_types_by_month")
-	return Builder[model.AllTypesByMonth]{builder[*model.AllTypesByMonth, *model.AllTypesByMonth]{
+	return Builder[model.AllTypesByMonth]{chain[*model.AllTypesByMonth, *model.AllTypesByMonth]{builder[*model.AllTypesByMonth, *model.AllTypesByMonth]{
 		db:    db,
 		info:  allTypesByMonthModelInfo,
 		query: q,
-	}}
+	}}}
 }

@@ -38,8 +38,9 @@ orders, err := client.OrderRepo().Query().
     All(ctx)
 ```
 
-`Version` combines with the regular query methods — filters, ordering, `Count`, `Iterate`,
-`Paginate` and fragments all read the state at the given time:
+`Version` is the last call before the terminal. Everything chained before it — filters, ordering,
+fetches — applies to the past state, as do the terminals `All`, `First`, `Count`, `Exists`,
+`Iterate`, `Paginate` and the fragment variants (`AllAs`, ...):
 
 - **Fetched relations** are resolved at the same point in time.
 - **Soft-deleted records** are excluded based on their state at that time.
@@ -48,10 +49,11 @@ orders, err := client.OrderRepo().Query().
 
 ## Limitations
 
-- Live queries always follow the current state. `Version` returns a builder without `Live`; if a
-  later builder method brings it back, the live query fails instead of ignoring the version.
-- Full-text search fails as well: the search index only holds the current state, so it would
-  match the wrong records.
+- Live queries always follow the current state, and the full-text index only holds the current
+  state as well. `Version` returns a `query.Versioned[M]`, which has neither `Live` nor `Search`,
+  so combining them is a compile error.
+- `query.Distinct` only accepts a plain `query.Builder[M]` and thus does not work on a versioned
+  query.
 - A time before a table was defined fails with a "table does not exist" error.
 - Versions are stamped by the server clock. Times taken on a client with a drifting clock may
   resolve to a slightly different state.

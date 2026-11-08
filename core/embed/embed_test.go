@@ -43,7 +43,7 @@ func TestEmbedNoLocalImports(t *testing.T) {
 func TestReadVersionedQueryMethod(t *testing.T) {
 	t.Parallel()
 
-	const versionMethod = "func (b builder[M, R]) Version(at time.Time)"
+	const versionMethod = "func (b chain[M, R]) Version(at time.Time)"
 
 	for _, versioned := range []bool{false, true} {
 		files, err := Read(&Template{GenerateOutPath: "som.test/gen/som", Versioned: versioned})

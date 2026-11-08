@@ -191,10 +191,6 @@ func (b builder[M, R]) DescribeAs[F som.FragmentOf[M]]() string {
 // Note: for delete notifications the database only sends the record id, so the
 // received fragment holds no field values.
 func (b BuilderOf[M, R]) LiveAs[F som.FragmentOf[M]](ctx context.Context) (<-chan LiveResult[*F], error) {
-	if err := b.requireCurrentState(); err != nil {
-		return nil, err
-	}
-
 	info, err := fragmentInfoFor[F]()
 	if err != nil {
 		return nil, err

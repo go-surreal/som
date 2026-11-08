@@ -38,10 +38,10 @@ var drawingRangeFn = rangeFn[*model.Drawing](func(q *lib.Query[*model.Drawing], 
 // NewDrawing creates a new query builder for Drawing models.
 func NewDrawing(db Database) Builder[model.Drawing] {
 	q := lib.NewQuery[*model.Drawing]("drawing")
-	return Builder[model.Drawing]{builder[*model.Drawing, *model.Drawing]{
+	return Builder[model.Drawing]{chain[*model.Drawing, *model.Drawing]{builder[*model.Drawing, *model.Drawing]{
 		db:      db,
 		info:    drawingModelInfo,
 		query:   q,
 		rangeFn: drawingRangeFn,
-	}}
+	}}}
 }

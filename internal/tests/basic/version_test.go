@@ -2,10 +2,12 @@ package basic
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
 	"som.test/gen/som/filter"
+	"som.test/gen/som/query"
 	"som.test/gen/som/repo"
 	"som.test/gen/som/with"
 	"som.test/model"
@@ -122,23 +124,23 @@ func TestVersionTerminals(t *testing.T) {
 
 }
 
-// TestVersionCurrentStateOnly verifies that the terminals which can only read
-// the current state reject a version instead of silently ignoring it.
+// TestVersionCurrentStateOnly verifies that a versioned query does not offer
+// the methods that only read the current state, nor the chain methods that
+// would hand them back.
 func TestVersionCurrentStateOnly(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	versioned := reflect.TypeFor[query.Versioned[model.AllTypes]]()
 
-	client, cleanup := prepareDatabase(ctx, t)
-	defer cleanup()
+	for _, method := range []string{"Live", "LiveCount", "Search", "SearchAll", "Where", "Order", "Fetch"} {
+		_, hasMethod := versioned.MethodByName(method)
+		assert.Assert(t, !hasMethod, "versioned query must not offer %s", method)
+	}
 
-	query := client.AllTypesRepo().Query().Version(serverNow(ctx, t, client))
-
-	_, err := query.Search(filter.AllTypes.FieldString.Matches("quick fox")).All(ctx)
-	assert.ErrorContains(t, err, "does not support Version")
-
-	_, err = query.Where(filter.AllTypes.FieldString.Equal("quick fox")).Live(ctx)
-	assert.ErrorContains(t, err, "does not support Version")
+	for _, method := range []string{"All", "Count", "Iterate", "Paginate", "Describe"} {
+		_, hasMethod := versioned.MethodByName(method)
+		assert.Assert(t, hasMethod, "versioned query must offer %s", method)
+	}
 }
 
 func TestVersionBeforeTableExists(t *testing.T) {

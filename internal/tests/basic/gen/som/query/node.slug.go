@@ -38,10 +38,10 @@ var slugRangeFn = rangeFn[*model.Slug](func(q *lib.Query[*model.Slug], from som.
 // NewSlug creates a new query builder for Slug models.
 func NewSlug(db Database) Builder[model.Slug] {
 	q := lib.NewQuery[*model.Slug]("slug")
-	return Builder[model.Slug]{builder[*model.Slug, *model.Slug]{
+	return Builder[model.Slug]{chain[*model.Slug, *model.Slug]{builder[*model.Slug, *model.Slug]{
 		db:      db,
 		info:    slugModelInfo,
 		query:   q,
 		rangeFn: slugRangeFn,
-	}}
+	}}}
 }

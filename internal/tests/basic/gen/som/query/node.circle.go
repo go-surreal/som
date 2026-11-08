@@ -38,10 +38,10 @@ var circleRangeFn = rangeFn[*model.Circle](func(q *lib.Query[*model.Circle], fro
 // NewCircle creates a new query builder for Circle models.
 func NewCircle(db Database) Builder[model.Circle] {
 	q := lib.NewQuery[*model.Circle]("circle")
-	return Builder[model.Circle]{builder[*model.Circle, *model.Circle]{
+	return Builder[model.Circle]{chain[*model.Circle, *model.Circle]{builder[*model.Circle, *model.Circle]{
 		db:      db,
 		info:    circleModelInfo,
 		query:   q,
 		rangeFn: circleRangeFn,
-	}}
+	}}}
 }

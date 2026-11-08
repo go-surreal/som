@@ -25,9 +25,9 @@ var shapeModelInfo = modelInfo[*model.Shape, model.Shape]{
 // Shape union: Square, Circle.
 func NewShape(db Database) UnionBuilder[model.Shape] {
 	q := lib.NewQuery[*model.Shape]("square, circle")
-	return UnionBuilder[model.Shape]{builder[*model.Shape, model.Shape]{
+	return UnionBuilder[model.Shape]{chain[*model.Shape, model.Shape]{builder[*model.Shape, model.Shape]{
 		db:    db,
 		info:  shapeModelInfo,
 		query: q,
-	}}
+	}}}
 }

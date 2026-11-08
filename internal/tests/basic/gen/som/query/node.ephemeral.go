@@ -40,10 +40,10 @@ func NewEphemeral(db Database) Builder[model.Ephemeral] {
 	q := lib.NewQuery[*model.Ephemeral]("ephemeral")
 	// Automatically exclude expired records
 	q.ExpiryField = "expires_at"
-	return Builder[model.Ephemeral]{builder[*model.Ephemeral, *model.Ephemeral]{
+	return Builder[model.Ephemeral]{chain[*model.Ephemeral, *model.Ephemeral]{builder[*model.Ephemeral, *model.Ephemeral]{
 		db:      db,
 		info:    ephemeralModelInfo,
 		query:   q,
 		rangeFn: ephemeralRangeFn,
-	}}
+	}}}
 }

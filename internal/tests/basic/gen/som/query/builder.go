@@ -37,10 +37,6 @@ type modelInfo[M any, R any] struct {
 	Fields func(R) map[string]any
 }
 
-// errVersionUnsupported is returned by the query terminals that can only read
-// the current state of the database, if Version was set.
-var errVersionUnsupported = errors.New("query does not support Version: it only reads the current state")
-
 type rangeFn[M any] func(q *lib.Query[M], from som.RangeFrom, to som.RangeTo) lib.RecordRange
 
 // M is a placeholder for the model type.
@@ -51,11 +47,25 @@ type builder[M any, R any] struct {
 	rangeFn rangeFn[M]
 }
 
-type BuilderOf[M any, R any] struct {
+// chain holds the methods that refine a query and return another builder.
+// It is kept apart from builder, which holds the terminals, so that a builder
+// type can offer the terminals without the chain methods.
+type chain[M any, R any] struct {
 	builder[M, R]
 }
 
+type BuilderOf[M any, R any] struct {
+	chain[M, R]
+}
+
 type BuilderNoLiveOf[M any, R any] struct {
+	chain[M, R]
+}
+
+// VersionedOf is a query that reads a past state of the database, as returned
+// by Version. It only offers the terminals that can read a past state, so
+// neither live queries nor full-text search are available.
+type VersionedOf[M any, R any] struct {
 	builder[M, R]
 }
 
@@ -73,6 +83,8 @@ type BuilderNoLiveOf[M any, R any] struct {
 type Builder[M any] = BuilderOf[*M, *M]
 
 type BuilderNoLive[M any] = BuilderNoLiveOf[*M, *M]
+
+type Versioned[M any] = VersionedOf[*M, *M]
 
 type PageBuilder[M any] = PageBuilderOf[*M, *M]
 
@@ -95,7 +107,7 @@ type UnionBuilder[M any] = BuilderOf[*M, M]
 // together that all need to match.
 // Use filter.Any to chain multiple conditions
 // together where at least one needs to match.
-func (b builder[M, R]) Where(filters ...lib.Filter[M]) BuilderOf[M, R] {
+func (b chain[M, R]) Where(filters ...lib.Filter[M]) BuilderOf[M, R] {
 	b.query.Where = append(b.query.Where, filters...)
 	return BuilderOf[M, R]{b}
 }
@@ -103,7 +115,7 @@ func (b builder[M, R]) Where(filters ...lib.Filter[M]) BuilderOf[M, R] {
 // WithDeleted allows querying soft-deleted records.
 // By default, soft-deleted records are automatically filtered out.
 // This method only has an effect on models with SoftDelete enabled.
-func (b builder[M, R]) WithDeleted() BuilderOf[M, R] {
+func (b chain[M, R]) WithDeleted() BuilderOf[M, R] {
 	b.query.IncludeDeleted = true
 	return BuilderOf[M, R]{b}
 }
@@ -111,7 +123,7 @@ func (b builder[M, R]) WithDeleted() BuilderOf[M, R] {
 // WithExpired allows querying records that have passed their expiry.
 // By default, expired records are automatically filtered out.
 // This method only has an effect on models with a som.Expiry embed.
-func (b builder[M, R]) WithExpired() BuilderOf[M, R] {
+func (b chain[M, R]) WithExpired() BuilderOf[M, R] {
 	b.query.IncludeExpired = true
 	return BuilderOf[M, R]{b}
 }
@@ -121,7 +133,7 @@ func (b builder[M, R]) WithExpired() BuilderOf[M, R] {
 // which avoids table scans and is much more performant than WHERE filters.
 // Available for models with string IDs (ULID/UUID/Rand) and complex IDs
 // (ArrayID/ObjectID).
-func (b builder[M, R]) Range(from som.RangeFrom, to som.RangeTo) BuilderNoLiveOf[M, R] {
+func (b chain[M, R]) Range(from som.RangeFrom, to som.RangeTo) BuilderNoLiveOf[M, R] {
 	if b.rangeFn != nil {
 		bounds := b.rangeFn(&b.query, from, to)
 		b.query.Range = &bounds
@@ -133,7 +145,7 @@ func (b builder[M, R]) Range(from som.RangeFrom, to som.RangeTo) BuilderNoLiveOf
 // If multiple conditions are given, they are applied one after the other.
 // Note: If OrderRandom is used within the same query,
 // it would override the sort conditions.
-func (b builder[M, R]) Order(by ...*lib.Sort[M]) BuilderNoLiveOf[M, R] {
+func (b chain[M, R]) Order(by ...*lib.Sort[M]) BuilderNoLiveOf[M, R] {
 	for _, s := range by {
 		b.query.Sort = append(b.query.Sort, (*lib.SortBuilder)(s))
 	}
@@ -142,19 +154,19 @@ func (b builder[M, R]) Order(by ...*lib.Sort[M]) BuilderNoLiveOf[M, R] {
 
 // OrderRandom sorts the returned records in a random order.
 // Note: OrderRandom takes precedence over Order.
-func (b builder[M, R]) OrderRandom() BuilderNoLiveOf[M, R] {
+func (b chain[M, R]) OrderRandom() BuilderNoLiveOf[M, R] {
 	b.query.SortRandom = true
 	return BuilderNoLiveOf[M, R]{b}
 }
 
 // Start skips the first x records for the result set.
-func (b builder[M, R]) Start(start int) BuilderNoLiveOf[M, R] {
+func (b chain[M, R]) Start(start int) BuilderNoLiveOf[M, R] {
 	b.query.Start = start
 	return BuilderNoLiveOf[M, R]{b}
 }
 
 // Limit restricts the query to return at most x records.
-func (b builder[M, R]) Limit(limit int) BuilderNoLiveOf[M, R] {
+func (b chain[M, R]) Limit(limit int) BuilderNoLiveOf[M, R] {
 	b.query.Limit = limit
 	return BuilderNoLiveOf[M, R]{b}
 }
@@ -164,18 +176,24 @@ func (b builder[M, R]) Limit(limit int) BuilderNoLiveOf[M, R] {
 // Requires a SurrealKV datastore with versioning enabled, otherwise the
 // query fails; times before the table existed fail as well.
 // Expired records are filtered relative to the given time.
-// Live queries and full-text search only read the current state and fail
-// if Version was set.
-func (b builder[M, R]) Version(at time.Time) BuilderNoLiveOf[M, R] {
+// It must be the last call before the terminal, as live queries and
+// full-text search only read the current state.
+func (b chain[M, R]) Version(at time.Time) VersionedOf[M, R] {
 	b.query.Version = b.query.AsVar(types.DateTime{Time: at})
-	return BuilderNoLiveOf[M, R]{b}
+	return VersionedOf[M, R]{b.builder}
+}
+
+// Debug logs the query to the default debug logger.
+func (b VersionedOf[M, R]) Debug(prefix ...string) VersionedOf[M, R] {
+	b.debug(prefix)
+	return b
 }
 
 // Fetch can be used to return related records.
 // This works for both record links and edges.
 // Note: Soft-delete filtering does not apply to fetched relations.
 // All related records are returned regardless of their soft-delete status.
-func (b builder[M, R]) Fetch(fetch ...with.FetchOf[M]) BuilderOf[M, R] {
+func (b chain[M, R]) Fetch(fetch ...with.FetchOf[M]) BuilderOf[M, R] {
 	for _, f := range fetch {
 		field := fmt.Sprintf("%v", f)
 		if field != "" {
@@ -187,7 +205,7 @@ func (b builder[M, R]) Fetch(fetch ...with.FetchOf[M]) BuilderOf[M, R] {
 
 // Timeout adds an execution time limit to the query.
 // When exceeded, the query call will return with an error.
-func (b builder[M, R]) Timeout(timeout time.Duration) BuilderNoLiveOf[M, R] {
+func (b chain[M, R]) Timeout(timeout time.Duration) BuilderNoLiveOf[M, R] {
 	b.query.Timeout = timeout
 	return BuilderNoLiveOf[M, R]{b}
 }
@@ -195,7 +213,7 @@ func (b builder[M, R]) Timeout(timeout time.Duration) BuilderNoLiveOf[M, R] {
 // TempFiles tells SurrealDB to process the query using temporary files
 // rather than memory. This reduces memory usage for large result sets
 // at the cost of slower performance.
-func (b builder[M, R]) TempFiles(tempFiles bool) BuilderNoLiveOf[M, R] {
+func (b chain[M, R]) TempFiles(tempFiles bool) BuilderNoLiveOf[M, R] {
 	b.query.TempFiles = tempFiles
 	return BuilderNoLiveOf[M, R]{b}
 }
@@ -499,10 +517,6 @@ func (b builder[M, R]) IterateID(ctx context.Context, batchSize int) iter.Seq2[s
 // data consistency. The other way around, there could be missing
 // updates happening between the initial query and the live query.
 func (b BuilderOf[M, R]) Live(ctx context.Context) (<-chan LiveResult[R], error) {
-	if err := b.requireCurrentState(); err != nil {
-		return nil, err
-	}
-
 	req := b.query.BuildAsLive()
 	resChan, err := b.db.Live(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -575,16 +589,6 @@ func (b BuilderOf[M, R]) LiveCount(ctx context.Context) (<-chan int, error) {
 //	panic("not yet implemented") // TODO: implement!
 //}
 
-// requireCurrentState fails if Version was set, for the terminals that cannot
-// read a past state.
-func (b builder[M, R]) requireCurrentState() error {
-	if b.query.Version != "" {
-		return errVersionUnsupported
-	}
-
-	return nil
-}
-
 // Describe returns a string representation of the query.
 // While this might be a valid SurrealDB query, it
 // should only be used for debugging purposes.
@@ -608,12 +612,15 @@ func (b builder[M, R]) DescribeWithVars() string {
 }
 
 // Debug logs the query to the default debug logger.
-func (b builder[M, R]) Debug(prefix ...string) BuilderOf[M, R] {
+func (b chain[M, R]) Debug(prefix ...string) BuilderOf[M, R] {
+	b.debug(prefix)
+	return BuilderOf[M, R]{b}
+}
+
+func (b builder[M, R]) debug(prefix []string) {
 	slog.Debug(strings.Join(prefix, " ")+b.Describe(),
 		"vars", b.query.Vars(),
 	)
-
-	return BuilderOf[M, R]{b}
 }
 
 // Paginate starts a cursor-based (keyset) pagination request. Chain First or
@@ -966,29 +973,27 @@ func cursorDataOf(dbFields map[string]any, sorts []*lib.SortBuilder) (lib.Cursor
 // This is the default behavior, similar to how search engines work.
 // Use SearchAll() if you need AND behavior (all must match).
 // Returns a SearchBuilder which provides search-specific methods.
-func (b builder[M, R]) Search(searches ...lib.Search[M]) SearchBuilderOf[M, R] {
+func (b chain[M, R]) Search(searches ...lib.Search[M]) SearchBuilderOf[M, R] {
 	where, clauses := lib.BuildSearchOr(searches, &b.query)
 	b.query.SearchWhere = where
 	b.query.SearchClauses = clauses
-	return SearchBuilderOf[M, R]{builder: b}
+	return SearchBuilderOf[M, R]{builder: b.builder}
 }
 
 // SearchAll adds full-text search conditions to the query.
 // Multiple search conditions are combined with AND (all must match).
 // Use this when you need documents to match ALL search terms.
 // Returns a SearchBuilder which provides search-specific methods.
-func (b builder[M, R]) SearchAll(searches ...lib.Search[M]) SearchBuilderOf[M, R] {
+func (b chain[M, R]) SearchAll(searches ...lib.Search[M]) SearchBuilderOf[M, R] {
 	searchAll := lib.SearchAll[M](searches)
 	where, clauses := searchAll.BuildClauses(&b.query)
 	b.query.SearchWhere = where
 	b.query.SearchClauses = clauses
-	return SearchBuilderOf[M, R]{builder: b}
+	return SearchBuilderOf[M, R]{builder: b.builder}
 }
 
 // SearchBuilder provides search-specific query methods.
 // It does NOT expose Search() or SearchAll() to prevent chaining multiple search calls.
-// Its terminals fail if Version was set, as the full-text index only holds
-// the current state.
 type SearchBuilderOf[M any, R any] struct {
 	builder[M, R]
 }
@@ -1037,10 +1042,6 @@ func (b SearchBuilderOf[M, R]) TempFiles(tempFiles bool) SearchBuilderOf[M, R] {
 
 // All returns all records matching the search conditions (without search metadata).
 func (b SearchBuilderOf[M, R]) All(ctx context.Context) ([]R, error) {
-	if err := b.requireCurrentState(); err != nil {
-		return nil, err
-	}
-
 	return b.builder.All(ctx)
 }
 
@@ -1051,12 +1052,6 @@ func (b SearchBuilderOf[M, R]) AllAsync(ctx context.Context) *asyncResult[[]R] {
 
 // First returns the first record matching the search conditions (without search metadata).
 func (b SearchBuilderOf[M, R]) First(ctx context.Context) (R, error) {
-	var zero R
-
-	if err := b.requireCurrentState(); err != nil {
-		return zero, err
-	}
-
 	return b.builder.First(ctx)
 }
 
@@ -1067,10 +1062,6 @@ func (b SearchBuilderOf[M, R]) FirstAsync(ctx context.Context) *asyncResult[R] {
 
 // AllMatches returns all records matching the search conditions with search metadata.
 func (b SearchBuilderOf[M, R]) AllMatches(ctx context.Context) ([]lib.SearchResult[R], error) {
-	if err := b.requireCurrentState(); err != nil {
-		return nil, err
-	}
-
 	req := b.query.BuildAsAll()
 	res, err := b.db.Query(ctx, req.Statement, req.Variables)
 	if err != nil {
@@ -1099,10 +1090,6 @@ func (b SearchBuilderOf[M, R]) FirstMatch(ctx context.Context) (lib.SearchResult
 
 // Count returns the number of records matching the search conditions.
 func (b SearchBuilderOf[M, R]) Count(ctx context.Context) (int, error) {
-	if err := b.requireCurrentState(); err != nil {
-		return 0, err
-	}
-
 	return b.builder.Count(ctx)
 }
 
@@ -1113,10 +1100,6 @@ func (b SearchBuilderOf[M, R]) CountAsync(ctx context.Context) *asyncResult[int]
 
 // Exists returns whether at least one record matches the search conditions.
 func (b SearchBuilderOf[M, R]) Exists(ctx context.Context) (bool, error) {
-	if err := b.requireCurrentState(); err != nil {
-		return false, err
-	}
-
 	return b.builder.Exists(ctx)
 }
 

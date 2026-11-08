@@ -38,10 +38,10 @@ var constrainedRangeFn = rangeFn[*model.Constrained](func(q *lib.Query[*model.Co
 // NewConstrained creates a new query builder for Constrained models.
 func NewConstrained(db Database) Builder[model.Constrained] {
 	q := lib.NewQuery[*model.Constrained]("constrained")
-	return Builder[model.Constrained]{builder[*model.Constrained, *model.Constrained]{
+	return Builder[model.Constrained]{chain[*model.Constrained, *model.Constrained]{builder[*model.Constrained, *model.Constrained]{
 		db:      db,
 		info:    constrainedModelInfo,
 		query:   q,
 		rangeFn: constrainedRangeFn,
-	}}
+	}}}
 }

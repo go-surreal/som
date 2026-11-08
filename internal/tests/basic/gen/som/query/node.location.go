@@ -38,10 +38,10 @@ var locationRangeFn = rangeFn[*model.Location](func(q *lib.Query[*model.Location
 // NewLocation creates a new query builder for Location models.
 func NewLocation(db Database) Builder[model.Location] {
 	q := lib.NewQuery[*model.Location]("location")
-	return Builder[model.Location]{builder[*model.Location, *model.Location]{
+	return Builder[model.Location]{chain[*model.Location, *model.Location]{builder[*model.Location, *model.Location]{
 		db:      db,
 		info:    locationModelInfo,
 		query:   q,
 		rangeFn: locationRangeFn,
-	}}
+	}}}
 }

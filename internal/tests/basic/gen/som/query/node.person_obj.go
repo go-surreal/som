@@ -40,10 +40,10 @@ var personObjRangeFn = rangeFn[*model.PersonObj](func(q *lib.Query[*model.Person
 // NewPersonObj creates a new query builder for PersonObj models.
 func NewPersonObj(db Database) Builder[model.PersonObj] {
 	q := lib.NewQuery[*model.PersonObj]("person_obj")
-	return Builder[model.PersonObj]{builder[*model.PersonObj, *model.PersonObj]{
+	return Builder[model.PersonObj]{chain[*model.PersonObj, *model.PersonObj]{builder[*model.PersonObj, *model.PersonObj]{
 		db:      db,
 		info:    personObjModelInfo,
 		query:   q,
 		rangeFn: personObjRangeFn,
-	}}
+	}}}
 }
