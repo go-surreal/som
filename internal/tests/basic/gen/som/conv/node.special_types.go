@@ -106,7 +106,8 @@ func ToSpecialTypesPtr(data *SpecialTypes) *model.SpecialTypes {
 // names and types.
 func SpecialTypesFields(m *model.SpecialTypes) map[string]any {
 	c := SpecialTypes{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // specialTypesLink is a SpecialTypes as referenced by another record. It marshals

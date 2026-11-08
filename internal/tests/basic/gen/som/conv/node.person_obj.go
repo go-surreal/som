@@ -98,7 +98,12 @@ func ToPersonObjPtr(data *PersonObj) *model.PersonObj {
 // names and types.
 func PersonObjFields(m *model.PersonObj) map[string]any {
 	c := PersonObj{*m}
-	return c.fields()
+	data := c.fields()
+	// fields() leaves out a complex ID, but cursors need it as their tiebreaker.
+	if link := toPersonObjLinkPtr(m); link != nil {
+		data["id"] = *link.ID
+	}
+	return data
 }
 
 // personObjLink is a PersonObj as referenced by another record. It marshals

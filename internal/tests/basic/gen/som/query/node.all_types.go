@@ -22,22 +22,17 @@ var allTypesModelInfo = modelInfo[*model.AllTypes, *model.AllTypes]{
 	},
 }
 
-var allTypesRangeFn = rangeFn[*model.AllTypes](func(q *lib.Query[*model.AllTypes], from som.RangeFrom, to som.RangeTo) string {
-	expr := ":"
+var allTypesRangeFn = rangeFn[*model.AllTypes](func(q *lib.Query[*model.AllTypes], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+	var bounds lib.RecordRange
 	if !from.IsOpen() {
-		expr += q.AsVar(from.Value().(som.ULID))
-	}
-	if !from.IsOpen() && !from.IsInclusive() {
-		expr += ">"
-	}
-	expr += ".."
-	if !to.IsOpen() && to.IsInclusive() {
-		expr += "="
+		bounds.From = q.AsVar(from.Value().(som.ULID))
+		bounds.FromInclusive = from.IsInclusive()
 	}
 	if !to.IsOpen() {
-		expr += q.AsVar(to.Value().(som.ULID))
+		bounds.To = q.AsVar(to.Value().(som.ULID))
+		bounds.ToInclusive = to.IsInclusive()
 	}
-	return expr
+	return bounds
 })
 
 // NewAllTypes creates a new query builder for AllTypes models.

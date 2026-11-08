@@ -102,7 +102,7 @@ func (b *queryBuilder) buildFile(node *field.NodeTable) error {
 		"SoftDelete":    node.Source.SoftDelete,
 		"Expiry":        node.Source.Expiry,
 
-		"RangeBound": func(bound string) string { return file.code(b.rangeBound(node, bound)) },
+		"RangeBound": func(bound, target string) string { return file.code(b.rangeBound(node, bound, target)) },
 	}
 
 	return b.renderQueryFile(file, node.FileName(), data)
@@ -231,22 +231,17 @@ func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[s
 			},
 		}
 		{{if .HasRangeFn}}
-		var {{.NameGoLower}}RangeFn = rangeFn[*model.{{.NameGo}}](func(q *lib.Query[*model.{{.NameGo}}], from som.RangeFrom, to som.RangeTo) string {
-			expr := ":"
+		var {{.NameGoLower}}RangeFn = rangeFn[*model.{{.NameGo}}](func(q *lib.Query[*model.{{.NameGo}}], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+			var bounds lib.RecordRange
 			if !from.IsOpen() {
-				{{call .RangeBound "from"}}
-			}
-			if !from.IsOpen() && !from.IsInclusive() {
-				expr += ">"
-			}
-			expr += ".."
-			if !to.IsOpen() && to.IsInclusive() {
-				expr += "="
+				{{call .RangeBound "from" "From"}}
+				bounds.FromInclusive = from.IsInclusive()
 			}
 			if !to.IsOpen() {
-				{{call .RangeBound "to"}}
+				{{call .RangeBound "to" "To"}}
+				bounds.ToInclusive = to.IsInclusive()
 			}
-			return expr
+			return bounds
 		})
 		{{end}}
 		// New{{.NameGo}} creates a new query builder for {{.NameGo}} {{.Kind}}.
@@ -287,11 +282,11 @@ func (b *queryBuilder) renderQueryFile(file *goFile, fileName string, data map[s
 	)
 }
 
-// rangeBound emits the statements that append the given range bound to the
-// record ID range expression.
-func (b *queryBuilder) rangeBound(node *field.NodeTable, bound string) jen.Code {
+// rangeBound emits the statements that assign the key of the given range bound
+// to the target field of the record ID range.
+func (b *queryBuilder) rangeBound(node *field.NodeTable, bound, target string) jen.Code {
 	value := jen.Id(bound).Dot("Value").Call()
-	expr := jen.Id("expr").Op("+=")
+	expr := jen.Id("bounds").Dot(target).Op("=")
 
 	if !node.HasComplexID() {
 		idType := jen.Qual(b.relativePkgPath(), string(node.Source.IDType))

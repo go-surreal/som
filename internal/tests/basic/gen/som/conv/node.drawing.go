@@ -129,7 +129,8 @@ func ToDrawingPtr(data *Drawing) *model.Drawing {
 // names and types.
 func DrawingFields(m *model.Drawing) map[string]any {
 	c := Drawing{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // drawingLink is a Drawing as referenced by another record. It marshals

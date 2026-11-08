@@ -229,11 +229,30 @@ page, err := client.UserRepo().Query().
     Paginate().First(10).Get(ctx)
 ```
 
+#### Paging by record ID
+
+Without an `Order()` (or ordered by `id` alone), forward pages don't filter the
+table with `id > $cursor`. The scan starts right at the cursor as a record ID
+range (`type::record('user', record::id($cursor)>..)`). Each page then costs the
+same no matter how deep you are into the table. This also works on top of
+`Range()`, so paging through e.g. one city's readings of a complex-ID model
+only ever touches that key range:
+
+```go
+q := client.WeatherRepo().Query().Range(
+    som.From(model.WeatherKey{City: "London", Date: start}),
+    som.To(model.WeatherKey{City: "London", Date: end}),
+)
+
+page, err := q.Paginate().First(100).After(cursor).Get(ctx)
+```
+
+The range's lower bound still applies to every page, so a cursor taken from
+outside the range can't widen it. Backward pages (`Last`/`Before`) use the
+regular keyset filter.
+
 #### Limitations
 
-- **String-ID models only.** Models with a complex ID (`ArrayID`/`ObjectID`) have
-  no single `id` tiebreaker; `Paginate()` returns an error for them. Use
-  `Range()` instead.
 - **Top-level scalar sort fields only.** Sorting on nested fields
   (`group.name`) is not supported for cursor pagination.
 - **Not compatible with `OrderRandom()`.**
