@@ -74,6 +74,31 @@ type VersionedOf[M any, R any] struct {
 }
 {{- end}}
 
+// The methods below shadow the promoted chain methods of the same name.
+// Those return BuilderOf, which would make Live available again once a
+// live-incompatible option like Order or Limit has been applied.
+
+func (b BuilderNoLiveOf[M, R]) Where(filters ...lib.Filter[M]) BuilderNoLiveOf[M, R] {
+	return BuilderNoLiveOf[M, R]{b.chain.Where(filters...).chain}
+}
+
+func (b BuilderNoLiveOf[M, R]) WithDeleted() BuilderNoLiveOf[M, R] {
+	return BuilderNoLiveOf[M, R]{b.chain.WithDeleted().chain}
+}
+
+func (b BuilderNoLiveOf[M, R]) WithExpired() BuilderNoLiveOf[M, R] {
+	return BuilderNoLiveOf[M, R]{b.chain.WithExpired().chain}
+}
+
+func (b BuilderNoLiveOf[M, R]) Fetch(fetch ...with.FetchOf[M]) BuilderNoLiveOf[M, R] {
+	return BuilderNoLiveOf[M, R]{b.chain.Fetch(fetch...).chain}
+}
+
+func (b BuilderNoLiveOf[M, R]) Debug(prefix ...string) BuilderNoLiveOf[M, R] {
+	b.debug(prefix)
+	return b
+}
+
 // The exported query types carry a second type parameter for the element a
 // query yields, which is a pointer to the model for a table and the interface
 // itself for a union. Every table-backed query uses the single-parameter
