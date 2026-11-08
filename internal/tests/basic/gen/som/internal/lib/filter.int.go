@@ -94,6 +94,10 @@ func (i *Int[M]) GreaterThanEqual[V Int_](val V) Filter[M] {
 	return i.key().op(OpGreaterThanEqual, val)
 }
 
+func (i *Int[M]) Between[V Int_](from, to V) *BetweenFilter[M, int64] {
+	return newBetweenFilter[M, int64](i.key(), from, to)
+}
+
 func (i *Int[M]) Float32() *Float[M, float32] {
 	return NewFloat[M, float32](i.Base.prefix(CastFloat))
 }

@@ -19,20 +19,20 @@ func NewSemVer[M any](key Key[M]) *SemVer[M] {
 	}
 }
 
-func (b *SemVer[M]) Compare(other som.SemVer) *Numeric[M, int] {
-	return NewNumeric[M, int](b.fn("string::semver::compare", other))
+func (b *SemVer[M]) Compare(other som.SemVer) *Int[M] {
+	return NewInt[M](b.fn("string::semver::compare", other))
 }
 
-func (b *SemVer[M]) Major() *Numeric[M, int] {
-	return NewNumeric[M, int](b.Base.fn("string::semver::major"))
+func (b *SemVer[M]) Major() *Int[M] {
+	return NewInt[M](b.Base.fn("string::semver::major"))
 }
 
-func (b *SemVer[M]) Minor() *Numeric[M, int] {
-	return NewNumeric[M, int](b.Base.fn("string::semver::minor"))
+func (b *SemVer[M]) Minor() *Int[M] {
+	return NewInt[M](b.Base.fn("string::semver::minor"))
 }
 
-func (b *SemVer[M]) Patch() *Numeric[M, int] {
-	return NewNumeric[M, int](b.Base.fn("string::semver::patch"))
+func (b *SemVer[M]) Patch() *Int[M] {
+	return NewInt[M](b.Base.fn("string::semver::patch"))
 }
 
 func (b *SemVer[M]) IncMajor() *SemVer[M] {

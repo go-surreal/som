@@ -69,8 +69,10 @@ func (b *ViewBuilder[V, T]) Where(filters ...lib.Filter[T]) *ViewBuilder[V, T] {
 	return b
 }
 
-// GroupBy groups the source rows before aggregation.
-func (b *ViewBuilder[V, T]) GroupBy(keys ...lib.KeyProvider[T]) *ViewBuilder[V, T] {
+// GroupBy groups the source rows before aggregation. It takes view columns
+// rather than source fields: SurrealDB only groups by idioms, so a computed
+// projection such as a time part can only be grouped through its alias.
+func (b *ViewBuilder[V, T]) GroupBy(keys ...lib.KeyProvider[V]) *ViewBuilder[V, T] {
 	for _, k := range keys {
 		b.groupBy = append(b.groupBy, lib.RenderProjection(k))
 	}

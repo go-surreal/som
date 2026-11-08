@@ -268,3 +268,14 @@ type AllTypesSummary struct {
 	Total    int
 	AvgValue float64
 }
+
+// AllTypesByMonth is a read-only view counting AllTypes records per
+// FieldString and month of FieldTime. It exercises grouping by a computed
+// projection and counting rows with count().
+type AllTypesByMonth struct {
+	som.View
+
+	Category string
+	Month    int
+	Total    int
+}

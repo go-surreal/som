@@ -53,3 +53,51 @@ func TestQueryView(t *testing.T) {
 	assert.Equal(t, byCategory["beta"].Total, 1)
 	assert.Equal(t, byCategory["beta"].AvgValue, 10.0)
 }
+
+func TestQueryViewGroupedByMonth(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	client, cleanup := prepareDatabase(ctx, t)
+	defer cleanup()
+
+	data := []struct {
+		category string
+		time     time.Time
+	}{
+		{"alpha", time.Date(2026, time.January, 5, 0, 0, 0, 0, time.UTC)},
+		{"alpha", time.Date(2026, time.January, 20, 0, 0, 0, 0, time.UTC)},
+		{"alpha", time.Date(2026, time.March, 1, 0, 0, 0, 0, time.UTC)},
+		{"beta", time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)},
+	}
+
+	for _, d := range data {
+		err := client.AllTypesRepo().Create(ctx, &model.AllTypes{
+			FieldString:   d.category,
+			FieldTime:     d.time,
+			FieldDuration: time.Second,
+			FieldMonth:    time.January,
+		})
+		assert.NilError(t, err)
+	}
+
+	rows, err := client.AllTypesByMonthRepo().Query().All(ctx)
+	assert.NilError(t, err)
+
+	type groupKey struct {
+		Category string
+		Month    int
+	}
+
+	totals := make(map[groupKey]int, len(rows))
+	for _, r := range rows {
+		totals[groupKey{r.Category, r.Month}] = r.Total
+	}
+
+	assert.DeepEqual(t, totals, map[groupKey]int{
+		{"alpha", 1}: 2,
+		{"alpha", 3}: 1,
+		{"beta", 1}:  1,
+	})
+}

@@ -204,14 +204,14 @@ func (s *Slice[M, E, F]) Distinct() *Slice[M, E, F] {
 
 // func (s *Slice[M, E, F]) Flatten() *Slice[M, E, F] {} -> only works for arrays of arrays
 
-func (s *Slice[M, E, F]) FindIndex(val E) *Numeric[M, int] {
-	return NewNumeric[M, int](s.fn("array::find_index", val))
+func (s *Slice[M, E, F]) FindIndex(val E) *Int[M] {
+	return NewInt[M](s.fn("array::find_index", val))
 }
 
-func (s *Slice[M, E, F]) FilterIndex(val E) *Slice[M, int, *Numeric[M, int]] {
-	return NewSlice[M, int, *Numeric[M, int]](
+func (s *Slice[M, E, F]) FilterIndex(val E) *Slice[M, int64, *Int[M]] {
+	return NewSlice[M, int64, *Int[M]](
 		s.fn("array::filter_index", val),
-		NewNumeric[M, int],
+		NewInt[M],
 	)
 }
 
@@ -237,8 +237,8 @@ func (s *Slice[M, E, F]) Last() F {
 	return s.makeElemFilter(s.fn("array::last"))
 }
 
-func (s *Slice[M, E, F]) Len() *Numeric[M, int] {
-	return NewNumeric[M, int](s.fn("array::len"))
+func (s *Slice[M, E, F]) Len() *Int[M] {
+	return NewInt[M](s.fn("array::len"))
 }
 
 func (s *Slice[M, E, F]) LogicalAnd(val []E) *Slice[M, bool, *Bool[M]] {

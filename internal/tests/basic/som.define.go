@@ -17,6 +17,7 @@ func Definitions() define.Definitions {
 		},
 		Views: []define.ViewDefinition{
 			allTypesSummary,
+			allTypesByMonth,
 			eventSummary,
 		},
 		Asserts: []*define.AssertBuilder{
@@ -77,7 +78,18 @@ var allTypesSummary = define.View[model.AllTypesSummary, model.AllTypes]().
 		define.As(filter.AllTypesSummary.Total, aggregate.Count(filter.AllTypes.FieldString)),
 		define.As(filter.AllTypesSummary.AvgValue, aggregate.Mean(filter.AllTypes.FieldFloat64)),
 	).
-	GroupBy(filter.AllTypes.FieldString)
+	GroupBy(filter.AllTypesSummary.Category)
+
+// allTypesByMonth counts rows per category and month, grouping by the
+// alias of a computed projection.
+//
+var allTypesByMonth = define.View[model.AllTypesByMonth, model.AllTypes]().
+	Project(
+		define.As(filter.AllTypesByMonth.Category, filter.AllTypes.FieldString),
+		define.As(filter.AllTypesByMonth.Month, filter.AllTypes.FieldTime.Month()),
+		define.As(filter.AllTypesByMonth.Total, aggregate.CountAll(filter.AllTypes)),
+	).
+	GroupBy(filter.AllTypesByMonth.Category, filter.AllTypesByMonth.Month)
 
 // eventSummary aggregates the write-only EventLog sink into a view,
 // exercising the sink→view ingestion pattern.
@@ -88,4 +100,4 @@ var eventSummary = define.View[model.EventSummary, model.EventLog]().
 		define.As(filter.EventSummary.Total, aggregate.Count(filter.EventLog.Category)),
 		define.As(filter.EventSummary.AvgValue, aggregate.Mean(filter.EventLog.Value)),
 	).
-	GroupBy(filter.EventLog.Category)
+	GroupBy(filter.EventSummary.Category)

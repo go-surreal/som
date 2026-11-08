@@ -36,8 +36,8 @@ func (u *URL[M]) Path() *String[M] {
 	return NewString(u.fn("parse::url::path"))
 }
 
-func (u *URL[M]) Port() *Numeric[M, int] {
-	return NewNumeric[M, int](u.fn("parse::url::port"))
+func (u *URL[M]) Port() *Int[M] {
+	return NewInt[M](u.fn("parse::url::port"))
 }
 
 func (u *URL[M]) Query() *String[M] {

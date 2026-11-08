@@ -80,10 +80,10 @@ type EventSummary struct {
 var eventSummary = define.View[model.EventSummary, model.EventLog]().
     Project(
         define.As(filter.EventSummary.Category, filter.EventLog.Category),
-        define.As(filter.EventSummary.Total, aggregate.Count(filter.EventLog.Category)),
+        define.As(filter.EventSummary.Total, aggregate.CountAll(filter.EventLog)),
         define.As(filter.EventSummary.AvgValue, aggregate.Mean(filter.EventLog.Value)),
     ).
-    GroupBy(filter.EventLog.Category)
+    GroupBy(filter.EventSummary.Category)
 ```
 
 Writes go to the sink, reads come from the view:

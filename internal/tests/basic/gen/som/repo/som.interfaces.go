@@ -25,6 +25,7 @@ type Client interface {
 	ColoredRepo() ColoredRepo
 	EventSummaryRepo() EventSummaryRepo
 	AllTypesSummaryRepo() AllTypesSummaryRepo
+	AllTypesByMonthRepo() AllTypesByMonthRepo
 	EventLogRepo() EventLogRepo
 	Raw(ctx context.Context, query string, params som.Params) (*som.RawResult, error)
 	ApplySchema(ctx context.Context) error
@@ -52,6 +53,7 @@ type ClientImpl struct {
 	coloredRepo         *colored
 	eventSummaryRepo    *eventSummary
 	allTypesSummaryRepo *allTypesSummary
+	allTypesByMonthRepo *allTypesByMonth
 	eventLogRepo        *eventLog
 }
 

@@ -54,10 +54,10 @@ func Definitions() define.Definitions {
 var eventSummary = define.View[model.EventSummary, model.EventLog]().
     Project(
         define.As(filter.EventSummary.Category, filter.EventLog.Category),
-        define.As(filter.EventSummary.Total, aggregate.Count(filter.EventLog.Category)),
+        define.As(filter.EventSummary.Total, aggregate.CountAll(filter.EventLog)),
         define.As(filter.EventSummary.AvgValue, aggregate.Mean(filter.EventLog.Value)),
     ).
-    GroupBy(filter.EventLog.Category)
+    GroupBy(filter.EventSummary.Category)
 ```
 
 `define.View[V, T]()` takes the view model `V` and the source model `T`. `define.As(column, expr)`
@@ -70,16 +70,38 @@ must belong to `V`, the expression to `T`, and their value types must match.
 |--------|-------------|
 | `Project(projections...)` | The columns the view computes |
 | `Where(filters...)` | Restrict which source rows enter the view |
-| `GroupBy(keys...)` | Group source rows before aggregating |
+| `GroupBy(columns...)` | Group source rows before aggregating, by view columns |
 
 `Where` renders its values as literals, since a table definition cannot carry query parameters.
+
+`GroupBy` takes columns of the view, not fields of the source. SurrealDB groups by idioms only, so
+a computed projection can only be grouped through its alias. Grouping by a view column always
+renders that alias:
+
+```go
+var eventsByMonth = define.View[model.EventsByMonth, model.EventLog]().
+    Project(
+        define.As(filter.EventsByMonth.Category, filter.EventLog.Category),
+        define.As(filter.EventsByMonth.Month, filter.EventLog.OccurredAt.Month()),
+        define.As(filter.EventsByMonth.Total, aggregate.CountAll(filter.EventLog)),
+    ).
+    GroupBy(filter.EventsByMonth.Category, filter.EventsByMonth.Month)
+
+// DEFINE TABLE events_by_month TYPE NORMAL AS
+//     SELECT category AS category, time::month(occurred_at) AS month, count() AS total
+//     FROM event_log
+//     GROUP BY category, month;
+```
 
 ### Aggregates
 
 Aggregate functions live in the generated `define/aggregate` package. Only the incrementally
 maintained set supported by SurrealDB views is exposed:
 
-`Count`, `Sum`, `Mean`, `Min`, `Max`, `Variance`, `StdDev`.
+`Count`, `CountAll`, `Sum`, `Mean`, `Min`, `Max`, `Variance`, `StdDev`.
+
+`Count(field)` counts the non-null values of a field, `CountAll(root)` counts rows. `CountAll`
+takes the model's filter root (e.g. `filter.EventLog`) only to pin the source model.
 
 Aggregates are functions rather than methods on filter fields, which keeps them out of `WHERE`,
 where they would be invalid.
@@ -88,7 +110,7 @@ The example above generates:
 
 ```surql
 DEFINE TABLE event_summary TYPE NORMAL AS
-    SELECT category AS category, count(category) AS total, math::mean(value) AS avg_value
+    SELECT category AS category, count() AS total, math::mean(value) AS avg_value
     FROM event_log
     GROUP BY category;
 ```

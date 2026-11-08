@@ -190,4 +190,35 @@ func TestBetweenQuery(t *testing.T) {
 		assert.Equal(t, 1, len(results))
 		assert.Equal(t, 30, results[0].FieldInt)
 	})
+
+	t.Run("typed integer bounds", func(t *testing.T) {
+		var from, to int = 20, 50
+
+		results, err := client.AllTypesRepo().Query().
+			Where(filter.AllTypes.FieldInt.Between(from, to)).
+			All(ctx)
+		assert.NilError(t, err)
+		assert.Equal(t, 4, len(results))
+
+		var fromNarrow, toNarrow int8 = 20, 50
+
+		results, err = client.AllTypesRepo().Query().
+			Where(filter.AllTypes.FieldInt.Between(fromNarrow, toNarrow)).
+			All(ctx)
+		assert.NilError(t, err)
+		assert.Equal(t, 4, len(results))
+	})
+
+	t.Run("integer function result with typed bounds", func(t *testing.T) {
+		var from, to int = 0, 0
+
+		results, err := client.AllTypesRepo().Query().
+			Where(
+				filter.AllTypes.FieldInt.Between(20, 50),
+				filter.AllTypes.FieldString.Len().Between(from, to),
+			).
+			All(ctx)
+		assert.NilError(t, err)
+		assert.Equal(t, 4, len(results))
+	})
 }

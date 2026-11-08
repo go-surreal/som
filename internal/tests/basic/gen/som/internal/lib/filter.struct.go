@@ -24,6 +24,6 @@ func (s *Struct[M, T]) Keys() *Slice[M, string, *String[M]] {
 
 //func (s *Struct[M, E]) Values() any {}
 
-func (s *Struct[M, T]) Len() *Numeric[M, int] {
-	return NewNumeric[M, int](s.key.fn("object::len"))
+func (s *Struct[M, T]) Len() *Int[M] {
+	return NewInt[M](s.key.fn("object::len"))
 }
