@@ -45,7 +45,7 @@ type ViewDef struct {
 	Projections []string
 	// Where is the rendered (literal) filter condition, if any.
 	Where string
-	// GroupBy holds the rendered group-by field expressions, if any.
+	// GroupBy holds the rendered group-by view columns (aliases), if any.
 	GroupBy []string
 }
 

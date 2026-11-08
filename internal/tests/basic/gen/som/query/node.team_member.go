@@ -24,24 +24,19 @@ var teamMemberModelInfo = modelInfo[*model.TeamMember, *model.TeamMember]{
 	},
 }
 
-var teamMemberRangeFn = rangeFn[*model.TeamMember](func(q *lib.Query[*model.TeamMember], from som.RangeFrom, to som.RangeTo) string {
-	expr := ":"
+var teamMemberRangeFn = rangeFn[*model.TeamMember](func(q *lib.Query[*model.TeamMember], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+	var bounds lib.RecordRange
 	if !from.IsOpen() {
 		key := from.Value().(model.TeamMemberKey)
-		expr += "{" + "member: " + q.AsVar(models.NewRecordID("all_types", string(key.Member.ID()))) + ", " + "forecast: " + q.AsVar(models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}})) + "}"
-	}
-	if !from.IsOpen() && !from.IsInclusive() {
-		expr += ">"
-	}
-	expr += ".."
-	if !to.IsOpen() && to.IsInclusive() {
-		expr += "="
+		bounds.From = "{" + "member: " + q.AsVar(models.NewRecordID("all_types", string(key.Member.ID()))) + ", " + "forecast: " + q.AsVar(models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}})) + "}"
+		bounds.FromInclusive = from.IsInclusive()
 	}
 	if !to.IsOpen() {
 		key := to.Value().(model.TeamMemberKey)
-		expr += "{" + "member: " + q.AsVar(models.NewRecordID("all_types", string(key.Member.ID()))) + ", " + "forecast: " + q.AsVar(models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}})) + "}"
+		bounds.To = "{" + "member: " + q.AsVar(models.NewRecordID("all_types", string(key.Member.ID()))) + ", " + "forecast: " + q.AsVar(models.NewRecordID("weather", []any{key.Forecast.ID().City, &types.DateTime{Time: key.Forecast.ID().Date}})) + "}"
+		bounds.ToInclusive = to.IsInclusive()
 	}
-	return expr
+	return bounds
 })
 
 // NewTeamMember creates a new query builder for TeamMember models.

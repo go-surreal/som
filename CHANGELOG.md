@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.22.0] - 2026-11-08
+
+
+### Added
+
+- Add load markers and reject partial-model writes ([#547](https://github.com/go-surreal/som/pull/547))
+- Add Resolve to load relations lazily ([#407](https://github.com/go-surreal/som/pull/407))
+- Add fragments to narrow the select ([#548](https://github.com/go-surreal/som/pull/548))
+- Implement union node types ([#87](https://github.com/go-surreal/som/pull/87))
+- Add field constraints enforced by the schema ([#556](https://github.com/go-surreal/som/pull/556))
+- Require surrealdb v3.3.4 ([#563](https://github.com/go-surreal/som/pull/563))
+- Return som.ErrIndexBuilding when rebuilding a building index ([#564](https://github.com/go-surreal/som/pull/564))
+- Add ReadForUpdate for locked reads in transactions ([#565](https://github.com/go-surreal/som/pull/565))
+- Add opt-in strict database mode ([#567](https://github.com/go-surreal/som/pull/567))
+- Bump surrealdb.go to v1.7.1 and signal live query disconnects ([#568](https://github.com/go-surreal/som/pull/568))
+- Require surrealdb v3.3.5 ([#569](https://github.com/go-surreal/som/pull/569))
+- Bump surrealdb.go to v1.8.0 ([#571](https://github.com/go-surreal/som/pull/571))
+- Configure reconnect and add health check ([#572](https://github.com/go-surreal/som/pull/572))
+- Range-seek pagination for all record ids ([#573](https://github.com/go-surreal/som/pull/573))
+- Group views by column aliases and count rows ([#574](https://github.com/go-surreal/som/pull/574))
+
+### Changed
+
+- Generate structure via go templates ([#528](https://github.com/go-surreal/som/pull/528))
+- Merge handlers into the types they parse ([#549](https://github.com/go-surreal/som/pull/549))
+- Give the phantom model parameter a single GC shape ([#551](https://github.com/go-surreal/som/pull/551))
+- Stop instantiating the int filter per width ([#552](https://github.com/go-surreal/som/pull/552))
+- Keep the key builders out of line ([#554](https://github.com/go-surreal/som/pull/554))
+
+### Fixed
+
+- Stop widening enum types with the empty string ([#553](https://github.com/go-surreal/som/pull/553))
+- Sign in again when a reconnect cannot restore the session ([#575](https://github.com/go-surreal/som/pull/575))
+
 ## [v0.21.0] - 2026-09-07
 
 
@@ -569,6 +603,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.0.1] - 2022-12-03
 
+[v0.22.0]: https://github.com/go-surreal/som/compare/v0.21.0...v0.22.0
 [v0.21.0]: https://github.com/go-surreal/som/compare/v0.20.0...v0.21.0
 [v0.20.0]: https://github.com/go-surreal/som/compare/v0.19.0...v0.20.0
 [v0.19.0]: https://github.com/go-surreal/som/compare/v0.18.0...v0.19.0

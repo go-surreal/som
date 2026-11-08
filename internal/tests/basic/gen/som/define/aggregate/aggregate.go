@@ -20,6 +20,12 @@ func Count[M any](f lib.KeyProvider[M]) *lib.Int[M] {
 	return lib.Count(f)
 }
 
+// CountAll counts the rows within each group, regardless of null values.
+// Pass the model's filter root, e.g. aggregate.CountAll(filter.EventLog).
+func CountAll[M any](source lib.KeyProvider[M]) *lib.Int[M] {
+	return lib.CountAll(source)
+}
+
 // Sum sums the field's values within each group.
 func Sum[M any](f lib.KeyProvider[M]) *lib.Float[M, float64] {
 	return lib.Sum(f)

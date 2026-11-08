@@ -56,8 +56,8 @@ func (t *Time[M]) Ceil(dur time.Duration) *Time[M] {
 	return NewTime[M](t.fn("time::ceil", types.Duration{Duration: dur}))
 }
 
-func (t *Time[M]) Day() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::day"))
+func (t *Time[M]) Day() *Int[M] {
+	return NewInt[M](t.fn("time::day"))
 }
 
 func (t *Time[M]) Floor(dur time.Duration) *Time[M] {
@@ -106,60 +106,60 @@ func (t *Time[M]) Group(group Group) *Time[M] {
 	return NewTime[M](t.fn("time::group", group))
 }
 
-func (t *Time[M]) Hour() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::hour"))
+func (t *Time[M]) Hour() *Int[M] {
+	return NewInt[M](t.fn("time::hour"))
 }
 
-func (t *Time[M]) Micros() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::micros"))
+func (t *Time[M]) Micros() *Int[M] {
+	return NewInt[M](t.fn("time::micros"))
 }
 
-func (t *Time[M]) Millis() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::millis"))
+func (t *Time[M]) Millis() *Int[M] {
+	return NewInt[M](t.fn("time::millis"))
 }
 
-func (t *Time[M]) Minute() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::minute"))
+func (t *Time[M]) Minute() *Int[M] {
+	return NewInt[M](t.fn("time::minute"))
 }
 
-func (t *Time[M]) Month() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::month"))
+func (t *Time[M]) Month() *Int[M] {
+	return NewInt[M](t.fn("time::month"))
 }
 
-func (t *Time[M]) Nano() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::nano")) // TODO: int64? big.Int?
+func (t *Time[M]) Nano() *Int[M] {
+	return NewInt[M](t.fn("time::nano")) // TODO: int64? big.Int?
 }
 
 func (t *Time[M]) Round(dur time.Duration) *Time[M] {
 	return NewTime[M](t.fn("time::round", types.Duration{Duration: dur}))
 }
 
-func (t *Time[M]) Second() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::second"))
+func (t *Time[M]) Second() *Int[M] {
+	return NewInt[M](t.fn("time::second"))
 }
 
 func (t *Time[M]) Timezone() *String[M] {
 	return NewString[M](t.fn("time::timezone"))
 }
 
-func (t *Time[M]) Unix() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::unix"))
+func (t *Time[M]) Unix() *Int[M] {
+	return NewInt[M](t.fn("time::unix"))
 }
 
-func (t *Time[M]) Weekday() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::wday")) // TODO: time.Weekday type!
+func (t *Time[M]) Weekday() *Int[M] {
+	return NewInt[M](t.fn("time::wday")) // TODO: time.Weekday type!
 }
 
-func (t *Time[M]) Week() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::week"))
+func (t *Time[M]) Week() *Int[M] {
+	return NewInt[M](t.fn("time::week"))
 }
 
-func (t *Time[M]) YearDay() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::yday"))
+func (t *Time[M]) YearDay() *Int[M] {
+	return NewInt[M](t.fn("time::yday"))
 }
 
-func (t *Time[M]) Year() *Numeric[M, int] {
-	return NewNumeric[M, int](t.fn("time::year"))
+func (t *Time[M]) Year() *Int[M] {
+	return NewInt[M](t.fn("time::year"))
 }
 
 func (t *Time[M]) IsLeapYear() *Bool[M] {

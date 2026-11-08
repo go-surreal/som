@@ -822,7 +822,8 @@ func ToAllTypesPtr(data *AllTypes) *model.AllTypes {
 // names and types.
 func AllTypesFields(m *model.AllTypes) map[string]any {
 	c := AllTypes{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // allTypesLink is a AllTypes as referenced by another record. It marshals

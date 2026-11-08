@@ -104,6 +104,14 @@ func TestMain(m *testing.M) {
 func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 	tb.Helper()
 
+	return prepareDatabaseWith(ctx, tb, nil)
+}
+
+// prepareDatabaseWith behaves like prepareDatabase, but lets the caller adjust
+// the client config before connecting.
+func prepareDatabaseWith(ctx context.Context, tb testing.TB, configure func(*repo.Config)) (repo.Client, func()) {
+	tb.Helper()
+
 	id := dbCounter.Add(1)
 	namespace := fmt.Sprintf("ns_%d", id)
 	database := fmt.Sprintf("db_%d", id)
@@ -115,6 +123,10 @@ func prepareDatabase(ctx context.Context, tb testing.TB) (repo.Client, func()) {
 		Namespace: namespace,
 		Database:  database,
 		Strict:    true,
+	}
+
+	if configure != nil {
+		configure(&config)
 	}
 
 	var client *repo.ClientImpl

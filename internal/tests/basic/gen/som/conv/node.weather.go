@@ -105,7 +105,12 @@ func ToWeatherPtr(data *Weather) *model.Weather {
 // names and types.
 func WeatherFields(m *model.Weather) map[string]any {
 	c := Weather{*m}
-	return c.fields()
+	data := c.fields()
+	// fields() leaves out a complex ID, but cursors need it as their tiebreaker.
+	if link := toWeatherLinkPtr(m); link != nil {
+		data["id"] = *link.ID
+	}
+	return data
 }
 
 // weatherLink is a Weather as referenced by another record. It marshals

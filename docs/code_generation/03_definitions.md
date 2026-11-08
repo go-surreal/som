@@ -128,10 +128,10 @@ View projections are declared with `define.View` and listed under `Views`:
 var eventSummary = define.View[model.EventSummary, model.EventLog]().
     Project(
         define.As(filter.EventSummary.Category, filter.EventLog.Category),
-        define.As(filter.EventSummary.Total, aggregate.Count(filter.EventLog.Category)),
+        define.As(filter.EventSummary.Total, aggregate.CountAll(filter.EventLog)),
         define.As(filter.EventSummary.AvgValue, aggregate.Mean(filter.EventLog.Value)),
     ).
-    GroupBy(filter.EventLog.Category)
+    GroupBy(filter.EventSummary.Category)
 ```
 
 See [Views](../models/07_views.md) for the full description.

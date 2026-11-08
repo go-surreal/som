@@ -2,18 +2,18 @@ module github.com/go-surreal/som
 
 go 1.27.1
 
-retract [v0.0.0, v0.20.99] // only the latest version is supported for now
+retract [v0.0.0, v0.21.99] // only the latest version is supported for now
 
 require (
 	github.com/dave/jennifer v1.7.1
-	github.com/fxamacker/cbor/v2 v2.9.6
+	github.com/fxamacker/cbor/v2 v2.10.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/surrealdb/surrealdb.go/v2 v2.0.1
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/wzshiming/gotype v0.8.0
-	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e
+	golang.org/x/exp v0.0.0-20261106192419-47ce03d25ef0
 	golang.org/x/mod v0.42.0
 	gotest.tools/v3 v3.5.2
 )

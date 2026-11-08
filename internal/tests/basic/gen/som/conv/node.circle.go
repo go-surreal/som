@@ -96,7 +96,8 @@ func ToCirclePtr(data *Circle) *model.Circle {
 // names and types.
 func CircleFields(m *model.Circle) map[string]any {
 	c := Circle{*m}
-	return c.fields()
+	data := c.fields()
+	return data
 }
 
 // circleLink is a Circle as referenced by another record. It marshals

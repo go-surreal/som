@@ -22,22 +22,17 @@ var slugModelInfo = modelInfo[*model.Slug, *model.Slug]{
 	},
 }
 
-var slugRangeFn = rangeFn[*model.Slug](func(q *lib.Query[*model.Slug], from som.RangeFrom, to som.RangeTo) string {
-	expr := ":"
+var slugRangeFn = rangeFn[*model.Slug](func(q *lib.Query[*model.Slug], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+	var bounds lib.RecordRange
 	if !from.IsOpen() {
-		expr += q.AsVar(from.Value().(som.String))
-	}
-	if !from.IsOpen() && !from.IsInclusive() {
-		expr += ">"
-	}
-	expr += ".."
-	if !to.IsOpen() && to.IsInclusive() {
-		expr += "="
+		bounds.From = q.AsVar(from.Value().(som.String))
+		bounds.FromInclusive = from.IsInclusive()
 	}
 	if !to.IsOpen() {
-		expr += q.AsVar(to.Value().(som.String))
+		bounds.To = q.AsVar(to.Value().(som.String))
+		bounds.ToInclusive = to.IsInclusive()
 	}
-	return expr
+	return bounds
 })
 
 // NewSlug creates a new query builder for Slug models.

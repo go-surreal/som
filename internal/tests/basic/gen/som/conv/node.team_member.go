@@ -140,7 +140,12 @@ func ToTeamMemberPtr(data *TeamMember) *model.TeamMember {
 // names and types.
 func TeamMemberFields(m *model.TeamMember) map[string]any {
 	c := TeamMember{*m}
-	return c.fields()
+	data := c.fields()
+	// fields() leaves out a complex ID, but cursors need it as their tiebreaker.
+	if link := toTeamMemberLinkPtr(m); link != nil {
+		data["id"] = *link.ID
+	}
+	return data
 }
 
 // teamMemberLink is a TeamMember as referenced by another record. It marshals

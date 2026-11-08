@@ -2,8 +2,8 @@
 
 package lib
 
-func (b *SemVer[M]) Compare_(other *SemVer[M]) *Numeric[M, int] {
-	return NewNumeric[M, int](b.fn_("string::semver::compare", other.key()))
+func (b *SemVer[M]) Compare_(other *SemVer[M]) *Int[M] {
+	return NewInt[M](b.fn_("string::semver::compare", other.key()))
 }
 
 func (b *SemVer[M]) SetMajor_(val AnyInt[M]) *SemVer[M] {

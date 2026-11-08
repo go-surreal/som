@@ -163,7 +163,7 @@ Query().WithExpired()
 ### Range
 
 Range query over record IDs, for models with string IDs (ULID, UUID, Rand) or complex IDs
-(ArrayID, ObjectID). It uses SurrealDB's native range syntax and avoids a table scan:
+(ArrayID, ObjectID). It uses SurrealDB's native record ID range scan and avoids a table scan:
 
 ```go
 Query().Range(from som.RangeFrom, to som.RangeTo)
@@ -206,6 +206,11 @@ results, err := client.WeatherRepo().Query().Range(
     som.To(model.WeatherKey{City: "London", Date: end}),
 ).All(ctx)
 ```
+
+The bounds are always sent as query variables, so the range is rendered as
+`type::record('<table>', $from..$to)` rather than the literal `table:a..b` form. SurrealDB
+rejects variables inside a literal range, and only the `type::record()` form lets `Limit()`
+stop the scan early instead of reading the whole range first.
 
 Note: `Range()` returns a `BuilderNoLive` — live queries are not supported with range queries.
 

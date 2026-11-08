@@ -23,24 +23,19 @@ var weatherModelInfo = modelInfo[*model.Weather, *model.Weather]{
 	},
 }
 
-var weatherRangeFn = rangeFn[*model.Weather](func(q *lib.Query[*model.Weather], from som.RangeFrom, to som.RangeTo) string {
-	expr := ":"
+var weatherRangeFn = rangeFn[*model.Weather](func(q *lib.Query[*model.Weather], from som.RangeFrom, to som.RangeTo) lib.RecordRange {
+	var bounds lib.RecordRange
 	if !from.IsOpen() {
 		key := from.Value().(model.WeatherKey)
-		expr += "[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
-	}
-	if !from.IsOpen() && !from.IsInclusive() {
-		expr += ">"
-	}
-	expr += ".."
-	if !to.IsOpen() && to.IsInclusive() {
-		expr += "="
+		bounds.From = "[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
+		bounds.FromInclusive = from.IsInclusive()
 	}
 	if !to.IsOpen() {
 		key := to.Value().(model.WeatherKey)
-		expr += "[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
+		bounds.To = "[" + q.AsVar(key.City) + ", " + q.AsVar(&types.DateTime{Time: key.Date}) + "]"
+		bounds.ToInclusive = to.IsInclusive()
 	}
-	return expr
+	return bounds
 })
 
 // NewWeather creates a new query builder for Weather models.

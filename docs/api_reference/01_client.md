@@ -53,10 +53,18 @@ type Config struct {
 
     // Strict marks the database as strict on creation.
     Strict bool
+
+    // Reconnect controls how a lost WebSocket connection is recovered.
+    // The zero value reconnects automatically with the driver defaults.
+    Reconnect ReconnectConfig
+
+    // OnStatus, if set, is called with each change of the connection status.
+    OnStatus func(ConnectionEvent)
 }
 ```
 
-See [Expiry (TTL)](../models/09_expiry.md) for details on the purge behaviour.
+See [Expiry (TTL)](../models/09_expiry.md) for details on the purge behaviour and
+[Reconnecting](#reconnecting) for the connection settings.
 
 ## Strict Mode
 
@@ -118,7 +126,10 @@ that intent cannot be derived from the model structs.
 
 ## Version Verification
 
-When creating a client, SOM automatically verifies that the connected SurrealDB server meets the minimum required version (currently **4.0.0**). If the version check fails, `NewClient` returns a `som.ErrUnsupportedVersion` error:
+When creating a client, SOM automatically verifies that the connected SurrealDB server is
+supported: at least **4.0.0**, and below the first version the underlying driver does not
+support (currently **5.0.0**). If the version check fails, `NewClient` returns a
+`som.ErrUnsupportedVersion` error:
 
 ```go
 client, err := repo.NewClient(ctx, config)
@@ -155,6 +166,70 @@ workers (such as the expiry purge goroutine):
 
 ```go
 client.Close()
+```
+
+### Reconnecting
+
+A WebSocket client reconnects on its own when the connection is lost. Before any other request
+is sent, the namespace, database and authentication are restored on the new connection;
+requests made in the meantime wait for it until their context ends.
+
+Authentication is restored with the token of the original sign-in. If that token has expired by
+then (after one hour for system users by default), the client signs in again with the configured
+`Username` and `Password`. Requests sent in the brief moment before that sign-in completes fail
+with a permission error.
+
+What cannot be restored is lost:
+
+- **Open transactions** are gone. Retry them.
+- **Live queries** end with a `LiveDisconnected` result. Subscribe again once the client is
+  connected — see [Live Queries](../querying/04_live_queries.md).
+- **Requests in flight** when the connection dropped fail. They may or may not have run on the
+  server, so only retry them blindly if they are idempotent.
+
+The behaviour is tuned via `Config.Reconnect`; the zero value keeps the defaults:
+
+```go
+client, err := repo.NewClient(ctx, repo.Config{
+    // ...
+    Reconnect: repo.ReconnectConfig{
+        MinDelay:    500 * time.Millisecond, // base of the exponential backoff (default 1s)
+        MaxDelay:    30 * time.Second,       // cap of the backoff (default 1m)
+        MaxAttempts: -1,                     // attempts before giving up (default 5, negative = no limit)
+    },
+})
+```
+
+Set `Disabled: true` to turn reconnecting off, so that a lost connection closes the client for
+good. HTTP connections are stateless and unaffected.
+
+To log or react to connection changes, pass `OnStatus`. It is called with each change — the
+connection being lost, every attempt to reconnect and its outcome, and the client closing:
+
+```go
+client, err := repo.NewClient(ctx, repo.Config{
+    // ...
+    OnStatus: func(event repo.ConnectionEvent) {
+        slog.Info("surrealdb connection", "status", event.Status, "attempt", event.Attempt, "error", event.Err)
+    },
+})
+```
+
+`event.Status` is one of `repo.StatusConnected`, `repo.StatusDisconnected`,
+`repo.StatusReconnecting` or `repo.StatusClosed`. On `StatusConnected` after a reconnect,
+`event.Err` holds what could not be restored, or `nil` once the session is fully back — including
+when the client had to sign in again. A `StatusClosed` event after failed
+attempts means the client gave up and has to be recreated.
+
+### Health Check
+
+`Health` reports whether the SurrealDB server is up. It needs no authentication, which makes
+it suitable for readiness probes:
+
+```go
+if err := client.Health(ctx); err != nil {
+    // server not reachable or not healthy
+}
 ```
 
 ### Context Usage
@@ -223,7 +298,7 @@ SOM automatically recognizes common domain errors:
 | `som.ErrEmptyResponse` | Database returned an unexpected empty response |
 | `som.ErrCacheNotSupported` | Caching enabled for a node with a complex ID |
 | `som.ErrIndexBuilding` | Index rebuilt while its build is still running |
-| `som.ErrUnsupportedVersion` | Server version below minimum required |
+| `som.ErrUnsupportedVersion` | Server version outside the supported range |
 
 ### Error Kinds and Helpers
 
