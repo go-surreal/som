@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	surrealDBVersion    = "4.0.0"
+	surrealDBVersion    = "4.0.1"
 	containerStartedMsg = "Started web server on "
 
 	// surrealDBPath matches the v4 default engine (SurrealKV) instead of the

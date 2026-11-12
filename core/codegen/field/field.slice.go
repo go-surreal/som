@@ -82,8 +82,8 @@ const (
 )
 
 // definePtrStructSlice defines a slice of struct pointers in a way that can be
-// applied repeatedly. SurrealDB 4.0.0 refuses to redefine the type of such a
-// field once fields are nested in its elements, even an unchanged one
+// applied repeatedly. SurrealDB 4.0.0 and 4.0.1 refuse to redefine the type of
+// such a field once fields are nested in its elements, even an unchanged one
 // (https://github.com/surrealdb/surrealdb/issues/7670). While the stored kind
 // already matches, only the assertion is altered, which leaves the type alone.
 func (f *Slice) definePtrStructSlice(table, prefix string) string {

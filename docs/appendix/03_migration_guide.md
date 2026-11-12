@@ -43,7 +43,7 @@ Values you pass to raw queries are encoded by the driver, which changed some enc
 a zero `time.Time` is sent as `NONE` (was `NULL`) and a `time.Duration` as a SurrealDB
 `duration` (was an integer of nanoseconds). Fields of generated models are not affected.
 
-**Known issue**: SurrealDB 4.0.0 refuses to redefine the type of a slice of struct pointers
+**Known issue**: SurrealDB 4.0.0 and 4.0.1 refuse to redefine the type of a slice of struct pointers
 (`[]*Struct`) once fields are nested in its elements
 ([surrealdb/surrealdb#7670](https://github.com/surrealdb/surrealdb/issues/7670)). SOM works around
 this so `ApplySchema` can be repeated, but changing an existing `[]Struct` field to `[]*Struct`
