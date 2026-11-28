@@ -13,8 +13,8 @@ require (
 	github.com/surrealdb/surrealdb.go/v2 v2.0.1
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/wzshiming/gotype v0.8.0
-	golang.org/x/exp v0.0.0-20261106192419-47ce03d25ef0
-	golang.org/x/mod v0.42.0
+	golang.org/x/exp v0.0.0-20261128033645-f63ec7c7eed0
+	golang.org/x/mod v0.43.0
 	gotest.tools/v3 v3.5.2
 )
 

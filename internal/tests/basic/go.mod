@@ -7,18 +7,18 @@ replace github.com/go-surreal/som => ../../../
 tool github.com/go-surreal/som
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.18.1
+	github.com/brianvoe/gofakeit/v7 v7.18.11
 	github.com/fxamacker/cbor/v2 v2.10.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/moby/moby/api v1.56.1
+	github.com/moby/moby/api v1.57.0
 	github.com/paulmach/orb v0.14.0
 	github.com/peterstace/simplefeatures v0.59.0
 	github.com/surrealdb/surrealdb.go/v2 v2.0.1
 	github.com/testcontainers/testcontainers-go v0.45.0
 	github.com/twpayne/go-geom v1.7.0
-	golang.org/x/sync v0.24.0
+	golang.org/x/sync v0.25.0
 	gotest.tools/v3 v3.5.2
 )
 
@@ -42,7 +42,7 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-surreal/som v0.21.0 // indirect
+	github.com/go-surreal/som v0.22.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/klauspost/compress v1.18.7 // indirect
@@ -75,7 +75,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
-	golang.org/x/exp v0.0.0-20261106192419-47ce03d25ef0 // indirect
-	golang.org/x/mod v0.42.0 // indirect
+	golang.org/x/exp v0.0.0-20261128033645-f63ec7c7eed0 // indirect
+	golang.org/x/mod v0.43.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 )
